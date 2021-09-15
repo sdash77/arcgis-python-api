@@ -272,8 +272,7 @@ class Country(object):
     .. note::
 
         Currently, when using a ``GIS('Pro')`` instance, only the ``data_collections``
-        and ``enrich_variables`` properties to discover of available enrichment
-        variables are supported.
+        and ``enrich_variables`` properties  are supported.
 
     """
 
@@ -1017,9 +1016,9 @@ def enrich(
                                   * addresses, points of interest, place names or other
                                     supported locations as strings.
 
-                                  * dictionaries such as
-                                  ```
-                                      [
+                                  * dictionaries for multiple field addresses
+
+                                  ``  [
                                         {
                                           "address": {
                                             "Address":"380 New York St.",
@@ -1029,9 +1028,7 @@ def enrich(
                                             "CountryCode":"USA"
                                           }
                                         }
-                                      ]
-                                  ```
-                                  for multiple field addresses
+                                    ]``
 
                                   * ``arcgis.gis.Geometry`` instances
 
