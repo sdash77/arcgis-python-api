@@ -752,12 +752,17 @@ def create_report(
 
                            Creating a new output in a Portal for ArcGIS Instance:
 
-                           return_type = {'user' : 'testUser',
-                                          'folder' : 'FolderName',
-                                          'title' : 'Report Title',
-                                          'item_properties' : '<properties>',
-                                          'url' : 'https://hostname.domain.com/webadaptor',
-                                          'token' : 'token', 'referrer' : 'referrer'}
+                           .. code-block:: python
+                               return_type = {
+                                   'user' : 'testUser',
+                                    'folder' : 'FolderName',
+                                    'title' : 'Report Title',
+                                    'item_properties' : '<properties>',
+                                    'url' : 'https://hostname.domain.com/webadaptor',
+                                    'token' : 'token',
+                                    'referrer' : 'referrer'
+                               }
+
     ------------------     --------------------------------------------------------------------
     use_data               Optional dictionary. This parameter explicitly specify the country
                            or dataset to query. When all input features specified in the
@@ -1018,7 +1023,7 @@ def enrich(
 
                                   * dictionaries for multiple field addresses
 
-                                  .. code::
+                                  .. code-block:: python
 
                                       [
                                         {
