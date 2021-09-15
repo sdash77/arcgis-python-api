@@ -18,7 +18,7 @@
 norm_cfg = dict(type="BN", requires_grad=True)
 model = dict(
     type="EncoderDecoder",
-    pretrained="open-mmlab://resnet101_v1c",
+    init_cfg="open-mmlab://resnet101_v1c",
     backbone=dict(
         type="ResNetV1c",
         depth=101,

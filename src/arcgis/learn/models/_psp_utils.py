@@ -453,7 +453,7 @@ def _pspnet_learner(
         ),
         data.device,
     )
-    if not _isnotebook() and arcgis_os.name == "posix":
+    if not _isnotebook():
         distributed_prep = DummyDistributed()
         _set_ddp_multigpu(distributed_prep)
         if distributed_prep._multigpu_training:
@@ -491,7 +491,7 @@ def _pspnet_learner_with_unet(
         model = _add_auxillary_branch_to_psunet(model, chip_size, data.c)
     elif vggv2:
         model = PSPUnet(model)
-    if not _isnotebook() and arcgis_os.name == "posix":
+    if not _isnotebook():
         distributed_prep = DummyDistributed()
         _set_ddp_multigpu(distributed_prep)
         if distributed_prep._multigpu_training:

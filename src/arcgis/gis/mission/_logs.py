@@ -1,4 +1,4 @@
-import os
+import os, csv
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from datetime import datetime as _datetime
@@ -212,7 +212,7 @@ class LogManager(object):
         if export is True and out_path is not None:
 
             messages = self._con.get(url, params)
-            with open(name=out_path, mode="wb") as f:
+            with open(out_path, mode="wb") as f:
                 hasKeys = False
                 if export_type == "TAB":
                     csvwriter = csv.writer(f, delimiter="\t")

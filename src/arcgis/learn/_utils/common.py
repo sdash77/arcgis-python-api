@@ -96,8 +96,10 @@ def read_image(path, resize_to: int = None):
 
     try:
         from skimage.io import imread
-
-        return np.array(PIL.Image.open(path).convert("RGB"))
+        with PIL.Image.open(path).convert("RGB") as im:
+            arr = np.array(im)
+            im.close()
+        return arr
     except Exception as _pillow_error:
         pillow_error = str(_pillow_error)
 
@@ -190,8 +192,9 @@ class ArcGISMSImage(Image):
                     warnings.simplefilter(
                         "ignore", UserWarning
                     )  # EXIF warning from TiffPlugin
-                    x = PIL.Image.open(path).convert("RGB")
-                x = pil2tensor(x, cast_to)
+                    with PIL.Image.open(path).convert("RGB") as im:
+                        x = pil2tensor(im, cast_to)
+                        im.close()
                 read = True
             except Exception as _pillow_error:
                 pillow_error = str(_pillow_error)
@@ -243,6 +246,8 @@ class ArcGISImageList(ImageList):
     def open(self, fn):
         return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
 
+class ArcGISImageListRGB(ArcGISImageList):
+    _div = 255
 
 def get_multispectral_data_params_from_emd(data, emd):
     data._is_multispectral = emd.get("IsMultispectral", False)

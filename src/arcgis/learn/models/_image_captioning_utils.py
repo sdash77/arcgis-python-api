@@ -29,6 +29,9 @@ import fasttext
 import fasttext.util
 
 
+EPS = 1e-5
+
+
 class EncoderAttention(nn.Module):
     def __init__(self, backbone, cut=None, pretrained=True):
         """Load the pretrained backbone and replace top fc layer."""
@@ -605,11 +608,11 @@ def get_bleu(self, data, beam_width=5, max_len=20):
             counts[i] += t
 
     # compute precision of all type of bleu
-    n_precs = [c / t for c, t in zip(corrects, counts)]
+    n_precs = [c / (t + EPS) for c, t in zip(corrects, counts)]
     precs = n_precs
 
     # compute overall bleu as https://www.aclweb.org/anthology/P02-1040.pdf
-    len_penalty = exp(1 - targ_len / pred_len) if pred_len < targ_len else 1
+    len_penalty = exp(1 - targ_len / (pred_len + EPS)) if pred_len < targ_len else 1
     bleu = len_penalty * ((precs[0] * precs[1] * precs[2] * precs[3]) ** 0.25)
 
     BLEU = {

@@ -103,11 +103,8 @@ def _show_pairs(
     for x, y, o, ax in zip(xs, ys, orients, axs):
         ax[0].imshow(x)
         ax[1].imshow(y)
-        # ax[2].imshow(o)
-        # _plotOrientationOnImage(ax[3], o, x, bin_size)
     for ax in axs.flatten():
         ax.axis("off")
-    # plt.tight_layout()
 
 
 def _plotOrientationOnImage(ax, orientMap, image, bin_size=20):
@@ -336,13 +333,6 @@ class RoadOrientation:
         data.sub_dataset_type = "RoadOrientation"
         data.transform = self.transforms
         x_shape = data.train_ds[0][0].shape
-        # if x_shape[0] == 4:
-        #   message = f"""
-        #          Could not infer Imagery Type, Found 4 Bands in input imagery. Please set the optional parameter 'imagery_type' to an appropriate value.
-        #         \nIf the imagery used to export the training data is a RGB imagery, please continue training by specifying `imagery_type='RGB'`.
-        #        \nIf the imagery used to export the training data is a multispectral imagery containing information in the 4th band, please check the documentation for parameter 'imagery_type' to find a suitable value.
-        #       """
-        # raise Exception(message)
 
         return data
 
@@ -391,15 +381,6 @@ class RoadOrientDataset(Dataset):
         self.is_gaussian_mask = kwargs.get("is_gaussian_mask", False)
         self.generate_orient = kwargs.get("generate_orient", True)
 
-        # self.transforms = []
-        # for tfm in transforms:
-        #     if isinstance(tfm.tfm, TfmCrop) or isinstance(tfm.tfm, TfmPixel):
-        #         self.transforms.append(tfm)
-
-        # self.transforms_kwargs = {}
-        # if self.resize_to:
-        #     self.transforms_kwargs.update(mode="nearest")
-        #     self.transforms_kwargs.update(size=self.resize_to)
         # Angle Mask Buffers
         self.angle_theta = orient_theta
         self.bin_size = orient_bin_size
@@ -446,18 +427,10 @@ class RoadOrientDataset(Dataset):
         """
         image_dict = self.files[index]
         # read each image in list
-        # try:
-        image = ArcGISMSImage.open_gdal(image_dict["image"])
+        image = ArcGISMSImage.open(image_dict["image"])
         if (image.shape[0] > 3) and (self.orig_data._imagery_type == "RGB"):
             image = image.data[[0, 1, 2]]
-
-        # image = PILImage.open(image_dict["image"])
-        # image = image.convert('RGB')
-        # image = self.data.train_ds.x[index].px
-        # except:
-        #
-        # image = PILImage.fromarray(np.asarray(ArcGISMSImage.open_gdal(image_dict["image"]))).astype(np.uint8)
-        label = self._get_mask(np.asarray(PILImage.open(image_dict["label"])))
+        label = self._get_mask(ArcGISMSImage.read_image(image_dict["label"]))
 
         return image, PILImage.fromarray(label).convert("L")
 
