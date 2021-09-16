@@ -166,6 +166,7 @@ def connect_origins_to_destinations(
     output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                             feature layer will cause the new layer to be appended to the Feature Service. 
                                             If overwrite is True in context, new layer will overwrite existing layer.
+                                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------   ---------------------------------------------------------
     context                                 Optional dict. Additional settings such as processing extent 
                                             and output spatial reference. 
@@ -455,6 +456,7 @@ def create_buffers(
     output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                  feature layer will cause the new layer to be appended to the Feature Service. 
                                  If overwrite is True in context, new layer will overwrite existing layer.
+                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
     context                      Optional dict. Additional settings such as processing extent 
                                  and output spatial reference. 
@@ -668,6 +670,7 @@ def create_drive_time_areas(
     output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                  feature layer will cause the new layer to be appended to the Feature Service. 
                                  If overwrite is True in context, new layer will overwrite existing layer.
+                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
     context                      Optional dict. Additional settings such as processing extent 
                                  and output spatial reference. 
@@ -725,7 +728,6 @@ def create_drive_time_areas(
                                  area polygons. Set this to true if you want a potentially more accurate
                                  result of which streets are actually covered within a specific travel
                                  distance than what the drive-time areas would contain.
-    -------------------------    ---------------------------------------------------------
     =========================    =========================================================
 
     :returns: result_layer : :class`~arcgis.features.FeatureLayer` if output_name is specified, else Feature Collection.
@@ -937,6 +939,7 @@ def find_nearest(
     output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                  feature layer will cause the new layer to be appended to the Feature Service. 
                                  If overwrite is True in context, new layer will overwrite existing layer.
+                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
     context                      Optional dict. Additional settings such as processing extent 
                                  and output spatial reference. 
@@ -1265,6 +1268,7 @@ def plan_routes(
     output_name                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                     feature layer will cause the new layer to be appended to the Feature Service. 
                                     If overwrite is True in context, new layer will overwrite existing layer.
+                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ----------------------------    --------------------------------------------------------------------------------------------------
     context                         Optional dict. Additional settings such as processing extent and output spatial reference. 
                                     For plan_routes, there are three settings.

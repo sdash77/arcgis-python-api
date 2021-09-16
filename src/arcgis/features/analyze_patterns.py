@@ -80,6 +80,7 @@ def calculate_density(
     output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                  feature layer will cause the new layer to be appended to the Feature Service. 
                                  If overwrite is True in context, new layer will overwrite existing layer.
+                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
     context                      Optional dict. Additional settings such as processing extent and output spatial reference. 
                                  For calculate_density, there are three settings.
@@ -200,6 +201,7 @@ def summarize_center_and_dispersion(
     output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                             feature layer will cause the new layer to be appended to the Feature Service. 
                             If overwrite is True in context, new layer will overwrite existing layer.
+                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     --------------------    ---------------------------------------------------------
     context                 Optional dict. Additional settings such as processing extent and output spatial reference. 
                             For summarize_center_and_dispersion, there are three settings.
@@ -318,6 +320,7 @@ def find_point_clusters(
     output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                             feature layer will cause the new layer to be appended to the Feature Service. 
                             If overwrite is True in context, new layer will overwrite existing layer.
+                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     --------------------    ---------------------------------------------------------
     context                 Optional dict. Additional settings such as processing extent and output spatial reference. 
                             For find_point_clusters, there are three settings.
@@ -440,6 +443,7 @@ def find_hot_spots(
     output_name                                                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                                                             feature layer will cause the new layer to be appended to the Feature Service. 
                                                                             If overwrite is True in context, new layer will overwrite existing layer.
+                                                                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------------------------------------     ---------------------------------------------------------
     context                                                                 Optional dict. Additional settings such as processing extent and output spatial reference. 
                                                                             For find_hot_spots, there are three settings.
@@ -610,6 +614,7 @@ def find_outliers(
     output_name                                                         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                                                         feature layer will cause the new layer to be appended to the Feature Service. 
                                                                         If overwrite is True in context, new layer will overwrite existing layer.
+                                                                        If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ------------------------------------------------------------------  ---------------------------------------------------------------
     context                                                             Optional dict. Additional settings such as processing extent and output spatial reference. 
                                                                         For find_outliers, there are three settings.
@@ -812,6 +817,7 @@ def interpolate_points(
     output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                  feature layer will cause the new layer to be appended to the Feature Service. 
                                  If overwrite is True in context, new layer will overwrite existing layer.
+                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
     context                      Optional dict. Additional settings such as processing extent and output spatial reference. 
                                  For interpolate_points, there are three settings.

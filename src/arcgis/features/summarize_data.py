@@ -90,6 +90,7 @@ def aggregate_points(
     output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                             feature layer will cause the new layer to be appended to the Feature Service. 
                                             If overwrite is True in context, new layer will overwrite existing layer.
+                                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ------------------------------------    --------------------------------------------------------------------
     context                                 Optional dict. Additional settings such as processing extent and output spatial reference. 
                                             For aggregate_points, there are three settings.
@@ -365,6 +366,7 @@ def summarize_nearby(
     output_name                 Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                 feature layer will cause the new layer to be appended to the Feature Service. 
                                 If overwrite is True in context, new layer will overwrite existing layer.
+                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     context                     Optional dict. Additional settings such as processing extent and output spatial reference. 
                                 For summarize_nearby, there are three settings.
@@ -502,6 +504,7 @@ def summarize_center_and_dispersion(
     output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                             feature layer will cause the new layer to be appended to the Feature Service. 
                             If overwrite is True in context, new layer will overwrite existing layer.
+                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     --------------------    ---------------------------------------------------------
     context                 Optional dict. Additional settings such as processing extent and output spatial reference. 
                             For summarize_center_and_dispersion, there are three settings.
@@ -649,6 +652,7 @@ def summarize_within(
     output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                             feature layer will cause the new layer to be appended to the Feature Service. 
                                             If overwrite is True in context, new layer will overwrite existing layer.
+                                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------   ---------------------------------------------------------
     context                                 Optional dict. Additional settings such as processing extent and output spatial reference. 
                                             For summarize_within, there are three settings.
@@ -820,6 +824,7 @@ def join_features(
     output_name                                                                                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
                                                                                                     feature layer will cause the new layer to be appended to the Feature Service. 
                                                                                                     If overwrite is True in context, new layer will overwrite existing layer.
+                                                                                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     context                                                                                         Optional dict. Additional settings such as processing extent and output spatial reference. 
                                                                                                     For join_features, there are three settings.

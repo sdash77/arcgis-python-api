@@ -39,8 +39,8 @@ class Feature(object):
 
         # Obtain a feature from a feature layer:
 
-        feat_set = feature_layer.query(where="OBJECTID=1")
-        feat = feat_set[0]
+        feature_set = feature_layer.query(where="OBJECTID=1")
+        feature = feature_set[0]
 
     """
 
@@ -63,7 +63,7 @@ class Feature(object):
     # ----------------------------------------------------------------------
     def set_value(self, field_name, value):
         """
-        The ``set_value`` method sets an attribute value for a given field name.
+        Sets an attribute value for a given field name.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -73,18 +73,17 @@ class Feature(object):
         value               Required. Value to update the field with.
         ===============     ====================================================================
 
+        :return:
+            A boolean indicating whether ``field_name`` value was updated (True), or not updated (False).
+
         .. code-block:: python
 
             # UsageExample
 
             >>> feat_set = feature_layer.query(where="OBJECTID=1")
             >>> feat = feat_set[0]
-            >>> feat.set_value(field_name = "field_name",
-            >>>               value = "new_value")
+            >>> feat.set_value(field_name = "field_name", value = "new_value")
             True
-
-        :returns:
-            A boolean indicating whether ``field_name`` value was updated (True), or not updated (False).
 
         """
         if field_name in self.fields:
@@ -113,18 +112,18 @@ class Feature(object):
     # ----------------------------------------------------------------------
     def get_value(self, field_name):
         """
-        The ``get_value`` method retrieves the value for a specified field name.
+        Retrieves the value for a specified field name.
 
-        =============     ===========================================================
-        **Argument**          **Description**
-        -------------     -----------------------------------------------------------
-        field_name       Required String. The name for each attribute field.
+        =============       ===========================================================
+        **Argument**        **Description**
+        -------------       -----------------------------------------------------------
+        field_name          Required String. The name for each attribute field.
 
-                          .. note::
-                            ``feature.fields`` will return a list of all field names.
-        =============     ===========================================================
+                            .. note::
+                                ``feature.fields`` will return a list of all field names.
+        =============       ===========================================================
 
-        :returns:
+        :return:
             The value for the specified attribute field of the :class:`~arcgis.features.Feature`
 
         """
@@ -142,8 +141,10 @@ class Feature(object):
     @property
     def as_dict(self):
         """
-        The ``as_dict`` property retrieves the feature layer as a dictionary.
-        :returns: the feature as a dictionary
+        Retrieves the feature layer as a dictionary.
+        
+        :returns: 
+            The feature as a dictionary
         """
         return self._dict
 
@@ -151,18 +152,19 @@ class Feature(object):
     @property
     def as_row(self):
         """
-        The ``as_row`` property retrieves the feature as a tuple containing two lists:
+        Retrieves the feature as a tuple containing two lists:
 
         =============     ===========================================================
-        **List of:**          **Description**
+        **List of:**      **Description**
         -------------     -----------------------------------------------------------
         row values        the specific attribute values and geometry for this feature
         -------------     -----------------------------------------------------------
         field names       the name for each attribute field
         =============     ===========================================================
 
-        :returns:
-            A tuple
+        :return:
+            A tuple of two lists: row values and field names
+
         """
         fields = self.fields
         row = [""] * len(fields)
@@ -178,7 +180,14 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @property
     def geometry(self):
-        """:return: the feature geometry"""
+        """
+        Get/Set the geometry of the feature, if any
+        
+        Values: 'Polyline' | 'Polygon' | 'Point'
+
+        :return: The feature's geometry
+        
+        """
         if self._geom is None:
             if "geometry" in self._dict.keys():
                 self._geom = self._dict["geometry"]
@@ -188,21 +197,26 @@ class Feature(object):
 
     @geometry.setter
     def geometry(self, value):
-        """The ``geometry`` property`` gets and sets a feature's geometry"""
         self._geom = value
         self._dict["geometry"] = value
 
     # ----------------------------------------------------------------------
     @property
     def attributes(self):
-        """:return: a dictionary of feature attribute values with field names as the key"""
+        """
+        Get/Set the attribute values for a feature
+
+        :return: 
+            A dictionary of feature attribute values with field names as the key
+        
+        """
+
         if self._attributes is None and "attributes" in self._dict:
             self._attributes = self._dict["attributes"]
         return self._attributes
 
     @attributes.setter
     def attributes(self, value):
-        """The ``attributes`` property gets and sets a feature's attributes"""
         self._attributes = value
         self._dict["attributes"] = value
 
@@ -210,9 +224,9 @@ class Feature(object):
     @property
     def fields(self):
         """
-        The ``fields`` property retrieves the attribute field names for the feature as a list of strings
+        Retrieves the attribute field names for the feature as a list of strings
 
-        :returns:
+        :return:
             A list of strings
         """
         if "attributes" in self._dict:
@@ -225,11 +239,12 @@ class Feature(object):
     @property
     def geometry_type(self):
         """
-        The ``geometry_type`` property retrieves the geometry type of the :class:`~arcgis.features.feature.Feature` as a
-        string.
+        Retrieves the geometry type of the Feature as a string.
 
-        :returns:
-            The geometry type of the :class:`~arcgis.features.feature.Feature` as a string"""
+        :return:
+            The geometry type of the :class`~arcgis.features.Feature` as a string
+            
+        """
         if self._geom_type is None:
             if self.geometry is not None:
                 if hasattr(self.geometry, "type"):
@@ -244,10 +259,12 @@ class Feature(object):
     @classmethod
     def from_json(cls, json_str):
         """
-        The ``from_json`` method creates a :class:`~arcgis.features.Feature` object from a JSON string.
+        Creates a Feature object from a JSON string.
 
         :returns:
-            A :class:`~arcgis.features.Feature` from a JSON string"""
+            A :class:`~arcgis.features.Feature`
+        
+        """
         feature = _ujson.loads(json_str)
         geom = feature["geometry"] if "geometry" in feature else None
         attribs = feature["attributes"] if "attributes" in feature else None
@@ -257,10 +274,10 @@ class Feature(object):
     @classmethod
     def from_dict(cls, feature, sr=None):
         """
-        The ``from_dict`` method creates a :class:`~arcgis.features.Feature` object from a dictionary.
+        Creates a Feature object from a dictionary.
 
         :returns:
-            A class:`~arcgis.features.feature.Feature` from a dictionary
+            A class:`~arcgis.features.feature.Feature`
         """
         geom = feature["geometry"] if "geometry" in feature else None
         if geom and sr and isinstance(geom, dict) and not "spatialReference" in geom:
@@ -357,14 +374,6 @@ class FeatureSet(object):
             if isinstance(feature, Feature):
                 pass
                 # features passed in as a list of Feature objects
-
-                # if "attributes" in feature.as_dict:
-                #     if "geometry" in feature.as_dict:
-                #         features = [Feature(feat.as_dict['geometry'], feat.as_dict['attributes']) for feat in features]
-                #     else:
-                #         features = [Feature(None, feat.as_dict['attributes']) for feat in features]
-                # elif "geometry" in feature.as_dict:
-                #     features = [Feature(feat.as_dict['geometry'], None) for feat in features]
             elif isinstance(feature, dict):
                 # features passed in as a list of dicts
                 if "attributes" in feature:
@@ -416,8 +425,6 @@ class FeatureSet(object):
                         self._geometry_type = "esriGeometryPoint"
                     elif isinstance(geometry, MultiPoint):
                         self._geometry_type = "esriGeometryMultipoint"
-                # else:
-                #     raise AttributeError("Invalid geometry type") # Dont raise this error as input can be tables without geometries
 
             # region - build fields into a dict
             if self._fields is None or len(self._fields) == 0:
@@ -537,7 +544,7 @@ class FeatureSet(object):
         ===============     ====================================================================
 
 
-        :return: list of feature objects
+        :return: A list of :class:`~arcgis.features.Feature` objects
         """
         try:
             import arcpy
@@ -608,10 +615,10 @@ class FeatureSet(object):
     @property
     def value(self):
         """
-        The ``value`` method retrieves the :class:`~arcgis.features.FeatureSet` object as a dictionary.
+        Gets the Feature Set object as a dictionary.
 
         :returns:
-            A dictionary
+            A dictionary of the :class:`~arcgis.features.FeatureSet`
         """
         val = {"features": [f.as_dict for f in self._features]}
 
@@ -634,26 +641,14 @@ class FeatureSet(object):
 
         return val
 
-        # return {
-        #    "objectIdFieldName" : self._objectIdFieldName,
-        #    "displayFieldName" : self._displayFieldName,
-        #    "globalIdFieldName" : self._globalIdFieldName,
-        #    "geometryType" : self._geometryType,
-        #    "spatialReference" : self._spatialReference,
-        #    "hasZ" : self._hasZ,
-        #    "hasM" : self._hasM,
-        #    "fields" : self._fields,
-        #    "features" : [f.as_dict for f in self._features]
-        # }
-
     # ----------------------------------------------------------------------
     @property
     def to_json(self):
         """
-        The ``to_json`` method converts the :class:`~arcgis.features.FeatureSet` object to a JSON string.
+        Gets the Feature Set object as a JSON string.
 
         :returns:
-            A JSON string
+            A JSON string of the :class:`~arcgis.features.FeatureSet`
         """
         return json.dumps(self.value, default=_date_handler)
 
@@ -661,7 +656,7 @@ class FeatureSet(object):
     @property
     def to_geojson(self):
         """
-        The ``to_geojson`` method converts the :class:`~arcgis.features.FeatureSet` object to a GeoJSON.
+        Gets the Feature Set object as a GeoJSON.
 
         :returns:
             A GeoJSON object.
@@ -724,11 +719,10 @@ class FeatureSet(object):
 
     def to_dict(self):
         """
-        The ``to_dict`` method converts the :class:`~arcgis.features.FeatureSet` object to a Python dictionary.
-
+        Converts the Feature Set object to a Python dictionary.
 
         :returns:
-            A Python dictionary
+            A Python dictionary of the :class:`~arcgis.features.FeatureSet`
         """
         return self.value
 
@@ -805,10 +799,10 @@ class FeatureSet(object):
     @property
     def sdf(self):
         """
-        The ``sdf`` method converts the :class:`~arcgis.features.FeatureSet` to a Spatially Enabled Pandas dataframe
+        Gets the Feature Set as a Spatially Enabled Pandas dataframe.
 
         :returns:
-            A Spatially Enabled Pandas `Dataframe <https://pandas.pydata.org/docs/reference/frame.html#dataframe>`_
+            A Spatially Enabled `Pandas Dataframe <https://pandas.pydata.org/docs/reference/frame.html#dataframe>`_
             object
         """
         try:
@@ -840,8 +834,13 @@ class FeatureSet(object):
     @staticmethod
     def from_json(json_str):
         """
-        The ``from_json`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
-        JSON string.
+        Creates a Feature Set objects from a JSON string.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        json_str            Required json style string.
+        ===============     ====================================================================
 
         :returns:
            A :class:`~arcgis.features.FeatureSet` object
@@ -853,6 +852,12 @@ class FeatureSet(object):
         """
         The ``from_dataframe`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
         Pandas' DataFrame or :class:`~arcgis.features.SpatialDataFrame`
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        df                  Required DataFrame.
+        ===============     ====================================================================
 
         :returns:
            A :class:`~arcgis.features.FeatureSet` object
@@ -950,11 +955,16 @@ class FeatureSet(object):
     @staticmethod
     def from_geojson(geojson):
         """
-        The ``from_geoJSON`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
-        GEO JSON  :class:`~arcgis.features.FeatureCollection` object
+        Creates a Feature Set objects from a GEO JSON  :class:`~arcgis.features.FeatureCollection` object
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        geojson             Required GEOJSON object
+        ===============     ====================================================================
 
         :returns:
-           A :class:`~arcgis.features.FeatureSet` object
+           A :class`~arcgis.features.FeatureSet` object
 
         """
         from warnings import warn
@@ -1108,11 +1118,19 @@ class FeatureSet(object):
     @staticmethod
     def from_dict(featureset_dict):
         """
-        The ``from_dict`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
-        dictionary.
+        Creates a Feature Set objects from a dictionary.
+        
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        featureset_dict     Required dict. 
+                            Keys can include:
+                            'fields', 'features', 'hasZ', 'hasM', 'geometryType', 'objectIdFieldName',
+                            'globalIdFieldName', 'displayFieldName', 'spatialReference'
+        ===============     ====================================================================
 
         :returns:
-           A :class:`~arcgis.features.FeatureSet` object
+           A :class`~arcgis.features.FeatureSet`
         """
         features = []
         if "fields" in featureset_dict:
@@ -1149,18 +1167,22 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @property
     def spatial_reference(self):
-        """gets the featureset's spatial reference"""
+        """
+        Get/Set the Feature Set's spatial reference
+
+        Ex: FeatureSet.spatial_reference = {"wkid": 4326}
+
+        :returns:
+            A :class:`~arcgis.geometry.SpatialReference`
+
+        """
         return self._spatial_reference
 
     # ----------------------------------------------------------------------
     @spatial_reference.setter
     def spatial_reference(self, value):
         """
-        The ``spatial_reference`` method sets and gets the :class:`~arcgis.features.FeatureSet` object's spatial
-        reference.
-
-        :returns:
-            A :class:`~arcgis.geometry.SpatialReference`
+        Sets Feature Set object's spatial reference.
 
         """
         if isinstance(value, SpatialReference):
@@ -1176,7 +1198,8 @@ class FeatureSet(object):
     @property
     def has_z(self):
         """
-        The ``has_z`` method gets and sets the Z-property of the :class:`~arcgis.features.FeatureSet` object
+        Get/Set the Z-property of the Feature Set object
+        Set values: True | False
 
         :returns:
             The Z-value of the :class:`~arcgis.features.FeatureSet` object
@@ -1186,12 +1209,6 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @has_z.setter
     def has_z(self, value):
-        """
-        The ``has_z`` method gets and sets the Z-property of the :class:`~arcgis.features.FeatureSet` object
-
-        :returns:
-            The Z-value of the :class:`~arcgis.features.FeatureSet` object
-        """
         if isinstance(value, bool):
             self._has_z = value
 
@@ -1199,7 +1216,8 @@ class FeatureSet(object):
     @property
     def has_m(self):
         """
-        The ``has_m`` method gets and sets the M-property of the :class:`~arcgis.features.FeatureSet` object
+        Get/Set the M-property of the Feature Set object.
+        Set values: True | False
 
         :returns:
             The M-value of the :class:`~arcgis.features.FeatureSet` object
@@ -1209,12 +1227,7 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @has_m.setter
     def has_m(self, value):
-        """
-        The ``has_m`` method gets and sets the M-property of the :class:`~arcgis.features.FeatureSet` object
 
-        :returns:
-            The M-value of the :class:`~arcgis.features.FeatureSet` object
-        """
         if isinstance(value, bool):
             self._has_m = value
 
@@ -1222,8 +1235,8 @@ class FeatureSet(object):
     @property
     def geometry_type(self):
         """
-        The ``geometry_type`` method sets or gets the ``Type`` of the :class:`~arcgis.features.FeatureSet` object, such
-        as ``Polygon``, ``Polyline``, or ``Point``.
+        Get/Set the ``Type`` of the Feature Set object.
+        Set values: ``Polygon`` | ``Polyline`` | ``Point``
 
         :returns:
             A string representing the geometry type of the :class:`~arcgis.features.FeatureSet` object
@@ -1233,13 +1246,7 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @geometry_type.setter
     def geometry_type(self, value):
-        """
-        The ``geometry_type`` method sets or gets the ``Type`` of the :class:`~arcgis.features.FeatureSet` object, such
-        as ``Polygon``, ``Polyline``, or ``Point``.
 
-        :returns:
-            A string representing the geometry type of the :class:`~arcgis.features.FeatureSet` object
-        """
         if value in self._allowed_geom_types:
             self._geometry_type = value
 
@@ -1247,8 +1254,8 @@ class FeatureSet(object):
     @property
     def object_id_field_name(self):
         """
-        The ``object_id_field_name`` gets and sets the object id field of the :class:`~arcgis.features.FeatureSet`
-        object
+        Get/Set the object id field of the Feature Set object
+        Set value: A string
 
         :returns:
             A string representing the object id field name
@@ -1258,21 +1265,15 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @object_id_field_name.setter
     def object_id_field_name(self, value):
-        """
-        The ``object_id_field_name`` gets and sets the object id field of the :class:`~arcgis.features.FeatureSet`
-        object
 
-        :returns:
-            A string representing the object id field name
-        """
         self._object_id_field_name = value
 
     # ----------------------------------------------------------------------
     @property
     def global_id_field_name(self):
         """
-        The ``global_id_field_name`` gets and sets the ``global ID`` field  for the
-        :class:`~arcgis.features.FeatureSet` object.
+        Get/Set the ``global ID`` field  for the Feature Set object.
+        Set value: A string
 
         :returns:
             A string
@@ -1282,21 +1283,15 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @global_id_field_name.setter
     def global_id_field_name(self, value):
-        """
-        The ``global_id_field_name`` gets and sets the ``globalIdFieldName`` for the
-        :class:`~arcgis.features.FeatureSet` object.
 
-        :returns:
-            A string
-        """
         self._global_id_field_name = value
 
     # ----------------------------------------------------------------------
     @property
     def display_field_name(self):
         """
-        The ``display_field_name`` gets and sets the ``display`` field for the :class:`~arcgis.features.FeatureSet`
-        object.
+        Get/Set the ``display`` field for the Feature Set object.
+        Set value: A string
 
         :returns:
             A String
@@ -1312,13 +1307,13 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     def save(self, save_location, out_name, encoding=None):
         """
-        The ``save`` method saves a :class:`~arcgis.features.FeatureSet` object to a
+        The ``save`` method saves a Feature Set object to a
         :class:`~arcgis.features.Feature` class on disk.
 
         =================    ====================================================================
         **Argument**         **Description**
         -----------------    --------------------------------------------------------------------
-        save_location        Required string. Path to export the :class:`~arcgis.features.FeatureSet` to.
+        save_location        Required string. Path to export the Feature Set to.
         -----------------    --------------------------------------------------------------------
         out_name             Required string. Name of the saved table.
         -----------------    --------------------------------------------------------------------
@@ -1327,6 +1322,9 @@ class FeatureSet(object):
                              default is None.
         =================    ====================================================================
 
+        :returns:
+            A string
+            
         .. code-block:: python
 
             # Obtain a feature from a feature layer:
@@ -1334,9 +1332,6 @@ class FeatureSet(object):
             >>> feat_set = feature_layer.save(save_location = "C:\ArcGISProjects\"
             >>>                               out_name = "Power_Plant_Data")
             "C:\ArcGISProjects\Power_Plant_Data"
-
-        :returns:
-            A string
 
         """
         _, file_extension = os.path.splitext(out_name)
@@ -1399,7 +1394,7 @@ class FeatureSet(object):
     @property
     def features(self):
         """
-        The ``features`` method gets the :class:`~arcgis.features.Feature` objects in the ``FeatureSet`` object.
+        Gets the :class:`~arcgis.features.Feature` objects in the FeatureSet object.
 
         :returns:
             A list of :class:`~arcgis.features.Feature` objects
@@ -1409,8 +1404,14 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @property
     def fields(self):
-        """The ``fields`` method sets and gets the fields in the FeatureSet"""
-        # todo - build object id field if not found - webmaps need this
+        """
+        Get/Set the fields in the FeatureSet
+        Set values: A dictionary of field names
+
+        :return:
+            A dictionary
+        """
+        # Build object id field if not found - webmaps need this
         if not self._object_id_field_name:
             obj_field = {
                 "name": "OBJECTID",
@@ -1441,13 +1442,7 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @fields.setter
     def fields(self, fields):
-        """
-        The ``fields`` method sets the fields in the
-        :class:`~arcgis.features.FeatureSet` object.
 
-        :returns:
-            A dictionary
-        """
         self._fields = fields
 
 
@@ -1485,14 +1480,15 @@ class FeatureCollection(Layer):
 
     def query(self):
         """
-        The ``query`` method retrieves the data in this feature collection as a
-        :class:`~arcgis.features.FeatureSet`.
+        Retrieves the data in this feature collection as a :class:`~arcgis.features.FeatureSet`.
+        Ex: FeatureCollection.query()
 
         .. Warning::
             Filtering by ``where clause`` is not supported for feature collections.
 
-        :returns:
+        :return:
             A :class:`~arcgis.features.FeatureSet` object
+
         """
         if "layers" in self.properties:
             if "fields" in self.properties["layers"][0]["layerDefinition"]:
@@ -1500,9 +1496,7 @@ class FeatureCollection(Layer):
                     "layers"
                 ][0]["layerDefinition"]["fields"]
 
-            return FeatureSet.from_dict(
-                self.properties["layers"][0]["featureSet"],
-            )
+            return FeatureSet.from_dict(self.properties["layers"][0]["featureSet"],)
         else:
             if "fields" in self.properties["layerDefinition"]:
                 self.properties["featureSet"]["fields"] = self.properties[
@@ -1514,8 +1508,7 @@ class FeatureCollection(Layer):
     @staticmethod
     def from_featureset(fset, symbol=None, name=None):
         """
-        The ``from_featureset`` method creates a :class:`~arcgis.features.FeatureCollection` object from a
-        :class:`~arcgis.features.FeatureSet` object.
+        Creates a :class:`~arcgis.features.FeatureCollection` object from a :class:`~arcgis.features.FeatureSet` object.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1533,6 +1526,9 @@ class FeatureCollection(Layer):
                                provided, then a random name is generated. (New at 1.6.1)
         ==================     ====================================================================
 
+        :returns:
+            A :class:`~arcgis.features.FeatureCollection` object.
+            
         .. code-block:: python
 
             # Usage Example
@@ -1542,8 +1538,7 @@ class FeatureCollection(Layer):
             >>> type(feat_collect)
             "acrgis.features.FeatureCollection"
 
-        :returns:
-            A :class:`~arcgis.features.FeatureCollection` object.
+
         """
         if not isinstance(fset, FeatureSet):
             raise ValueError

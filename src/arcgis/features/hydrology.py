@@ -109,7 +109,7 @@ def trace_downstream(
     future                 Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
     ==================     ====================================================================
 
-    :return: FeatureSet
+    :return: A new :class`~arcgis.features.FeatureSet`
 
     .. code-block:: python
 
