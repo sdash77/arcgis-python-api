@@ -28,11 +28,14 @@ class BigDataAnalyticsManager:
         :return: returns a collection of all configured Big Data Analytics items
         """
         all_bigdata_analytics_response = self._util._get_request("analytics/bigdata")
-        bigdata_analytics_items = [
-            BigDataAnalytics(self._gis, self._util, bigdata_item)
-            for bigdata_item in all_bigdata_analytics_response
-        ]
-        return bigdata_analytics_items
+        if all_bigdata_analytics_response is not None and type(all_bigdata_analytics_response) is list:
+            bigdata_analytics_items = [
+                BigDataAnalytics(self._gis, self._util, bigdata_item)
+                for bigdata_item in all_bigdata_analytics_response
+            ]
+            return bigdata_analytics_items
+        else:
+            return []
 
     # ----------------------------------------------------------------------
     def get(self, id):
