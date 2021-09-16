@@ -35,7 +35,7 @@ class BigDataAnalyticsManager:
             ]
             return bigdata_analytics_items
         else:
-            return []
+            raise Exception("Could not retrieve items - Received invalid response from Velocity.")
 
     # ----------------------------------------------------------------------
     def get(self, id):
