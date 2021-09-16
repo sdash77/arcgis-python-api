@@ -7,6 +7,10 @@ roles, users, groups, and searches can be view, modified or created.
 
 from ._workflow_manager import WorkflowManager
 from ._workflow_manager import WorkflowManagerAdmin
-from ._workflow_manager import JobManager
+from ._workflow_manager import JobManager, JobLocation, JobTemplate
 from ._workflow_manager import Job
 from ._workflow_manager import JobDiagram
+from ._workflow_manager import Group
+from ._workflow_manager import SavedSearchesManager
+from ._workflow_manager import WMRole
+
