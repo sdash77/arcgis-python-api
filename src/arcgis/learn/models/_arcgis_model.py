@@ -303,7 +303,7 @@ class SaveModelCallback(TrackerCallback):
             if isinstance(current, torch.Tensor):
                 if current.is_cuda:
                     current = current.cpu()
-                    
+
             # if a better checkpoint is found.
             better_checkpoint = current is not None and self.operator(
                 current, self.best
