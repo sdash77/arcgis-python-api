@@ -192,7 +192,17 @@ class FeatureClassifier(ArcGISModel):
             if getattr(data, "_dataset_type", "Labeled_Tiles") == "MultiLabeled_Tiles":
                 # ToDo: allow option to change `thresh` parameter by user
                 accuracy_multi.__name__ = "accuracy"
-                metrics = [accuracy_multi, MultiLabelFbeta()]
+                class MultLabelFbetaModified(MultiLabelFbeta):
+                    def fbeta_score(self, precision, recall):
+                        beta2 = self.beta**2
+                        fbeta = (1 + beta2)*(precision*recall)/((beta2*precision + recall) + self.eps)
+                        if isinstance(fbeta, torch.Tensor):
+                            if fbeta.is_cuda:
+                                fbeta = fbeta.cpu()
+                        return fbeta
+
+                MultLabelFbetaModified.__name__ = "MultiLabelFbeta"
+                metrics = [accuracy_multi, MultLabelFbetaModified()]
             else:
                 metrics = accuracy
 

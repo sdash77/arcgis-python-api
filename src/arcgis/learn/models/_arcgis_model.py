@@ -299,6 +299,11 @@ class SaveModelCallback(TrackerCallback):
         # do not save model after early stopping kicks in.
         if not kwargs.get("stop_training", False):
             current = self.get_monitor_value()
+
+            if isinstance(current, torch.Tensor):
+                if current.is_cuda:
+                    current = current.cpu()
+                    
             # if a better checkpoint is found.
             better_checkpoint = current is not None and self.operator(
                 current, self.best
@@ -308,9 +313,6 @@ class SaveModelCallback(TrackerCallback):
                 self.learn._best_epoch = epoch
                 self.best = current
 
-            if isinstance(current, torch.Tensor):
-                if current.is_cuda:
-                    current = current.cpu()
             self.current = current
 
             if self.every == "epoch":
