@@ -17,7 +17,7 @@ HAS_SK_LEARN = True
 HAS_AUTOML = True
 HAS_FASTAI = True
 HAS_NUMPY = True
-import_exception=None
+import_exception = None
 
 try:
     from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
@@ -30,28 +30,36 @@ except:
 try:
     from supervised.automl import AutoML as base_AutoML
 except Exception as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_AUTOML = False
 
 try:
     import numpy as np
     import pandas as pd
 except Exception as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_NUMPY = False
 
 try:
     import sklearn
     from sklearn import *
 except Exception as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_SK_LEARN = False
 
 HAS_FAST_PROGRESS = True
 try:
     from fastprogress.fastprogress import progress_bar
 except Exception as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_FAST_PROGRESS = False
 
 _PROTOCOL_LEVEL = 2
@@ -172,10 +180,10 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            if mode == "Explain":
-                explain_level = 2
-            else:
-                explain_level = 1
+            # if mode == "Explain":
+            #    explain_level = 2
+            # else:
+            explain_level = 2
             self._model = base_AutoML(
                 mode=mode,
                 algorithms=algorithms,
@@ -274,9 +282,13 @@ class AutoML(object):
         """
         :returns output from AutoML's model.predict_proba()
         """
-        if ((self._data._is_classification == 'classification') or (self._data._is_classification == True)):
-            if getattr(self._data, '_is_not_empty', False):
-                raise Exception("This method is not available when the model is initiated for prediction")
+        if (self._data._is_classification == "classification") or (
+            self._data._is_classification == True
+        ):
+            if getattr(self._data, "_is_not_empty", False):
+                raise Exception(
+                    "This method is not available when the model is initiated for prediction"
+                )
             else:
                 return self._model.predict_proba(self._data._dataframe)
         else:
@@ -451,7 +463,7 @@ class AutoML(object):
         )
         empty_data._is_classification = _is_classification
         empty_data._is_not_empty = False
-        #empty_data.path = emd["ResultsPath"]
+        # empty_data.path = emd["ResultsPath"]
         empty_data.path = emd_path.parent
         return cls(data=empty_data)
 

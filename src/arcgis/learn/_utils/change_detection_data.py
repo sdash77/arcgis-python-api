@@ -14,6 +14,7 @@ import json
 try:
     import torch
     from fastai.vision import open_image, open_mask, image2np
+    from fastai.vision.image import ImageSegment
     import matplotlib.pyplot as plt
     from torch.utils.data import Dataset, DataLoader
     from fastai.data_block import DataBunch
@@ -334,15 +335,24 @@ class ChangeDetectionDataset(Dataset):
             transforms, flip_vert=flip_vert
         )
 
-        crop_tfm = [crop(size=chip_size, row_pct=(0, 1), col_pct=(0, 1))]
-        self.crop_tfm = crop_tfm
-        self.chip_size = chip_size
         self.split = split
         self.norm_stats = norm_stats
         self.class_mapping = class_mapping
         self.color_mapping = color_mapping
         self.x = ArcGISImageList(self.before_list + self.after_list)
         self.n_c = self.x[0].data.shape[0]
+
+        # if transforms is False, chip_size will be equal to actual size.
+        # no cropping will take place.
+        if not transforms:
+            chip_size = self.x[0].data.shape[1]
+
+        crop_tfm = [crop(size=chip_size, row_pct=(0, 1), col_pct=(0, 1))]
+
+        self.train_crop_tfm = crop_tfm
+        # val crop tfm is just center crop.
+        self.val_crop_tfm = [crop(size=chip_size, row_pct=0.5, col_pct=0.5)]
+        self.chip_size = chip_size
 
         # MS
         self._is_multispectral = _is_multispectral
@@ -363,9 +373,13 @@ class ChangeDetectionDataset(Dataset):
                 self.after_list[idx], imagery_type=self.imagery_type
             )
         else:
-            image_before = open_image(self.before_list[idx])
-            image_after = open_image(self.after_list[idx])
-        change_label = open_mask(self.label_list[idx])
+            image_before = ArcGISMSImage.open(
+                self.before_list[idx], imagery_type=self.imagery_type, div=255
+            )
+            image_after = ArcGISMSImage.open(
+                self.after_list[idx], imagery_type=self.imagery_type, div=255
+            )
+        change_label = ImageSegment(ArcGISMSImage.open(self.label_list[idx]).data)
 
         assert (
             image_before.shape[1:] == image_after.shape[1:] == change_label.shape[1:]
@@ -375,14 +389,15 @@ class ChangeDetectionDataset(Dataset):
         # cropped and zoomed the same way.
         _resolve_tfms(self.train_tfms)
         _resolve_tfms(self.val_tfms)
-        _resolve_tfms(self.crop_tfm)
+        _resolve_tfms(self.train_crop_tfm)
+        _resolve_tfms(self.val_crop_tfm)
 
         images = (image_before, image_after, change_label)
 
         if self.split == "train":
-            images = apply_tfms(images, self.crop_tfm, self.train_tfms)
+            images = apply_tfms(images, self.train_crop_tfm, self.train_tfms)
         else:
-            images = apply_tfms(images, self.crop_tfm, self.val_tfms)
+            images = apply_tfms(images, self.val_crop_tfm, self.val_tfms)
 
         image_before, image_after, change_label = images
 
@@ -466,9 +481,7 @@ def apply_tfms(images, crop_tfm, other_tfms):
 def _get_transforms(transforms, flip_vert):
     if transforms is None:
         transforms = get_transforms(
-            flip_vert=flip_vert,
-            max_lighting=0.3,
-            max_warp=0.0,
+            flip_vert=flip_vert, max_lighting=0.3, max_warp=0.0,
         )
 
     elif transforms is False:
@@ -924,8 +937,12 @@ def predict(
         image_after = image_after.apply_tfms([_scaling_tfm])
 
     else:
-        image_before = open_image(image_before)
-        image_after = open_image(image_after)
+        image_before = ArcGISMSImage.open(
+            image_before, imagery_type=self._data._imagery_type, div=255
+        )
+        image_after = ArcGISMSImage.open(
+            image_after, imagery_type=self._data._imagery_type, div=255
+        )
 
     assert image_before.shape == image_after.shape
     if crop_predict:

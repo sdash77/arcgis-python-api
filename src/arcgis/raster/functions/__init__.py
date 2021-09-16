@@ -5040,7 +5040,11 @@ def raster_collection_function(
     :return: the output raster with function applied on it
     """
 
-    layer, raster, raster_ra = _raster_input(raster)
+    layer, raster1, raster_ra = _raster_input(raster)
+    if raster._fn is not None:
+        raster = raster._fn
+    else:
+        raster = "$$"
 
     template_dict = {
         "rasterFunction": "RasterCollection",

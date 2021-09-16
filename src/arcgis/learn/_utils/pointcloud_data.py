@@ -237,6 +237,42 @@ def expand_classes_of_interest(classes_of_interest, inverse_remap_classes):
     return expanded
 
 
+def get_random_cluster_indexes(block_centers, block_size):
+    """
+    This clustering method will operate on block centers
+    as this will be less compute intesive as compared to the
+    points.
+    DBScan algo is used for this where we set the eps value
+    to be 3/2 times the block size. This makes sure not extra
+    cluster is for
+    returns: a bool index mask
+    """
+    block_centers = np.array(block_centers)
+    from sklearn.cluster import DBSCAN
+
+    # clustering is required because some h5 files have many las files
+    # because of which the aspect ratio of the show batch/ show result
+    # plot was getting messed up.
+    # The nearest neighbour to consider is 1.5 times the block size
+    # based on experiments.
+    # slice :2 because we want this clustering in spatial space only X and Y.
+    clustering = DBSCAN(eps=3 * block_size / 2, min_samples=2).fit(block_centers[:, :2])
+    clustered_labels = clustering.labels_
+    unique_labels = np.unique(clustering.labels_)
+    # clusters with fewer than 5 blocks cannot be selected.
+    fewer_than = 5
+    unique_label_masks = [clustered_labels == i for i in unique_labels]
+    unique_label_masks_filtered = [
+        i for i in unique_label_masks if i.sum() > fewer_than
+    ]
+    if len(unique_label_masks_filtered) != 0:
+        return unique_label_masks_filtered[
+            np.random.randint(0, len(unique_label_masks_filtered))
+        ]
+    else:
+        return unique_label_masks[np.random.randint(0, len(unique_label_masks))]
+
+
 class PointCloudDataset(Dataset):
     def __init__(self, path, class_mapping, json_file, folder="", **kwargs):
         try_import("h5py")
@@ -301,11 +337,15 @@ class PointCloudDataset(Dataset):
                 "background_classcode can only be used when `classes_of_interest` is passed."
             )
 
-        # Class Mapping
-        full_class_mapping = {
-            int(v["classCode"]): str(v["classCode"])
-            for v in self.statistics["classification"]["table"]
-        }
+        # dummy class mapping for predict case.
+        full_class_mapping = {0: 0}
+        # will overwrite classmapping when classification key is present.
+        if "classification" in self.statistics:
+            full_class_mapping = {
+                int(v["classCode"]): str(v["classCode"])
+                for v in self.statistics["classification"]["table"]
+            }
+
         orig_classes = list(full_class_mapping.keys())
         # account for remapping here.
         if self.remap_classes != {}:
@@ -478,16 +518,22 @@ class PointCloudDataset(Dataset):
         xyzs_scaled = []
         centers = []
         scale = self.block_size / 2
+        block_centers = []
         for idx in indexes[0]:
             tile = self.tiles[idx]
             center = self.centers[idx]
             xyz = read_file["xyz"][tile[1] : tile[1] + tile[2]]
+            xyz_scaled = xyz * scale + center
             xyzs.append(xyz)
             labels.append(read_file["classification"][tile[1] : tile[1] + tile[2]])
-            xyzs_scaled.append(xyz * scale + center)
-        xyzs = np.concatenate(xyzs, axis=0)
-        labels = np.concatenate(labels, axis=0)
-        xyzs_scaled = np.concatenate(xyzs_scaled, axis=0)
+            xyzs_scaled.append(xyz_scaled)
+            block_centers.append(xyz_scaled.mean(axis=0))
+
+        index_mask = get_random_cluster_indexes(block_centers, self.block_size)
+        xyzs = np.concatenate(np.array(xyzs)[index_mask], axis=0)
+        labels = np.concatenate(np.array(labels)[index_mask], axis=0)
+        xyzs_scaled = np.concatenate(np.array(xyzs_scaled)[index_mask], axis=0)
+
         return xyzs, labels, xyzs_scaled
 
     def __getitem__(self, i, return_scaled=False, add_centers=False):
@@ -2849,7 +2895,12 @@ def predict_h5(self, path, output_path, **kwargs):
     if "xyz" in features_to_keep:
         features_to_keep.remove("xyz")
     point_cloud_dataset = PointCloudDataset(
-        path, None, None, "", extra_features=features_to_keep, attributes=attributes
+        path,
+        None,
+        None,
+        "",
+        extra_features=features_to_keep,
+        attributes=attributes,
     )
     if progressor is not None:
         progressor.set_total_blocks(len(point_cloud_dataset))
@@ -3016,6 +3067,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         labels = []
         pc = []
         pred_class = []
+        block_centers = []
+        blocks = []
         for block_idx in indices:
             (
                 (block, point_num),
@@ -3024,7 +3077,24 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
             ) = data.valid_ds.__getitem__(
                 block_idx, return_scaled=True, add_centers=True
             )
-            # print(block.shape, point_num, self.sample_point_num, scaled_block.shape)
+
+            blocks.append((block, point_num))
+            pc.append(scaled_block[:point_num].cpu().numpy())
+            block_centers.append(
+                scaled_block[:point_num, :3].cpu().numpy().mean(axis=0)
+            )
+            labels.append(classification[:point_num].cpu().numpy())
+
+        # clustered indexes is a boolean mask
+        clustered_index_bool_mask = get_random_cluster_indexes(
+            block_centers, self._data.block_size
+        )
+        labels = np.concatenate(np.array(labels)[clustered_index_bool_mask])
+        pc = np.concatenate(np.array(pc)[clustered_index_bool_mask], axis=0)
+        blocks = [blocks[i] for i, mask in enumerate(clustered_index_bool_mask) if mask]
+
+        # prediction step
+        for block, point_num in blocks:
             block = block[None]
             points_batch = block[[0] * 1]
             predictions = np.array(
@@ -3039,12 +3109,7 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
                 )
             )
             pred_class.append(predictions[:point_num, 0])
-            # pc.append(block[0, :point_num].cpu().numpy())
-            pc.append(scaled_block[:point_num])
-            labels.append(classification[:point_num].cpu().numpy())
 
-        labels = np.concatenate(labels)
-        pc = np.concatenate(pc)
         pred_class = np.concatenate(pred_class, axis=0)
         unmapped_labels = remap_labels(labels.copy().astype(int), data.idx2class)
         unmapped_predictions = remap_labels(pred_class, data.idx2class)

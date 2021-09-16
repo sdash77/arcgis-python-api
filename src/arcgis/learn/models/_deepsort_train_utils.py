@@ -37,7 +37,9 @@ try:
     from fastai.vision import imagenet_stats
     from fastai.vision.data import ImageDataBunch
     from fastai.vision.transform import ResizeMethod
-
+    from fastai.metrics import accuracy
+    from fastai.callback import Callback
+    from fastai.torch_core import add_metrics
     from ._arcgis_model import _EmptyData
 
     HAS_FASTAI = True
@@ -404,6 +406,42 @@ def get_fake_data():
     return data
 
 
+def reid_accuracy(input, targs):
+    correct = input.max(dim=1)[1].eq(targs).sum().item()
+    count = targs.size(0)
+
+    return correct, count
+
+
+class Accuracy(Callback):
+    "Wrap a `func` in a callback for metrics computation."
+
+    def __init__(self, func):
+        # If func has a __name__ use this one else it should be a partial
+        name = func.__name__ if hasattr(func, "__name__") else func.func.__name__
+        self.func, self.name = func, name
+
+    def on_epoch_begin(self, **kwargs):
+        "Set the inner value to 0."
+        self.correct, self.count = 0.0, 0
+
+    def on_batch_end(self, last_output, last_target, **kwargs):
+        "Update metric computation with `last_output` and `last_target`."
+        if not isinstance(last_target, (tuple, list)):
+            last_target = [last_target]
+        correct, count = self.func(last_output, *last_target)
+        self.correct += correct
+        self.count += count
+
+    def on_epoch_end(self, last_metrics, **kwargs):
+        "Set the final result in `last_metrics`."
+        return add_metrics(last_metrics, 1.0 * self.correct / self.count)
+
+
+def _get_metrics():
+    return Accuracy(reid_accuracy)
+
+
 def get_learner(data=None, num_classes=None, backbone=None, device=torch.device("cpu")):
 
     learn = None
@@ -417,12 +455,13 @@ def get_learner(data=None, num_classes=None, backbone=None, device=torch.device(
     _check_data_shape(data, model.img_shape)
 
     model = model.to(device)
+    metrics = _get_metrics()
     if data is not None:
         learn = Learner(
             data=data,
             model=model,
             loss_func=get_reid_loss,
-            opt_func=build_opt_lr
-            # TODO: Add metric
+            opt_func=build_opt_lr,
+            metrics=metrics,
         )
     return learn

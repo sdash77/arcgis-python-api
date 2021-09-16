@@ -15,8 +15,10 @@
 _base_ = "./_base_/models/faster_rcnn_r50_fpn.py"
 rpn_weight = 0.7
 model = dict(
-    pretrained="open-mmlab://detectron2/resnet50_caffe",
-    backbone=dict(norm_cfg=dict(requires_grad=False), norm_eval=True, style="caffe"),
+    backbone=dict(norm_cfg=dict(requires_grad=False),
+            norm_eval=True,
+            style="caffe",
+            init_cfg=dict(type='Pretrained', checkpoint="open-mmlab://detectron2/resnet50_caffe")),
     rpn_head=dict(
         _delete_=True,
         type="CascadeRPNHead",

@@ -1017,6 +1017,26 @@ class ImageryLayer(Layer):
             return self._con.post(path=url, params=params, timeout=None)
 
     # ----------------------------------------------------------------------
+    @property
+    def item_info(self):
+        """The ``item_info`` property returns the image service's item's infomation"""
+        url = "{url}/info/iteminfo".format(url=self._url)
+        params = {"f": "json"}
+        if self._datastore_raster:
+            params["Raster"] = self._uri
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def metadata(self):
+        """The ``metadata`` property returns the image service's XML metadata file"""
+        url = "{url}/info/metadata".format(url=self._url)
+        params = {"f": "json"}
+        if self._datastore_raster:
+            params["Raster"] = self._uri
+        return self._con.get(url, params, try_json=False)
+
+    # ----------------------------------------------------------------------
     def project(self, geometries, in_sr, out_sr):
         """
         The ``project`` operation is performed on an :class:`~arcgis.raster.ImageryLayer` method.
@@ -2760,6 +2780,36 @@ class ImageryLayer(Layer):
             return hist_return["histograms"]
         else:
             return None
+
+    # ----------------------------------------------------------------------
+    def thumbnail(self, out_path=None):
+        """
+        The ``thumbnail`` method downloads the image service's thumbnail image to local disk.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        out_path              Optional string. Represents the path to which the image needs to be downloaded.
+        =================     ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example: This example returns the thumbnail of an Imagery Layer object.
+
+            lyr_input.thumbnail()
+
+        :returns: string representing path to the downloaded thumbnail.
+
+        """
+        if out_path is None:
+            out_path = tempfile.gettempdir()
+        url = "{url}/info/thumbnail".format(url=self._url)
+        params = {"f": "json"}
+        if self._datastore_raster:
+            params["Raster"] = self._uri
+        return self._con.get(
+            url, params, out_folder=out_path, file_name="thumbnail.png"
+        )
 
     # ----------------------------------------------------------------------
     def _add_rasters(

@@ -18,7 +18,7 @@
 norm_cfg = dict(type="BN", requires_grad=True)
 model = dict(
     type="EncoderDecoder",
-    pretrained="open-mmlab://resnet101_v1c",
+    init_cfg="open-mmlab://resnet101_v1c",
     backbone=dict(
         type="ResNetV1c",
         depth=101,
@@ -60,3 +60,5 @@ model = dict(
     train_cfg=dict(),
     test_cfg=dict(mode="whole"),
 )
+
+checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/dmnet/dmnet_r101-d8_512x1024_80k_cityscapes/dmnet_r101-d8_512x1024_80k_cityscapes_20201215_031718-fa081cb8.pth'

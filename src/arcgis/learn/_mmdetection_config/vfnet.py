@@ -16,7 +16,6 @@
 
 model = dict(
     type="VFNet",
-    pretrained="open-mmlab://resnext101_64x4d",
     backbone=dict(
         type="ResNeXt",
         depth=101,
@@ -30,14 +29,15 @@ model = dict(
         style="pytorch",
         dcn=dict(type="DCNv2", deform_groups=1, fallback_on_stride=False),
         stage_with_dcn=(False, True, True, True),
+        init_cfg=dict(
+            type='Pretrained', checkpoint='open-mmlab://resnext101_64x4d')
     ),
     neck=dict(
         type="FPN",
         in_channels=[256, 512, 1024, 2048],
         out_channels=256,
         start_level=1,
-        add_extra_convs=True,
-        extra_convs_on_inputs=False,  # use P5
+        add_extra_convs='on_input',
         num_outs=5,
         relu_before_extra_convs=True,
     ),

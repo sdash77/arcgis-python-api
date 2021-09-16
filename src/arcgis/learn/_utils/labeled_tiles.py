@@ -6,6 +6,23 @@ from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
 
 def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in kwargs
+    """
+    This function randomly picks a few training chips and visualizes them.
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    rows                    Optional Integer.
+                            Number of rows to display.
+                            Default: 3.
+    ---------------------   -------------------------------------------
+    alpha                   Optional Float.
+                            Opacity of the lables for the corresponding
+                            images. Values range between 0 and 1, where
+                            1 means opaque.
+    -------------------------------------------------------------------
+    
+    """
     nrows = rows
     ncols = kwargs.get("ncols", nrows)
     # start_index = kwargs.get('start_index', 0) # Does not work with dataloader
