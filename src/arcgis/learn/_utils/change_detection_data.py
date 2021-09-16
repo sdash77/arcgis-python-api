@@ -481,7 +481,9 @@ def apply_tfms(images, crop_tfm, other_tfms):
 def _get_transforms(transforms, flip_vert):
     if transforms is None:
         transforms = get_transforms(
-            flip_vert=flip_vert, max_lighting=0.3, max_warp=0.0,
+            flip_vert=flip_vert,
+            max_lighting=0.3,
+            max_warp=0.0,
         )
 
     elif transforms is False:

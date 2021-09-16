@@ -24,8 +24,8 @@ model = dict(
         norm_cfg=dict(type="BN", requires_grad=False, eps=0),
         style="caffe",
         init_cfg=dict(
-            type='Pretrained',
-            checkpoint='open-mmlab://detectron2/resnet50_caffe')
+            type="Pretrained", checkpoint="open-mmlab://detectron2/resnet50_caffe"
+        ),
     ),
     neck=dict(
         type="NASFCOS_FPN",
