@@ -102,7 +102,7 @@ class ChangeDetector(ArcGISModel):
 
     @staticmethod
     def _supported_datasets():
-        return ["ChangeDetection"]
+        return ["ChangeDetection", "Classified_Tiles"]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
