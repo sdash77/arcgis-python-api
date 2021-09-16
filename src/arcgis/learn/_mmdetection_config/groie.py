@@ -12,20 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#error in show_result due thier bug
-#grid_rcnn_r50_fpn_gn-head_groie_1x_coco.py, box AP=39.1
+# error in show_result due thier bug
+# grid_rcnn_r50_fpn_gn-head_groie_1x_coco.py, box AP=39.1
 
-_base_ = './_base_/grid_rcnn_r50_fpn_gn-head_2x_coco.py'
+_base_ = "./_base_/grid_rcnn_r50_fpn_gn-head_2x_coco.py"
 model = dict(
     roi_head=dict(
         bbox_roi_extractor=dict(
-            type='GenericRoIExtractor',
-            aggregation='sum',
-            roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=2),
+            type="GenericRoIExtractor",
+            aggregation="sum",
+            roi_layer=dict(type="RoIAlign", output_size=7, sampling_ratio=2),
             out_channels=256,
             featmap_strides=[4, 8, 16, 32],
             pre_cfg=dict(
-                type='ConvModule',
+                type="ConvModule",
                 in_channels=256,
                 out_channels=256,
                 kernel_size=5,
@@ -33,19 +33,21 @@ model = dict(
                 inplace=False,
             ),
             post_cfg=dict(
-                type='GeneralizedAttention',
+                type="GeneralizedAttention",
                 in_channels=256,
                 spatial_range=-1,
                 num_heads=6,
-                attention_type='0100',
-                kv_stride=2)),
+                attention_type="0100",
+                kv_stride=2,
+            ),
+        ),
         grid_roi_extractor=dict(
-            type='GenericRoIExtractor',
-            roi_layer=dict(type='RoIAlign', output_size=14, sampling_ratio=2),
+            type="GenericRoIExtractor",
+            roi_layer=dict(type="RoIAlign", output_size=14, sampling_ratio=2),
             out_channels=256,
             featmap_strides=[4, 8, 16, 32],
             pre_cfg=dict(
-                type='ConvModule',
+                type="ConvModule",
                 in_channels=256,
                 out_channels=256,
                 kernel_size=5,
@@ -53,11 +55,15 @@ model = dict(
                 inplace=False,
             ),
             post_cfg=dict(
-                type='GeneralizedAttention',
+                type="GeneralizedAttention",
                 in_channels=256,
                 spatial_range=-1,
                 num_heads=6,
-                attention_type='0100',
-                kv_stride=2))))
+                attention_type="0100",
+                kv_stride=2,
+            ),
+        ),
+    )
+)
 
-checkpoint = 'http://download.openmmlab.com/mmdetection/v2.0/groie/grid_rcnn_r50_fpn_gn-head_1x_coco/grid_rcnn_r50_fpn_gn-head_1x_coco_20200605_202059-64f00ee8.pth'
+checkpoint = "http://download.openmmlab.com/mmdetection/v2.0/groie/grid_rcnn_r50_fpn_gn-head_1x_coco/grid_rcnn_r50_fpn_gn-head_1x_coco_20200605_202059-64f00ee8.pth"

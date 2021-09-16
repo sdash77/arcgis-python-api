@@ -37,12 +37,16 @@ try:
     from fastai.vision import imagenet_stats
     from fastai.vision.data import ImageDataBunch
     from fastai.vision.transform import ResizeMethod
-
+    from fastai.metrics import accuracy
+    from fastai.callback import Callback
+    from fastai.torch_core import add_metrics
     from ._arcgis_model import _EmptyData
+
     HAS_FASTAI = True
 except Exception as e:
-    import_exception = \
-        "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_FASTAI = False
 
 REID_V1 = "reid_v1"
@@ -52,12 +56,7 @@ DEFAULT_HEIGHT = 128
 DEFAULT_WIDTH = 64
 DEFAULT_CHANNELS = 3
 DEFAULT_NUM_CLASSES = 4
-DEFAULT_CLASS_MAPPING = {
-    'obj_a': 1,
-    'obj_b': 2,
-    'obj_c': 3,
-    'obj_d': 4
-}
+DEFAULT_CLASS_MAPPING = {"obj_a": 1, "obj_b": 2, "obj_c": 3, "obj_d": 4}
 
 
 class BasicBlock_v1(nn.Module):
@@ -66,30 +65,20 @@ class BasicBlock_v1(nn.Module):
 
         self.is_downsample = is_downsample
         if is_downsample:
-            self.conv1 = nn.Conv2d(
-                c_in, c_out, 3, stride=2, padding=1, bias=False)
+            self.conv1 = nn.Conv2d(c_in, c_out, 3, stride=2, padding=1, bias=False)
         else:
-            self.conv1 = nn.Conv2d(
-                c_in, c_out, 3, stride=1, padding=1, bias=False)
+            self.conv1 = nn.Conv2d(c_in, c_out, 3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(c_out)
         self.relu = nn.ReLU(True)
-        self.conv2 = nn.Conv2d(
-            c_out,
-            c_out,
-            3,
-            stride=1,
-            padding=1,
-            bias=False)
+        self.conv2 = nn.Conv2d(c_out, c_out, 3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(c_out)
         if is_downsample:
             self.downsample = nn.Sequential(
-                nn.Conv2d(c_in, c_out, 1, stride=2, bias=False),
-                nn.BatchNorm2d(c_out)
+                nn.Conv2d(c_in, c_out, 1, stride=2, bias=False), nn.BatchNorm2d(c_out)
             )
         elif c_in != c_out:
             self.downsample = nn.Sequential(
-                nn.Conv2d(c_in, c_out, 1, stride=1, bias=False),
-                nn.BatchNorm2d(c_out)
+                nn.Conv2d(c_in, c_out, 1, stride=1, bias=False), nn.BatchNorm2d(c_out)
             )
             self.is_downsample = True
 
@@ -108,11 +97,15 @@ def make_layers_v1(c_in, c_out, repeat_times, is_downsample=False):
     blocks = []
     for i in range(repeat_times):
         if i == 0:
-            blocks += [BasicBlock_v1(c_in, c_out,
-                                     is_downsample=is_downsample), ]
+            blocks += [
+                BasicBlock_v1(c_in, c_out, is_downsample=is_downsample),
+            ]
         else:
-            blocks += [BasicBlock_v1(c_out, c_out), ]
+            blocks += [
+                BasicBlock_v1(c_out, c_out),
+            ]
     return nn.Sequential(*blocks)
+
 
 # TODO: Handle varied input sizes
 
@@ -142,7 +135,7 @@ class Net_v1(nn.Module):
             nn.Dropout(p=0.6),
             nn.Linear(128 * 16 * 8, 128),
             nn.BatchNorm1d(128),
-            nn.ELU(inplace=True)
+            nn.ELU(inplace=True),
         )
         # 256 1 1
         self.reid = reid
@@ -176,30 +169,20 @@ class BasicBlock_v2(nn.Module):
 
         self.is_downsample = is_downsample
         if is_downsample:
-            self.conv1 = nn.Conv2d(
-                c_in, c_out, 3, stride=2, padding=1, bias=False)
+            self.conv1 = nn.Conv2d(c_in, c_out, 3, stride=2, padding=1, bias=False)
         else:
-            self.conv1 = nn.Conv2d(
-                c_in, c_out, 3, stride=1, padding=1, bias=False)
+            self.conv1 = nn.Conv2d(c_in, c_out, 3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(c_out)
         self.relu = nn.ReLU(True)
-        self.conv2 = nn.Conv2d(
-            c_out,
-            c_out,
-            3,
-            stride=1,
-            padding=1,
-            bias=False)
+        self.conv2 = nn.Conv2d(c_out, c_out, 3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(c_out)
         if is_downsample:
             self.downsample = nn.Sequential(
-                nn.Conv2d(c_in, c_out, 1, stride=2, bias=False),
-                nn.BatchNorm2d(c_out)
+                nn.Conv2d(c_in, c_out, 1, stride=2, bias=False), nn.BatchNorm2d(c_out)
             )
         elif c_in != c_out:
             self.downsample = nn.Sequential(
-                nn.Conv2d(c_in, c_out, 1, stride=1, bias=False),
-                nn.BatchNorm2d(c_out)
+                nn.Conv2d(c_in, c_out, 1, stride=1, bias=False), nn.BatchNorm2d(c_out)
             )
             self.is_downsample = True
 
@@ -218,10 +201,13 @@ def make_layers_v2(c_in, c_out, repeat_times, is_downsample=False):
     blocks = []
     for i in range(repeat_times):
         if i == 0:
-            blocks += [BasicBlock_v2(c_in, c_out,
-                                     is_downsample=is_downsample), ]
+            blocks += [
+                BasicBlock_v2(c_in, c_out, is_downsample=is_downsample),
+            ]
         else:
-            blocks += [BasicBlock_v2(c_out, c_out), ]
+            blocks += [
+                BasicBlock_v2(c_out, c_out),
+            ]
     return nn.Sequential(*blocks)
 
 
@@ -277,9 +263,7 @@ class Net_v2(nn.Module):
 
 
 def build_opt_lr(trainable_params, **kwargs):
-    optimizer = torch.optim.SGD(trainable_params, 0.1,
-                                momentum=0.9,
-                                weight_decay=5e-4)
+    optimizer = torch.optim.SGD(trainable_params, 0.1, momentum=0.9, weight_decay=5e-4)
 
     return optimizer
 
@@ -290,9 +274,7 @@ get_reid_loss = torch.nn.CrossEntropyLoss()
 def _get_num_classes(data):
     if data is None or isinstance(data, _EmptyData):
         return DEFAULT_NUM_CLASSES
-    return max(
-        len(data.train_ds.y.classes),
-        len(data.valid_ds.y.classes))
+    return max(len(data.train_ds.y.classes), len(data.valid_ds.y.classes))
 
 
 def get_default_backbone():
@@ -316,8 +298,7 @@ def check_data_sanity(data, dataset_types=[]):
     try:
         if data is None:
             return False
-        if (isinstance(data, ImageDataBunch)
-                and data._dataset_type in dataset_types):
+        if isinstance(data, ImageDataBunch) and data._dataset_type in dataset_types:
             return True
         else:
             return False
@@ -329,37 +310,26 @@ def _get_model_state(model_path, model=None):
     model_state = None
     if model_path is not None and os.path.isfile(model_path):
         if not torch.cuda.is_available():
-            state = torch.load(
-                model_path,
-                map_location=lambda storage,
-                loc: storage)
+            state = torch.load(model_path, map_location=lambda storage, loc: storage)
         else:
             device = torch.cuda.current_device()
             state = torch.load(
-                model_path,
-                map_location=lambda storage,
-                loc: storage.cuda(device))
+                model_path, map_location=lambda storage, loc: storage.cuda(device)
+            )
 
             model_state = state
-            if 'model' in set(state.keys()):
-                model_state = state['model']
-            elif isinstance(state, dict) \
-                    and 'net_dict' in state.keys():
-                model_state = state['net_dict']
+            if "model" in set(state.keys()):
+                model_state = state["model"]
+            elif isinstance(state, dict) and "net_dict" in state.keys():
+                model_state = state["net_dict"]
 
-    if model_state is None \
-            and model is not None \
-            and hasattr(model, "state_dict"):
+    if model_state is None and model is not None and hasattr(model, "state_dict"):
         model_state = model.state_dict()
 
     return model_state
 
 
-def load_for_prediction(
-        model_path,
-        num_classes,
-        backbone,
-        model):
+def load_for_prediction(model_path, num_classes, backbone, model):
 
     model_state = _get_model_state(model_path, model)
     model = get_model(num_classes, backbone, reid=True)
@@ -388,29 +358,27 @@ def _check_shape(data_in, img_shape):
 
 def _check_data_shape(data, img_shape):
     import warnings
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
-        if data is not None \
-                and isinstance(data, ImageDataBunch):
+        if data is not None and isinstance(data, ImageDataBunch):
 
             is_valid = True
             if data.train_dl is not None:
-                is_valid = is_valid \
-                    and _check_shape(data.train_dl, img_shape)
+                is_valid = is_valid and _check_shape(data.train_dl, img_shape)
 
             if data.valid_dl is not None:
-                is_valid = is_valid \
-                    and _check_shape(data.valid_dl, img_shape)
+                is_valid = is_valid and _check_shape(data.valid_dl, img_shape)
 
             if data.test_dl is not None:
-                is_valid = is_valid \
-                    and _check_shape(data.test_dl, img_shape)
+                is_valid = is_valid and _check_shape(data.test_dl, img_shape)
 
             if not is_valid:
                 raise Exception(
                     """\nInvalid input data shape.
                         DeepSort only supports input of the form
-                        (channels=3, height=128, width=64)\n""")
+                        (channels=3, height=128, width=64)\n"""
+                )
 
 
 def get_fake_data():
@@ -421,11 +389,13 @@ def get_fake_data():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
         kwargs_transforms = {}
-        kwargs_transforms['size'] = get_default_imgsize()
-        kwargs_transforms['resize_method'] = ResizeMethod.SQUISH
+        kwargs_transforms["size"] = get_default_imgsize()
+        kwargs_transforms["resize_method"] = ResizeMethod.SQUISH
         data = ImageDataBunch.single_from_classes(
-            Path(os.getcwd()), sorted(list(DEFAULT_CLASS_MAPPING.values())),
-            ds_tfms=transforms).normalize(imagenet_stats)
+            Path(os.getcwd()),
+            sorted(list(DEFAULT_CLASS_MAPPING.values())),
+            ds_tfms=transforms,
+        ).normalize(imagenet_stats)
 
     data.class_mapping = DEFAULT_CLASS_MAPPING
     data.classes = list(data.class_mapping.values())
@@ -436,11 +406,43 @@ def get_fake_data():
     return data
 
 
-def get_learner(
-        data=None,
-        num_classes=None,
-        backbone=None,
-        device=torch.device('cpu')):
+def reid_accuracy(input, targs):
+    correct = input.max(dim=1)[1].eq(targs).sum().item()
+    count = targs.size(0)
+
+    return correct, count
+
+
+class Accuracy(Callback):
+    "Wrap a `func` in a callback for metrics computation."
+
+    def __init__(self, func):
+        # If func has a __name__ use this one else it should be a partial
+        name = func.__name__ if hasattr(func, "__name__") else func.func.__name__
+        self.func, self.name = func, name
+
+    def on_epoch_begin(self, **kwargs):
+        "Set the inner value to 0."
+        self.correct, self.count = 0.0, 0
+
+    def on_batch_end(self, last_output, last_target, **kwargs):
+        "Update metric computation with `last_output` and `last_target`."
+        if not isinstance(last_target, (tuple, list)):
+            last_target = [last_target]
+        correct, count = self.func(last_output, *last_target)
+        self.correct += correct
+        self.count += count
+
+    def on_epoch_end(self, last_metrics, **kwargs):
+        "Set the final result in `last_metrics`."
+        return add_metrics(last_metrics, 1.0 * self.correct / self.count)
+
+
+def _get_metrics():
+    return Accuracy(reid_accuracy)
+
+
+def get_learner(data=None, num_classes=None, backbone=None, device=torch.device("cpu")):
 
     learn = None
     if num_classes is None:
@@ -450,16 +452,16 @@ def get_learner(
     if model is None:
         return learn
 
-    _check_data_shape(
-        data, model.img_shape)
+    _check_data_shape(data, model.img_shape)
 
     model = model.to(device)
+    metrics = _get_metrics()
     if data is not None:
         learn = Learner(
             data=data,
             model=model,
             loss_func=get_reid_loss,
-            opt_func=build_opt_lr
-            # TODO: Add metric
+            opt_func=build_opt_lr,
+            metrics=metrics,
         )
     return learn

@@ -19,7 +19,11 @@ try:
     from skimage import filters
     from .._utils.common import ArcGISMSImage
     from ._base_data import ArcgisData
-    from .._utils.road_orient_utils.affinity_utils import (convertAngles2VecMap, getKeypoints, getVectorMapsAngles)
+    from .._utils.road_orient_utils.affinity_utils import (
+        convertAngles2VecMap,
+        getKeypoints,
+        getVectorMapsAngles,
+    )
     from .._utils.pointcloud_data import get_device
     from fastai.basic_data import DatasetType
     from fastai.vision.data import imagenet_stats
@@ -38,7 +42,9 @@ try:
     from torch.utils.data import DataLoader, Dataset
     from torchvision import transforms as pytorch_tfms
 except ImportError as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_FASTAI = False
 
 
@@ -51,8 +57,11 @@ def _to_np(x: Tensor) -> np.ndarray:
 
 
 def _show_batch(
-    self, rows: int = 5, ds_type: DatasetType = DatasetType.Train,
-    cpu: bool = True, **kwargs,
+    self,
+    rows: int = 5,
+    ds_type: DatasetType = DatasetType.Train,
+    cpu: bool = True,
+    **kwargs,
 ):
     "Show a batch of data in `ds_type` on a few `rows`."
     if self is None:
@@ -78,7 +87,10 @@ def _show_batch(
 
 
 def _show_pairs(
-    xs, ys, orients, imgsize: int = 4,
+    xs,
+    ys,
+    orients,
+    imgsize: int = 4,
     figsize: Optional[Tuple[int, int]] = None,
     bin_size: int = 20,
 ):
@@ -91,11 +103,8 @@ def _show_pairs(
     for x, y, o, ax in zip(xs, ys, orients, axs):
         ax[0].imshow(x)
         ax[1].imshow(y)
-        #ax[2].imshow(o)
-        #_plotOrientationOnImage(ax[3], o, x, bin_size)
     for ax in axs.flatten():
         ax.axis("off")
-    #plt.tight_layout()
 
 
 def _plotOrientationOnImage(ax, orientMap, image, bin_size=20):
@@ -114,8 +123,16 @@ def _plotOrientationOnImage(ax, orientMap, image, bin_size=20):
 
     s = 15
     ax.quiver(
-        X[::s, ::s], Y[::s, ::s], U[::s, ::s], V[::s, ::s],
-        scale=50, headaxislength=3, headwidth=4, width=0.01, alpha=0.8, color="r",
+        X[::s, ::s],
+        Y[::s, ::s],
+        U[::s, ::s],
+        V[::s, ::s],
+        scale=50,
+        headaxislength=3,
+        headwidth=4,
+        width=0.01,
+        alpha=0.8,
+        color="r",
     )
 
 
@@ -128,6 +145,7 @@ class DiscreteAffine:
     angles                   Required List of int ranging from 0..360
     ---------------------   -------------------------------------------
     """
+
     def __init__(self, angles: Sequence[int]):
         self.angles = angles
 
@@ -136,7 +154,7 @@ class DiscreteAffine:
         return TF.affine(x, angle, (0, 0), 1.0, 0.0, resample=False, fillcolor=0)
 
 
-class RoadOrientation():
+class RoadOrientation:
     def __init__(self, orig_data, classified_tiles_data: ArcgisData, **kwargs):
         """
         The class is used to create Fast AI Databunch for Multi-Task
@@ -161,14 +179,18 @@ class RoadOrientation():
             raise_fastai_import_error(import_exception=import_exception)
 
         self.base = classified_tiles_data
-        assert self.base, "Road Orientation requires instance of base Classified Tiles Dataset!"
+        assert (
+            self.base
+        ), "Road Orientation requires instance of base Classified Tiles Dataset!"
         # TODO: Need to fix this Hack
         if "0" not in self.base.class_mapping:
             self.base.class_mapping[0] = "0"
         self.base.class_mapping = dict(sorted(self.base.class_mapping.items()))
 
         self.class_mapping = (
-            {"0": 0, "1": 1} if not bool(self.base.class_mapping) is None else self.base.class_mapping
+            {"0": 0, "1": 1}
+            if not bool(self.base.class_mapping) is None
+            else self.base.class_mapping
         )
         # Dataset parameters
         default_road_params = {
@@ -177,9 +199,13 @@ class RoadOrientation():
             "multi_scale": None,
         }
         # self.road_extractor_params = kwargs.get("road_extractor_params", default_road_params)
-        self.orient_bin_size = kwargs.get("orient_bin_size", default_road_params['orient_bin_size'])
-        self.orient_theta = kwargs.get("orient_theta", default_road_params['orient_theta'])
-        self.multi_scale = kwargs.get("multi_scale", default_road_params['multi_scale'])
+        self.orient_bin_size = kwargs.get(
+            "orient_bin_size", default_road_params["orient_bin_size"]
+        )
+        self.orient_theta = kwargs.get(
+            "orient_theta", default_road_params["orient_theta"]
+        )
+        self.multi_scale = kwargs.get("multi_scale", default_road_params["multi_scale"])
 
         self.files = []
         for cnt, image in enumerate(orig_data.train_ds.x.items):
@@ -208,59 +234,84 @@ class RoadOrientation():
         val_split_count = int(len(self.files) * self.base.val_split_pct)
         self.valid_files = list(islice(files_iterator, val_split_count))
         self.train_files = list(files_iterator)
-        self.transforms = [
-            # Training Transforms
+        self.transforms = (
             [
-                # Pairwise Transforms
+                # Training Transforms
                 [
-                    pytorch_tfms.RandomCrop(size=self.base.chip_size, padding_mode='constant',
-                                            pad_if_needed=True) if self.base.chip_size else None,
-                    pytorch_tfms.Resize(size=self.base.resize_to) if self.base.resize_to else None,
-                    pytorch_tfms.RandomHorizontalFlip(),
-                    pytorch_tfms.RandomVerticalFlip(),
-                    pytorch_tfms.Normalize(
-                        mean=[0.485, 0.456, 0.406],
-                        std=[0.229, 0.224, 0.225]
-                    )
+                    # Pairwise Transforms
+                    [
+                        pytorch_tfms.RandomCrop(
+                            size=self.base.chip_size,
+                            padding_mode="constant",
+                            pad_if_needed=True,
+                        )
+                        if self.base.chip_size
+                        else None,
+                        pytorch_tfms.Resize(size=self.base.resize_to)
+                        if self.base.resize_to
+                        else None,
+                        pytorch_tfms.RandomHorizontalFlip(),
+                        pytorch_tfms.RandomVerticalFlip(),
+                        pytorch_tfms.Normalize(
+                            mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                        ),
+                    ],
+                    # Image Transforms
+                    [
+                        pytorch_tfms.ColorJitter(brightness=0.1, contrast=0.1),
+                        pytorch_tfms.ToTensor(),
+                    ],
                 ],
-                # Image Transforms
+                # Validation Transforms
                 [
-                    pytorch_tfms.ColorJitter(brightness=0.1, contrast=0.1), pytorch_tfms.ToTensor()
-                ]
-            ],
-            # Validation Transforms
-            [
-                # Pairwise Transforms
-                [pytorch_tfms.Resize(size=self.base.resize_to) if self.base.resize_to else None],
-                # Image Transforms
-                [pytorch_tfms.ToTensor()],
-                [pytorch_tfms.Normalize(
-                    mean=[0.485, 0.456, 0.406],
-                    std=[0.229, 0.224, 0.225]
-                )]
+                    # Pairwise Transforms
+                    [
+                        pytorch_tfms.Resize(size=self.base.resize_to)
+                        if self.base.resize_to
+                        else None
+                    ],
+                    # Image Transforms
+                    [pytorch_tfms.ToTensor()],
+                    [
+                        pytorch_tfms.Normalize(
+                            mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                        )
+                    ],
+                ],
             ]
-        ] if self.base.transforms is None else self.base.transforms
+            if self.base.transforms is None
+            else self.base.transforms
+        )
 
-    def get_databunch(self,orig_data,**kwargs) -> ImageDataBunch:
+    def get_databunch(self, orig_data, **kwargs) -> ImageDataBunch:
         """
         Method to create Databunch
         """
-        train_dataset = RoadOrientDataset(orig_data,
-            self.train_files, self.transforms[0], **kwargs,
+        train_dataset = RoadOrientDataset(
+            orig_data,
+            self.train_files,
+            self.transforms[0],
+            **kwargs,
         )
-        valid_dataset = RoadOrientDataset(orig_data,
-            self.valid_files, self.transforms[1], **kwargs,
+        valid_dataset = RoadOrientDataset(
+            orig_data,
+            self.valid_files,
+            self.transforms[1],
+            **kwargs,
         )
         train_dl = DataLoader(
-            train_dataset, batch_size=self.base.train_batch_size, **self.base.databunch_kwargs
+            train_dataset,
+            batch_size=self.base.train_batch_size,
+            **self.base.databunch_kwargs,
         )
         valid_dl = DataLoader(
-            valid_dataset, batch_size=self.base.valid_batch_size, **self.base.databunch_kwargs
+            valid_dataset,
+            batch_size=self.base.valid_batch_size,
+            **self.base.databunch_kwargs,
         )
 
         device = get_device()
         data = ImageDataBunch(train_dl, valid_dl, device=device)
-
 
         data.chip_size = data.train_ds[0][0].shape[-1]
         data.c = len(self.class_mapping) if self.class_mapping else 2
@@ -279,24 +330,23 @@ class RoadOrientation():
         data.val_files = self.valid_files
         data.show_batch = types.MethodType(_show_batch, data)
         data.parent_obj = self
-        data.sub_dataset_type='RoadOrientation'
-        data.transform= self.transforms
+        data.sub_dataset_type = "RoadOrientation"
+        data.transform = self.transforms
         x_shape = data.train_ds[0][0].shape
-        #if x_shape[0] == 4:
-         #   message = f"""
-          #          Could not infer Imagery Type, Found 4 Bands in input imagery. Please set the optional parameter 'imagery_type' to an appropriate value.
-           #         \nIf the imagery used to export the training data is a RGB imagery, please continue training by specifying `imagery_type='RGB'`.
-            #        \nIf the imagery used to export the training data is a multispectral imagery containing information in the 4th band, please check the documentation for parameter 'imagery_type' to find a suitable value.
-             #       """
-            #raise Exception(message)
 
         return data
 
 
 class RoadOrientDataset(Dataset):
     def __init__(
-        self, orig_data,data_files: Dict, transforms: List = None, multi_scale: List = None,
-        orient_theta: int = 5, orient_bin_size: int = 20, **kwargs,
+        self,
+        orig_data,
+        data_files: Dict,
+        transforms: List = None,
+        multi_scale: List = None,
+        orient_theta: int = 5,
+        orient_bin_size: int = 20,
+        **kwargs,
     ):
         """
         PyTorch Dataset class to create Road-Orientaion pair for training.
@@ -315,27 +365,22 @@ class RoadOrientDataset(Dataset):
             |--> generate_orient: bool, flag will allow to create Orientation Label. It is
             |                     helpful at inference time for faster data prepration.
         """
-        self.data= kwargs.get("data", None)
-        self.orig_data=orig_data
+        self.data = kwargs.get("data", None)
+        self.orig_data = orig_data
         self.files = data_files
         self.pair_tfms = [tfm for tfm in transforms[0] if tfm]
         self.image_tfms = [tfm for tfm in transforms[1] if tfm]
-        self.pair_tfms = pytorch_tfms.Compose(self.pair_tfms) if self.pair_tfms else None
-        self.image_tfms = pytorch_tfms.Compose(self.image_tfms) if self.image_tfms else None
+        self.pair_tfms = (
+            pytorch_tfms.Compose(self.pair_tfms) if self.pair_tfms else None
+        )
+        self.image_tfms = (
+            pytorch_tfms.Compose(self.image_tfms) if self.image_tfms else None
+        )
 
         self.gaussian_thresh = kwargs.get("gaussian_thresh", 0.76)
         self.is_gaussian_mask = kwargs.get("is_gaussian_mask", False)
         self.generate_orient = kwargs.get("generate_orient", True)
 
-        # self.transforms = []
-        # for tfm in transforms:
-        #     if isinstance(tfm.tfm, TfmCrop) or isinstance(tfm.tfm, TfmPixel):
-        #         self.transforms.append(tfm)
-
-        # self.transforms_kwargs = {}
-        # if self.resize_to:
-        #     self.transforms_kwargs.update(mode="nearest")
-        #     self.transforms_kwargs.update(size=self.resize_to)
         # Angle Mask Buffers
         self.angle_theta = orient_theta
         self.bin_size = orient_bin_size
@@ -350,15 +395,21 @@ class RoadOrientDataset(Dataset):
         random.seed(seed)  # apply this seed to img tranfsorms
         label = np.asarray(label)
         if isinstance(image, PILImage.Image):
-            image = torch.from_numpy(np.asarray(image).astype(np.float32).transpose(2, 0, 1))
-        if self.generate_orient:
-            orient_label = self._getOrientationGT(
-                np.copy(label.astype(np.uint8))
+            image = torch.from_numpy(
+                np.asarray(image).astype(np.float32).transpose(2, 0, 1)
             )
+        if self.generate_orient:
+            orient_label = self._getOrientationGT(np.copy(label.astype(np.uint8)))
             # orient_label = self._get_fastai_image(orient_label, dtype=np.float32)
-            return image, [torch.from_numpy(label.copy()), torch.from_numpy(orient_label.copy())]
+            return image, [
+                torch.from_numpy(label.copy()),
+                torch.from_numpy(orient_label.copy()),
+            ]
         else:
-            return image, [torch.from_numpy(label.copy()), torch.from_numpy(label.copy())]
+            return image, [
+                torch.from_numpy(label.copy()),
+                torch.from_numpy(label.copy()),
+            ]
 
     def _get_fastai_image(self, x, dtype) -> Image:
         """
@@ -376,18 +427,10 @@ class RoadOrientDataset(Dataset):
         """
         image_dict = self.files[index]
         # read each image in list
-        #try:
-        image= ArcGISMSImage.open_gdal(image_dict["image"])
-        if (image.shape[0]>3) and (self.orig_data._imagery_type=='RGB'):
-            image=image.data[[0,1,2]]
-
-        #image = PILImage.open(image_dict["image"])
-        #image = image.convert('RGB')
-        #image = self.data.train_ds.x[index].px
-        #except:
-            #
-            #image = PILImage.fromarray(np.asarray(ArcGISMSImage.open_gdal(image_dict["image"]))).astype(np.uint8)
-        label = self._get_mask(np.asarray(PILImage.open(image_dict["label"])))
+        image = ArcGISMSImage.open(image_dict["image"])
+        if (image.shape[0] > 3) and (self.orig_data._imagery_type == "RGB"):
+            image = image.data[[0, 1, 2]]
+        label = self._get_mask(ArcGISMSImage.read_image(image_dict["label"]))
 
         return image, PILImage.fromarray(label).convert("L")
 
@@ -400,8 +443,10 @@ class RoadOrientDataset(Dataset):
         )
         smooth_dist_dict = {6: 1, 7: 1, 8: 1, 9: 2, 10: 4, 11: 4}
         keypoints = getKeypoints(
-            road_mask.astype(np.float32), is_gaussian=False,
-            thresh=0.98, smooth_dist=smooth_dist_dict[round(math.log(height) / math.log(2))]
+            road_mask.astype(np.float32),
+            is_gaussian=False,
+            thresh=0.98,
+            smooth_dist=smooth_dist_dict[round(math.log(height) / math.log(2))],
         )
         _, vecmap_angles = getVectorMapsAngles(
             (height, width), keypoints, theta=self.angle_theta, bin_size=self.bin_size
@@ -433,7 +478,9 @@ class RoadOrientDataset(Dataset):
             try:
                 new_label = self._createGaussianMask(label)
             except:
-                new_label = self._createGaussianMask(label > filters.threshold_otsu(label))
+                new_label = self._createGaussianMask(
+                    label > filters.threshold_otsu(label)
+                )
         new_label[new_label >= self.gaussian_thresh] = 1
         new_label[new_label < self.gaussian_thresh] = 0
 

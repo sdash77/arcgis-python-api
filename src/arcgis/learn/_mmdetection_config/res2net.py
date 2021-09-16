@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#cascade_rcnn_r2_101_fpn_20e_coco.py, box AP=45.7
+# cascade_rcnn_r2_101_fpn_20e_coco.py, box AP=45.7
 
-_base_ = './_base_/models/cascade_rcnn_r50_fpn.py'
+_base_ = "./_base_/models/cascade_rcnn_r50_fpn.py"
 
 model = dict(
-    pretrained='open-mmlab://res2net101_v1d_26w_4s',
-    backbone=dict(type='Res2Net', depth=101, scales=4, base_width=26))
+    pretrained="open-mmlab://res2net101_v1d_26w_4s",
+    backbone=dict(type="Res2Net", depth=101, scales=4, base_width=26),
+)
 
-checkpoint = 'http://download.openmmlab.com/mmdetection/v2.0/res2net/cascade_rcnn_r2_101_fpn_20e_coco/cascade_rcnn_r2_101_fpn_20e_coco-f4b7b7db.pth'
+checkpoint = "http://download.openmmlab.com/mmdetection/v2.0/res2net/cascade_rcnn_r2_101_fpn_20e_coco/cascade_rcnn_r2_101_fpn_20e_coco-f4b7b7db.pth"

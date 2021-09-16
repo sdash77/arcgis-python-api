@@ -261,7 +261,7 @@ class LogManager(BaseServer):
         if export is True and out_path is not None:
 
             messages = self._con.post(path=url, postdata=params)
-            with open(name=out_path, mode="wb") as f:
+            with open(out_path, mode="w") as f:
                 hasKeys = False
                 if export_type == "TAB":
                     csvwriter = csv.writer(f, delimiter="\t")
@@ -269,9 +269,9 @@ class LogManager(BaseServer):
                     csvwriter = csv.writer(f)
                 for message in messages["logMessages"]:
                     if hasKeys == False:
-                        csvwriter.writerow(message.keys())
+                        csvwriter.writerow(list(message.keys()))
                         hasKeys = True
-                    csvwriter.writerow(message.values())
+                    csvwriter.writerow(list(message.values()))
                     del message
             del messages
             return out_path

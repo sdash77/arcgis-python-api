@@ -12,23 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#tridentnet_r50_caffe_mstrain_3x_coco.py, box AP=40.3
+# tridentnet_r50_caffe_mstrain_3x_coco.py, box AP=40.3
 
-_base_ = './_base_/models/faster_rcnn_r50_caffe_c4.py'
+_base_ = "./_base_/models/faster_rcnn_r50_caffe_c4.py"
 
 model = dict(
-    type='TridentFasterRCNN',
-    pretrained='open-mmlab://detectron2/resnet50_caffe',
+    type="TridentFasterRCNN",
+    pretrained="open-mmlab://detectron2/resnet50_caffe",
     backbone=dict(
-        type='TridentResNet',
+        type="TridentResNet",
         trident_dilations=(1, 2, 3),
         num_branch=3,
-        test_branch_idx=1),
-    roi_head=dict(type='TridentRoIHead', num_branch=3, test_branch_idx=1),
+        test_branch_idx=1,
+    ),
+    roi_head=dict(type="TridentRoIHead", num_branch=3, test_branch_idx=1),
     train_cfg=dict(
         rpn_proposal=dict(nms_post=500, max_num=500),
-        rcnn=dict(
-            sampler=dict(num=128, pos_fraction=0.5,
-                         add_gt_as_proposals=False))))
+        rcnn=dict(sampler=dict(num=128, pos_fraction=0.5, add_gt_as_proposals=False)),
+    ),
+)
 
-checkpoint = 'https://download.openmmlab.com/mmdetection/v2.0/tridentnet/tridentnet_r50_caffe_mstrain_3x_coco/tridentnet_r50_caffe_mstrain_3x_coco_20201130_100539-46d227ba.pth'
+checkpoint = "https://download.openmmlab.com/mmdetection/v2.0/tridentnet/tridentnet_r50_caffe_mstrain_3x_coco/tridentnet_r50_caffe_mstrain_3x_coco_20201130_100539-46d227ba.pth"

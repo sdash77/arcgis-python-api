@@ -2033,7 +2033,7 @@ class FeatureLayerCollectionManager(_GISResource):
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
         # check for outstanding replicas
-        if bool(self._fs.replicas.get_list()):
+        if hasattr(self._fs, "replicas") and bool(self._fs.replicas.get_list()):
             raise Exception(
                 "Service cannot be overwritten if Sync is enabled and replicas exist."
             )
@@ -2057,7 +2057,8 @@ class FeatureLayerCollectionManager(_GISResource):
         # endregion
         params = None
         if (
-            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase"]
+            related_data_item.type
+            in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
             and self._gis._portal.is_arcgisonline == False
         ):
             params = {
@@ -2069,8 +2070,16 @@ class FeatureLayerCollectionManager(_GISResource):
                 "overwriteService": "on",
                 "useDescription": "on",
             }
-            lyr_url_info = "%s/layers" % feature_layer_item.layers[0].container._url
-            fs_url = "%s" % feature_layer_item.layers[0].container._url
+
+            # append layers and tables and check if empty
+            layers_and_tables = []
+            layers_and_tables.extend(feature_layer_item.layers)
+            layers_and_tables.extend(feature_layer_item.tables)
+            if not layers_and_tables:
+                raise Exception("Must contain layer or table. Empty list.")
+
+            lyr_url_info = "%s/layers" % layers_and_tables[0].container._url
+            fs_url = "%s" % layers_and_tables[0].container._url
             layer_info = self._gis._con.get(lyr_url_info, {"f": "json"})
             [lyr.pop("fields") for lyr in layer_info["layers"]]
             [lyr.pop("fields") for lyr in layer_info["tables"]]
@@ -2104,7 +2113,8 @@ class FeatureLayerCollectionManager(_GISResource):
 
         # region construct publishParameters dictionary
         elif (
-            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase"]
+            related_data_item.type
+            in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
             and self._gis._portal.is_arcgisonline
         ):
             # construct a full publishParameters that is a combination of existing Feature Layer definition
@@ -2202,7 +2212,8 @@ class FeatureLayerCollectionManager(_GISResource):
         # region Construct publish parameters for Portal / Enterprise
         params = None
         if (
-            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase"]
+            related_data_item.type
+            in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
             and self._gis._portal.is_arcgisonline == False
         ):
             params = {
@@ -2250,7 +2261,8 @@ class FeatureLayerCollectionManager(_GISResource):
 
         # region Construct publish parameters for AGO
         elif (
-            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase"]
+            related_data_item.type
+            in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
             and self._gis._portal.is_arcgisonline
         ):
             # construct a full publishParameters that is a combination of existing Feature Layer definition

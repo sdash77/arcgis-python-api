@@ -5,20 +5,34 @@ from ._arcgis_model import _EmptyData
 from functools import partial
 import math
 import types
-from .._data import _raise_fastai_import_error  
+from .._data import _raise_fastai_import_error
 import traceback
 import logging
+
 logger = logging.getLogger()
 
 try:
-    from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback, _resnet_family, _set_ddp_multigpu, _isnotebook
+    from ._arcgis_model import (
+        ArcGISModel,
+        SaveModelCallback,
+        _set_multigpu_callback,
+        _resnet_family,
+        _set_ddp_multigpu,
+        _isnotebook,
+    )
     import torch
     from torchvision import models
     from fastai.vision.learner import unet_learner, cnn_config
     import numpy as np
     from fastai.layers import CrossEntropyFlat
-    from .._utils.segmentation_loss_functions import  FocalLoss, MixUpCallback, DiceLoss
-    from ._unet_utils import is_no_color, LabelCallback, _class_array_to_rbg, predict_batch, show_results_multispectral
+    from .._utils.segmentation_loss_functions import FocalLoss, MixUpCallback, DiceLoss
+    from ._unet_utils import (
+        is_no_color,
+        LabelCallback,
+        _class_array_to_rbg,
+        predict_batch,
+        show_results_multispectral,
+    )
     from fastai.callbacks import EarlyStoppingCallback
     from torch.nn import Module as NnModule
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
@@ -28,11 +42,16 @@ try:
     import os as arcgis_os
     from matplotlib import pyplot as plt
     from .._utils.env import _IS_ARCGISPRONOTEBOOK
+
     HAS_FASTAI = True
 except Exception as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
-    class NnModule():
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
+
+    class NnModule:
         pass
+
     HAS_FASTAI = False
 
 
@@ -66,7 +85,7 @@ class UnetClassifier(ArcGISModel):
     ---------------------   -------------------------------------------
     class_balancing         Optional boolean. If True, it will balance the
                             cross-entropy loss inverse to the frequency
-                            of pixels per class. Default: False. 
+                            of pixels per class. Default: False.
     ---------------------   -------------------------------------------
     mixup                   Optional boolean. If True, it will use mixup
                             augmentation and mixup loss. Default: False
@@ -74,30 +93,30 @@ class UnetClassifier(ArcGISModel):
     focal_loss              Optional boolean. If True, it will use focal loss
                             Default: False
     ---------------------   -------------------------------------------
-    dice_loss_fraction      Optional float. 
-                            Min_val=0, Max_val=1 
-                            If > 0 , model will use a combination of default or 
-                            focal(if focal=True) loss with the specified fraction 
+    dice_loss_fraction      Optional float.
+                            Min_val=0, Max_val=1
+                            If > 0 , model will use a combination of default or
+                            focal(if focal=True) loss with the specified fraction
                             of dice loss.
-                            E.g. 
+                            E.g.
                             for dice = 0.3, loss = (1-0.3)*default loss + 0.3*dice
                             Default: 0
     ---------------------   -------------------------------------------
-    dice_loss_average       Optional str. 
-                            micro: Micro dice coefficient will be used for loss 
+    dice_loss_average       Optional str.
+                            micro: Micro dice coefficient will be used for loss
                             calculation.
-                            macro: Macro dice coefficient will be used for loss 
+                            macro: Macro dice coefficient will be used for loss
                             calculation.
-                            A macro-average will compute the metric independently 
-                            for each class and then take the average (hence treating 
-                            all classes equally), whereas a micro-average will 
-                            aggregate the contributions of all classes to compute the 
-                            average metric. In a multi-class classification setup, 
-                            micro-average is preferable if you suspect there might be 
-                            class imbalance (i.e you may have many more examples of 
+                            A macro-average will compute the metric independently
+                            for each class and then take the average (hence treating
+                            all classes equally), whereas a micro-average will
+                            aggregate the contributions of all classes to compute the
+                            average metric. In a multi-class classification setup,
+                            micro-average is preferable if you suspect there might be
+                            class imbalance (i.e you may have many more examples of
                             one class than of other classes)
                             Default: 'micro'
-    ---------------------   -------------------------------------------                        
+    ---------------------   -------------------------------------------
     ignore_classes          Optional list. It will contain the list of class
                             values on which model will not incur loss.
                             Default: []
@@ -106,7 +125,15 @@ class UnetClassifier(ArcGISModel):
     :returns: `UnetClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None, backend='pytorch', *args, **kwargs):
+    def __init__(
+        self,
+        data,
+        backbone=None,
+        pretrained_path=None,
+        backend="pytorch",
+        *args,
+        **kwargs,
+    ):
 
         if pretrained_path is not None:
             backbone_pretrained = False
@@ -114,78 +141,131 @@ class UnetClassifier(ArcGISModel):
             backbone_pretrained = True
 
         self._backend = backend
-        if self._backend == 'tensorflow':
+        if self._backend == "tensorflow":
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, kwargs)
         else:
             super().__init__(data, backbone, **kwargs)
 
             self._check_dataset_support(self._data)
-            if not (self._check_backbone_support(getattr(self, '_backbone', backbone))):
-                raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+            if not (self._check_backbone_support(getattr(self, "_backbone", backbone))):
+                raise Exception(
+                    f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
+                )
 
-            self._ignore_classes = kwargs.get('ignore_classes', [])
+            self._ignore_classes = kwargs.get("ignore_classes", [])
             if self._ignore_classes != [] and len(data.classes) <= 3:
-                raise Exception(f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes.")
+                raise Exception(
+                    f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes."
+                )
 
             data_classes = list(self._data.class_mapping.keys())
             if 0 not in list(data.class_mapping.values()):
-                self._ignore_mapped_class = [data_classes.index(k) + 1 for k in self._ignore_classes if k != 0]
+                self._ignore_mapped_class = [
+                    data_classes.index(k) + 1 for k in self._ignore_classes if k != 0
+                ]
             else:
-                self._ignore_mapped_class = [data_classes.index(k) + 1 for k in self._ignore_classes]
+                self._ignore_mapped_class = [
+                    data_classes.index(k) + 1 for k in self._ignore_classes
+                ]
             if self._ignore_classes != []:
                 if 0 not in self._ignore_mapped_class:
                     self._ignore_mapped_class.insert(0, 0)
                 global accuracy
-                accuracy = partial(accuracy, ignore_mapped_class=self._ignore_mapped_class)       
+                accuracy = partial(
+                    accuracy, ignore_mapped_class=self._ignore_mapped_class
+                )
 
-            self.mixup = kwargs.get('mixup', False)
-            self.class_balancing = kwargs.get('class_balancing', False)
-            self.focal_loss = kwargs.get('focal_loss', False)
-            self.dice_loss_fraction = kwargs.get('dice_loss_fraction', False)
-            self.weighted_dice = kwargs.get('weighted_dice', False)
-            self.dice_loss_average = kwargs.get('dice_loss_average', 'micro')
+            self.mixup = kwargs.get("mixup", False)
+            self.class_balancing = kwargs.get("class_balancing", False)
+            self.focal_loss = kwargs.get("focal_loss", False)
+            self.dice_loss_fraction = kwargs.get("dice_loss_fraction", False)
+            self.weighted_dice = kwargs.get("weighted_dice", False)
+            self.dice_loss_average = kwargs.get("dice_loss_average", "micro")
 
             self._code = image_classifier_prf
 
             backbone_cut = None
             backbone_split = None
 
-            if hasattr(self, '_orig_backbone'):
+            if hasattr(self, "_orig_backbone"):
                 _backbone_meta = cnn_config(self._orig_backbone)
-                backbone_cut = _backbone_meta['cut']
-                backbone_split = _backbone_meta['split']
+                backbone_cut = _backbone_meta["cut"]
+                backbone_split = _backbone_meta["split"]
 
-            if not _isnotebook() and arcgis_os.name=='posix':
+            if not _isnotebook():
                 _set_ddp_multigpu(self)
                 if self._multigpu_training:
-                    self.learn = unet_learner(data, arch=self._backbone, pretrained=backbone_pretrained, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split).to_distributed(self._rank_distributed)
-                    self._map_location = {'cuda:%d' % 0: 'cuda:%d' % self._rank_distributed}
+                    self.learn = unet_learner(
+                        data,
+                        arch=self._backbone,
+                        pretrained=backbone_pretrained,
+                        metrics=accuracy,
+                        wd=1e-2,
+                        bottle=True,
+                        last_cross=True,
+                        cut=backbone_cut,
+                        split_on=backbone_split,
+                    ).to_distributed(self._rank_distributed)
+                    self._map_location = {
+                        "cuda:%d" % 0: "cuda:%d" % self._rank_distributed
+                    }
                 else:
-                    self.learn = unet_learner(data, arch=self._backbone, pretrained=backbone_pretrained, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
+                    self.learn = unet_learner(
+                        data,
+                        arch=self._backbone,
+                        pretrained=backbone_pretrained,
+                        metrics=accuracy,
+                        wd=1e-2,
+                        bottle=True,
+                        last_cross=True,
+                        cut=backbone_cut,
+                        split_on=backbone_split,
+                    )
             else:
-                self.learn = unet_learner(data, arch=self._backbone, pretrained=backbone_pretrained, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
+                self.learn = unet_learner(
+                    data,
+                    arch=self._backbone,
+                    pretrained=backbone_pretrained,
+                    metrics=accuracy,
+                    wd=1e-2,
+                    bottle=True,
+                    last_cross=True,
+                    cut=backbone_cut,
+                    split_on=backbone_split,
+                )
 
             class_weight = None
             if self.class_balancing:
                 if data.class_weight is not None:
                     # Handle condition when nodata is already at pixel value 0 in data
-                    if (data.c-1) == data.class_weight.shape[0]:
-                        class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
+                    if (data.c - 1) == data.class_weight.shape[0]:
+                        class_weight = (
+                            torch.tensor(
+                                [data.class_weight.mean()] + data.class_weight.tolist()
+                            )
+                            .float()
+                            .to(self._device)
+                        )
                     else:
-                        class_weight = torch.tensor(data.class_weight).float().to(self._device)
+                        class_weight = (
+                            torch.tensor(data.class_weight).float().to(self._device)
+                        )
                 else:
-                    if getattr(data, 'overflow_encountered', False):
-                        logger.warning("Overflow Encountered. Ignoring `class_balancing` parameter.")
+                    if getattr(data, "overflow_encountered", False):
+                        logger.warning(
+                            "Overflow Encountered. Ignoring `class_balancing` parameter."
+                        )
                         class_weight = [1] * len(data.classes)
                     else:
-                        logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
-
+                        logger.warning(
+                            "Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter."
+                        )
 
             if self._ignore_classes != []:
                 if not self.class_balancing:
                     class_weight = torch.tensor([1] * data.c).float().to(self._device)
-                class_weight[self._ignore_mapped_class] = 0.
+                class_weight[self._ignore_mapped_class] = 0.0
 
             self._final_class_weight = class_weight
             self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
@@ -196,10 +276,17 @@ class UnetClassifier(ArcGISModel):
                 self.learn.callbacks.append(MixUpCallback(self.learn))
 
             if self.dice_loss_fraction:
-                self.learn.loss_func = DiceLoss(self.learn.loss_func, self.dice_loss_fraction,  weighted_dice=self.weighted_dice, dice_average = self.dice_loss_average)
+                self.learn.loss_func = DiceLoss(
+                    self.learn.loss_func,
+                    self.dice_loss_fraction,
+                    weighted_dice=self.weighted_dice,
+                    dice_average=self.dice_loss_average,
+                )
 
-            self._arcgis_init_callback() # make first conv weights learnable
-            self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
+            self._arcgis_init_callback()  # make first conv weights learnable
+            self.learn.callbacks.append(
+                LabelCallback(self.learn)
+            )  # appending label callback
 
             self.learn.model = self.learn.model.to(self._device)
             # _set_multigpu_callback(self) # MultiGPU doesn't work for U-Net. (Fastai-Forums)
@@ -210,15 +297,15 @@ class UnetClassifier(ArcGISModel):
         return self.__repr__()
 
     def __repr__(self):
-        return '<%s>' % (type(self).__name__)
+        return "<%s>" % (type(self).__name__)
 
     @staticmethod
     def _available_metrics():
-        return ['valid_loss', 'accuracy']
+        return ["valid_loss", "accuracy"]
 
     @property
     def supported_backbones(self):
-        """ Supported torchvision backbones for this model. """        
+        """Supported torchvision backbones for this model."""
         return UnetClassifier._supported_backbones()
 
     @staticmethod
@@ -226,13 +313,13 @@ class UnetClassifier(ArcGISModel):
         return [*_resnet_family]
 
     @property
-    def  supported_datasets(self):
-        """ Supported dataset types for this model. """
+    def supported_datasets(self):
+        """Supported dataset types for this model."""
         return UnetClassifier._supported_datasets()
-    
+
     @staticmethod
     def _supported_datasets():
-        return ['Classified_Tiles']    
+        return ["Classified_Tiles"]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -249,7 +336,7 @@ class UnetClassifier(ArcGISModel):
                                 object from `prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
-        
+
         :returns: `UnetClassifier` Object
         """
         return cls.from_emd(data, emd_path)
@@ -269,53 +356,58 @@ class UnetClassifier(ArcGISModel):
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
-        
+
         :returns: `UnetClassifier` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-            
+
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 
-        model_file = Path(emd['ModelFile'])
+        model_file = Path(emd["ModelFile"])
 
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
-        model_params = emd['ModelParameters']
+        model_params = emd["ModelParameters"]
 
         try:
-            class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
-            color_mapping = {i['Value']: i['Color'] for i in emd['Classes']}
+            class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
+            color_mapping = {i["Value"]: i["Color"] for i in emd["Classes"]}
         except KeyError:
-            class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
-            color_mapping = {i['ClassValue']: i['Color'] for i in emd['Classes']}
+            class_mapping = {i["ClassValue"]: i["ClassName"] for i in emd["Classes"]}
+            color_mapping = {i["ClassValue"]: i["Color"] for i in emd["Classes"]}
 
-        resize_to = emd.get('resize_to')
+        resize_to = emd.get("resize_to")
 
         if data is None:
-            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1,
-                              chip_size=emd['ImageHeight'])
+            data = _EmptyData(
+                path=emd_path.parent.parent,
+                loss_func=None,
+                c=len(class_mapping) + 1,
+                chip_size=emd["ImageHeight"],
+            )
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
             data = get_multispectral_data_params_from_emd(data, emd)
-                
+
             data.emd_path = emd_path
             data.emd = emd
             data._is_empty = True
 
-        data.resize_to = resize_to        
+        data.resize_to = resize_to
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
     @property
     def _model_metrics(self):
-        return {'accuracy': '{0:1.4e}'.format(self._get_model_metrics())}
-        
+        return {"accuracy": "{0:1.4e}".format(self._get_model_metrics())}
+
     def _get_emd_params(self, save_inference_file):
         import random
+
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_unet"
@@ -323,35 +415,39 @@ class UnetClassifier(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template[
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
         _emd_template["SupportsVariableTileSize"] = True
 
-        _emd_template['Classes'] = []
+        _emd_template["Classes"] = []
         class_data = {}
-        for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
+        for i, class_name in enumerate(
+            self._data.classes[1:]
+        ):  # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             class_data["Value"] = inverse_class_mapping[class_name]
             class_data["Name"] = class_name
-            color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) else \
-                self._data.color_mapping[inverse_class_mapping[class_name]]
+            color = (
+                [random.choice(range(256)) for i in range(3)]
+                if is_no_color(self._data.color_mapping)
+                else self._data.color_mapping[inverse_class_mapping[class_name]]
+            )
             class_data["Color"] = color
-            _emd_template['Classes'].append(class_data.copy())
+            _emd_template["Classes"].append(class_data.copy())
 
         return _emd_template
 
     def _predict_batch(self, imagetensor_batch):
         return predict_batch(self, imagetensor_batch)
 
-    def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
-        return_fig = kwargs.get('return_fig', False)
-        ret_val = show_results_multispectral(
-            self, 
-            nrows=rows, 
-            alpha=alpha, 
-            **kwargs
-        )
+    def _show_results_multispectral(
+        self, rows=5, alpha=0.7, **kwargs
+    ):  # parameters adjusted in kwargs
+        return_fig = kwargs.get("return_fig", False)
+        ret_val = show_results_multispectral(self, nrows=rows, alpha=alpha, **kwargs)
         if return_fig:
             fig, ax = ret_val
             return fig
@@ -361,10 +457,14 @@ class UnetClassifier(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
         """
         self._check_requisites()
-        self.learn.callbacks = [x for x in self.learn.callbacks if not isinstance(x, LabelCallback)]
+        self.learn.callbacks = [
+            x for x in self.learn.callbacks if not isinstance(x, LabelCallback)
+        ]
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
-        self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
+        self.learn.show_results(
+            rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs
+        )
         if _IS_ARCGISPRONOTEBOOK:
             plt.show()
 
@@ -372,22 +472,24 @@ class UnetClassifier(ArcGISModel):
         try:
             return self.learn.validate()[1].tolist()
         except Exception as e:
-            accuracy = self._data.emd.get('accuracy')
+            accuracy = self._data.emd.get("accuracy")
             if accuracy:
                 return accuracy
             else:
                 logger.error("Metric not found in the loaded model")
 
     def _get_model_metrics(self, **kwargs):
-        checkpoint = kwargs.get('checkpoint', True)
-        if not hasattr(self.learn, 'recorder'):
+        checkpoint = getattr(self, "_is_checkpointed", False)
+        if not hasattr(self.learn, "recorder"):
             return 0.0
 
         try:
             model_accuracy = self.learn.recorder.metrics[-1][0]
             if checkpoint:
                 val_losses = self.learn.recorder.val_losses
-                model_accuracy = self.learn.recorder.metrics[val_losses.index(min(val_losses))][0]
+                model_accuracy = self.learn.recorder.metrics[
+                    val_losses.index(min(val_losses))
+                ][0]
         except:
             model_accuracy = 0.0
 
@@ -403,71 +505,91 @@ class UnetClassifier(ArcGISModel):
         ---------------------   -------------------------------------------
         mean                    Optional bool. If False returns class-wise
                                 mean IOU, otherwise returns mean iou of all
-                                classes combined.   
+                                classes combined.
         ---------------------   -------------------------------------------
         show_progress           Optional bool. Displays the progress bar if
-                                True.                     
+                                True.
         =====================   ===========================================
-        
+
         :returns: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
         num_classes = torch.arange(self._data.c)
-        miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
+        miou = compute_miou(
+            self,
+            self._data.valid_dl,
+            mean,
+            num_classes,
+            show_progress,
+            self._ignore_mapped_class,
+        )
         if mean:
-            miou = [miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class]
+            miou = [
+                miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class
+            ]
             return np.mean(miou)
         if self._ignore_mapped_class == []:
-            return dict(zip(['0'] + self._data.classes[1:], miou))
+            return dict(zip(["0"] + self._data.classes[1:], miou))
         else:
             class_values = [0] + list(self._data.class_mapping.keys())
-            return {class_values[i]: miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class} 
+            return {
+                class_values[i]: miou[i]
+                for i in range(len(miou))
+                if i not in self._ignore_mapped_class
+            }
 
     ## Tensorflow specific functions start ##
     def _intialize_tensorflow(self, data, backbone, pretrained_path, kwargs):
         self._check_tf()
         self._ignore_mapped_class = []
-        
+
         import tensorflow as tf
         from .._utils.common import get_color_array
         from .._utils.common_tf import handle_backbone_parameter, get_input_shape
-        from .._model_archs.unet_tf import get_unet_tf_model 
-        from tensorflow.keras.losses import SparseCategoricalCrossentropy, BinaryCrossentropy
+        from .._model_archs.unet_tf import get_unet_tf_model
+        from tensorflow.keras.losses import (
+            SparseCategoricalCrossentropy,
+            BinaryCrossentropy,
+        )
         from .._utils.fastai_tf_fit import TfLearner, defaults
         from tensorflow.keras.models import Model
         from tensorflow.keras.optimizers import Adam
         from .._utils.common import kwarg_fill_none
-        
+
         if data._is_multispectral:
-            raise Exception('Multispectral data is not supported with backend="tensorflow"')
+            raise Exception(
+                'Multispectral data is not supported with backend="tensorflow"'
+            )
 
         # Intialize Tensorflow
         self._init_tensorflow(data, backbone)
 
         # Loss Function
-        #self._loss_function_tf_ = BinaryCrossentropy(from_logits=True)
-        self._loss_function_tf_ = SparseCategoricalCrossentropy(from_logits=True, reduction='auto')
+        # self._loss_function_tf_ = BinaryCrossentropy(from_logits=True)
+        self._loss_function_tf_ = SparseCategoricalCrossentropy(
+            from_logits=True, reduction="auto"
+        )
 
-        self._mobile_optimized = kwarg_fill_none(kwargs, 'mobile_optimized', self._backbone_mobile_optimized)
+        self._mobile_optimized = kwarg_fill_none(
+            kwargs, "mobile_optimized", self._backbone_mobile_optimized
+        )
 
         # Create Unet Model
         model = get_unet_tf_model(
-            self._backbone_initalized,
-            data,
-            mobile_optimized=self._mobile_optimized
+            self._backbone_initalized, data, mobile_optimized=self._mobile_optimized
         )
 
         self.learn = TfLearner(
-            data, 
+            data,
             model,
             opt_func=Adam,
             loss_func=self._loss_function_tf,
-            true_wd=True, 
-            bn_wd=True, 
-            wd=defaults.wd, 
-            train_bn=True
+            true_wd=True,
+            bn_wd=True,
+            wd=defaults.wd,
+            train_bn=True,
         )
-        
+
         self.learn.unfreeze()
         self.learn.freeze_to(len(self._backbone_initalized.layers))
 
@@ -477,11 +599,12 @@ class UnetClassifier(ArcGISModel):
 
     def _loss_function_tf(self, target, predictions):
         import tensorflow as tf
+
         # print(target.shape, predictions.shape)
         # print(target.dtype, predictions.dtype)
         # print(tf.unique(tf.reshape(target, [-1]))[0])
         # print('\n', tf.unique(tf.reshape(predictions, [-1]))[0])
-        #print(tf.unique(tf.reshape(target, [-1])).numpy(), tf.unique(tf.reshape(predictions, [-1])))
+        # print(tf.unique(tf.reshape(target, [-1])).numpy(), tf.unique(tf.reshape(predictions, [-1])))
         target = tf.squeeze(target, axis=1)
 
         # from .._utils.pixel_classification import segmentation_mask_to_one_hot
@@ -503,10 +626,10 @@ class UnetClassifier(ArcGISModel):
         ---------------------   -------------------------------------------
         ignore_classes          Optional list. It will contain the list of class
                                 values on which model will not incur loss.
-                                Default: []    
+                                Default: []
         =====================   ===========================================
 
-        Returns per class precision, recall and f1 scores 
+        Returns per class precision, recall and f1 scores
         """
         try:
             self._check_requisites()
@@ -514,8 +637,8 @@ class UnetClassifier(ArcGISModel):
             return per_class_metrics(self, ignore_classes)
         except:
             import pandas as pd
-            if 'per_class_metrics' in self._data.emd.keys():
-                return pd.read_json(self._data.emd['per_class_metrics'])        
+
+            if "per_class_metrics" in self._data.emd.keys():
+                return pd.read_json(self._data.emd["per_class_metrics"])
             else:
                 logger.error("Metric not found in the loaded model")
-        

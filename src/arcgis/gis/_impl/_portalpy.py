@@ -14,7 +14,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "1.9.0"
+__version__ = "1.9.1"
 
 _log = logging.getLogger(__name__)
 
@@ -110,7 +110,9 @@ class Portal(object):
             try:
                 import arcpy
 
-                url = arcpy.GetActivePortalURL()
+                if not arcpy.GetSigninToken():
+                    self._is_arcpy = False
+                url = arcpy.GetActivePortalURL() or "https://www.arcgis.com/"
                 self.url = url
             except ImportError:
                 raise ImportError("Could not import arcpy")
@@ -175,6 +177,7 @@ class Portal(object):
                     token=token,
                     trust_env=trust_env,
                     timeout=kwargs.get("timeout", 600),
+                    proxy=kwargs.get("proxy", None),
                 )
             else:
                 self.con = Connection(
@@ -196,6 +199,7 @@ class Portal(object):
                     token=token,
                     trust_env=trust_env,
                     timeout=kwargs.get("timeout", 600),
+                    proxy=kwargs.get("proxy", None),
                 )
         # self.get_version(True)
         self.get_properties(True)

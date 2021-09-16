@@ -20,9 +20,7 @@ except:
 class TestBigDataAnalyticsMethods(unittest.TestCase):
     velocity = gis.velocity
     bigdata_analytics = velocity.bigdata_analytics
-    bigdata_analytics_item = bigdata_analytics.get(
-        "bf9c78e94fde40dabda67b6b4c8d3395"
-    )
+    bigdata_analytics_item = bigdata_analytics.get("bf9c78e94fde40dabda67b6b4c8d3395")
 
     # ----------------------------------------------------------------------
     @unittest.skipIf(SKIP_SOME_TESTS, "test_get_all_bigdata_analytics skipping")
@@ -49,9 +47,7 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
         print("\n ---- test_get_bigdata_analytics ----")
 
         try:
-            response = self.bigdata_analytics.get(
-                "bf9c78e94fde40dabda67b6b4c8d3395"
-            )
+            response = self.bigdata_analytics.get("bf9c78e94fde40dabda67b6b4c8d3395")
             assert isinstance(response, BigDataAnalytics)
 
         except AssertionError as assertErrorException:

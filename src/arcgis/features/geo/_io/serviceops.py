@@ -60,7 +60,10 @@ def from_featureset(fset, sr=None):
             gt = None
         cols = [fld["name"] for fld in fset.fields]
         dt_fields = [
-            fld["name"] for fld in fset.fields if fld["type"] == "esriFieldTypeDate"
+            fld["name"]
+            for fld in fset.fields
+            if ("type" in fld and fld["type"] == "esriFieldTypeDate")
+            or ("fieldType" in fld and fld["fieldType"] == "esriFieldTypeDate")
         ]
         if sr is None:
             sr = {"wkid": 4326}

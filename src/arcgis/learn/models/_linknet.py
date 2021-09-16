@@ -66,7 +66,12 @@ class LinkNet(ArcGISModel):
     """
 
     def __init__(
-        self, data, backbone=None, pretrained_path=None, *args, **kwargs,
+        self,
+        data,
+        backbone=None,
+        pretrained_path=None,
+        *args,
+        **kwargs,
     ):
         # Set default backbone to be 'resnet34'
         if backbone is None:
@@ -118,8 +123,10 @@ class LinkNet(ArcGISModel):
 
         # Initialize the model, loss function and the Learner object
         self._model = LinkNetModel(
-            self._encoder, n_classes=self._data.c,
-            chip_size=self._chip_size, n_bands=n_bands,
+            self._encoder,
+            n_classes=self._data.c,
+            chip_size=self._chip_size,
+            n_bands=n_bands,
         )
         self._loss_f = mIoULoss(n_classes=self._data.c)
         learner_kwargs = {}
@@ -131,8 +138,11 @@ class LinkNet(ArcGISModel):
                 learner_kwargs["opt_func"] = partial(_opt_func, **self._opt_func_args)
 
         self.learn = Learner(
-            self._data, self._model, loss_func=self._loss_f,
-            metrics=[pixel_accuracy, mean_iou], **learner_kwargs,
+            self._data,
+            self._model,
+            loss_func=self._loss_f,
+            metrics=[pixel_accuracy, mean_iou],
+            **learner_kwargs,
         )
         if pretrained_path is not None:
             self.load(str(pretrained_path))
@@ -180,9 +190,7 @@ class LinkNet(ArcGISModel):
         class_data = {}
         # 0th index is background
         for _, class_name in enumerate(self._data.classes[1:]):
-            inverse_class_mapping = {
-                v: k for k, v in self._data.class_mapping.items()
-            }
+            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             class_data["Value"] = inverse_class_mapping[class_name]
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
@@ -253,7 +261,9 @@ class LinkNet(ArcGISModel):
         """
         self._check_requisites()
         ds_type = kwargs.get("ds_type", DatasetType.Valid)
-        min_data_rows = min(len(self._data.dl(ds_type)), self._data.dl(ds_type).batch_size)
+        min_data_rows = min(
+            len(self._data.dl(ds_type)), self._data.dl(ds_type).batch_size
+        )
         if rows > min_data_rows:
             rows = min_data_rows
         self.learn.show_results(rows=rows, **kwargs)
@@ -267,7 +277,7 @@ class LinkNet(ArcGISModel):
         }
 
     def _get_model_metrics(self, **kwargs):
-        checkpoint = kwargs.get("checkpoint", True)
+        checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
             return 0.0
 

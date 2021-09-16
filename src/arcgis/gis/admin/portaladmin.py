@@ -18,7 +18,7 @@ class PortalAdminManager(BasePortalAdmin):
     portal environment is available through System and Security resources.
 
     Parameter:
-    :param url: web address to portaladmin API
+    :param url: web address to portaladmin rest API (ends with: portal//sharing/rest/)
     :param gis: GIS object containing Administrative credentials
     :param initialize: (optional) if True, properties of REST endpoint are
     loaded on creation of object. False (default) means they are loaded
@@ -76,7 +76,7 @@ class PortalAdminManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def ux(self):
-        """returns a UX/UI manager"""
+        """returns a UX/UI manager with properties such as description, featured_content, name, etc."""
         if self._ux is None:
             from ._ux import UX
 
@@ -226,7 +226,8 @@ class PortalAdminManager(BasePortalAdmin):
         if self._machines is None:
             from ._machines import Machines
 
-            url = "%s/machines" % self._url
+            # url root needs to be administrator site root
+            url = "%s/portaladmin/machines" % self._gis._portal.url
             self._machines = Machines(url=url, gis=self._gis, portaladmin=self)
         return self._machines
 
@@ -240,7 +241,7 @@ class PortalAdminManager(BasePortalAdmin):
         if self._security is None:
             from ._security import Security
 
-            url = "%s/security" % self._url
+            url = "%s/portaladmin/security" % self._gis._portal.url
             self._security = Security(url=url, gis=self._gis)
         return self._security
 
@@ -266,7 +267,7 @@ class PortalAdminManager(BasePortalAdmin):
         if self._logs is None:
             from ._logs import Logs
 
-            url = "%s/logs" % self._url
+            url = "%s/portaladmin/logs" % self._gis._portal.url
             self._logs = Logs(url=url, gis=self._gis)
         return self._logs
 
@@ -279,7 +280,7 @@ class PortalAdminManager(BasePortalAdmin):
         if self._federation is None:
             from ._federation import Federation
 
-            url = "%s/federation" % self._url
+            url = "%s/portaladmin/federation" % self._gis._portal.url
             self._federation = Federation(url=url, gis=self._gis)
         return self._federation
 
@@ -295,7 +296,7 @@ class PortalAdminManager(BasePortalAdmin):
         if self._system is None:
             from ._system import System
 
-            url = "%s/system" % self._url
+            url = "%s/portaladmin/system" % self._gis._portal.url
             self._system = System(url=url, gis=self._gis)
         return self._system
 
@@ -320,7 +321,7 @@ class PortalAdminManager(BasePortalAdmin):
         if self._license is None:
             from ._license import LicenseManager
 
-            url = self._gis._portal.resturl + "portals/self/purchases"
+            url = "%s/portaladmin/license" % self._gis._portal.url
             self._license = LicenseManager(url=url, gis=self._gis)
         return self._license
 
@@ -358,7 +359,7 @@ class PortalAdminManager(BasePortalAdmin):
 
         :returns: dict
         """
-        url = self._url + "/mode"
+        url = "%s/portaladmin/mode" % self._gis._portal.url
         params = {"f": "json"}
         return self._con.get(url, params)
 
@@ -387,7 +388,7 @@ class PortalAdminManager(BasePortalAdmin):
         assert gis.admin.mode['isReadOnly'] == False
 
         """
-        url = f"{self._url}/mode/update"
+        url = "%s/portaladmin/mode/update" % self._gis._portal.url
         if mode is None:
             mode = {"read_only": False, "message": ""}
         params = {"f": "json", "isReadOnly": mode.pop("read_only", False)}
