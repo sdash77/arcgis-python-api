@@ -13,11 +13,16 @@ def scale(geom, *scale_factor):
     """
     Create a scaling transform from a scalar value (float)
 
-    Parameters:
-    :scale_factor: The scaling factor. A scalar value will
-     scale in both dimensions equally.
-    :Output:
-     dictionary or arcgis.Geomerty
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    geom                Required class:`~arcgis.geometry.Geometry object or dictionary.
+    ---------------     --------------------------------------------------------------------
+    scale_factor        Required int. A scalar value will scale in both dimensions equally
+    ===============     ====================================================================
+    
+    :return:
+        Dictionary or class:`~arcgis.geometry.Geometry` object
     """
     import numpy as np
 
@@ -68,13 +73,18 @@ def scale(geom, *scale_factor):
 # -------------------------------------------------------------------------
 def rotate(geom, theta):
     """
-    rotates a geometry counter-clockwise by some degree theta
+    Rotates a geometry counter-clockwise by some degree theta
 
-    Parameters:
-     :geom: - Geometry to rotate
-     :theta: - angle of rotation
-    Ouput:
-     dict or arcgis.Geometry
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    geom                Required class:`~arcgis.geometry.Geometry object or dictionary.
+    ---------------     --------------------------------------------------------------------
+    theta               Required angle of rotation
+    ===============     ====================================================================
+
+    :return:
+        Dictionary or class:`~arcgis.geometry.Geometry` object
     """
     import numpy as np
 
@@ -122,24 +132,25 @@ def skew(geom, x_angle=0, y_angle=0):
     """
     Create a skew transform along one or both axes.
 
-    Parameters:
-     :geom: geometry to alter (dictionary or arcgis.Geometry)
-     :x_angle: angle to skew in the x coordinate
-     :y_angle: angle to skew in the y coordinate
-    Output:
-     dictionary or arcgis.Geometry
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    geom                Required class:`~arcgis.geometry.Geometry object or dictionary.
+    ---------------     --------------------------------------------------------------------
+    x_angle             Required angle to skew in the x-coordinates
+    ---------------     --------------------------------------------------------------------
+    y_angle             Required angle to skew in the y-coordinates
+    ===============     ====================================================================
+    
+    :return:
+        Dictionary or class:`~arcgis.geometry.Geometry` object
     """
     import numpy as np
 
     A = np.matrix([[1, math.tan(x_angle)], [math.tan(y_angle), 1]])
     if isinstance(geom, dict) or isinstance(geom, GEOM_TYPES):
         if "x" in geom and "y" in geom:  # translates point
-            matrix = np.matrix(
-                [
-                    [geom["x"]],
-                    [geom["y"]],
-                ]
-            )
+            matrix = np.matrix([[geom["x"]], [geom["y"]],])
             val = (A * matrix).tolist()
             geom["x"] = val[0][0]
             geom["y"] = val[1][0]
@@ -163,12 +174,7 @@ def skew(geom, x_angle=0, y_angle=0):
             return geom
         elif "points" in geom:  # translates Multipoint
             for pt in geom["points"]:
-                matrix = np.matrix(
-                    [
-                        [pt[0]],
-                        [pt[1]],
-                    ]
-                )
+                matrix = np.matrix([[pt[0]], [pt[1]],])
                 val = (A * matrix).tolist()
                 pt[0] = val[0][0]
                 pt[1] = val[1][0]
@@ -182,12 +188,18 @@ def translate(geom, x_offset, y_offset):
     """
     Moves a geometry by some distance
 
-    Parameters:
-     :geom: dictionary or arcgis.Geometry to move
-     :x_offset: distance to move the coordinates in the x direction
-     :y_offset: distance to move the coordinates in the y direction
-    Output:
-     dictionary or arcgis.Geometry
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    geom                Required class:`~arcgis.geometry.Geometry object or dictionary.
+    ---------------     --------------------------------------------------------------------
+    x_offset            Required int. Distance to move coordinates in the x-direction
+    ---------------     --------------------------------------------------------------------
+    y_offset            Required int. Distance to move coordinates in the y-direction
+    ===============     ====================================================================
+    
+    :return:
+        Dictionary or class:`~arcgis.geometry.Geometry` object
     """
     import numpy as np
 

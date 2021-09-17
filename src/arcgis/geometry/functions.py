@@ -177,7 +177,7 @@ def areas_and_lengths(
                                        calculation_type = "planar",
                                        future = True)
     :returns:
-        JSON as dictionary
+        Dictionary of perimeters and areas for each polygon indicated
     """
     if gis is None:
         gis = arcgis.env.active_gis
