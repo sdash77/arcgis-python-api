@@ -268,7 +268,7 @@ class _DotDensity(object):
         alpha               Optional float. A value between 0-1 that determines the symbol opacity.
         ===============     ====================================================================
 
-        :returns: Boolean
+        :returns: True if successful otherwise error message
 
         """
         mapped_names = [n["field"].lower() for n in self.attributes]
@@ -281,7 +281,6 @@ class _DotDensity(object):
             return True
         else:
             raise ValueError("Field not found in dataset.")
-        return False
 
     # ----------------------------------------------------------------------
     def remove_attribute(self, field):
@@ -294,7 +293,7 @@ class _DotDensity(object):
         field               Required String.  Name of the dataset field
         ===============     ====================================================================
 
-        :returns: Boolean
+        :returns:True if successful else False
 
         """
         mapped_names = [n["field"].lower() for n in self.attributes if "field" in n]
@@ -947,7 +946,7 @@ def generate_renderer(
     ======================  =========================================================
 
 
-    :returns: dict
+    :returns: A dictionary of the renderer.
 
     """
     import numpy as np
