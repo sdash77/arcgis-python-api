@@ -642,7 +642,7 @@ def get_countries(gis: GIS = None, as_df: bool = False):
                       country dataset installed locally. Finally, if
                       neither of these (Pro or an active GIS) are available,
                       a GIS object instance must be explicitly provided.
-
+    ----------------  --------------------------------------------------------
     as_df             Optional boolean specifying if a Pandas DataFrame output
                       is desired. If ```False`` (the default) a list of
                       ``arcgis.geoenrichment.Country`` objects will be
