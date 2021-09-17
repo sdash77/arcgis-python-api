@@ -677,7 +677,7 @@ class TfOptimWrapper:
 
     @property
     def lr(self) -> float:
-        "Get learning rate."
+        "Get/Set learning rate."
         return self._lr[-1].numpy()
 
     @lr.setter
@@ -689,7 +689,7 @@ class TfOptimWrapper:
 
     @property
     def mom(self) -> float:
-        "Get momentum."
+        "Get/Set momentum."
         return self._mom.numpy()
 
     @mom.setter

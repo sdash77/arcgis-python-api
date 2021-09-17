@@ -142,6 +142,14 @@ class Security(BasePortalAdmin):
         This resource represents the token configuration within your
         portal. Use the set on token_config operation to change the
         configuration properties of the token service.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        value                           Required string. A shared key value
+        ===========================     ====================================================================
+
+        :return: Dictionary
         """
         url = "%s/tokens" % self._url
         params = {"f": "json"}
@@ -151,18 +159,7 @@ class Security(BasePortalAdmin):
     @tokens.setter
     def tokens(self, value):
         """
-        This resource represents the token configuration within your
-        portal. Use the set on token_config operation to change the
-        configuration properties of the token service.
-
-        ===========================     ====================================================================
-        **Argument**                    **Description**
-        ---------------------------     --------------------------------------------------------------------
-        value                           Required string. A shared key value
-        ===========================     ====================================================================
-
-        :returns: dict
-
+        See main ``tokens`` property docsring
         """
         import six
 
@@ -192,23 +189,6 @@ class Security(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def config(self):
-        """
-        The security configuration consists of the identity store
-        configuration.
-        If your portal will be authenticated through ArcGIS Web Adaptor,
-        you must set up your preferred authentication on your web server.
-        Use the Update Identity Store operation to configure your portal to
-        connect to your enterprise identity provider such as Windows Domain
-        or LDAP. By default, Portal for ArcGIS is configured to use the
-        built-in store and token-based authentication.
-        """
-        url = "%s/config" % self._url
-        params = {"f": "json"}
-        return self._con.get(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    @config.setter
-    def config(self, value):
         """
         This operation can be used to update the portal's security settings
         such as whether or not enterprise accounts are automatically
@@ -260,6 +240,16 @@ class Security(BasePortalAdmin):
            "enableAutomaticAccountCreation":true,
            "defaultRoleForUser": 12aBC3D4EF5ghIJ
           }
+        """
+        url = "%s/config" % self._url
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    @config.setter
+    def config(self, value):
+        """
+        See main ``config`` property docstring
         """
         url = "%s/config/update" % self._url
         params = {"securityConfig": value, "f": "json"}
@@ -433,9 +423,7 @@ class OAuth(BasePortalAdmin):
     @app_info.setter
     def app_info(self, value):
         """
-        This operation allows you to update the OAuth-specific properties
-        associated with an application. Use the Get App Info operation to
-        obtain the existing OAuth properties that can be edited.
+        See main ``app_info`` property docstring
         """
         url = "%s/updateAppInfo" % self._url
         params = {"f": "json", "appInfo": value}

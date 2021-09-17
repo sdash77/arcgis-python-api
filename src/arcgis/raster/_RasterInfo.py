@@ -59,7 +59,7 @@ class RasterInfo(object):
     @property
     def band_count(self):
         """
-        The ``band_count`` property retrieves information about the band count of a raster.
+        Get/Set information about the band count of a raster.
         """
         return self._band_count
 
@@ -70,7 +70,7 @@ class RasterInfo(object):
     @property
     def extent(self):
         """
-        The ``extent`` property retrieves information about the extent of a raster.
+        Get/Set information about the extent of a raster.
         """
         return self._extent
 
@@ -81,7 +81,7 @@ class RasterInfo(object):
     @property
     def pixel_type(self):
         """
-        The ``pixel_type`` property retrieves information about the pixel type of a :class:`~arcgis.raster.Raster`
+        Get/Set information about the pixel type of a :class:`~arcgis.raster.Raster`
         object.
         """
         return self._pixel_type
@@ -93,7 +93,7 @@ class RasterInfo(object):
     @property
     def pixel_size_x(self):
         """
-        The ``pixel_size_x`` property retrieves information about the pixel size of a :class:`~arcgis.raster.Raster` in
+        Get/Set information about the pixel size of a :class:`~arcgis.raster.Raster` in
         x direction.
         """
         return self._pixel_size_x
@@ -105,7 +105,7 @@ class RasterInfo(object):
     @property
     def pixel_size_y(self):
         """
-        The ``pixel_size_y`` property retrieves information about the pixel size of a :class:`~arcgis.raster.Raster` in
+        Get/Set information about the pixel size of a :class:`~arcgis.raster.Raster` in
         the y direction.
         """
         return self._pixel_size_y
@@ -117,7 +117,7 @@ class RasterInfo(object):
     @property
     def block_height(self):
         """
-        The ``block_height`` property retrieves information about the block height of the :class:`~arcgis.raster.Raster`
+        Get/Set information about the block height of the :class:`~arcgis.raster.Raster`
         object.
         """
         return self._block_height
@@ -129,7 +129,7 @@ class RasterInfo(object):
     @property
     def block_width(self):
         """
-        The ``block_width`` property retrieves information about the block width of a :class:`~arcgis.raster.Raster`
+        Get/Set information about the block width of a :class:`~arcgis.raster.Raster`
         object.
         """
         return self._block_width
@@ -141,7 +141,7 @@ class RasterInfo(object):
     @property
     def no_data_values(self):
         """
-        The ``no_data_values`` property information about the ``no_data_values`` property of a
+        Get/Set information about the ``no_data_values`` property of a
         :class:`~arcgis.raster.Raster` object.
         """
         return self._no_data_values

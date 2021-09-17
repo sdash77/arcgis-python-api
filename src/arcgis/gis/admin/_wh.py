@@ -86,30 +86,7 @@ class WebhookManager(object):
     @settings.setter
     def settings(self, value):
         """
-        There are several advanced parameters that can be used to configure
-        the connection behavior of your webhook. These parameters will be
-        applied to all of the configured webhooks in your Enterprise portal. Use the
-        Update operation to modify any of the parameters.
-
-
-
-        ** Dictionary Key/Values **
-
-        =================================  ===============================================================================
-        **Argument**                       **Description**
-        ---------------------------------  -------------------------------------------------------------------------------
-        notificationAttempts               Required Integer. This will determine how many attempts will be made to deliver
-                                           a payload.
-        ---------------------------------  -------------------------------------------------------------------------------
-        otificationTimeOutInSeconds        Required Integer. The length of time (in seconds) that Portal will wait to
-                                           receive a response. The max response is 60.
-        ---------------------------------  -------------------------------------------------------------------------------
-        notificationElapsedTimeInSeconds   Required Integer. The amount of time between each payload delivery attempt. By
-                                           default, this is set to 30 seconds and can be set to a maximum of 100 seconds
-                                           and a minimum of one second.
-        =================================  ===============================================================================
-
-
+        See main ``settings`` property docstring
         """
         url = "%s/settings/update" % self._url
         params = {"f": "json"}

@@ -70,7 +70,13 @@ class Logs(BasePortalAdmin):
     @property
     def settings(self):
         """
-        Reads/writes the current log settings for the portal.
+        Get/Set the current log settings for the portal.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        value             required dictionary, the dictionary of the log settings
+        ================  ===============================================================
 
         .. code-block:: python
 
@@ -102,16 +108,7 @@ class Logs(BasePortalAdmin):
     @settings.setter
     def settings(self, value):
         """
-        Reads/writes the current log settings for the portal.
-
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        value             required dictionary, the dictionary of the log settings
-        ================  ===============================================================
-
-        :returns:
-           None
+        See main ``settings`` property docstring.
         """
         url = "%s/settings/edit" % self._url
         params = {"f": "json"}

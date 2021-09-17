@@ -283,10 +283,18 @@ class MapView(widgets.DOMWidget):
     @property
     def zoom(self):
         """
-        The ``zoom`` property defines the level of zoom applied to the Map Widget.
+        Get/Set the level of zoom applied to the Map Widget.
 
-        .. note::
-            The higher the number, the more zoomed in you are.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required int. 
+                            .. note::
+                                The higher the number, the more zoomed in you are.
+        ===============     ====================================================================
+
+        :return:
+        Int value that represent the zoom level
 
         .. code-block:: python
 
@@ -312,8 +320,14 @@ class MapView(widgets.DOMWidget):
     @property
     def scale(self):
         """
-        The ``scale`` property represents the map scale at the center of the view. If set to X, the scale
+        Get/Set the map scale at the center of the view. If set to X, the scale
         of the map would be 1:X.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required int.
+        ===============     ====================================================================
 
         .. note::
             For continuous values to apply and not get "snapped" to the closest
@@ -338,8 +352,16 @@ class MapView(widgets.DOMWidget):
     def snap_to_zoom(self):
         """
         The ``snap_to_zoom`` property is used to determine how the zoom is enabled when the map widget is created.
-        When ``True``, snap to the next level of detail when zooming in or out.
-        When ``False``, the zoom is continuous.
+        
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required bool. 
+                            Values:
+                                + True: snap to the next level of detail when zooming in or out.
+                                + False: the zoom is continuous.
+        ===============     ====================================================================
 
         .. note::
             The ``snap_to_zoom`` method only applies in 2D mode.
@@ -357,8 +379,14 @@ class MapView(widgets.DOMWidget):
     @property
     def rotation(self):
         """
-        The ``rotation`` property represents the clockwise rotation of due north in relation to the top
+        Get/Set the clockwise rotation of due north in relation to the top
         of the view in degrees in 2D mode.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required float.
+        ===============     ====================================================================
 
         .. note::
             ``rotation`` cannot be set in 3D mode. Rather, 3D mode uses the :attr:`~arcgis.widgets.MapView.heading`
@@ -387,7 +415,7 @@ class MapView(widgets.DOMWidget):
     @property
     def heading(self):
         """
-         The ``heading`` property represents the compass heading of the camera in degrees when in 3D mode. ``heading`` is
+         Get/Set the compass heading of the camera in degrees when in 3D mode. ``heading`` is
          zero when north is the top of the screen. It increases as the view rotates
          clockwise. The angles are always normalized between 0 and 360 degrees.
 
@@ -418,7 +446,7 @@ class MapView(widgets.DOMWidget):
     @property
     def tilt(self):
         """
-        The ``tilt`` property represents the tilt of the camera in degrees with respect to the
+        Get/Set the tilt of the camera in degrees with respect to the
         surface as projected down from the camera position, when in 3D mode. ``tilt`` is zero when
         looking straight down at the surface and 90 degrees when the camera is
         looking parallel to the surface.
@@ -435,13 +463,17 @@ class MapView(widgets.DOMWidget):
     @property
     def basemap(self):
         """
-        The ``basemap`` property defines the basemap you would like to apply to the widget (``topo``,
-        ``national-geographic``, etc.).
+       Get/Set the basemap you would like to apply to the widget.
 
-        .. note::
-            See :attr:`~arcgis.widgets.MapView.basemaps` for a full list of possible maps
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string. Ex: ('topo', 'national-geographic', etc.).
+                            .. note::
+                                See :attr:`~arcgis.widgets.MapView.basemaps` for a full list of possible maps
+        ===============     ====================================================================
 
-
+        :return: basemap being used.
         .. code-block:: python
 
             # Usage example: Set the widget basemap equal to an item
@@ -517,38 +549,39 @@ class MapView(widgets.DOMWidget):
     @property
     def extent(self):
         """
-        The ``extent`` property represents the map widget's extent.
+        Get/Set the map widget's extent.
 
 
-        ==================     ====================================================================
-        getter                 A dict that represents the JSON of the map widget's extent.
-        ------------------     --------------------------------------------------------------------
-        setter                 A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
-                               or a dict that represents the JSON of the map widget's extent.
+            ==================     ====================================================================
+            **Argument**           **Description**
+            ------------------     --------------------------------------------------------------------
+            value                  Required dict. 
+                                   A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
+                                   or a dict that represents the JSON of the map widget's extent.
 
-                               Examples for each:
-                               web_map.extent = [[-124.35, 32.54], [-114.31, 41.95]]
-                               web_map.extent = data_frame.spatial.full_extent
-                               web_map.extent = {
-                                    "xmin": -124.35,
-                                    "ymin": 32.54,
-                                    "xmax": -114.31,
-                                    "ymax": 41.95
-                                }
-        ==================     ====================================================================
+                                    Examples for each:
+                                    web_map.extent = [[-124.35, 32.54], [-114.31, 41.95]]
+                                    web_map.extent = data_frame.spatial.full_extent
+                                    web_map.extent = {
+                                            "xmin": -124.35,
+                                            "ymin": 32.54,
+                                            "xmax": -114.31,
+                                            "ymax": 41.95
+                                        }
+            ==================     ====================================================================
 
-         .. code-block:: python
+            .. code-block:: python
 
-            #Usage Example
+                #Usage Example
 
-            >>> from arcgis.gis import GIS, Item
-            >>> from arcgis.widgets import MapView
-            >>> map2 = gis.map("California")
-            >>> map2.extent
-            {
-            'xmin': -124.20822999999997, 'ymin': 31.436105693000048,
-            'xmax': -114.33222999999997, 'ymax': 41.31210569300005
-             }
+                >>> from arcgis.gis import GIS, Item
+                >>> from arcgis.widgets import MapView
+                >>> map2 = gis.map("California")
+                >>> map2.extent
+                {
+                'xmin': -124.20822999999997, 'ymin': 31.436105693000048,
+                'xmax': -114.33222999999997, 'ymax': 41.31210569300005
+                }
 
         """
         if self._readonly_extent:
@@ -605,16 +638,16 @@ class MapView(widgets.DOMWidget):
     @property
     def center(self):
         """
-        The ``center`` property  represents the center of the ``Map Widget``.
+        Get/Set the center of the ``Map Widget``.
 
         ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        getter                 A dict that represents the JSON of the map widget's center.
+        **Argument**           **Description**            
         ------------------     --------------------------------------------------------------------
         setter                 A `[lat, long]` list, or a dict that represents the JSON of the map
                                widget's center.
         ==================     ====================================================================
+
+        :return: A dict that represents the JSON of the map widget's center.
 
         .. code-block:: python
 
@@ -811,10 +844,6 @@ class MapView(widgets.DOMWidget):
             [<FeatureLayer url:"https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/Power_Plants_Itm/FeatureServer/0">]
         """
         return [self._hashed_layers[key] for key in self._hashed_layers]
-
-    @layers.setter
-    def layers(self, value):
-        raise Exception("Can't set layers directly: use add_layer()")
 
     # end how we store layers
 

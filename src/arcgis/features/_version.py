@@ -376,12 +376,15 @@ class Version(object):
         The `mode` allows versoin editors to start and stop edit, read, or
         view mode.
 
-        Allowed Values:
-
-            + edit - calls the `start_editing` method and creates a lock
-            + read - calls the `start_reading` method and creates a lock
-            + None - terminates all sessions and lets a user view the version information (default)
-
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+                                Values: 
+                                + edit - calls the `start_editing` method and creates a lock
+                                + read - calls the `start_reading` method and creates a lock
+                                + None - terminates all sessions and lets a user view the version information (default)
+        ==================      ====================================================================
 
         """
         if (
@@ -482,6 +485,13 @@ class Version(object):
     def save_edits(self):
         """
         Get/Set the Property to Save the Changes.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required bool.
+                                Values: True | False
+        ==================      ====================================================================
 
         When set to true, any edits performed on the version will be saved.
         """

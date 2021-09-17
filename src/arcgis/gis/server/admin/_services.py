@@ -75,7 +75,7 @@ class ServiceManager(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def _folder(self):
-        """returns current folder"""
+        """Get/Set current folder"""
         return self._folderName
 
     # ----------------------------------------------------------------------

@@ -329,20 +329,6 @@ class WebAdaptorManager(object):
     @property
     def config(self) -> Dict[str, Any]:
         """
-        Gets the Web Adaptors configuration which is a resource of all the
-        configuration parameters shared across all the Web Adaptors in the
-        site. Most importantly, this resource lists the shared key that is
-        used by all the Web Adaptors to encrypt key data bits for the
-        incoming requests to the server.
-        """
-        url = self._url + "/config"
-        params = {"f": "json"}
-        return self._con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    @config.setter
-    def config(self, config) -> None:
-        """
         This is a property that allows for the retreival and manipulation of web adaptors.
 
         You can use this operation to change the Web Adaptor configuration
@@ -358,7 +344,16 @@ class WebAdaptorManager(object):
 
         :return:
             A boolean indicating success (True), else a Python dictionary containing an error message.
+        """
+        url = self._url + "/config"
+        params = {"f": "json"}
+        return self._con.get(url, params)
 
+    # ----------------------------------------------------------------------
+    @config.setter
+    def config(self, config) -> None:
+        """
+        See main ``config`` property docstring.
         """
         url = self._url + "/config/update"
         params = {"f": "json", "webAdaptorConfig": config}
@@ -582,8 +577,17 @@ class SystemManager(object):
         some of its intricate behavior. This resource is a container for
         these properties. The properties are available to all server
         objects and extensions through the server environment interface.
+        
+        Sets the ArcGIS Notebook Server has configuration properties that govern
+        some of its intricate behavior. This resource is a container for
+        these properties. The properties are available to all server
+        objects and extensions through the server environment interface.
 
-
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required property.
+        ===============     ====================================================================
         The available properties are as follows:
 
             + WebContextURL - Defines the web front-end as seen by your users. Example: https://mydomain.com/gis
@@ -622,21 +626,7 @@ class SystemManager(object):
     @properties.setter
     def properties(self, value) -> None:
         """
-        Sets the ArcGIS Notebook Server has configuration properties that govern
-        some of its intricate behavior. This resource is a container for
-        these properties. The properties are available to all server
-        objects and extensions through the server environment interface.
-
-
-        The available properties are as follows:
-
-            + WebContextURL - Defines the web front-end as seen by your users. Example: https://mydomain.com/gis
-            + maxContainersPerNode - The default maximum number of containers that can be opened on a notebook server machine assuming the machine has the necessary CPU/Memory resources to support the containers.
-            + idleNotebookThreshold - Specifies the time (in minutes) after which idle notebooks are closed automatically.
-            + containerCreatedThreshold - Specifies the time (in minutes) after which an empty container is closed automatically.
-            + webSocketSize - Specifies the amount of memory (in MB) available to ArcGIS Notebooks for WebSocket communication
-
-        :returns: PropertyMap
+        See main ``properties`` property docstring
         """
         properties: {
             "dockerConnectionPort": 2375,

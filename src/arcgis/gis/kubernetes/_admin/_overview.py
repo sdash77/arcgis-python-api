@@ -117,32 +117,7 @@ class Overview(_BaseKube):
     @config.setter
     def config(self, value: Dict[str, Any]) -> None:
         """
-        Gets/sets a dictionary of resource types that correspond with the
-        `Overview` class.  It contains the update interval for each
-        property.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        resource            Required Dictionary. A dictionary object containing the `id`, `type`,
-                            and `updateIntervalMin` for an overview resource type, returned by
-                            the config resource. The accepted values for `updateIntervalMin`
-                            (0-60) can be modified to update the interval (in minutes) of which
-                            the resource type will have it's information pulled and cached. If
-                            set to 0, information for the resource type will not be cached and
-                            will, instead, have it's real-time information returned when the
-                            overview resource is called. The default values for each resource
-                            type are listed below:
-
-                               + criticalLogs: 0
-                               + systemServices: 1
-                               + utilityServices: 1
-                               + dataStores: 2
-
-        ===============     ====================================================================
-
-        :returns: Dict[str, Any]
-
+        See main ``config`` property docstring
         """
         url = f"{self._url}/config/config"
         params = {"f": "json", "resourceConfigJson": value}

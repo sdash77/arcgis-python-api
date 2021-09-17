@@ -199,9 +199,6 @@ class GIS(object):
 
     ================    ===============================================================
 
-
-
-
     .. code-block:: python
 
         # Usage Example 1: Anonymous Login to ArcGIS Online
@@ -1162,38 +1159,7 @@ class GIS(object):
     @org_settings.setter
     def org_settings(self, settings):
         """
-        This operation allows you to enable and customize an access notice
-        and informational banner for your organization. The access notice,
-        for authenticated and anonymous access, acts as a terms of service
-        that users must agree to before being able to access the portal
-        site. The informational banner allows you to alert members of your
-        organization about your site's current status and content, such as
-        a notice that the site is currently in read-only mode or
-        containing content of a specific classification level.
-
-        ======================     ===============================================================
-        **Parameters**             **Description**
-        ----------------------     ---------------------------------------------------------------
-        settings                   Required `Dict <https://docs.python.org/3/tutorial/datastructures.html#dictionaries>`_
-                                    A dictionary of the settings.
-
-                                    ==========================    =============================================
-                                    **Fields**                    **Description**
-                                    --------------------------    ---------------------------------------------
-                                    anonymousAccessNotice         Dictionary. A JSON object representing a notice that is shown to your organization's anonymous users.
-                                                                  Ex: {'title': 'Anonymous Access Notice Title', 'text': 'Anonymous Access Notice Text', 'buttons': 'acceptAndDecline', 'enabled': True}
-                                    --------------------------    ---------------------------------------------
-                                    authenticatedAccessNotice     Dictionary. A JSON object representing a notice that is shown to your organization's authenticated users.
-                                                                  Ex: {'title': 'Authenticated Access Notice Title', 'text': 'Authenticated Access Notice Text', 'buttons': 'okOnly', 'enabled': True}
-                                    --------------------------    ---------------------------------------------
-                                    informationalBanner           Dictionary. A JSON object representing the informational banner that is shown at the top of your organization's page.
-                                                                  Ex: {'text': 'Header Text', 'bgColor': 'grey', 'fontColor': 'blue', 'enabled': True}
-                                    --------------------------    ---------------------------------------------
-                                    clearEmptyFields              Boolean.  If True, any empty dictionary will be set to null.
-                                    ==========================    =============================================
-
-        ======================     ===============================================================
-
+        See main ``org_settings`` property docstring
         """
         if self.version >= [7, 4] and isinstance(settings, dict):
             url = "portals/self/settings/update"
@@ -1856,13 +1822,22 @@ class DatastoreManager(object):
         when publishing. Rather, the publisher is required to register data items through which the service being
         published can reference data.
 
-        Values: ``True`` | ``False``
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required bool. 
+                                Values: True | False
+                                .. note::
+                                    If you specify the property as ``True``, users will not be able 
+                                    to publish ``geoprocessing services`` and ``geocode services`` 
+                                    from composite locators. These service types require data to be 
+                                    copied to the server.
+                                    As a workaround, you can temporarily set the property to ``False``, 
+                                    publish the service, and then set the property back to ``True``.
+        ==================      ====================================================================
 
-         .. note::
-             If you specify the property as ``True``, users will not be able to publish ``geoprocessing services`` and
-             ``geocode services`` from composite locators. These service types require data to be copied to the server.
-             As a workaround, you can temporarily set the property to ``False``, publish the service, and then set the
-             property back to ``True``.
+        :return: A bool
+         
         """
         params = {"f": "json"}
         path = self._admin_url + "/data/config"
@@ -1872,11 +1847,7 @@ class DatastoreManager(object):
     @config.setter
     def config(self, value):
         """
-        The data store configuration properties affect the behavior of the data holdings of the server. The properties include:
-        blockDataCopy When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior.
-        When this property is True, the client application is not allowed to copy data to the site when publishing. Rather, the publisher is required to register data items through which the service being published can reference data. Values: True | False
-        Note:
-        If you specify the property as True, users will not be able to publish geoprocessing services and geocode services from composite locators. These service types require data to be copied to the server. As a workaround, you can temporarily set the property to False, publish the service, and then set the property back to True.
+        See main ``config`` property docstring
         """
         params = {"f": "json"}
         params["datastoreConfig"] = value
@@ -2519,50 +2490,7 @@ class UserManager(object):
     @user_settings.setter
     def user_settings(self, settings):
         """
-        The ``user_settings`` method allows administrators to set, and edit, new
-        member defaults. Members who create their own built-in accounts and
-        members added by an administrator or through automatic account
-        creation will be automatically assigned the new member defaults.
-
-        Passing in `None` to the property will delete all the user settings.
-
-        **Settings Key/Value Dictionary**
-
-        ================  ===============================================================================
-        **Keys**          **Description**
-        ----------------  -------------------------------------------------------------------------------
-        role	          String/Role. The role ID. To assign a custom role as the new member default,
-                          provide a Role object.
-
-                          Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object
-        ----------------  -------------------------------------------------------------------------------
-        userLicenseType   String. The ID of a user type licensed with your organization. To see which
-                          user types are included with your organization's licensing, see the License
-                          resource in the Portal Admin API.
-
-                          Values: `creator`, `editor`, `Advanced GIS`, `Basic GIS`, `Standard GIS`,
-                          `viewer`, or `fieldWorker`
-        ----------------  -------------------------------------------------------------------------------
-        groups            List of String/Groups. An array of group ID numbers or `Group` objects that
-                          specify the groups new members will be added to.
-        ----------------  -------------------------------------------------------------------------------
-        userType          String.  This key only applies to `ArcGIS Online`. If new members will have
-                          Esri access (both) or if Esri access will be disabled (arcgisonly). The default
-                          value is `arcgisonly`.
-
-                          Values: `arcgisonly` or `both`
-        ----------------  -------------------------------------------------------------------------------
-        apps              List of dictionaries.  An array of an app's itemID and, when applicable, entitlement.
-                          Example: `{"apps" :[{"itemId": "f761dd0f298944dcab22d1e888c60293","entitlements": ["Insights"]}]}`
-        ----------------  -------------------------------------------------------------------------------
-        appBundles        List of dictionaries. An array of an app bundle's ID.
-
-                          Example: `{"appBundles":[{"itemId": "99d7956c7e824ff4ab27422e2a26c2b7}]}`
-        ================  ===============================================================================
-
-        :returns:
-            A Dictionary
-
+        See main ``user_settings`` property docstring
         """
         user_li_lu = {
             "creatorUT": "creatorUT",
@@ -8665,8 +8593,16 @@ class Group(dict):
     @property
     def protected(self):
         """
-        Indicates if the group is protected from deletion. Set it to `True`
-        to protect the group and `False` to unprotect it.
+        Indicates if the group is protected from deletion.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required bool.
+                                Values: True (protect group) | False (unprotect)
+        ==================      ====================================================================
+        
+        :return: True if group currently protected, False if unprotected
         """
         return self["protected"]
 
@@ -8674,8 +8610,7 @@ class Group(dict):
     @protected.setter
     def protected(self, value):
         """
-        If set to True, the group will be prevented from being deleted.
-        If false, a group can be deleted.
+        See main ``protected`` property docstring
         """
         params = {"f": "json"}
         if value == True and self.protected == False:
@@ -9596,6 +9531,14 @@ class User(dict):
         Please see the `Enable Esri access <https://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23>`_
         section in the Manage members page in ArcGIS Online Resources for more information.
 
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        value             Required boolean. The current user will be allowed to use
+                          the username for other Esri/ArcGIS logins when the value
+                          is set to True. If false, the account can only be used to
+                          access a given individual's organization.
+        ================  ==========================================================
 
         """
         if self._portal.is_arcgisonline:
@@ -9608,29 +9551,8 @@ class User(dict):
     @esri_access.setter
     def esri_access(self, value):
         """
-
-        Enable or disable 'Esri access'. Administrator privileges required.
-        A member whose account has Esri access enabled can use My Esri and
-        Community and Forums (GeoNet), access e-Learning on the Training
-        website, and manage email communications from Esri. The member
-        cannot enable or disable their own access to these Esri resources.
-
-        **Trial** accounts cannot modify esri_access property.
-
-        Please see the `Enable Esri access <http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23>`_
-        section in the ArcGIS Online Resources for more information.
-
-
-        ================  ==========================================================
-        **Argument**      **Description**
-        ----------------  ----------------------------------------------------------
-        value             Required boolean. The current user will be allowed to use
-                          the username for other Esri/ArcGIS logins when the value
-                          is set to True. If false, the account can only be used to
-                          access a given individual's organization.
-        ================  ==========================================================
-        """
-        if self._portal.is_arcgisonline:
+        See main ``esri_access`` property docstring
+        """        if self._portal.is_arcgisonline:
             if value == True:
                 ret = self._portal.update_user(self._user_id, user_type="both")
             else:
@@ -10490,19 +10412,7 @@ class Item(dict):
     @content_status.setter
     def content_status(self, value):
         """
-        The ``content_status property`` states if an item is authoritative or deprecated. This
-        givens owners and administrators of an `Item` the ability to warn users whether they should be utilizing or
-        accessing this information.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Optional string or None.  Defines if an Item is deprecated or
-                               authoritative.
-                               If a value of None is given, then the value will be reset.
-
-                               Allowsed Values: authoritative, deprecated, or None
-        ==================     ====================================================================
+        See main ``content_status`` property docstring
         """
         status_values = [
             "authoritative",
@@ -11071,8 +10981,7 @@ class Item(dict):
     @metadata.setter
     def metadata(self, value):
         """
-        For metadata enabled site, users can get/set metadata from a file
-        or XML text.
+        See main ``metadata`` property docstring
         """
         import shutil
         from six import string_types
@@ -13217,7 +13126,19 @@ class Item(dict):
     @property
     def rating(self):
         """
-        Gets or sets the rating given by the current user to the item.
+        Get/Set the rating given by the current user to the item.
+        Set adds a rating to an item to which you have access - Only one rating
+        can be given to an item per user. If this call is made on a
+        currently rated item, the new rating will overwrite the existing
+        rating. A user cannot rate their own item. Available only to
+        authenticated users.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required float. The rating to be applied for the item. The value
+                            must be a floating point number between 1.0 and 5.0.
+        ===============     ====================================================================
         """
         url = "%s/sharing/rest/content/items/%s/rating" % (self._portal.url, self.id)
         params = {"f": "json"}
@@ -13230,20 +13151,7 @@ class Item(dict):
     @rating.setter
     def rating(self, value):
         """
-        The ``rating`` method adds a rating to an item to which you have access - Only one rating
-        can be given to an item per user. If this call is made on a
-        currently rated item, the new rating will overwrite the existing
-        rating. A user cannot rate their own item. Available only to
-        authenticated users.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        value               Required float. The rating to be applied for the item. The value
-                            must be a floating point number between 1.0 and 5.0.
-        ===============     ====================================================================
-
-
+        See main ``rating`` property docstring
         """
         url = "%s/sharing/rest/content/items/%s/addRating" % (self._portal.url, self.id)
         params = {"f": "json", "rating": float(value)}

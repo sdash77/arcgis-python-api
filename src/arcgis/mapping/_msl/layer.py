@@ -127,19 +127,7 @@ class MapFeatureLayer(Layer):
     @time_filter.setter
     def time_filter(self, value):
         """
-        Starting at Enterprise 10.7.1+, instead of querying time-enabled map
-        service layers or time-enabled feature service layers, a time filter
-        can be specified. Time can be filtered as a single instant or by
-        separating the two ends of a time extent with a comma.
-
-        ================     =================================================
-        **Input**            **Description**
-        ----------------     -------------------------------------------------
-        value                Required Datetime/List Datetime. This is a single
-                             or list of start/stop date.
-        ================     =================================================
-
-        :returns: String of datetime values as milliseconds from epoch
+        See main ``time_filter`` property docstring
         """
         import datetime as _dt
 
@@ -168,13 +156,15 @@ class MapFeatureLayer(Layer):
     @property
     def renderer(self):
         """
-        The ``renderer`` property retrieves the Renderer of the Map Feature Layer.
+        Get/Set the Renderer of the Map Feature Layer.
 
         .. note::
             The ``renderer`` property overrides the default symbology when displaying it on a
             :class:`~arcgis.mapping.WebMap`.
 
-        :returns: InsensitiveDict
+        :return:
+            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
+            A varients of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict

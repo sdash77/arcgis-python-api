@@ -94,23 +94,7 @@ class FeatureLayer(Layer):
     @time_filter.setter
     def time_filter(self, value):
         """
-        The ``time_filter`` method is used to set a time filter instead of querying time-enabled map
-        service layers or time-enabled :class:`~arcgis.features.FeatureLayer`, a time filter
-        can be specified. Time can be filtered as a single instant or by
-        separating the two ends of a time extent with a comma.
-
-        .. note::
-            The ``time_filter`` method is supported starting at Enterprise 10.7.1+.
-
-        ================     =================================================
-        **Input**            **Description**
-        ----------------     -------------------------------------------------
-        value                Required Datetime/List Datetime. This is a single
-                             or list of start/stop date.
-        ================     =================================================
-
-        :returns:
-            A string of datetime values as milliseconds from epoch
+        See main ``time_filter`` property docstring
         """
         import datetime as _dt
 
@@ -139,7 +123,13 @@ class FeatureLayer(Layer):
     def renderer(self):
         """
         Get/Set the Renderer of the Feature Layer.  
-        
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required dict.
+        ==================      ====================================================================
+
         ..note::
             When set, this overrides the default symbology when displaying it on a webmap.
 
@@ -156,6 +146,9 @@ class FeatureLayer(Layer):
 
     @renderer.setter
     def renderer(self, value):
+        """
+        See main ``renderer`` property docstring
+        """
         from arcgis._impl.common._isd import InsensitiveDict
 
         if isinstance(value, (dict, PropertyMap)):
@@ -334,7 +327,11 @@ class FeatureLayer(Layer):
         Get/Set the :class:`~arcgis.features.FeatureLayerCollection` to which this
         layer belongs.
 
-        Set values: A Feature Layer Collection
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required :class`~arcgis.features.FeatureLayerCollection`.
+        ==================      ====================================================================
 
         :return:
             The Feature Layer Collection where the layer is stored
@@ -343,6 +340,9 @@ class FeatureLayer(Layer):
 
     @container.setter
     def container(self, value):
+        """
+        See main ``container`` property docstring
+        """
         self._storage = value
 
     def export_attachments(self, output_folder, label_field=None):

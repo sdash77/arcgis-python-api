@@ -857,7 +857,7 @@ class FormElement:
 
     @property
     def element_type(self):
-        """Gets the element type of the form element."""
+        """Get/Set the element type of the form element."""
         return self._element_type
 
     @element_type.setter
@@ -1050,7 +1050,19 @@ class FormFieldElement(FormElement):
 
     @property
     def input_type(self):
-        """Gets/sets the input type of the form element."""
+        """
+        Gets/sets the input type of the form element.
+        
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string. 
+                            Values: "text-area" | "text-box" | "barcode-scanner" | "combo-box" |
+                                    "radio-buttons" | "datetime-picker"
+        ===============     ====================================================================
+
+        :return: String that represents the input type
+        """
         return self._input_type
 
     @input_type.setter
@@ -1190,7 +1202,16 @@ class FormGroupElement(FormElement):
 
     @property
     def initial_state(self):
-        """Gets/sets the initial state of the form element."""
+        """
+        Gets/sets the initial state of the form element.
+        
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string. 
+                            Values: "collapsed" | "expanded"
+        ===============     ====================================================================
+        """
         return self._initial_state
 
     @initial_state.setter

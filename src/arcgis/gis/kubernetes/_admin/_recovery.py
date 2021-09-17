@@ -254,16 +254,7 @@ class RecoveryManager(_BaseKube):
     @settings.setter
     def settings(self, value: Dict[str, Any]) -> None:
         """
-        Gets/Sets the currently configured disaster recovery settings.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required Dict[str, Any]. Dictionary describing disaster recovery
-                               settings.
-        ==================     ====================================================================
-
-        :returns: Dict[str, Any]
+        See main ``settings`` property docstring
         """
         url = f"{self._url}/settings/update"
         params = {

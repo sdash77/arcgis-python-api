@@ -40,16 +40,7 @@ class UX(object):
     @summary.setter
     def summary(self, text):
         """
-        Allows the get/setting of a brief summary to describe your organization on the sign in page
-        associated with its custom apps and sites. This summary has a maximum of 310 characters.
-
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        text              Required string. The brief description of the organization.
-        ================  ===============================================================
-
-        :return: string
+        See main ``summary`` property docstring
         """
         if text == "":
             text = None
@@ -275,7 +266,13 @@ class UX(object):
     @property
     def name(self):
         """
-        Returns the site's name.  The name can get defined using the 'set_name()'.
+        Get/Set the site's name.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        name              required string. Name of the site.
+        ================  ===============================================================
 
          :return: string of the name of the site
         """
@@ -285,15 +282,7 @@ class UX(object):
     @name.setter
     def name(self, name):
         """
-        Allows for the setting of a site's name.
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        name              required string. Name of the site.
-        ================  ===============================================================
-
-
-         :return: boolean
+        See main ``name`` property docstring
         """
         import json
 
@@ -319,9 +308,16 @@ class UX(object):
     @property
     def description(self):
         """
-        Returns the site's description.
+        Get/Set the site's description.
 
-         :return: dictionary
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        description       Required string. Descriptive text of the site. If None, the
+                          value is reset to default.
+        ================  ===============================================================
+        
+        :return: dictionary
         """
         return self._gis.properties["description"]
 
@@ -329,7 +325,14 @@ class UX(object):
     @property
     def description_visibility(self):
         """
-        Returns the site's description visibility
+        Get/Set the site's description visibility
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        visiblity         Required boolean. If True, the desciptive text will show on the
+                          home page. If False, the descriptive text will not be displayed
+        ================  ===============================================================
 
          :return: boolean
         """
@@ -339,15 +342,7 @@ class UX(object):
     @description_visibility.setter
     def description_visibility(self, visiblity):
         """
-        Allows for the setting of a site's description.
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        visiblity         optional boolean. If True, the desciptive text will show on the
-                          home page. If False, the descriptive text will not be displayed
-        ================  ===============================================================
-
-         :return: boolean
+        See main ``description_visibility`` property docstring
         """
         return self._gis.update_properties({"showHomePageDescription": visiblity})
 
@@ -355,15 +350,7 @@ class UX(object):
     @description.setter
     def description(self, description=None):
         """
-        Allows for the setting of a site's description.
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        description       optional string. descriptive text of the site. If None, the
-                          value is reset to default.
-        ================  ===============================================================
-
-         :return: boolean
+        See main ``description`` property docstring
         """
         if description is None:
             description = "<br/>"
@@ -375,12 +362,22 @@ class UX(object):
         """
         Gets/Sets the featured content group information.
 
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        content           Required dictionary, defines the group and count of the feature
+                          content area on an organizational site.  A value of None will
+                          reset the value back to the install defaults.
+                          Example:
+                          {'group': <group id>, 'count' : 12}
+        ================  ===============================================================
+
           :return: dictionary
 
         :Usage Example:
 
         >>> data = ux.get_featured_content()
-        >>> ux.set_featured_content(data)
+        >>> ux.set_featured_content = data
         True
 
         """
@@ -393,18 +390,7 @@ class UX(object):
     @featured_content.setter
     def featured_content(self, content):
         """
-        Sets the featured content group for the homepage.
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        content           optional dictionary, defines the group and count of the feature
-                          content area on an organizational site.  A value of None will
-                          reset the value back to the install defaults.
-                          Example:
-                          {'group': <group id>, 'count' : 12}
-        ================  ===============================================================
-
-         :return: boolean
+        See main ``featured_content`` property docstring
         """
         from .. import Group
 
@@ -577,15 +563,8 @@ class UX(object):
     @property
     def enable_comments(self):
         """
-        Turn on item comments
-        """
-        return self._gis.properties["commentsEnabled"]
+        Get/Set item commenting and comments.
 
-    # ----------------------------------------------------------------------
-    @enable_comments.setter
-    def enable_comments(self, enable=False):
-        """
-        Sets the comments property on the items
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
@@ -593,8 +572,15 @@ class UX(object):
                           on.  False will disable comments (default)
         ================  ===============================================================
 
-         :return: boolean
+        :return: True if enabled, False if disabled
+        """
+        return self._gis.properties["commentsEnabled"]
 
+    # ----------------------------------------------------------------------
+    @enable_comments.setter
+    def enable_comments(self, enable=False):
+        """
+        See main ``enable_comments`` property docstring.
         """
         return self._gis.update_properties({"commentsEnabled": enable})
 
@@ -602,7 +588,19 @@ class UX(object):
     @property
     def default_extent(self):
         """
-        returns the site's default extent
+        Get/Set the site's default extent
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        extent            Required dictionary. The default extent defines where a webmap
+                          will open.
+                          If a value of None is given, the default extent will be provided.
+                          Example Extent (default):
+                          {"type":"extent","xmin":-17999999.999994524,"ymin":-11999999.999991827,
+                          "xmax":17999999.999994524,"ymax":15999999.999982955,
+                          "spatialReference":{"wkid":102100}}
+        ================  ===============================================================
 
           :return: dictionary
         """
@@ -612,21 +610,7 @@ class UX(object):
     @default_extent.setter
     def default_extent(self, extent):
         """
-        defines the site's default extent
-
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        extent            optional dictionary. The default extent defines where a webmap
-                          will open.
-                          If a value of None is given, the default extent will be provided.
-                          Example Extent (default):
-                          {"type":"extent","xmin":-17999999.999994524,"ymin":-11999999.999991827,
-                          "xmax":17999999.999994524,"ymax":15999999.999982955,
-                          "spatialReference":{"wkid":102100}}
-        ================  ===============================================================
-
-          :return: boolean
+        See main ``default_extent`` property docstring
         """
         if extent is None:
             extent = {
@@ -643,7 +627,18 @@ class UX(object):
     @property
     def default_basemap(self):
         """
-        returns the site's default extent
+        Get/Set the site's default basemap.
+
+        The Default Basemap opens when users click New Map. Set the group
+        in the Basemap Gallery above and choose the map to open. It will
+        open at the default extent you set.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        basemap           Required string. The new default basemap to set. If None, the
+                          default value will be set.
+        ================  ===============================================================
 
           :return: dictionary
         """
@@ -653,16 +648,7 @@ class UX(object):
     @default_basemap.setter
     def default_basemap(self, basemap):
         """
-        The Default Basemap opens when users click New Map. Set the group
-        in the Basemap Gallery above and choose the map to open. It will
-        open at the default extent you set.
-
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        basemap           optional string. The new default basemap to set. If None, the
-                          default value will be set.
-        ================  ===============================================================
+        See main ``default_basemap`` property docstring
         """
         if basemap is None:
             basemap = ""
@@ -672,16 +658,7 @@ class UX(object):
     @property
     def vector_basemap(self):
         """
-        gets/sets the default vector basemap
-        """
-        return self._gis.properties["defaultVectorBasemap"]
-
-    # ----------------------------------------------------------------------
-    @vector_basemap.setter
-    def vector_basemap(self, basemap):
-        """
-        gets/sets the default vector basemap
-
+        Get/Set the default vector basemap
 
         ================  ===============================================================
         **Argument**      **Description**
@@ -689,5 +666,15 @@ class UX(object):
         basemap           required dictionary. The new default vector basemap to set for
                           a given site.
         ================  ===============================================================
+
+        :return: The current default vector basemap
+        """
+        return self._gis.properties["defaultVectorBasemap"]
+
+    # ----------------------------------------------------------------------
+    @vector_basemap.setter
+    def vector_basemap(self, basemap):
+        """
+        See main ``vector_basemap`` property docstring
         """
         return self._gis.update_properties({"defaultVectorBasemap": basemap})

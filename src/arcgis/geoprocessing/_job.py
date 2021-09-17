@@ -68,7 +68,7 @@ class GPJob(object):
     @property
     def ellapse_time(self):
         """
-        Returns the Ellapse Time for the Job
+        Get the Ellapse Time for the Job
         """
         if self._end_time:
             return self._end_time - self._start_time
@@ -106,7 +106,7 @@ class GPJob(object):
     # ----------------------------------------------------------------------
     @property
     def task(self):
-        """Returns the task name.
+        """Get the task name.
         :returns: string
         """
         if self._task_name is None:
@@ -117,7 +117,7 @@ class GPJob(object):
     @property
     def messages(self):
         """
-        Returns the service's messages
+        Get the service's messages
 
         :returns: List
         """
@@ -133,7 +133,7 @@ class GPJob(object):
     @property
     def status(self):
         """
-        returns the GP status
+        Get the GP status
 
         :returns: String
         """

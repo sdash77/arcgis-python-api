@@ -202,7 +202,9 @@ class System(BasePortalAdmin):
     def properties(self):
         """
         Gets/Sets the system properties that have been modified to control
-        the portal's environment. The list of available properties are:
+        the portal's environment. 
+        
+        The list of available properties are:
          - privatePortalURL-Informs the portal that it has a front end
            load-balancer/proxy reachable at the URL. This property is
            typically used to set up a highly available portal configuration
@@ -246,42 +248,7 @@ class System(BasePortalAdmin):
     @properties.setter
     def properties(self, properties):
         """
-        Gets/Sets the system properties that have been modified to control
-        the portal's environment. The list of available properties are:
-         - privatePortalURL-Informs the portal that it has a front end
-           load-balancer/proxy reachable at the URL. This property is
-           typically used to set up a highly available portal configuration
-         - portalLocalhostName-Informs the portal back-end to advertise the
-           value of this property as the local portal machine. This is
-           typically used during federation and when the portal machine has
-           one or more public host names.
-         - httpProxyHost-Specifies the HTTP hostname of the proxy server
-         - httpProxyPort-Specifies the HTTP port number of the proxy server
-         - httpProxyUser-Specifies the HTTP proxy server username.
-         - httpProxyPassword-Specifies the HTTP proxy server password.
-         - isHttpProxyPasswordEncrypted-Set this property to false when you
-           are configuring the HTTP proxy server password in plain text.
-           After configuration, the password will be encrypted and this
-           property will be set to true
-         - httpsProxyHost-Specifies the HTTPS hostname of the proxy server
-         - httpsProxyPort-Specifies the HTTPS port number of the proxy
-           server
-         - httpsProxyUser-Specifies the HTTPS proxy server username
-         - httpsProxyPassword-Specifies the HTTPS proxy server password
-         - isHttpsProxyPasswordEncrypted-Set this property to false when
-           you are configuring the HTTPS proxy server password in plain
-           text. After configuration, the password will be encrypted and
-           this property will be set to true.
-         - nonProxyHosts-If you want to federate ArcGIS Server and the site
-           does not require use of the forward proxy, list the server
-           machine or site in the nonProxyHosts property. Machine and
-           domain items are separated using a pipe (|).
-         - WebContextURL-If you are using a reverse proxy, set this
-           property to reverse proxy URL.
-        - ldapCertificateValidation-Introduced at 10.7. When set to true,
-           any encrypted LDAP communication (LDAPS) made from the portal to
-           the user or group identity store will enforce certificate
-           validation. The default value is false.
+        See main ``properties`` property docstring
         """
         url = "%s/properties/update" % self._url
         params = {"f": "json", "properties": properties}
@@ -371,11 +338,7 @@ class System(BasePortalAdmin):
     @database.setter
     def database(self, value):
         """
-        The database resource represents the database management system
-        (DBMS) that contains all of the portal's configuration and
-        relationship rules. This resource also returns the name and version
-        of the database server currently running in the portal.
-        You can use the properety to update database accounts
+        See main ``database`` property docstring
         """
         url = "%s/database" % self._url
         params = {"f": "json"}
@@ -553,24 +516,7 @@ class System(BasePortalAdmin):
     @content_discovery.setter
     def content_discovery(self, value):
         """
-        This resource allows an administrator to enable or disable external content discovery from the portal website.
-        Because some Esri-provided content requires external access to the internet, an administrator may choose to disable the content to prevent requests to ArcGIS Online resources. When disabling the content, a select group of items will be disabled:
-
-        - All basemaps owned by "esri_[lang]"
-        - All content owned by "esri_nav"
-        - All content owned by "esri"
-
-        This resource will not disable ArcGIS Online utility services or Living Atlas content. For steps to disable these items, refer to the Portal Administrator guide.
-
-        When external content is disabled, System Languages are also disabled.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  required Boolean. If true, external content is enabled, else it is
-                               disabled.
-        ==================     ====================================================================
-
+        See main ``content_discovery`` property docstring
         """
         import json
 
@@ -655,6 +601,14 @@ class WebAdaptors(BasePortalAdmin):
         """
         Gets/Sets the common properties and configuration of the ArcGIS Web
         Adaptor configured with the portal.
+        
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        shared_key                      Required string. This property represents credentials that are shared
+                                        with the Web Adaptor. The Web Adaptor uses these credentials to
+                                        communicate with the portal
+        ===========================     ====================================================================
         """
         url = "%s/config" % self._url
         params = {"f": "json"}
@@ -664,18 +618,7 @@ class WebAdaptors(BasePortalAdmin):
     @configuration.setter
     def configuration(self, shared_key):
         """
-        Gets/Sets the common properties and configuration of the ArcGIS Web
-        Adaptor configured with the portal.
-
-        ===========================     ====================================================================
-        **Argument**                    **Description**
-        ---------------------------     --------------------------------------------------------------------
-        shared_key                      Required string. This property represents credentials that are shared
-                                        with the Web Adaptor. The Web Adaptor uses these credentials to
-                                        communicate with the portal
-        ===========================     ====================================================================
-
-
+        See main ``configuration`` property docstring
         """
         url = "%s/config/update" % self._url
         if isinstance(shared_key, str):

@@ -145,6 +145,13 @@ class LicenseManager(BasePortalAdmin):
         the enterprise users cannot check out licenses to work in a disconnected setting
         for ArcGIS Pro.
 
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required bool. 
+                            Value: True | False
+        ===============     ====================================================================
+        
         :returns: Boolean
 
         """
@@ -155,12 +162,7 @@ class LicenseManager(BasePortalAdmin):
     @offline_pro.setter
     def offline_pro(self, value):
         """
-        Administrators can get/set the disconnect settings for the ArcGIS Pro licensing.
-        A value of True means that a user can check out a license from the enterprise
-        inorder to use it in a disconnected setting.  By setting `offline_pro` to False,
-        the enterprise users cannot check out licenses to work in a disconnected setting
-        for ArcGIS Pro.
-
+        See main ``offline_pro`` property docstring
         """
         import json
 

@@ -204,25 +204,8 @@ class CSVLayer(BaseOpenData):
     # ----------------------------------------------------------------------
     @delimiter.setter
     def delimiter(self, value):
-        r"""
-        Gets/Sets the delimiter for the CSV Layer.  The default is `,`
-
-        ===========   ==========================================
-        **Values**    **Description**
-        -----------   ------------------------------------------
-        ,             Comma
-        -----------   ------------------------------------------
-        " "           space
-        -----------   ------------------------------------------
-        ;             semicolon
-        -----------   ------------------------------------------
-        |             pipe
-        -----------   ------------------------------------------
-        `\r`          tab
-        ===========   ==========================================
-
-        :returns: string
-
+        """
+        See main ``delimiter`` property docstring
         """
         if value in [",", " ", ";", "|", "\r"] and self._delimiter != value:
             self._delimiter = value
@@ -250,12 +233,7 @@ class CSVLayer(BaseOpenData):
                 if isinstance(col_val, (str, np.str)):
                     fields.append({"name": col, "type": "string", "alias": col})
                 elif isinstance(
-                    col_val,
-                    (
-                        datetime.datetime,
-                        pd.Timestamp,
-                        np.datetime64,
-                    ),
+                    col_val, (datetime.datetime, pd.Timestamp, np.datetime64,),
                 ):
                     fields.append({"name": col, "type": "date", "alias": col})
                 elif isinstance(col_val, (np.int32, np.int16, np.int8)):

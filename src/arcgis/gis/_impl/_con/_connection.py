@@ -1406,7 +1406,7 @@ class Connection(object):
     # ----------------------------------------------------------------------
     @property
     def token(self):
-        """Gets a Token"""
+        """Get/Set a Token"""
         if str(self._auth).lower() in ["builtin", "oauth"]:
             if self._expiration is None or self._expiration <= 5:
                 self._expiration = 6

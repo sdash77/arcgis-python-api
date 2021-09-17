@@ -92,7 +92,13 @@ class _DotDensity(object):
     @property
     def background(self):
         """
-        Returns the background color
+        Get/Set the background color
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string. Color to set the background to.
+        ===============     ====================================================================
 
         :returns: List
 
@@ -103,7 +109,24 @@ class _DotDensity(object):
     @property
     def shape(self):
         """
-        Returns the shape of the dots
+        Get/Set the shape of the dots
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string. 
+                            Values: "o" | "+" | "d" | "s" | "x"
+        ===============     ====================================================================
+
+        :return: 
+            The string representing the dot shape
+            {
+            "o": "Circle",  # default
+            "+": "Cross",
+            "d": "Diamond",
+            "s": "Square",
+            "x": "X",
+            }
         """
         return self._dot_shape
 
@@ -126,7 +149,7 @@ class _DotDensity(object):
     # ----------------------------------------------------------------------
     @property
     def unit(self):
-        """gets/sets the units"""
+        """Get/Set the units"""
         return self._unit
 
     # ----------------------------------------------------------------------
@@ -138,13 +161,23 @@ class _DotDensity(object):
     # ----------------------------------------------------------------------
     @property
     def size(self):
-        """returns the size of the dots"""
+        """Get/Set the size of the dots"""
         return self._dot_size
 
     # ----------------------------------------------------------------------
     @property
     def ref_scale(self):
-        """reference scale"""
+        """
+        Get/Set the reference scale
+        
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required int or float.
+        ===============     ====================================================================
+        
+        :return: Int or float value depicting the current reference scale
+        """
         return self._ref_scale
 
     # ----------------------------------------------------------------------
@@ -305,7 +338,7 @@ class _DotDensity(object):
     @property
     def dot_value(self):
         """
-        Get/Sets what each dot is worth. This should be an float/integer.
+        Get/Set what each dot is worth. This should be an float/integer.
         """
         return self._dot_value
 

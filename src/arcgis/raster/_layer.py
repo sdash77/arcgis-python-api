@@ -754,7 +754,7 @@ class ImageryLayer(Layer):
     @property
     def extent(self):
         """
-        The ``extent`` property represents the area of interest.
+        Get/Set the area of interest.
         The ``extent`` property is used for displaying the :class:`~arcgis.raster.ImageryLayer` when queried.
         """
         if self._extent is None:
@@ -6873,7 +6873,7 @@ class Raster:
     @property
     def extent(self):
         """
-        The ``extent`` property represents the area of interest. Used for displaying the
+       Get/Set the area of interest. Used for displaying the
          :class:`~arcgis.raster.Raster when queried.
 
         """
@@ -6888,7 +6888,7 @@ class Raster:
     @property
     def cmap(self):
         """
-        The ``cmap`` property represents what matplotlib colormap to apply to the raster when displaying a 1 band raster
+        Get/Set what matplotlib colormap to apply to the raster when displaying a 1 band raster
         in a :class:`~arcgis.widgets.MapView` widget.
 
         .. note::
@@ -6957,7 +6957,7 @@ class Raster:
     @property
     def opacity(self):
         """
-        The ``opacity`` property represents what opacity to apply when displaying in a
+        Get/Set what opacity to apply when displaying in a
         :class:`~arcgis.widgets.MapView` widget.
 
         .. note::

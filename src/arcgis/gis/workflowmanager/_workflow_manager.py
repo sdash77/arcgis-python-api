@@ -2131,7 +2131,7 @@ class Job(object):
     @property
     def location(self):
         """
-        Returns the job location for the user-defined job
+        Get/Set the job location for the user-defined job
 
         :return: Workflow Manager Job Location Object
         """

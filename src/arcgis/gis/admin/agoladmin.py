@@ -77,24 +77,7 @@ class AGOLAdminManager(object):
         completely optional and anonymous; none of the information
         collected is used to identify or contact members of your
         organization.
-        """
-        return self._gis.properties["eueiEnabled"]
-
-    # ----------------------------------------------------------------------
-    @_user_experience_program.setter
-    def _user_experience_program(self, value):
-        """
-        ArcGIS Online works continuously to improve our products and one of
-        the best ways to find out what needs improvement is through
-        customer feedback. The Esri User Experience Improvement program
-        (EUEI) allows your organization to contribute to the design and
-        development of ArcGIS Online. The program collects information
-        about the usage of ArcGIS Online including hardware and browser
-        characteristics, without interrupting work. The program is
-        completely optional and anonymous; none of the information
-        collected is used to identify or contact members of your
-        organization.
-
+        
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -102,7 +85,14 @@ class AGOLAdminManager(object):
                             in the Esri User Experience Improvement Program. False means the
                             organization will not be part of the program.
         ===============     ====================================================================
+        """
+        return self._gis.properties["eueiEnabled"]
 
+    # ----------------------------------------------------------------------
+    @_user_experience_program.setter
+    def _user_experience_program(self, value):
+        """
+        See main ``_user_experience_program`` property docstring.
         """
         if value != self._user_experience_program:
             self._gis.update_properties(

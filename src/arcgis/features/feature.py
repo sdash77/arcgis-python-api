@@ -182,10 +182,15 @@ class Feature(object):
     def geometry(self):
         """
         Get/Set the geometry of the feature, if any
-        
-        Values: 'Polyline' | 'Polygon' | 'Point'
 
-        :return: The feature's geometry
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+                                Values: 'Polyline' | 'Polygon' | 'Point'
+        ==================      ====================================================================
+
+        :return: The feature's geometry as a string
         
         """
         if self._geom is None:
@@ -197,6 +202,9 @@ class Feature(object):
 
     @geometry.setter
     def geometry(self, value):
+        """
+        See main ``geometry`` property docstring
+        """
         self._geom = value
         self._dict["geometry"] = value
 
@@ -205,6 +213,12 @@ class Feature(object):
     def attributes(self):
         """
         Get/Set the attribute values for a feature
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required dict.
+        ==================      ====================================================================
 
         :return: 
             A dictionary of feature attribute values with field names as the key
@@ -217,6 +231,9 @@ class Feature(object):
 
     @attributes.setter
     def attributes(self, value):
+        """
+        See main ``attributes`` property docstring
+        """
         self._attributes = value
         self._dict["attributes"] = value
 
@@ -1170,7 +1187,12 @@ class FeatureSet(object):
         """
         Get/Set the Feature Set's spatial reference
 
-        Ex: FeatureSet.spatial_reference = {"wkid": 4326}
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required dict.
+                                (e.g. {"wkid" : 4326})
+        ==================      ====================================================================
 
         :returns:
             A :class:`~arcgis.geometry.SpatialReference`
@@ -1182,8 +1204,7 @@ class FeatureSet(object):
     @spatial_reference.setter
     def spatial_reference(self, value):
         """
-        Sets Feature Set object's spatial reference.
-
+        See main ``spatial_reference`` property docstring
         """
         if isinstance(value, SpatialReference):
             self._spatial_reference = value
@@ -1199,9 +1220,15 @@ class FeatureSet(object):
     def has_z(self):
         """
         Get/Set the Z-property of the Feature Set object
-        Set values: True | False
 
-        :returns:
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required bool.
+                                Values: True | False
+        ==================      ====================================================================
+
+       :returns:
             The Z-value of the :class:`~arcgis.features.FeatureSet` object
         """
         return self._has_z
@@ -1209,6 +1236,9 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @has_z.setter
     def has_z(self, value):
+        """
+        See main ``has_z`` property docstring
+        """
         if isinstance(value, bool):
             self._has_z = value
 
@@ -1217,7 +1247,13 @@ class FeatureSet(object):
     def has_m(self):
         """
         Get/Set the M-property of the Feature Set object.
-        Set values: True | False
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required bool.
+                                Values: True | False
+        ==================      ====================================================================
 
         :returns:
             The M-value of the :class:`~arcgis.features.FeatureSet` object
@@ -1227,7 +1263,9 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @has_m.setter
     def has_m(self, value):
-
+        """
+        See main ``has_m`` property docstring
+        """
         if isinstance(value, bool):
             self._has_m = value
 
@@ -1236,7 +1274,13 @@ class FeatureSet(object):
     def geometry_type(self):
         """
         Get/Set the ``Type`` of the Feature Set object.
-        Set values: ``Polygon`` | ``Polyline`` | ``Point``
+ 
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+                                Values: 'Polygon' | 'Polyline' | 'Point'
+        ==================      ====================================================================
 
         :returns:
             A string representing the geometry type of the :class:`~arcgis.features.FeatureSet` object
@@ -1246,7 +1290,9 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @geometry_type.setter
     def geometry_type(self, value):
-
+        """
+        See main ``geometry_type`` property docstring
+        """
         if value in self._allowed_geom_types:
             self._geometry_type = value
 
@@ -1255,7 +1301,12 @@ class FeatureSet(object):
     def object_id_field_name(self):
         """
         Get/Set the object id field of the Feature Set object
-        Set value: A string
+        
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+        ==================      ====================================================================
 
         :returns:
             A string representing the object id field name
@@ -1265,7 +1316,9 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @object_id_field_name.setter
     def object_id_field_name(self, value):
-
+        """
+        See main ``object_id_field_name`` property docstring
+        """
         self._object_id_field_name = value
 
     # ----------------------------------------------------------------------
@@ -1273,7 +1326,13 @@ class FeatureSet(object):
     def global_id_field_name(self):
         """
         Get/Set the ``global ID`` field  for the Feature Set object.
-        Set value: A string
+        
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+        ==================      ====================================================================
+
 
         :returns:
             A string
@@ -1283,7 +1342,9 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @global_id_field_name.setter
     def global_id_field_name(self, value):
-
+        """
+        See main ``global_id_field_name`` property docstring
+        """
         self._global_id_field_name = value
 
     # ----------------------------------------------------------------------
@@ -1291,7 +1352,12 @@ class FeatureSet(object):
     def display_field_name(self):
         """
         Get/Set the ``display`` field for the Feature Set object.
-        Set value: A string
+        
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+        ==================      ====================================================================
 
         :returns:
             A String
@@ -1301,7 +1367,9 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @display_field_name.setter
     def display_field_name(self, value):
-        """gets/sets the displayFieldName"""
+        """
+        See main ``display_field_name`` property docstring
+        """
         self._display_field_name = value
 
     # ----------------------------------------------------------------------
@@ -1406,7 +1474,13 @@ class FeatureSet(object):
     def fields(self):
         """
         Get/Set the fields in the FeatureSet
-        Set values: A dictionary of field names
+        
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required dict.
+        ==================      ====================================================================
+
 
         :return:
             A dictionary
@@ -1442,7 +1516,9 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @fields.setter
     def fields(self, fields):
-
+        """
+        See main ``fields`` property docstring
+        """
         self._fields = fields
 
 

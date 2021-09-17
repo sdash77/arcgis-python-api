@@ -100,7 +100,16 @@ class Machine(object):
     # ----------------------------------------------------------------------
     @property
     def properties(self):
-        """returns the properties of the resource"""
+        """  
+        Get/Set the properties on the ArcGIS Notebook Server machine.
+
+        Set operation allows you to update properties on the ArcGIS
+        Notebook Server machine.
+
+        ArcGIS Notebook Server uses port 11443 for communication. When you
+        create a site, this is assigned as the default. You must ensure that
+        your firewall allows communication through port 11443.
+        """
         if self._properties is None:
             self._init()
         return self._properties
@@ -109,14 +118,7 @@ class Machine(object):
     @properties.setter
     def properties(self, value):
         """
-        This operation allows you to update properties on the ArcGIS
-        Notebook Server machine.
-
-        ArcGIS Notebook Server uses port 11443 for communication. When you
-        create a site, this is assigned as the default. You must ensure that
-        your firewall allows communication through port 11443.
-
-
+        See main ``properties`` property docstring.
         """
         import json
 

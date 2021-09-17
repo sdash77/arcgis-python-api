@@ -66,22 +66,17 @@ class SystemManager(object):
     @properties.setter
     def properties(self, value):
         """
-        Sets the ArcGIS Mission Server has configuration properties that govern
-        some of its intricate behavior. This resource is a container for
-        these properties. The properties are available to all server
-        objects and extensions through the server environment interface.
-
-        :returns: PropertyMap
+        See main ``properties`` property docstring.
         """
-        properties: {
-            "PushIdentityToDatabase": True,
-            "messageFormat": "esriServiceCatalogMessageFormatSoapOrBin",
-            "uploadFileExtensionWhitelist": "soe,sd,sde,csv,txt,kmz,geodatabase",
-            "featureServiceXSSFilter": "inputOutput",
-            "percentageMaxAllowedComputeCores": 50,
-            "percentageMaxAllowedComputeMemory": 50,
-        }
-        props = {}
+        # properties: {
+        #     "PushIdentityToDatabase": True,
+        #     "messageFormat": "esriServiceCatalogMessageFormatSoapOrBin",
+        #     "uploadFileExtensionWhitelist": "soe,sd,sde,csv,txt,kmz,geodatabase",
+        #     "featureServiceXSSFilter": "inputOutput",
+        #     "percentageMaxAllowedComputeCores": 50,
+        #     "percentageMaxAllowedComputeMemory": 50,
+        # }
+        # props = {}
         url = self._url + "/properties/update"
         params = {"f": "json", "properties": {}}
         current = dict(self.properties)

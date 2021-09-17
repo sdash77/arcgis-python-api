@@ -1164,18 +1164,7 @@ class GeoAccessor(object):
     @_meta.setter
     def _meta(self, source):
         """
-        Users have the ability to store the source reference back to the
-        dataframe.  This will allow the user to compare SeDF with source
-        data such as FeatureLayers and Feature Classes.
-
-        ===============   =======================================================
-        **Parameter**     **Description**
-        ---------------   -------------------------------------------------------
-        source            String/Object Reference to the source of the dataframe.
-        ===============   =======================================================
-
-        :returns: object/string
-
+        See main ``_meta`` property docstring
         """
         from ._tools import _metadata
 
@@ -1197,12 +1186,17 @@ class GeoAccessor(object):
     def renderer(self):
         """
         The ``renderer`` property defines the renderer for the Spatially-enabled DataFrame.
+        
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required dict. If none is given, then the value is reset
+        ==================      ====================================================================
 
-        .. note::
-            If none is given, then the value is reset.
+        :return:
+            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
+            A varients of a case-less dictionary that allows for dot and bracket notation.
 
-        :returns:
-            InsensitiveDict
         """
         if self._meta.renderer is None:
             self._meta.renderer = self._build_renderer()
@@ -1212,15 +1206,8 @@ class GeoAccessor(object):
     @renderer.setter
     def renderer(self, renderer):
         """
-        The ``renderer`` property defines the renderer for the SeDF.
-
-        .. note::
-            If none is given, then the value is reset.
-
-        :returns:
-            InsensitiveDict
+        See main ``renderer`` property docstring
         """
-
         if renderer is None:
             renderer = self._build_renderer()
         if isinstance(renderer, dict):
@@ -2956,14 +2943,7 @@ class GeoAccessor(object):
                 if fs["displayFieldName"] == "":
                     fs["displayFieldName"] = col
             elif (
-                isinstance(
-                    col_val,
-                    (
-                        datetime.datetime,
-                        pd.Timestamp,
-                        np.datetime64,
-                    ),
-                )
+                isinstance(col_val, (datetime.datetime, pd.Timestamp, np.datetime64,),)
                 or col in date_cols
             ):  # pd.datetime
                 fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
@@ -3034,7 +3014,14 @@ class GeoAccessor(object):
     @property
     def sr(self):
         """
-        The ``sr`` property gets and sets the :class:`~arcgis.geometry.SpatialReference` of the dataframe"""
+        The ``sr`` property gets and sets the :class:`~arcgis.geometry.SpatialReference` of the dataframe
+        
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Spatial Reference
+        ==================      ====================================================================
+        """
         data = [
             getattr(g, "spatialReference", None) or g["spatialReference"]
             for g in self._data[self.name]
@@ -3051,7 +3038,9 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     @sr.setter
     def sr(self, ref):
-        """Sets the spatial reference"""
+        """
+        See main ``sr`` property docstring
+        """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY:
             try:

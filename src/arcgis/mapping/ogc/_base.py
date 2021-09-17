@@ -67,7 +67,13 @@ class BaseOGC(object):
     @property
     def title(self) -> str:
         """
-        The title of the layer used to identify it in places such as the Legend and LayerList widgets.
+        Get/Set the title of the layer used to identify it in places such as the Legend and LayerList widgets.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string. Name of title
+        ===============     ====================================================================
 
         :returns: String
         """
@@ -77,9 +83,7 @@ class BaseOGC(object):
     @title.setter
     def title(self, value: str):
         """
-        The title of the layer used to identify it in places such as the Legend and LayerList widgets.
-
-        :returns: String
+        See main ``title`` property docstring
         """
         if self._title != value:
             self._title = value
@@ -88,7 +92,14 @@ class BaseOGC(object):
     @property
     def opacity(self) -> float:
         """
-        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
+        Get/Set the opacity value.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required float. Value can range between 1 and 0, where 0 is 100
+                            percent transparent and 1 is completely opaque.
+        ===============     ====================================================================
 
         :returns: Float
         """
@@ -98,9 +109,7 @@ class BaseOGC(object):
     @opacity.setter
     def opacity(self, value: float):
         """
-        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
-
-        :returns: Float
+        See main ``opacity`` property docstring
         """
         if isinstance(value, (float, int)):
             self._opacity = value
@@ -108,7 +117,17 @@ class BaseOGC(object):
     # ----------------------------------------------------------------------
     @property
     def scale(self):
-        """Gets/Sets the Min/Max Scale for the layer"""
+        """
+        Gets/Sets the Min/Max Scale for the layer
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required tuple. (Min_value, Max_value)
+        ===============     ====================================================================
+
+        :return: A tuple (min, max)
+        """
         return self._min_scale, self._max_scale
 
     # ----------------------------------------------------------------------
@@ -209,15 +228,7 @@ class BaseOpenData(BaseOGC):
     @sql_expression.setter
     def sql_expression(self, value):
         """
-        The SQL where clause used to filter features on the client. Only
-        the features that satisfy the definition expression are displayed
-        in the widget. Setting a definition expression is useful when the
-        dataset is large and you don't want to bring all features to the
-        client for analysis. The `sql_expressions` may be set when a
-        layer is constructed prior to it loading in the view or after it
-        has been loaded into the class.
-
-        :return: String
+        See main ``sql_expression`` property docstring.
         """
         if self._sql != value:
             self._sql = value
