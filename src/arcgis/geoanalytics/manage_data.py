@@ -134,7 +134,7 @@ def run_python_script(
     param_as_input    Optional Boolean. If True, the user_variable will be added if a method past. If False, the variable will not be given into the method.
     ================  ===============================================================
 
-    :returns: list of dictionary of messages from the code provided.
+    :returns: Dictionary of messages from the code provided.
 
     .. code-block:: python
 
@@ -298,7 +298,7 @@ def dissolve_boundaries(
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
-    :returns: result_layer : Output Features as feature layer collection item.
+    :returns: result_layer : Output Features as :class`~arcgis.features.FeatureLayerCollection`.
 
     .. code-block:: python
 
@@ -476,7 +476,7 @@ def merge_layers(
                       The default value is 'False'.
     ================  ===============================================================
 
-    :returns: result_layer : Output Features as feature layer item.
+    :returns: result_layer : Output Features as :class`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
 
@@ -598,7 +598,7 @@ def clip_layer(
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
-    :returns: feature layer collection
+    :returns: :class`~arcgis.features.FeatureLayerCollection`
 
     .. code-block:: python
 
@@ -773,7 +773,7 @@ def overlay_data(
                             The default value is 'False'.
     ======================  ===============================================================================
 
-    :returns: result_layer : Output Features as feature layer item.
+    :returns: result_layer : Output Features as :class`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
 
@@ -930,7 +930,7 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
                       execution.
     ================  ===============================================================
 
-    :returns: boolean
+    :returns: True or an error
 
     """
     kwargs = locals()
@@ -957,7 +957,6 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
         return True
     except:
         raise
-    return False
 
 
 def calculate_fields(
@@ -1040,7 +1039,7 @@ def calculate_fields(
     =================================================   ===============================================================
 
 
-    :returns: feature layer collection
+    :returns: :class`~arcgis.features.FeatureLayerCollection`
 
     .. code-block:: python
 
@@ -1163,7 +1162,7 @@ def copy_to_data_store(
                                  The default value is 'False'.
     ==========================   ===============================================================
 
-    :returns: result_layer : Output Features as feature layer item.
+    :returns: result_layer : Output Features as :class`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
 

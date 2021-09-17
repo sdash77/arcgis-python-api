@@ -1,7 +1,7 @@
 """
 These tools help answer one of the most common questions posed in spatial analysis: What is near what?
 
-create_buffers() creates areas of a specified distance from features.
+```create_buffers()``` creates areas of a specified distance from features.
 """
 import json as _json
 
@@ -86,7 +86,7 @@ def group_by_proximity(
     future                                                                 optional Boolean. If True, a GAJob is returned instead of results. The GAJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
 
-    :returns: Item when Future=False or GAJob when Future=True
+    :returns: :class`~arcgis.gis.Item` when Future=False or GAJob when Future=True
 
     """
     input_features = _prevent_bds_item(input_layer)
@@ -250,7 +250,7 @@ def trace_proximity_events(
     future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
 
-    :returns: Item when Future=False or GAJob when Future=True
+    :returns: :class`~arcgis.gis.Item` when Future=False or GAJob when Future=True
 
     """
     input_points = _prevent_bds_item(input_points)
@@ -476,7 +476,7 @@ def create_buffers(
                                                         The default value is 'False'
     ================================================    =========================================================
 
-    :returns: Output Features as a feature layer collection item
+    :returns: Output Features as a :class`~arcgis.features.FeatureLayerCollection`
 
     .. code-block:: python
 

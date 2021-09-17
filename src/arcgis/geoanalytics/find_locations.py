@@ -124,7 +124,7 @@ def geocode_locations(
     ==========================   ===============================================================
 
 
-    :returns: Feature Layer
+    :returns: :class`~arcgis.features.FeatureLayer`
 
     .. code-block:: python
 
@@ -208,7 +208,7 @@ def geocode_locations(
             )
         params["geocode_service_url"] = geocode_service_url
     elif isinstance(geocode_service, Geocoder):
-        geocode_service = geocode_service.url
+        geocode_service_url = geocode_service.url
         params["geocode_service_url"] = geocode_service_url
     elif isinstance(geocode_service, str):
         params["geocode_service_url"] = geocode_service
@@ -390,7 +390,7 @@ def detect_incidents(
                                  The default value is 'False'.
     ==========================   ===============================================================
 
-    :returns: result_layer : Output Features as feature layer collection item.
+    :returns: result_layer : Output Features as :class`~arcgis.features.FeatureLayerCollection`.
 
     .. code-block:: python
 
@@ -859,11 +859,11 @@ def find_similar_locations(
 
     :returns: named tuple with the following keys if ``return_tuple`` is set to 'True':
 
-      "output" : feature layer
+      "output" : :class`~arcgis.features.FeatureLayer`
 
       "process_info" : list
 
-    else returns a feature layer of the results.
+    else returns a :class`~arcgis.features.FeatureLayer` of the results.
 
     .. code-block:: python
 

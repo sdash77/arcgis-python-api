@@ -224,15 +224,15 @@ def forest(
 
     :returns: a named tuple with the following keys if ``return_tuple`` is set to 'True':
 
-        "output_trained" : featureLayer
+        "output_trained" : :class`~arcgis.features.FeatureLayer`
 
-        "output_predicted" : featureLayer
+        "output_predicted" : :class`~arcgis.features.FeatureLayer`
 
-        "variable_of_importance" : Table
+        "variable_of_importance" : :class`~arcgis.features.Table`
 
         "process_info" : list
 
-    else returns a feature layer of the results.
+        else returns a :class`~arcgis.features.FeatureLayer` of the results.
 
     .. code-block:: python
 
@@ -682,15 +682,15 @@ def glr(
 
     :returns: a named tuple with the following keys if ``return_tuple`` is set to 'True':
 
-      "output" : featureLayer
+      "output" : :class`~arcgis.features.FeatureLayer`
 
-      "output_predicted" : featureLayer
+      "output_predicted" : :class`~arcgis.features.FeatureLayer`
 
-      "coefficient_table" : Table
+      "coefficient_table" : :class`~arcgis.features.Table`
 
       "process_info" : list
 
-    else returns a feature layer of the results.
+    else returns a :class`~arcgis.features.FeatureLayer` of the results.
 
     .. code-block:: python
 
@@ -885,7 +885,7 @@ def find_point_clusters(
     ==========================   ===============================================================
 
     :returns:
-       Output feature layer item
+       Output :class`~arcgis.features.FeatureLayer`
 
     """
     input_layer = _prevent_bds_item(input_layer)
@@ -1105,7 +1105,7 @@ def calculate_density(
                                                           results. The GPJob can be queried on the status of the execution.
     =================================================     ========================================================================
 
-    :returns: result_layer : Output Features as feature layer item.
+    :returns: result_layer : Output Features as :class`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
 
@@ -1295,7 +1295,7 @@ def find_hot_spots(
     future                                                                                          Optional boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ==============================================================================================  ===============================================================
 
-    :returns: Output Features as a feature layer collection item
+    :returns: Output Features as a :class`~arcgis.features.FeatureLayerCollection` item
 
     .. code-block:: python
 
@@ -1487,7 +1487,9 @@ def create_space_time_cube(
     future                                                                           Optional boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ============================================================================     ===================================================================================================
 
-    :returns: dict with url containing the path to Output Space Time Cube (netCDF) dataFile. When you browse to the output url, your netCDF will automatically download to your local machine.
+    :returns: 
+        Dict with url containing the path to Output Space Time Cube (netCDF) dataFile. 
+        When you browse to the output url, your netCDF will automatically download to your local machine.
 
     .. code-block:: python
 
