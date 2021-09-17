@@ -3634,11 +3634,11 @@ class FeatureLayerCollection(_GISResource):
 
     In a web GIS, a feature layer collection is exposed as a feature service with multiple feature layers.
 
-    Instances of`` FeatureDatasets`` can be obtained from feature service Items in the GIS using
+    Instances of ``FeatureLayerCollection`` can be obtained from feature service Items in the GIS using
     :attr:`~arcgis.features.FeatureLayerCollection.fromitem`, from feature service endpoints using the constructor,
     or by accessing the ``dataset`` attribute of :class:`~arcgis.features.FeatureLayer` objects.
 
-    ``FeatureDatasets`` can be configured and managed using their `manager` helper object.
+    ``FeatureLayerCollection``s can be configured and managed using their `manager` helper object.
 
     If the dataset supports the sync operation, the `replicas` helper object allows management and synchronization of
     replicas for disconnected editing of the feature layer collection.
