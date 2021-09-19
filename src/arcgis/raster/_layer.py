@@ -6194,8 +6194,12 @@ class ImageryLayer(Layer):
                         dictdata = self._con.get(self.url, params, token=token)
                     elif str(e).lower().find("token required") > -1:
                         dictdata = self._con.get(self.url, params)
+                    elif str(e).lower().find("invalid token") > -1:
+                        dictdata = self._con.post(self.url, params, token=None, timeout=None)
+                        self._lazy_token=None #got info as public service
                     else:
-                        raise e
+                        dictdata = self._con.post(self.url, params, token=None, timeout=None)
+                        self._lazy_token=None #got info as public service
             self._original_info = dictdata
             return self._original_info
 
