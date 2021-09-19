@@ -1135,7 +1135,8 @@ class ImageryLayer(Layer):
                                         defines the location to be identified.
 
                                         .. note::
-                                            The location can be a point or polygon.
+                                            The location can be a point or polygon or envelope.
+                                            Support for envelope was added at 10.9.1.
         ----------------------------    --------------------------------------------------------------------
         mosaic_rule                     optional string or dict. Specifies the mosaic rule when defining how
                                         individual images should be mosaicked. When a mosaic rule is not
