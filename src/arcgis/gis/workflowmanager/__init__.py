@@ -13,4 +13,3 @@ from ._workflow_manager import JobDiagram
 from ._workflow_manager import Group
 from ._workflow_manager import SavedSearchesManager
 from ._workflow_manager import WMRole
-

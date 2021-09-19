@@ -1540,7 +1540,7 @@ class FeatureClassifier(ArcGISModel):
     ):
         if isinstance(cl, fastai.core.MultiCategory):
             cat = cl.raw  # Handles MuliCategory types
-            cat1 = cat[1]
+            cat1 = cat[0]
         else:
             cat1 = int(cl)
         m = self.learn.model.eval()
@@ -1548,10 +1548,12 @@ class FeatureClassifier(ArcGISModel):
         xb, _ = self._data.one_item(
             im, detach=False, denorm=False
         )  # put into a minibatch of batch size = 1
-        with hook_output(m[0]) as hook_a:
-            with hook_output(m[0], grad=True) as hook_g:
-                preds = m(xb)
-                preds[0, cat1].backward()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with hook_output(m[0]) as hook_a:
+                with hook_output(m[0], grad=True) as hook_g:
+                    preds = m(xb)
+                    preds[0, cat1].backward()
         acts = hook_a.stored[0].cpu()  # activation maps
         if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
             grad = hook_g.stored[0][0].cpu()
