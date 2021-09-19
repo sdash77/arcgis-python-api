@@ -6198,8 +6198,7 @@ class ImageryLayer(Layer):
                         dictdata = self._con.post(self.url, params, token=None, timeout=None)
                         self._lazy_token=None #got info as public service
                     else:
-                        dictdata = self._con.post(self.url, params, token=None, timeout=None)
-                        self._lazy_token=None #got info as public service
+                        raise e
             self._original_info = dictdata
             return self._original_info
 
