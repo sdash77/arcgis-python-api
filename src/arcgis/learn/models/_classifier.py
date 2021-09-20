@@ -961,6 +961,7 @@ class FeatureClassifier(ArcGISModel):
         """
         Classifies the exported images and updates the feature layer with the prediction results in the ``output_label_field``.
         Works with RGB images only.
+        Deprecated since version 1.9.1: Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -1599,7 +1600,7 @@ class FeatureClassifier(ArcGISModel):
         """
         Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
         and updates the feature layer with the prediction results in the ``output_label_field``.
-        Deprecated, please use arcgis.learn.classify_objects() instead.
+        Deprecated, Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
 
         ====================================     ====================================================================
         **Argument**                             **Description**
