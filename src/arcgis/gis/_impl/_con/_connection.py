@@ -46,7 +46,22 @@ from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
-from arcgis.auth import EsriWindowsAuth, EsriKerberosAuth, EsriBasicAuth
+
+try:
+    from arcgis.auth import EsriWindowsAuth
+
+    HAS_SSPI = True
+except ImportError:
+    HAS_SSPI = False
+
+try:
+    from arcgis.auth import EsriKerberosAuth
+
+    HAS_KERBEROS = True
+except ImportError:
+    HAS_KERBEROS = False
+
+from arcgis.auth import EsriBasicAuth
 
 __version__ = "1.9.1"
 
@@ -394,7 +409,7 @@ class Connection(object):
             self._session.auth = GuessAuth(
                 username=self._username, password=self._password
             )
-        elif self._auth.lower() in ["iwa", "ntlm"]:
+        elif self._auth.lower() in ["iwa", "ntlm"] and HAS_SSPI:
             self._session.auth = EsriWindowsAuth(
                 username=self._username, password=self._password
             )
@@ -402,20 +417,11 @@ class Connection(object):
             self._session.auth = GuessAuth(None, None)
 
         else:
-            try:
 
-                HAS_KERBEROS = True
-            except:
-                HAS_KERBEROS = False
-            if HAS_KERBEROS:
+            if HAS_SSPI:
                 self._session.auth = EsriWindowsAuth()
-            else:
-                try:
-                    self._session.auth = EsriKerberosAuth()
-                except ImportError:
-                    pass
-                except Exception as e:
-                    raise e
+            elif HAS_KERBEROS:
+                self._session.auth = EsriKerberosAuth()
         if self._cert_file and self._key_file:
             self._session.cert = (self._cert_file, self._key_file)
         elif self._cert_file and self._password:
