@@ -313,7 +313,7 @@ class MaskRCNN(ArcGISModel):
                 in_features_mask, hidden_layer, data.c
             )
 
-        if not _isnotebook() and arcgis_os.name == "posix":
+        if not _isnotebook():
             _set_ddp_multigpu(self)
             if self._multigpu_training:
                 self.learn = Learner(

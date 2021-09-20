@@ -11,21 +11,19 @@ package:
 requirements:
   build:
   - python
+  - cachetools
   - ujson >=3
   - setuptools
   - six
-  - cryptography
   - notebook
   - ipywidgets >=7
   - widgetsnbextension >=3
   - pandas >=1
   - numpy >=1.16.2
   - matplotlib
-  - keyring >=19
+  - keyring >=19, <21.8.0
   - pytest
   - pyshp >=2
-  - lxml
-  - certifi
   - requests
   - requests-toolbelt
   - requests-kerberos
@@ -35,12 +33,13 @@ requirements:
   - pywin32-security [win]
   - lerc
   - winkerberos      [win]
-  run:
-  - python
-  - six
   - cryptography
   - lxml
   - certifi
+  run:
+  - python
+  - six
+  - cachetools
   - notebook
   - ipywidgets >=7
   - widgetsnbextension >=3
@@ -49,7 +48,7 @@ requirements:
   - numpy >=1.16.2
   - pyshp >=2
   - matplotlib
-  - keyring >=19
+  - keyring >=19, <21.8.0
   - requests
   - requests-toolbelt
   - requests-kerberos
@@ -60,6 +59,9 @@ requirements:
   - lerc
   - winkerberos      [win]
   - python-certifi-win32 [win]
+  - cryptography
+  - lxml
+  - certifi
 source:
   path: ../../src
 test:

@@ -20,6 +20,7 @@ import urllib
 import time
 import pathlib
 
+
 _TEXT_BASED_ITEM_TYPES = [
     "Web Map",
     "Feature Service",
@@ -250,9 +251,14 @@ class _DeepCloner:
         # Check if the item is specified in the mapping, if so don't process it
         if item.id in self._clone_mapping["Item IDs"]:
             return None
+        from arcgis.gis.clone import clone_registry
 
+        # if the item is in the clone_registry then use the item definition.
+        if item["type"] in clone_registry():
+            item_definition = self._get_item_definition(item)
+            self._graph[item.id] = item_definition
         # if the item is a group find all the web maps that are shared with the group
-        if isinstance(item, gis.Group):
+        elif isinstance(item, gis.Group):
             item_definition = self._get_group_definition(item)
             # add to graph
             self._graph[item_definition.info["id"]] = item_definition
@@ -1171,10 +1177,84 @@ class _DeepCloner:
         Keyword arguments:
         item - The arcgis.GIS.Item to get the definition for.
         """
+        from arcgis._impl.common._itemdef import _TileItemDefinition
+        from arcgis.gis.clone import (
+            clone_registry,
+            BaseCloneDefinition,
+            BaseCloneItemDefinition,
+            BaseCloneTextItemDefinition,
+        )
+
+        _CUSTOM_TYPES = (
+            BaseCloneDefinition,
+            BaseCloneItemDefinition,
+            BaseCloneTextItemDefinition,
+        )
+
         if self._preserve_item_id and self.target._portal.is_arcgisonline:
             self._preserve_item_id = False
         # If the item is an application or dashboard get the ApplicationDefinition
-        if item["type"] == "Web Mapping Application":
+        if item["type"] in clone_registry():
+            cls = clone_registry()[item["type"]]
+            if issubclass(cls, BaseCloneTextItemDefinition):
+                source_url = _get_org_url(item._gis)
+                try:
+                    data = item.get_data()
+                except:
+                    data = item.get_data(try_json=True)
+                return cls(
+                    target=self.target,
+                    clone_mapping=self._clone_mapping,
+                    info=dict(item),
+                    data=data,
+                    source_url=source_url,
+                    thumbnail=item.get_thumbnail(),
+                    portal_item=item,
+                    folder=self.folder,
+                    item_extent=self._item_extent,
+                    search_existing=self._search_existing_items,
+                    owner=self.owner,
+                    preserve_item_id=self._preserve_item_id,
+                )
+            elif issubclass(cls, BaseCloneItemDefinition):
+                source_url = _get_org_url(item._gis)
+                return cls(
+                    target=self.target,
+                    clone_mapping=self._clone_mapping,
+                    info=dict(item),
+                    data=item.get_data(),
+                    sharing=None,
+                    portal_item=item,
+                    folder=self.folder,
+                    item_extent=self._item_extent,
+                    search_existing=self._search_existing_items,
+                    owner=self.owner,
+                    preserve_item_id=self._preserve_item_id,
+                )
+            else:
+                source_url = _get_org_url(item._gis)
+                return cls(
+                    target=self.target,
+                    clone_mapping=self._clone_mapping,
+                    info=dict(item),
+                    source_url=source_url,
+                    preserve_item_id=self._preserve_item_id,
+                )
+        elif item["type"] == "Map Service" and _TileItemDefinition.is_tileservice(item):
+            return _TileItemDefinition(
+                target=self.target,
+                clone_mapping=self._clone_mapping,
+                info=dict(item),
+                data=item.get_data(),
+                sharing=None,
+                portal_item=item,
+                folder=self.folder,
+                item_extent=self._item_extent,
+                search_existing=self._search_existing_items,
+                owner=self.owner,
+                preserve_item_id=self._preserve_item_id,
+            )
+        elif item["type"] == "Web Mapping Application":
             app_json = None
             source_app_title = None
             update_url = False

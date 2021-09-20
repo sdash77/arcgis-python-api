@@ -1534,6 +1534,14 @@ def explain_prediction(
 def show_local_interpretation(
     model, processed_df, index=0, random_index=False, method="Tree"
 ):
+    feature_variables = (
+        model._data._categorical_variables + model._data._continuous_variables
+    )
+    if len(feature_variables) < 2:
+        print(
+            "Shap Explanation for prediction can be obtained only if number of explnatory variables > 1 "
+        )
+        return
     if method == "Tree":
         explainer = shap.TreeExplainer(model._model, algorithm="Tree")
     elif method == "KernelRegressor":
@@ -1567,7 +1575,9 @@ def show_local_interpretation(
                 np.random.choice(model._data._databunch.train_ds.x.items, 500)
             ):
                 row = np.array(model._data._databunch.train_ds.x[item].data[1])
-                df[cnt] = row
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    df[cnt] = row
             explainer = shap.DeepExplainer(
                 model.learn.model.layers, torch.tensor(df.transpose().values).cuda()
             )
@@ -1690,6 +1700,11 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
         feature_variables = (
             model._data._categorical_variables + model._data._continuous_variables
         )
+        if len(feature_variables) < 2:
+            print(
+                "This method can be used only on datasets with more than 1 explanatory variables"
+            )
+            return
         df = pd.DataFrame(
             shap.sample(model._data._ml_data[0], 500), columns=feature_variables
         )
@@ -1711,7 +1726,9 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
                 np.random.choice(model._data._databunch.train_ds.x.items, 500)
             ):
                 row = np.array(model._data._databunch.train_ds.x[item].data[1])
-                df[cnt] = row
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    df[cnt] = row
             explainer = shap.DeepExplainer(
                 model.learn.model.layers, torch.tensor(df.transpose().values).cuda()
             )

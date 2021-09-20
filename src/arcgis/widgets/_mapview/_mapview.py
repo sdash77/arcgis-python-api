@@ -250,12 +250,19 @@ class MapView(widgets.DOMWidget):
     .. note::
         If the Jupyter Notebook server is running over http, you need to
         configure your portal/organization to allow your host and port; or else
-        you will run into ``CORs`` issues.
+        you will run into ``CORS`` issues.
 
-        This can be accomplished by signing into your portal/organization in a
-        browser, then navigating to:
+        This can be accomplished programmatically by signing into your organization
+        and running this code:
 
-        `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888 (replace with the host/port you are running on)
+        .. code-block:: python
+
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_admin_profile")
+
+            >>> more_origins = {"allowedOrigins":"http://localhost:8888"} #replace your port
+
+            >>> gis.update_properties(more_origins)
 
     """
 

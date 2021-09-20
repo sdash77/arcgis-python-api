@@ -1141,8 +1141,10 @@ class EnterpriseUsers(BasePortalAdmin):
             "viewer": "viewerUT",
             "fieldworker": "fieldWorkerUT",
         }
-        if user_license.lower() in user_license_lu:
+        if user_license and user_license.lower() in user_license_lu:
             user_license = user_license_lu[user_license.lower()]
+        else:
+            user_license = user_license_lu["creator"]
         if role.lower() in role_lu:
             role = role_lu[role.lower()]
 
@@ -1187,9 +1189,9 @@ class EnterpriseUsers(BasePortalAdmin):
         :returns: dict
 
         """
-        url = "%s/getEnterpriseUsers" % self._url
+        url = "%s/getEnterpriseUser" % self._url
         params = {"f": "json", "username": username}
-        return self._con.get(path=url, params=params)
+        return self._con.post(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def update(self, username, idp_username):

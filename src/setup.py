@@ -47,6 +47,7 @@ if conda_install_mode:
     dependencies = []
 else:
     dependencies = [
+        "cachetools",
         "six",
         "lxml",
         "cryptography",
@@ -55,13 +56,14 @@ else:
         "pandas >=1",
         "numpy >=1.16.2",
         "matplotlib",
-        "keyring >=19",
+        "keyring >=19,<=21.8.*",
         "lerc",
         "ujson >=3",
         "jupyterlab",
         "python-certifi-win32",
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
+        "geomet",
         "requests",
         "requests-oauthlib",
         "requests_toolbelt",

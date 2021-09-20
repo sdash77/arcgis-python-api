@@ -110,7 +110,9 @@ class Portal(object):
             try:
                 import arcpy
 
-                url = arcpy.GetActivePortalURL()
+                if not arcpy.GetSigninToken():
+                    self._is_arcpy = False
+                url = arcpy.GetActivePortalURL() or "https://www.arcgis.com/"
                 self.url = url
             except ImportError:
                 raise ImportError("Could not import arcpy")

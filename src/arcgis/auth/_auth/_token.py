@@ -1,6 +1,7 @@
 from urllib.parse import urlunparse, quote, parse_qsl, parse_qs
 from getpass import getpass
-from bs4 import BeautifulSoup
+
+# from bs4 import BeautifulSoup
 from requests.auth import AuthBase
 from requests_oauthlib import OAuth2Session
 from requests.cookies import extract_cookies_to_jar
