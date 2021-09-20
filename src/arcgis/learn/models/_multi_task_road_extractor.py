@@ -127,7 +127,12 @@ class MultiTaskRoadExtractor(ArcGISModel):
     """
 
     def __init__(
-        self, data, backbone=None, pretrained_path=None, *args, **kwargs,
+        self,
+        data,
+        backbone=None,
+        pretrained_path=None,
+        *args,
+        **kwargs,
     ):
         # if data.sub_dataset_type != "RoadOrientation":
         #    raise Exception(
