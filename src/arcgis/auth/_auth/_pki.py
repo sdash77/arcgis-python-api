@@ -1,3 +1,4 @@
+from typing import Tuple
 from requests.auth import AuthBase
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
@@ -15,9 +16,10 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
     _server_log = None
     _server_log_count = None
     _tokens = None
+    _session = None
 
     def __init__(
-        self, cert: tuple, referer: str = None, verify_cert: bool = True, **kwargs
+        self, cert: Tuple[str], referer: str = None, verify_cert: bool = True, **kwargs
     ):
         self._server_log = {}
         self._server_log_time = {}
@@ -30,6 +32,15 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
             self.referer = "http"
         else:
             self.referer = referer
+        self._session = kwargs.pop("session", requests.Session())
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return f"<{self.__class__.__name__}>"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return f"<{self.__class__.__name__}>"
 
     # ----------------------------------------------------------------------
     def generate_portal_server_token(self, r, **kwargs):
@@ -60,7 +71,7 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
                     parsed.netloc
                 ] = _dt.datetime.now() + _dt.timedelta(minutes=expiration)
             else:
-                info = requests.get(
+                info = self._session.get(
                     server_url + "/rest/info?f=json",
                     cert=(self.cert[0], self.cert[1]),
                     verify=self.verify_cert,
@@ -74,7 +85,7 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
                     return self.generate_portal_server_token(r)
                 token_str = self._tokens[server_url]
             else:
-                token = requests.post(
+                token = self._session.post(
                     token_url,
                     data=postdata,
                     cert=(self.cert[0], self.cert[1]),
@@ -89,10 +100,10 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
             #
             r.content
             r.raw.release_conn()
-            r.request.headers["Referer"] = self.referer or "http"
+            r.request.headers["referer"] = self.referer or "http"
             r.request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
             _r = r.connection.send(r.request, **kwargs)
-            _r.headers["Referer"] = self.referer or "http"
+            _r.headers["referer"] = self.referer or "http"
             _r.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
             _r.history.append(r)
             return _r

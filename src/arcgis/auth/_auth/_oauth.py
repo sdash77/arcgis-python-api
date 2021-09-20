@@ -71,6 +71,14 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             self._session = session
 
     # ----------------------------------------------------------------------
+    def __str__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
+
+    # ----------------------------------------------------------------------
     def _oauth_token(self):
         """performs the oauth2 when secret and client exist"""
         auth_url = "%s/oauth2/authorize" % self.baseurl
@@ -228,6 +236,16 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         return None
 
     # ----------------------------------------------------------------------
+    @property
+    def token(self) -> str:
+        """
+        Gets the Oauth token
+
+        :returns: String
+        """
+        return self._oauth_token()
+
+    # ----------------------------------------------------------------------
     def handle_40x(self, r, **kwargs):
         """Handles Case where token is invalid"""
 
@@ -242,7 +260,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             r.raw.release_conn()
             r.request.headers.pop("X-Esri-Authorization", None)
             _r = r.connection.send(r.request, **kwargs)
-            _r.headers["Referer"] = self._referer or "http"
+            _r.headers["referer"] = self._referer or "http"
             _r.history.append(r)
             return _r
         return r

@@ -46,6 +46,14 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
         self._session.headers.update({"referer": referer})
         self._session.auth = (self.username, self.password)
 
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return f"<{self.__class__.__name__}>"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return f"<{self.__class__.__name__}>"
+
     def __eq__(self, other):
         return all(
             [
@@ -103,10 +111,10 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
             #
             r.content
             r.raw.release_conn()
-            r.request.headers["Referer"] = self.referer or "http"
+            r.request.headers["referer"] = self.referer or "http"
             r.request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
             _r = r.connection.send(r.request, **kwargs)
-            _r.headers["Referer"] = self.referer or "http"
+            _r.headers["referer"] = self.referer or "http"
             _r.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
             _r.history.append(r)
             return _r

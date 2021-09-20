@@ -1,6 +1,7 @@
 from requests.auth import AuthBase
 from urllib import parse
 from arcgis.auth.tools import parse_url
+
 from ._schain import SupportMultiAuth
 
 
@@ -26,6 +27,14 @@ class EsriAPIKeyAuth(AuthBase, SupportMultiAuth):
             self.referer = ""
         else:
             self.referer = referer
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
 
     # ----------------------------------------------------------------------
     @property
@@ -59,21 +68,21 @@ class EsriAPIKeyAuth(AuthBase, SupportMultiAuth):
             #
             r.content
             r.raw.release_conn()
-            r.request.headers["Referer"] = self.referer  # or "http"
+            r.request.headers["referer"] = self.referer  # or "http"
             r.request.headers.pop("X-Esri-Authorization", None)
             _r = r.connection.send(r.request, **kwargs)
-            _r.headers["Referer"] = self.referer  # or "http"
+            _r.headers["referer"] = self.referer  # or "http"
             _r.headers.pop("X-Esri-Authorization", None)
             _r.history.append(r)
             return _r
         elif r.text.lower().find("token required") > -1:
             r.content
             r.raw.release_conn()
-            r.request.headers["Referer"] = self.referer  # or "http"
+            r.request.headers["referer"] = self.referer  # or "http"
             r.headers["X-Esri-Authorization"] = f"Bearer {self.api_key}"
             # r.request.headers.pop("X-Esri-Authorization", None)
             _r = r.connection.send(r.request, **kwargs)
-            _r.headers["Referer"] = self.referer  # or "http"
+            _r.headers["referer"] = self.referer  # or "http"
             # _r.headers.pop("X-Esri-Authorization", None)
             _r.headers["X-Esri-Authorization"] = f"Bearer {self.api_key}"
             _r.history.append(r)

@@ -1,4 +1,5 @@
 import sys
+from typing import Dict, Any, Tuple
 
 if sys.platform == "win32":  # pragma: no cover
     # when on Windows, append to the certifi
@@ -6,14 +7,23 @@ if sys.platform == "win32":  # pragma: no cover
     # when certifi_win32 is present.
     try:
         import certifi_win32
+
+        certifi_win32.wincerts.verify_combined_pem()
+        certifi_win32.wincerts.where()
     except ImportError:
         pass
+
 
 from requests.sessions import Session
 from requests.adapters import HTTPAdapter
 
 
 from urllib3 import Retry
+from urllib3 import __version__ as __URLLIB3VERSION__
+
+__URLLIB3VERSION__ = [
+    int(i) if i.isdigit() else i for i in __URLLIB3VERSION__.split(".")
+]
 
 from ._version import __version__
 
@@ -115,6 +125,16 @@ class EsriSession:
     ------------------     --------------------------------------------------------------------
     method_whitelist       Optional List.  When `retries` is specified, the user can specifiy what methods are retried.
                            The default is `'POST', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PUT', 'TRACE'`
+    ------------------     --------------------------------------------------------------------
+    proxies                Optional Dict. A key/value mapping where the keys are the transfer protocol and the value is the <url>:<port>.
+
+                           **example**
+
+                           ```python
+                           proxies = {"http" : 127.0.0.1:8080, "https" : 127.0.0.1:8081}
+                           session = EsriSession(proxies=proxies)
+                           ```
+
     ==================     ====================================================================
 
 
@@ -129,10 +149,10 @@ class EsriSession:
     def __init__(
         self,
         auth: "AuthBase" = None,
-        cert: tuple = None,
+        cert: Tuple[str] = None,
         verify_cert: bool = True,
         allow_redirects: bool = True,
-        headers: dict = None,
+        headers: Dict[str, Any] = None,
         referer="http",
         **kwargs,
     ) -> "EsriSession":
@@ -146,7 +166,7 @@ class EsriSession:
         if check_hostname == False:
             self.mount("https://", HostHeaderSSLAdapter())
         self._session.cert = cert
-
+        self.cert = cert
         self.allow_redirects = allow_redirects
         self.verify_cert = verify_cert
         self._useragent = f"EsriSession/{__version__}"
@@ -164,32 +184,56 @@ class EsriSession:
 
         elif auth and cert:
             self.auth = EsriPKIAuth(
-                cert=cert, referer=referer, verify_cert=verify_cert, auth=auth
+                cert=cert,
+                referer=referer,
+                verify_cert=verify_cert,
+                auth=auth,
+                session=self,
             )
         elif auth is None and cert:
-            self.auth = EsriPKIAuth(cert=cert, referer=referer, verify_cert=verify_cert)
+            self.auth = EsriPKIAuth(
+                cert=cert, referer=referer, verify_cert=verify_cert, session=self
+            )
         elif sys.platform == "win32" and HAS_GSSAPI:  # Default Case Load IWA/WinAuth
             self.auth = EsriWindowsAuth(referer=referer, verify_cert=verify_cert)
         elif HAS_KERBEROS:
             self.auth = EsriKerberosAuth(referer=self._referer, verify_cert=verify_cert)
 
+        proxies = kwargs.get("proxies", None)
+        if proxies:
+            self.proxies = proxies
+
         if "retries" in kwargs and kwargs.get("retries"):
-            r = urllib3.Retry(
-                total=kwargs.get("retries", 5),
-                read=kwargs.get("retries", 5),
-                connect=kwargs.get("retries", 5),
-                backoff_factor=kwargs.get("backoff_factor", 1),
-                status_forcelist=kwargs.get(
-                    "status_to_retry", (413, 429, 503, 500, 502, 504)
-                ),
-                method_whitelist=kwargs.get(
-                    "method_whitelist",
-                    frozenset(
-                        ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
+            if __URLLIB3VERSION__[0] <= 1:
+                r = Retry(
+                    total=kwargs.get("retries", 5),
+                    read=kwargs.get("retries", 5),
+                    connect=kwargs.get("retries", 5),
+                    status_forcelist=kwargs.get(
+                        "status_to_retry", (413, 429, 503, 500, 502, 504)
                     ),
-                ),
-                # **kwargs
-            )
+                    method_whitelist=kwargs.get(
+                        "method_whitelist",
+                        frozenset(
+                            ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
+                        ),
+                    ),
+                )
+            else:
+                r = Retry(
+                    total=kwargs.get("retries", 5),
+                    read=kwargs.get("retries", 5),
+                    connect=kwargs.get("retries", 5),
+                    status_forcelist=kwargs.get(
+                        "status_to_retry", (413, 429, 503, 500, 502, 504)
+                    ),
+                    allowed_methods=kwargs.get(
+                        "method_whitelist",
+                        frozenset(
+                            ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
+                        ),
+                    ),
+                )
             adapter = HTTPAdapter(max_retries=r)
             self._session.mount("http://", adapter)
             self._session.mount("https://", adapter)
@@ -222,13 +266,13 @@ class EsriSession:
 
     # ----------------------------------------------------------------------
     @property
-    def headers(self) -> dict:
+    def headers(self) -> Dict[str, Any]:
         """Gets/Sets the headers from the current session object"""
         return self._session.headers
 
     # ----------------------------------------------------------------------
     @headers.setter
-    def headers(self, values: dict):
+    def headers(self, values: Dict[str, Any]):
         """Gets/Sets the headers from the current session object"""
         if isinstance(values, dict):
             from requests.utils import CaseInsensitiveDict
@@ -237,7 +281,7 @@ class EsriSession:
             self._session.headers = values
 
     # ----------------------------------------------------------------------
-    def update_headers(self, values: dict) -> bool:
+    def update_headers(self, values: Dict[str, Any]) -> bool:
         """Performs an update call on the headers"""
         try:
             self._session.headers.update(values)
@@ -248,7 +292,7 @@ class EsriSession:
     # ----------------------------------------------------------------------
     @property
     def referer(self) -> str:
-        """Gets/Sets the Referer"""
+        """Gets/Sets the referer"""
         try:
             return self._session.headers["referer"]
         except:
@@ -257,16 +301,16 @@ class EsriSession:
     # ----------------------------------------------------------------------
     @referer.setter
     def referer(self, value: str):
-        """Gets/Sets the Referer"""
+        """Gets/Sets the referer"""
         self._session.headers["referer"] = value
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"<Esri Session {__version__}>"
+        return f"<ArcGIS Session {__version__}>"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return f"<Esri Session {__version__}>"
+        return f"<ArcGIS Session {__version__}>"
 
     # ----------------------------------------------------------------------
     @property
@@ -295,7 +339,7 @@ class EsriSession:
 
     # ----------------------------------------------------------------------
     @property
-    def adapters(self) -> dict:
+    def adapters(self) -> Dict[str, str]:
         """
         Returns an dictionary of mounted adapters.
 
@@ -314,6 +358,37 @@ class EsriSession:
     def auth(self, value: "AuthBase"):
         """Get/Set the Authentication Handler for the Session"""
         self._session.auth = value
+
+    # ----------------------------------------------------------------------
+    @property
+    def proxies(self) -> Dict[str, str]:
+        """
+        Dictionary mapping protocol or protocol and host to the URL of the proxy.
+        (e.g. {'http': 'foo.bar:3128', 'http://host.name': 'foo.bar:4012'}) to
+        be used on each :class:`Request <Request>`.
+
+        :return: dict
+        """
+        return self._session.proxies
+
+    # ----------------------------------------------------------------------
+    @proxies.setter
+    def proxies(self, value: Dict[str, str]) -> None:
+        """
+        Dictionary mapping protocol or protocol and host to the URL of the proxy.
+        (e.g. {'http': 'foo.bar:3128', 'http://host.name': 'foo.bar:4012'}) to
+        be used on each :class:`Request <Request>`.
+
+        :return: dict
+        """
+        if isinstance(value, dict) and self._session.proxies:
+            self._session.proxies.update(value)
+        elif isinstance(value, dict) and not self._session.proxies:
+            self._session.proxies = value
+        elif value is None:
+            self._session.proxies = {}
+        else:
+            raise ValueError("Proxy must be of type dictionary.")
 
     # ----------------------------------------------------------------------
     def get(self, url, **kwargs) -> "requests.Response":

@@ -31,6 +31,14 @@ class EsriUserTokenAuth(AuthBase, SupportMultiAuth):
         self.legacy = kwargs.pop("legacy", False)
 
     # ----------------------------------------------------------------------
+    def __str__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
+
+    # ----------------------------------------------------------------------
     def handle_40x(self, r, **kwargs):
         """Handles Case where token is invalid"""
 
@@ -45,7 +53,7 @@ class EsriUserTokenAuth(AuthBase, SupportMultiAuth):
             r.raw.release_conn()
             r.request.headers.pop("X-Esri-Authorization", None)
             _r = r.connection.send(r.request, **kwargs)
-            _r.headers["Referer"] = self.referer or "http"
+            _r.headers["referer"] = self.referer or "http"
             _r.history.append(r)
             return _r
         return r

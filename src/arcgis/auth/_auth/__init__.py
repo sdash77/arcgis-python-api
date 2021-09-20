@@ -1,3 +1,4 @@
+from ._base import BaseEsriAuth
 from ._pki import EsriPKIAuth
 from ._winauth import EsriWindowsAuth, EsriKerberosAuth
 from ._apikey import EsriAPIKeyAuth
@@ -25,4 +26,5 @@ __all__ = [
     "EsriUserTokenAuth",
     "ArcGISProAuth",
     "EsriWindowsAuth",
+    "BaseEsriAuth",
 ]

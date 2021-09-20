@@ -1,10 +1,11 @@
+import lxml.html
 from urllib.parse import urlunparse, quote, parse_qsl, parse_qs
+from functools import lru_cache
 from getpass import getpass
-
-# from bs4 import BeautifulSoup
 from requests.auth import AuthBase
 from requests_oauthlib import OAuth2Session
 from requests.cookies import extract_cookies_to_jar
+
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url
@@ -35,6 +36,27 @@ You need to a security question by integer:
 14. Where did you go on your first date?
 """
 # -------------------------------------------------------------------------
+@lru_cache(maxsize=255)
+def _token_url_validator(url: str, session: "EsriSession") -> str:
+    """validates the token url from the give URL"""
+    parts = ["/info", "/rest/info", "/sharing/rest/info"]
+    params = {"f": "json"}
+    parsed_url = _parse_arcgis_url(url=url)
+    token_url = None  # parsed_url + "/sharing/rest/generateToken"
+    for pt in parts:
+        try:
+            resp = session.get(f"{parsed_url}{pt}?f=json")
+            token_url = resp.json()["authInfo"]["tokenServicesUrl"]
+            if token_url:
+                break
+            del pt
+        except:
+            pass
+    return token_url
+
+
+# -------------------------------------------------------------------------
+@lru_cache(maxsize=255)
 def _parse_arcgis_url(url: str) -> str:
     """
     Returns a valid ArcGIS Online or ArcGIS Enterprise base URL
@@ -82,6 +104,14 @@ class ArcGISProAuth(AuthBase, SupportMultiAuth):
             raise
 
     # ----------------------------------------------------------------------
+    def __str__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
+
+    # ----------------------------------------------------------------------
     @property
     def token(self):
         """obtains the login token"""
@@ -124,7 +154,7 @@ class ArcGISProAuth(AuthBase, SupportMultiAuth):
             r.raw.release_conn()
             r.request.headers.pop("X-Esri-Authorization", None)
             _r = r.connection.send(r.request, **kwargs)
-            _r.headers["Referer"] = self._referer or "http"
+            _r.headers["referer"] = self._referer or "http"
             _r.history.append(r)
             return _r
         return r
@@ -186,13 +216,13 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     # ----------------------------------------------------------------------
     def __init__(
         self,
-        url,
-        username,
-        password,
-        expiration=None,
-        legacy=False,
-        verify_cert=True,
-        referer=None,
+        url: str,
+        username: str,
+        password: str,
+        expiration: int = None,
+        legacy: bool = False,
+        verify_cert: bool = True,
+        referer: str = None,
         **kwargs,
     ):
         """init"""
@@ -221,6 +251,14 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         self._params = {"expiration": expiration or 1440}
 
         self._auto_refresh_extra_params = {"client_id": self._clientid}
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
 
     # ----------------------------------------------------------------------
     def suspend(self) -> bool:
@@ -265,9 +303,9 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         pattern = self._re_expressions["step-1a"]
         if len(pattern.findall(content)) == 0:
             pattern = self._re_expressions["step-1b"]
-        soup = BeautifulSoup(content, "html.parser")
-        for script in soup.find_all("script"):
-            script_code = str(script.string).strip()
+        soup = lxml.html.fromstring(content)
+        for script in soup.xpath("//script/text()"):
+            script_code = str(script).strip()
             matches = pattern.search(script_code)
             if not matches is None:
                 js_object = matches.groups()[0]
@@ -453,20 +491,20 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             #
             r.content
             r.raw.release_conn()
-            r.request.headers["Referer"] = self._referer  # or "http"
+            r.request.headers["referer"] = self._referer  # or "http"
             r.request.headers.pop("X-Esri-Authorization", None)
             _r = r.connection.send(r.request, **kwargs)
-            _r.headers["Referer"] = self._referer  # or "http"
+            _r.headers["referer"] = self._referer  # or "http"
             _r.headers.pop("X-Esri-Authorization", None)
             _r.history.append(r)
             return _r
         elif r.text.lower().find("token required") > -1:
             r.content
             r.raw.release_conn()
-            r.request.headers["Referer"] = self._referer  # or "http"
+            r.request.headers["referer"] = self._referer  # or "http"
             r.headers["X-Esri-Authorization"] = f"Bearer {self.token}"
             _r = r.connection.send(r.request, **kwargs)
-            _r.headers["Referer"] = self._referer  # or "http"
+            _r.headers["referer"] = self._referer  # or "http"
             _r.headers["X-Esri-Authorization"] = f"Bearer {self.token}"
             _r.history.append(r)
             return _r
@@ -522,20 +560,22 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
         **kwargs,
     ) -> None:
         """init"""
-        token_url = _parse_arcgis_url(token_url) + "/sharing/rest/generateToken"
+
         if username is None and portal_auth is None:
             raise Exception(
                 "A portal_auth or username/password is required for GenerateToken"
             )
         self._anon_urls = set()
-        self._legacy_auth = kwargs.pop("legacy", False)
+        self._legacy_auth = legacy
         self._portal_auth = portal_auth
         has_session = "session" in kwargs
         self._session = kwargs.pop("session", None) or requests.sessions.Session()
         if has_session == False:
             self._session.verify = verify_cert
             self._session.allow_redirects = True
-
+        token_url = _token_url_validator(
+            _parse_arcgis_url(token_url), session=self._session
+        )  # + "/sharing/rest/generateToken"
         self._thread_local = threading.local()
 
         self._expires_on = None
@@ -553,10 +593,18 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
             self._time_out = time_out
 
     # ----------------------------------------------------------------------
+    def __str__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
+
+    # ----------------------------------------------------------------------
     @property
     def referer(self) -> str:
         if "referer" in self._session.headers:
-            return self._session.headers["Referer"]
+            return self._session.headers["referer"]
         else:
             self.referer = "http"
             return self.referer
@@ -564,14 +612,14 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
     # ----------------------------------------------------------------------
     @referer.setter
     def referer(self, value: str) -> None:
-        """Gets/Sets the Referer"""
+        """Gets/Sets the referer"""
         if (
-            "Referer" in self._session.headers
-            and self._session.headers["Referer"] != value
+            "referer" in self._session.headers
+            and self._session.headers["referer"] != value
         ):
-            self._session.headers["Referer"] = value
+            self._session.headers["referer"] = value
         else:
-            self._session.headers["Referer"] = value
+            self._session.headers["referer"] = value
 
     # ----------------------------------------------------------------------
     @property
@@ -626,7 +674,7 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
             r.prepare_body(data, None, None)
         else:
             r.headers["X-Esri-Authorization"] = f"Bearer {self.token(server_url)}"
-        r.headers["Referer"] = self.referer
+        r.headers["referer"] = self.referer
         r.register_hook("response", self.handle_401)
         r.register_hook("response", self.handle_redirect)
         try:
@@ -702,14 +750,12 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
     def _init_token_auth_handshake(self, server_url=None):
         """gets the token"""
         if self.username and self.password:  # Basic Generate Token Logic
-
             postdata = {
                 "username": self.username,
                 "password": self.password,
                 "referer": self.referer,
-                "expiration": self.time_out,
-                "encrypted": json.dumps(False),
                 "client": "referer",
+                "expiration": self.time_out,
                 "f": "json",
             }
             resp = self._session.post(url=self._token_url, data=postdata)

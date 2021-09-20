@@ -30,6 +30,14 @@ class EsriNotebookAuth(AuthBase, SupportMultiAuth):
         self._no_go_token = set()
 
     # ----------------------------------------------------------------------
+    def __str__(self):
+        return f"<{self.__class__.__name__}, token={self.token[:5]}...>"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return f"<{self.__class__.__name__}, token={self.token[:5]}...>"
+
+    # ----------------------------------------------------------------------
     @property
     def token(self) -> str:
         """
@@ -59,10 +67,10 @@ class EsriNotebookAuth(AuthBase, SupportMultiAuth):
             #
             r.content
             r.raw.release_conn()
-            r.request.headers["Referer"] = self.referer  # or "http"
+            r.request.headers["referer"] = self.referer  # or "http"
             r.request.headers.pop("X-Esri-Authorization", None)
             _r = r.connection.send(r.request, **kwargs)
-            _r.headers["Referer"] = self.referer  # or "http"
+            _r.headers["referer"] = self.referer  # or "http"
             _r.headers.pop("X-Esri-Authorization", None)
             _r.history.append(r)
             return _r
