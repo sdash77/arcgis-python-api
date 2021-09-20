@@ -419,9 +419,15 @@ class Connection(object):
         else:
 
             if HAS_SSPI:
-                self._session.auth = EsriWindowsAuth()
+                try:
+                    self._session.auth = EsriWindowsAuth()
+                except:
+                    ...
             elif HAS_KERBEROS:
-                self._session.auth = EsriKerberosAuth()
+                try:
+                    self._session.auth = EsriKerberosAuth()
+                except:
+                    ...
         if self._cert_file and self._key_file:
             self._session.cert = (self._cert_file, self._key_file)
         elif self._cert_file and self._password:
