@@ -322,6 +322,9 @@ class PointCNN(ArcGISModel):
         if not hasattr(self.learn, "recorder"):
             return 0.0
 
+        if len(self.learn.recorder.metrics) == 0:
+            return 0.0
+
         model_accuracy = self.learn.recorder.metrics[-1][0]
         if checkpoint:
             val_losses = self.learn.recorder.val_losses

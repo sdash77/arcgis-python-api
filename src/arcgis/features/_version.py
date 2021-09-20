@@ -390,7 +390,7 @@ class Version(object):
         if (
             "isBeingEdited" in self.properties
             and self.properties.isBeingEdited
-            and "isBeingRed" in self.properties
+            and "isBeingRead" in self.properties
             and self.properties.isBeingRead
         ):
             self._mode = "edit"
@@ -398,7 +398,7 @@ class Version(object):
         elif (
             "isBeingEdited" in self.properties
             and self.properties.isBeingEdited == False
-            and "isBeingRed" in self.properties
+            and "isBeingRead" in self.properties
             and self.properties.isBeingRead
         ):
             self._mode = "read"

@@ -715,6 +715,9 @@ class MultiTaskRoadExtractor(ArcGISModel):
         if not hasattr(self.learn, "recorder"):
             return 0.0, 0.0
 
+        if len(self.learn.recorder.metrics) == 0:
+            return 0.0, 0.0
+
         try:
             model_accuracy = self.learn.recorder.metrics[-1][0]
             model_iou = self.learn.recorder.metrics[-1][1]

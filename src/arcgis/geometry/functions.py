@@ -8,7 +8,8 @@ import arcgis.env
 
 class AreaUnits(Enum):
     """
-    Supported Geometry Service Area Units
+    Represents the Supported Geometry Service Area Units Enumerations.
+    Example: areas_and_lengths(polygons=[geom],area_unit=AreaUnits.ACRES)
     """
 
     UNKNOWNAREAUNITS = {"areaUnit": "esriUnknownAreaUnits"}
@@ -29,6 +30,7 @@ class AreaUnits(Enum):
 class LengthUnits(Enum):
     """
     Represents the Geometry Service Length Units Enumerations
+    Example: areas_and_lengths(polygons=[geom],length_unit=LengthUnits.FOOT)
     """
 
     BRITISH1936FOOT = 9095
@@ -118,26 +120,25 @@ def areas_and_lengths(
     length_unit       The length unit in which the perimeters of
                       polygons will be calculated. If ``calculation_type``
                       is planar, then ``length_unit`` can be any esriUnits
-                      constant. If ``length_unit`` is not specified, the
-                      units are derived from ``spatial_ref``. If ``calculationType`` is
+                      constant (string or integer). If ``calculationType`` is
                       not planar, then ``length_unit`` must be a linear
-                      esriUnits constant, such as `esriSRUnit_Meter` or
-                      `esriSRUnit_SurveyMile`. If ``length_unit`` is not
-                      specified, the units are meters. For a list of
+                      esriUnits constant, such as `esriSRUnit_Meter`(i.e. `9001`|`LengthUnits.METER`) or
+                      `esriSRUnit_SurveyMile`(i.e. `9035`|`LengthUnits.SURVEYMILE`). If ``length_unit`` is not
+                      specified, the units are derived from ``spatial_ref``. If ``spatial_ref`` is not
+                      specified as well, the units are in meters. For a list of
                       valid units, see `esriSRUnitType Constants` and
-                      `esriSRUnit2Type Constant`.
+                      `esriSRUnit2Type Constants`.
     ----------------  -------------------------------------------------------------------------------
     area_unit         The area unit in which areas of polygons will be
                       calculated. If calculation_type is planar, then
-                      area_unit can be any `esriUnits` constant. If
+                      area_unit can be any `esriAreaUnits` constant (dict or enum). If ``calculation_type`` is
+                      not planar, then ``area_unit`` must be a `esriAreaUnits` constant such
+                      as `AreaUnits.SQUAREMETERS` (i.e. `{"areaUnit": "esriSquareMeters"}`) or
+                      `AreaUnits.SQUAREMILES` (i.e. `{"areaUnit": "esriSquareMiles"}`). If
                       ``area_unit`` is not specified, the units are derived
-                      from ``spatial_ref``. If ``calculation_type`` is not planar, then
-                      ``area_unit`` must be a linear `esriUnits` constant such
-                      as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
-                      area_unit is not specified, then the units are
+                      from ``spatial_ref``. If ``spatial_ref`` is not specified, then the units are in square
                       meters. For a list of valid units, see
-                      `esriSRUnitType Constants` and `esriSRUnit2Type
-                      constant`.
+                      `esriAreaUnits Constants`.
                       The list of valid esriAreaUnits constants include,
                       `esriSquareInches | esriSquareFeet |
                       esriSquareYards | esriAcres | esriSquareMiles |
@@ -165,19 +166,20 @@ def areas_and_lengths(
 
     .. code-block:: python
 
-            >>> geom = Geometry({
-            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-            >>>               [-97.06326,32.759]]],
-            >>>   "spatialReference" : {"wkid" : 4326}
-            >>>                 })
-            >>> geom.areas_and_lengths(polygons =[polygon1, polygon2,...],
-                                       length_unit = "esriMeters",
-                                       area_unit = "esriSquareMeters",
-                                       calculation_type = "planar",
-                                       future = True)
-    :return:
-        Dictionary of perimeters and areas for each polygon indicated
+            >>> # Use case 1
+            >>> areas_and_lengths(polygons =[polygon1, polygon2,...],
+                                  length_unit = 9001,
+                                  area_unit = {"areaUnit": "esriSquareMeters"},
+                                  calculation_type = "planar")
+            >>> # Use case 2
+            >>> from arcgis.geometry import LengthUnits, AreaUnits
+            >>> areas_and_lengths(polygons =[polygon1, polygon2,...],
+                                  length_unit = LengthUnits.METER,
+                                  area_unit = AreaUnits.SQUAREMETERS,
+                                  calculation_type = "planar",
+                                  future = True)
+    :returns:
+        A JSON as dictionary, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -212,8 +214,8 @@ def auto_complete(
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        A :class:`~arcgis.geometry.Polygon` object
+    :returns:
+        A :class:`~arcgis.geometry.Polygon` object, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -282,25 +284,17 @@ def buffer(
 
     .. code-block:: python
 
-            >>> geom = Geometry({
-            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-            >>>               [-97.06326,32.759]]],
-            >>>   "spatialReference" : {"wkid" : 4326}
-            >>>                 })
-            >>> new_poly = geom.buffer(geometries =[geom1, geom2,...],
-                                       in_sr = "wkid_in",
-                                       unit = "esriMeters",
-                                       out_sr = "wkid_out",
-                                       buffer_sr = "wkid_buffer",
-                                       union_results =True,
-                                       geodesic = True,
-                                       future = True)
-            >>> new_poly.type
-                "POLYGON"
+            >>> buffer(geometries =[geom1, geom2,...],
+                       in_sr = "wkid_in",
+                       unit = "esriMeters",
+                       out_sr = "wkid_out",
+                       buffer_sr = "wkid_buffer",
+                       union_results =True,
+                       geodesic = True,
+                       future = True)
 
-    :return:
-        A :class:`~arcgis.geometry.Polygon` object
+    :returns:
+        A list of :class:`~arcgis.geometry.Polygon` object, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -342,8 +336,8 @@ def convex_hull(geometries, spatial_ref=None, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        The convex hull of the :class:`~arcgis.geometry.Geometry` object
+    :returns:
+        The convex hull of the :class:`~arcgis.geometry.Geometry` object, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -384,8 +378,8 @@ def cut(cutter, target, spatial_ref=None, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        A List of :class:`~arcgis.geometry.Geometry` objects
+    :returns:
+        A List of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -445,23 +439,15 @@ def densify(
 
     .. code-block:: python
 
-            >>> geom = Geometry({
-            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-            >>>               [-97.06326,32.759]]],
-            >>>   "spatialReference" : {"wkid" : 4326}
-            >>>                 })
-            >>> new_geom = geom.densify(geometries =[geom1, geom2,...],
-                                        spatial_ref = "wkid",
-                                        max_segment_length = 100.0,
-                                        length_unit = "esriMeters",
-                                        geodesic = True,
-                                        future = True)
-            >>> new_geom.type
-                "GEOMETRY"
+            >>> densify(geometries =[geom1, geom2,...],
+                        spatial_ref = "wkid",
+                        max_segment_length = 100.0,
+                        length_unit = "esriMeters",
+                        geodesic = True,
+                        future = False)
 
-    :return:
-        A :class:`~arcgis.geometry.Geometry` object
+    :returns:
+        A list of :class:`~arcgis.geometry.Geometry` object, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -507,8 +493,8 @@ def difference(geometries, spatial_ref, geometry, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        A :class:`~arcgis.geometry.Geometry` object
+    :returns:
+        A list of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -557,8 +543,9 @@ def distance(
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        The 2D or geodesic distance between the two :class:`~arcgis.geometry.Geometry` objects
+    :returns:
+        The 2D or geodesic distance between the two :class:`~arcgis.geometry.Geometry` objects, or
+        a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -620,8 +607,8 @@ def find_transformation(
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        A List of geographic transformations
+    :returns:
+        A List of geographic transformations, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -689,21 +676,15 @@ def from_geo_coordinate_string(
 
     .. code-block:: python
 
-            >>> geom = Geometry({
-            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-            >>>               [-97.06326,32.759]]],
-            >>>   "spatialReference" : {"wkid" : 4326}
-            >>>                 })
             >>> coords = from_geo_coordinate_string(spatial_ref = "wkid",
                                             strings = ["01N AA 66021 00000","11S NT 00000 62155", "31U BT 94071 65288"]
                                             conversion_type = "MGRS",
                                             conversion_mode = "mgrs_default",
-                                            future = True)
+                                            future = False)
             >>> coords
                 [[x1,y1], [x2,y2], [x3,y3]]
-    :return:
-        An array of (x,y) coordinates
+    :returns:
+        An array of (x,y) coordinates, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -747,8 +728,8 @@ def generalize(
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        An array of the simplified :class:`~arcgis.geometry.Geometry` objects
+    :returns:
+        An array of the simplified :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -788,8 +769,8 @@ def intersect(spatial_ref, geometries, geometry, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        The set-theoretic dimension between :class:`~arcgis.geometry.Geometry` objects
+    :returns:
+        The set-theoretic dimension between :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -818,8 +799,8 @@ def label_points(spatial_ref, polygons, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        An array of :class:`~arcgis.geometry.Point` objects
+    :returns:
+        An array of :class:`~arcgis.geometry.Point` objects, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -869,8 +850,8 @@ def lengths(
      future            A required Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        A list of floats of 2D-Euclidean or Geodesic lengths
+    :returns:
+        A list of floats of 2D-Euclidean or Geodesic lengths, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -952,13 +933,7 @@ def offset(
 
     .. code-block:: python
 
-            >>> geom = Geometry({
-            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-            >>>               [-97.06326,32.759]]],
-            >>>   "spatialReference" : {"wkid" : 4326}
-            >>>                 })
-            >>> new_geom = offset(geometries = [geom1,geom2,...],
+            >>> new_job = offset( geometries = [geom1,geom2,...],
                                   offset_distance = 100,
                                   offset_unit = "esriMeters",
                                   offset_how = "esriGeometryOffsetRounded",
@@ -966,11 +941,9 @@ def offset(
                                   simplify_result = True
                                   spatial_ref = "wkid",
                                   future = True)
-            >>> new_geom.type
-                arcgis.geometry.Geometry
 
-    :return:
-        A :class:`~arcgis.geometry.Geometry` object
+    :returns:
+        A list of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
 
     """
     if gis is None:
@@ -1038,14 +1011,14 @@ def project(
 
         #Usage Example
 
-        >>> input_geom = [{"x": -17568824.55, "y": 2428377.35}, {"x": -17568456.88, "y": 2428431.352}]
-        >>> result = project(geometries = input_geom,
+        >>> result = project(geometries = [{"x": -17568824.55, "y": 2428377.35}, {"x": -17568456.88, "y": 2428431.352}],
                              in_sr = 3857,
                              out_sr = 4326)
             [{"x": -157.82343617279275, "y": 21.305781607280093}, {"x": -157.8201333369876, "y": 21.306233559873714}]
 
-    :return:
-        A list of :class:`~arcgis.geometry.Geometry` objects in the ``out_sr`` coordinate system
+    :returns:
+        A list of :class:`~arcgis.geometry.Geometry` objects in the ``out_sr`` coordinate system, or
+        a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1096,23 +1069,18 @@ def relation(
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    >>> geom = Geometry({
-            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-            >>>               [-97.06326,32.759]]],
-            >>>   "spatialReference" : {"wkid" : 4326}
-            >>>                 })
-            >>> new_geom = relation(geometry1 = [geom1,geom2,...],
-                                  geometry2 = [geom21,geom22,..],
-                                  relation_param = "relationParameter",
-                                  spatial_relation = "esriGeometryRelationPointTouch"
-                                  spatial_ref = "wkid",
-                                  future = True)
-            >>> new_geom
-                [[geom1,geom22], [geom2,geom21]]
 
-    :return:
-        An array of paired :class:`~arcgis.geometry.Geometry` objects
+            >>> new_res = relation(geometry1 = [geom1,geom2,...],
+                                   geometry2 = [geom21,geom22,..],
+                                   relation_param = "relationParameter",
+                                   spatial_relation = "esriGeometryRelationPointTouch"
+                                   spatial_ref = "wkid",
+                                   future = False)
+            >>> new_res
+                {'relations': [{'geometry1Index': 0, 'geometry2Index': 0}]}
+
+    :returns:
+        A JSON dict of geometryNIndex between two lists of geometries, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1147,8 +1115,9 @@ def reshape(spatial_ref, target, reshaper, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        A reshaped :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` object
+    :returns:
+        A reshaped :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` object, or
+        a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1176,8 +1145,8 @@ def simplify(spatial_ref, geometries, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        An array of :class:`~arcgis.geometry.Geometry` objects
+    :returns:
+        An array of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1266,22 +1235,16 @@ def to_geo_coordinate_string(
 
         .. code-block:: python
 
-            >>> geom = Geometry({
-            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-            >>>               [-97.06326,32.759]]],
-            >>>   "spatialReference" : {"wkid" : 4326}
-            >>>                 })
             >>> strings = from_geo_coordinate_string(spatial_ref = "wkid",
-                                            coordinates = [[x1,y1], [x2,y2], [x3,y3]]
-                                            conversion_type = "MGRS",
-                                            conversion_mode = "mgrs_default",
-                                            future = True)
+                                                     coordinates = [[x1,y1], [x2,y2], [x3,y3]]
+                                                     conversion_type = "MGRS",
+                                                     conversion_mode = "mgrs_default",
+                                                     future = False)
             >>> strings
                 ["01N AA 66021 00000","11S NT 00000 62155", "31U BT 94071 65288"]
 
-    :return:
-        An array of Strings
+    :returns:
+        An array of Strings, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1348,22 +1311,16 @@ def trim_extend(
 
     .. code-block:: python
 
-            >>> geom = Geometry({
-            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-            >>>               [-97.06326,32.759]]],
-            >>>   "spatialReference" : {"wkid" : 4326}
-            >>>                 })
             >>> polylines_arr = trim_extends(polylines = [polyline1,polyline2, ...],
                                              trim_extend_to = polyline_trimmer
                                              extend_how = 2,
                                              spatial_ref = "wkid",
-                                             future = True)
+                                             future = False)
             >>> polyline_arr
                 [polyline1, polyline2,...]
 
-    :return:
-        An array of :class:`~arcgis.geometry.Polyline` objects
+    :returns:
+        An array of :class:`~arcgis.geometry.Polyline` objects, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1395,8 +1352,8 @@ def union(spatial_ref, geometries, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :return:
-        The set-theoretic union of the :class:`~arcgis.geometry.Geometry` objects
+    :returns:
+        The set-theoretic union of the :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
