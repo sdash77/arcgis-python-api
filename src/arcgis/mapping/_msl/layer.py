@@ -179,7 +179,9 @@ class MapFeatureLayer(Layer):
         """
         Get/Set the Renderer of the Map Feature Layer.  This overrides the default symbology when displaying it on a webmap.
 
-        :return: InsensitiveDict
+        :return:
+            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
+            A varients of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict

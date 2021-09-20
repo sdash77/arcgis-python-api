@@ -143,7 +143,9 @@ class CSVLayer(BaseOpenData):
         """
         Get/Set the Renderer of the CSV Layer
 
-        :return: InsensitiveDict
+        :return:
+            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
+            A varients of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -161,7 +163,9 @@ class CSVLayer(BaseOpenData):
         """
         Get/Set the Renderer of the CSV Layer
 
-        :return: InsensitiveDict
+        :return:
+            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
+            A varients of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
