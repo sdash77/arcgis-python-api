@@ -6,6 +6,7 @@ from torch.autograd import Variable
 from fastai.vision import ImageImageList, Tuple, subplots, plt
 from .common import ArcGISMSImage, ArcGISImageListRGB
 
+
 def gaussian(window_size, sigma):
     gauss = torch.Tensor(
         [

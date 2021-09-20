@@ -209,7 +209,15 @@ class Connection(object):
             self._auth = "BUILTIN"
         elif baseurl.lower() == "pro":
             self._auth = "PRO"
-            self._baseurl = arcpy.GetActivePortalURL()
+            portal_url = arcpy.GetActivePortalURL()
+            if portal_url.lower().find("/sharing/rest") == -1:
+                if arcpy.GetActivePortalURL().endswith("/"):
+
+                    self._baseurl = arcpy.GetActivePortalURL() + "sharing/rest"
+                else:
+                    self._baseurl = arcpy.GetActivePortalURL() + "/sharing/rest"
+            else:
+                self._baseurl = arcpy.GetActivePortalURL()
         elif self._cert_file or (self._cert_file and self._key_file):
             self._auth = "PKI"
 
@@ -1976,9 +1984,19 @@ class Connection(object):
             return "AGOL"
         elif baseurl.lower().find("/sharing/rest") > -1:
             if baseurl.endswith("/"):
-                res = self.get(baseurl + "info", params={"f": "json"}, add_token=False)
+                try:
+                    res = self.get(
+                        baseurl + "info", params={"f": "json"}, add_token=False
+                    )
+                except:
+                    res = self.get(baseurl + "info", params={"f": "json"})
             else:
-                res = self.get(baseurl + "/info", params={"f": "json"}, add_token=False)
+                try:
+                    res = self.get(
+                        baseurl + "/info", params={"f": "json"}, add_token=False
+                    )
+                except:
+                    res = self.get(baseurl + "/info", params={"f": "json"})
             if (
                 self._token_url is None
                 and res is not None

@@ -21,7 +21,7 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in 
                             images. Values range between 0 and 1, where
                             1 means opaque.
     -------------------------------------------------------------------
-    
+
     """
     nrows = rows
     ncols = kwargs.get("ncols", nrows)

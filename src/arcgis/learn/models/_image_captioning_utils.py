@@ -437,8 +437,9 @@ def get_grams(x, n, max_n=5000):
 
 
 def get_correct_ngrams(pred, targ, n, max_n=5000):
-    pred_grams, targ_grams = get_grams(pred, n, max_n=max_n), get_grams(
-        targ, n, max_n=max_n
+    pred_grams, targ_grams = (
+        get_grams(pred, n, max_n=max_n),
+        get_grams(targ, n, max_n=max_n),
     )
     pred_cnt, targ_cnt = Counter(pred_grams), Counter(targ_grams)
     return sum([min(c, targ_cnt[g]) for g, c in pred_cnt.items()]), len(pred_grams)
@@ -515,9 +516,9 @@ class CorpusBLEU(Callback):
                 self.counts[i] += t
 
     def on_epoch_end(self, last_metrics, **kwargs):
-        precs = [c / t for c, t in zip(self.corrects, self.counts)]
+        precs = [c / (t + EPS) for c, t in zip(self.corrects, self.counts)]
         len_penalty = (
-            exp(1 - self.targ_len / self.pred_len)
+            exp(1 - self.targ_len / (self.pred_len + EPS))
             if self.pred_len < self.targ_len
             else 1
         )

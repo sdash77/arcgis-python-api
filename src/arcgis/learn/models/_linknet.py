@@ -66,12 +66,7 @@ class LinkNet(ArcGISModel):
     """
 
     def __init__(
-        self,
-        data,
-        backbone=None,
-        pretrained_path=None,
-        *args,
-        **kwargs,
+        self, data, backbone=None, pretrained_path=None, *args, **kwargs,
     ):
         # Set default backbone to be 'resnet34'
         if backbone is None:
@@ -279,6 +274,9 @@ class LinkNet(ArcGISModel):
     def _get_model_metrics(self, **kwargs):
         checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
+            return 0.0
+
+        if len(self.learn.recorder.metrics) == 0:
             return 0.0
 
         try:

@@ -667,9 +667,7 @@ def predict(self, img_path):
     img_path = Path(img_path)
     if self._data.label_nc == 0:
         raw_img = ArcGISMSImage.open(
-            img_path,
-            imagery_type=self._data.imagery_type,
-            div=255
+            img_path, imagery_type=self._data.imagery_type, div=255
         )
     else:
         raw_img = ImageSegment(ArcGISMSImage.open(img_path).data)
