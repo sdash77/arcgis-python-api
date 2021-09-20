@@ -243,7 +243,7 @@ def connect_origins_to_destinations(
     ===================================     =========================================================
 
 
-    :returns: dict with the following keys:
+    :return: dict with the following keys:
 
         "routes_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
@@ -484,7 +484,7 @@ def create_buffers(
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
-    :returns: result_layer : :class`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
 
     .. code-block:: python
@@ -730,7 +730,7 @@ def create_drive_time_areas(
                                  distance than what the drive-time areas would contain.
     =========================    =========================================================
 
-    :returns: result_layer : :class`~arcgis.features.FeatureLayer` if output_name is specified, else Feature Collection.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else Feature Collection.
 
 
     .. code-block:: python
@@ -967,13 +967,13 @@ def find_nearest(
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
-    :Returns:
+    :return:
 
     dict with the following keys:
 
-       "nearest_layer" : layer (:class`~arcgis.features.FeatureCollection`)
+       "nearest_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-       "connecting_lines_layer" : layer (:class`~arcgis.features.FeatureCollection`)
+       "connecting_lines_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 
@@ -1307,14 +1307,14 @@ def plan_routes(
     future                          Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ============================    ==================================================================================================
 
-    :returns: :class`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else dict with the following keys:
+    :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else dict with the following keys:
 
 
-        "routes_layer" : layer (:class`~arcgis.features.FeatureCollection`)
+        "routes_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        "assigned_stops_layer" : layer (:class`~arcgis.features.FeatureCollection`)
+        "assigned_stops_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        "unassigned_stops_layer" : layer (:class`~arcgis.features.FeatureCollection`)
+        "unassigned_stops_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 

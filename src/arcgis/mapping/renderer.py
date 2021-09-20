@@ -100,7 +100,7 @@ class _DotDensity(object):
         value               Required string. Color to set the background to.
         ===============     ====================================================================
 
-        :returns: List
+        :return: List
 
         """
         return self._bg_color
@@ -268,7 +268,7 @@ class _DotDensity(object):
         alpha               Optional float. A value between 0-1 that determines the symbol opacity.
         ===============     ====================================================================
 
-        :returns: True if successful otherwise error message
+        :return: True if successful otherwise error message
 
         """
         mapped_names = [n["field"].lower() for n in self.attributes]
@@ -293,7 +293,7 @@ class _DotDensity(object):
         field               Required String.  Name of the dataset field
         ===============     ====================================================================
 
-        :returns:True if successful else False
+        :return:True if successful else False
 
         """
         mapped_names = [n["field"].lower() for n in self.attributes if "field" in n]
@@ -946,7 +946,7 @@ def generate_renderer(
     ======================  =========================================================
 
 
-    :returns: A dictionary of the renderer.
+    :return: A dictionary of the renderer.
 
     """
     import numpy as np

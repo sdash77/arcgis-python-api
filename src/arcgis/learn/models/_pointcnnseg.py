@@ -90,7 +90,7 @@ class PointCNN(ArcGISModel):
                             will actually process.
     =====================   ===========================================
 
-    :returns: `PointCNN` Object
+    :return: `PointCNN` Object
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
@@ -155,7 +155,7 @@ class PointCNN(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `PointCNN` Object
+        :return: `PointCNN` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -514,7 +514,7 @@ class PointCNN(ArcGISModel):
                                 Default: [].
         =====================   ===========================================
 
-        :returns: Path where files are dumped.
+        :return: Path where files are dumped.
         """
 
         return inference_las(path, self, output_path, print_metrics, **kwargs)
@@ -545,7 +545,7 @@ class PointCNN(ArcGISModel):
                                 folder in input path.
         =====================   ===========================================
 
-        :returns: Path where files are dumped.
+        :return: Path where files are dumped.
         """
 
         return predict_h5(self, path, output_path, **kwargs)

@@ -176,7 +176,7 @@ def areas_and_lengths(
                                        area_unit = "esriSquareMeters",
                                        calculation_type = "planar",
                                        future = True)
-    :returns:
+    :return:
         Dictionary of perimeters and areas for each polygon indicated
     """
     if gis is None:
@@ -212,7 +212,7 @@ def auto_complete(
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         A :class:`~arcgis.geometry.Polygon` object
     """
     if gis is None:
@@ -299,7 +299,7 @@ def buffer(
             >>> new_poly.type
                 "POLYGON"
 
-    :returns:
+    :return:
         A :class:`~arcgis.geometry.Polygon` object
     """
     if gis is None:
@@ -342,7 +342,7 @@ def convex_hull(geometries, spatial_ref=None, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         The convex hull of the :class:`~arcgis.geometry.Geometry` object
     """
     if gis is None:
@@ -384,7 +384,7 @@ def cut(cutter, target, spatial_ref=None, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         A List of :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
@@ -460,7 +460,7 @@ def densify(
             >>> new_geom.type
                 "GEOMETRY"
 
-    :returns:
+    :return:
         A :class:`~arcgis.geometry.Geometry` object
     """
     if gis is None:
@@ -507,7 +507,7 @@ def difference(geometries, spatial_ref, geometry, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         A :class:`~arcgis.geometry.Geometry` object
     """
     if gis is None:
@@ -557,7 +557,7 @@ def distance(
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         The 2D or geodesic distance between the two :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
@@ -620,7 +620,7 @@ def find_transformation(
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         A List of geographic transformations
     """
     if gis is None:
@@ -702,7 +702,7 @@ def from_geo_coordinate_string(
                                             future = True)
             >>> coords
                 [[x1,y1], [x2,y2], [x3,y3]]
-    :returns:
+    :return:
         An array of (x,y) coordinates
     """
     if gis is None:
@@ -747,7 +747,7 @@ def generalize(
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         An array of the simplified :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
@@ -788,7 +788,7 @@ def intersect(spatial_ref, geometries, geometry, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         The set-theoretic dimension between :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
@@ -818,7 +818,7 @@ def label_points(spatial_ref, polygons, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         An array of :class:`~arcgis.geometry.Point` objects
     """
     if gis is None:
@@ -869,7 +869,7 @@ def lengths(
      future            A required Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         A list of floats of 2D-Euclidean or Geodesic lengths
     """
     if gis is None:
@@ -969,7 +969,7 @@ def offset(
             >>> new_geom.type
                 arcgis.geometry.Geometry
 
-    :returns:
+    :return:
         A :class:`~arcgis.geometry.Geometry` object
 
     """
@@ -1044,7 +1044,7 @@ def project(
                              out_sr = 4326)
             [{"x": -157.82343617279275, "y": 21.305781607280093}, {"x": -157.8201333369876, "y": 21.306233559873714}]
 
-    :returns:
+    :return:
         A list of :class:`~arcgis.geometry.Geometry` objects in the ``out_sr`` coordinate system
     """
     if gis is None:
@@ -1111,7 +1111,7 @@ def relation(
             >>> new_geom
                 [[geom1,geom22], [geom2,geom21]]
 
-    :returns:
+    :return:
         An array of paired :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
@@ -1147,7 +1147,7 @@ def reshape(spatial_ref, target, reshaper, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         A reshaped :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` object
     """
     if gis is None:
@@ -1176,7 +1176,7 @@ def simplify(spatial_ref, geometries, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         An array of :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
@@ -1280,7 +1280,7 @@ def to_geo_coordinate_string(
             >>> strings
                 ["01N AA 66021 00000","11S NT 00000 62155", "31U BT 94071 65288"]
 
-    :returns:
+    :return:
         An array of Strings
     """
     if gis is None:
@@ -1362,7 +1362,7 @@ def trim_extend(
             >>> polyline_arr
                 [polyline1, polyline2,...]
 
-    :returns:
+    :return:
         An array of :class:`~arcgis.geometry.Polyline` objects
     """
     if gis is None:
@@ -1395,7 +1395,7 @@ def union(spatial_ref, geometries, gis=None, future=False):
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
-    :returns:
+    :return:
         The set-theoretic union of the :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:

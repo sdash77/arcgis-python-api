@@ -318,7 +318,7 @@ class Geometry(BaseGeometry):
         """
         Converts an ESRI JSON to GeoJSON
 
-        :returns: string
+        :return: string
         """
         _HASARCPY, _HASSHAPELY = _check_geometry_engine()
         if _HASARCPY:
@@ -479,7 +479,7 @@ class Geometry(BaseGeometry):
         .. note::
             The ``as_arcpy`` method requires ArcPy
 
-        :returns:
+        :return:
             An :class:`~arcgis.geometry.Geometry` object
 
         """
@@ -560,7 +560,7 @@ class Geometry(BaseGeometry):
             >>> g.geoextent
             (1,2,3,4)
 
-        :returns: tuple
+        :return: tuple
         """
         _HASARCPY, _HASSHAPELY = _check_geometry_engine()
 
@@ -643,7 +643,7 @@ class Geometry(BaseGeometry):
         """
         The ``envelope`` method retrieves the geoextent as an :class:`~arcgis.geometry.Envelope` object
 
-        :returns:
+        :return:
             :class:`~arcgis.geometry.Envelope`
         """
         env_dict = {
@@ -672,7 +672,7 @@ class Geometry(BaseGeometry):
         ===============     ====================================================================
 
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
 
         """
@@ -698,7 +698,7 @@ class Geometry(BaseGeometry):
         ===============     ====================================================================
 
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
 
         """
@@ -737,7 +737,7 @@ class Geometry(BaseGeometry):
                                    y_scale = 0.5,
                                    inplace = False)
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
 
         """
@@ -779,7 +779,7 @@ class Geometry(BaseGeometry):
                                y_offset = 50,
                                inplace = True)
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
 
         """
@@ -795,7 +795,7 @@ class Geometry(BaseGeometry):
         """
         Determines if the geometry is empty.
 
-        :returns:
+        :return:
            A boolean indicating empty (True), or filled (False)
         """
         if isinstance(self, Point):
@@ -816,7 +816,7 @@ class Geometry(BaseGeometry):
         """
         The ``as_shapely`` method retrieves a shapely :class:`~arcgis.geometry.Geometry` object
 
-        :returns:
+        :return:
             A shapely :class:`~arcgis.geometry.Geometry` object.
             If shapely is not installed, None is returned
         """
@@ -836,7 +836,7 @@ class Geometry(BaseGeometry):
         The ``JSON`` method retrieves an Esri JSON representation of the :class:`~arcgis.geometry.Geometry` object as a
         string.
 
-        :returns:
+        :return:
             A string representing a :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -870,7 +870,7 @@ class Geometry(BaseGeometry):
                             Defines the spatial reference for the output geometry.
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
 
         .. code-block:: python
@@ -913,7 +913,7 @@ class Geometry(BaseGeometry):
             Any true curves in the geometry will be densified into approximate
             curves in the WKT string.
 
-        :returns:
+        :return:
             A String
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -950,7 +950,7 @@ class Geometry(BaseGeometry):
             Any true curves in the geometry will be densified into approximate
             curves in the WKT string.
 
-        :returns:
+        :return:
             A string
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -981,7 +981,7 @@ class Geometry(BaseGeometry):
         It provides a portable representation of a geometry value as a
         contiguous stream of bytes.
 
-        :returns:
+        :return:
             bytes
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1030,7 +1030,7 @@ class Geometry(BaseGeometry):
             -1.869999999973911e-06
 
 
-        :returns:
+        :return:
             A float
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1086,7 +1086,7 @@ class Geometry(BaseGeometry):
             (-97.06258999999994, 32.754333333000034)
 
 
-        :returns:
+        :return:
             A tuple(x,y) indicating the center
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1132,7 +1132,7 @@ class Geometry(BaseGeometry):
             >>> geom.extent
             (-97.06326, 32.749, -97.06124, 32.837)
 
-        :returns:
+        :return:
             A tuple
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1243,7 +1243,7 @@ class Geometry(BaseGeometry):
         """
         The ``has_z`` method determines if the geometry has a `Z` value.
 
-        :returns:
+        :return:
             A boolean indicating yes (True), or no (False)
 
         """
@@ -1255,7 +1255,7 @@ class Geometry(BaseGeometry):
         """
         The ``has_m`` method determines if the geometry has a `M` value.
 
-        :returns:
+        :return:
             A boolean indicating yes (True), or no (False)
 
         """
@@ -1351,7 +1351,7 @@ class Geometry(BaseGeometry):
             >>> geom.label_point
             {'x': -97.06258999999994, 'y': 32.754333333000034, 'spatialReference': {'wkid': 4326, 'latestWkid': 4326}}
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Point` object
 
         """
@@ -1387,7 +1387,7 @@ class Geometry(BaseGeometry):
             {'x': -97.06326, 'y': 32.759, 'spatialReference': {'wkid': 4326, 'latestWkid': 4326}}
 
 
-        :returns: A :class:`~arcgis.geometry.Point` object
+        :return: A :class:`~arcgis.geometry.Point` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1449,7 +1449,7 @@ class Geometry(BaseGeometry):
             >>> geom.length
             0.03033576008004027
 
-        :returns: A float
+        :return: A float
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1486,7 +1486,7 @@ class Geometry(BaseGeometry):
             >>> geom.length3D
             0.03033576008004027
 
-        :returns: A float
+        :return: A float
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1516,7 +1516,7 @@ class Geometry(BaseGeometry):
             >>> geom.part_count
             1
 
-        :returns: An Integer representing the amount of :class:`~arcgis.geometry.Geometry` parts
+        :return: An Integer representing the amount of :class:`~arcgis.geometry.Geometry` parts
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1585,7 +1585,7 @@ class Geometry(BaseGeometry):
             >>> geom.spatial_reference
             <SpatialReference Class>
 
-        :returns: A :class:`~arcgis.geometry.SpatialReference` object
+        :return: A :class:`~arcgis.geometry.SpatialReference` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1619,7 +1619,7 @@ class Geometry(BaseGeometry):
             >>> geom.true_centroid
             {'x': -97.06272135472369, 'y': 32.746201426025, 'spatialReference': {'wkid': 4326, 'latestWkid': 4326}}
 
-        :returns: A :class:`~arcgis.geometry.Point` object
+        :return: A :class:`~arcgis.geometry.Point` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
@@ -1666,7 +1666,7 @@ class Geometry(BaseGeometry):
             'polygon'
 
 
-        :returns: A string indicating the geometry type
+        :return: A string indicating the geometry type
         """
         if isinstance(self, Envelope):
             return "envelope"
@@ -1715,7 +1715,7 @@ class Geometry(BaseGeometry):
             >>>                        method="PLANAR")
                 {54.5530, 1000.1111}
 
-        :returns: A tuple of angle and distance to another :class:`~arcgis.geometry.Point` using a measurement type.
+        :return: A tuple of angle and distance to another :class:`~arcgis.geometry.Point` using a measurement type.
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -1734,7 +1734,7 @@ class Geometry(BaseGeometry):
         """
         The ``boundary`` method constructs the boundary of the :class:`~arcgis.geometry.Geometry` object.
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1762,7 +1762,7 @@ class Geometry(BaseGeometry):
                             A negative distance can only be specified against a polygon geometry.
         ===============     ====================================================================
 
-        :returns: A :class:`~arcgis.geometry.Polygon` object
+        :return: A :class:`~arcgis.geometry.Polygon` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -1787,7 +1787,7 @@ class Geometry(BaseGeometry):
                             represents the lower left bound and upper right bound of the extent.
         ===============     ====================================================================
 
-        :returns:
+        :return:
             The :class:`~arcgis.geometry.Geometry` object clipped to the extent
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1839,7 +1839,7 @@ class Geometry(BaseGeometry):
                               relation="CLEMENTINI")
                 True
 
-        :returns:
+        :return:
             A boolean indicating containment (True), or no containment (False)
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1862,7 +1862,7 @@ class Geometry(BaseGeometry):
         Constructs the :class:`~arcgis.geometry.Geometry` object that is the minimal bounding
         :class:`~arcgis.geometry.Polygon` such that all outer angles are convex.
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1945,7 +1945,7 @@ class Geometry(BaseGeometry):
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A boolean indicating yes (True), or no (False)
 
         """
@@ -1975,7 +1975,7 @@ class Geometry(BaseGeometry):
         cutter              Required :class:`~arcgis.geometry.Polyline`. The cutting polyline geometry
         ===============     ====================================================================
 
-        :returns: a list of two :class:`~arcgis.geometry.Geometry` objects
+        :return: a list of two :class:`~arcgis.geometry.Geometry` objects
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2025,7 +2025,7 @@ class Geometry(BaseGeometry):
                                      distance = 1244.0,
                                      deviation = 100.0)
 
-        :returns:
+        :return:
             A new :class:`~arcgis.geometry.Geometry` object
 
         """
@@ -2053,7 +2053,7 @@ class Geometry(BaseGeometry):
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
 
         """
@@ -2086,7 +2086,7 @@ class Geometry(BaseGeometry):
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A boolean indicating no :class:`~arcgis.geometry.Point` objects in common (True), or some in common
             (False)
 
@@ -2120,7 +2120,7 @@ class Geometry(BaseGeometry):
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns: A float
+        :return: A float
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2152,7 +2152,7 @@ class Geometry(BaseGeometry):
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
 
         """
@@ -2182,7 +2182,7 @@ class Geometry(BaseGeometry):
         max_offset          Required float. The maximum offset tolerance.
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
 
         """
@@ -2216,7 +2216,7 @@ class Geometry(BaseGeometry):
                             SQUAREMILLIMETERS | SQUAREYARDS`
         ===============     ====================================================================
 
-        :returns: A float representing the area of the :class:`~arcgis.geometry.Geometry` object
+        :return: A float representing the area of the :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2248,7 +2248,7 @@ class Geometry(BaseGeometry):
                             MILLIMETERS | NAUTICALMILES | YARDS`
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A float representing the length of the :class:`~arcgis.geometry.Geometry` object
 
         """
@@ -2321,7 +2321,7 @@ class Geometry(BaseGeometry):
                                dimension = 4)
                 True
 
-        :returns:
+        :return:
             A boolean indicating an intersection (True), or no intersection (False)
 
         """
@@ -2464,7 +2464,7 @@ class Geometry(BaseGeometry):
                                                            method = "PLANAR")
             >>> point.type
                 "POINT"
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Point` object
 
 
@@ -2501,7 +2501,7 @@ class Geometry(BaseGeometry):
                                 0.0 (0%) to 1.0 (100%).
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
 
         """
@@ -2552,7 +2552,7 @@ class Geometry(BaseGeometry):
             >>> geom2.type
                 arcgis.geometry.Geometry
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
         from six import string_types, integer_types
@@ -2665,7 +2665,7 @@ class Geometry(BaseGeometry):
                             distance, True, measure will be a percentage
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A tuple of the point and the distance
 
         """
@@ -2748,7 +2748,7 @@ class Geometry(BaseGeometry):
         second_geometry     Required :class:`~arcgis.geometry.Geometry` - A second geometry
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Point` object
 
         """
@@ -2777,7 +2777,7 @@ class Geometry(BaseGeometry):
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2813,7 +2813,7 @@ class Geometry(BaseGeometry):
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A boolean indicating whether the :class:`~arcgis.geometry.Geometry` objects touch (True), or if they do not
             touch (False)
 
@@ -2844,7 +2844,7 @@ class Geometry(BaseGeometry):
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2882,7 +2882,7 @@ class Geometry(BaseGeometry):
 
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A boolean indicating the :class:`~arcgis.geometry.Geometry` object is within (True), or not within (False)
 
         """
@@ -2963,7 +2963,7 @@ class MultiPoint(Geometry):
                           valid, and "#ff3333" if invalid.
         ================  ===============================================================================
 
-        :returns:
+        :return:
             A group of SVG circle elements
         """
         if self.is_empty:
@@ -3004,7 +3004,7 @@ class MultiPoint(Geometry):
             >>> coords
                 [ [x1,y1,m1,z1], [x2,y2,m2,z2],...]
 
-        :returns:
+        :return:
             An np.array containing coordinate values for each point
         """
         import numpy as np
@@ -3080,7 +3080,7 @@ class Point(Geometry):
                           valid, and "#ff3333" if invalid.
         ================  ===============================================================================
 
-        :returns:
+        :return:
             An SVG circle element
         """
         if self.is_empty:
@@ -3120,7 +3120,7 @@ class Point(Geometry):
             >>> coords
                 [x1,y1,m1,z1]
 
-        :returns:
+        :return:
             An np.array containing coordinate values
         """
         import numpy as np
@@ -3191,7 +3191,7 @@ class Polygon(Geometry):
                           valid, and "#ff3333" if invalid.
         ================  ===============================================================================
 
-        :returns:
+        :return:
             The SVG polygon element
         """
 
@@ -3245,7 +3245,7 @@ class Polygon(Geometry):
             >>> coords
                 [ [x1,y1,m1,z1], [x2,y2,m2,z2],...,[x1,y1,m1,z1] ]
 
-        :returns:
+        :return:
             An np.array containing coordinate values
         """
         import numpy as np
@@ -3334,7 +3334,7 @@ class Polyline(Geometry):
                           valid, and "#ff3333" if invalid.
         ================  ===============================================================================
 
-        :returns:
+        :return:
             The SVG polyline element for the LineString Geometry
         """
         if self.is_empty:
@@ -3380,7 +3380,7 @@ class Polyline(Geometry):
             >>> coords
                 [ [x1,y1,m1,z1], [x2,y2,m2,z2],...]
 
-        :returns:
+        :return:
             An np.array containing coordinate values
         """
         import numpy as np
@@ -3473,7 +3473,7 @@ class Envelope(Geometry):
                           valid, and "#ff3333" if invalid.
         ================  ===============================================================================
 
-        :returns:
+        :return:
             A SVG envelope element
         """
         return self.polygon.svg(scale_factor, fill_color)
@@ -3496,7 +3496,7 @@ class Envelope(Geometry):
             >>> coords
                 [ [x1,y1,m1,z1], [x2,y2,m2,z2],...]
 
-        :returns:
+        :return:
             An np.array containing coordinate values
         """
         import numpy as np
@@ -3523,7 +3523,7 @@ class Envelope(Geometry):
         """
         The ``geohash`` method retrieves a geohash string of the extent of the ``Envelope.
 
-        :returns:
+        :return:
             A geohash String
         """
         return getattr(self.as_arcpy, "geohash", None)
@@ -3535,7 +3535,7 @@ class Envelope(Geometry):
         The ``geohash_covers`` method retrieves a list of up to the four longest geohash strings that
         fit within the extent of the ``Envelope``.
 
-        :returns:
+        :return:
            A list of geohash Strings
         """
         return getattr(self.as_arcpy, "geohashCovers", None)
@@ -3547,7 +3547,7 @@ class Envelope(Geometry):
         Gets a list of the geohash neighbor strings for the extent of the
         ``Envelope``.
 
-        :returns:
+        :return:
            A list of geohash neighbor Strings
         """
         return getattr(self.as_arcpy, "geohashNeighbors", None)
@@ -3558,7 +3558,7 @@ class Envelope(Geometry):
         """
         Gets the extent height value.
 
-        :returns:
+        :return:
             The extent height value
         """
         return getattr(self.as_arcpy, "height", None)
@@ -3569,7 +3569,7 @@ class Envelope(Geometry):
         """
         Gets the extent width value.
 
-        :returns:
+        :return:
             The extent width value
         """
         return getattr(self.as_arcpy, "width", None)
@@ -3580,7 +3580,7 @@ class Envelope(Geometry):
         """
         Gets the ``Envelope`` as a :class:`~arcgis.geometry.Polygon` object.
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.Polygon` object
         """
         fe = self.coordinates().tolist()
@@ -3708,7 +3708,7 @@ class SpatialReference(BaseGeometry):
                           valid, and "#ff3333" if invalid.
         ================  ===============================================================================
 
-        :returns:
+        :return:
             The SVG element
         """
         return "<g/>"
@@ -3733,7 +3733,7 @@ class SpatialReference(BaseGeometry):
         """
         The ``as_arcpy`` property retrieves the class as an ``arcpy SpatialReference`` object.
 
-        :returns:
+        :return:
             An ``arcpy SpatialReference`` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()

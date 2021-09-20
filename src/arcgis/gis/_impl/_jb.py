@@ -125,7 +125,7 @@ class StatusJob(object):
     @property
     def task(self) -> str:
         """Returns the task name.
-        :returns: string
+        :return: string
         """
         return self._op
 
@@ -135,7 +135,7 @@ class StatusJob(object):
         """
         returns the GP status
 
-        :returns: String
+        :return: String
         """
 
         url = f"{self._gis._portal.resturl}portals/self/jobs/%s" % self._jobid
@@ -151,7 +151,7 @@ class StatusJob(object):
         """
         returns the jobs message
 
-        :returns: String
+        :return: String
         """
 
         url = f"{self._gis._portal.resturl}portals/self/jobs/%s" % self._jobid
@@ -167,7 +167,7 @@ class StatusJob(object):
         Cancels the `Future` process to end the job locally.
         Import/Export jobs cannot be terminiated on server.
 
-        :returns: boolean
+        :return: boolean
         """
         if self.done():
             return False
@@ -181,7 +181,7 @@ class StatusJob(object):
         """
         Return True if the call was successfully cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.cancelled()
 
@@ -190,7 +190,7 @@ class StatusJob(object):
         """
         Return True if the call is currently being executed and cannot be cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.running()
 
@@ -199,7 +199,7 @@ class StatusJob(object):
         """
         Return True if the call was successfully cancelled or finished running.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.done()
 
@@ -209,7 +209,7 @@ class StatusJob(object):
         Return the value returned by the call. If the call hasn't yet completed
         then this method will wait.
 
-        :returns: object
+        :return: object
         """
         from arcgis.gis import Item
 

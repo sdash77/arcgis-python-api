@@ -55,7 +55,7 @@ class Logs(BasePortalAdmin):
             # Output
             True
 
-        :returns:
+        :return:
             Boolean True or False depicting success
 
         """
@@ -96,7 +96,7 @@ class Logs(BasePortalAdmin):
             maxLogFileAge : 90
             usageMeteringEnabled : False
 
-        :returns:
+        :return:
             Dictionary of key/value pairs of log settings
 
         """
@@ -191,7 +191,7 @@ class Logs(BasePortalAdmin):
                           default is 1000
         ================  ===============================================================
 
-        :returns:
+        :return:
            dictionary of messages
         """
         from datetime import datetime

@@ -276,7 +276,7 @@ class Security(BasePortalAdmin):
         group_config                    Optional dict. The group store configuration
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/config/updateIdentityStore" % self._url
@@ -312,7 +312,7 @@ class Security(BasePortalAdmin):
         group_config                    Optional dict. The group store configuration
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
 
         """
@@ -393,7 +393,7 @@ class OAuth(BasePortalAdmin):
         new_id                          Required string. The new client ID to assign to the application.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json", "currentAppID": current_id, "newAppID": new_id}
@@ -491,7 +491,7 @@ class SSLCertificates(BasePortalAdmin):
                                         comma separated.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         self._certs = None
@@ -563,7 +563,7 @@ class SSLCertificates(BasePortalAdmin):
                                         parameter.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         import json
@@ -618,7 +618,7 @@ class SSLCertificates(BasePortalAdmin):
                                         and the portal will restart.  Added in 10.6.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         .. code-block:: python
 
@@ -682,7 +682,7 @@ class SSLCertificates(BasePortalAdmin):
         certificate                     Required string. The file location of the certificate file
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         params = {"f": "json", "password": password, "alias": alias}
@@ -708,7 +708,7 @@ class SSLCertificates(BasePortalAdmin):
                                         list of certificates.
         ===========================     ====================================================================
 
-        :returns:
+        :return:
             List of SSLCertificate objects
 
         .. code-block:: python
@@ -754,7 +754,7 @@ class SSLCertificates(BasePortalAdmin):
         alias_name                      Required string. The common name of the certificate.
         ===========================     ====================================================================
 
-        :returns: SSLCertificate Object
+        :return: SSLCertificate Object
 
         .. code-block:: python
 
@@ -825,7 +825,7 @@ class SSLCertificate(BasePortalAdmin):
         self-signed certificate. A CSR is required by a CA to create a
         digitally signed version of your certificate.
 
-        :returns: string
+        :return: string
 
         """
         params = {"f": "json"}
@@ -848,7 +848,7 @@ class SSLCertificate(BasePortalAdmin):
         out_path                        Required string. Save location of the certificate
         ===========================     ====================================================================
 
-        :returns: string
+        :return: string
 
         """
         if out_path is None:
@@ -889,7 +889,7 @@ class SSLCertificate(BasePortalAdmin):
         file_path                       Required string. The location of the certificate
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/importSignedCertificate" % self._url
@@ -937,7 +937,7 @@ class EnterpriseGroups(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json", "filter": query, "maxCount": max_count}
@@ -963,7 +963,7 @@ class EnterpriseGroups(BasePortalAdmin):
                                         refreshed
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/refreshMembership" % self._url
@@ -987,7 +987,7 @@ class EnterpriseGroups(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/getUsersWithinEnterpriseGroup" % self._url
@@ -1015,7 +1015,7 @@ class EnterpriseGroups(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/getEnterpriseGroupsForUser" % self._url
@@ -1111,7 +1111,7 @@ class EnterpriseUsers(BasePortalAdmin):
 
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         role_lu = {
@@ -1174,7 +1174,7 @@ class EnterpriseUsers(BasePortalAdmin):
                                         username. For LDAP users, the format is always username.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/getEnterpriseUser" % self._url
@@ -1199,7 +1199,7 @@ class EnterpriseUsers(BasePortalAdmin):
         idp_username                    Required string. The username used by the SAML identity provider
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/updateEnterpriseUser" % self._url
@@ -1223,7 +1223,7 @@ class EnterpriseUsers(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/searchEnterpriseUsers" % self._url
@@ -1248,7 +1248,7 @@ class EnterpriseUsers(BasePortalAdmin):
         users                           Required string. A comma seperated list of users.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json", "users": users}

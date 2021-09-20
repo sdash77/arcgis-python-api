@@ -142,7 +142,7 @@ class AttachmentManager(object):
                                     records that are beyond `maxRecordCount` property.
         =========================   ===============================================================
 
-        :returns: A Pandas DataFrame or Dict of the attachements of the :class`~arcgis.features.FeatureLayer`
+        :return: A Pandas DataFrame or Dict of the attachements of the :class:`~arcgis.features.FeatureLayer`
 
         """
         import copy
@@ -342,7 +342,7 @@ class AttachmentManager(object):
                                     **Example:** image/jpeg
         =========================   ===============================================================
 
-        :returns: path to the file where the attachements have downloaded
+        :return: path to the file where the attachements have downloaded
 
         """
         results = []
@@ -407,7 +407,7 @@ class AttachmentManager(object):
         save_folder                 Optional string. Path to save data to.
         =========================   ===============================================================
 
-        :returns: A path to the folder where the attachement are saved
+        :return: A path to the folder where the attachement are saved
 
 
         """
@@ -479,7 +479,7 @@ class AttachmentManager(object):
 
     def add(self, oid, file_path, keywords=None):
         """
-        Adds an attachment to a :class`~arcgis.features.FeatureLayer`
+        Adds an attachment to a :class:`~arcgis.features.FeatureLayer`
         
         ===============     ====================================================================
         **Argument**        **Description**
@@ -500,7 +500,7 @@ class AttachmentManager(object):
 
     def delete(self, oid, attachment_id):
         """
-        Removes an attachment from a :class`~arcgis.gis.FeatureLayer`
+        Removes an attachment from a :class:`~arcgis.gis.FeatureLayer`
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -537,9 +537,9 @@ class AttachmentManager(object):
 
 class SyncManager(object):
     """
-    Manager class for manipulating replicas for syncing disconnected editing of :class`~arcgis.features.FeatureLayer`s.
+    Manager class for manipulating replicas for syncing disconnected editing of :class:`~arcgis.features.FeatureLayer`s.
     This class is not created by users directly.
-    An instance of this class, called 'replicas', is available as a property of the :class`~arcgis.features.FeatureLayerCollection` object,
+    An instance of this class, called 'replicas', is available as a property of the :class:`~arcgis.features.FeatureLayerCollection` object,
     if the layer is sync enabled / supports disconnected editing.
     Users call methods on this 'replicas' object to manipulate (create, synchronize, unregister) replicas.
     """
@@ -600,7 +600,7 @@ class SyncManager(object):
         transformations=None,
     ):
         """
-        The create operation is performed on a :class`~arcgis.features.FeatureLayerCollection` resource. 
+        The create operation is performed on a :class:`~arcgis.features.FeatureLayerCollection` resource. 
         This operationcreates the replica between the feature dataset and a client based on a client-supplied
         replica definition. It requires the Sync capability. See Sync overview for more
         information on sync. The response for create includes replicaID, replica generation
@@ -832,7 +832,7 @@ class SyncManager(object):
         ==================     ====================================================================
 
 
-        :returns: 
+        :return: 
             Boolean when future is False and Future object when future is True
 
         """
@@ -971,10 +971,10 @@ class SyncManager(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        parent              Required :class`~arcgis.gis.Item` that points to the feature service
+        parent              Required :class:`~arcgis.gis.Item` that points to the feature service
                             that is the parent dataset. (source)
         ---------------     --------------------------------------------------------------------
-        child               Required :class`~arcgis.gis.Item` that points to the feature service
+        child               Required :class:`~arcgis.gis.Item` that points to the feature service
                             that is the child dataset. (target)
         ---------------     --------------------------------------------------------------------
         replica_name        Required string. Name of either parent or child Item
@@ -1093,7 +1093,7 @@ class WebHook(object):
         """
         Returns the WebHook's properties
 
-        :returns: :class`~arcgis._impl.common.PropertyMap`
+        :return: :class:`~arcgis._impl.common.PropertyMap`
         """
         if self._properties is None:
             self._properties = PropertyMap(
@@ -1182,7 +1182,7 @@ class WebHook(object):
         =====================================    ===========================================================================
 
 
-        :returns: Response of edit as a dict.
+        :return: Response of edit as a dict.
 
         """
         props = dict(self.properties)
@@ -1213,7 +1213,7 @@ class WebHook(object):
         """
         Deletes the current webhook from the system
 
-        :returns: Boolean, True if successful
+        :return: Boolean, True if successful
         """
         url = f"{self._url}/delete"
         params = {"f": "json"}
@@ -1225,7 +1225,7 @@ class WebHook(object):
 class WebHookServiceManager(object):
     """
     The `WebHookServiceManager` allows owners and administrators wire feature
-    service specific events to :class`~arcgis.features.FeatureLayerCollection`.
+    service specific events to :class:`~arcgis.features.FeatureLayerCollection`.
     """
 
     _fc = None
@@ -1251,7 +1251,7 @@ class WebHookServiceManager(object):
     def properties(self) -> PropertyMap:
         """
         Gets the properties for the WebHook Service Manager and returns
-        a :class`~arcgis._impl.common.PropertyMap` object
+        a :class:`~arcgis._impl.common.PropertyMap` object
         """
         return PropertyMap(self._gis._con.post(self._url, {"f": "json"}))
 
@@ -1259,9 +1259,9 @@ class WebHookServiceManager(object):
     @property
     def list(self) -> tuple:
         """
-        Get a list of web hooks on the :class`~arcgis.features.FeatureLayerCollection`
+        Get a list of web hooks on the :class:`~arcgis.features.FeatureLayerCollection`
 
-        :returns: tuple[WebHook]
+        :return: tuple[WebHook]
         """
         resp = self._gis._con.post(self._url, {"f": "json"})
         ret = [
@@ -1350,7 +1350,7 @@ class WebHookServiceManager(object):
         `FeatureServiceDefinitionChanged`        Any time a feature service is changed
         =====================================    ===========================================================================
 
-        :returns: A :class`~arcgis.features.WebHook` object
+        :return: A :class:`~arcgis.features.WebHook` object
 
         """
         url = f"{self._url}/create"
@@ -1381,7 +1381,7 @@ class WebHookServiceManager(object):
         activated, payloads will be delivered to the payload URL when the
         webhook is invoked.
 
-        :returns: Bool, True if successful
+        :return: Bool, True if successful
 
         """
         url = f"{self._url}/activateAll"
@@ -1393,7 +1393,7 @@ class WebHookServiceManager(object):
         """
         The `disable_hooks` will turn off all web hooks for the current service.
 
-        :returns: Bool, True if successful
+        :return: Bool, True if successful
 
         """
         url = f"{self._url}/deactivateAll"
@@ -1405,7 +1405,7 @@ class WebHookServiceManager(object):
         """
         The `delete_all_hooks` operation will permanently remove the specified webhook.
 
-        :returns: Bool, True if successful
+        :return: Bool, True if successful
 
         """
         url = f"{self._url}/deleteAll"
@@ -1416,9 +1416,9 @@ class WebHookServiceManager(object):
 ###########################################################################
 class FeatureLayerCollectionManager(_GISResource):
     """
-    Allows updating the definition (if access permits) of a :class`~arcgis.features.FeatureLayerCollection`.
+    Allows updating the definition (if access permits) of a :class:`~arcgis.features.FeatureLayerCollection`.
     This class is not created by users directly.
-    An instance of this class, called 'manager', is available as a property of the :class`~arcgis.features.FeatureLayerCollection` object.
+    An instance of this class, called 'manager', is available as a property of the :class:`~arcgis.features.FeatureLayerCollection` object.
 
     Users call methods on this 'manager' object to manage the feature layer collection.
     """
@@ -1488,7 +1488,7 @@ class FeatureLayerCollectionManager(_GISResource):
         """
         Returns a dictionary can be used for service generation.
 
-        :returns: dict or None (if not supported on the service)
+        :return: dict or None (if not supported on the service)
 
         """
         return self._generate_mapservice_definition()
@@ -1501,7 +1501,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         If a service does not support this operation, None is returned.
 
-        :returns:
+        :return:
            dictionary
         """
         params = {
@@ -1605,7 +1605,7 @@ class FeatureLayerCollectionManager(_GISResource):
                                                        capabilities="Query,Update,Delete")
 
         :return:
-            Returns the newly created :class`~arcgis.gis.Item` for the view.
+            Returns the newly created :class:`~arcgis.gis.Item` for the view.
         """
 
         import os
@@ -2417,10 +2417,10 @@ class FeatureLayerCollectionManager(_GISResource):
 
 class FeatureLayerManager(_GISResource):
     """
-    Allows updating the definition (if access permits) of a :class`~arcgis.features.FeatureLayer`. 
+    Allows updating the definition (if access permits) of a :class:`~arcgis.features.FeatureLayer`. 
     This class is not created by users
     directly.
-    An instance of this class, called 'manager', is available as a property of the :class`~arcgis.features.FeatureLayer`
+    An instance of this class, called 'manager', is available as a property of the :class:`~arcgis.features.FeatureLayer`
     object, if the layer can be managed by the user.
     Users call methods on this 'manager' object to manage the feature layer.
     """
@@ -2438,15 +2438,15 @@ class FeatureLayerManager(_GISResource):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        item                Required of type :class`~arcgis.features.FeatureService` that represents
-                            a :class`~arcgis.features.FeatureLayerCollection`.       
+        item                Required of type :class:`~arcgis.features.FeatureService` that represents
+                            a :class:`~arcgis.features.FeatureLayerCollection`.       
         ---------------     --------------------------------------------------------------------
         layer_id            Required string. Id of the layer in the 
-                            :class`~arcgis.features.FeatureLayerCollection` 
+                            :class:`~arcgis.features.FeatureLayerCollection` 
         ===============     ====================================================================
 
         :return:
-            :class`~arcgis.features.FeatureLayer` created from the layer provided.
+            :class:`~arcgis.features.FeatureLayer` created from the layer provided.
 
         """
         if item.type != "Feature Service":

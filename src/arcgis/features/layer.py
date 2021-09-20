@@ -85,7 +85,7 @@ class FeatureLayer(Layer):
                              or list of start/stop date.
         ================     =================================================
 
-        :returns:
+        :return:
             A string of datetime values as milliseconds from epoch
 
         """
@@ -176,7 +176,7 @@ class FeatureLayer(Layer):
                                             The default for ``layer_id`` is 0.
         ===============================     ====================================================================
         
-        :returns:
+        :return:
             A :class:`~arcgis.features.FeatureSet` object
 
 
@@ -205,7 +205,7 @@ class FeatureLayer(Layer):
         updating its definition.
 
         :return:
-            A :class`~arcgis.feature.FeatureLayerManager`
+            A :class:`~arcgis.feature.FeatureLayerManager`
             
         .. code-block:: python
 
@@ -232,7 +232,7 @@ class FeatureLayer(Layer):
             If metadata is disabled on the GIS or the
             layer does not support metadata, ``None`` will be returned.
 
-        :returns: String of the metadata, if any
+        :return: String of the metadata, if any
 
         """
         if "hasMetadata" in self.properties:
@@ -253,7 +253,7 @@ class FeatureLayer(Layer):
         save_folder           Optional String. A save location to download the metadata XML file.
         =================     ====================================================================
 
-        :returns: String
+        :return: String
         """
         import tempfile
 
@@ -277,7 +277,7 @@ class FeatureLayer(Layer):
         file_path             Required String.  The path to the .xml file that contains the metadata.
         =================     ====================================================================
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         """
@@ -330,7 +330,7 @@ class FeatureLayer(Layer):
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
-        value                   Required :class`~arcgis.features.FeatureLayerCollection`.
+        value                   Required :class:`~arcgis.features.FeatureLayerCollection`.
         ==================      ====================================================================
 
         :return:
@@ -456,7 +456,7 @@ class FeatureLayer(Layer):
                               the dynamic layer/table is allowed.
         =================     ====================================================================
 
-        :returns:
+        :return:
             A JSON Dictionary
         
         ..code-block:: python
@@ -509,7 +509,7 @@ class FeatureLayer(Layer):
                               it to understand properties like keywords field length.
         =================     ====================================================================
 
-        :returns: A JSON Dictionary indicating 'success' or 'error'
+        :return: A JSON Dictionary indicating 'success' or 'error'
 
         """
         if (os.path.getsize(file_path) >> 20) <= 9:
@@ -554,7 +554,7 @@ class FeatureLayer(Layer):
         attachment_id         Required integer. Id of the attachment to erase.
         =================     ====================================================================
 
-        :returns: dictionary
+        :return: dictionary
         """
         params = {"f": "json", "attachmentIds": "%s" % attachment_id}
         if self._dynamic_layer:
@@ -579,7 +579,7 @@ class FeatureLayer(Layer):
         file_path             Required string. Path to new attachment
         =================     ====================================================================
 
-        :returns: dictionary
+        :return: dictionary
 
         """
         params = {"f": "json", "attachmentId": "%s" % attachment_id}
@@ -635,7 +635,7 @@ class FeatureLayer(Layer):
             >>> layer
             ['PITKIN', 'PLATTE', 'TWIN FALLS']
 
-        :returns:
+        :return:
             A list of unique values
         """
 
@@ -776,7 +776,7 @@ class FeatureLayer(Layer):
         ================================     ====================================================================
 
 
-        :returns: Default is a pd.DataFrame, but when ```as_df=False``` returns a :class`~arcgis.feature.FeatureSet`. 
+        :return: Default is a pd.DataFrame, but when ```as_df=False``` returns a :class:`~arcgis.feature.FeatureSet`. 
                   If ```return_count_only=True```, the return type is Integer. 
                   If ```return_ids_only=True```, a list of value is returned.
 
@@ -1247,7 +1247,7 @@ class FeatureLayer(Layer):
         ===============================     ====================================================================
 
 
-        :returns:
+        :return:
             A Pandas DataFrame (pd.DataFrame)
 
         """
@@ -1558,7 +1558,7 @@ class FeatureLayer(Layer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
         
-        :returns:
+        :return:
             A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another return type
             is specified, such as ``return_count_only``, ``return_extent_only``, or ``return_ids_only``.
 
@@ -1937,7 +1937,7 @@ class FeatureLayer(Layer):
                                                   Values: `where | expression | statement`
         ===============================     ====================================================================
 
-        :returns:
+        :return:
             A JSON Dictionary indicating 'success' or 'error'
         """
         params = {"f": "json"}
@@ -2111,7 +2111,7 @@ class FeatureLayer(Layer):
         oid                 Optional string. Object id of the feature to get the HTML popup.
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A string
 
         """
@@ -2238,7 +2238,7 @@ class FeatureLayer(Layer):
                                    :class:`~concurrent.futures.Future` object.
         ========================   ====================================================================
         
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
             response messages will be return in addition to the boolean as a `tuple`.
             If ``future`` = True, then the result is a `Future` object. Call ``result()`` to get the response.
@@ -2382,7 +2382,7 @@ class FeatureLayer(Layer):
                                    is the default.
         ======================     ====================================================================
 
-        :returns:
+        :return:
             A dictionary if future=False (default), else a :class:`~concurrent.futures.Future` object.
 
         .. code-block:: python
@@ -2637,7 +2637,7 @@ class FeatureLayer(Layer):
                                 then edits can be applied asynchronously.
         =====================   ======================================================================================
 
-        :returns:
+        :return:
             A dictionary of the edited layer
 
 
@@ -2901,7 +2901,7 @@ class FeatureLayer(Layer):
 
         =====================   ====================================================
         
-        :returns:
+        :return:
             A dictionary with the following format:
              {
              'updatedFeatureCount': 1,
@@ -3220,7 +3220,7 @@ class Table(FeatureLayer):
     def fromitem(cls, item, table_id=0):
         """
         The ``fromitem`` method creates a :class:`~arcgis.features.Table` from a :class:`~arcgis.gis.Item` object.
-        The table_id is the id of the table in :class`~arcgis.features.FeatureLayerCollection` (feature service).
+        The table_id is the id of the table in :class:`~arcgis.features.FeatureLayerCollection` (feature service).
 
         ===============================     ====================================================================
         **Argument**                        **Description**
@@ -3234,7 +3234,7 @@ class Table(FeatureLayer):
                                             The default for ``table`` is 0.
         ===============================     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.features.Table` object
         """
         return item.tables[table_id]
@@ -3386,7 +3386,7 @@ class Table(FeatureLayer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.features.FeatureSet` object or, if ```as_df=True```, a Panda's DataFrame 
             containing the features matching the query unless another return type 
             is specified, such as ``return_count_only``
@@ -3752,7 +3752,7 @@ class FeatureLayerCollection(_GISResource):
         for example updating its definition.
 
         :return:
-            A :class`~arcgis.features.FeatureLayerCollectionManager` object
+            A :class:`~arcgis.features.FeatureLayerCollectionManager` object
         """
         if self._admin is None:
             url = self._url
@@ -3780,7 +3780,7 @@ class FeatureLayerCollection(_GISResource):
         will have the "supportsRelationshipsResource": true property on
         their properties.
 
-        :returns: List of Dictionaries
+        :return: List of Dictionaries
 
         """
         if (
@@ -3836,7 +3836,7 @@ class FeatureLayerCollection(_GISResource):
                                              based on the domains referenced by these layers. Example: [1,2,3,4]
         ================================     ====================================================================
 
-        :returns:
+        :return:
             List of dictionaries
 
         """
@@ -4021,7 +4021,7 @@ class FeatureLayerCollection(_GISResource):
                                              `hasGeometryUpdates` to be set as true.
         ================================     ====================================================================
 
-        :returns:
+        :return:
             A dictionary containing the layerServerGens and an array of edits
 
 
@@ -4155,7 +4155,7 @@ class FeatureLayerCollection(_GISResource):
         ===============================     ====================================================================
 
         :return:
-            A :class`~arcgis.features.FeatureSet` of the queried Feature Layer Collection unless 
+            A :class:`~arcgis.features.FeatureSet` of the queried Feature Layer Collection unless 
             ``return_count_only`` or ``return_ids_only`` is True.
 
         """
@@ -4339,7 +4339,7 @@ class FeatureLayerCollection(_GISResource):
                             the replica was created.
         ===============     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json"}
@@ -4573,7 +4573,7 @@ class FeatureLayerCollection(_GISResource):
 
 
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = "{url}/cleanupChangeTracking".format(url=self._url)
@@ -4875,7 +4875,7 @@ class FeatureLayerCollection(_GISResource):
         description         Optional string. Descriptive text for the uploaded item.
         ===============     ====================================================================
 
-        :returns: A tuple of (Boolean, dict)
+        :return: A tuple of (Boolean, dict)
 
         """
         if (os.path.getsize(path) >> 20) <= 9:

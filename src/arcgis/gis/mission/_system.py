@@ -56,7 +56,7 @@ class SystemManager(object):
         these properties. The properties are available to all server
         objects and extensions through the server environment interface.
 
-        :returns: PropertyMap
+        :return: PropertyMap
         """
         if self._properties is None:
             self._init()
@@ -144,7 +144,7 @@ class SystemManager(object):
         implementation is built on top of a file system and stores all the
         configurations in a hierarchy of folders and files.
 
-        :returns: dict
+        :return: dict
 
         """
         url = self._url + "/configStore"
@@ -229,7 +229,7 @@ class DirectoryManager(object):
         directory_type	       The type of directory. Values: DATA | WORKSPACE | OUTPUT
         ==================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         params = {"f": "json", "name": name, "path": path, "type": directory_type}
@@ -251,7 +251,7 @@ class DirectoryManager(object):
         directory_id           Required String.  The directory ID to remove.
         ==================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         params = {"f": "json"}
@@ -329,7 +329,7 @@ class WebAdaptorManager(object):
         description            Optional String. The optional web adapter description.
         ==================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         params = {
@@ -472,7 +472,7 @@ class WebAdaptor(object):
     def unregister(self):
         """
         Unregisters a WebAdapter for the Mission Server
-        :returns: boolean
+        :return: boolean
         """
         url = self._url + "/unregister"
         params = {"f": "json"}

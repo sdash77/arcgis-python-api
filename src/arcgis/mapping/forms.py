@@ -314,8 +314,8 @@ class FormInfo:
 
     def update(self):
         """
-        Saves the form to the backend. If the form was derived from an :class`~arcgis.gis.Item`, calling this function is required
-        to save the form into the item. If the form was derived from a :class`~arcgis.mapping.WebMap`, you can either call this
+        Saves the form to the backend. If the form was derived from an :class:`~arcgis.gis.Item`, calling this function is required
+        to save the form into the item. If the form was derived from a :class:`~arcgis.mapping.WebMap`, you can either call this
         function or :attr:`~arcgis.mapping.WebMap.update()`. If form has been cleared, removes formInfo from webmap
         """
         if self.exists():

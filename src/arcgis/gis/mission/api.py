@@ -45,7 +45,7 @@ class MissionJob(object):
         """
         Returns the status
 
-        :returns: string
+        :return: string
         """
         resp = self._con.get(self._url, {"f": "json"})
         try:
@@ -172,7 +172,7 @@ class Mission(object):
         share_as_template      Optional Boolean. Shares the report as a template.
         ==================     ====================================================================
 
-        :returns: Dict
+        :return: Dict
         """
         params = {
             "title": title,
@@ -194,7 +194,7 @@ class Mission(object):
         """
         Returns a List of Mission Report Items associated with the `Mission`
 
-        :returns: List[Item]
+        :return: List[Item]
 
         """
         url = f"{self._url}/reports"
@@ -309,7 +309,7 @@ class MissionCatalog:
         ==================     ====================================================================
 
 
-        :returns: `MissionJob`
+        :return: `MissionJob`
 
 
         """
@@ -348,7 +348,7 @@ class MissionCatalog:
         """
         returns a list of missions on the server
 
-        :returns: List
+        :return: List
         """
         url = f"{self._url}/missions"
         params = {"f": "json"}

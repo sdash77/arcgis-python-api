@@ -143,7 +143,7 @@ class CSVLayer(BaseOpenData):
         """
         Get/Set the Renderer of the CSV Layer
 
-        :returns: InsensitiveDict
+        :return: InsensitiveDict
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -161,7 +161,7 @@ class CSVLayer(BaseOpenData):
         """
         Get/Set the Renderer of the CSV Layer
 
-        :returns: InsensitiveDict
+        :return: InsensitiveDict
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -194,7 +194,7 @@ class CSVLayer(BaseOpenData):
         `\r`          tab
         ===========   ==========================================
 
-        :returns: string
+        :return: string
 
         """
         if self._delimiter is None:
@@ -216,7 +216,7 @@ class CSVLayer(BaseOpenData):
         """
         Returns the fields values for the CSV source.
 
-        :returns: list of strings
+        :return: list of strings
         """
         import numpy as np
         import datetime
@@ -319,6 +319,6 @@ class CSVLayer(BaseOpenData):
         """
         returns the CSV file as a DataFrame
 
-        :returns: Pandas' DataFrame
+        :return: Pandas' DataFrame
         """
         return self._df(False)

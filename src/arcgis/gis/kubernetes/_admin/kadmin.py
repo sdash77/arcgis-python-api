@@ -71,7 +71,7 @@ class KubernetesAdmin(_BaseKube):
         Provides access to the overview resource to access persisted cache
         or real-time information.
 
-        :returns: Overview
+        :return: Overview
 
         """
         url = f"{self._url}/overview"
@@ -83,7 +83,7 @@ class KubernetesAdmin(_BaseKube):
         """
         Provides access to the metrics viewer and metrics API tools.
 
-        :returns: UsageStatistics
+        :return: UsageStatistics
 
         """
         url = f"{self._url}/usagestatistics"
@@ -195,7 +195,7 @@ class KubernetesAdmin(_BaseKube):
         ================  ===============================================================================
 
 
-        :returns: List of Tasks
+        :return: List of Tasks
 
         """
         _tasks = []
@@ -307,7 +307,7 @@ class KubernetesAdmin(_BaseKube):
         """
         Gets an object to work with the site's security settings
 
-        :returns: KubeSecurity
+        :return: KubeSecurity
         """
         if self._security is None:
             from arcgis.gis.kubernetes._admin._security import KubeSecurity

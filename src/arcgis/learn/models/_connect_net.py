@@ -54,7 +54,7 @@ class ConnectNet(MultiTaskRoadExtractor):
                                     Default:8
     =============================   =============================================
 
-    :returns: `ConnectNet` Object
+    :return: `ConnectNet` Object
     """
 
     pass

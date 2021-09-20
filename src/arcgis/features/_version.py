@@ -292,7 +292,7 @@ class Version(object):
         """
         Provides access to a validation manager.
 
-        :returns: ValidationManager
+        :return: ValidationManager
         """
         if self._validation is None:
             from arcgis.mapping import MapImageLayer
@@ -315,7 +315,7 @@ class Version(object):
         """
         Provides access to a parcel fabric manager
 
-        :returns: ParcelFabricManager
+        :return: ParcelFabricManager
         """
         if (
             "controllerDatasetLayers" in self._flc.properties
@@ -513,7 +513,7 @@ class Version(object):
         """
         Starts an edit session for the current user.
 
-        :returns: boolean
+        :return: boolean
         """
         if (
             "isBeingEdited" in self.properties
@@ -550,7 +550,7 @@ class Version(object):
         ===============     ====================================================================
 
 
-        :returns: boolean
+        :return: boolean
 
         """
         self._properties = None
@@ -579,7 +579,7 @@ class Version(object):
         is enabled, it will prevent other users from editing or reconciling the
         version.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         self._properties = None
@@ -602,7 +602,7 @@ class Version(object):
         """
         Stops and releases a reading session.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         self._properties = None
@@ -713,7 +713,7 @@ class Version(object):
 
         ==================     ====================================================================
 
-        :returns: Boolean, String where the Boolean is the Success and the String is the Moment
+        :return: Boolean, String where the Boolean is the Success and the String is the Moment
 
         """
         url = "%s/restoreRows" % self._url
@@ -791,7 +791,7 @@ class Version(object):
         ===============     ====================================================================
 
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/differences" % self._url
@@ -955,7 +955,7 @@ class Version(object):
                                 value is true.
         =====================   ===========================================
 
-        :returns: dictionary
+        :return: dictionary
 
         """
         if self._mode == "edit":

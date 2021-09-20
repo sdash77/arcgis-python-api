@@ -47,7 +47,7 @@ class EditFeatureJob(object):
     @property
     def task(self):
         """Returns the task name.
-        :returns: string
+        :return: string
         """
         return "Edit Features Job"
 
@@ -57,7 +57,7 @@ class EditFeatureJob(object):
         """
         returns the GP messages
 
-        :returns: List
+        :return: List
         """
         return self._future.result()
 
@@ -67,7 +67,7 @@ class EditFeatureJob(object):
         """
         returns the Job status
 
-        :returns: bool - True means running, False means finished
+        :return: bool - True means running, False means finished
         """
         return self.running()
 
@@ -76,7 +76,7 @@ class EditFeatureJob(object):
         """
         Return True if the call was successfully cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.cancelled()
 
@@ -85,7 +85,7 @@ class EditFeatureJob(object):
         """
         Return True if the call is currently being executed and cannot be cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.running()
 
@@ -94,7 +94,7 @@ class EditFeatureJob(object):
         """
         Return True if the call was successfully cancelled or finished running.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.done()
 
@@ -104,7 +104,7 @@ class EditFeatureJob(object):
         Return the value returned by the call. If the call hasn't yet completed
         then this method will wait.
 
-        :returns: object
+        :return: object
         """
         try:
 

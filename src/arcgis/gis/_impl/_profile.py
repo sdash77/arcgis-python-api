@@ -184,7 +184,7 @@ class ProfileManager(object):
         """
         The ``list`` method retrieves a list of profile names in the configuration file
 
-        :returns:
+        :return:
             List if `as_df=False` or Pandas DataFrame if `as_df=True`
         """
         if self._cfg_exists and as_df == False:
@@ -223,7 +223,7 @@ class ProfileManager(object):
 
             >>> gis.ProfileManager.get("profile_name")
 
-        :returns:
+        :return:
             A dictionary
 
         """
@@ -268,7 +268,7 @@ class ProfileManager(object):
 
             >>> gis.ProfileManager.delete("profile_name")
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
         """
         import keyring
@@ -337,7 +337,7 @@ class ProfileManager(object):
             >>>                           username = "User12345",
             >>>                           key_file = "new_key_file")
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         """
@@ -395,7 +395,7 @@ class ProfileManager(object):
             >>>                           key_file = "key_file",
             >>>                           cert_fle = "cert_file_name")
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         """
@@ -446,7 +446,7 @@ class ProfileManager(object):
             >>> gis = GIS("pro")
             >>> gis.ProfileManager.save_as("Profile_name", gis)
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         from arcgis.gis import GIS

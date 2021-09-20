@@ -23,7 +23,7 @@ class LicenseManager(BasePortalAdmin):
     gis                 required GIS, the gis connection object
     ===============     ====================================================
 
-    :returns:
+    :return:
        LicenseManager Object
     """
 
@@ -68,7 +68,7 @@ class LicenseManager(BasePortalAdmin):
                             name="arcgis pro"
         ===============     ====================================================
 
-        :returns:
+        :return:
            License Object
         """
         licenses = self.all()
@@ -88,7 +88,7 @@ class LicenseManager(BasePortalAdmin):
         """
         Returns all Licenses registered with an organization
 
-        :returns:
+        :return:
            list of License objects
         """
         licenses = []
@@ -106,7 +106,7 @@ class LicenseManager(BasePortalAdmin):
         """
         Returns a list of Application Bundles for an Organization
 
-        :returns:
+        :return:
            list of Bundle objects
 
         """
@@ -152,7 +152,7 @@ class LicenseManager(BasePortalAdmin):
                             Value: True | False
         ===============     ====================================================================
         
-        :returns: Boolean
+        :return: Boolean
 
         """
         lic = self.get("arcgis pro")
@@ -280,7 +280,7 @@ class Bundle(object):
         ===============     ====================================================
 
 
-        :returns: boolean
+        :return: boolean
 
         """
         if isinstance(users, (tuple, set, list)) == False:
@@ -316,7 +316,7 @@ class Bundle(object):
         ===============     ====================================================
 
 
-        :returns: boolean
+        :return: boolean
 
         """
         if isinstance(users, (tuple, set, list)) == False:
@@ -356,7 +356,7 @@ class License(object):
                         and listing information.
     ===============     ====================================================
 
-    :returns:
+    :return:
        License Object
     """
 
@@ -479,7 +479,7 @@ class License(object):
                             examine the entitlements for.
         ===============     ====================================================
 
-        :returns: list
+        :return: list
         """
         if hasattr(user, "username"):
             user = user.username
@@ -517,7 +517,7 @@ class License(object):
                             examine the entitlements for.
         ===============     ====================================================
 
-        :returns:
+        :return:
            dictionary
         """
         item_id = self.properties["listing"]["itemId"]
@@ -562,7 +562,7 @@ class License(object):
                             user that their entitlements have changed.
         ===============     ====================================================
 
-        :returns:
+        :return:
            boolean
         """
         item_id = self.properties["listing"]["itemId"]
@@ -603,7 +603,7 @@ class License(object):
                             user that their entitlements have changed.
         ===============     ====================================================
 
-        :returns:
+        :return:
            boolean
         """
         if entitlements == "*":

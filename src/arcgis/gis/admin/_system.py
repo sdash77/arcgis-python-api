@@ -52,7 +52,7 @@ class EmailManager(BasePortalAdmin):
         email                           Required String. The test email to send to.
         ===========================     ====================================================================
 
-        :returns: Bool
+        :return: Bool
         """
         params = {"mailTo": email, "f": "json"}
         url = self._url + "/test"
@@ -99,7 +99,7 @@ class EmailManager(BasePortalAdmin):
         Password                        Optional String. The password to use to login to the smtp server.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
         """
         allowed_encrypt = ["none", "tls", "ssl"]
         if email_label is None:
@@ -136,7 +136,7 @@ class EmailManager(BasePortalAdmin):
         """
         Deletes the current email configuration
 
-        :returns: Boolean
+        :return: Boolean
         """
         url = self._url + "/delete"
         params = {"f": "json"}
@@ -183,7 +183,7 @@ class System(BasePortalAdmin):
         """
         Provides access to the email configuration setting on enterprise.
 
-        :returns: EmailManager
+        :return: EmailManager
         """
         # if "supportsEmail" in self._gis.properties and self._properties.supportsEmail:
         if self._gis.version >= [7, 3] or "supportsEmail" in self._gis.properties:
@@ -353,7 +353,7 @@ class System(BasePortalAdmin):
         Gets/Sets the Incremental Backup for the Enterprise Configuration
 
 
-        :returns: dict
+        :return: dict
         """
         url = "%s/database/settings" % self._url
         params = {"f": "json"}
@@ -365,7 +365,7 @@ class System(BasePortalAdmin):
         """
         Gets/Sets the Incremental Backup for the Enterprise Configuration
 
-        :returns: dict
+        :return: dict
         """
         url = "%s/database/settings/edit" % self._url
         params = {"incrementalBackupEnabled": value, "f": "json"}
@@ -383,7 +383,7 @@ class System(BasePortalAdmin):
         that you reindex to correct any issues. If indexing is in progress,
         you can monitor the status by refreshing the page.
 
-        :returns: dict
+        :return: dict
 
         .. code-block:: python
 
@@ -444,7 +444,7 @@ class System(BasePortalAdmin):
                                         certain items or user accounts.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         url = "%s/indexer/reindex" % self._url
@@ -504,7 +504,7 @@ class System(BasePortalAdmin):
                                disabled.
         ==================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         url = "%s/content/configuration" % self._url
@@ -808,7 +808,7 @@ class PortalLicense(BasePortalAdmin):
         file                            Required String. The portal license file.
         ===========================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         file = {"file": file}
@@ -828,7 +828,7 @@ class PortalLicense(BasePortalAdmin):
         operation is only necessary as you create or upgrade your portal
         through the Portal Admin API.
 
-        :returns: boolean
+        :return: boolean
 
         """
         params = {"f": "json"}
@@ -859,7 +859,7 @@ class PortalLicense(BasePortalAdmin):
         username	                Required String. The user name of the account.
         ===========================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
 
         """
@@ -911,7 +911,7 @@ class PortalLicense(BasePortalAdmin):
                                         connection information.
         ===========================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         **Sample Usage**
 
@@ -951,7 +951,7 @@ class PortalLicense(BasePortalAdmin):
                                         a portal.
         ===========================     ====================================================================
 
-        :returns: Dict
+        :return: Dict
 
         """
         file = {"file": file}
@@ -1015,7 +1015,7 @@ class Licenses(BasePortalAdmin):
                                         navigator, or RoadwayReporter
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         allowed = [
@@ -1049,7 +1049,7 @@ class Licenses(BasePortalAdmin):
                                         navigator, or RoadwayReporter
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         allowed = [
@@ -1095,7 +1095,7 @@ class Licenses(BasePortalAdmin):
                                         connection information.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json", "licenseManagerInfo": info}
@@ -1130,7 +1130,7 @@ class Licenses(BasePortalAdmin):
         application                     Required string. The application identifier to be imported
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/importEntitlements" % self._url

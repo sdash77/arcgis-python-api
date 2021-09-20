@@ -108,7 +108,7 @@ def calculate_density(
     =========================    =========================================================
 
 
-    :returns: result_layer : :class`~arcgis.features.FeatureLayer` if output_name is specified, else :class`~arcgis.features.FeatureCollection`.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -229,11 +229,11 @@ def summarize_center_and_dispersion(
     future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================    =========================================================
 
-    :returns: Python dictionary with the following keys:
-        "central_feature_result_layer" : layer (:class`~arcgis.features.FeatureCollection`)
-        "mean_feature_result_layer" : layer (:class`~arcgis.features.FeatureCollection`)
-        "median_feature_result_layer" : layer (:class`~arcgis.features.FeatureCollection`)
-        "ellipse_feature_result_layer" : layer (:class`~arcgis.features.FeatureCollection`)
+    :return: Python dictionary with the following keys:
+        "central_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        "mean_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        "ellipse_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         "process_info" : list of messages
     """
 
@@ -348,7 +348,7 @@ def find_point_clusters(
     future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================    =========================================================
 
-    :returns: :class`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class`~arcgis.features.FeatureCollection`.
+    :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -487,7 +487,7 @@ def find_hot_spots(
     future                                                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ===================================================================     =========================================================
 
-    :returns: :class`~arcgis.features.FeatureLayer` if output_name is specified, else a dictionary with a :class`~arcgis.features.FeatureCollection` and processing messages.
+    :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else a dictionary with a :class:`~arcgis.features.FeatureCollection` and processing messages.
 
     .. code-block:: python
 
@@ -639,10 +639,10 @@ def find_outliers(
     future                                                              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ==================================================================  ===============================================================
 
-    :Returns:
-    :class`~arcgis.features.FeatureLayer` if output_name is set. else results in a dict with the following keys:
+    :return:
+    :class:`~arcgis.features.FeatureLayer` if output_name is set. else results in a dict with the following keys:
 
-       "find_outliers_result_layer" : layer (:class`~arcgis.features.FeatureCollection`)
+       "find_outliers_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
        "process_info" : list of messages
     .. code-block:: python
@@ -844,13 +844,13 @@ def interpolate_points(
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ===========================  ===========================================================================================
 
-    :returns: result_layer : :class`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
 
-        "result_layer" : layer (:class`~arcgis.features.FeatureCollection`)
+        "result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        "prediction_error" : layer (:class`~arcgis.features.FeatureCollection`)
+        "prediction_error" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        "predicted_point_layer" : layer (:class`~arcgis.features.FeatureCollection`)
+        "predicted_point_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 

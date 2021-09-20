@@ -126,7 +126,7 @@ class ParcelFabricManager(object):
                                  they do not want to use the current moment
         ====================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = "{base}/assignFeaturesToRecord".format(base=self._url)
@@ -269,7 +269,7 @@ class ParcelFabricManager(object):
                                     being clipped.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary
 
 
         """
@@ -447,7 +447,7 @@ class ParcelFabricManager(object):
         parcel_subtype              Optional Integer. Represents the target parcel subtype.
         =======================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
 
         """
@@ -500,7 +500,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary
 
 
         """
@@ -542,7 +542,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
 
         """
@@ -593,7 +593,7 @@ class ParcelFabricManager(object):
                                     current.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary
 
         """
         if moment is None:
@@ -643,7 +643,7 @@ class ParcelFabricManager(object):
                                     in which to create seeds.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary
 
         """
         from arcgis.geometry import Envelope
@@ -707,7 +707,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary
 
         """
         if parcel_subtype is None:
@@ -928,7 +928,7 @@ class ParcelFabricManager(object):
         divide_cogo_line_bearing    Optional Float. Bearing of the divide line (decimal degrees north azimuth).
         =========================== ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary
 
 
         """

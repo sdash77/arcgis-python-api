@@ -211,7 +211,7 @@ class GAJob(object):
     @property
     def task(self):
         """Returns the task name.
-        :returns: string
+        :return: string
         """
         return self._gpjob.task
 
@@ -229,7 +229,7 @@ class GAJob(object):
         """
         returns the GP messages
 
-        :returns: List
+        :return: List
         """
         return self._gpjob.messages
 
@@ -239,7 +239,7 @@ class GAJob(object):
         """
         returns the GP status
 
-        :returns: String
+        :return: String
         """
         return self._gpjob.status
 
@@ -251,7 +251,7 @@ class GAJob(object):
         return False, otherwise the call will be cancelled and the method
         will return True.
 
-        :returns: boolean
+        :return: boolean
         """
         cancel = self._gpjob.cancel()
         if self._return_service:
@@ -263,7 +263,7 @@ class GAJob(object):
         """
         Return True if the call was successfully cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._gpjob.cancelled()
 
@@ -272,7 +272,7 @@ class GAJob(object):
         """
         Return True if the call is currently being executed and cannot be cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._gpjob.running()
 
@@ -281,7 +281,7 @@ class GAJob(object):
         """
         Return True if the call was successfully cancelled or finished running.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._gpjob.done()
 
@@ -290,7 +290,7 @@ class GAJob(object):
         """
         Returns the Processing Information for a GeoAnalytics job.
 
-        :returns: List or None if process_info does not exist.
+        :return: List or None if process_info does not exist.
 
         """
         processing_info = None
@@ -313,7 +313,7 @@ class GAJob(object):
         Return the value returned by the call. If the call hasn't yet completed
         then this method will wait.
 
-        :returns: object
+        :return: object
         """
         try:
 

@@ -88,7 +88,7 @@ class WorkflowManagerAdmin:
         name                Required String. The name of the new schema.
         ==================  =========================================================
 
-        :returns: string (item_id)
+        :return: string (item_id)
         """
 
         url = "{base}/admin/createWorkflowItem?token={token}&name={name}".format(
@@ -122,7 +122,7 @@ class WorkflowManagerAdmin:
         item                Required Item. The Workflow Manager Item to be upgraded
         ==================  =========================================================
 
-        :returns: success object
+        :return: success object
         """
 
         url = "{base}/admin/{id}/upgrade?token={token}".format(
@@ -789,7 +789,7 @@ class WorkflowManager:
         mode                    Optional String.
         ======================  ===============================================================
 
-        :returns: String
+        :return: String
         """
         url = f"{self._url}/evaluateArcade?token={self._gis._con.token}"
         params = {

@@ -1238,7 +1238,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
         Gets the tables in the ``WebMap`` object.
 
-        :return: List of :class`~arcgis.features.Table` as dictionaries
+        :return: List of :class:`~arcgis.features.Table` as dictionaries
 
         .. code-block:: python
 
@@ -1269,7 +1269,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
         Gets the operational layers in the ``Web Map`` object.
 
-        :return: List of :class`~arcgis.features.FeatureLayer` as dictionaries
+        :return: List of :class:`~arcgis.features.FeatureLayer` as dictionaries
 
         .. code-block:: python
 
@@ -1535,7 +1535,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        table                  Required object. Pass the :class`~arcgis.features.Table` 
+        table                  Required object. Pass the :class:`~arcgis.features.Table` 
                                that needs to be removed from the map. You can get the
                                list of tables in the map by calling the :attr:`~arcgis.mapping.WebMap.layers` property.
         ==================     ====================================================================
@@ -1554,7 +1554,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        layer                  Required object. Pass the :class`~arcgis.features.FeatureLaer` 
+        layer                  Required object. Pass the :class:`~arcgis.features.FeatureLaer` 
                                that needs to be removed from the map. You can get the
                                list of layers in the map by calling the :attr:`~arcgis.mapping.WebMap.layers` property.
         ==================     ====================================================================
@@ -1584,7 +1584,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                                to reference in the ``WebMap``.
         ==================     ====================================================================
 
-        :return: A :class`~arcgis.features.FeatureLayer` as a dictionary
+        :return: A :class:`~arcgis.features.FeatureLayer` as a dictionary
         """
         if item_id is None and title is None and layer_id is None:
             raise ValueError("Please pass at least one parameter into the function")
@@ -1646,7 +1646,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
         The ``offline_areas`` property is the resource manager for offline areas cached for the ``WebMap`` object.
 
-        :returns:
+        :return:
             The :class:`~arcgis.mapping.WebMap.OfflineMapAreaManager` for the ``WebMap`` object.
         """
         return OfflineMapAreaManager(self.item, self._gis)
@@ -2210,7 +2210,7 @@ class PackagingJob(object):
         """
         The ``ellapse_time`` property retrieves the ``Ellapse Time`` for the ``Job``.
 
-        :returns:
+        :return:
             The Ellapsed Time
 
         """
@@ -2253,7 +2253,7 @@ class PackagingJob(object):
         """
         Get the GP status of the call.
 
-        :returns:
+        :return:
             A String
         """
         return self._future.done()
@@ -2269,7 +2269,7 @@ class PackagingJob(object):
             return ``False``, otherwise the call will be cancelled and the method
             will return True.
 
-        :returns:
+        :return:
             A boolean indicating the call will be cancelled (True), or cannot be cancelled (False)
         """
         if self.done():
@@ -2283,7 +2283,7 @@ class PackagingJob(object):
         """
         The ``cancelled`` method retrieves whether the call was successfully cancelled.
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
         """
         return self._future.cancelled()
@@ -2293,7 +2293,7 @@ class PackagingJob(object):
         """
         The ``running`` method retrieves whether the call is currently being executed and cannot be cancelled.
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
         """
         return self._future.running()
@@ -2303,7 +2303,7 @@ class PackagingJob(object):
         """
         The ``done`` method retrieves whether the call was successfully cancelled or finished running.
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
         """
         return self._future.done()
@@ -2316,7 +2316,7 @@ class PackagingJob(object):
         .. note::
             If the call hasn't yet completed then this method will wait.
 
-        :returns:
+        :return:
             An Object
         """
         if self.cancelled():
@@ -2411,7 +2411,7 @@ class OfflineMapAreaManager(object):
                                read-only data.
         ==================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary
 
         """
         dl_lu = {
@@ -3389,7 +3389,7 @@ class OfflineMapAreaManager(object):
 
         ============================     ====================================================================
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
 
@@ -3696,7 +3696,7 @@ class VectorTileLayer(Layer):
          .. note::
             The template url for this fonts resource is represented in Vector Tile Style resource.
 
-        :returns:
+        :return:
             Glyphs in PBF format
         """
         url = "{url}/resources/fonts/{fontstack}/{stack_range}.pbf".format(
@@ -3714,7 +3714,7 @@ class VectorTileLayer(Layer):
             The bytes for the tile at the specified level, row and column are
             returned in PBF format. If a tile is not found, an error is returned.
 
-        :returns:
+        :return:
             Bytes in PBF format
         """
         url = "{url}/tile/{level}/{row}/{column}.pbf".format(
@@ -3728,7 +3728,7 @@ class VectorTileLayer(Layer):
         """
         The ``tile_sprite`` resource retrieves sprite images and metadata
 
-        :returns:
+        :return:
             Sprite image and metadata.
         """
         url = "{url}/resources/sprites/{f}".format(url=self._url, f=out_format)
@@ -3740,7 +3740,7 @@ class VectorTileLayer(Layer):
         """
         The ``info`` property retrieves the relative paths to a list of resource files.
 
-        :returns:
+        :return:
            A List of relative paths
         """
         url = "{url}/resources/info".format(url=self._url)
@@ -3838,7 +3838,7 @@ class MapImageLayerManager(_GISResource):
                             replace the existing ones when merging bundles.
         ===============     ====================================================
 
-        :returns:
+        :return:
             A dictionary
 
         .. code-block:: python
@@ -3906,7 +3906,7 @@ class MapImageLayerManager(_GISResource):
                             {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
         ===============     ====================================================
 
-        :returns:
+        :return:
            Dictionary. If the product is not ArcGIS Online tile service, the
            result will be None.
 
@@ -3968,7 +3968,7 @@ class MapImageLayerManager(_GISResource):
         job_id              required string, job to reprocess
         ===============     ====================================================
 
-        :returns:
+        :return:
            A boolean or dictionary
         """
         url = self._url + "/jobs/%s/rerun" % job_id
@@ -4059,7 +4059,7 @@ class MapImageLayerManager(_GISResource):
                             Example, 0-5,10,11-20 or 1,2,3 or 0-5
         ===============     ====================================================
 
-        :returns:
+        :return:
            A dictionary
 
         .. code-block:: python
@@ -4281,7 +4281,7 @@ class MapImageLayer(Layer):
                               }
         =================     ====================================================================
 
-        :returns:
+        :return:
             :class:`~arcgis.features.FeatureLayer` or None (if not enabled)
 
         .. code-block:: python
@@ -4340,7 +4340,7 @@ class MapImageLayer(Layer):
         """
         The ``kml`` method ``retrieves the KML file for the layer.
 
-        :returns:
+        :return:
             A KML file
         """
         url = "{url}/kml/mapImage.kmz".format(url=self._url)
@@ -4357,7 +4357,7 @@ class MapImageLayer(Layer):
         """
         The ``item_info`` method retrieves the service's item's information.
 
-        :returns:
+        :return:
             A dictionary
         """
         url = "{url}/info/iteminfo".format(url=self._url)
@@ -4379,7 +4379,7 @@ class MapImageLayer(Layer):
             The legend symbols include the base64 encoded imageData as well as
             a url that could be used to retrieve the image from the server.
 
-        :returns:
+        :return:
             Legend information
         """
         url = "%s/legend" % self._url
@@ -4391,7 +4391,7 @@ class MapImageLayer(Layer):
         """
         The ``metadata`` property retrieves the service's XML metadata file
 
-        :returns:
+        :return:
             An XML metadata file
         """
         url = "{url}/info/metadata".format(url=self._url)
@@ -4406,7 +4406,7 @@ class MapImageLayer(Layer):
         .. note::
             If a thumbnail is present, this operation will download the image to local disk.
 
-        :returns:
+        :return:
             A path to the downloaded thumbnail, or None.
         """
         if out_path is None:
@@ -4573,7 +4573,7 @@ class MapImageLayer(Layer):
                                value, that is assigned during authoring time, gets used instead.
         =================     ====================================================================
 
-        :returns:
+        :return:
             A dictionary
 
         .. code-block:: python
@@ -4788,7 +4788,7 @@ class MapImageLayer(Layer):
                                that is assigned during authoring time, gets used instead.
         ==================     ====================================================================
 
-        :returns:
+        :return:
             A dictionary
 
         .. code-block:: python
@@ -4892,7 +4892,7 @@ class MapImageLayer(Layer):
                               values: composite, separateImage, nonComposite
         =================     ====================================================================
 
-        :returns:
+        :return:
             A string to the file path
 
         """
@@ -5190,7 +5190,7 @@ class MapImageLayer(Layer):
                                is set to False, the function will wait until the task completes.
         ==================     ====================================================================
 
-        :returns: dictionary
+        :return: dictionary
 
         """
         if self.properties["exportTilesAllowed"] == False:
@@ -5349,7 +5349,7 @@ class MapImageLayer(Layer):
                                `tpkx` - Tiles are stored using CompactV2 storage format, which provides better performance on network shares and cloud store directories. This improved and simplified package structure type is supported by newer versions of ArcGIS products such as ArcGIS Online 7.1, ArcGIS Enterprise 10.7, and ArcGIS Runtime 100.5. This is the default.
         ==================     ====================================================================
 
-        :returns:
+        :return:
             A path to download file is asynchronous is ``False``. If ``True``, a dictionary is returned.
         """
         import time

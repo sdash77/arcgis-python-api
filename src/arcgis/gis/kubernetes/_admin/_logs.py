@@ -112,7 +112,7 @@ class LogManager(_BaseKube):
         generated or if existing logs are unavailable.
 
 
-        :returns: bool
+        :return: bool
 
         """
         params = {"f": "json"}

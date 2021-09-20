@@ -68,7 +68,7 @@ class Overview(_BaseKube):
                             The default is `None`. When `None`, all resources will be returned.
         ===============     ====================================================================
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
 
         """
         if resource is None:
@@ -106,7 +106,7 @@ class Overview(_BaseKube):
 
         ===============     ====================================================================
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
 
         """
         url = f"{self._url}/config"

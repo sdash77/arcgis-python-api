@@ -113,7 +113,7 @@ class KubeEnterpriseUser:
 
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         role_lu = {
@@ -267,7 +267,7 @@ class KubeOrganization:
         """
         Returns manager to work with server federation.
 
-        :returns: KubeOrgFederations
+        :return: KubeOrgFederations
         """
         if self._federation is None:
             url = self._url + "/federation"
@@ -442,7 +442,7 @@ class KubeOrgLicense:
                                         a portal.
         ===========================     ====================================================================
 
-        :returns: Dict
+        :return: Dict
 
         """
         file = {"file": file}
@@ -531,7 +531,7 @@ class KubeOrganizations:
         """
         Returns a list of registered organizations with the Kubernetes deployment
 
-        :returns: tuple
+        :return: tuple
         """
         return tuple(
             [

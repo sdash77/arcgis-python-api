@@ -673,7 +673,7 @@ class GIS(object):
         .. note::
             **The API Key manager is only available for ArcGIS Online**
 
-        :returns:
+        :return:
             An :class:`~arcgis.gis._impl.APIKeyManager` object
 
         """
@@ -689,7 +689,7 @@ class GIS(object):
         """
         Lists the available languages.
 
-        :returns: List[Dict[str, Any]]
+        :return: List[Dict[str, Any]]
         """
         url = f"{self._portal.resturl}portals/languages"
         params = {"f": "json"}
@@ -701,7 +701,7 @@ class GIS(object):
         """
         Lists the available regions.
 
-        :returns: List[Dict[str, Any]]
+        :return: List[Dict[str, Any]]
         """
         url = f"{self._portal.resturl}portals/regions"
         params = {"f": "json"}
@@ -932,7 +932,7 @@ class GIS(object):
         The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
         with the organization or enterprise.
 
-        :returns: `List <https://docs.python.org/3/library/stdtypes.html#lists>`_ [`NotebookServer`]
+        :return: `List <https://docs.python.org/3/library/stdtypes.html#lists>`_ [`NotebookServer`]
         """
         if self._portal.is_arcgisonline:
             urls = self._registered_servers()
@@ -1071,7 +1071,7 @@ class GIS(object):
         """
         Returns the ArcGIS Online Subscription Information for a Site.
 
-        :returns: dictionary
+        :return: dictionary
         """
         if self.version > [6, 4] and self._portal.is_arcgisonline:
             url = "%sportals/self/subscriptionInfo" % self._portal.resturl
@@ -1104,7 +1104,7 @@ class GIS(object):
         Returns the servers registered with ArcGIS Entperise.  For ArcGIS
         Online, the return value is `None`.
 
-        :returns: dict
+        :return: dict
         """
         if self._portal.is_arcgisonline:
             return None
@@ -1146,7 +1146,7 @@ class GIS(object):
 
         ======================     ===============================================================
 
-        :returns: Dictionary
+        :return: Dictionary
 
         """
         if self.version >= [7, 4]:
@@ -1459,7 +1459,7 @@ class Datastore(dict):
         ===============     ====================================================================
 
 
-        :returns:
+        :return:
            A boolean indicating success (True) or failure (False).
         """
         params = {"f": "json", "item": item}
@@ -1478,7 +1478,7 @@ class Datastore(dict):
         regenerate a manifest if you have added new data or if you have
         uploaded a hints file using the edit resource.
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
         """
         url = self._admin_url + "/data/items" + self.datapath + "/manifest/regenerate"
@@ -1497,7 +1497,7 @@ class Datastore(dict):
         The ``validate`` method is used to validate that this data item's path (for file shares) or
         connection string (for databases) is accessible to every server node in the site.
 
-        :returns:
+        :return:
            A boolean indicating success (True) or failure (False).
         """
         params = {"f": "json"}
@@ -1566,7 +1566,7 @@ class GroupMigrationManager(object):
     ):
         """
         Imports an EPK Item to a Group.  This will import items associated with this group.
-        :returns: Boolean
+        :return: Boolean
         """
         if self._gis.users.me.role == "org_admin":
             try_json = True
@@ -1643,7 +1643,7 @@ class GroupMigrationManager(object):
                                and return the results asynchronously.
         ==================     ====================================================================
 
-        :returns:
+        :return:
             :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
         """
         if self._gis.users.me.role == "org_admin":
@@ -1712,7 +1712,7 @@ class GroupMigrationManager(object):
         folder_owner      Optional String. In ArcGIS Online and Enterprise 10.9+, a user name of the folder owner.
         ================  ===============================================================================
 
-        :returns:
+        :return:
             A dictionary --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
         """
         assert isinstance(epk_item, Item)
@@ -1758,7 +1758,7 @@ class GroupMigrationManager(object):
         epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators
                           to view the contents inside a EPK.
         ================  ===============================================================================
-        :returns:
+        :return:
             A dictionary containing the contents of the EPK Package
         """
         if isinstance(epk_item, Item) and epk_item.type == "Export Package":
@@ -2477,7 +2477,7 @@ class UserManager(object):
                           Example: `{"appBundles":[{"itemId": "99d7956c7e824ff4ab27422e2a26c2b7}]}`
         ================  ===============================================================================
 
-        :returns: Dictionary
+        :return: Dictionary
 
         """
         if self._gis.version >= [7, 3]:
@@ -2561,7 +2561,7 @@ class UserManager(object):
         Default Settings operation or from the New Member Defaults tab in
         the Organization Settings of the portal.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         if self._gis.version > [7, 3]:
@@ -2584,7 +2584,7 @@ class UserManager(object):
             of a user should me based on the bundles associated with each user
             type. Additionally, the ``license_types`` is only available on ArcGIS Enterprise 10.7+.**
 
-        :returns:
+        :return:
             A List of available licenses
         """
 
@@ -2627,7 +2627,7 @@ class UserManager(object):
             # Usage Example
 
             >>>gis.users.counts("Role", as_df=True)
-        :returns:
+        :return:
             Pandas `DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
             if ``as_df`` is True. If False, the result is a list of dictionaries.
 
@@ -2715,7 +2715,7 @@ class UserManager(object):
             >>> gis.users.send_notification([user1,user1234,user123, user1234], "testing notification system",
                                             "This was a test of the sending notification property")
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         """
@@ -3389,7 +3389,7 @@ class UserManager(object):
             # Usage Example
 
             >>> gis.users.invite("user1234@email.com", role=org_admin, provider=enterprise)
-        :returns:
+        :return:
             A boolean indicating success (True), or faliure (False)
 
         """
@@ -3435,7 +3435,7 @@ class UserManager(object):
 
         **Note** : this is only supported by ArcGIS Online
 
-        :returns:
+        :return:
          An :class:`~arcgis.gis.InvitationManager` object
 
         """
@@ -3549,7 +3549,7 @@ class UserManager(object):
 
             >>> gis.users.enable_users(['user1','user1234','user123', 'user1234'])
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         """
@@ -3598,7 +3598,7 @@ class UserManager(object):
 
             >>> gis.users.disable_users(['user1','user1234', 'user123', 'user1234'])
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         """
@@ -3681,7 +3681,7 @@ class UserManager(object):
             # Usage Example
 
             >>> gis.users.advanced_search(query ="1234", sort_order = "username", max_users=20, as_dict=20)
-        :returns:
+        :return:
             A dictionary if `return_count` is False, else an integer
         """
         from arcgis.gis._impl import _search
@@ -3919,7 +3919,7 @@ class UserManager(object):
         """
         The ``roles`` property is a helper object to manage custom roles for users.
 
-        :returns:
+        :return:
             An instance of the :class:`~arcgis.gis.RoleManager`"""
         return RoleManager(self._gis)
 
@@ -3944,7 +3944,7 @@ class UserManager(object):
             # Usage Example
 
             >>> gis.users.user_groups([user1,user1234,user123, user1234], 50)
-        :returns:
+        :return:
             List of dictionaries with each :class:`~arcgis.gis.User` object's group ids.
 
         """
@@ -4642,7 +4642,7 @@ class ContentManager(object):
         method is useful when checking service URLs or validating that URLs can
         be reached.
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
 
         """
         curl = f"{self._gis._portal.resturl}portals/checkUrl"
@@ -4806,7 +4806,7 @@ class ContentManager(object):
 
             # Usage Example
             >>> gis.content.can_delete("9311d21a9a2047d19c0faaebd6f2cca6")
-        :returns:
+        :return:
             A dictionary - see the table below for examples of a successful call of ``can_delete`` and a failed
             call of ``can_delete``.
 
@@ -5207,7 +5207,7 @@ class ContentManager(object):
 
             >>> gis.content.analyze(item = "9311d21a9a2047d19c0faaebd6f2cca6", file_type = "csv")
 
-        :returns: dictionary
+        :return: dictionary
 
         """
         surl = "%s/sharing/rest/content/features/analyze" % self._gis._url
@@ -5563,7 +5563,7 @@ class ContentManager(object):
             >>> gis.content.advanced_search(query ="Hurricanes", categories = "Hurricanes, USA, Natural Disasters",
             >>>                                sort_order = "asc", count_fields = "tags, type", as_dict = True)
 
-        :returns:
+        :return:
             Depends on the inputs:
                 1. Dictionary for a standard search
                 2. `return_count`=True an integer is returned
@@ -5721,7 +5721,7 @@ class ContentManager(object):
         ================    ===============================================================
 
 
-        :returns: Dictionary[str, Any]
+        :return: Dictionary[str, Any]
         """
         params = {
             "f": "json",
@@ -5971,7 +5971,7 @@ class ContentManager(object):
             # Usage Example
             >>> gis.content.delete_items(items= ["item1", "item2", "item3", "item4", "item5"])
 
-        :returns:
+        :return:
             A boolean indicating success if the items were deleted (True), or failure if the items were not deleted
             (False)
         """
@@ -6726,7 +6726,7 @@ class ContentManager(object):
             >>> gis.content.bulk_update(itemids, properties)
             [{'results' : [{'itemid' : 'id', 'success' : "True/False" }]}]
 
-        :returns:
+        :return:
             A List of results
 
         """
@@ -6811,7 +6811,7 @@ class ContentManager(object):
             # Usage Example
             >>> gis.content.replace_service(replace_item="9311d21a9a2047d19c0faaebd6f2cca6",
                                             new_item = "420554d21a9a2047d19c0faaebd6f2cca4")
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
         """
         user = self._gis.users.me
@@ -6878,7 +6878,7 @@ class ContentManager(object):
 
             >>> gis.content.share_items(items=[item1, item2, item3], everyone=True, org=True)
 
-        :returns:
+        :return:
             A dictionary of shared :class:`~arcgis.gis.Item` objects
 
         """
@@ -6955,7 +6955,7 @@ class ContentManager(object):
             >>> gis.content.share_items(items=[item1, item2, item3], everyone=True, org=True,
                                         groups = ["Developers", "Engineers", "GIS_Analysts"])
 
-        :returns:
+        :return:
             A dictionary of unshared :class:`~arcgis.gis.Item` objects
 
         """
@@ -7129,7 +7129,7 @@ class CategorySchemaManager(object):
 
             >>> gis.content.categories.delete()
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
         """
         params = {"f": "json"}
@@ -7183,7 +7183,7 @@ class CategorySchemaManager(object):
                                                                  {"9ced00fdce3e4b20bb4b05155acbe817": {
                                                                  "categories": []}}])
 
-        :returns:
+        :return:
             A `dict` of `item_id` : `status`, with `status` being
             whether the content categories were successfully added. If the `status` is
             unsuccessfully updated, a message will provide information to help you debug
@@ -7253,7 +7253,7 @@ class ResourceManager(object):
             # Usage Example
 
             >>> Item.resources.export("file_name")
-        :returns:
+        :return:
             A .zip file containing the data's resources
         """
         url = (
@@ -7758,7 +7758,7 @@ class Group(dict):
 
             >>> group.search("Hurricane Data", category_filters =["Natural_Disasters", "Hurricanes", "USA"])
 
-        :returns: List of :class:`~arcgis.gis.Item` objects
+        :return: List of :class:`~arcgis.gis.Item` objects
         """
         from ._impl._search import _search
 
@@ -8068,7 +8068,7 @@ class Group(dict):
         """
         The ``delete_group_thumbnail`` method deletes the group's thumbnail.
 
-        :returns:
+        :return:
             A boolean indicating success (True) or failure (False).
 
         """
@@ -8111,7 +8111,7 @@ class Group(dict):
         users             Required List.  A comma-separated array of User objects to make group member roles.
         ================  ========================================================
 
-        :returns: List[dictionary]
+        :return: List[dictionary]
 
         """
         params = {"admins": managers or [], "users": users or [], "f": "json"}
@@ -8214,7 +8214,7 @@ class Group(dict):
                           2 Weeks.
         ================  ========================================================
 
-        :returns: A boolean indicating success (True) or failure (False)
+        :return: A boolean indicating success (True) or failure (False)
         """
 
         if self._gis.version >= [6, 4]:
@@ -8365,7 +8365,7 @@ class Group(dict):
         .. note::
             The ``user_list`` method is only available on ArcGIS Online and ArcGIS Enterprise 10.9+.
 
-        :returns: A dictionary of users and owners for the group
+        :return: A dictionary of users and owners for the group
 
         """
         if self._gis.version >= [8, 4]:
@@ -8956,7 +8956,7 @@ class User(dict):
 
             >>> user.generate_direct_access_url(store_type="notebook")
 
-        :returns: A string representing a direct access URL
+        :return: A string representing a direct access URL
 
         """
         if self._gis._portal.is_arcgisonline == False:
@@ -8979,7 +8979,7 @@ class User(dict):
         .. note::
             The ``provisions method`` is only available in ArcGIS Enterprise 10.7+.
 
-        :returns:
+        :return:
             A list contaning provisional licenses
 
         """
@@ -9030,7 +9030,7 @@ class User(dict):
         .. note::
             The ``bundles`` method is available in ArcGIS Online and Portal 10.7+.
 
-        :returns: A List of :class:`~arcgis.gis.admin._license.Bundle` objects
+        :return: A List of :class:`~arcgis.gis.admin._license.Bundle` objects
         """
         if self._gis.version < [6, 4]:
             raise NotImplementedError(
@@ -9066,7 +9066,7 @@ class User(dict):
         """
         ``The get_thumbnail_link`` method retrieves the URL to the thumbnail image.
 
-        :returns:
+        :return:
            The thumbnail's URL.
         """
         thumbnail_file = self.thumbnail
@@ -9191,7 +9191,7 @@ class User(dict):
                                Built-in Types: creator or viewer
         =====================  =========================================================
 
-        :returns: A boolean indicating success (True) or failure (False).
+        :return: A boolean indicating success (True) or failure (False).
 
         """
         if self._gis.version < [6, 4]:
@@ -9219,7 +9219,7 @@ class User(dict):
         """
         The ``delete_thumbnail`` removes the thumbnail from the user's profile.
 
-        :returns:
+        :return:
             A boolean indicating success (True) or failure (False).
 
         """
@@ -9565,7 +9565,7 @@ class User(dict):
         """The ``linked_accounts`` method retrieves all linked accounts for the current user as
         :class:`~arcgis.gis.User` objects
 
-        :returns:
+        :return:
             A list of :class:`~arcgis.gis.User` objects
         """
         if self._gis._portal.is_arcgisonline == False:
@@ -9736,7 +9736,7 @@ class User(dict):
             # Usage Example
 
             >>> user.update_level(2)
-        :returns:
+        :return:
            A boolean indicating success (True) or failure (False).
         """
         if self._gis.version >= [6, 4]:
@@ -10057,7 +10057,7 @@ class User(dict):
         """
         The ``notifications`` property retrieves the list of notifications available for the given user.
 
-        :returns:
+        :return:
             A list containing available notifications
         """
         from .._impl.notification import Notification
@@ -10136,7 +10136,7 @@ class Item(dict):
         The ``snapshots`` property provides access to the Notebook Item's Snapshots. If the user is not
         the owner of the `Item`, the snapshots will be an empty list.
 
-        :returns: List[SnapShot]
+        :return: List[SnapShot]
         """
         if (
             self._is_notebook
@@ -10168,7 +10168,7 @@ class Item(dict):
         """
         The ``resources`` property returns the Item's Resource Manager
 
-        :returns: A :class:`~arcgis.gis.ResourceManager` object
+        :return: A :class:`~arcgis.gis.ResourceManager` object
         """
         return ResourceManager(self, self._gis)
 
@@ -10375,7 +10375,7 @@ class Item(dict):
         """
         Checks if the Item can be removed from the system.
 
-        :returns: bool
+        :return: bool
         """
         url = f"{self._portal.resturl}content/users/{self._gis.users.me.username}/items/{self.itemid}/canDelete"
         params = {"f": "json"}
@@ -11584,7 +11584,7 @@ class Item(dict):
                             The default is True.
         ===============     ====================================================================
 
-        :returns: A :class:`~arcgis.geoprocessing._types.DataFile` object
+        :return: A :class:`~arcgis.geoprocessing._types.DataFile` object
 
         """
         from arcgis.geoprocessing._tool import Toolbox
@@ -11858,7 +11858,7 @@ class Item(dict):
                             as a dictionary when False
         ===============     ====================================================================
 
-        :returns: Pandas `DataFrame <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_ or Dictionary
+        :return: Pandas `DataFrame <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_ or Dictionary
 
         """
         if not self._portal.is_arcgisonline:
@@ -13336,7 +13336,7 @@ class Item(dict):
 
 
 
-        :returns: An :class:`~arcgis.gis.Item` object
+        :return: An :class:`~arcgis.gis.Item` object
         """
 
         if self._portal.is_arcgisonline:
@@ -13419,7 +13419,7 @@ class Item(dict):
             >>> item.copy()
             <Item title:"NZTiles - Copy 021a06" type:Vector Tile Layer owner:geoguy>
 
-        :returns: An :class:`~arcgis.gis.Item` object
+        :return: An :class:`~arcgis.gis.Item` object
 
         """
         TEXT_BASED_ITEM_TYPES = [
@@ -13804,7 +13804,7 @@ class Item(dict):
         Every registered app gets an App ID and App Secret, which are titled client_id and client_secret, respectively,
         in the terminology of OAuth.
 
-        :returns: A `Dictionary <https://docs.python.org/3/tutorial/datastructures.html#dictionaries>`_
+        :return: A `Dictionary <https://docs.python.org/3/tutorial/datastructures.html#dictionaries>`_
 
         """
         if "Registered App" not in self.typeKeywords:
@@ -13909,7 +13909,7 @@ class ItemDependency(object):
         depend_value        Required string. This is the associated value for the type above.
         ===============     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         dtlu = {"table": "table", "url": "url", "itemid": "id"}
@@ -13935,7 +13935,7 @@ class ItemDependency(object):
         depend_value        Required string. This is the associated value for the type above.
         ===============     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         dtlu = {"table": "table", "url": "url", "itemid": "id", "id": "id"}
@@ -13952,7 +13952,7 @@ class ItemDependency(object):
         """
         Revokes all dependencies for the current item
 
-        :returns: boolean
+        :return: boolean
 
         """
         if self._gis.version <= [8, 2]:
@@ -14075,7 +14075,7 @@ class _GISResource(object):
                                    a :class:`~arcgis.features.FeatureLayerCollection` object.
         ======================     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.features.FeatureLayerCollection` object.
 
         """

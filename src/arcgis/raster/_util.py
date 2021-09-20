@@ -865,10 +865,7 @@ class _ImageryUploaderAGOL:
                         else:
                             source = os.path.dirname(file_name)
                             target = os.path.dirname(
-                                url.replace(
-                                    url[0 : url.find(".net") + 4],
-                                    "/vsiaz",
-                                )
+                                url.replace(url[0 : url.find(".net") + 4], "/vsiaz",)
                             )
                             data_path = {"source": source, "target": target}
 
@@ -1108,7 +1105,7 @@ def _upload(path, description=None, gis=None):
     description         Optional string. Descriptive text for the uploaded item.
     ===============     ====================================================================
 
-    :returns: A tuple of (Boolean, dict)
+    :return: A tuple of (Boolean, dict)
 
     """
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]

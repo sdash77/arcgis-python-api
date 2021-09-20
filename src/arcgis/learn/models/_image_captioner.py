@@ -73,7 +73,7 @@ class ImageCaptioner(ArcGISModel):
                                 - 'pretrained_emb': If true, it will use fasttext embeddings.
     =====================   ===========================================
 
-    :returns: `ImageCaptioner` Object
+    :return: `ImageCaptioner` Object
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
@@ -124,7 +124,7 @@ class ImageCaptioner(ArcGISModel):
                                 None for inferencing.
         =====================   ===========================================
 
-        :returns: `ImageCaptioner` Object
+        :return: `ImageCaptioner` Object
         """
 
         from fastai.text.transform import Vocab

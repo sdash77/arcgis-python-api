@@ -123,16 +123,11 @@ class MultiTaskRoadExtractor(ArcGISModel):
                                     Default:8
     =============================   =============================================
 
-    :returns: `MultiTaskRoadExtractor` Object
+    :return: `MultiTaskRoadExtractor` Object
     """
 
     def __init__(
-        self,
-        data,
-        backbone=None,
-        pretrained_path=None,
-        *args,
-        **kwargs,
+        self, data, backbone=None, pretrained_path=None, *args, **kwargs,
     ):
         # if data.sub_dataset_type != "RoadOrientation":
         #    raise Exception(
@@ -459,7 +454,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
                                 True.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         # self._check_requisites()
         if hasattr(self.learn.data, "emd") and (self._learning_rate is None):
@@ -637,7 +632,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `Multi-Task Road Extractor` Object
+        :return: `Multi-Task Road Extractor` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

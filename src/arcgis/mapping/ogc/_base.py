@@ -51,7 +51,7 @@ class BaseOGC(object):
         """
         Returns the properties of the Layer.
 
-        :returns: PropertyMap
+        :return: PropertyMap
         """
         return PropertyMap(self._lyr_json)
 
@@ -75,7 +75,7 @@ class BaseOGC(object):
         value               Required string. Name of title
         ===============     ====================================================================
 
-        :returns: String
+        :return: String
         """
         return self._title
 
@@ -101,7 +101,7 @@ class BaseOGC(object):
                             percent transparent and 1 is completely opaque.
         ===============     ====================================================================
 
-        :returns: Float
+        :return: Float
         """
         return self._opacity
 

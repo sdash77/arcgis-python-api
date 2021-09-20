@@ -187,7 +187,7 @@ class PortalAdminManager(BasePortalAdmin):
         ================  ===============================================================================
 
 
-        :returns: List of Tasks
+        :return: List of Tasks
 
         """
         _tasks = []
@@ -409,7 +409,7 @@ class PortalAdminManager(BasePortalAdmin):
         save_folder       Optional String. The save location of the CSV file.
         ================  ===============================================================================
 
-        :returns: string
+        :return: string
 
         """
         if self._gis.properties.isPortal:

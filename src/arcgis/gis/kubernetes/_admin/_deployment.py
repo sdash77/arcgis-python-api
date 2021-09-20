@@ -21,7 +21,7 @@ class Deployment:
         """
         Returns the properties of the `Deployment`
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
         """
         self._con.get(self._url, {"f": "json"})
 
@@ -37,7 +37,7 @@ class Deployment:
         props                  Required Dict[str, Any]. he microservice properties, represented as a dictionary.
         ==================     ====================================================================
 
-        :returns: Bool
+        :return: Bool
 
         """
         url = f"{self._url}/edit"
@@ -52,7 +52,7 @@ class Deployment:
         Performing this operation will restart the corresponding pods and
         recreate the microservice.
 
-        :returns: Bool
+        :return: Bool
         """
         url = f"{self._url}/refresh"
         params = {"f": "json"}
@@ -63,7 +63,7 @@ class Deployment:
         """
         Returns the status of the current deployment.
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
         """
         url = f"{self._url}/status"
         params = {"f": "json"}
@@ -95,7 +95,7 @@ class DeploymentProperty:
         template_id            Required String.  The unique ID of the property template.
         ==================     ====================================================================
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
         """
         url = f"{self._url}/{template_id}"
         params = {"f": "json"}
@@ -150,11 +150,7 @@ class DeploymentManager(_BaseKube):
     _gis = None
     _url = None
 
-    def __init__(
-        self,
-        url: str,
-        gis: GIS = None,
-    ) -> None:
+    def __init__(self, url: str, gis: GIS = None,) -> None:
         """class initializer"""
         super()
         self._url = url
@@ -209,7 +205,7 @@ class DeploymentManager(_BaseKube):
                                `Coordinator`
         ==================     ====================================================================
 
-        :returns: List[Deployment]
+        :return: List[Deployment]
 
         """
         url = f"{self._url}/findDeployment"
@@ -234,7 +230,7 @@ class DeploymentManager(_BaseKube):
         """
         Returns a Single Deployment by Id.
 
-        :returns: Deployment
+        :return: Deployment
         """
         url = f"{self._url}/{deployment_id}"
         return Deployment(url=url, gis=self._gis)
@@ -244,7 +240,7 @@ class DeploymentManager(_BaseKube):
         """
         Provides administartors with tools to with the deployment property templates.
 
-        :returns: DeploymentProperty
+        :return: DeploymentProperty
         """
         if self._dp is None:
             url = f"{self._url}/properties"

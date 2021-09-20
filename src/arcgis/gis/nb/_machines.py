@@ -245,7 +245,7 @@ class Machine(object):
                                value: DNS:www.esri.com,DNS:esri,IP:10.60.1.16
         ==================     ====================================================================
 
-        :returns: Bool
+        :return: Bool
 
         """
         url = self._url + "/sslCertificates/generate"

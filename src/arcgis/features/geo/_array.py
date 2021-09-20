@@ -52,7 +52,7 @@ def _unary_geo(op, left, *args, **kwargs):
 
     **used for accessing properties on objects**
 
-    :returns: GeoArray
+    :return: GeoArray
     """
     data = np.empty(len(left), dtype=object)
     data[:] = [getattr(geom, op, None) for geom in left]
@@ -66,7 +66,7 @@ def _unary_op(op, left, null_value=False):
 
     **used for accessing properties on objects**
 
-    :returns: pd.Series
+    :return: pd.Series
 
     """
     data = np.empty(len(left), dtype=object)
@@ -97,7 +97,7 @@ def _binary_predicate(name, left, right, *args, **kwargs):
          left : GeoArray
          right: GeoArray or Geometry
 
-    :returns: np.array (should be dtype bool)
+    :return: np.array (should be dtype bool)
 
     """
     if isinstance(right, pd.Series):
@@ -785,7 +785,7 @@ class GeoArray(ExtensionArray):
                             an alternative, if desired.
         ===============     ====================================================================
 
-        :returns: a tuple of angle and distance to another point using a measurement type.
+        :return: a tuple of angle and distance to another point using a measurement type.
         """
         return _binary_op(
             name="angle_distance_to",
@@ -799,7 +799,7 @@ class GeoArray(ExtensionArray):
         """
         Constructs the boundary of the geometry.
 
-        :returns: arcgis.geometry.Polyline
+        :return: arcgis.geometry.Polyline
         """
 
         return _binary_op_geo(name="boundary", left=self.data, right=None)
@@ -817,7 +817,7 @@ class GeoArray(ExtensionArray):
                             A negative distance can only be specified against a polygon geometry.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Polygon
+        :return: arcgis.geometry.Polygon
         """
         return _binary_op_geo(name="buffer", left=self.data, **{"distance": distance})
 
@@ -833,7 +833,7 @@ class GeoArray(ExtensionArray):
                             represents the lower left bound and upper right bound of the extent.
         ===============     ====================================================================
 
-        :returns: output geometry clipped to extent
+        :return: output geometry clipped to extent
 
         """
         return _binary_op_geo(name="clip", left=self.data, **{"envelope": envelope})
@@ -855,7 +855,7 @@ class GeoArray(ExtensionArray):
                             + PROPER - Boundaries of geometries must not intersect.
         ===============     ====================================================================
 
-        :returns: boolean
+        :return: boolean
         """
         return _binary_predicate(
             name="contains",
@@ -884,7 +884,7 @@ class GeoArray(ExtensionArray):
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         return _binary_predicate(name="crosses", left=self.data, right=second_geometry)
@@ -901,7 +901,7 @@ class GeoArray(ExtensionArray):
         cutter              Required Polyline. The cuttin polyline geometry
         ===============     ====================================================================
 
-        :returns: a list of two geometries
+        :return: a list of two geometries
 
         """
         return _binary_op_geo(name="cut", left=self.data, right=cutter)
@@ -931,7 +931,7 @@ class GeoArray(ExtensionArray):
                             be required to approximate the curve.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :return: arcgis.geometry.Geometry
 
         """
         return _binary_op_geo(
@@ -954,7 +954,7 @@ class GeoArray(ExtensionArray):
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :return: arcgis.geometry.Geometry
 
         """
         return _binary_op_geo(name="difference", left=self.data, right=second_geometry)
@@ -971,7 +971,7 @@ class GeoArray(ExtensionArray):
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         return _binary_predicate(
@@ -991,7 +991,7 @@ class GeoArray(ExtensionArray):
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
 
-        :returns: float
+        :return: float
 
         """
         return _binary_op(
@@ -1011,7 +1011,7 @@ class GeoArray(ExtensionArray):
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
 
         """
@@ -1029,7 +1029,7 @@ class GeoArray(ExtensionArray):
         max_offset          Required float. The maximum offset tolerance.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :return: arcgis.geometry.Geometry
 
         """
         return _binary_op_geo(
@@ -1056,7 +1056,7 @@ class GeoArray(ExtensionArray):
                             SQUAREMILLIMETERS | SQUAREYARDS
         ===============     ====================================================================
 
-        :returns: float
+        :return: float
 
         """
         return _binary_op(
@@ -1082,7 +1082,7 @@ class GeoArray(ExtensionArray):
                             MILLIMETERS | NAUTICALMILES | YARDS
         ===============     ====================================================================
 
-        :returns: float
+        :return: float
 
         """
         return _binary_op(
@@ -1131,7 +1131,7 @@ class GeoArray(ExtensionArray):
 
         ===============     ====================================================================
 
-        :returns: boolean array
+        :return: boolean array
 
         """
         return _binary_predicate(
@@ -1254,7 +1254,7 @@ class GeoArray(ExtensionArray):
         transformation_name      Required String. The geotransformation name.
         ====================     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :return: arcgis.geometry.Geometry
         """
         return _binary_op_geo(
             name="project_as",
@@ -1314,7 +1314,7 @@ class GeoArray(ExtensionArray):
                             (0 percent) to 1.0 (100 percent).
         ===============     ====================================================================
 
-        :returns: Geometry
+        :return: Geometry
 
         """
         return _binary_op_geo(

@@ -111,7 +111,7 @@ class CategoryManager(object):
                                    categories
         =======================    =============================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         from arcgis.gis import Item
@@ -149,7 +149,7 @@ class CategoryManager(object):
             [{'results': [{'itemId': '<item id 1>', 'success': True}]},
              {'results': [{'itemId': '<item id 2>', 'success': True}]}]
 
-        :returns: dict
+        :return: dict
 
         """
         from arcgis.gis import Item

@@ -83,7 +83,7 @@ class LogManager(object):
         value                  Required dict. A dictionary with the key/values pairs to modify settings.
         ==================     ====================================================================
 
-        :returns: PropertyMap
+        :return: PropertyMap
         """
         params = {"f": "json"}
         url = self._url + "/settings"

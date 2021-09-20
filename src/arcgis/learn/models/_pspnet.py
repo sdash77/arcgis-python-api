@@ -129,7 +129,7 @@ class PSPNetClassifier(ArcGISModel):
                             at the cost of memory consumption. Default: False
     =====================   ===========================================
 
-    :returns: `PSPNetClassifier` Object
+    :return: `PSPNetClassifier` Object
     """
 
     def __init__(
@@ -340,7 +340,7 @@ class PSPNetClassifier(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `PSPNetClassifier` Object
+        :return: `PSPNetClassifier` Object
         """
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
@@ -540,7 +540,7 @@ class PSPNetClassifier(ArcGISModel):
                                 True.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
         num_classes = torch.arange(self._data.c)

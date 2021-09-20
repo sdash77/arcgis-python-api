@@ -143,7 +143,7 @@ class Feature(object):
         """
         Retrieves the feature layer as a dictionary.
         
-        :returns: 
+        :return: 
             The feature as a dictionary
         """
         return self._dict
@@ -259,7 +259,7 @@ class Feature(object):
         Retrieves the geometry type of the Feature as a string.
 
         :return:
-            The geometry type of the :class`~arcgis.features.Feature` as a string
+            The geometry type of the :class:`~arcgis.features.Feature` as a string
             
         """
         if self._geom_type is None:
@@ -278,7 +278,7 @@ class Feature(object):
         """
         Creates a Feature object from a JSON string.
 
-        :returns:
+        :return:
             A :class:`~arcgis.features.Feature`
         
         """
@@ -293,7 +293,7 @@ class Feature(object):
         """
         Creates a Feature object from a dictionary.
 
-        :returns:
+        :return:
             A class:`~arcgis.features.feature.Feature`
         """
         geom = feature["geometry"] if "geometry" in feature else None
@@ -634,7 +634,7 @@ class FeatureSet(object):
         """
         Gets the Feature Set object as a dictionary.
 
-        :returns:
+        :return:
             A dictionary of the :class:`~arcgis.features.FeatureSet`
         """
         val = {"features": [f.as_dict for f in self._features]}
@@ -664,7 +664,7 @@ class FeatureSet(object):
         """
         Gets the Feature Set object as a JSON string.
 
-        :returns:
+        :return:
             A JSON string of the :class:`~arcgis.features.FeatureSet`
         """
         return json.dumps(self.value, default=_date_handler)
@@ -675,7 +675,7 @@ class FeatureSet(object):
         """
         Gets the Feature Set object as a GeoJSON.
 
-        :returns:
+        :return:
             A GeoJSON object.
         """
 
@@ -738,7 +738,7 @@ class FeatureSet(object):
         """
         Converts the Feature Set object to a Python dictionary.
 
-        :returns:
+        :return:
             A Python dictionary of the :class:`~arcgis.features.FeatureSet`
         """
         return self.value
@@ -818,7 +818,7 @@ class FeatureSet(object):
         """
         Gets the Feature Set as a Spatially Enabled Pandas dataframe.
 
-        :returns:
+        :return:
             A Spatially Enabled `Pandas Dataframe <https://pandas.pydata.org/docs/reference/frame.html#dataframe>`_
             object
         """
@@ -859,7 +859,7 @@ class FeatureSet(object):
         json_str            Required json style string.
         ===============     ====================================================================
 
-        :returns:
+        :return:
            A :class:`~arcgis.features.FeatureSet` object
         """
         return FeatureSet.from_dict(_ujson.loads(json_str))
@@ -876,7 +876,7 @@ class FeatureSet(object):
         df                  Required DataFrame.
         ===============     ====================================================================
 
-        :returns:
+        :return:
            A :class:`~arcgis.features.FeatureSet` object
         """
 
@@ -980,8 +980,8 @@ class FeatureSet(object):
         geojson             Required GEOJSON object
         ===============     ====================================================================
 
-        :returns:
-           A :class`~arcgis.features.FeatureSet` object
+        :return:
+           A :class:`~arcgis.features.FeatureSet` object
 
         """
         from warnings import warn
@@ -1146,8 +1146,8 @@ class FeatureSet(object):
                             'globalIdFieldName', 'displayFieldName', 'spatialReference'
         ===============     ====================================================================
 
-        :returns:
-           A :class`~arcgis.features.FeatureSet`
+        :return:
+           A :class:`~arcgis.features.FeatureSet`
         """
         features = []
         if "fields" in featureset_dict:
@@ -1194,7 +1194,7 @@ class FeatureSet(object):
                                 (e.g. {"wkid" : 4326})
         ==================      ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.geometry.SpatialReference`
 
         """
@@ -1228,7 +1228,7 @@ class FeatureSet(object):
                                 Values: True | False
         ==================      ====================================================================
 
-       :returns:
+       :return:
             The Z-value of the :class:`~arcgis.features.FeatureSet` object
         """
         return self._has_z
@@ -1255,7 +1255,7 @@ class FeatureSet(object):
                                 Values: True | False
         ==================      ====================================================================
 
-        :returns:
+        :return:
             The M-value of the :class:`~arcgis.features.FeatureSet` object
         """
         return self._has_m
@@ -1282,7 +1282,7 @@ class FeatureSet(object):
                                 Values: 'Polygon' | 'Polyline' | 'Point'
         ==================      ====================================================================
 
-        :returns:
+        :return:
             A string representing the geometry type of the :class:`~arcgis.features.FeatureSet` object
         """
         return self._geometry_type
@@ -1308,7 +1308,7 @@ class FeatureSet(object):
         value                   Required string.
         ==================      ====================================================================
 
-        :returns:
+        :return:
             A string representing the object id field name
         """
         return self._object_id_field_name
@@ -1334,7 +1334,7 @@ class FeatureSet(object):
         ==================      ====================================================================
 
 
-        :returns:
+        :return:
             A string
         """
         return self._global_id_field_name
@@ -1359,7 +1359,7 @@ class FeatureSet(object):
         value                   Required string.
         ==================      ====================================================================
 
-        :returns:
+        :return:
             A String
         """
         return self._display_field_name
@@ -1390,7 +1390,7 @@ class FeatureSet(object):
                              default is None.
         =================    ====================================================================
 
-        :returns:
+        :return:
             A string
             
         .. code-block:: python
@@ -1464,7 +1464,7 @@ class FeatureSet(object):
         """
         Gets the :class:`~arcgis.features.Feature` objects in the FeatureSet object.
 
-        :returns:
+        :return:
             A list of :class:`~arcgis.features.Feature` objects
         """
         return self._features
@@ -1602,7 +1602,7 @@ class FeatureCollection(Layer):
                                provided, then a random name is generated. (New at 1.6.1)
         ==================     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.features.FeatureCollection` object.
             
         .. code-block:: python

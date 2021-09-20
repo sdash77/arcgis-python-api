@@ -138,7 +138,7 @@ class FeatureClassifier(ArcGISModel):
                             valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
 
-    :returns: `FeatureClassifier` Object
+    :return: `FeatureClassifier` Object
     """
 
     def __init__(
@@ -192,10 +192,15 @@ class FeatureClassifier(ArcGISModel):
             if getattr(data, "_dataset_type", "Labeled_Tiles") == "MultiLabeled_Tiles":
                 # ToDo: allow option to change `thresh` parameter by user
                 accuracy_multi.__name__ = "accuracy"
+
                 class MultLabelFbetaModified(MultiLabelFbeta):
                     def fbeta_score(self, precision, recall):
-                        beta2 = self.beta**2
-                        fbeta = (1 + beta2)*(precision*recall)/((beta2*precision + recall) + self.eps)
+                        beta2 = self.beta ** 2
+                        fbeta = (
+                            (1 + beta2)
+                            * (precision * recall)
+                            / ((beta2 * precision + recall) + self.eps)
+                        )
                         if isinstance(fbeta, torch.Tensor):
                             if fbeta.is_cuda:
                                 fbeta = fbeta.cpu()
@@ -322,7 +327,7 @@ class FeatureClassifier(ArcGISModel):
                                 be set to True.
         =====================   ===========================================
 
-        :returns: prediction label and confidence
+        :return: prediction label and confidence
         """
         img = open_image(img_path)
         pred = self.learn.predict(img)
@@ -407,7 +412,7 @@ class FeatureClassifier(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `FeatureClassifier` Object
+        :return: `FeatureClassifier` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -674,7 +679,7 @@ class FeatureClassifier(ArcGISModel):
         confidence_field        Optional String. The field name to use to add confidence.
         =====================   ===========================================
 
-        :returns: `FeatureCollection` Object
+        :return: `FeatureCollection` Object
         """
         return self._create_feature_layer(
             self._extract_images_geo_data(folder),

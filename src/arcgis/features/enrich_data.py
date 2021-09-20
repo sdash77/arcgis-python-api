@@ -109,7 +109,7 @@ def enrich_layer(
     future                                                                    Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =====================================================================     ====================================================================
 
-    :returns :class`~arcgis.features.FeatureLayer` if output_name is specified, else :class`~arcgis.features.FeatureCollection`.
+    :returns :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 

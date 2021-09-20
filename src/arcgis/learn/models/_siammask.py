@@ -64,7 +64,7 @@ class Track:
     mask                    Required numpy array. Mask for the tack
     =====================   ===========================================
 
-    :returns: `Track` Object
+    :return: `Track` Object
     """
 
     def __init__(self, id, label, bbox, mask):
@@ -92,7 +92,7 @@ class SiamMask(ArcGISModel):
                             Default value is None.
     =====================   ===========================================
 
-    :returns: `SiamMask` Object
+    :return: `SiamMask` Object
     """
 
     def __init__(self, data=None, **kwargs):
@@ -208,7 +208,7 @@ class SiamMask(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `SiamMask` Object
+        :return: `SiamMask` Object
         """
         emd_path = _get_emd_path(emd_path)
         emd_path = Path(emd_path)
@@ -278,7 +278,7 @@ class SiamMask(ArcGISModel):
                                 to the bounding boxes.
         =====================   ===========================================
 
-        :returns: Track list
+        :return: Track list
         """
         if self._model is None:
             raise Exception("SiamMask model not loaded properly.")
@@ -356,7 +356,7 @@ class SiamMask(ArcGISModel):
         labels                  Optional list. A list of labels.
         =====================   ===========================================
 
-        :returns: Updated track list
+        :return: Updated track list
         """
         for i, track in enumerate(self.track_list):
             state = siamese_track(
@@ -399,7 +399,7 @@ class SiamMask(ArcGISModel):
                                 from the track list.
         =====================   ===========================================
 
-        :returns: Updated track list
+        :return: Updated track list
         """
         try:
             for id in track_ids:
@@ -530,7 +530,7 @@ class SiamMask(ArcGISModel):
                                 considered a true positive.
         =====================   ===========================================
 
-        :returns: `dict` with mean IOU and F-Measure
+        :return: `dict` with mean IOU and F-Measure
         """
         self._check_requisites()
         if self._data._dataset_type == "_ObjectTracking":

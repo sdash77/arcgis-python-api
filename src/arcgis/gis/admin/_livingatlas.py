@@ -142,7 +142,7 @@ class LivingAtlas(BasePortalAdmin):
         The content includes valuable maps, data layers, tools, services and
         apps for geographic analysis.
 
-        :returns:
+        :return:
            boolean. `True` if enabled. `False` if failed to enable.
 
         """
@@ -159,7 +159,7 @@ class LivingAtlas(BasePortalAdmin):
         """
         Disables the Public Living Atlas content.
 
-        :returns:
+        :return:
            boolean. True means disabled, False means failure to disable.
 
         """
@@ -332,7 +332,7 @@ class LivingAtlas(BasePortalAdmin):
                             default is https://www.arcgis.com
         ===============     ====================================================
 
-        :returns:
+        :return:
           boolean
         """
         if online_url is None:

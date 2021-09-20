@@ -351,7 +351,7 @@ class Machine(BaseServer):
         few minutes. During this time, all administrative operations on the
         site will be blocked.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = self._url + "/synchronizeWithSite"

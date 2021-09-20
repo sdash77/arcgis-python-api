@@ -138,7 +138,7 @@ def aggregate_points(
                                             Values: `Meters, Kilometers, Feet, Miles, NauticalMiles, or Yards`
     ====================================    ====================================================================
 
-    :returns: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
 
     .. code-block:: python
@@ -391,7 +391,7 @@ def summarize_nearby(
     future                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================   ====================================================================================================================
 
-    :returns: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
 
          dict with the following keys:
 
@@ -529,7 +529,7 @@ def summarize_center_and_dispersion(
     future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================    =========================================================
 
-    :returns: list of items if ``output_name`` is supplied else, a Python dictionary with the following keys:
+    :return: list of items if ``output_name`` is supplied else, a Python dictionary with the following keys:
         "central_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         "mean_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
@@ -691,7 +691,7 @@ def summarize_within(
                                             The default is 'Meters'.
     =====================================   =========================================================
 
-    :returns: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
 
         dict with the following keys:
 
@@ -854,7 +854,7 @@ def join_features(
                                                                                                     Example: {"groupByFields":"","orderByFields":"objectid ASC","topCount":1}
     ============================================================================================    =================================================================================================================================
 
-    :returns: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 

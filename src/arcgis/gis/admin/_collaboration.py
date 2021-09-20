@@ -174,7 +174,7 @@ class CollaborationManager(object):
                                         web-tier authentication certificate password.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         data_path = "%s/acceptCollaborationInvitation" % self._basepath
@@ -275,7 +275,7 @@ class CollaborationManager(object):
                                         web-tier authentication certificate password.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         data_path = "%s/validateCollaborationInvitation" % self._basepath
@@ -331,7 +331,7 @@ class CollaborationManager(object):
         collaboration_description       Optional string. A generic description for the collaboration.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
 
 
@@ -508,7 +508,7 @@ class Collaboration(dict):
                                         workspace.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         from arcgis.gis import Group
@@ -597,7 +597,7 @@ class Collaboration(dict):
                                         collaboration.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
 
 
@@ -646,7 +646,7 @@ class Collaboration(dict):
         out_folder                      Required string. Save location of the file.
         ===========================     ====================================================================
 
-        :returns: string
+        :return: string
 
         """
         params = {"f": "json"}
@@ -694,7 +694,7 @@ class Collaboration(dict):
                                         web-tier authentication certificate password.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json"}
@@ -776,7 +776,7 @@ class Collaboration(dict):
         save_path                       Optional string. Path to download the invitation file to.
         ===========================     ====================================================================
 
-        :returns: contents of a file that contains the invitation information
+        :return: contents of a file that contains the invitation information
 
 
         """
@@ -839,7 +839,7 @@ class Collaboration(dict):
         delete_received_items           Optional Boolean.  When a participant leaves or deletes a collaboration, this property determines whether received items will be deleted or maintained.
         ===========================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         data_path = "%s/participants/%s/updateItemDeletePolicy" % (
@@ -868,7 +868,7 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: dict
 
         """
         group_id = None
@@ -928,7 +928,7 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json"}
@@ -963,7 +963,7 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json"}
@@ -985,7 +985,7 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json"}
@@ -1010,7 +1010,7 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json"}
@@ -1029,7 +1029,7 @@ class Collaboration(dict):
         workspace_id                    Required string. Workspace ID to remove from the link.
         ===========================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         params = {"f": "json"}
@@ -1051,7 +1051,7 @@ class Collaboration(dict):
         workspace_id                    Required string. Workspace ID to remove from the link.
         ===========================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         params = {"f": "json"}
@@ -1073,7 +1073,7 @@ class Collaboration(dict):
         workspace_id                    Required string. Workspace ID to remove from the link.
         ===========================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         params = {"f": "json"}
@@ -1104,7 +1104,7 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         params = {
@@ -1150,7 +1150,7 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json", "async": run_async}
@@ -1169,7 +1169,7 @@ class Collaboration(dict):
         workspace_id                    Required string. Workspace ID to examine `sync` jobs.
         ===========================     ====================================================================
 
-        :returns: List[Dict]
+        :return: List[Dict]
 
         """
         params = {"f": "json"}
@@ -1193,7 +1193,7 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json"}
@@ -1223,7 +1223,7 @@ class Collaboration(dict):
         config                          Optional dict. The configuration properties of the collaboration
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         data_path = "%s/updateInfo" % self._basepath
@@ -1273,7 +1273,7 @@ class Collaboration(dict):
                                         the imposed size limit has been exceeded.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         data_path = "%s/workspaces/%s/updateInfo" % (self._basepath, workspace_id)
@@ -1306,7 +1306,7 @@ class Collaboration(dict):
         workspace_access_json           Required dict/string. JSON describing the participant's access mode.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         data_path = "/participants/%s/updateParticipantAccessModes" % portal_id
@@ -1356,7 +1356,7 @@ class Collaboration(dict):
                                         This is supported on **10.9+**.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         data_path = "/workspaces/%s/updatePortalGroupLink" % workspace_id
@@ -1386,7 +1386,7 @@ class Collaboration(dict):
         response_file                   Required string. Path to the collaboration response file.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         files = {"invitationResponseFile": response_file}

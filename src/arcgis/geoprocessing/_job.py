@@ -107,7 +107,7 @@ class GPJob(object):
     @property
     def task(self):
         """Get the task name.
-        :returns: string
+        :return: string
         """
         if self._task_name is None:
             self._task_name = os.path.basename(self._url)
@@ -119,7 +119,7 @@ class GPJob(object):
         """
         Get the service's messages
 
-        :returns: List
+        :return: List
         """
         url = self._url + "/jobs/%s" % self._jobid
         params = {"f": "json", "returnMessages": True}
@@ -135,7 +135,7 @@ class GPJob(object):
         """
         Get the GP status
 
-        :returns: String
+        :return: String
         """
         url = self._url + "/jobs/%s" % self._jobid
         params = {"f": "json", "returnMessages": True}
@@ -153,7 +153,7 @@ class GPJob(object):
         return False, otherwise the call will be cancelled and the method
         will return True.
 
-        :returns: boolean
+        :return: boolean
         """
         if self.done():
             return False
@@ -180,7 +180,7 @@ class GPJob(object):
         """
         Return True if the call was successfully cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.cancelled()
 
@@ -189,7 +189,7 @@ class GPJob(object):
         """
         Return True if the call is currently being executed and cannot be cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.running()
 
@@ -198,7 +198,7 @@ class GPJob(object):
         """
         Return True if the call was successfully cancelled or finished running.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.done()
 
@@ -208,7 +208,7 @@ class GPJob(object):
         Return the value returned by the call. If the call hasn't yet completed
         then this method will wait.
 
-        :returns: object
+        :return: object
         """
         if self.cancelled():
             return None
@@ -610,7 +610,7 @@ class RAJob(GPJob):
     @property
     def task(self):
         """Returns the task name.
-        :returns: string
+        :return: string
         """
         return self._gpjob.task
 
@@ -620,7 +620,7 @@ class RAJob(GPJob):
         """
         Returns the service's messages
 
-        :returns: List
+        :return: List
         """
         return self._gpjob.messages
 
@@ -630,7 +630,7 @@ class RAJob(GPJob):
         """
         returns the GP status
 
-        :returns: String
+        :return: String
         """
         return self._gpjob.status
 
@@ -648,7 +648,7 @@ class RAJob(GPJob):
         Return the value returned by the call. If the call hasn't yet completed
         then this method will wait.
 
-        :returns: object
+        :return: object
         """
         try:
             return self._gpjob.result()
@@ -669,7 +669,7 @@ class RAJob(GPJob):
         return False, otherwise the call will be cancelled and the method
         will return True.
 
-        :returns: boolean
+        :return: boolean
         """
         res = self._gpjob.cancel()
         if self.cancelled():
@@ -686,7 +686,7 @@ class RAJob(GPJob):
         """
         Return True if the call was successfully cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._gpjob.cancelled()
 
@@ -695,7 +695,7 @@ class RAJob(GPJob):
         """
         Return True if the call is currently being executed and cannot be cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._gpjob.running()
 
@@ -704,6 +704,6 @@ class RAJob(GPJob):
         """
         Return True if the call was successfully cancelled or finished running.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._gpjob.done()

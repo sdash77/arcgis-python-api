@@ -85,10 +85,8 @@ class MyFasterRCNN:
                 **self.fasterrcnn_kwargs,
             )
         else:
-            backbone_fpn = (
-                self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(
-                    backbone.__name__, pretrained=pretrained_backbone
-                )
+            backbone_fpn = self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(
+                backbone.__name__, pretrained=pretrained_backbone
             )
             model = self.torchvision.models.detection.FasterRCNN(
                 backbone_fpn,
@@ -99,10 +97,8 @@ class MyFasterRCNN:
             )
 
         in_features = model.roi_heads.box_predictor.cls_score.in_features
-        model.roi_heads.box_predictor = (
-            self.torchvision.models.detection.faster_rcnn.FastRCNNPredictor(
-                in_features, len(data.classes)
-            )
+        model.roi_heads.box_predictor = self.torchvision.models.detection.faster_rcnn.FastRCNNPredictor(
+            in_features, len(data.classes)
         )
 
         if data._is_multispectral:
@@ -350,11 +346,7 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
         num_images = len(boxes)
         for i in range(num_images):
             result.append(
-                {
-                    "boxes": boxes[i],
-                    "labels": labels[i],
-                    "scores": scores[i],
-                }
+                {"boxes": boxes[i], "labels": labels[i], "scores": scores[i],}
             )
 
     return result, losses
@@ -488,7 +480,7 @@ class FasterRCNN(ModelExtension):
                                     Default: 0.25
     =============================   =============================================
 
-    :returns: ``FasterRCNN`` Object
+    :return: ``FasterRCNN`` Object
     """
 
     def __init__(self, data, backbone="resnet50", pretrained_path=None, **kwargs):
@@ -575,7 +567,7 @@ class FasterRCNN(ModelExtension):
 
         =====================   ===========================================
 
-        :returns: `FasterRCNN` Object
+        :return: `FasterRCNN` Object
         """
         emd_path = _get_emd_path(emd_path)
 
@@ -690,7 +682,7 @@ class FasterRCNN(ModelExtension):
                                 trained on).
         =====================   ===========================================
 
-        :returns: Returns a tuple with predictions, labels and optionally confidence scores
+        :return: Returns a tuple with predictions, labels and optionally confidence scores
                   if return_scores=True. The predicted bounding boxes are returned as a list
                   of lists containing the  xmin, ymin, width and height of each predicted object
                   in each image. The labels are returned as a list of class values and the
@@ -816,7 +808,7 @@ class FasterRCNN(ModelExtension):
                                 average precision.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):

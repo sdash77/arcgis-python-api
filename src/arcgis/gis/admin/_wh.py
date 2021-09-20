@@ -310,7 +310,7 @@ class Webhook(object):
         """
         Removes the current webhook from the system.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = self._url + "/delete"
@@ -327,7 +327,7 @@ class Webhook(object):
         payloads such as the time the webhook was triggered, the response
         received from the payload URL, and the delivered payload data.
 
-        :returns: List
+        :return: List
 
         """
         url = "%s/notificationStatus" % self._url
@@ -351,7 +351,7 @@ class Webhook(object):
         delivering payloads when it is invoked. The webhook will be
         automatically deactivated when the deactivation policy is met.
 
-        :returns: boolean
+        :return: boolean
         """
         url = self._url + "/deactivate"
         params = {"f": "json"}

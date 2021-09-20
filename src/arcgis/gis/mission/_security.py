@@ -53,7 +53,7 @@ class SecurityManager(object):
                                "STANDALONE_SERVER".
         ==================     ====================================================================
 
-        :returns: Dict
+        :return: Dict
 
         """
         url = self._url + "/config/changeServerRole"

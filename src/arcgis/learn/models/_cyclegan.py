@@ -55,7 +55,7 @@ class CycleGAN(ArcGISModel):
                             else it will use Binary Cross Entropy.
     =====================   ===========================================
 
-    :returns: `CycleGAN` Object
+    :return: `CycleGAN` Object
     """
 
     def __init__(
@@ -108,7 +108,7 @@ class CycleGAN(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         =====================   ===========================================
 
-        :returns: `CycleGAN` Object
+        :return: `CycleGAN` Object
         """
 
         if not HAS_FASTAI:

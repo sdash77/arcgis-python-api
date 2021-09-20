@@ -40,7 +40,7 @@ class APIKey(object):
         """
         The ``properties`` property retrieves the properties of the current APIKey object.
 
-        :returns:
+        :return:
             A dictionary containin the properties (if any) of the current APIKey object.
         """
         if self._properties is None:
@@ -53,7 +53,7 @@ class APIKey(object):
         """
         The ``apikey`` property retrieves the API Key value for the current key.
 
-        :returns:
+        :return:
             String
         """
         return self.properties.apiKey
@@ -74,7 +74,7 @@ class APIKey(object):
         Resets the API Key for the Item. The call will return the information
         with the new API Key information.
 
-        :returns:
+        :return:
             A dictionary with the APIKey object information
 
         """
@@ -145,7 +145,7 @@ class APIKey(object):
             >>>                               "premium:user:geocode",
             >>>                               "premium:user:networkanalysis"])
 
-        :returns:
+        :return:
             A dictionary
 
         """
@@ -294,7 +294,7 @@ class APIKeyManager(object):
             >>>                     privleges = ["portal:apikey:basemaps", "portal:app:access:item:itemId",
             >>>                                        "premium:user:geocode", "premium:user:networkanalysis"])
 
-        :returns:
+        :return:
             An :class:`~arcgis.gis._impl.APIKey` object
         """
         api_item = self._gis.content.add(
@@ -341,7 +341,7 @@ class APIKeyManager(object):
 
             >>> gis.APIKeyManager.validate(ApiKey1)
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         """
@@ -367,7 +367,7 @@ class APIKeyManager(object):
         The ``keys`` property retrieves a tuple of :class:`~arcgis.gis._impl.APIKey` objects registered with the
         Organization.
 
-        :returns:
+        :return:
             A `tuple <https://docs.python.org/3/tutorial/datastructures.html#tuples-and-sequences>`_ of
             :class:`~arcgis.gis._impl.APIKey` objects
 

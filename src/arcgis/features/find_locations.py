@@ -275,7 +275,7 @@ def find_existing_locations(
     future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =====================================    ======================================================================================================
 
-    :Returns: :class`~arcgis.features.FeatureLayer` if output_name is specified, else :class`~arcgis.features.FeatureCollection`.
+    :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -561,7 +561,7 @@ def derive_new_locations(
     future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =====================================    ======================================================================================================
 
-    :return: :class`~arcgis.features.FeatureLayer` if output_name is specified, else :class`~arcgis.features.FeatureCollection`.
+    :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -701,9 +701,9 @@ def find_similar_locations(
     future                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =======================     ===========================================================================================
 
-    :returns: :class`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
+    :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
 
-        "similar_result_layer" : layer (:class`~arcgis.features.FeatureCollection`)
+        "similar_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
         "process_info" : list of message
 
@@ -793,7 +793,7 @@ def find_centroids(
     future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ================    ===============================================================
 
-    :returns: result_layer : :class`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class`~arcgis.features.FeatureCollection`.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -1091,13 +1091,13 @@ def choose_best_facilities(
     =====================================    =========================================================
 
 
-    :returns: When an output_name is specified, a :class`~arcgis.features.FeatureCollection` with 3 layers is returned (see dictionary below for details), else a dict with the following keys:
+    :return: When an output_name is specified, a :class:`~arcgis.features.FeatureCollection` with 3 layers is returned (see dictionary below for details), else a dict with the following keys:
 
-       "allocated_demand_locations_layer" : layer (:class`~arcgis.features.FeatureCollection`)
+       "allocated_demand_locations_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-       "allocation_lines_layer"  : layer (:class`~arcgis.features.FeatureCollection`)
+       "allocation_lines_layer"  : layer (:class:`~arcgis.features.FeatureCollection`)
 
-       "assigned_facilities_layer"   : layer (:class`~arcgis.features.FeatureCollection`)
+       "assigned_facilities_layer"   : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 
@@ -1289,7 +1289,7 @@ def create_viewshed(
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
-    :returns result_layer : :class`~arcgis.features.FeatureLayer` if output_name is specified, else :class`~arcgis.features.FeatureCollection`.
+    :returns result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -1423,7 +1423,7 @@ def create_watersheds(
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
-    :returns result_layer : :class`~arcgis.features.FeatureLayer` if output_name is specified, else :class`~arcgis.features.FeatureCollection`.
+    :returns result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -1557,7 +1557,7 @@ def trace_downstream(
     future                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =====================================   =========================================================
 
-    :returns: :class`~arcgis.features.FeatureLayer` if ``output_name`` is set, else :class`~arcgis.features.FeatureCollection`.
+    :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is set, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 

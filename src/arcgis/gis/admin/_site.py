@@ -98,7 +98,7 @@ class Site(BasePortalAdmin):
 
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/createNewSite" % url
@@ -139,7 +139,7 @@ class Site(BasePortalAdmin):
                                         where the exported site configuration will be written.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         .. code-block:: python
 
@@ -179,7 +179,7 @@ class Site(BasePortalAdmin):
         location                        Required string. A file path to an exported configuration.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/importSite" % self._url
@@ -230,7 +230,7 @@ class Site(BasePortalAdmin):
                                         of the existing portal site.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = "%s/joinSite" % self._url

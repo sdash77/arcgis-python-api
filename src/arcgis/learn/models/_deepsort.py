@@ -64,7 +64,7 @@ class DeepSort(ArcGISModel):
                             DeepSort only supports image size of (3, 128, 64)
     =====================   ===========================================
 
-    :returns: `DeepSort` Object
+    :return: `DeepSort` Object
     """
 
     # TODO: kwargs description
@@ -252,7 +252,7 @@ class DeepSort(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `DeepSort` Object
+        :return: `DeepSort` Object
         """
 
         if not HAS_FASTAI:
@@ -334,7 +334,7 @@ class DeepSort(ArcGISModel):
                                 corresponding to the detections.
         =====================   ===========================================
 
-        :returns: Track list
+        :return: Track list
         """
         if detections is None:
             detections = []
@@ -421,7 +421,7 @@ class DeepSort(ArcGISModel):
                                 corresponding to the detections.
         =====================   ===========================================
 
-        :returns: Track list
+        :return: Track list
         """
         self.track_list = []
         self._update_interval = kwargs.get("update_interval", self._update_interval)
@@ -465,7 +465,7 @@ class DeepSort(ArcGISModel):
                                 from the track list.
         =====================   ===========================================
 
-        :returns: Updated track list
+        :return: Updated track list
         """
         try:
             for track_id in track_ids:

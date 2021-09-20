@@ -41,7 +41,7 @@ class Backup(_BaseKube):
         """
         Removes the backup from the system
 
-        :returns: bool
+        :return: bool
         """
         url = "{self._url}/delete"
         params = {"f": "json"}
@@ -63,7 +63,7 @@ class Backup(_BaseKube):
                                passcode must be the same as the one used when creating the backup.
         ==================     ====================================================================
 
-        :returns: Bool
+        :return: Bool
 
         """
         url = f"{self._url}/restore"
@@ -164,7 +164,7 @@ class RecoveryManager(_BaseKube):
         description            Optional String. A description of the backup.
         ==================     ====================================================================
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
         """
         params = {
             "f": "json",
@@ -182,7 +182,7 @@ class RecoveryManager(_BaseKube):
         This resource returns the status of a current, or previously
         executed, backup.
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
 
         """
         try:
@@ -219,7 +219,7 @@ class RecoveryManager(_BaseKube):
         """
         Returns the backup stores that are registered with your deployment.
 
-        :returns: List[BackupStore]
+        :return: List[BackupStore]
         """
         url = f"{self._url}/stores"
         params = {"f": "json"}
@@ -243,7 +243,7 @@ class RecoveryManager(_BaseKube):
                                settings.
         ==================     ====================================================================
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
 
         """
         url = f"{self._url}/settings"

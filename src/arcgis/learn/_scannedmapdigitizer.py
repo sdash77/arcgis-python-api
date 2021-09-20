@@ -1062,7 +1062,7 @@ def find_current_timestamp():
     """
     Creates a string representing the current timestamp
 
-    :returns:
+    :return:
         timestamp_str: Current timestamp string in the format "%H_%M_%S_%f"
     """
     datetime_obj = datetime.now()
@@ -1323,8 +1323,7 @@ def write_georeference_xml_file(control_point, path, image_name, extent):
 
     aux_file_out = os.path.join(path, os.path.basename(image_name) + ".jpg.aux.xml")
     aux.write(
-        aux_file_out,
-        encoding="utf-8",
+        aux_file_out, encoding="utf-8",
     )
 
 

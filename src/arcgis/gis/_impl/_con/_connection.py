@@ -703,7 +703,7 @@ class Connection(object):
         timeout                       optional Integer. Timeout in seconds
         ===========================   =====================================================
 
-        :returns: data returned from the URL call.
+        :return: data returned from the URL call.
         """
         timeout = kwargs.pop("timeout", self._timeout)
         retry_count = 0
@@ -925,7 +925,7 @@ class Connection(object):
         timeout                       optional Integer. The number of seconds to timeout a service without a response.  The default is 600 seconds.
         ===========================   =====================================================
 
-        :returns: data returned from the URL call.
+        :return: data returned from the URL call.
 
         """
         timeout = kwargs.pop("timeout", self._timeout)
@@ -1139,7 +1139,7 @@ class Connection(object):
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
         ===========================   =====================================================
 
-        :returns: dict or string depending on the response
+        :return: dict or string depending on the response
 
         """
         token = kwargs.pop("token", _DEFAULT_TOKEN)
@@ -1263,7 +1263,7 @@ class Connection(object):
                                       https.
         ===========================   =====================================================
 
-        :returns: dict or string depending on the response
+        :return: dict or string depending on the response
         """
         out_path = kwargs.pop("out_path", None)
         file_name = kwargs.pop("file_name", None)

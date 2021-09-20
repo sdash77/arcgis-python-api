@@ -262,7 +262,7 @@ class AGOLAdminManager(object):
         ================  ===============================================================================
 
 
-        :returns: List of Tasks
+        :return: List of Tasks
 
         """
         _tasks = []
@@ -364,7 +364,7 @@ class AGOLAdminManager(object):
         save_folder       Optional String. The save location of the CSV file.
         ================  ===============================================================================
 
-        :returns: string or pd.DataFrame or dict
+        :return: string or pd.DataFrame or dict
 
         """
         import tempfile, json

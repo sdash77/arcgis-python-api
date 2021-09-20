@@ -53,7 +53,7 @@ class KubeService(object):
         ===============     ====================================================================
 
 
-        :returns: boolean
+        :return: boolean
         """
         lu = {"dmaps": "DMaps", "arcobjects11": "ArcObjects11"}
         provider = lu[provider.lower()]
@@ -69,7 +69,7 @@ class KubeService(object):
         """
         Removes the service from the hosting server
 
-        :returns: bool
+        :return: bool
 
         """
         url = f"{self._url}/delete"
@@ -100,7 +100,7 @@ class KubeService(object):
         """
         Starts the service
 
-        :returns: bool
+        :return: bool
         """
 
         url = f"{self._url}/start"
@@ -112,7 +112,7 @@ class KubeService(object):
         """
         Stops the service
 
-        :returns: bool
+        :return: bool
         """
 
         url = f"{self._url}/stop"
@@ -123,7 +123,7 @@ class KubeService(object):
     def restart(self) -> bool:
         """
         Recycles the current service
-        :returns: Bool
+        :return: Bool
         """
         self.stop()
         return self.start()
@@ -254,7 +254,7 @@ class ServicesManager(object):
         """
         The proeprties of the manager.
 
-        :returns: dict
+        :return: dict
         """
         url = self._url
         params = {"f": "json"}
@@ -307,7 +307,7 @@ class ServicesManager(object):
         """
         returns a list of folder names
 
-        :returns: List[str]
+        :return: List[str]
 
         """
         return self.properties.get("folders", [])
@@ -318,7 +318,7 @@ class ServicesManager(object):
         """
         This resource provides metadata about all service types and extensions that can be enabled.
 
-        :returns: Dict
+        :return: Dict
 
         """
         if self._types is None:
@@ -352,7 +352,7 @@ class ServicesManager(object):
         """
         This operation checks if a folder or service exists on the server.
 
-        :returns: dict
+        :return: dict
         """
         params = {
             "f": "json",
@@ -496,7 +496,7 @@ class ServicesManager(object):
         during site creation. This operation should only be performed if either the System or
         Utility service fails to be created with the site.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = f"{self._url}/refreshAutodeployedServices"

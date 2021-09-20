@@ -80,8 +80,8 @@ def generate_tessellation(
             The tool requires either an 'extent' given in the `context` or an `extent_layer`.
 
     :return: 
-        :class`~arcgis.features.FeatureLayer` if out_put name specified or 
-        a :class`~arcgis.features.FeatureLayerCollection`
+        :class:`~arcgis.features.FeatureLayer` if out_put name specified or 
+        a :class:`~arcgis.features.FeatureLayerCollection`
 
     """
 
@@ -216,7 +216,7 @@ def dissolve_boundaries(
     future                                   Optional boolean. If True, the result will be a :class:`~arcgis.geoprocessing.GPJob` object and results will be returned asynchronously.
     ====================================     =====================================================================================
 
-    :returns: result_layer : Feature layer :class:`~arcgis.gis.Item` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+    :return: result_layer : Feature layer :class:`~arcgis.gis.Item` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
 
 
     .. code-block:: python
@@ -314,7 +314,7 @@ def extract_data(
     future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ===================================    =========================================================
 
-    :returns: result_layer : Feature layer :class:`~arcgis.gis.Item` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+    :return: result_layer : Feature layer :class:`~arcgis.gis.Item` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
 
     .. code-block:: python
 
@@ -427,7 +427,7 @@ def merge_layers(
     future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ================    ===============================================================
 
-    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
+    :return: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
 
     .. code-block:: python
 
@@ -566,7 +566,7 @@ def overlay_layers(
     future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ================    ===============================================================
 
-    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
+    :return: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
 
 
     .. code-block:: python
@@ -656,7 +656,7 @@ def create_route_layers(
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
-    :returns: result_layer : A list (items) or an :class`~arcgis.gis.Item`
+    :return: result_layer : A list (items) or an :class:`~arcgis.gis.Item`
 
     .. code-block:: python
 

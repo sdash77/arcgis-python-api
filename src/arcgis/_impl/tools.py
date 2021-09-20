@@ -62,7 +62,7 @@ def _inspect_function_inputs(fn, **params):
     a new dictionary.  This method is used primarily to validate GP services and ensure
     that the parameters given are supported in the current version of the tool.
 
-    :returns: dictionary
+    :return: dictionary
 
     Example:
 
@@ -2340,7 +2340,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         estimate          Optional Boolean. Returns the number of credit for the operation.
         ================  ===============================================================
 
-        :Returns: output_layer - Feature Layer or Feature Collection
+        :return: output_layer - Feature Layer or Feature Collection
 
         """
         task = "FindCentroids"
@@ -2916,7 +2916,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                 credits for the current task.
         ====================    =========================================================
 
-        :returns: Python dictionary with the following keys:
+        :return: Python dictionary with the following keys:
             "point_clusters_result_layer" : layer (FeatureCollection)
             "process_info" : list of messages
         """
@@ -3813,7 +3813,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                 credits for the current task.
         ====================    =========================================================
 
-        :returns:
+        :return:
         If an output_name is provided, a
 
         Python dictionary with the following keys:
@@ -4442,7 +4442,7 @@ class _PackagingTools(object):
         future                     Optional Boolean.  If true, the operation will occur in an asynchronous manner.
         ========================   ====================================================================
 
-        :returns: ToolOutput or GPJob
+        :return: ToolOutput or GPJob
 
         """
         import uuid
@@ -4480,7 +4480,7 @@ class _PackagingTools(object):
         packages                                                                    List Items.  A JSON array consisting of packages that need to be refreshed, specified with the ID of each package item. Packages can belong to different map areas. A package item should only be listed if you are the owner of the package item or organization administrators.
         =========================================================================   ===========================================================================
 
-        :returns: Job, ToolOutput or Dict
+        :return: Job, ToolOutput or Dict
 
         """
         res = []
@@ -4561,7 +4561,7 @@ class _PackagingTools(object):
                                                                                     ]
         =========================================================================   ===========================================================================
 
-        :returns: Job, ToolOutput or Dict
+        :return: Job, ToolOutput or Dict
 
 
         """
@@ -4734,7 +4734,7 @@ class _HydrologyTool:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns:
+        :return:
 
 
         """
@@ -4825,7 +4825,7 @@ class _HydrologyTool:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns:
+        :return:
 
         """
         tool = self._tbx.watershed
@@ -5161,7 +5161,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5177,11 +5177,9 @@ class _OrthoMappingTools:
         if color_correction_method is None:
             color_correction_method = defaults["color_correction_method"]
         else:
-            color_correction_allowed_values = (
-                self._tbx.choice_list.compute_color_correction[
-                    "color_correction_method"
-                ]
-            )
+            color_correction_allowed_values = self._tbx.choice_list.compute_color_correction[
+                "color_correction_method"
+            ]
             if [element.lower() for element in color_correction_allowed_values].count(
                 color_correction_method.lower()
             ) <= 0:
@@ -5196,9 +5194,9 @@ class _OrthoMappingTools:
         if dodging_surface is None:
             dodging_surface = defaults["dodging_surface"]
         else:
-            dodging_surface_type_allowed_values = (
-                self._tbx.choice_list.compute_color_correction["dodging_surface"]
-            )
+            dodging_surface_type_allowed_values = self._tbx.choice_list.compute_color_correction[
+                "dodging_surface"
+            ]
             if [
                 element.lower() for element in dodging_surface_type_allowed_values
             ].count(dodging_surface.lower()) <= 0:
@@ -5273,7 +5271,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5289,9 +5287,9 @@ class _OrthoMappingTools:
         if image_location_accuracy is None:
             image_location_accuracy = defaults["image_location_accuracy"]
         else:
-            image_location_accuracy_allowed_values = (
-                self._tbx.choice_list.compute_control_points["image_location_accuracy"]
-            )
+            image_location_accuracy_allowed_values = self._tbx.choice_list.compute_control_points[
+                "image_location_accuracy"
+            ]
             if [
                 element.lower() for element in image_location_accuracy_allowed_values
             ].count(image_location_accuracy.lower()) <= 0:
@@ -5376,7 +5374,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Dictionary
+        :return: Dictionary
 
         """
         gis = self._gis
@@ -5459,7 +5457,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5556,7 +5554,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5642,7 +5640,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5775,7 +5773,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5874,7 +5872,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5930,7 +5928,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
 
         """
@@ -5976,7 +5974,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
 
 
@@ -6042,7 +6040,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: GPJob or Pandas' DataFrame
+        :return: GPJob or Pandas' DataFrame
 
         """
         gis = self._gis
@@ -6076,7 +6074,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -6116,7 +6114,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -9545,7 +9543,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         """
         Lists the deep learning models registered with the site
 
-        :returns: List
+        :return: List
 
         """
         task = "ListDeepLearningModels"
@@ -9875,11 +9873,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "percentile_interpolation_type"
                 in self._tbx.choice_list.summarize_raster_within.keys()
             ):
-                percentile_interpolation_type_allowed_values = (
-                    self._tbx.choice_list.summarize_raster_within[
-                        "percentile_interpolation_type"
-                    ]
-                )
+                percentile_interpolation_type_allowed_values = self._tbx.choice_list.summarize_raster_within[
+                    "percentile_interpolation_type"
+                ]
                 if [
                     element.lower()
                     for element in percentile_interpolation_type_allowed_values
@@ -10832,9 +10828,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if seasonal_period is not None:
             if "seasonal_period" in self._tbx.choice_list.generate_trend_raster.keys():
-                seasonal_period_allowed_values = (
-                    self._tbx.choice_list.generate_trend_raster["seasonal_period"]
-                )
+                seasonal_period_allowed_values = self._tbx.choice_list.generate_trend_raster[
+                    "seasonal_period"
+                ]
                 if [
                     element.lower() for element in seasonal_period_allowed_values
                 ].count(seasonal_period.lower()) <= 0:
@@ -12101,12 +12097,12 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_neighbor_connections_service_name = (
                 "Output Neighbor Connections" + _id_generator()
             )
-            output_neighbor_connections_name = (
-                output_neighbor_connections_service_name.replace(" ", "_")
+            output_neighbor_connections_name = output_neighbor_connections_service_name.replace(
+                " ", "_"
             )
         else:
-            output_neighbor_connections_service_name = (
-                output_neighbor_connections_name.replace(" ", "_")
+            output_neighbor_connections_service_name = output_neighbor_connections_name.replace(
+                " ", "_"
             )
 
         folderId = None
@@ -12769,11 +12765,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         )
 
         if change_type is not None:
-            change_type_allowed_values = (
-                self._tbx.choice_list.detect_change_using_change_analysis_raster[
-                    "change_type"
-                ]
-            )
+            change_type_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster[
+                "change_type"
+            ]
             if [element.lower() for element in change_type_allowed_values].count(
                 change_type.lower()
             ) <= 0:
@@ -12790,11 +12784,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "segment_date"
                 in self._tbx.choice_list.detect_change_using_change_analysis_raster.keys()
             ):
-                segment_date_allowed_values = (
-                    self._tbx.choice_list.detect_change_using_change_analysis_raster[
-                        "segment_date"
-                    ]
-                )
+                segment_date_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster[
+                    "segment_date"
+                ]
                 if [element.lower() for element in segment_date_allowed_values].count(
                     segment_date.lower()
                 ) <= 0:
@@ -12811,11 +12803,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "change_direction"
                 in self._tbx.choice_list.detect_change_using_change_analysis_raster.keys()
             ):
-                change_direction_allowed_values = (
-                    self._tbx.choice_list.detect_change_using_change_analysis_raster[
-                        "change_direction"
-                    ]
-                )
+                change_direction_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster[
+                    "change_direction"
+                ]
                 if [
                     element.lower() for element in change_direction_allowed_values
                 ].count(change_direction.lower()) <= 0:
@@ -12932,9 +12922,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 input_multidimensional_rasters
             )
 
-        manage_mode_allowed_values = (
-            self._tbx.choice_list.manage_multidimensional_raster["manage_mode"]
-        )
+        manage_mode_allowed_values = self._tbx.choice_list.manage_multidimensional_raster[
+            "manage_mode"
+        ]
         if [element.lower() for element in manage_mode_allowed_values].count(
             manage_mode.lower()
         ) <= 0:
@@ -13257,11 +13247,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_multidimensional_rasters = self._set_multiple_raster_inputs(
             input_multidimensional_rasters
         )
-        resolve_overlap_method_allowed_values = (
-            self._tbx.choice_list.merge_multidimensional_rasters[
-                "resolve_overlap_method"
-            ]
-        )
+        resolve_overlap_method_allowed_values = self._tbx.choice_list.merge_multidimensional_rasters[
+            "resolve_overlap_method"
+        ]
         if [element.lower() for element in resolve_overlap_method_allowed_values].count(
             resolve_overlap_method.lower()
         ) <= 0:
@@ -13584,11 +13572,9 @@ class _RasterAnalysisTools(BaseAnalytics):
             if statistic_type.lower() == element.lower():
                 statistic_type = element
 
-        percentile_interpolation_type_allowed_values = (
-            self._tbx.choice_list.zonal_statistics_as_table[
-                "percentile_interpolation_type"
-            ]
-        )
+        percentile_interpolation_type_allowed_values = self._tbx.choice_list.zonal_statistics_as_table[
+            "percentile_interpolation_type"
+        ]
         if [
             element.lower() for element in percentile_interpolation_type_allowed_values
         ].count(percentile_interpolation_type.lower()) <= 0:
@@ -13707,9 +13693,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_to_raster = self._layer_input(input_layer=input_to_raster)
 
         if compute_change_method is not None:
-            compute_change_method_allowed_values = (
-                self._tbx.choice_list.compute_change_raster["compute_change_method"]
-            )
+            compute_change_method_allowed_values = self._tbx.choice_list.compute_change_raster[
+                "compute_change_method"
+            ]
             if [
                 element.lower() for element in compute_change_method_allowed_values
             ].count(compute_change_method.lower()) <= 0:
@@ -13737,9 +13723,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                     filter_method = element
 
         if transition_class_colors is not None:
-            transition_class_colors_allowed_values = (
-                self._tbx.choice_list.compute_change_raster["transition_class_colors"]
-            )
+            transition_class_colors_allowed_values = self._tbx.choice_list.compute_change_raster[
+                "transition_class_colors"
+            ]
             if [
                 element.lower() for element in transition_class_colors_allowed_values
             ].count(transition_class_colors.lower()) <= 0:

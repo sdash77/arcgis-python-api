@@ -124,7 +124,7 @@ def geocode_locations(
     ==========================   ===============================================================
 
 
-    :returns: :class`~arcgis.features.FeatureLayer`
+    :return: :class:`~arcgis.features.FeatureLayer`
 
     .. code-block:: python
 
@@ -390,7 +390,7 @@ def detect_incidents(
                                  The default value is 'False'.
     ==========================   ===============================================================
 
-    :returns: result_layer : Output Features as :class`~arcgis.features.FeatureLayerCollection`.
+    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayerCollection`.
 
     .. code-block:: python
 
@@ -637,7 +637,7 @@ def find_dwell_locations(
                                  begin from. This parameter was introduced in ArcGIS Enterprise 10.8.1.
     ==========================   ===============================================================
 
-    :returns: Output Service if future is False and GAJob if future is True
+    :return: Output Service if future is False and GAJob if future is True
 
     """
     gis = None
@@ -857,13 +857,13 @@ def find_similar_locations(
                                  The default value is 'False'.
     ==========================   ===============================================================
 
-    :returns: named tuple with the following keys if ``return_tuple`` is set to 'True':
+    :return: named tuple with the following keys if ``return_tuple`` is set to 'True':
 
-      "output" : :class`~arcgis.features.FeatureLayer`
+      "output" : :class:`~arcgis.features.FeatureLayer`
 
       "process_info" : list
 
-    else returns a :class`~arcgis.features.FeatureLayer` of the results.
+    else returns a :class:`~arcgis.features.FeatureLayer` of the results.
 
     .. code-block:: python
 

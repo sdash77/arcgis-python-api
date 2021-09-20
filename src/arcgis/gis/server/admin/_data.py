@@ -1031,7 +1031,7 @@ class Datastore(BaseServer):
         regenerate a manifest if you have added new data or if you have
         uploaded a hints file using the edit resource.
 
-        :returns: Boolean. True = Success, False = Failure
+        :return: Boolean. True = Success, False = Failure
 
         """
         url = self._datastore._url + "/regenerate"
