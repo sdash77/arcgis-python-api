@@ -1,6 +1,8 @@
 from ._bigdata_analytics import BigDataAnalytics
 from ._util import _Util
+import logging
 
+_LOGGER = logging.getLogger(__name__)
 
 class BigDataAnalyticsManager:
     """
@@ -34,8 +36,11 @@ class BigDataAnalyticsManager:
                 for bigdata_item in all_bigdata_analytics_response
             ]
             return bigdata_analytics_items
+        elif all_bigdata_analytics_response is None:
+            _LOGGER.warning("No Big-data Analytic items found for the user.")
+            return []
         else:
-            raise Exception("Could not retrieve items - Received invalid response from Velocity.")
+            raise Exception(f"Error retrieving Big-data Analytic items. Velocity response: ${all_bigdata_analytics_response}")
 
     # ----------------------------------------------------------------------
     def get(self, id):
