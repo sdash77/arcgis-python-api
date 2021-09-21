@@ -533,7 +533,7 @@ class Connection(object):
         try_json = kwargs.pop("try_json", True)
         add_token = kwargs.pop("add_token", True)
 
-        if add_token == 'ignore':
+        if add_token == "ignore":
             if token != _DEFAULT_TOKEN:
                 if token is not None:
                     params["token"] = token
@@ -844,7 +844,7 @@ class Connection(object):
             url = self._baseurl + url
         if kwargs.pop("ssl", False) or self._all_ssl:
             url = url.replace("http://", "https://")
-        if add_token == 'ignore':
+        if add_token == "ignore":
             if token != _DEFAULT_TOKEN:
                 if token is not None:
                     params["token"] = token
@@ -1067,7 +1067,7 @@ class Connection(object):
             url = self._baseurl + url
         if kwargs.pop("ssl", False) or self._all_ssl:
             url = url.replace("http://", "https://")
-        if add_token == 'ignore':
+        if add_token == "ignore":
             if token != _DEFAULT_TOKEN:
                 if token is not None:
                     params["token"] = token
@@ -1274,7 +1274,7 @@ class Connection(object):
             url = self._baseurl + url
         if kwargs.pop("ssl", False):
             url = url.replace("http://", "https://")
-        if add_token == 'ignore':
+        if add_token == "ignore":
             if token != _DEFAULT_TOKEN:
                 if token is not None:
                     params["token"] = token
@@ -1394,7 +1394,7 @@ class Connection(object):
             url = self._baseurl + url
         if kwargs.pop("ssl", False):
             url = url.replace("http://", "https://")
-        if add_token == 'ignore':
+        if add_token == "ignore":
             if token_as_header == False and not "token" in kwargs:  # as ?token=
                 params["token"] = self.token
             elif (

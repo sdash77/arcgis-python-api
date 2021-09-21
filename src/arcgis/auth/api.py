@@ -394,7 +394,7 @@ class EsriSession:
     def cert(self) -> Tuple[str]:
         """
         Get/Set the users certificate as a (private, public) keys.
-        
+
         :return: Tuple[str]
         """
         return self._cert or self._session.cert
@@ -403,7 +403,7 @@ class EsriSession:
     def cert(self, cert: Tuple[str]):
         """
         Get/Set the users certificate as a (private, public) keys.
-        
+
         :return: Tuple[str]
         """
         if cert is None:
