@@ -38,7 +38,8 @@ import tempfile
 from functools import lru_cache
 from urllib.request import urlparse, unquote, urljoin
 import requests
-from requests import Session
+
+# from requests import Session
 from requests_toolbelt.downloadutils import stream
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from json import JSONDecodeError
@@ -46,6 +47,8 @@ from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
+from arcgis.auth import EsriSession
+from arcgis.auth import EsriBuiltInAuth, EsriGenTokenAuth
 
 try:
     from arcgis.auth import EsriWindowsAuth
@@ -202,17 +205,17 @@ class Connection(object):
             and any([ac.lower().find("ntlm") > -1 for ac in auth_check])
         ):
             self._auth = "NTLM"
-        elif (
-            not username is None and not password is None
-        ) or self._portal_connection._auth == "BUILTIN":
+        elif (not username is None and not password is None) or (
+            self._portal_connection and self._portal_connection._auth == "BUILTIN"
+        ):
             self._auth = "BUILTIN"
-        elif (
-            not username is None and not password is None
-        ) or self._portal_connection._auth == "BASIC_REALM":
+        elif (not username is None and not password is None) or (
+            self._portal_connection and self._portal_connection._auth == "BASIC_REALM"
+        ):
             self._auth = "BASIC_REALM"
-        elif (
-            not username is None and not password is None
-        ) or self._portal_connection._auth == "NTLM":
+        elif (not username is None and not password is None) or (
+            self._portal_connection and self._portal_connection._auth == "NTLM"
+        ):
             self._auth = "NTLM"
         elif (
             (username and password)
@@ -240,6 +243,7 @@ class Connection(object):
             "BASIC_REALM",
             "IWA",
             "NTLM",
+            "PKI",
         ]:
             self._session = self._portal_connection._session
         else:
@@ -300,9 +304,9 @@ class Connection(object):
         return list(
             set(
                 [
-                    requests.get(root + pt, params=params).headers.get(
-                        "www-authenticate", ""
-                    )
+                    requests.get(
+                        root + pt, params=params, verify=self._verify_cert
+                    ).headers.get("www-authenticate", "")
                     for pt in ["/info", "/rest/info", "/sharing/rest/info"]
                 ]
             )
@@ -357,12 +361,28 @@ class Connection(object):
         else:
             proxies = None
 
-        self._session = Session()
+        if self._cert_file and self._key_file:
+            cert = (self._cert_file, self._key_file)
+
+        elif self._cert_file and self._password:
+            from arcgis.gis._impl._con._cert import pfx_to_pem
+
+            self._key_file, self._cert_file = pfx_to_pem(
+                pfx_path=self._cert_file, pfx_password=self._password
+            )
+            cert = (self._cert_file, self._key_file)
+        elif self._cert_file:
+            cert = self._cert_file
+        else:
+            cert = None
+
+        self._session = EsriSession(cert=cert)
         self._session.verify = self._verify_cert
         self._session.stream = True
         self._session.trust_env = self.trust_env
         self._session.headers.update(self._header)
         self._session.proxies = proxies
+
         from urllib3.util import Retry
 
         a = requests.adapters.HTTPAdapter(
@@ -398,6 +418,31 @@ class Connection(object):
         if self._custom_auth:
             self._session.auth = self._custom_auth
             self._auth = "CUSTOM"
+        elif self._auth.lower() == "builtin":
+            if self._check_product() == "SERVER":
+                pauth = None
+                if self._portal_connection:
+                    pauth = self._portal_connection._con._auth
+                self._session.auth = EsriGenTokenAuth(
+                    token_url=self._token_url,
+                    referer=self._referer,
+                    username=self._username,
+                    password=self._password,
+                    portal_auth=pauth,
+                    time_out=self._timeout,
+                    verify_cert=self._verify_cert,
+                    legacy=False,
+                )
+            else:
+                self._session.auth = EsriBuiltInAuth(
+                    url=self._baseurl,
+                    username=self._username,
+                    password=self._password,
+                    expiration=self._timeout,
+                    legacy=False,
+                    verify_cert=self._verify_cert,
+                    referer=self._referer,
+                )
         elif self._auth.lower() == "basic_realm":
             self._session.auth = EsriBasicAuth(
                 username=self._username,
@@ -428,19 +473,6 @@ class Connection(object):
                     self._session.auth = EsriKerberosAuth()
                 except:
                     ...
-        if self._cert_file and self._key_file:
-            self._session.cert = (self._cert_file, self._key_file)
-        elif self._cert_file and self._password:
-            from arcgis.gis._impl._con._cert import pfx_to_pem
-
-            self._key_file, self._cert_file = pfx_to_pem(
-                pfx_path=self._cert_file, pfx_password=self._password
-            )
-            self._session.cert = (self._cert_file, self._key_file)
-        elif self._cert_file:
-            self._session.cert = self._cert_file
-        else:
-            self._session.cert = None
 
     # ----------------------------------------------------------------------
     def get(self, path, params=None, **kwargs):
@@ -501,7 +533,7 @@ class Connection(object):
         try_json = kwargs.pop("try_json", True)
         add_token = kwargs.pop("add_token", True)
 
-        if add_token:
+        if add_token == 'ignore':
             if token != _DEFAULT_TOKEN:
                 if token is not None:
                     params["token"] = token
@@ -812,7 +844,7 @@ class Connection(object):
             url = self._baseurl + url
         if kwargs.pop("ssl", False) or self._all_ssl:
             url = url.replace("http://", "https://")
-        if add_token:
+        if add_token == 'ignore':
             if token != _DEFAULT_TOKEN:
                 if token is not None:
                     params["token"] = token
@@ -1035,7 +1067,7 @@ class Connection(object):
             url = self._baseurl + url
         if kwargs.pop("ssl", False) or self._all_ssl:
             url = url.replace("http://", "https://")
-        if add_token:
+        if add_token == 'ignore':
             if token != _DEFAULT_TOKEN:
                 if token is not None:
                     params["token"] = token
@@ -1242,7 +1274,7 @@ class Connection(object):
             url = self._baseurl + url
         if kwargs.pop("ssl", False):
             url = url.replace("http://", "https://")
-        if add_token:
+        if add_token == 'ignore':
             if token != _DEFAULT_TOKEN:
                 if token is not None:
                     params["token"] = token
@@ -1362,7 +1394,7 @@ class Connection(object):
             url = self._baseurl + url
         if kwargs.pop("ssl", False):
             url = url.replace("http://", "https://")
-        if add_token:
+        if add_token == 'ignore':
             if token_as_header == False and not "token" in kwargs:  # as ?token=
                 params["token"] = self.token
             elif (
@@ -1490,6 +1522,10 @@ class Connection(object):
     @property
     def token(self):
         """Gets a Token"""
+        if isinstance(self._session.auth, EsriBuiltInAuth):
+            return self._session.auth.token
+        elif isinstance(self._session.auth, EsriGenTokenAuth):
+            return self._session.auth.token()
         if str(self._auth).lower() in ["builtin", "oauth"]:
             if self._expiration is None or self._expiration <= 5:
                 self._expiration = 6

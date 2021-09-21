@@ -1,3 +1,4 @@
+from cachetools import cached, TTLCache
 import lxml.html
 from urllib.parse import urlunparse, quote, parse_qsl, parse_qs
 from functools import lru_cache
@@ -646,6 +647,7 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
             return self.expiration
 
     # ----------------------------------------------------------------------
+    @cached(cache=TTLCache(maxsize=255, ttl=60))
     def token(self, server_url=None) -> str:
         if self._token:
             if (_dt.datetime.now() - _dt.timedelta(minutes=5)) >= self.expiration:
@@ -670,7 +672,7 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
             r.prepare_url(url=r.url, params={"token": self.token(server_url)})
         elif self._legacy_auth and r.method == "POST":
             data = parse_qs(r.body)
-            data["token"] = self.token
+            data["token"] = self.token(server_url)
             r.prepare_body(data, None, None)
         else:
             r.headers["X-Esri-Authorization"] = f"Bearer {self.token(server_url)}"
@@ -701,6 +703,7 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
             self._thread_local.num_401_calls = None
 
     # ----------------------------------------------------------------------
+
     def handle_401(self, r, **kwargs):
         # if r.status_code in [401, 402, 403]:
         # raise Exception(f"Error: {r.status_code}, {r.text}")
@@ -742,20 +745,23 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
         return r
 
     # ----------------------------------------------------------------------
+
     def handle_redirect(self, r, **kwargs):
         if r.is_redirect:
             self._thread_local.num_401_calls = 1
 
     # ----------------------------------------------------------------------
+    @cached(cache=TTLCache(maxsize=255, ttl=60))
     def _init_token_auth_handshake(self, server_url=None):
         """gets the token"""
         if self.username and self.password:  # Basic Generate Token Logic
+            self.time_out = 60
             postdata = {
                 "username": self.username,
                 "password": self.password,
                 "referer": self.referer,
                 "client": "referer",
-                "expiration": self.time_out,
+                "expiration": 60,  # self.time_out,
                 "f": "json",
             }
             resp = self._session.post(url=self._token_url, data=postdata)

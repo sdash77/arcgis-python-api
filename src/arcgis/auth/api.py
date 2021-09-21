@@ -166,7 +166,7 @@ class EsriSession:
         if check_hostname == False:
             self.mount("https://", HostHeaderSSLAdapter())
         self._session.cert = cert
-        self.cert = cert
+        self._cert = cert
         self.allow_redirects = allow_redirects
         self.verify_cert = verify_cert
         self._useragent = f"EsriSession/{__version__}"
@@ -389,6 +389,34 @@ class EsriSession:
             self._session.proxies = {}
         else:
             raise ValueError("Proxy must be of type dictionary.")
+
+    @property
+    def cert(self) -> Tuple[str]:
+        """
+        Get/Set the users certificate as a (private, public) keys.
+        
+        :return: Tuple[str]
+        """
+        return self._cert or self._session.cert
+
+    @cert.setter
+    def cert(self, cert: Tuple[str]):
+        """
+        Get/Set the users certificate as a (private, public) keys.
+        
+        :return: Tuple[str]
+        """
+        if cert is None:
+            self._cert = None
+            self._session.cert = None
+            if isinstance(self._session.auth, EsriPKIAuth):
+                self._session.auth = None
+        else:
+            self._cert = cert
+            self._session.cert = cert
+            self._session.auth = EsriPKIAuth(
+                cert=cert, referer=self._referer, verify_cert=self.verify_cert
+            )
 
     # ----------------------------------------------------------------------
     def get(self, url, **kwargs) -> "requests.Response":

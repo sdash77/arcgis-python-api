@@ -104,7 +104,7 @@ class ServicesDirectory(BaseServer):
         key_file=None,
         cert_file=None,
         verify_cert=False,
-        **kwargs
+        **kwargs,
     ):
         """Constructor"""
         super(ServicesDirectory, self)
@@ -143,6 +143,8 @@ class ServicesDirectory(BaseServer):
                 self._con = self._portal_connection._portal.con
             elif hasattr(self._portal_connection, "post"):
                 self._con = self._portal_connection
+        elif self._portal_connection and hasattr(self._portal_connection, "post"):
+            self._con = self._portal_connection
         elif con:
             self._con = con
         else:
@@ -154,7 +156,7 @@ class ServicesDirectory(BaseServer):
                 cert_file=cert_file,
                 portal_connection=self._portal_connection,
                 verify_cert=verify_cert,
-                **kwargs
+                **kwargs,
             )
         self._gis = kwargs.pop("gis", None)
         if self._is_agol == False and self._con._auth.lower() != "anon":
