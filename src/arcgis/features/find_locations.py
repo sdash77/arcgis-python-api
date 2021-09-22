@@ -253,7 +253,7 @@ def find_existing_locations(
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                                
+
                                              .. code-block:: python
                                                 # Example Usage
 
@@ -528,14 +528,14 @@ def derive_new_locations(
                                              +-------------------+----------------------------------------------------------------------------------------+
 
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    output_name                              Optional string. If provided, the task will create a feature layer of the results. You define the name of the layer.                                           
+    output_name                              Optional string. If provided, the task will create a feature layer of the results. You define the name of the layer.
                                              If output_name is not supplied, the task will return a feature collection.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     context                                  Optional dict. Additional settings such as processing extent and output spatial reference. For ``derive_new_locations``, there are three settings.
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                             
+
                                              .. code-block:: python
                                                 # Example Usage
 
@@ -672,7 +672,7 @@ def find_similar_locations(
                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                
+
                              .. code-block:: python
                                 # Example Usage
 
@@ -760,7 +760,7 @@ def find_centroids(
                       - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                       - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                       - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                        
+
                       .. code-block:: python
                         # Example Usage
 
@@ -1033,7 +1033,7 @@ def choose_best_facilities(
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                                
+
                                                 .. code-block:: python
                                                 # Example Usage
 
@@ -1248,7 +1248,7 @@ def create_viewshed(
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                  - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                 
+
                                  .. code-block:: python
                                     # Example Usage
 
@@ -1377,7 +1377,7 @@ def create_watersheds(
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                  - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                 
+
                                  .. code-block:: python
                                     # Example Usage
 
@@ -1509,7 +1509,7 @@ def trace_downstream(
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                             
+
                                              .. code-block:: python
                                                 # Example Usage
 
