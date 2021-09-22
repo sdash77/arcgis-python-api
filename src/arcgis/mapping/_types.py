@@ -3791,9 +3791,9 @@ class VectorTileLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def rebuild_cache(self):
         """
-        The rebuild_cache operation update the vector tile layer cache to reflect 
-        any changes made to the feature layer used to publish this vector tile layer. 
-        The results of the operation is a response indicating success, which 
+        The rebuild_cache operation update the vector tile layer cache to reflect
+        any changes made to the feature layer used to publish this vector tile layer.
+        The results of the operation is a response indicating success, which
         redirects you to the Job Statistics page, or failure.
         """
         url = self._url + "/rebuildCache"
@@ -3811,7 +3811,7 @@ class VectorTileLayerManager(_GISResource):
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
         target_service_     Required string. Name of service you want to swap with.
-                    name     
+                    name
         ===============     ====================================================
 
         :returns: dictionary indicating success or error
@@ -3831,9 +3831,9 @@ class VectorTileLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def jobs(self):
         """
-        The tile service job summary (jobs) resource represents a 
-        summary of all jobs associated with a vector tile service. 
-        Each job contains a jobid that corresponds to the specific 
+        The tile service job summary (jobs) resource represents a
+        summary of all jobs associated with a vector tile service.
+        Each job contains a jobid that corresponds to the specific
         jobid run and redirects you to the Job Statistics page.
 
         """
@@ -3844,9 +3844,9 @@ class VectorTileLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def job_statistics(self, job_id):
         """
-        The tile service job summary (jobs) resource represents a 
-        summary of all jobs associated with a vector tile service. 
-        Each job contains a jobid that corresponds to the specific 
+        The tile service job summary (jobs) resource represents a
+        summary of all jobs associated with a vector tile service.
+        Each job contains a jobid that corresponds to the specific
         jobid run and redirects you to the Job Statistics page.
 
         """
@@ -3857,10 +3857,10 @@ class VectorTileLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def delete_job(self, job_id):
         """
-        This operation deletes the specified asynchronous job being run by 
-        the geoprocessing service. If the current status of the job is 
-        SUBMITTED or EXECUTING, it will cancel the job. Regardless of status, 
-        it will remove all information about the job from the system. To cancel a 
+        This operation deletes the specified asynchronous job being run by
+        the geoprocessing service. If the current status of the job is
+        SUBMITTED or EXECUTING, it will cancel the job. Regardless of status,
+        it will remove all information about the job from the system. To cancel a
         job in progress without removing information, use the Cancel Job operation.
         """
         url = self._url + "jobs/{job_id}/delete".format(job_id=job_id)
@@ -3882,9 +3882,9 @@ class VectorTileLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def update_tiles(self, levels=None, extent=None):
         """
-        The update_tiles operation supports updating the cooking extent and 
-        cache levels in a hosted vector tile service. The results of the 
-        operation is a response indicating success, which redirects you 
+        The update_tiles operation supports updating the cooking extent and
+        cache levels in a hosted vector tile service. The results of the
+        operation is a response indicating success, which redirects you
         to the Job Statistics page, or failure.
 
         .. note::
@@ -3979,17 +3979,17 @@ class VectorTileLayerManager(_GISResource):
         max_export_tile_count=None,
     ):
         """
-        The edit operation enables editing the service exportTilesAllowed, 
-        export_tile_count, max_scale, and min_scale properties. Allowed for 
+        The edit operation enables editing the service exportTilesAllowed,
+        export_tile_count, max_scale, and min_scale properties. Allowed for
         Enterprise and ArcGIS Online
 
         =================     ======================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------
-        source_item_id        Required String. The Source Item ID is the GeoWarehouse 
+        source_item_id        Required String. The Source Item ID is the GeoWarehouse
                               Item ID of the tile service
         -----------------     ------------------------------------------------------
-        export_tiles_allowed  Optional boolean. ``exports_tiles_allowed`` sets 
+        export_tiles_allowed  Optional boolean. ``exports_tiles_allowed`` sets
                               the value to let users export tiles
         -----------------     ------------------------------------------------------
         min_scale             Optional float. Sets the services minimum scale for caching.
@@ -5154,7 +5154,10 @@ class MapImageLayer(Layer):
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 params[k] = v
-        res = self._con.post(path=url, postdata=params,)
+        res = self._con.post(
+            path=url,
+            postdata=params,
+        )
         return res
 
     # ----------------------------------------------------------------------
@@ -5200,7 +5203,11 @@ class MapImageLayer(Layer):
             "layers": layers,
             "layerOptions": options,
         }
-        return self._con.get(kmlURL, params, out_folder=save_location,)
+        return self._con.get(
+            kmlURL,
+            params,
+            out_folder=save_location,
+        )
 
     # ----------------------------------------------------------------------
     def export_map(
