@@ -720,6 +720,7 @@ class SyncManager(object):
             )
             geometry_filter = {"geometryType": "esriGeometryEnvelope"}
             geometry_filter.update({"geometry": extents_str})
+
         return self._fs._create_replica(
             replica_name=replica_name,
             layers=layers,
