@@ -264,7 +264,10 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
                 token_str = self._tokens[server_url]
             else:
                 token = requests.post(
-                    token_url, data=postdata, auth=self.auth, verify=self.verify_cert,
+                    token_url,
+                    data=postdata,
+                    auth=self.auth,
+                    verify=self.verify_cert,
                 )
                 token_str = token.json().get("token", None)
                 if token_str is None:

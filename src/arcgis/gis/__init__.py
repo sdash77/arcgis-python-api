@@ -14192,18 +14192,22 @@ class _GISResource(object):
                 params["Raster"] = self._uri
 
         if type(self).__name__ == "VectorTileLayer":  # VectorTileLayer is GET only
-            dictdata = self._con.get(self.url, params)#, token=self._lazy_token)
+            dictdata = self._con.get(self.url, params)  # , token=self._lazy_token)
         else:
             try:
                 if is_raster:
                     dictdata = self._con.post(
-                        self.url, params, timeout=None#token=self._lazy_token, 
+                        self.url, params, timeout=None  # token=self._lazy_token,
                     )
                 else:
-                    dictdata = self._con.post(self.url, params)#, token=self._lazy_token)
+                    dictdata = self._con.post(
+                        self.url, params
+                    )  # , token=self._lazy_token)
             except Exception as e:
                 if hasattr(e, "msg") and e.msg == "Method Not Allowed":
-                    dictdata = self._con.get(self.url, params)#, token=self._lazy_token)
+                    dictdata = self._con.get(
+                        self.url, params
+                    )  # , token=self._lazy_token)
                 elif str(e).lower().find("token required") > -1:
                     dictdata = self._con.get(self.url, params)
                 else:

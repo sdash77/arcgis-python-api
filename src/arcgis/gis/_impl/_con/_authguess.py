@@ -28,12 +28,13 @@ class GuessAuth(auth.AuthBase):
 
     _try_auth_count = None
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, **kwargs):
         self.username = username
         self.password = password
         self.auth = None
         self.pos = None
         self._try_auth_count = 0
+        self._legacy = kwargs.pop("legacy", True)
 
     def _handle_basic_auth_401(self, r, kwargs):
         if self.pos is not None:
@@ -58,7 +59,7 @@ class GuessAuth(auth.AuthBase):
         return _r
 
     def _handle_ntlm_auth_401(self, r, kwargs):
-        self.auth = EsriWindowsAuth(self.username, self.password, legacy=True)
+        self.auth = EsriWindowsAuth(self.username, self.password, legacy=self._legacy)
         try:
             self.auth.init_per_thread_state()
         except AttributeError:
@@ -130,7 +131,7 @@ class GuessAuth(auth.AuthBase):
             if self._try_auth_count == 0:
                 self._try_auth_count += 1
                 self.auth = EsriWindowsAuth(
-                    self.username, self.password, verify_cert=False, legacy=True
+                    self.username, self.password, verify_cert=False, legacy=self._legacy
                 )
                 return self._handle_ntlm_auth_401(r, kwargs)
             elif self._try_auth_count == 1 and HAS_KERBEROS:
@@ -146,14 +147,14 @@ class GuessAuth(auth.AuthBase):
                     username=self.username,
                     password=self.password,
                     verify_cert=False,
-                    legacy=True,
+                    legacy=self._legacy,
                 )
             else:
                 self.auth = EsriWindowsAuth(
                     username=self.username,
                     password=self.password,
                     verify_cert=False,
-                    legacy=True,
+                    legacy=self._legacy,
                 )
 
     def __call__(self, request):

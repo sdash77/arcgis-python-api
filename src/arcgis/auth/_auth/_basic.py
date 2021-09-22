@@ -71,10 +71,14 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
         if (
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
+            or r.text.lower().find("unauthorized") > -1
         ) or parsed.netloc in self._server_log:
             expiration = 16000
             if parsed.port:
-                server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
+                if parsed.port in parsed.netloc:
+                    server_url = f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+                else:
+                    server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
             else:
                 server_url = (
                     f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
