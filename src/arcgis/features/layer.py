@@ -4498,6 +4498,7 @@ class FeatureLayerCollection(_GISResource):
             params["replicaOptions"] = replica_options
         if transport_type is not None:
             params["transportType"] = transport_type
+
         if asynchronous:
             if wait:
                 export_job = self._con.post(path=url, postdata=params)
