@@ -1,5 +1,6 @@
 import platform
 from requests.auth import AuthBase
+from urllib.parse import parse_qs
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url
@@ -53,6 +54,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
         verify_cert: bool = True,
         **kwargs,
     ):
+        self.legacy = kwargs.pop("legacy", False)
         self._server_log = {}
         self._tokens = {}
         self._token_url = None
@@ -108,6 +110,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
         if (
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
+            or r.text.lower().find("token not found") > -1
         ) or parsed.netloc in self._server_log:
             expiration = 16000
             if parsed.port:
@@ -147,7 +150,17 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
             r.content
             r.raw.release_conn()
             r.request.headers["referer"] = self.referer or "http"
-            r.request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
+
+            if self.legacy and r.request.method == "GET":
+                r.request.prepare_url(url=r.url, params={"token": token_str})
+            elif self.legacy and r.request.method == "POST":
+                data = parse_qs(r.request.body)
+                data["token"] = token_str
+                r.request.prepare_body(data, None, None)
+            else:
+                r.request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
+
+            # r.request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
             _r = r.connection.send(r.request, **kwargs)
             _r.headers["referer"] = self.referer or "http"
             _r.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
@@ -178,12 +191,13 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
     _server_log = None
     _tokens = None
 
-    def __init__(self, referer: str = None, verify_cert: bool = True):
+    def __init__(self, referer: str = None, verify_cert: bool = True, **kwargs):
         """initializer"""
         if HAS_KERBEROS == False:
             raise ImportError(
                 "requests_kerberos is required to use this authentication handler."
             )
+        self.legacy = kwargs.pop("legacy", False)
         self._server_log = {}
         self._tokens = {}
         self._token_url = None
@@ -219,6 +233,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
         if (
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
+            or r.text.lower().find("token not found") > -1
         ) or parsed.netloc in self._server_log:
             expiration = 16000
             if parsed.port:
@@ -248,7 +263,9 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             if server_url in self._tokens:
                 token_str = self._tokens[server_url]
             else:
-                token = requests.post(token_url, data=postdata, auth=self.auth)
+                token = requests.post(
+                    token_url, data=postdata, auth=self.auth, verify=self.verify_cert,
+                )
                 token_str = token.json().get("token", None)
                 if token_str is None:
                     return r
@@ -259,6 +276,16 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             r.raw.release_conn()
             r.request.headers["referer"] = self.referer or "http"
             r.request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
+
+            if self.legacy and r.request.method == "GET":
+                r.request.prepare_url(url=r.url, params={"token": token_str})
+            elif self.legacy and r.request.method == "POST":
+                data = parse_qs(r.body)
+                data["token"] = token_str
+                r.request.prepare_body(data, None, None)
+            else:
+                r.request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
+
             _r = r.connection.send(r.request, **kwargs)
             _r.headers["referer"] = self.referer or "http"
             _r.headers["X-Esri-Authorization"] = f"Bearer {token_str}"

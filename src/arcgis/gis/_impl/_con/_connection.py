@@ -434,15 +434,25 @@ class Connection(object):
                     legacy=False,
                 )
             else:
-                self._session.auth = EsriBuiltInAuth(
-                    url=self._baseurl,
+                self._session.auth = EsriGenTokenAuth(
+                    token_url=self._token_url,
+                    referer=self._referer,
                     username=self._username,
                     password=self._password,
-                    expiration=self._timeout,
-                    legacy=False,
+                    portal_auth=pauth,
+                    time_out=self._timeout,
                     verify_cert=self._verify_cert,
-                    referer=self._referer,
+                    legacy=True,
                 )
+                # self._session.auth = EsriBuiltInAuth(
+                # url=self._baseurl,
+                # username=self._username,
+                # password=self._password,
+                # expiration=self._timeout,
+                # legacy=False,
+                # verify_cert=self._verify_cert,
+                # referer=self._referer,
+                # )
         elif self._auth.lower() == "basic_realm":
             self._session.auth = EsriBasicAuth(
                 username=self._username,
@@ -456,7 +466,10 @@ class Connection(object):
             )
         elif self._auth.lower() in ["iwa", "ntlm"] and HAS_SSPI:
             self._session.auth = EsriWindowsAuth(
-                username=self._username, password=self._password
+                username=self._username,
+                password=self._password,
+                verify_cert=self._verify_cert,
+                legacy=True,
             )
         elif self._auth.lower() == "pro":
             self._session.auth = GuessAuth(None, None)
@@ -465,12 +478,16 @@ class Connection(object):
 
             if HAS_SSPI:
                 try:
-                    self._session.auth = EsriWindowsAuth()
+                    self._session.auth = EsriWindowsAuth(
+                        verify_cert=self._verify_cert, legacy=True
+                    )
                 except:
                     ...
             elif HAS_KERBEROS:
                 try:
-                    self._session.auth = EsriKerberosAuth()
+                    self._session.auth = EsriKerberosAuth(
+                        verify_cert=self._verify_cert,
+                    )
                 except:
                     ...
 
@@ -1093,11 +1110,20 @@ class Connection(object):
                 if timeout:
 
                     resp = self._session.post(
-                        url=url, data=params, cert=cert, files=files, timeout=timeout
+                        url=url,
+                        data=params,
+                        cert=cert,
+                        files=files,
+                        timeout=timeout,
+                        verify=self._verify_cert,
                     )
                 else:
                     resp = self._session.post(
-                        url=url, data=params, cert=cert, files=files
+                        url=url,
+                        data=params,
+                        cert=cert,
+                        files=files,
+                        verify=self._verify_cert,
                     )
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(

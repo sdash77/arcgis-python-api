@@ -58,7 +58,7 @@ class GuessAuth(auth.AuthBase):
         return _r
 
     def _handle_ntlm_auth_401(self, r, kwargs):
-        self.auth = EsriWindowsAuth(self.username, self.password)
+        self.auth = EsriWindowsAuth(self.username, self.password, legacy=True)
         try:
             self.auth.init_per_thread_state()
         except AttributeError:
@@ -129,7 +129,9 @@ class GuessAuth(auth.AuthBase):
         if www_authenticate.find("ntlm") > -1 and self.username and self.password:
             if self._try_auth_count == 0:
                 self._try_auth_count += 1
-                self.auth = EsriWindowsAuth(self.username, self.password)
+                self.auth = EsriWindowsAuth(
+                    self.username, self.password, verify_cert=False, legacy=True
+                )
                 return self._handle_ntlm_auth_401(r, kwargs)
             elif self._try_auth_count == 1 and HAS_KERBEROS:
                 self.auth = EsriKerberosAuth()
@@ -141,11 +143,17 @@ class GuessAuth(auth.AuthBase):
             if HAS_SSPI:
 
                 self.auth = EsriWindowsAuth(
-                    username=self.username, password=self.password
+                    username=self.username,
+                    password=self.password,
+                    verify_cert=False,
+                    legacy=True,
                 )
             else:
                 self.auth = EsriWindowsAuth(
-                    username=self.username, password=self.password
+                    username=self.username,
+                    password=self.password,
+                    verify_cert=False,
+                    legacy=True,
                 )
 
     def __call__(self, request):
