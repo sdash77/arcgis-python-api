@@ -19,7 +19,7 @@ print(layer)
 
 class TestQueryFeatureLayer(unittest.TestCase):
     def test_manager(self):
-        """"
+        """ "
         Test manager property
         """
         manager = layer.manager

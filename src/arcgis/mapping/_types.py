@@ -3672,11 +3672,11 @@ class VectorTileLayer(Layer):
         ============================    ===================================================================================================================
         **Argument**                    **Description**
         ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        fontstack                       Required string. 
-                                        
+        fontstack                       Required string.
+
                                         .. note::
                                             The template url for this fonts resource is represented in the
-                                            'Vector Tile Style <https://developers.arcgis.com/rest/services-reference/enterprise/vector-tile-style.htm>'_ 
+                                            'Vector Tile Style <https://developers.arcgis.com/rest/services-reference/enterprise/vector-tile-style.htm>'_
                                             resource.
         ----------------------------    -------------------------------------------------------------------------------------------------------------------
         stack_range                     Required string that depict a range. Ex: "0-255"
@@ -3705,13 +3705,13 @@ class VectorTileLayer(Layer):
         ----------------------------    ------------------------------------------------
         level                           Required string. A level number as a string.
         ----------------------------    ------------------------------------------------
-        row                             Required string. Number of the row that the tile 
+        row                             Required string. Number of the row that the tile
                                         belongs to.
         ----------------------------    ------------------------------------------------
-        column                          Required string. Number of the column that tile 
+        column                          Required string. Number of the column that tile
                                         belongs to.
         ============================    ================================================
-        
+
         :returns:
             Bytes in PBF format
         """
@@ -3731,7 +3731,7 @@ class VectorTileLayer(Layer):
         ----------------------------    ------------------------------------------------
         out_format                      Optional string. Default is "sprite.json"
         ============================    ================================================
-        
+
         :returns:
             Sprite image and metadata.
         """
@@ -4856,7 +4856,10 @@ class MapImageLayer(Layer):
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 params[k] = v
-        res = self._con.post(path=url, postdata=params,)
+        res = self._con.post(
+            path=url,
+            postdata=params,
+        )
         return res
 
     # ----------------------------------------------------------------------
@@ -4902,7 +4905,11 @@ class MapImageLayer(Layer):
             "layers": layers,
             "layerOptions": options,
         }
-        return self._con.get(kmlURL, params, out_folder=save_location,)
+        return self._con.get(
+            kmlURL,
+            params,
+            out_folder=save_location,
+        )
 
     # ----------------------------------------------------------------------
     def export_map(

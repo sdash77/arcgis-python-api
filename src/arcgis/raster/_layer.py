@@ -583,8 +583,8 @@ class ImageryLayer(Layer):
                         )
                         and ImageryLayer._rendering_service_object.gis.url != gis.url
                     ):
-                        ImageryLayer._rendering_service_object = _RasterRenderingService(
-                            gis
+                        ImageryLayer._rendering_service_object = (
+                            _RasterRenderingService(gis)
                         )
                         url = ImageryLayer._rendering_service_object.url
                     else:
@@ -13074,10 +13074,12 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
             where_clause = ""
         if raster_query is None:
             raster_query = ""
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filter(
-            where_clause=where_clause,
-            query_geometry_or_extent=query_geometry_or_extent,
-            raster_query=raster_query,
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.filter(
+                where_clause=where_clause,
+                query_geometry_or_extent=query_geometry_or_extent,
+                raster_query=raster_query,
+            )
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -13095,8 +13097,12 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(
-            start_time=start_time, end_time=end_time, time_field_name=time_field_name,
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.filterByTime(
+                start_time=start_time,
+                end_time=end_time,
+                time_field_name=time_field_name,
+            )
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -13133,12 +13139,14 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByCalendarRange(
-            calendar_field=calendar_field,
-            start=start,
-            end=end,
-            time_field_name=time_field_name,
-            date_time_format=date_time_format,
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.filterByCalendarRange(
+                calendar_field=calendar_field,
+                start=start,
+                end=end,
+                time_field_name=time_field_name,
+                date_time_format=date_time_format,
+            )
         )
         # newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(self._raster_collection.filterByCalendarRange(calendar_field=calendar_field, start=start, end=end,time_field_name=time_field_name,date_time_format=date_time_format))
         newcollection._ras_coll_engine_obj._df = (
@@ -13152,8 +13160,10 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         newcollection = self._clone_raster_collection(context=context)
         if isinstance(query_geometry_or_extent, _arcgis.geometry.Geometry):
             query_geometry_or_extent = query_geometry_or_extent.as_arcpy
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByGeometry(
-            query_geometry_or_extent=query_geometry_or_extent
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.filterByGeometry(
+                query_geometry_or_extent=query_geometry_or_extent
+            )
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -13164,8 +13174,10 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByAttribute(
-            field_name=field_name, operator=operator, field_values=field_values
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.filterByAttribute(
+                field_name=field_name, operator=operator, field_values=field_values
+            )
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -13178,10 +13190,12 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByRasterProperty(
-            property_name=property_name,
-            operator=operator,
-            property_values=property_values,
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.filterByRasterProperty(
+                property_name=property_name,
+                operator=operator,
+                property_values=property_values,
+            )
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -13192,8 +13206,8 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.sort(
-            field_name=field_name, ascending=ascending
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.sort(field_name=field_name, ascending=ascending)
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -13245,8 +13259,8 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.selectBands(
-            band_ids_or_names
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.selectBands(band_ids_or_names)
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -14194,9 +14208,11 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 )
             newcollection._ras_coll_engine_obj._df = self._df.query(where_clause)
         if query_geometry_or_extent is not None:
-            newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.filter_by_geometry(
-                query_geometry_or_extent
-            )._as_df()
+            newcollection._ras_coll_engine_obj._df = (
+                newcollection._ras_coll_engine_obj.filter_by_geometry(
+                    query_geometry_or_extent
+                )._as_df()
+            )
         if raster_query is not None:
             props_list = []
             for ele in self:

@@ -18,7 +18,7 @@ print(layer)
 
 class TestQueryFeatureLayer(unittest.TestCase):
     def test_query_count_only(self):
-        """"
+        """ "
         Test query with return_count_only=True
         """
         count = layer.query(return_count_only=True)
@@ -26,7 +26,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert count > 0
 
     def test_query_ids_only(self):
-        """"
+        """ "
         Test query with return_ids_only=True
         """
         ids = layer.query(return_ids_only=True)
@@ -35,7 +35,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert "objectIdFieldName" in ids
 
     def test_query_geometries(self):
-        """"
+        """ "
         Test query with return geometries = True and then False
         """
         geometry_true = layer.query(return_geometry=True)
@@ -45,7 +45,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert geometry_false.features[0].geometry is None
 
     def test_query_out_fields(self):
-        """"
+        """ "
         Test query with limited out_fields indicated
         Test return_distinct_values
         """
@@ -60,7 +60,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert len(distinct_values.fields) == 3
 
     def test_query_extent_only(self):
-        """"
+        """ "
         Test query with return_extent_only=True
         """
         extent = layer.query(return_extent_only=True)
@@ -69,7 +69,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert extent["extent"]["spatialReference"]
 
     def test_query_order_by_fields(self):
-        """"
+        """ "
         Test query with order_by_fields=True
         """
         ordered = layer.query(
@@ -79,7 +79,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert ordered
 
     def test_query_return_m_and_z(self):
-        """"
+        """ "
         Test query with return_m and return_z
         """
         all_coord_item = gis.content.get("301df20a74b841c7b18b40a6673ff4e6")
@@ -96,7 +96,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert m_and_z.has_z
 
     def test_query_all_records(self):
-        """"
+        """ "
         Test query with return_all_records=False
         """
         limit_records = layer.query(return_all_records=False)
@@ -106,7 +106,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert limit_records
 
     def test_query_historic_moments(self):
-        """"
+        """ "
         Test query with historic_moments parameter
         """
         layer_1 = gis.content.get("5183636f099c48789628226e5730fb13").layers[0]
@@ -114,14 +114,14 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert historic
 
     def test_query_sql_format(self):
-        """"
+        """ "
         Test query with sql_format
         """
         sql = layer.query(sql_format="standard")
         assert sql
 
     def test_query_units(self):
-        """"
+        """ "
         Test query with different units
         """
         km = layer.query(units="esriSRUnit_Kilometer")
@@ -133,7 +133,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert nautical
 
     def test_query_geometry_filter(self):
-        """"
+        """ "
         Test query with geometry_filter
         """
         geom_filter = layer.query(
@@ -151,14 +151,14 @@ class TestQueryFeatureLayer(unittest.TestCase):
         )
 
     def test_query_group_by_field(self):
-        """"
+        """ "
         Test query with group_by_field_for_statistics
         """
         group_field = layer.query(group_by_fields_for_statistics="females, families")
         assert group_field
 
     def test_query_out_statistics(self):
-        """"
+        """ "
         Test query with out_statistics
         """
         output_name = "female_count"
