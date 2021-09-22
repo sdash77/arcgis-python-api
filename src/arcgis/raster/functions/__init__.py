@@ -458,6 +458,7 @@ def arg_statistics(
     duration (number of bands) between a minimum and maximum value
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+
     =================       ======================================================
     **Argument**            **Description**
     -----------------       ------------------------------------------------------
@@ -511,6 +512,7 @@ def arg_max(rasters, undefined_class=None, astype=None):
     within each input raster.
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+
     =================       ======================================================
     **Argument**            **Description**
     -----------------       ------------------------------------------------------
@@ -533,6 +535,7 @@ def arg_min(rasters, undefined_class=None, astype=None):
     its minimum value.
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+
     =================       ======================================================
     **Argument**            **Description**
     -----------------       ------------------------------------------------------
@@ -559,6 +562,7 @@ def arg_median(rasters, undefined_class=None, astype=None):
     array has n values, the median is the ith (0-based) value, where: i = ( (n-1) / 2 )
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+
     =================       ======================================================
     **Argument**            **Description**
     -----------------       ------------------------------------------------------
@@ -584,6 +588,7 @@ def duration(
     than or equal to min_value and less than or equal to max_value, and then returns its length.
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+
     =================       ======================================================
     **Argument**            **Description**
     -----------------       ------------------------------------------------------
@@ -615,6 +620,7 @@ def arithmetic(
 ):
     """
     The Arithmetic function performs an arithmetic operation between two rasters or a raster and a scalar, and vice versa.
+
     =================       ======================================================
     **Argument**            **Description**
     -----------------       ------------------------------------------------------
@@ -1317,7 +1323,8 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
     -----------------       ------------------------------------------------------
     raster                  The input raster
     -----------------       ------------------------------------------------------
-    colormap_name           String. Colormap name, if one of Random | NDVI | Elevation | Gray
+    colormap_name           String. Colormap name,
+                            Values: Random | NDVI | Elevation | Gray
     -----------------       ------------------------------------------------------
     colormap                | [
                             | [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
@@ -3771,45 +3778,44 @@ def stretch(
 
     Optionally, set the SigmoidStrengthLevel (1 to 6) to adjust the curvature of Sigmoid curve used in color stretch.
     
-    =================       ======================================================
-    **Argument**            **Description**
-    -----------------       ------------------------------------------------------
-    raster                  The input raster
-    -----------------       ------------------------------------------------------
-    stretch_type            Optional string. None | StdDev | Histogram | MinMax
-                            | PercentClip | 9 = Sigmoid
-    -----------------       ------------------------------------------------------
-    min                     Optional double
-    -----------------       ------------------------------------------------------
-    max                     Optional double
-    -----------------       ------------------------------------------------------
-    num_stddev              Optional double
-    -----------------       ------------------------------------------------------
-    statistics              Optional double. [<min1>, <max1>, <mean1>, <standardDeviation1>], 
-                            //[double, double, double, double][<min2>, <max2>, <mean2>, <standardDeviation2>]],
-    -----------------       ------------------------------------------------------
-    dra                     Optional bool. Derive statistics from currest request,
-                            statistics paramater is ignored when DRA is True
-    -----------------       ------------------------------------------------------
-    min_percent             Optional double, applicable to PercentClip (e.g 0.25)
-    -----------------       ------------------------------------------------------
-    max_percent             Optional double, applicable to PercentClip (e.g 0.5)
-    -----------------       ------------------------------------------------------
-    gamma                   Optional array of doubles
-    -----------------       ------------------------------------------------------
-    compute_gamma           Optional bool, applicable to any stretch type when
-                            "UseGamma" is True.
-    -----------------       ------------------------------------------------------
-    sigmoid_strength_       Optional int (1~6), applicable to Sigmoid
-    level                   
-    -----------------       ------------------------------------------------------
-    astype                  Output pixel type
-    -----------------       ------------------------------------------------------
-    colorramp               Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
-                            or a color ramp object.
-                            For more information about colorramp object, see color ramp object at
-                            https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
-    =================       ======================================================
+    =====================       ================================================================
+    **Argument**                **Description**
+    ---------------------       ----------------------------------------------------------------
+    raster                      The input raster
+    ---------------------       ----------------------------------------------------------------
+    stretch_type                Optional string. 
+                                Values: None | StdDev | Histogram | MinMax | PercentClip | 9 = Sigmoid
+    ---------------------       ----------------------------------------------------------------
+    min                         Optional double
+    ---------------------       ----------------------------------------------------------------
+    max                         Optional double
+    ---------------------       ----------------------------------------------------------------
+    num_stddev                  Optional double
+    ---------------------       ----------------------------------------------------------------
+    statistics                  Optional double. [<min1>, <max1>, <mean1>, <standardDeviation1>], 
+                                //[double, double, double, double][<min2>, <max2>, <mean2>, <standardDeviation2>]],
+    ---------------------       ----------------------------------------------------------------
+    dra                         Optional bool. Derive statistics from currest request,
+                                statistics paramater is ignored when DRA is True
+    ---------------------       ----------------------------------------------------------------
+    min_percent                 Optional double, applicable to PercentClip (e.g 0.25)
+    ---------------------       ----------------------------------------------------------------
+    max_percent                 Optional double, applicable to PercentClip (e.g 0.5)
+    ---------------------       ----------------------------------------------------------------
+    gamma                       Optional array of doubles
+    ---------------------       ----------------------------------------------------------------
+    compute_gamma               Optional bool, applicable to any stretch type when
+                                "UseGamma" is True.
+    ---------------------       ----------------------------------------------------------------
+    sigmoid_strength_level      Optional int (1~6), applicable to Sigmoid
+    ---------------------       ----------------------------------------------------------------
+    astype                      Output pixel type
+    ---------------------       ----------------------------------------------------------------
+    colorramp                   Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
+                                or a color ramp object.
+                                For more information about colorramp object, see color ramp object at
+                                https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
+    =====================       ================================================================
 
     :return: the output raster
 
