@@ -122,7 +122,7 @@ class AGOLUsageReports(BasePortalAdmin):
                             None, the current time is used.
         ---------------     ----------------------------------------------------
         time_frame          optional string, is the timeframe report to create.
-                            Allowed values: today, week (default), 14days, 30days, 
+                            Allowed values: today, week (default), 14days, 30days,
                             60days, 90days, 6months, year
         ---------------     ----------------------------------------------------
         export              optional boolean, if True, a csv is generated from

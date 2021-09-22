@@ -147,7 +147,7 @@ class CreditManager(object):
                               at least 1 day previous than then start_time.
         -------------------   -----------------------------------------------
         time_frame            Optional string. is the timeframe report to create.
-                              Allowed values: today, week (default), 14days, 30days, 
+                              Allowed values: today, week (default), 14days, 30days,
                               60days, 90days, 6months, year
 
                               If end_time is specified, this parameter is ignored.
