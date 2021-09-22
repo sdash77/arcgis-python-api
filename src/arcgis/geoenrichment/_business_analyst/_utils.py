@@ -2,7 +2,7 @@
 Utility functions useful for Business Analyst - the glue functions not fitting neatly anywhere else.
 """
 from collections import Iterable
-from functools import wraps
+from functools import wraps, lru_cache
 import importlib
 from typing import AnyStr, Union
 
@@ -69,32 +69,40 @@ def local_vs_gis(fn):
     return wrapped
 
 
+@lru_cache(maxsize=10)
 def local_business_analyst_avail() -> bool:
     """
     Check if a local installation of Business Analyst is available.
     """
     avail = False
+
     if avail_arcpy is True:
         import arcpy
 
         if arcpy.CheckExtension("Business"):
             avail = True
+
     return avail
 
 
+@lru_cache(maxsize=10)
 def local_ba_data_avail() -> bool:
     """
     Check to see if any local business analyst data packs are installed.
     """
     avail = False
 
-    if avail_arcpy is True:
+    if local_business_analyst_avail():
 
         # lazy load to avoid import issues
         import arcpy._ba
 
-        # if data is available, there will be more than one dataset available
-        avail = len(list(arcpy._ba.ListDatasets())) > 0
+        # TODO: remove once bapy patched
+        # addresses issue with bapy not being part of Notebook server docker image
+        if "getLocalDatasets" in arcpy._ba.__dict__.keys() or module_avail("bapy"):
+
+            # if data is available, there will be more than one dataset available
+            avail = len(list(arcpy._ba.ListDatasets())) > 0
 
     return avail
 
@@ -360,12 +368,8 @@ def geography_iterable_to_arcpy_geometry_list(
 
 def get_sanitized_names(names: Union[str, list, tuple, pd.Series]) -> pd.Series:
     """
-    Sanitize the column names using the GeoAccessor.sanitize_column_names function.
+    Sanitize the column names to be PEP 8 compliant.
     Useful when trying to match up column names from previously enriched data.
-
-    .. note::
-        This process is, especially with long lists, painfully slow, so only use
-        if absolutely necessary.
 
     Args:
         names: Iterable (list, tuple, pd.Series) of names to be "sanitized"
@@ -376,17 +380,15 @@ def get_sanitized_names(names: Union[str, list, tuple, pd.Series]) -> pd.Series:
     # if just one name was passed in, make it an iterable
     names = [names] if isinstance(names, str) else names
 
-    # sanititze the column names on a dummy dataframe created to get access to the function
-    nm_df = pd.DataFrame(columns=names)
-    nm_df = nm_df.spatial.sanitize_column_names()
-    sani_names = pd.Series(nm_df.columns)
+    # sanititze the column names and drop into a series
+    sani_names = pd.Series(map(pep8ify, names))
 
     return sani_names
 
 
 def validate_spatial_reference(
     spatial_reference: Union[str, int, dict, SpatialReference]
-):
+) -> SpatialReference:
     """Validate the variety of ways a spatial reference can be inputted. This does not validate the WKID."""
     # instantiate the output spatial reference variable
     sr = None

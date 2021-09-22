@@ -827,7 +827,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if polygon_layer:
             polygon_layer = self._feature_input(polygon_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -942,7 +942,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if candidate_facilities_layer:
             candidate_facilities_layer = self._feature_input(candidate_facilities_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1111,7 +1111,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         origins_layer = self._feature_input(origins_layer)
         destinations_layer = self._feature_input(destinations_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1244,7 +1244,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1358,7 +1358,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if route_data_item:
             route_data_item = {"itemId": route_data_item.itemid}
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1463,7 +1463,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CreateBuffers"
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1701,7 +1701,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CreateViewshed"
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1812,7 +1812,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1902,7 +1902,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1976,7 +1976,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2078,7 +2078,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2268,7 +2268,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2348,7 +2348,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2433,7 +2433,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2529,7 +2529,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2665,7 +2665,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if polygon_barrier_layer:
             polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2803,7 +2803,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2926,7 +2926,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3013,7 +3013,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3106,7 +3106,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if extent_layer:
             extent_layer = self._feature_input(extent_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3219,7 +3219,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if predict_at_point_layer:
             predict_at_point_layer = self._feature_input(predict_at_point_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3350,7 +3350,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         target_layer = self._feature_input(target_layer)
         join_layer = self._feature_input(join_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3453,7 +3453,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         merge_layer = self._feature_input(merge_layer)
 
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3542,7 +3542,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layer = self._feature_input(input_layer)
         overlay_layer = self._feature_input(overlay_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3673,7 +3673,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if end_layer:
             end_layer = self._feature_input(end_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3829,7 +3829,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3943,7 +3943,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             sum_within_layer = self._feature_input(sum_within_layer)
         summary_layer = self._feature_input(summary_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -4061,7 +4061,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -4192,7 +4192,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         summary_layer = self._feature_input(summary_layer)
 
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -6481,6 +6481,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         image_collection_properties=None,
         use_input_rasters_by_ref=False,
         upload_properties=None,
+        task=None,
     ):
         gis = self._gis
         input_raster_specified = False
@@ -6532,12 +6533,26 @@ class _RasterAnalysisTools(BaseAnalytics):
                     single_image = False
                     if raster_type_name is None:
                         single_image = True
-                    uri_list = _upload_imagery_agol(
-                        upload_rasters_list,
-                        gis,
-                        upload_properties=upload_properties,
-                        single_image=single_image,
-                    )
+                    if (
+                        isinstance(raster_type_name, str)
+                    ) and raster_type_name == "mosaic_dataset":
+                        uri_list, md_data_info = _upload_imagery_agol(
+                            upload_rasters_list,
+                            gis,
+                            upload_properties=upload_properties,
+                            single_image=single_image,
+                            raster_type=raster_type_name,
+                            task=task,
+                        )
+                    else:
+                        uri_list = _upload_imagery_agol(
+                            upload_rasters_list,
+                            gis,
+                            upload_properties=upload_properties,
+                            single_image=single_image,
+                            raster_type=raster_type_name,
+                            task=task,
+                        )
                 else:
                     item_id_list = _upload_imagery_enterprise(
                         upload_rasters_list, raster_type_name, gis
@@ -6641,6 +6656,8 @@ class _RasterAnalysisTools(BaseAnalytics):
             )
 
         raster_type_dict = json.dumps(raster_type_dict)
+        if (isinstance(raster_type_name, str)) and raster_type_name == "mosaic_dataset":
+            return input_rasters_dict, raster_type_dict, md_data_info
         return input_rasters_dict, raster_type_dict
 
     def _set_param(self, input_param):
@@ -7857,17 +7874,29 @@ class _RasterAnalysisTools(BaseAnalytics):
                 for ele in input_rasters:
                     md_data_path.append(os.path.dirname(ele))
 
-            if raster_type_name is None:
-                raster_type_name = "mosaic_dataset"
+            raster_type_name = "mosaic_dataset"
 
-        input_rasters, raster_type = self._build_param_dictionary(
-            input_rasters=input_rasters,
-            raster_type_name=raster_type_name,
-            raster_type_params=raster_type_params,
-            image_collection_properties=image_collection_properties,
-            use_input_rasters_by_ref=use_input_rasters_by_ref,
-            upload_properties=upload_properties,
-        )
+        md_data_info = []
+        if (isinstance(raster_type_name, str)) and raster_type_name == "mosaic_dataset":
+            input_rasters, raster_type, md_data_info = self._build_param_dictionary(
+                input_rasters=input_rasters,
+                raster_type_name=raster_type_name,
+                raster_type_params=raster_type_params,
+                image_collection_properties=None,
+                use_input_rasters_by_ref=use_input_rasters_by_ref,
+                upload_properties=upload_properties,
+                task=task,
+            )
+        else:
+            input_rasters, raster_type = self._build_param_dictionary(
+                input_rasters=input_rasters,
+                raster_type_name=raster_type_name,
+                raster_type_params=raster_type_params,
+                image_collection_properties=image_collection_properties,
+                use_input_rasters_by_ref=use_input_rasters_by_ref,
+                upload_properties=upload_properties,
+                task=task,
+            )
 
         mosaic_dataset_uploaded = md_to_upload
         if md_to_upload is not None:
@@ -7892,7 +7921,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             if len(md_data_path) == 1:
                 md_data_path = md_data_path[0]
             input_rasters.update(
-                {"mosaic_dataset": mosaic_dataset_uploaded, "data_path": md_data_path}
+                {"mosaic_dataset": mosaic_dataset_uploaded, "data_path": md_data_info}
             )
 
         if raster_type_name == "mosaic_dataset":
@@ -10131,6 +10160,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         raster_type_name=None,
         raster_type_params=None,
+        md_to_upload=None,
         **kwargs
     ):
         """
@@ -10158,7 +10188,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         """
 
         task = "CopyRaster"
-
+        gis = self._gis
         upload_properties = None
         use_input_rasters_by_ref = None
         if context is not None:
@@ -10186,14 +10216,69 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_raster = self._layer_input(input_layer=input_raster)
 
         else:
-            input_raster, raster_type = self._build_param_dictionary(
-                input_rasters=input_raster,
-                raster_type_name=raster_type_name,
-                raster_type_params=raster_type_params,
-                image_collection_properties=None,
-                use_input_rasters_by_ref=use_input_rasters_by_ref,
-                upload_properties=upload_properties,
-            )
+            md_data_path = []
+            if md_to_upload is not None:
+                if isinstance(input_raster, str):
+                    md_data_path.append(os.path.dirname(input_raster))
+                elif isinstance(input_raster, list):
+                    for ele in input_raster:
+                        md_data_path.append(os.path.dirname(ele))
+
+                raster_type_name = "mosaic_dataset"
+            md_data_info = []
+            if (
+                isinstance(raster_type_name, str)
+            ) and raster_type_name == "mosaic_dataset":
+                input_raster, raster_type, md_data_info = self._build_param_dictionary(
+                    input_rasters=input_raster,
+                    raster_type_name=raster_type_name,
+                    raster_type_params=raster_type_params,
+                    image_collection_properties=None,
+                    use_input_rasters_by_ref=use_input_rasters_by_ref,
+                    upload_properties=upload_properties,
+                    task=task,
+                )
+            else:
+                input_raster, raster_type = self._build_param_dictionary(
+                    input_rasters=input_raster,
+                    raster_type_name=raster_type_name,
+                    raster_type_params=raster_type_params,
+                    image_collection_properties=None,
+                    use_input_rasters_by_ref=use_input_rasters_by_ref,
+                    upload_properties=upload_properties,
+                    task=task,
+                )
+
+            mosaic_dataset_uploaded = md_to_upload
+            if md_to_upload is not None:
+                if gis._con._product == "AGOL":
+                    from arcgis.raster._util import _upload_imagery_agol
+
+                    if ".gdb" in md_to_upload:
+                        gdb_path = os.path.dirname(md_to_upload)
+                    uploaded_list = _upload_imagery_agol(
+                        [gdb_path], gis, upload_properties=upload_properties
+                    )
+                    if len(uploaded_list) == 1:
+                        azure_upload_url = uploaded_list[0]
+                        mosaic_dataset_uploaded = (
+                            azure_upload_url
+                            + "/"
+                            + os.path.basename(gdb_path)
+                            + "/"
+                            + os.path.basename(md_to_upload)
+                        )
+
+                input_raster.update(
+                    {
+                        "mosaic_dataset": mosaic_dataset_uploaded,
+                        "data_path": md_data_info,
+                    }
+                )
+
+            if raster_type_name == "mosaic_dataset":
+                raster_type = None
+
             if isinstance(raster_type, str):
                 try:
                     raster_type = json.loads(raster_type)
@@ -10928,8 +11013,15 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         values = None
         if dimension_values is not None:
+            if isinstance(dimension_values, str):
+                if ";" in dimension_values:
+                    values = dimension_values.split(";")
+                elif "," in dimension_values:
+                    values = dimension_values.split(",")
+                else:
+                    values = dimension_values
             if isinstance(dimension_values, list):
-                values = ";".join(dimension_values)
+                values = dimension_values
 
         output_raster, output_service = self._set_output_raster(
             output_name=output_name, task=task, output_properties=kwargs

@@ -15,6 +15,7 @@ from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
+from arcgis.features._async import EditFeatureJob
 
 from .managers import (
     AttachmentManager,
@@ -2108,7 +2109,7 @@ class FeatureLayer(Layer):
         """
         The ``append`` method is used to update an existing hosted :class:`~arcgis.features.FeatureLayer` object.
         See the `Append (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm>`_
-        page in the ArcGIS REST API documentation for more informatin.
+        page in the ArcGIS REST API documentation for more information.
 
         .. note::
             The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
@@ -2488,6 +2489,7 @@ class FeatureLayer(Layer):
         session_id=None,
         use_previous_moment=False,
         datum_transformation=None,
+        future=False,
     ):
         """
         The ``edit_features`` operation adds, updates, and deletes features to the
@@ -2593,7 +2595,9 @@ class FeatureLayer(Layer):
                                     Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
                                     ===========     ===================================
 
-
+        ---------------------   --------------------------------------------------------------------------------------
+        future                  Optional Boolean.  If `True` and the `FeatureLayer` has `supportsAsyncApplyEdits` set to `True`,
+                                then edits can be applied asynchronously.
         =====================   ======================================================================================
 
         :returns:
@@ -2608,7 +2612,17 @@ class FeatureLayer(Layer):
             HAS_PANDAS = True
         except:
             HAS_PANDAS = False
-
+        if (
+            future
+            and "advancedEditingCapabilities" in self.properties
+            and "supportsAsyncApplyEdits"
+            in self.properties["advancedEditingCapabilities"]
+        ):
+            future = self.properties["advancedEditingCapabilities"][
+                "supportsAsyncApplyEdits"
+            ]
+        else:
+            future = False
         if adds is None:
             adds = []
         if updates is None:
@@ -2755,6 +2769,17 @@ class FeatureLayer(Layer):
             print("Parameters not valid for edit_features")
             return None
         try:
+            if future:
+                params["async"] = True
+                executor = concurrent.futures.ThreadPoolExecutor(1)
+                res = self._con.post_multipart(path=edit_url, postdata=params)
+                future = executor.submit(
+                    self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
+                )
+                executor.shutdown(False)
+
+                return EditFeatureJob(future, self._con)
+                # return future
             return self._con.post_multipart(path=edit_url, postdata=params)
         except Exception as e:
             if str(e).lower().find("Invalid Token".lower()) > -1:
@@ -3634,11 +3659,11 @@ class FeatureLayerCollection(_GISResource):
 
     In a web GIS, a feature layer collection is exposed as a feature service with multiple feature layers.
 
-    Instances of`` FeatureDatasets`` can be obtained from feature service Items in the GIS using
+    Instances of ``FeatureLayerCollection`` can be obtained from feature service Items in the GIS using
     :attr:`~arcgis.features.FeatureLayerCollection.fromitem`, from feature service endpoints using the constructor,
     or by accessing the ``dataset`` attribute of :class:`~arcgis.features.FeatureLayer` objects.
 
-    ``FeatureDatasets`` can be configured and managed using their `manager` helper object.
+    ``FeatureLayerCollection``s can be configured and managed using their `manager` helper object.
 
     If the dataset supports the sync operation, the `replicas` helper object allows management and synchronization of
     replicas for disconnected editing of the feature layer collection.

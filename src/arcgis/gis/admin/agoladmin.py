@@ -104,7 +104,7 @@ class AGOLAdminManager(object):
         ===============     ====================================================================
 
         """
-        if value != self.user_experience_program:
+        if value != self._user_experience_program:
             self._gis.update_properties(
                 {"clearEmptyFields": True, "eueiEnabled": value}
             )

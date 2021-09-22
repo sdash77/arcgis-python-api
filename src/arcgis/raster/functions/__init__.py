@@ -112,11 +112,6 @@ def _clone_layer(
             newlyr = ImageryLayer(layer._url, layer._gis)
             newlyr._tiles_only = layer._tiles_only
 
-    # if layer._fn is not None: # chain the functions
-    #     old_chain = layer._fn
-    #     newlyr._fn = function_chain
-    #     newlyr._fn['rasterFunctionArguments']['Raster'] = old_chain
-    # else:
     newlyr._fn = function_chain
     newlyr._fnra = function_chain_ra
     if layer._datastore_raster:
@@ -178,11 +173,6 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
             newlyr = ImageryLayer(layer._url, layer._gis)
             newlyr._tiles_only = layer._tiles_only
 
-    # if layer._fn is not None: # chain the functions
-    #     old_chain = layer._fn
-    #     newlyr._fn = function_chain
-    #     newlyr._fn['rasterFunctionArguments']['Raster'] = old_chain
-    # else:
     newlyr._fn = function_chain
     newlyr._fnra = function_chain_ra
 
@@ -738,88 +728,6 @@ def arithmetic(
         template_dict["outputPixelType"] = astype.upper()
 
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
-
-
-#
-#
-# def plus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#     """
-#     Adds two rasters or a raster and a scalar, and vice versa
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 1)
-#
-# def minus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#     """
-#     Subtracts a raster or a scalar from another raster or a scaler
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 2)
-#
-# def multiply(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#     """
-#     Multiplies two rasters or a raster and a scalar, and vice versa
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 3)
-#
-# def divide(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#     """
-#     Divides two rasters or a raster and a scalar, and vice versa
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 4)
-#
-# def power(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#     """
-#     Adds two rasters or a raster and a scalar, and vice versa
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 5)
-#
-# def mode(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#     """
-#     Adds two rasters or a raster and a scalar, and vice versa
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 6)
-#
 
 
 def aspect(raster):
@@ -6934,6 +6842,7 @@ def stretch(
     compute_gamma=None,
     sigmoid_strength_level=None,
     astype=None,
+    colorramp=None,
 ):
     """
     The stretch function enhances an image through multiple stretch types. For more information, see
@@ -6982,6 +6891,12 @@ def stretch(
     sigmoid_strength_level                  int (1~6), applicable to Sigmoid
     --------------------------------     --------------------------------------------------------------------
     astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    colorramp                               Can be a string specifiying color ramp name like
+                                            <Black To White|Yellow To Red|Slope|more..> or a color ramp object.
+
+                                            For more information about colorramp object, see color ramp object at
+                                            https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     ================================     ====================================================================
 
     :return: The output raster.
@@ -7042,7 +6957,11 @@ def stretch(
     if compute_gamma is not None or gamma is not None:
         template_dict["rasterFunctionArguments"]["UseGamma"] = True
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if colorramp:
+        raster = _clone_layer(layer, template_dict, raster_ra)
+        return colormap(raster=raster, colorramp=colorramp)
+    else:
+        return _clone_layer(layer, template_dict, raster_ra)
 
 
 def threshold(raster, astype=None):
@@ -8456,7 +8375,11 @@ def raster_collection_function(
     :return: The output raster.
     """
 
-    layer, raster, raster_ra = _raster_input(raster)
+    layer, raster1, raster_ra = _raster_input(raster)
+    if raster._fn is not None:
+        raster = raster._fn
+    else:
+        raster = "$$"
 
     template_dict = {
         "rasterFunction": "RasterCollection",
