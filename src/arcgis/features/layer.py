@@ -1924,7 +1924,10 @@ class FeatureLayer(Layer):
             params["sqlType"] = sql_type
         sql_type = sql_type.lower()
         url = self._url + "/validateSQL"
-        return self._con.post(path=url, postdata=params,)
+        return self._con.post(
+            path=url,
+            postdata=params,
+        )
 
     # ----------------------------------------------------------------------
     def query_related_records(
@@ -2249,8 +2252,10 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-        upload_formats = """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
-            ","
+        upload_formats = (
+            """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
+                ","
+            )
         )
         if upload_format not in upload_formats:
             raise ValueError("Invalid upload format: %s." % upload_format)
@@ -2910,13 +2915,19 @@ class FeatureLayer(Layer):
         ):
             params["async"] = True
             executor = concurrent.futures.ThreadPoolExecutor(1)
-            res = self._con.post(path=url, postdata=params,)
+            res = self._con.post(
+                path=url,
+                postdata=params,
+            )
             future = executor.submit(
                 self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
             )
             executor.shutdown(False)
             return future
-        return self._con.post(path=url, postdata=params,)
+        return self._con.post(
+            path=url,
+            postdata=params,
+        )
 
     # ----------------------------------------------------------------------
     def _query(self, url, params, raw=False, **kwargs):
@@ -2927,7 +2938,10 @@ class FeatureLayer(Layer):
                     path=url, postdata=params, add_token=kwargs.get("add_token", True)
                 )
             else:
-                result = self._con.post(path=url, postdata=params,)
+                result = self._con.post(
+                    path=url,
+                    postdata=params,
+                )
         except Exception as queryException:
             error_list = [
                 "Error performing query operation",
@@ -4369,7 +4383,7 @@ class FeatureLayerCollection(_GISResource):
                                                         "where": "requires_inspection = Yes"}}
         ----------------------------    --------------------------------------------------------------------
         geometry_filter                 Spatial filter from arcgis.geometry.filters module to filter results by a
-                                        spatial relationship with another geometry. 
+                                        spatial relationship with another geometry.
                                         Only intersections are currently supported
         ----------------------------    --------------------------------------------------------------------
         return_attachments              Optional boolean. If true, attachments are added to the replica and returned in the
@@ -4388,13 +4402,13 @@ class FeatureLayerCollection(_GISResource):
                                         If async is true, the results will always be returned as if transportType is
                                         esriTransportTypeUrl. If dataFormat is sqlite, the transportFormat will always be
                                         esriTransportTypeUrl regardless of how the parameter is set.
-                                        
+
                                         Values: esriTransportTypeUrl | esriTransportTypeEmbedded
         ----------------------------    --------------------------------------------------------------------
         attachments_sync_direction      Client can specify the attachmentsSyncDirection when
                                         creating a replica. AttachmentsSyncDirection is currently a createReplica property
                                         and cannot be overridden during sync.
-                                    
+
                                         Values: none, upload, bidirectional
         ----------------------------    --------------------------------------------------------------------
         asynchronous                    If true, the request is processed as an asynchronous job, and a URL is
@@ -4407,7 +4421,7 @@ class FeatureLayerCollection(_GISResource):
         ----------------------------    --------------------------------------------------------------------
         data_format                     The format of the replica geodatabase returned in the response. The
                                         default is json.
-                                    
+
                                         Values: filegdb, json, sqlite, shapefile
         ----------------------------    --------------------------------------------------------------------
         target_type                     This option was added at 10.5.1. Can be set to either server or client.
@@ -4430,7 +4444,7 @@ class FeatureLayerCollection(_GISResource):
                                         on the new service to import the changes, be sure to pass the new replicaServerGen or
                                         serverGen from the source service as the replicaServerSibGen or serverSibGen. This will
                                         update the replica metadata appropriately such that it can be used in the next sync.
-                                        
+
                                         Values: server, client
         ----------------------------    --------------------------------------------------------------------
         sync_direction                  Defaults to bidirectional when the targetType is client and download
@@ -4463,29 +4477,29 @@ class FeatureLayerCollection(_GISResource):
                                         transformation on each layer when the spatial reference used in
                                         geometry is different than the layer's spatial reference.
         ----------------------------    --------------------------------------------------------------------
-        time_reference_unknown_client   Setting timeReferenceUnknownClient as trueindicates that the client is                  capable of working with data values that are not in UTC. If its not set 
-                                        to true, and the service layer's datesInUnknownTimeZone property is true, 
+        time_reference_unknown_client   Setting timeReferenceUnknownClient as trueindicates that the client is                  capable of working with data values that are not in UTC. If its not set
+                                        to true, and the service layer's datesInUnknownTimeZone property is true,
                                         then an error is returned. The default is false
 
-                                        Its possible to define a service's time zone of date fields as unknown. 
-                                        Setting the time zone as unknown means that date values will be returned 
-                                        as-is from the database, rather than as date values in UTC. Non-hosted feature 
-                                        services can be set to use an unknown time zone using ArcGIS Server Manager. 
-                                        Setting the time zones to unknown also sets the datesInUnknownTimeZone layer property 
-                                        as true. Currently, hosted feature services do not support this setting. 
-                                        This setting does not apply to editor tracking date fields which are 
+                                        Its possible to define a service's time zone of date fields as unknown.
+                                        Setting the time zone as unknown means that date values will be returned
+                                        as-is from the database, rather than as date values in UTC. Non-hosted feature
+                                        services can be set to use an unknown time zone using ArcGIS Server Manager.
+                                        Setting the time zones to unknown also sets the datesInUnknownTimeZone layer property
+                                        as true. Currently, hosted feature services do not support this setting.
+                                        This setting does not apply to editor tracking date fields which are
                                         stored and returned in UTC even when the time zone is set to unknown.
 
-                                        Most clients released prior to ArcGIS Enterprise 10.9 will not be able 
-                                        to work with feature services that have an unknown time setting. 
-                                        The timeReferenceUnknownClient parameter prevents these clients from working 
-                                        with the service in order to avoid problems.. 
-                                        Setting this parameter to true indicates that the client is capable of working with 
+                                        Most clients released prior to ArcGIS Enterprise 10.9 will not be able
+                                        to work with feature services that have an unknown time setting.
+                                        The timeReferenceUnknownClient parameter prevents these clients from working
+                                        with the service in order to avoid problems..
+                                        Setting this parameter to true indicates that the client is capable of working with
                                         unknown date values that are not in UTC.
         ============================    ====================================================================
 
         :return: The created replica
-        
+
         """
         if (
             not self.properties.syncEnabled
@@ -4710,7 +4724,7 @@ class FeatureLayerCollection(_GISResource):
         ---------------                 --------------------------------------------------------------------
         replica_id                      The ID of the replica you want to synchronize.
         ---------------                 --------------------------------------------------------------------
-        transport_type                          
+        transport_type
         ---------------                 --------------------------------------------------------------------
         replica_server_gen              Is a generation number that allows the server to keep track of what
                                         changes have already been synchronized. A new replicaServerGen is sent with the response
@@ -4723,7 +4737,7 @@ class FeatureLayerCollection(_GISResource):
         return_ids_for_adds             If true, the objectIDs and globalIDs of features added during the
                                         synchronize will be returned to the client in the addResults sections of the response.
                                         Otherwise, the IDs are not returned. The default is false.
-                                        
+
                                         Values: true | false
         ---------------                 --------------------------------------------------------------------
         edits                           The edits the client wants to apply to the service. Alternatively, the
@@ -4798,7 +4812,7 @@ class FeatureLayerCollection(_GISResource):
         ---------------                 --------------------------------------------------------------------
         data_format                     The format of the replica geodatabase returned in the response. The
                                         default is json.
-                                    
+
                                         Values: filegdb, json, sqlite, shapefile
         ---------------                 --------------------------------------------------------------------
         rollback_on_failure             Determines the behavior when there are errors while importing edits
@@ -4819,7 +4833,7 @@ class FeatureLayerCollection(_GISResource):
         out_path                        Folder path to save the file
         ===============                 ====================================================================
 
-        :returns: 
+        :returns:
         """
 
         url = "{url}/synchronizeReplica".format(url=self._url)
