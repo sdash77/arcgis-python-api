@@ -4350,13 +4350,14 @@ class FeatureLayerCollection(_GISResource):
         existing data by using replicaOptions, the response type will be
         esriReplicaResponseTypeInfo, and the response will not contain data
         for the layers in the replica.
-        ===============                 ====================================================================
+
+        ============================    ====================================================================
         **Argument**                    **Description**
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         replicaName                     Optional string. The name of the replica
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         layers                          The layers to export
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         layer_queries                   In addition to the layers and geometry parameters, the layerQueries
                                         parameter can be used to further define what is replicated. This
                                         parameter allows you to set properties on a per layer or per table
@@ -4366,20 +4367,20 @@ class FeatureLayerCollection(_GISResource):
                                         #Example:
                                         layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
                                                         "where": "requires_inspection = Yes"}}
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         geometry_filter                 Spatial filter from arcgis.geometry.filters module to filter results by a
                                         spatial relationship with another geometry. 
                                         Only intersections are currently supported
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         return_attachments              Optional boolean. If true, attachments are added to the replica and returned in the
                                         response. Otherwise, attachments are not included.
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         return_attachment_databy_url    If true, a reference to a URL will be provided for each
                                         attachment returned from createReplica. Otherwise,
                                         attachments are embedded in the response.
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         replica_sr                      The spatial reference of the replica geometry
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         transport_type                  The transportType represents the response format. If the
                                         transportType is esriTransportTypeUrl, the JSON response is contained in a file,
                                         and the URL link to the file is returned. Otherwise, the JSON object is returned
@@ -4389,26 +4390,26 @@ class FeatureLayerCollection(_GISResource):
                                         esriTransportTypeUrl regardless of how the parameter is set.
                                         
                                         Values: esriTransportTypeUrl | esriTransportTypeEmbedded
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         attachments_sync_direction      Client can specify the attachmentsSyncDirection when
                                         creating a replica. AttachmentsSyncDirection is currently a createReplica property
                                         and cannot be overridden during sync.
                                     
                                         Values: none, upload, bidirectional
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         asynchronous                    If true, the request is processed as an asynchronous job, and a URL is
                                         returned that a client can visit to check the status of the job. See the topic on
                                         asynchronous usage for more information. The default is false.
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         sync_model                      Client can specify the attachmentsSyncDirection when creating a replica.
                                         AttachmentsSyncDirection is currently a createReplica property and cannot be
                                         overridden during sync.
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         data_format                     The format of the replica geodatabase returned in the response. The
                                         default is json.
                                     
                                         Values: filegdb, json, sqlite, shapefile
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         target_type                     This option was added at 10.5.1. Can be set to either server or client.
                                         If not set, the default is client.A targetType of client will generate a replica that
                                         matches those generated in pre-10.5.1 releases. These are designed to support syncing
@@ -4431,7 +4432,7 @@ class FeatureLayerCollection(_GISResource):
                                         update the replica metadata appropriately such that it can be used in the next sync.
                                         
                                         Values: server, client
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         sync_direction                  Defaults to bidirectional when the targetType is client and download
                                         when the targetType is server. If set, only bidirectional is supported when
                                         targetType is client. If set, only upload or download are supported when targetType is
@@ -4447,23 +4448,22 @@ class FeatureLayerCollection(_GISResource):
                                         A syncDirection of download means that the synchronizeReplica operation allows only sync
                                         with a download direction. Use this option to allow the download of edits to provide to
                                         the source service.
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         replica_options                 This parameter instructs the createReplica operation to create a
                                         new replica based on an existing replica definition (refReplicaId). It can be used
                                         to specify parameters for registration of existing data for sync. The operation
                                         will create a replica but will not return data. The responseType returned in the
                                         createReplica response will be esriReplicaResponseTypeInfo.
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         wait                            If async, wait to pause the process until the async operation is completed.
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         out_path                        Folder path to save the file
-        ---------------                 --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         transformations                 Optional List. Introduced at 10.8. This parameter applies a datum
                                         transformation on each layer when the spatial reference used in
                                         geometry is different than the layer's spatial reference.
-        ------------------              --------------------------------------------------------------------
-        time_reference_                 Setting timeReferenceUnknownClient as trueindicates that the client is
-        unknown_client                  capable of working with data values that are not in UTC. If its not set 
+        ----------------------------    --------------------------------------------------------------------
+        time_reference_unknown_client   Setting timeReferenceUnknownClient as trueindicates that the client is                  capable of working with data values that are not in UTC. If its not set 
                                         to true, and the service layer's datesInUnknownTimeZone property is true, 
                                         then an error is returned. The default is false
 
@@ -4482,8 +4482,10 @@ class FeatureLayerCollection(_GISResource):
                                         with the service in order to avoid problems.. 
                                         Setting this parameter to true indicates that the client is capable of working with 
                                         unknown date values that are not in UTC.
-        ===============                 ====================================================================
+        ============================    ====================================================================
 
+        :return: The created replica
+        
         """
         if (
             not self.properties.syncEnabled
