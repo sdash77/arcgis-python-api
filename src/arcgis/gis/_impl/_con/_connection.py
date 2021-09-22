@@ -298,14 +298,32 @@ class Connection(object):
     def _auth_check(self, url):
         import requests
 
+        if self._cert_file and self._key_file:
+            cert = (self._cert_file, self._key_file)
+
+        elif self._cert_file and self._password:
+            from arcgis.gis._impl._con._cert import pfx_to_pem
+
+            self._key_file, self._cert_file = pfx_to_pem(
+                pfx_path=self._cert_file, pfx_password=self._password
+            )
+            cert = (self._cert_file, self._key_file)
+        elif self._cert_file:
+            cert = self._cert_file
+        else:
+            cert = None
+        s = requests.Session()
+        s.cert = cert
+        s.verify = self._verify_cert
+        s.trust_env = True
         parsed = self._parsed(url)
         root = fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
         params = {"f": "json"}
         return list(
             set(
                 [
-                    requests.get(
-                        root + pt, params=params, verify=self._verify_cert
+                    s.get(
+                        root + pt, params=params, verify=self._verify_cert,
                     ).headers.get("www-authenticate", "")
                     for pt in ["/info", "/rest/info", "/sharing/rest/info"]
                 ]
