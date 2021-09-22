@@ -626,7 +626,7 @@ def arithmetic(
     =================       ======================================================
     **Argument**            **Description**
     -----------------       ------------------------------------------------------
-    raster1                The first image layer filtered by where clause, spatial, and
+    raster1                 The first image layer filtered by where clause, spatial, and
                             temporal filters.
     -----------------       ------------------------------------------------------
     raster2                 The second image layer filtered by where clause, spatial, and
