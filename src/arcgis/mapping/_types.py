@@ -3733,58 +3733,59 @@ class VectorTileLayer(Layer):
         """
         Export vector tile layer
 
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        levels              Required string.Specifies the tiled service levels to export. 
-                            The values should correspond to Level IDs. The values 
-                            can be comma-separated values or a range of values. 
-                            Ensure that the tiles are present at each specified level.
+        =====================       =======================================================
+        **Argument**                **Description**
+        ---------------------       -------------------------------------------------------
+        levels                      Required string.Specifies the tiled service levels to export. 
+                                    The values should correspond to Level IDs. The values 
+                                    can be comma-separated values or a range of values. 
+                                    Ensure that the tiles are present at each specified level.
 
-                            .. code-block:: python
-                            # Example:
-                                
-                                //Comma-separated values
-                                levels=1,2,3,4,5,6,7,8,9
+                                    .. code-block:: python
+                                    # Example:
+                                        
+                                        //Comma-separated values
+                                        levels=1,2,3,4,5,6,7,8,9
 
-                                //Ranged values
-                                levels=1-4, 7-9
-        ---------------     ----------------------------------------------------
-        export_extent       Dictionary of the extent (bounding box) of the vector 
-                            tile package to be exported. 
-                            The extent should be within the specified spatial reference. 
-                            The default value is the full extent of the tiled map service.
+                                        //Ranged values
+                                        levels=1-4, 7-9
+        ---------------------       -------------------------------------------------------
+        export_extent               Dictionary of the extent (bounding box) of the vector 
+                                    tile package to be exported. 
+                                    The extent should be within the specified spatial reference. 
+                                    The default value is the full extent of the tiled map service.
 
-                            .. code-block:: python
-                            # Example:
-                                
-                                {
-                                "xmin": -109.55, "ymin" : 25.76, 
-                                "xmax": -86.39, "ymax" : 49.94,
-                                "spatialReference": {"wkid": 4326}
-                                }
-        ---------------     ----------------------------------------------------
-        polygon             Introduced at 10.7. A JSON representation of a polygon, 
-                            containing an array of rings and a spatialReference.
+                                    .. code-block:: python
+                                    # Example:
+                                        
+                                        {
+                                        "xmin": -109.55, "ymin" : 25.76, 
+                                        "xmax": -86.39, "ymax" : 49.94,
+                                        "spatialReference": {"wkid": 4326}
+                                        }
+        ---------------------       -------------------------------------------------------
+        polygon                     Introduced at 10.7. A JSON representation of a polygon, 
+                                    containing an array of rings and a spatialReference.
 
-                            .. code-block:: python
-                            # Example:
-                                
-                                {
-                                "rings": [
-                                    [[6453,16815],[10653,16423],[14549,5204],[-7003,6939],[6453,16815]],
-                                    [[914,7992],[3140,11429],[1510,10525],[914,7992]]
-                                ],
-                                "spatialReference": {"wkid": 54004}
-                                }
-        ---------------     ----------------------------------------------------
-        max_export_tile_    Optional float. ``max_export_tile_count``sets the maximum amount of tiles 
-                count       to be exported from a single call.
+                                    .. code-block:: python
+                                    # Example:
+                                        
+                                        {
+                                        "rings": [
+                                            [[6453,16815],[10653,16423],[14549,5204],[-7003,6939],[6453,16815]],
+                                            [[914,7992],[3140,11429],[1510,10525],[914,7992]]
+                                        ],
+                                        "spatialReference": {"wkid": 54004}
+                                        }
+        ---------------------       -------------------------------------------------------
+        max_export_tile_count       Optional float. ``max_export_tile_count``sets the maximum 
+                                    amount of tiles to be exported from a single call.
 
-                              .. note::
-                                The default value is 100000.
-                            Required boolean. ``exports_tiles_allowed`` sets the value to let users export tiles
-        ===============     ====================================================
+                                    .. note::
+                                        The default value is 100000.
+                                    Required boolean. ``exports_tiles_allowed`` sets the value to let users export tiles
+        =====================       =======================================================
+        
         :returns:
             A path to downloaded file
         """
