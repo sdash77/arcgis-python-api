@@ -512,13 +512,15 @@ class PSPNetClassifier(ArcGISModel):
         if not hasattr(self.learn, "recorder"):
             return 0.0
 
+        if len(self.learn.recorder.metrics) == 0:
+            return 0.0
+
         try:
             model_accuracy = self.learn.recorder.metrics[-1][0]
             if checkpoint:
-                val_losses = self.learn.recorder.val_losses
-                model_accuracy = self.learn.recorder.metrics[
-                    val_losses.index(min(val_losses))
-                ][0]
+                model_accuracy = self.learn.recorder.metrics[self.learn._best_epoch][
+                    0
+                ]  # index using best epoch.
         except:
             model_accuracy = 0.0
 
