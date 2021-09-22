@@ -1375,7 +1375,8 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def iteminformation(self):
-        """returns the item information
+        """
+        Returns the item information
 
         :return: ItemInformationManager
 

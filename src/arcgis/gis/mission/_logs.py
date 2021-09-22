@@ -59,7 +59,7 @@ class LogManager(object):
         up disk space. However, it is not required that you invoke this operation because
         the server periodically purges old logs.
 
-        :return: boolean
+        :return: Boolean. True if successful else False.
 
         """
         params = {

@@ -112,7 +112,7 @@ class LogManager(_BaseKube):
         generated or if existing logs are unavailable.
 
 
-        :return: bool
+        :return: Boolean. True if successful else False.
 
         """
         params = {"f": "json"}
@@ -143,8 +143,7 @@ class LogManager(_BaseKube):
         ==================     ====================================================================
 
 
-        :return:
-           Boolean
+        :return: Boolean. True if successful else False.
 
         """
         url = self._url + "/settings/edit"

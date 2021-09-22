@@ -1472,7 +1472,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         skip_invalids           Optional boolean. If True, any bad rows will be ignored.
         ====================    =========================================================
 
-        :return: string
+        :return: A string
 
         """
         from .io import to_featureclass
@@ -1595,7 +1595,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         global_id_field        Optional string. The Global ID field of the dataset.
         =====================  ===============================================================
 
-        :return: FeatureCollection object
+        :return: :class:`~arcgis.features.FeatureCollection`
         """
         from arcgis.features import FeatureCollection
         import uuid
@@ -1808,7 +1808,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                                         service
         ===========================     ====================================================================
 
-        :return: FeatureLayer
+        :return: :class:`~arcgis.features.FeatureLayer`
 
         """
         from arcgis import env

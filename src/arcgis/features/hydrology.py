@@ -18,6 +18,7 @@ def _evaluate_spatial_input(input_points):
     Helper function to determine if the input is either a FeatureSet or Spatially Enabled DataFrame, and
     output to FeatureSet for subsequent processing.
     :param input_points: FeatureSet or Spatially Enabled DataFrame
+
     :return: FeatureSet
     """
     try:

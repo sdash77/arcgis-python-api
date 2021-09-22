@@ -119,7 +119,8 @@ class UtilityNetworkManager(object):
              - This operation must be executed by the portal utility network owner.
              - The topology can be disabled in the default version or in a named version.
 
-        :return: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
+
         """
         url = "%s/disableTopology" % self._url
         params = {
@@ -147,7 +148,7 @@ class UtilityNetworkManager(object):
                                                  10,000.
         ====================================     ====================================================================
 
-        :return: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         if self._version_name.lower().find("default") == -1:
@@ -378,7 +379,7 @@ class UtilityNetworkManager(object):
         SubnetLine class is refreshed, the Subnetworks table is updated and
         finally diagrams are generated or updated for the subnetwork.
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/updateSubnetwork" % self._url
@@ -404,7 +405,7 @@ class UtilityNetworkManager(object):
         dirty areas present in the network. Validation of network topology
         is supported synchronously and asynchronously.
 
-        :return: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/validateNetworkTopology" % self._url

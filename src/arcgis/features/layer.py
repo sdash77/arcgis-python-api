@@ -460,6 +460,7 @@ class FeatureLayer(Layer):
             A JSON Dictionary
 
         ..code-block:: python
+
             # Example Usage
             FeatureLayer.generate_renderer(
                 definition = {"type":"uniqueValueDef",
@@ -621,6 +622,9 @@ class FeatureLayer(Layer):
                                             ex. "name_2 like '%K%'"
         ===============================     ====================================================================
 
+        :return:
+            A list of unique values
+
         .. code-block:: python
 
             # Usage Example with only a "where" sql statement
@@ -635,8 +639,6 @@ class FeatureLayer(Layer):
             >>> layer
             ['PITKIN', 'PLATTE', 'TWIN FALLS']
 
-        :return:
-            A list of unique values
         """
 
         result = self.query(

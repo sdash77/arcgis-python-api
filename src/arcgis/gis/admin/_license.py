@@ -24,7 +24,7 @@ class LicenseManager(BasePortalAdmin):
     ===============     ====================================================
 
     :return:
-       LicenseManager Object
+       :class:`~arcgis.admin.LicenseManager` Object
     """
 
     _con = None
@@ -58,7 +58,8 @@ class LicenseManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
     def get(self, name):
         """
-        retrieves a license by it's name (title)
+        Retrieves a license by it's name (title)
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
@@ -69,7 +70,7 @@ class LicenseManager(BasePortalAdmin):
         ===============     ====================================================
 
         :return:
-           License Object
+           :class:`~arcgis.admin.License` Object
         """
         licenses = self.all()
         for l in licenses:
@@ -89,7 +90,7 @@ class LicenseManager(BasePortalAdmin):
         Returns all Licenses registered with an organization
 
         :return:
-           list of License objects
+           List of :class:`~arcgis.admin.License` objects
         """
         licenses = []
         if self._properties is None:
@@ -107,7 +108,7 @@ class LicenseManager(BasePortalAdmin):
         Returns a list of Application Bundles for an Organization
 
         :return:
-           list of Bundle objects
+           List of :class:`~arcgis.admin.Bundles` objects
 
         """
         if self._gis.version < [6, 4]:
@@ -280,7 +281,7 @@ class Bundle(object):
         ===============     ====================================================
 
 
-        :return: boolean
+        :return: Boolean. True if successful else False
 
         """
         if isinstance(users, (tuple, set, list)) == False:
@@ -316,7 +317,7 @@ class Bundle(object):
         ===============     ====================================================
 
 
-        :return: boolean
+        :return: Boolean. True if successful else False.
 
         """
         if isinstance(users, (tuple, set, list)) == False:
@@ -357,7 +358,7 @@ class License(object):
     ===============     ====================================================
 
     :return:
-       License Object
+       :class:`~arcgis.admin.License` Object
     """
 
     _properties = None
@@ -563,7 +564,7 @@ class License(object):
         ===============     ====================================================
 
         :return:
-           boolean
+           Boolean. True if successful else False.
         """
         item_id = self.properties["listing"]["itemId"]
         if isinstance(entitlements, str):

@@ -111,7 +111,7 @@ class CategoryManager(object):
                                    categories
         =======================    =============================================================
 
-        :return: boolean
+        :return: Boolean. True if successful else False
 
         """
         from arcgis.gis import Item
@@ -140,6 +140,8 @@ class CategoryManager(object):
         category                   Required String. Assigns a category value to the items.
         =======================    =============================================================
 
+        :return: Dictionary indicating 'success' or 'error'
+
         .. code-block:: python
 
             >>> item = [gis.content.get("<item id 1>"),
@@ -149,7 +151,6 @@ class CategoryManager(object):
             [{'results': [{'itemId': '<item id 1>', 'success': True}]},
              {'results': [{'itemId': '<item id 2>', 'success': True}]}]
 
-        :return: dict
 
         """
         from arcgis.gis import Item

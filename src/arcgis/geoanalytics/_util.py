@@ -210,7 +210,9 @@ class GAJob(object):
     # ----------------------------------------------------------------------
     @property
     def task(self):
-        """Returns the task name.
+        """
+        Returns the task name.
+
         :return: string
         """
         return self._gpjob.task
@@ -227,7 +229,7 @@ class GAJob(object):
     @property
     def messages(self):
         """
-        returns the GP messages
+        Returns the GP messages
 
         :return: List
         """
@@ -237,7 +239,7 @@ class GAJob(object):
     @property
     def status(self):
         """
-        returns the GP status
+        Returns the GP status
 
         :return: String
         """
@@ -251,7 +253,7 @@ class GAJob(object):
         return False, otherwise the call will be cancelled and the method
         will return True.
 
-        :return: boolean
+        :return: Boolean
         """
         cancel = self._gpjob.cancel()
         if self._return_service:
@@ -263,7 +265,7 @@ class GAJob(object):
         """
         Return True if the call was successfully cancelled.
 
-        :return: boolean
+        :return: Boolean
         """
         return self._gpjob.cancelled()
 
@@ -272,7 +274,7 @@ class GAJob(object):
         """
         Return True if the call is currently being executed and cannot be cancelled.
 
-        :return: boolean
+        :return: Boolean
         """
         return self._gpjob.running()
 
@@ -281,7 +283,7 @@ class GAJob(object):
         """
         Return True if the call was successfully cancelled or finished running.
 
-        :return: boolean
+        :return: Boolean
         """
         return self._gpjob.done()
 

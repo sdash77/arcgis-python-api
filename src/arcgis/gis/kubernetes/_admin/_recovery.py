@@ -41,7 +41,7 @@ class Backup(_BaseKube):
         """
         Removes the backup from the system
 
-        :return: bool
+        :return: Boolean. True if successful else False.
         """
         url = "{self._url}/delete"
         params = {"f": "json"}
@@ -63,7 +63,7 @@ class Backup(_BaseKube):
                                passcode must be the same as the one used when creating the backup.
         ==================     ====================================================================
 
-        :return: Bool
+        :return: Boolean. True if successful else False.
 
         """
         url = f"{self._url}/restore"

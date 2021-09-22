@@ -243,7 +243,7 @@ def connect_origins_to_destinations(
     ===================================     =========================================================
 
 
-    :return: dict with the following keys:
+    :return: A dictionary with the following keys:
 
         "routes_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
@@ -967,9 +967,7 @@ def find_nearest(
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
-    :return:
-
-    dict with the following keys:
+    :return: A dictionary with the following keys:
 
        "nearest_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 

@@ -153,6 +153,7 @@ def from_url(url: str) -> list:
     ---------------------------     --------------------------------------------------------------------
     url                             Required String. The web location of the compressed shapefile.
     ===========================     ====================================================================
+
     :return: List[pd.DataFrame]
 
     """
@@ -704,7 +705,7 @@ def to_featureclass(
     ===============     ====================================================
 
 
-    :return: string
+    :return: A string
 
     """
     out_location = os.path.dirname(location)

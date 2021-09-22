@@ -725,6 +725,9 @@ class Geometry(BaseGeometry):
                             creates a new object
         ===============     ====================================================================
 
+        :return:
+            A :class:`~arcgis.geometry.Geometry` object
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -736,9 +739,6 @@ class Geometry(BaseGeometry):
             >>> geom2 = geom.sacle(x_scale = 3,
                                    y_scale = 0.5,
                                    inplace = False)
-
-        :return:
-            A :class:`~arcgis.geometry.Geometry` object
 
         """
         from .affine import scale
@@ -767,6 +767,9 @@ class Geometry(BaseGeometry):
                             creates a new Geometry object
         ===============     ====================================================================
 
+        :return:
+            A :class:`~arcgis.geometry.Geometry` object
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -778,9 +781,6 @@ class Geometry(BaseGeometry):
             >>> geom.translate(x_offset = 40,
                                y_offset = 50,
                                inplace = True)
-
-        :return:
-            A :class:`~arcgis.geometry.Geometry` object
 
         """
         from .affine import translate
@@ -1703,6 +1703,8 @@ class Geometry(BaseGeometry):
                             an alternative, if desired.
         ===============     ====================================================================
 
+        :return: A tuple of angle and distance to another :class:`~arcgis.geometry.Point` using a measurement type.
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -1715,7 +1717,6 @@ class Geometry(BaseGeometry):
             >>>                        method="PLANAR")
                 {54.5530, 1000.1111}
 
-        :return: A tuple of angle and distance to another :class:`~arcgis.geometry.Point` using a measurement type.
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -1827,6 +1828,9 @@ class Geometry(BaseGeometry):
                             + PROPER - Boundaries of geometries must not intersect.
         ===============     ====================================================================
 
+        :return:
+            A boolean indicating containment (True), or no containment (False)
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -1838,9 +1842,6 @@ class Geometry(BaseGeometry):
             >>> geom.contains(second_geometry = geom2,
                               relation="CLEMENTINI")
                 True
-
-        :return:
-            A boolean indicating containment (True), or no containment (False)
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -2013,6 +2014,9 @@ class Geometry(BaseGeometry):
                             be required to approximate the curve.
         ===============     ====================================================================
 
+        :return:
+            A new :class:`~arcgis.geometry.Geometry` object
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -2024,9 +2028,6 @@ class Geometry(BaseGeometry):
             >>> geom2 = geom.densify(method = "GEODESIC",
                                      distance = 1244.0,
                                      deviation = 100.0)
-
-        :return:
-            A new :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2152,7 +2153,7 @@ class Geometry(BaseGeometry):
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
-        :return: boolean
+        :return: Boolean indicating True if geometries are equal else False
 
 
         """
@@ -2309,6 +2310,9 @@ class Geometry(BaseGeometry):
 
         ===============     ====================================================================
 
+        :return:
+            A boolean indicating an intersection (True), or no intersection (False)
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -2320,9 +2324,6 @@ class Geometry(BaseGeometry):
             >>> geom.intersect(second_geometry = geom2,
                                dimension = 4)
                 True
-
-        :return:
-            A boolean indicating an intersection (True), or no intersection (False)
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2372,6 +2373,9 @@ class Geometry(BaseGeometry):
                             distance; if True, the measure will be returned as a percentage.
         ===============     ====================================================================
 
+        :return:
+            A float
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -2383,9 +2387,6 @@ class Geometry(BaseGeometry):
             >>> geom.measure_on_line(second_geometry = geom2,
                                      as_percentage = True)
                 0.33
-
-        :return:
-            A float
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2451,6 +2452,9 @@ class Geometry(BaseGeometry):
                             an alternative, if desired.
         ===============     ====================================================================
 
+        :return:
+            A :class:`~arcgis.geometry.Point` object
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -2464,10 +2468,6 @@ class Geometry(BaseGeometry):
                                                            method = "PLANAR")
             >>> point.type
                 "POINT"
-        :return:
-            A :class:`~arcgis.geometry.Point` object
-
-
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -2539,6 +2539,9 @@ class Geometry(BaseGeometry):
         transformation_name      Required String. The ``geotransformation`` name.
         ====================     ====================================================================
 
+        :return:
+            A :class:`~arcgis.geometry.Geometry` object
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -2551,9 +2554,6 @@ class Geometry(BaseGeometry):
                                         transformation_name = "transformation")
             >>> geom2.type
                 arcgis.geometry.Geometry
-
-        :return:
-            A :class:`~arcgis.geometry.Geometry` object
         """
         from six import string_types, integer_types
 
@@ -2707,6 +2707,8 @@ class Geometry(BaseGeometry):
                                 (0 percent) to 1.0 (100 percent).
         ===============     ====================================================================
 
+        :return: A float
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -2719,8 +2721,6 @@ class Geometry(BaseGeometry):
                                         end_measure= 1000,
                                         use_percentage = True)
                 0.56
-
-        :return: A float
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):

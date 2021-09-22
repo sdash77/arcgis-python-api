@@ -235,6 +235,7 @@ def summarize_center_and_dispersion(
         "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         "ellipse_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         "process_info" : list of messages
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -640,17 +641,18 @@ def find_outliers(
     ==================================================================  ===============================================================
 
     :return:
-    :class:`~arcgis.features.FeatureLayer` if output_name is set. else results in a dict with the following keys:
+        :class:`~arcgis.features.FeatureLayer` if output_name is set. else results in a dict with the following keys:
 
-       "find_outliers_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        "find_outliers_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-       "process_info" : list of messages
+        "process_info" : list of messages
+
     .. code-block:: python
 
-         #USAGE EXAMPLE: To find statistically significant outliers within the collision clusters.
-         outliers = find_outliers(analysis_layer=collisions,
-                                  shape_type='fishnet',
-                                  output_name='find outliers')
+        #USAGE EXAMPLE: To find statistically significant outliers within the collision clusters.
+        outliers = find_outliers(analysis_layer=collisions,
+                                shape_type='fishnet',
+                                output_name='find outliers')
 
     """
     distance_band_units = band_units

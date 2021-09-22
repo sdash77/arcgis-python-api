@@ -52,7 +52,7 @@ class EmailManager(BasePortalAdmin):
         email                           Required String. The test email to send to.
         ===========================     ====================================================================
 
-        :return: Bool
+        :return: Boolean. True if successful else False.
         """
         params = {"mailTo": email, "f": "json"}
         url = self._url + "/test"
@@ -99,7 +99,8 @@ class EmailManager(BasePortalAdmin):
         Password                        Optional String. The password to use to login to the smtp server.
         ===========================     ====================================================================
 
-        :return: boolean
+        :return: Boolean. True if successful else False.
+
         """
         allowed_encrypt = ["none", "tls", "ssl"]
         if email_label is None:
@@ -136,7 +137,7 @@ class EmailManager(BasePortalAdmin):
         """
         Deletes the current email configuration
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
         """
         url = self._url + "/delete"
         params = {"f": "json"}
@@ -183,7 +184,7 @@ class System(BasePortalAdmin):
         """
         Provides access to the email configuration setting on enterprise.
 
-        :return: EmailManager
+        :return: :class:`~arcgis.gis.admin.EmailManager`
         """
         # if "supportsEmail" in self._gis.properties and self._properties.supportsEmail:
         if self._gis.version >= [7, 3] or "supportsEmail" in self._gis.properties:
@@ -365,7 +366,7 @@ class System(BasePortalAdmin):
         """
         Gets/Sets the Incremental Backup for the Enterprise Configuration
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
         """
         url = "%s/database/settings/edit" % self._url
         params = {"incrementalBackupEnabled": value, "f": "json"}
@@ -444,7 +445,7 @@ class System(BasePortalAdmin):
                                         certain items or user accounts.
         ===========================     ====================================================================
 
-        :return: boolean
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/indexer/reindex" % self._url
@@ -808,7 +809,7 @@ class PortalLicense(BasePortalAdmin):
         file                            Required String. The portal license file.
         ===========================     ====================================================================
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         file = {"file": file}
@@ -828,7 +829,7 @@ class PortalLicense(BasePortalAdmin):
         operation is only necessary as you create or upgrade your portal
         through the Portal Admin API.
 
-        :return: boolean
+        :return: Boolean. True if successful else False.
 
         """
         params = {"f": "json"}
@@ -859,7 +860,7 @@ class PortalLicense(BasePortalAdmin):
         username	                Required String. The user name of the account.
         ===========================     ====================================================================
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
 
         """
@@ -911,7 +912,7 @@ class PortalLicense(BasePortalAdmin):
                                         connection information.
         ===========================     ====================================================================
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         **Sample Usage**
 
@@ -951,7 +952,7 @@ class PortalLicense(BasePortalAdmin):
                                         a portal.
         ===========================     ====================================================================
 
-        :return: Dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         file = {"file": file}
@@ -1095,7 +1096,7 @@ class Licenses(BasePortalAdmin):
                                         connection information.
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         params = {"f": "json", "licenseManagerInfo": info}
@@ -1130,7 +1131,7 @@ class Licenses(BasePortalAdmin):
         application                     Required string. The application identifier to be imported
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/importEntitlements" % self._url

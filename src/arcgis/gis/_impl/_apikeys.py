@@ -134,6 +134,9 @@ class APIKey(object):
         ================  ===============================================================================
 
 
+        :return:
+            A dictionary
+
         .. code-block:: python
 
             # Usage Example
@@ -144,9 +147,6 @@ class APIKey(object):
             >>>                               "portal:app:access:item:itemId",
             >>>                               "premium:user:geocode",
             >>>                               "premium:user:networkanalysis"])
-
-        :return:
-            A dictionary
 
         """
         url = f"{ self._gis._portal.resturl}oauth2/apps/{self.properties.client_id}/update"
@@ -285,6 +285,9 @@ class APIKeyManager(object):
                             configured.
         ================  ===============================================================================
 
+        :return:
+            An :class:`~arcgis.gis._impl.APIKey` object
+
         .. code-block:: python
 
             # Usage Example
@@ -293,9 +296,6 @@ class APIKeyManager(object):
             >>>                     http_referers = ["https://foo.com", "https://bar.com"],
             >>>                     privleges = ["portal:apikey:basemaps", "portal:app:access:item:itemId",
             >>>                                        "premium:user:geocode", "premium:user:networkanalysis"])
-
-        :return:
-            An :class:`~arcgis.gis._impl.APIKey` object
         """
         api_item = self._gis.content.add(
             {
@@ -335,14 +335,14 @@ class APIKeyManager(object):
                           a list of string values.
         ================  ===============================================================================
 
+        :return:
+            A boolean indicating success (True), or failure (False)
+
         .. code-block:: python
 
             # Usage Example
 
             >>> gis.APIKeyManager.validate(ApiKey1)
-
-        :return:
-            A boolean indicating success (True), or failure (False)
 
         """
         if isinstance(privileges, (list, tuple)):

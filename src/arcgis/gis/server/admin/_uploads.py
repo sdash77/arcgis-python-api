@@ -83,7 +83,7 @@ class Uploads(BaseServer):
         ===============     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean. True if successful else False.
 
         """
         url = self._url + "/%s/delete" % item_id
@@ -130,7 +130,7 @@ class Uploads(BaseServer):
         ===============     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean. True if successful else False.
 
 
         """
@@ -176,7 +176,7 @@ class Uploads(BaseServer):
         ===============     ====================================================================
 
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = self._url + "{iid}/uploadPart".format(iid=item_id)
@@ -203,7 +203,7 @@ class Uploads(BaseServer):
         ===============     ====================================================================
 
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         params = {"f": "json"}

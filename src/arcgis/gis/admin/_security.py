@@ -276,7 +276,7 @@ class Security(BasePortalAdmin):
         group_config                    Optional dict. The group store configuration
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/config/updateIdentityStore" % self._url
@@ -312,7 +312,7 @@ class Security(BasePortalAdmin):
         group_config                    Optional dict. The group store configuration
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
 
 
         """
@@ -393,7 +393,7 @@ class OAuth(BasePortalAdmin):
         new_id                          Required string. The new client ID to assign to the application.
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Boolean. True if successful else False
 
         """
         params = {"f": "json", "currentAppID": current_id, "newAppID": new_id}
@@ -491,7 +491,7 @@ class SSLCertificates(BasePortalAdmin):
                                         comma separated.
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         self._certs = None
@@ -682,7 +682,7 @@ class SSLCertificates(BasePortalAdmin):
         certificate                     Required string. The file location of the certificate file
         ===========================     ====================================================================
 
-        :return: boolean
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         params = {"f": "json", "password": password, "alias": alias}
@@ -692,7 +692,6 @@ class SSLCertificates(BasePortalAdmin):
             return self._con.post(path=url, postdata=params, files=files)
         except:
             return False
-        return True
 
     # ----------------------------------------------------------------------
     def list(self, force=False):
@@ -889,7 +888,7 @@ class SSLCertificate(BasePortalAdmin):
         file_path                       Required string. The location of the certificate
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/importSignedCertificate" % self._url
@@ -937,7 +936,7 @@ class EnterpriseGroups(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         params = {"f": "json", "filter": query, "maxCount": max_count}
@@ -963,7 +962,7 @@ class EnterpriseGroups(BasePortalAdmin):
                                         refreshed
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/refreshMembership" % self._url
@@ -987,7 +986,7 @@ class EnterpriseGroups(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary of group users
 
         """
         url = "%s/getUsersWithinEnterpriseGroup" % self._url
@@ -1015,7 +1014,7 @@ class EnterpriseGroups(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary of user groups
 
         """
         url = "%s/getEnterpriseGroupsForUser" % self._url
@@ -1174,7 +1173,7 @@ class EnterpriseUsers(BasePortalAdmin):
                                         username. For LDAP users, the format is always username.
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/getEnterpriseUser" % self._url
@@ -1199,7 +1198,7 @@ class EnterpriseUsers(BasePortalAdmin):
         idp_username                    Required string. The username used by the SAML identity provider
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/updateEnterpriseUser" % self._url
@@ -1223,7 +1222,7 @@ class EnterpriseUsers(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary of the search
 
         """
         url = "%s/searchEnterpriseUsers" % self._url
@@ -1248,7 +1247,7 @@ class EnterpriseUsers(BasePortalAdmin):
         users                           Required string. A comma seperated list of users.
         ===========================     ====================================================================
 
-        :return: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         params = {"f": "json", "users": users}

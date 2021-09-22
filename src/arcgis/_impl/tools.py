@@ -2323,13 +2323,17 @@ class _FeatureAnalysisTools(BaseAnalytics):
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        input_layer       Required FeatureLayer. The multipoint, line, or polygon features that will be used to generate centroid point features.
+        input_layer       Required :class:`~arcgis.features.FeatureLayer`.
+                          The multipoint, line, or polygon features that will be used to
+                          generate centroid point features.
         ----------------  ---------------------------------------------------------------
         point_location    Optional Boolean. A Boolean value that determines the output location of the points.
 
 
-                          + true - Output points will be the nearest point to the actual centroid, but located inside or contained by the bounds of the input feature.
-                          + false - Output point locations will be determined by the calculated geometric center of each input feature. This is the default.
+                          + true - Output points will be the nearest point to the actual centroid,
+                            but located inside or contained by the bounds of the input feature.
+                          + false - Output point locations will be determined by the calculated geometric
+                            center of each input feature. This is the default.
 
 
         ----------------  ---------------------------------------------------------------
@@ -2340,7 +2344,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         estimate          Optional Boolean. Returns the number of credit for the operation.
         ================  ===============================================================
 
-        :return: output_layer - Feature Layer or Feature Collection
+        :return: output_layer - :class:`~arcgis.features.FeatureLayer` or :class:`~arcgis.features.FeatureCollection`
 
         """
         task = "FindCentroids"

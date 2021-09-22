@@ -294,7 +294,7 @@ class MapView(widgets.DOMWidget):
         ===============     ====================================================================
 
         :return:
-        Int value that represent the zoom level
+            Int value that represent the zoom level
 
         .. code-block:: python
 
@@ -474,6 +474,7 @@ class MapView(widgets.DOMWidget):
          ===============     ====================================================================
 
          :return: basemap being used.
+
          .. code-block:: python
 
              # Usage example: Set the widget basemap equal to an item
@@ -1770,6 +1771,9 @@ class MapView(widgets.DOMWidget):
         culture            Optional string. Language and country information.
         =================  =====================================================================
 
+        :return:
+            Item object corresponding to the new web map Item created.
+
         .. code-block:: python
 
            USAGE EXAMPLE: Save map widget as a new web map item in GIS
@@ -1779,8 +1783,6 @@ class MapView(widgets.DOMWidget):
            italy_streets_map = map1.save({'title':'Italy streets',
                                         'snippet':'Arterial road network of Italy',
                                         'tags':'streets, network, roads'})
-        :return:
-            Item object corresponding to the new web map Item created.
         """
         if mode == None:
             mode = self.mode
@@ -2004,6 +2006,9 @@ class MapView(widgets.DOMWidget):
                            allowed (true) or not allowed (false).
         =================  =====================================================================
 
+        :return:
+           A boolean indicating success (True) or failure (False).
+
         .. code-block:: python
 
            USAGE EXAMPLE: Interactively add a new layer and change the basemap of an existing web map.
@@ -2012,9 +2017,6 @@ class MapView(widgets.DOMWidget):
            map1.add_layer(Italy_streets2)
            map1.basemap = 'dark-gray-vector'
            map1.update(thumbnail = './new_webmap.png')
-
-        :return:
-           A boolean indicating success (True) or failure (False).
 
         """
         if mode == None:

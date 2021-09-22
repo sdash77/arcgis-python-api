@@ -37,7 +37,7 @@ class Deployment:
         props                  Required Dict[str, Any]. he microservice properties, represented as a dictionary.
         ==================     ====================================================================
 
-        :return: Bool
+        :return: Boolean. True if successful else False.
 
         """
         url = f"{self._url}/edit"
@@ -52,7 +52,7 @@ class Deployment:
         Performing this operation will restart the corresponding pods and
         recreate the microservice.
 
-        :return: Bool
+        :return: Boolean. True if successful else False.
         """
         url = f"{self._url}/refresh"
         params = {"f": "json"}
@@ -122,7 +122,7 @@ class DeploymentProperty:
                                particular microservice type.
         ==================     ====================================================================
 
-        :return: bool
+        :return: Boolean. True if successful else False.
 
         """
         url = f"{self._url}/{template_id}/edit"
