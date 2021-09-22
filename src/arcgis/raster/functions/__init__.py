@@ -484,7 +484,9 @@ def arg_statistics(
 
     template_dict = {
         "rasterFunction": "ArgStatistics",
-        "rasterFunctionArguments": {"Rasters": raster,},
+        "rasterFunctionArguments": {
+            "Rasters": raster,
+        },
         "variableName": "Rasters",
     }
 
@@ -634,7 +636,7 @@ def arithmetic(
     -----------------       ------------------------------------------------------
     cellsize_type           One of "FirstOf", "MinOf", "MaxOf", "MeanOf", "LastOf"
     -----------------       ------------------------------------------------------
-    operation_type          Int. 
+    operation_type          Int.
                             1 = Plus, 2 = Minus, 3 = Multiply, 4 = Divide, 5 = Power, 6 = Mode
     =================       ======================================================
 
@@ -695,7 +697,9 @@ def aspect(raster):
 
     template_dict = {
         "rasterFunction": "Aspect",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -1442,7 +1446,9 @@ def convolution(raster, kernel=None, astype=None):
 
     template_dict = {
         "rasterFunction": "Convolution",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
         "variableName": "Raster",
     }
 
@@ -3777,13 +3783,13 @@ def stretch(
     Stretch type Sigmoid does not require other parameters.
 
     Optionally, set the SigmoidStrengthLevel (1 to 6) to adjust the curvature of Sigmoid curve used in color stretch.
-    
+
     =====================       ================================================================
     **Argument**                **Description**
     ---------------------       ----------------------------------------------------------------
     raster                      The input raster
     ---------------------       ----------------------------------------------------------------
-    stretch_type                Optional string. 
+    stretch_type                Optional string.
                                 Values: None | StdDev | Histogram | MinMax | PercentClip | 9 = Sigmoid
     ---------------------       ----------------------------------------------------------------
     min                         Optional double
@@ -3792,7 +3798,7 @@ def stretch(
     ---------------------       ----------------------------------------------------------------
     num_stddev                  Optional double
     ---------------------       ----------------------------------------------------------------
-    statistics                  Optional double. [<min1>, <max1>, <mean1>, <standardDeviation1>], 
+    statistics                  Optional double. [<min1>, <max1>, <mean1>, <standardDeviation1>],
                                 //[double, double, double, double][<min2>, <max2>, <mean2>, <standardDeviation2>]],
     ---------------------       ----------------------------------------------------------------
     dra                         Optional bool. Derive statistics from currest request,
@@ -4245,7 +4251,9 @@ def complex(raster):
 
     template_dict = {
         "rasterFunction": "Complex",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4270,7 +4278,9 @@ def colormap_to_rgb(raster):
 
     template_dict = {
         "rasterFunction": "ColormapToRGB",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4292,7 +4302,9 @@ def statistics_histogram(raster, statistics=None, histograms=None):
 
     template_dict = {
         "rasterFunction": "StatisticsHistogram",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if statistics is not None:
@@ -4329,7 +4341,9 @@ def tasseled_cap(raster):
 
     template_dict = {
         "rasterFunction": "TasseledCap",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4350,7 +4364,9 @@ def identity(raster):
 
     template_dict = {
         "rasterFunction": "Identity",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4376,7 +4392,9 @@ def colorspace_conversion(raster, conversion_type="rgb_to_hsv"):
 
     template_dict = {
         "rasterFunction": "ColorspaceConversion",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     template_dict["rasterFunctionArguments"]["ConversionType"] = conversion_types[
@@ -4402,7 +4420,9 @@ def grayscale(raster, conversion_parameters=None):
 
     template_dict = {
         "rasterFunction": "Grayscale",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if conversion_parameters is not None and isinstance(conversion_parameters, list):
@@ -4534,7 +4554,9 @@ def speckle(
 
     template_dict = {
         "rasterFunction": "Speckle",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     template_dict["rasterFunctionArguments"]["FilterType"] = filter_types[filter_type]
@@ -4881,7 +4903,9 @@ def lookup(raster, field=None):
 
     template_dict = {
         "rasterFunction": "Lookup",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if field is not None:
@@ -5519,7 +5543,9 @@ def aggregate_cells(
 
     template_dict = {
         "rasterFunction": "Aggregate",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if cell_factor is not None:
@@ -5648,7 +5674,9 @@ def generate_trend(
 
     template_dict = {
         "rasterFunction": "TrendAnalysis",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if dimension_name is not None:
@@ -5759,7 +5787,9 @@ def predict_using_trend(
 
     template_dict = {
         "rasterFunction": "Trend",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     dimension_definition_type_dict = {"BY_VALUE": 0, "BY_INTERVAL": 1}
@@ -5829,7 +5859,9 @@ def linear_spectral_unmixing(
 
     template_dict = {
         "rasterFunction": "SpectralUnmixing",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if spectral_profile_def is not None:
@@ -6060,7 +6092,9 @@ def s1_radiometric_calibration(raster, calibration_type=None):
 
     template_dict = {
         "rasterFunction": "S1RadiometricCalibration",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     calibration_type_dict = {"beta_nought": 0, "sigma_nought": 1, "gamma": 2}
@@ -6097,7 +6131,9 @@ def s1_thermal_noise_removal(raster, calibration_type=None):
 
     template_dict = {
         "rasterFunction": "S1ThermalNoiseRemoval",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -6223,7 +6259,9 @@ def _simple_collection(raster, md_info=None):
 
     template_dict = {
         "rasterFunction": "SimpleCollection",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
         "variableName": "Rasters",
     }
 
@@ -7005,7 +7043,9 @@ def detect_change_using_change_analysis_raster(
 
     template_dict = {
         "rasterFunction": "DetectChange",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
         "variableName": "Raster",
     }
 
@@ -7161,7 +7201,9 @@ def trend_to_rgb(raster, model_type=0):
 
     template_dict = {
         "rasterFunction": "TrendToRGB",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
         "variableName": "Raster",
     }
 
@@ -7250,7 +7292,9 @@ def apparent_reflectance(
 
     template_dict = {
         "rasterFunction": "Reflectance",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
         "variableName": "Raster",
     }
 
@@ -7345,7 +7389,9 @@ def buffered(raster):
 
     template_dict = {
         "rasterFunction": "BufferedRaster",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -7392,7 +7438,9 @@ def rasterize_features(
 
     template_dict = {
         "rasterFunction": "RasterizeFeatureClass",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if feature_class is not None:
@@ -7542,7 +7590,9 @@ def reproject(
 
     template_dict = {
         "rasterFunction": "Reproject",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if spatial_reference is not None:
@@ -8118,10 +8168,10 @@ class RFT:
                                                 )
                                         else:
                                             if (
-                                                ("value" in element["arguments"])
-                                                and "arguments"
-                                                in element["arguments"]["value"]
-                                            ):
+                                                "value" in element["arguments"]
+                                            ) and "arguments" in element["arguments"][
+                                                "value"
+                                            ]:
                                                 self._apply_argument(
                                                     element["arguments"]["value"][
                                                         "arguments"
