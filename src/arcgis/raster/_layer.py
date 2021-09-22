@@ -3033,58 +3033,58 @@ class ImageryLayer(Layer):
         be items uploaded using the items parameter or URLs of published
         services using the serviceUrl parameter.
 
-        =================     ====================================================================
-        **Argument**          **Description**
-        -----------------     --------------------------------------------------------------------
-        raster_ids            Required integer. The object IDs of a raster catalog items to be
-                              updated.
-        -----------------     --------------------------------------------------------------------
-        files                 Optional list. Local source location to the raster to replace the
-                              dataset with.
-                              Example: [r"<path>\data.tiff"]
-        -----------------     --------------------------------------------------------------------
-        item_ids              Optional string.  The uploaded items (raster files) being used to
-                              replace existing raster.
-        -----------------     --------------------------------------------------------------------
-        service_url           Optional string. The URL of the layer to be uploaded to replace
-                              existing raster data. The image layer will add this URL to the
-                              mosaic dataset. The serviceUrl is required for the following raster
-                              types: Image Layer, Map Service, WCS, and WMS.
-        -----------------     --------------------------------------------------------------------
-        compute_statistics    Optional bool. If true, statistics for the uploaded raster will be computed.
-                              The default is false.
-        -----------------     --------------------------------------------------------------------
-        build_pyramids        Optional boolean. If true, builds pyramids for the uploaded raster.
-                              The default is false.
-        -----------------     --------------------------------------------------------------------
-        build_thumbnail       Optional boolean. If true, generates a thumbnail for the uploaded
-                              raster. The default is false.
-        -----------------     --------------------------------------------------------------------
-        minimum_cell_size     Optional float. The factor (times raster resolution) used to
-        _factor               populate MinPS field (minimum cell size above which raster is visible).
-        -----------------     --------------------------------------------------------------------
-        maximum_cell_size     Optional float. The factor (times raster resolution) used to
-        _factor               populate MaxPS field (maximum cell size below which raster is visible).
-        -----------------     --------------------------------------------------------------------
-        footprint             optional Polygon.  A JSON 2D polygon object that defines the
-                              footprint of the raster. If the spatial reference is not defined, it
-                              will default to the image layer's spatial reference.
-        -----------------     --------------------------------------------------------------------
-        attributes            optional dictionary.  Any attribute for the uploaded raster.
-        -----------------     --------------------------------------------------------------------
-        geodata_transforms    optional string. The geodata transformations applied on the updated
-                              rasters. A geodata transformation is a mathematical model that
-                              performs geometric transformation on a raster. It defines how the
-                              pixels will be transformed when displayed or accessed, such as
-                              polynomial, projective, or identity transformations. The geodata
-                              transformations will be applied to the updated dataset.
-        -----------------     --------------------------------------------------------------------
-        apply_method          optional string. Defines how to apply the provided geodataTransform.
-                              The default is esriGeodataTransformApplyAppend.
-                              Values: esriGeodataTransformApplyAppend,
-                                      esriGeodataTransformApplyReplace,
-                                      esriGeodataTransformApplyOverwrite
-        =================     ====================================================================
+        =========================       ====================================================================
+        **Argument**                    **Description**
+        -------------------------       --------------------------------------------------------------------
+        raster_ids                      Required integer. The object IDs of a raster catalog items to be
+                                        updated.
+        -------------------------       --------------------------------------------------------------------
+        files                           Optional list. Local source location to the raster to replace the
+                                        dataset with.
+                                        Example: [r"<path>\data.tiff"]
+        -------------------------       --------------------------------------------------------------------
+        item_ids                        Optional string.  The uploaded items (raster files) being used to
+                                        replace existing raster.
+        -------------------------       --------------------------------------------------------------------
+        service_url                     Optional string. The URL of the layer to be uploaded to replace
+                                        existing raster data. The image layer will add this URL to the
+                                        mosaic dataset. The serviceUrl is required for the following raster
+                                        types: Image Layer, Map Service, WCS, and WMS.
+        -------------------------       --------------------------------------------------------------------
+        compute_statistics              Optional bool. If true, statistics for the uploaded raster will be computed.
+                                        The default is false.
+        -------------------------       --------------------------------------------------------------------
+        build_pyramids                  Optional boolean. If true, builds pyramids for the uploaded raster.
+                                        The default is false.
+        -------------------------       --------------------------------------------------------------------
+        build_thumbnail                 Optional boolean. If true, generates a thumbnail for the uploaded
+                                        raster. The default is false.
+        -------------------------       --------------------------------------------------------------------
+        minimum_cell_size_factor        Optional float. The factor (times raster resolution) used to
+                                        populate MinPS field (minimum cell size above which raster is visible).
+        -------------------------       --------------------------------------------------------------------
+        maximum_cell_size_factor        Optional float. The factor (times raster resolution) used to
+                                        populate MaxPS field (maximum cell size below which raster is visible).
+        -------------------------       --------------------------------------------------------------------
+        footprint                       Optional Polygon.  A JSON 2D polygon object that defines the
+                                        footprint of the raster. If the spatial reference is not defined, it
+                                        will default to the image layer's spatial reference.
+        -------------------------       --------------------------------------------------------------------
+        attributes                      Optional dictionary.  Any attribute for the uploaded raster.
+        -------------------------       --------------------------------------------------------------------
+        geodata_transforms              Optional string. The geodata transformations applied on the updated
+                                        rasters. A geodata transformation is a mathematical model that
+                                        performs geometric transformation on a raster. It defines how the
+                                        pixels will be transformed when displayed or accessed, such as
+                                        polynomial, projective, or identity transformations. The geodata
+                                        transformations will be applied to the updated dataset.
+        -------------------------       --------------------------------------------------------------------
+        apply_method                    Optional string. Defines how to apply the provided geodataTransform.
+                                        The default is esriGeodataTransformApplyAppend.
+                                        Values: esriGeodataTransformApplyAppend,
+                                                esriGeodataTransformApplyReplace,
+                                                esriGeodataTransformApplyOverwrite
+        =========================       ====================================================================
 
         :return: dictionary
         """
