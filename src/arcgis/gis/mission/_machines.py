@@ -102,7 +102,7 @@ class Machine(object):
     def properties(self):
         """
         Get/Set the properties of the resource
-        
+
         Set operation allows you to update properties on the ArcGIS
         Mission Server machine.
 

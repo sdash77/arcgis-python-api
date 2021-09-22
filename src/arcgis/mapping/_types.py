@@ -1309,9 +1309,9 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        value                  Required string. What basemap you would like to apply to the map 
-                               (‘topo’, ‘national-geographic’, etc.). 
-                               See :attr:`~arcgis.mapping.WebMap.basemaps` and 
+        value                  Required string. What basemap you would like to apply to the map
+                               (‘topo’, ‘national-geographic’, etc.).
+                               See :attr:`~arcgis.mapping.WebMap.basemaps` and
                                :attr:`~arcgis.mapping.WebMap.gallery_basemaps` for a full list.
         ==================     ====================================================================
 
@@ -1535,7 +1535,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        table                  Required object. Pass the :class:`~arcgis.features.Table` 
+        table                  Required object. Pass the :class:`~arcgis.features.Table`
                                that needs to be removed from the map. You can get the
                                list of tables in the map by calling the :attr:`~arcgis.mapping.WebMap.layers` property.
         ==================     ====================================================================
@@ -1554,7 +1554,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        layer                  Required object. Pass the :class:`~arcgis.features.FeatureLaer` 
+        layer                  Required object. Pass the :class:`~arcgis.features.FeatureLaer`
                                that needs to be removed from the map. You can get the
                                list of layers in the map by calling the :attr:`~arcgis.mapping.WebMap.layers` property.
         ==================     ====================================================================
@@ -4857,7 +4857,10 @@ class MapImageLayer(Layer):
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 params[k] = v
-        res = self._con.post(path=url, postdata=params,)
+        res = self._con.post(
+            path=url,
+            postdata=params,
+        )
         return res
 
     # ----------------------------------------------------------------------
@@ -4903,7 +4906,11 @@ class MapImageLayer(Layer):
             "layers": layers,
             "layerOptions": options,
         }
-        return self._con.get(kmlURL, params, out_folder=save_location,)
+        return self._con.get(
+            kmlURL,
+            params,
+            out_folder=save_location,
+        )
 
     # ----------------------------------------------------------------------
     def export_map(

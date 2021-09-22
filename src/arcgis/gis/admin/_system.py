@@ -202,8 +202,8 @@ class System(BasePortalAdmin):
     def properties(self):
         """
         Gets/Sets the system properties that have been modified to control
-        the portal's environment. 
-        
+        the portal's environment.
+
         The list of available properties are:
          - privatePortalURL-Informs the portal that it has a front end
            load-balancer/proxy reachable at the URL. This property is
@@ -601,7 +601,7 @@ class WebAdaptors(BasePortalAdmin):
         """
         Gets/Sets the common properties and configuration of the ArcGIS Web
         Adaptor configured with the portal.
-        
+
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------

@@ -100,7 +100,7 @@ class Machine(object):
     # ----------------------------------------------------------------------
     @property
     def properties(self):
-        """  
+        """
         Get/Set the properties on the ArcGIS Notebook Server machine.
 
         Set operation allows you to update properties on the ArcGIS

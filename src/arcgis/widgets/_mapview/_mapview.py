@@ -288,7 +288,7 @@ class MapView(widgets.DOMWidget):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        value               Required int. 
+        value               Required int.
                             .. note::
                                 The higher the number, the more zoomed in you are.
         ===============     ====================================================================
@@ -352,12 +352,12 @@ class MapView(widgets.DOMWidget):
     def snap_to_zoom(self):
         """
         The ``snap_to_zoom`` property is used to determine how the zoom is enabled when the map widget is created.
-        
+
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        value               Required bool. 
+        value               Required bool.
                             Values:
                                 + True: snap to the next level of detail when zooming in or out.
                                 + False: the zoom is continuous.
@@ -463,30 +463,30 @@ class MapView(widgets.DOMWidget):
     @property
     def basemap(self):
         """
-       Get/Set the basemap you would like to apply to the widget.
+        Get/Set the basemap you would like to apply to the widget.
 
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        value               Required string. Ex: ('topo', 'national-geographic', etc.).
-                            .. note::
-                                See :attr:`~arcgis.widgets.MapView.basemaps` for a full list of possible maps
-        ===============     ====================================================================
+         ===============     ====================================================================
+         **Argument**        **Description**
+         ---------------     --------------------------------------------------------------------
+         value               Required string. Ex: ('topo', 'national-geographic', etc.).
+                             .. note::
+                                 See :attr:`~arcgis.widgets.MapView.basemaps` for a full list of possible maps
+         ===============     ====================================================================
 
-        :return: basemap being used.
-        .. code-block:: python
+         :return: basemap being used.
+         .. code-block:: python
 
-            # Usage example: Set the widget basemap equal to an item
+             # Usage example: Set the widget basemap equal to an item
 
-            from arcgis.mapping import WebMap
-            widget = gis.map()
+             from arcgis.mapping import WebMap
+             widget = gis.map()
 
-            # Use basemap from another item as your own
-            widget.basemap = webmap
-            widget.basemap = tiled_map_service_item
-            widget.basemap = image_layer_item
-            widget.basemap = webmap2.basemap
-            widget.basemap - 'national-geographic'
+             # Use basemap from another item as your own
+             widget.basemap = webmap
+             widget.basemap = tiled_map_service_item
+             widget.basemap = image_layer_item
+             widget.basemap = webmap2.basemap
+             widget.basemap - 'national-geographic'
 
         """
         return self._basemap
@@ -555,7 +555,7 @@ class MapView(widgets.DOMWidget):
             ==================     ====================================================================
             **Argument**           **Description**
             ------------------     --------------------------------------------------------------------
-            value                  Required dict. 
+            value                  Required dict.
                                    A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
                                    or a dict that represents the JSON of the map widget's extent.
 
@@ -641,7 +641,7 @@ class MapView(widgets.DOMWidget):
         Get/Set the center of the ``Map Widget``.
 
         ==================     ====================================================================
-        **Argument**           **Description**            
+        **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         setter                 A `[lat, long]` list, or a dict that represents the JSON of the map
                                widget's center.

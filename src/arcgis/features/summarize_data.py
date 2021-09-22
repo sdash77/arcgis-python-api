@@ -35,13 +35,13 @@ def aggregate_points(
 
     The Aggregate Points task works with a layer of point features and a layer of polygon features. It first figures out which points fall within each polygon's area.
     After determining this point-in-polygon spatial relationship, statistics about all points in the polygon are calculated and assigned to the area. The most basic statistic is the count of the number of points within the polygon, but you can get other statistics as well.
-    
+
     For example, if your points represented coffee shops and each point has a TOTAL_SALES attribute, you can get statistics like the sum of all TOTAL_SALES within the polygon, or the minimum or maximum TOTAL_SALES value, or the standard deviation of all sales within the polygon.
 
     ====================================    ====================================================================
     **Parameter**                           **Description**
     ------------------------------------    --------------------------------------------------------------------
-    point_layer                             Required point layer. The point features that will be aggregated 
+    point_layer                             Required point layer. The point features that will be aggregated
                                             into the polygons in the polygon_layer. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------    --------------------------------------------------------------------
     polygon_layer                           Optional polygon layer. The polygon features (areas) into which the input points will be aggregated. See :ref:`Feature Input<FeatureInput>`. The `polygon_layer` is **required** if the `bin_type`, `bin_size` and `bin_size_unit` are not specified.
@@ -59,48 +59,48 @@ def aggregate_points(
                                             * Stddev - Finds the standard deviation of all the points in each polygon.
                                             Example [fieldName1 summaryType1,fieldName2 summaryType2].
     ------------------------------------    --------------------------------------------------------------------
-    group_by_field                          Optional string. A field name in the point_layer. Points that have 
-                                            the same value for the group by field will have their own counts and 
-                                            summary field statistics. You can create statistical groups using an 
-                                            attribute in the analysis layer. 
-                                            For example, if you are aggregating crimes to neighborhood boundaries, 
-                                            you may have an attribute Crime_type with five different crime types. 
-                                            Each unique crime type forms a group, and the statistics you choose will 
-                                            be calculated for each unique value of Crime_type. When you choose 
-                                            a grouping attribute, two results are created: the result layer and a 
+    group_by_field                          Optional string. A field name in the point_layer. Points that have
+                                            the same value for the group by field will have their own counts and
+                                            summary field statistics. You can create statistical groups using an
+                                            attribute in the analysis layer.
+                                            For example, if you are aggregating crimes to neighborhood boundaries,
+                                            you may have an attribute Crime_type with five different crime types.
+                                            Each unique crime type forms a group, and the statistics you choose will
+                                            be calculated for each unique value of Crime_type. When you choose
+                                            a grouping attribute, two results are created: the result layer and a
                                             related table containing the statistics.
     ------------------------------------    --------------------------------------------------------------------
-    minority_majority                       Optional boolean. This boolean parameter is applicable only when a 
-                                            group_by_field is specified. If true, the minority (least dominant) or 
-                                            the majority (most dominant) attribute values for each group field 
-                                            within each boundary are calculated. Two new fields are added to the 
+    minority_majority                       Optional boolean. This boolean parameter is applicable only when a
+                                            group_by_field is specified. If true, the minority (least dominant) or
+                                            the majority (most dominant) attribute values for each group field
+                                            within each boundary are calculated. Two new fields are added to the
                                             aggregated_layer prefixed with Majority_ and Minority_.
                                             The default is false.
     ------------------------------------    --------------------------------------------------------------------
-    percent_points                          Optional boolean. This boolean parameter is applicable only when a 
-                                            group_by_field is specified. If set to true, the percentage count of 
+    percent_points                          Optional boolean. This boolean parameter is applicable only when a
+                                            group_by_field is specified. If set to true, the percentage count of
                                             points for each unique group_by_field value is calculated.
-                                            A new field is added to the group summary output table containing the 
-                                            percentages of each attribute value within each group. 
-                                            
-                                            If minority_majority is true, two additional fields are added to the 
-                                            aggregated_layer containing the percentages of the minority and majority 
+                                            A new field is added to the group summary output table containing the
+                                            percentages of each attribute value within each group.
+
+                                            If minority_majority is true, two additional fields are added to the
+                                            aggregated_layer containing the percentages of the minority and majority
                                             attribute values within each group.
     ------------------------------------    --------------------------------------------------------------------
-    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                            feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                            feature layer will cause the new layer to be appended to the Feature Service.
                                             If overwrite is True in context, new layer will overwrite existing layer.
                                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ------------------------------------    --------------------------------------------------------------------
-    context                                 Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
                                             For aggregate_points, there are three settings.
 
                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                                
+
                                                 .. code-block:: python
-                                                    
+
                                                     # Example Usage
                                                     context = {"extent": {"xmin": 3164569.408035,
                                                                         "ymin": -9187921.892449,
@@ -110,30 +110,30 @@ def aggregate_points(
                                                                 "outSR": {"wkid": 3857},
                                                                 "overwrite": True}
     ------------------------------------    --------------------------------------------------------------------
-    gis                                     Optional, the GIS on which this tool runs. 
+    gis                                     Optional, the GIS on which this tool runs.
                                             If not specified, the active GIS is used.
     ------------------------------------    --------------------------------------------------------------------
-    estimate                                Optional Boolean. If True, the number of credits to run the operation 
+    estimate                                Optional Boolean. If True, the number of credits to run the operation
                                             will be returned.
     ------------------------------------    --------------------------------------------------------------------
     future                                  Optional Boolean. When True, the task will be performed asynchronously.
     ------------------------------------    --------------------------------------------------------------------
-    bin_type                                Optional String. The type of bin that will be generated and points 
+    bin_type                                Optional String. The type of bin that will be generated and points
                                             will be aggregated into. Bin options are as follows: Hexagon and Square.
-                                            Square is the Default. When generating bins, for Square, the number and 
+                                            Square is the Default. When generating bins, for Square, the number and
                                             units specified determine the height and length of the square.
-                                            For Hexagon, the number and units specified determine the distance 
+                                            For Hexagon, the number and units specified determine the distance
                                             between parallel sides. Either `bin_type` or `polygon_layer` must be
-                                            specified. If `bin_type` is chosen, then `bin_size` and `bin_size_unit` 
+                                            specified. If `bin_type` is chosen, then `bin_size` and `bin_size_unit`
                                             specifying the size of the bins must be included.
     ------------------------------------    --------------------------------------------------------------------
-    bin_size                                Optional Float. The distance for the bins of type 
-                                            `bin_type` that the `point_layer` will be aggregated into. 
-                                            When generating bins for `Square` the number and units specified determine 
-                                            the height and length of the square. For `Hexagon`, the number and units 
+    bin_size                                Optional Float. The distance for the bins of type
+                                            `bin_type` that the `point_layer` will be aggregated into.
+                                            When generating bins for `Square` the number and units specified determine
+                                            the height and length of the square. For `Hexagon`, the number and units
                                             specified determine the distance between parallel sides.
     ------------------------------------    --------------------------------------------------------------------
-    bin_size_unit                           Optional String. The linear unit to be used with the distance value 
+    bin_size_unit                           Optional String. The linear unit to be used with the distance value
                                             specified in `bin_size`.
                                             Values: `Meters, Kilometers, Feet, Miles, NauticalMiles, or Yards`
     ====================================    ====================================================================
@@ -363,20 +363,20 @@ def summarize_nearby(
 
                                 The default is False.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
-    output_name                 Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                 Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                feature layer will cause the new layer to be appended to the Feature Service.
                                 If overwrite is True in context, new layer will overwrite existing layer.
                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
-    context                     Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                     Optional dict. Additional settings such as processing extent and output spatial reference.
                                 For summarize_nearby, there are three settings.
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                    
+
                                     .. code-block:: python
-                                        
+
                                         # Example Usage
                                         context = {"extent": {"xmin": 3164569.408035,
                                                             "ymin": -9187921.892449,
@@ -501,20 +501,20 @@ def summarize_center_and_dispersion(
                             distribution calculations. The ``group_field`` can be of
                             integer, date, or string type.
     --------------------    ---------------------------------------------------------
-    output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                            feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                            feature layer will cause the new layer to be appended to the Feature Service.
                             If overwrite is True in context, new layer will overwrite existing layer.
                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     --------------------    ---------------------------------------------------------
-    context                 Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                 Optional dict. Additional settings such as processing extent and output spatial reference.
                             For summarize_center_and_dispersion, there are three settings.
 
                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                
+
                                 .. code-block:: python
-                                    
+
                                     # Example Usage
                                     context = {"extent": {"xmin": 3164569.408035,
                                                         "ymin": -9187921.892449,
@@ -649,20 +649,20 @@ def summarize_within(
 
                                             The default is False.
     -------------------------------------   ---------------------------------------------------------
-    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                            feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                            feature layer will cause the new layer to be appended to the Feature Service.
                                             If overwrite is True in context, new layer will overwrite existing layer.
                                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------   ---------------------------------------------------------
-    context                                 Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
                                             For summarize_within, there are three settings.
 
                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                                
+
                                                 .. code-block:: python
-                                                    
+
                                                     # Example Usage
                                                     context = {"extent": {"xmin": 3164569.408035,
                                                                         "ymin": -9187921.892449,
@@ -821,20 +821,20 @@ def join_features(
                                                                                                     * ``MAX`` - Finds the largest value of all the points in each polygon
                                                                                                     * ``STDDEV`` - Finds the standard deviation of all the points in each polygon
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
-    output_name                                                                                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                                                                                    feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                                                                                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                                                                    feature layer will cause the new layer to be appended to the Feature Service.
                                                                                                     If overwrite is True in context, new layer will overwrite existing layer.
                                                                                                     If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
-    context                                                                                         Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                                                                                         Optional dict. Additional settings such as processing extent and output spatial reference.
                                                                                                     For join_features, there are three settings.
 
                                                                                                     - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                                                     - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                                                                                     - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                                                                                        
+
                                                                                                         .. code-block:: python
-                                                                                                            
+
                                                                                                             # Example Usage
                                                                                                             context = {"extent": {"xmin": 3164569.408035,
                                                                                                                                 "ymin": -9187921.892449,

@@ -135,7 +135,7 @@ class DataStoreManager(BaseServer):
     # ----------------------------------------------------------------------
     @config.setter
     def config(self, config):
-        """ 
+        """
         See main ``config`` property docstring.
         """
         if config is None:

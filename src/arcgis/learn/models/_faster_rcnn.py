@@ -85,8 +85,10 @@ class MyFasterRCNN:
                 **self.fasterrcnn_kwargs,
             )
         else:
-            backbone_fpn = self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(
-                backbone.__name__, pretrained=pretrained_backbone
+            backbone_fpn = (
+                self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(
+                    backbone.__name__, pretrained=pretrained_backbone
+                )
             )
             model = self.torchvision.models.detection.FasterRCNN(
                 backbone_fpn,
@@ -97,8 +99,10 @@ class MyFasterRCNN:
             )
 
         in_features = model.roi_heads.box_predictor.cls_score.in_features
-        model.roi_heads.box_predictor = self.torchvision.models.detection.faster_rcnn.FastRCNNPredictor(
-            in_features, len(data.classes)
+        model.roi_heads.box_predictor = (
+            self.torchvision.models.detection.faster_rcnn.FastRCNNPredictor(
+                in_features, len(data.classes)
+            )
         )
 
         if data._is_multispectral:
@@ -346,7 +350,11 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
         num_images = len(boxes)
         for i in range(num_images):
             result.append(
-                {"boxes": boxes[i], "labels": labels[i], "scores": scores[i],}
+                {
+                    "boxes": boxes[i],
+                    "labels": labels[i],
+                    "scores": scores[i],
+                }
             )
 
     return result, losses

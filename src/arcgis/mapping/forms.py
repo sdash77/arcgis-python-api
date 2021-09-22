@@ -1057,11 +1057,11 @@ class FormFieldElement(FormElement):
     def input_type(self):
         """
         Gets/sets the input type of the form element.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        value               Required string. 
+        value               Required string.
                             Values: "text-area" | "text-box" | "barcode-scanner" | "combo-box" |
                                     "radio-buttons" | "datetime-picker"
         ===============     ====================================================================
@@ -1209,11 +1209,11 @@ class FormGroupElement(FormElement):
     def initial_state(self):
         """
         Gets/sets the initial state of the form element.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        value               Required string. 
+        value               Required string.
                             Values: "collapsed" | "expanded"
         ===============     ====================================================================
         """

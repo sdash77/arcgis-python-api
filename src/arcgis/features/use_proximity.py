@@ -146,38 +146,38 @@ def connect_origins_to_destinations(
 
                                             UTC-refers to Coordinated Universal Time.
     -----------------------------------     ---------------------------------------------------------
-    include_route_layers                    Optional Boolean. When include_route_layers is set to True, 
-                                            each route from the result is also saved as a route layer item. 
-                                            A route layer includes all the information for a particular route 
-                                            such as the stops assigned to the route as well as the travel directions. 
-                                            Creating route layers is useful if you want to share individual 
-                                            routes with other members in your organization. 
+    include_route_layers                    Optional Boolean. When include_route_layers is set to True,
+                                            each route from the result is also saved as a route layer item.
+                                            A route layer includes all the information for a particular route
+                                            such as the stops assigned to the route as well as the travel directions.
+                                            Creating route layers is useful if you want to share individual
+                                            routes with other members in your organization.
                                             The route layers use the output feature service name provided in the ```output_name```
                                             parameter as a prefix and the route name generated as part of the analysis is added to create a unique name for each route layer.
 
-                                            Caution: Route layers cannot be created when the output is a feature collection. 
+                                            Caution: Route layers cannot be created when the output is a feature collection.
                                             The task will raise an error if output_name is not specified
                                             (which indicates feature collection output) and include_route_layers is True.
 
-                                            The maximum number of route layers that can be created is 1,000. 
+                                            The maximum number of route layers that can be created is 1,000.
                                             If the result contains more than 1,000 routes and include_route_layers is True,
                                             the task will only create the output feature service.
     -----------------------------------     ---------------------------------------------------------
-    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                            feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                            feature layer will cause the new layer to be appended to the Feature Service.
                                             If overwrite is True in context, new layer will overwrite existing layer.
                                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------   ---------------------------------------------------------
-    context                                 Optional dict. Additional settings such as processing extent 
-                                            and output spatial reference. 
+    context                                 Optional dict. Additional settings such as processing extent
+                                            and output spatial reference.
                                             For connect_origins_to_destinations, there are three settings.
 
                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                                
+
                                                 .. code-block:: python
-                                                    
+
                                                     # Example Usage
                                                     context = {"extent": {"xmin": 3164569.408035,
                                                                         "ymin": -9187921.892449,
@@ -187,56 +187,56 @@ def connect_origins_to_destinations(
                                                                 "outSR": {"wkid": 3857},
                                                                 "overwrite": True}
     -----------------------------------     ---------------------------------------------------------
-    gis                                     Optional, the GIS on which this tool runs. If not specified, 
+    gis                                     Optional, the GIS on which this tool runs. If not specified,
                                             the active GIS is used.
     -----------------------------------     ---------------------------------------------------------
-    estimate                                Optional Boolean. Is True, the number of credits needed 
+    estimate                                Optional Boolean. Is True, the number of credits needed
                                             to run the operation will be returned as a float.
     -----------------------------------     ---------------------------------------------------------
-    point_barrier_layer                     Optional layer. Specify one or more point features that 
-                                            act as temporary restrictions (in other words, barriers) when 
+    point_barrier_layer                     Optional layer. Specify one or more point features that
+                                            act as temporary restrictions (in other words, barriers) when
                                             traveling on the underlying streets.
 
-                                            A point barrier can model a fallen tree, an accident, a downed 
-                                            electrical line, or anything that completely blocks traffic at 
-                                            a specific position along the street. Travel is permitted on the 
+                                            A point barrier can model a fallen tree, an accident, a downed
+                                            electrical line, or anything that completely blocks traffic at
+                                            a specific position along the street. Travel is permitted on the
                                             street but not through the barrier. See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------     ---------------------------------------------------------
-    line_barrier_layer                      Optional layer. Specify one or more line features that prohibit 
+    line_barrier_layer                      Optional layer. Specify one or more line features that prohibit
                                             travel anywhere the lines intersect the streets.
 
-                                            A line barrier prohibits travel anywhere the barrier intersects the 
-                                            streets. For example, a parade or protest that blocks traffic across 
+                                            A line barrier prohibits travel anywhere the barrier intersects the
+                                            streets. For example, a parade or protest that blocks traffic across
                                             several street
-                                            segments can be modeled with a line barrier. 
+                                            segments can be modeled with a line barrier.
                                             See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------     ---------------------------------------------------------
-    polygon_barrier_layer                   Optional string. Specify one or more polygon features 
-                                            that completely restrict travel on the streets intersected 
+    polygon_barrier_layer                   Optional string. Specify one or more polygon features
+                                            that completely restrict travel on the streets intersected
                                             by the polygons.
 
-                                            One use of this type of barrier is to model floods covering 
-                                            areas of the street network and making road travel there impossible. 
+                                            One use of this type of barrier is to model floods covering
+                                            areas of the street network and making road travel there impossible.
                                             See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------     ---------------------------------------------------------
-    future                                  Optional boolean. If True, the result will be a GPJob object 
+    future                                  Optional boolean. If True, the result will be a GPJob object
                                             and results will be returned asynchronously.
     -----------------------------------     ---------------------------------------------------------
-    route_shape                             Optional String. Specify the shape of the route that connects 
+    route_shape                             Optional String. Specify the shape of the route that connects
                                             each origin to it's destination when using a travel mode.
 
                                             Values: FollowStreets or StraightLine
 
                                             Default: FollowStreets
 
-                                              + FollowStreets - The shape is based on the underlying street network. 
-                                                This option is best when you want to generate the routes between 
-                                                origins and destinations. This is the default value when using a 
+                                              + FollowStreets - The shape is based on the underlying street network.
+                                                This option is best when you want to generate the routes between
+                                                origins and destinations. This is the default value when using a
                                                 travel mode.
-                                              + StraightLine - The shape is a straight line connecting 
+                                              + StraightLine - The shape is a straight line connecting
                                                 the origin-destination pair. This option is best when you want to g
-                                                enerate spider diagrams or desire lines (for example, to show which 
-                                                stores customers are visiting). This is the default value when not using 
+                                                enerate spider diagrams or desire lines (for example, to show which
+                                                stores customers are visiting). This is the default value when not using
                                                 a travel mode.
 
                                             The best route between an origin and it's matched destination is always calculated based on the travel mode, regardless of which route shape is chosen.
@@ -453,21 +453,21 @@ def create_buffers(
                                  +---------+-------------------------------------------------------------------------------+
 
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                 feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
                                  If overwrite is True in context, new layer will overwrite existing layer.
                                  If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Additional settings such as processing extent 
-                                 and output spatial reference. 
+    context                      Optional dict. Additional settings such as processing extent
+                                 and output spatial reference.
                                  For create_buffers, there are three settings.
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                  - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                    
+
                                      .. code-block:: python
-                                        
+
                                          # Example Usage
                                          context = {"extent": {"xmin": 3164569.408035,
                                                              "ymin": -9187921.892449,
@@ -667,21 +667,21 @@ def create_drive_time_areas(
 
                                  The default is 'GeoLocal'.
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                 feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
                                  If overwrite is True in context, new layer will overwrite existing layer.
                                  If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Additional settings such as processing extent 
-                                 and output spatial reference. 
+    context                      Optional dict. Additional settings such as processing extent
+                                 and output spatial reference.
                                  For create_drive_time_areas, there are three settings.
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                  - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                    
+
                                  .. code-block:: python
-                                        
+
                                     # Example Usage
                                          context = {"extent": {"xmin": 3164569.408035,
                                                              "ymin": -9187921.892449,
@@ -936,21 +936,21 @@ def find_nearest(
 
                                  One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible.
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                 feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
                                  If overwrite is True in context, new layer will overwrite existing layer.
                                  If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Additional settings such as processing extent 
-                                 and output spatial reference. 
+    context                      Optional dict. Additional settings such as processing extent
+                                 and output spatial reference.
                                  For find_nearest, there are three settings.
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                  - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                    
+
                                      .. code-block:: python
-                                        
+
                                          # Example Usage
                                          context = {"extent": {"xmin": 3164569.408035,
                                                              "ymin": -9187921.892449,
@@ -1265,20 +1265,20 @@ def plan_routes(
                                     members in your organization. The route layers use the output feature service name provided in the ``output_name`` parameter as a
                                     prefix and the route name generated as part of the analysis is added to create a unique name for each route layer.
     ----------------------------    --------------------------------------------------------------------------------------------------
-    output_name                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                    feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                    feature layer will cause the new layer to be appended to the Feature Service.
                                     If overwrite is True in context, new layer will overwrite existing layer.
                                     If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ----------------------------    --------------------------------------------------------------------------------------------------
-    context                         Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                         Optional dict. Additional settings such as processing extent and output spatial reference.
                                     For plan_routes, there are three settings.
 
                                     - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                     - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                     - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                    
+
                                         .. code-block:: python
-                                        
+
                                             # Example Usage
                                             context = {"extent": {"xmin": 3164569.408035,
                                                                 "ymin": -9187921.892449,

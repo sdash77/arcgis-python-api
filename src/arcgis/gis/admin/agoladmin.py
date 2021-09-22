@@ -77,7 +77,7 @@ class AGOLAdminManager(object):
         completely optional and anonymous; none of the information
         collected is used to identify or contact members of your
         organization.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------

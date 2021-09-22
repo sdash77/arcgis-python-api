@@ -66,7 +66,12 @@ class LinkNet(ArcGISModel):
     """
 
     def __init__(
-        self, data, backbone=None, pretrained_path=None, *args, **kwargs,
+        self,
+        data,
+        backbone=None,
+        pretrained_path=None,
+        *args,
+        **kwargs,
     ):
         # Set default backbone to be 'resnet34'
         if backbone is None:

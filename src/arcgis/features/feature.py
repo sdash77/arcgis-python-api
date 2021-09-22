@@ -142,8 +142,8 @@ class Feature(object):
     def as_dict(self):
         """
         Retrieves the feature layer as a dictionary.
-        
-        :return: 
+
+        :return:
             The feature as a dictionary
         """
         return self._dict
@@ -191,7 +191,7 @@ class Feature(object):
         ==================      ====================================================================
 
         :return: The feature's geometry as a string
-        
+
         """
         if self._geom is None:
             if "geometry" in self._dict.keys():
@@ -220,9 +220,9 @@ class Feature(object):
         value                   Required dict.
         ==================      ====================================================================
 
-        :return: 
+        :return:
             A dictionary of feature attribute values with field names as the key
-        
+
         """
 
         if self._attributes is None and "attributes" in self._dict:
@@ -260,7 +260,7 @@ class Feature(object):
 
         :return:
             The geometry type of the :class:`~arcgis.features.Feature` as a string
-            
+
         """
         if self._geom_type is None:
             if self.geometry is not None:
@@ -280,7 +280,7 @@ class Feature(object):
 
         :return:
             A :class:`~arcgis.features.Feature`
-        
+
         """
         feature = _ujson.loads(json_str)
         geom = feature["geometry"] if "geometry" in feature else None
@@ -1136,11 +1136,11 @@ class FeatureSet(object):
     def from_dict(featureset_dict):
         """
         Creates a Feature Set objects from a dictionary.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        featureset_dict     Required dict. 
+        featureset_dict     Required dict.
                             Keys can include:
                             'fields', 'features', 'hasZ', 'hasM', 'geometryType', 'objectIdFieldName',
                             'globalIdFieldName', 'displayFieldName', 'spatialReference'
@@ -1219,17 +1219,17 @@ class FeatureSet(object):
     @property
     def has_z(self):
         """
-        Get/Set the Z-property of the Feature Set object
+         Get/Set the Z-property of the Feature Set object
 
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        value                   Required bool.
-                                Values: True | False
-        ==================      ====================================================================
+         ==================      ====================================================================
+         **Argument**            **Description**
+         ------------------      --------------------------------------------------------------------
+         value                   Required bool.
+                                 Values: True | False
+         ==================      ====================================================================
 
-       :return:
-            The Z-value of the :class:`~arcgis.features.FeatureSet` object
+        :return:
+             The Z-value of the :class:`~arcgis.features.FeatureSet` object
         """
         return self._has_z
 
@@ -1274,7 +1274,7 @@ class FeatureSet(object):
     def geometry_type(self):
         """
         Get/Set the ``Type`` of the Feature Set object.
- 
+
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
@@ -1301,7 +1301,7 @@ class FeatureSet(object):
     def object_id_field_name(self):
         """
         Get/Set the object id field of the Feature Set object
-        
+
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
@@ -1326,7 +1326,7 @@ class FeatureSet(object):
     def global_id_field_name(self):
         """
         Get/Set the ``global ID`` field  for the Feature Set object.
-        
+
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
@@ -1352,7 +1352,7 @@ class FeatureSet(object):
     def display_field_name(self):
         """
         Get/Set the ``display`` field for the Feature Set object.
-        
+
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
@@ -1392,7 +1392,7 @@ class FeatureSet(object):
 
         :return:
             A string
-            
+
         .. code-block:: python
 
             # Obtain a feature from a feature layer:
@@ -1474,7 +1474,7 @@ class FeatureSet(object):
     def fields(self):
         """
         Get/Set the fields in the FeatureSet
-        
+
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
@@ -1572,7 +1572,9 @@ class FeatureCollection(Layer):
                     "layers"
                 ][0]["layerDefinition"]["fields"]
 
-            return FeatureSet.from_dict(self.properties["layers"][0]["featureSet"],)
+            return FeatureSet.from_dict(
+                self.properties["layers"][0]["featureSet"],
+            )
         else:
             if "fields" in self.properties["layerDefinition"]:
                 self.properties["featureSet"]["fields"] = self.properties[
@@ -1604,7 +1606,7 @@ class FeatureCollection(Layer):
 
         :return:
             A :class:`~arcgis.features.FeatureCollection` object.
-            
+
         .. code-block:: python
 
             # Usage Example

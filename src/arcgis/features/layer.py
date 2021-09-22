@@ -122,7 +122,7 @@ class FeatureLayer(Layer):
     @property
     def renderer(self):
         """
-        Get/Set the Renderer of the Feature Layer.  
+        Get/Set the Renderer of the Feature Layer.
 
         ==================      ====================================================================
         **Argument**            **Description**
@@ -175,7 +175,7 @@ class FeatureLayer(Layer):
         layer_id                            Required Integer. the id of the layer in feature layer collection (feature service).
                                             The default for ``layer_id`` is 0.
         ===============================     ====================================================================
-        
+
         :return:
             A :class:`~arcgis.features.FeatureSet` object
 
@@ -206,12 +206,12 @@ class FeatureLayer(Layer):
 
         :return:
             A :class:`~arcgis.feature.FeatureLayerManager`
-            
+
         .. code-block:: python
 
             # Usage Example
 
-            >>> manager = FeatureLayer.manager        
+            >>> manager = FeatureLayer.manager
         """
         url = self._url
         res = search("/rest/", url).span()
@@ -458,7 +458,7 @@ class FeatureLayer(Layer):
 
         :return:
             A JSON Dictionary
-        
+
         ..code-block:: python
             # Example Usage
             FeatureLayer.generate_renderer(
@@ -476,10 +476,10 @@ class FeatureLayer(Layer):
                                     "toColor":[255,25,86,255],
                                     "algorithm": "esriHSVAlgorithm"
                                     }
-                            }, 
+                            },
                 where = "POP2000 > 350000"
                 )
-            
+
         """
         if self._dynamic_layer:
             url = "%s/generateRenderer" % self._url.split("?")[0]
@@ -503,9 +503,9 @@ class FeatureLayer(Layer):
         -----------------     --------------------------------------------------------------------
         file_path             Required string. Location of the file to attach.
         -----------------     --------------------------------------------------------------------
-        keywords              Optional string. Sets a text value that is stored as the keywords 
-                              value for the attachment. If the attachments have keywords enabled and 
-                              the layer also includes the attachmentFields property, you can use 
+        keywords              Optional string. Sets a text value that is stored as the keywords
+                              value for the attachment. If the attachments have keywords enabled and
+                              the layer also includes the attachmentFields property, you can use
                               it to understand properties like keywords field length.
         =================     ====================================================================
 
@@ -776,8 +776,8 @@ class FeatureLayer(Layer):
         ================================     ====================================================================
 
 
-        :return: Default is a pd.DataFrame, but when ```as_df=False``` returns a :class:`~arcgis.feature.FeatureSet`. 
-                  If ```return_count_only=True```, the return type is Integer. 
+        :return: Default is a pd.DataFrame, but when ```as_df=False``` returns a :class:`~arcgis.feature.FeatureSet`.
+                  If ```return_count_only=True```, the return type is Integer.
                   If ```return_ids_only=True```, a list of value is returned.
 
 
@@ -1557,7 +1557,7 @@ class FeatureLayer(Layer):
                                             explicitly implemented on the function. A complete list of functions
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
-        
+
         :return:
             A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another return type
             is specified, such as ``return_count_only``, ``return_extent_only``, or ``return_ids_only``.
@@ -1953,7 +1953,10 @@ class FeatureLayer(Layer):
             params["sqlType"] = sql_type
         sql_type = sql_type.lower()
         url = self._url + "/validateSQL"
-        return self._con.post(path=url, postdata=params,)
+        return self._con.post(
+            path=url,
+            postdata=params,
+        )
 
     # ----------------------------------------------------------------------
     def query_related_records(
@@ -2050,9 +2053,9 @@ class FeatureLayer(Layer):
         :return: Dictionary of the query results
 
         ..code-block:: python
-            # The query results will return the related records for each objectIds 
+            # The query results will return the related records for each objectIds
             # where TOWNSHIP is the outField and orderByField:
-            
+
             FeatureLayer.query_related_records(object_ids="7028,7029",
                                                relationship_id="1",
                                                out_fields="TOWNSHIP",
@@ -2237,7 +2240,7 @@ class FeatureLayer(Layer):
         future                     Optional Boolean.  When true, the response is returned as a
                                    :class:`~concurrent.futures.Future` object.
         ========================   ====================================================================
-        
+
         :return:
             A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
             response messages will be return in addition to the boolean as a `tuple`.
@@ -2292,8 +2295,10 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-        upload_formats = """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
-            ","
+        upload_formats = (
+            """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
+                ","
+            )
         )
         if upload_format not in upload_formats:
             raise ValueError("Invalid upload format: %s." % upload_format)
@@ -2900,7 +2905,7 @@ class FeatureLayer(Layer):
                                 **This applies to 10.8+ only**
 
         =====================   ====================================================
-        
+
         :return:
             A dictionary with the following format:
              {
@@ -2954,13 +2959,19 @@ class FeatureLayer(Layer):
         ):
             params["async"] = True
             executor = concurrent.futures.ThreadPoolExecutor(1)
-            res = self._con.post(path=url, postdata=params,)
+            res = self._con.post(
+                path=url,
+                postdata=params,
+            )
             future = executor.submit(
                 self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
             )
             executor.shutdown(False)
             return future
-        return self._con.post(path=url, postdata=params,)
+        return self._con.post(
+            path=url,
+            postdata=params,
+        )
 
     # ----------------------------------------------------------------------
     def _query(self, url, params, raw=False, **kwargs):
@@ -2971,7 +2982,10 @@ class FeatureLayer(Layer):
                     path=url, postdata=params, add_token=kwargs.get("add_token", True)
                 )
             else:
-                result = self._con.post(path=url, postdata=params,)
+                result = self._con.post(
+                    path=url,
+                    postdata=params,
+                )
         except Exception as queryException:
             error_list = [
                 "Error performing query operation",
@@ -3226,10 +3240,10 @@ class Table(FeatureLayer):
         **Argument**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         item                                Required :class:`~arcgis.gis.Item` object. The type of item should be a
-                                            ``Feature Service`` that represents a 
+                                            ``Feature Service`` that represents a
                                             :class:`~arcgis.features.FeatureLayerCollection`
         -------------------------------     --------------------------------------------------------------------
-        table_id                            Required Integer. The id of the layer in feature layer collection 
+        table_id                            Required Integer. The id of the layer in feature layer collection
                                             (feature service).
                                             The default for ``table`` is 0.
         ===============================     ====================================================================
@@ -3387,8 +3401,8 @@ class Table(FeatureLayer):
         ===============================     ====================================================================
 
         :return:
-            A :class:`~arcgis.features.FeatureSet` object or, if ```as_df=True```, a Panda's DataFrame 
-            containing the features matching the query unless another return type 
+            A :class:`~arcgis.features.FeatureSet` object or, if ```as_df=True```, a Panda's DataFrame
+            containing the features matching the query unless another return type
             is specified, such as ``return_count_only``
 
         .. code-block:: python
@@ -4155,7 +4169,7 @@ class FeatureLayerCollection(_GISResource):
         ===============================     ====================================================================
 
         :return:
-            A :class:`~arcgis.features.FeatureSet` of the queried Feature Layer Collection unless 
+            A :class:`~arcgis.features.FeatureSet` of the queried Feature Layer Collection unless
             ``return_count_only`` or ``return_ids_only`` is True.
 
         """
@@ -4269,7 +4283,7 @@ class FeatureLayerCollection(_GISResource):
 
 
         :return: Dictionary of query results
-        
+
         """
         params = {
             "f": "json",

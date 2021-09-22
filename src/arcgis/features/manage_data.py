@@ -46,20 +46,20 @@ def generate_tessellation(
     intersect_study_area                     Optional Boolean. A boolean defines whether to keep only tessellations intersect with the study area.
 
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                             feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                             feature layer will cause the new layer to be appended to the Feature Service.
                                              If overwrite is True in context, new layer will overwrite existing layer.
                                              If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
                                              For calculate_density, there are three settings.
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                
+
                                                 .. code-block:: python
-                                    
+
                                                     # Example Usage
                                                     context = {"extent": {"xmin": 3164569.408035,
                                                                         "ymin": -9187921.892449,
@@ -79,8 +79,8 @@ def generate_tessellation(
     .. note::
             The tool requires either an 'extent' given in the `context` or an `extent_layer`.
 
-    :return: 
-        :class:`~arcgis.features.FeatureLayer` if out_put name specified or 
+    :return:
+        :class:`~arcgis.features.FeatureLayer` if out_put name specified or
         a :class:`~arcgis.features.FeatureLayerCollection`
 
     """
@@ -175,20 +175,20 @@ def dissolve_boundaries(
                                                                         summary_fields=["Population Sum"],
                                                                         output_name="US_States")
     ------------------------------------     -------------------------------------------------------------------------------------
-    output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                             feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                             feature layer will cause the new layer to be appended to the Feature Service.
                                              If overwrite is True in context, new layer will overwrite existing layer.
                                              If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ------------------------------------     -------------------------------------------------------------------------------------
-    context                                  Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
                                              For calculate_density, there are three settings.
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                
+
                                                 .. code-block:: python
-                                    
+
                                                     # Example Usage
                                                     context = {"extent": {"xmin": 3164569.408035,
                                                                         "ymin": -9187921.892449,
@@ -397,20 +397,20 @@ def merge_layers(
                             You can match STATUS to CODE, and the output will contain the CODE field with values of the STATUS field used for features copied from the ``merge_layer``.
                             Type casting is supported (for example, float to integer, integer to string) except for string to numeric.
     ----------------    ---------------------------------------------------------------
-    output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                        feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                        feature layer will cause the new layer to be appended to the Feature Service.
                         If overwrite is True in context, new layer will overwrite existing layer.
                         If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ----------------    ---------------------------------------------------------------
-    context             Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context             Optional dict. Additional settings such as processing extent and output spatial reference.
                         For calculate_density, there are three settings.
 
                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                         - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                    
+
                             .. code-block:: python
-                        
+
                                 # Example Usage
                                 context = {"extent": {"xmin": 3164569.408035,
                                                     "ymin": -9187921.892449,
@@ -538,20 +538,20 @@ def overlay_layers(
     tolerance           Optional float. A float value of the minimum distance separating all feature coordinates
                         as well as the distance a coordinate can move in X or Y (or both). The units of tolerance are the same as the units of the ``input_layer``.
     ----------------    ---------------------------------------------------------------
-    output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                        feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                        feature layer will cause the new layer to be appended to the Feature Service.
                         If overwrite is True in context, new layer will overwrite existing layer.
                         If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ----------------    ---------------------------------------------------------------
-    context             Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context             Optional dict. Additional settings such as processing extent and output spatial reference.
                         For calculate_density, there are three settings.
 
                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                         - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                    
+
                             .. code-block:: python
-                        
+
                                 # Example Usage
                                 context = {"extent": {"xmin": 3164569.408035,
                                                     "ymin": -9187921.892449,

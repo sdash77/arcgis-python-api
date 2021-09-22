@@ -316,7 +316,7 @@ class UX(object):
         description       Required string. Descriptive text of the site. If None, the
                           value is reset to default.
         ================  ===============================================================
-        
+
         :return: dictionary
         """
         return self._gis.properties["description"]

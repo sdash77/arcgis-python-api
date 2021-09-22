@@ -71,20 +71,20 @@ def enrich_layer(
 
                                                                               Choice list: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'Seconds', 'Minutes'. 'Hours']
     ---------------------------------------------------------------------     --------------------------------------------------------------------
-    output_name                                                               Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                                                              feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                                                               Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                                              feature layer will cause the new layer to be appended to the Feature Service.
                                                                               If overwrite is True in context, new layer will overwrite existing layer.
                                                                               If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
-    context                                                                   Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                                                                   Optional dict. Additional settings such as processing extent and output spatial reference.
                                                                               For enrich_layer, there are three settings.
 
                                                                               - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                               - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                                                               - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                                                            
+
                                                                                   .. code-block:: python
-                                                                                
+
                                                                                       # Example Usage
                                                                                       context = {"extent": {"xmin": 3164569.408035,
                                                                                                           "ymin": -9187921.892449,

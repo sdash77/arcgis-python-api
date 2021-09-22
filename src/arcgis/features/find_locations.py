@@ -245,20 +245,20 @@ def find_existing_locations(
                                              sets of features from the same layer. One way to think of grouping is that without grouping, you would have to execute
                                              ``find_existing_locations`` multiple times and merge the results.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                             feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                             feature layer will cause the new layer to be appended to the Feature Service.
                                              If overwrite is True in context, new layer will overwrite existing layer.
                                              If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    context                                  Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
                                              For find_existing_locations, there are three settings.
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                
+
                                                  .. code-block:: python
-                                    
+
                                                     # Example Usage
                                                     context = {"extent": {"xmin": 3164569.408035,
                                                                         "ymin": -9187921.892449,
@@ -531,20 +531,20 @@ def derive_new_locations(
                                              +-------------------+----------------------------------------------------------------------------------------+
 
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                             feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                             feature layer will cause the new layer to be appended to the Feature Service.
                                              If overwrite is True in context, new layer will overwrite existing layer.
                                              If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    context                                  Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
                                              For derive_new_locations, there are three settings.
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                
+
                                                 .. code-block:: python
-                                    
+
                                                     # Example Usage
                                                     context = {"extent": {"xmin": 3164569.408035,
                                                                         "ymin": -9187921.892449,
@@ -673,20 +673,20 @@ def find_similar_locations(
     number_of_results           Optional int. The number of ranked candidate locations output to the ``similar_result_layer``.
                                 If ``number_of_results`` is not specified, or set to zero, all candidate locations will be ranked and output.
     -----------------------     -------------------------------------------------------------------------------------------
-    output_name                 Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                 Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                feature layer will cause the new layer to be appended to the Feature Service.
                                 If overwrite is True in context, new layer will overwrite existing layer.
                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -----------------------     -------------------------------------------------------------------------------------------
-    context                     Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                     Optional dict. Additional settings such as processing extent and output spatial reference.
                                 For find_similar_locations, there are three settings.
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                            
+
                                     .. code-block:: python
-                                
+
                                         # Example Usage
                                         context = {"extent": {"xmin": 3164569.408035,
                                                             "ymin": -9187921.892449,
@@ -765,20 +765,20 @@ def find_centroids(
                         + True - Output points will be the nearest point to the actual centroid, but located inside or contained by the bounds of the input feature.
                         + False - Output point locations will be determined by the calculated geometric center of each input feature. This is the default.
     ----------------    ---------------------------------------------------------------
-    output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                        feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                        feature layer will cause the new layer to be appended to the Feature Service.
                         If overwrite is True in context, new layer will overwrite existing layer.
                         If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ----------------    ---------------------------------------------------------------
-    context             Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context             Optional dict. Additional settings such as processing extent and output spatial reference.
                         For find_centroids, there are three settings.
 
                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                         - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                    
+
                             .. code-block:: python
-                        
+
                                 # Example Usage
                                 context = {"extent": {"xmin": 3164569.408035,
                                                     "ymin": -9187921.892449,
@@ -1039,20 +1039,20 @@ def choose_best_facilities(
 
                                              The default value is 100.
     -------------------------------------    ---------------------------------------------------------
-    output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                             feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                             feature layer will cause the new layer to be appended to the Feature Service.
                                              If overwrite is True in context, new layer will overwrite existing layer.
                                              If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------    ---------------------------------------------------------
-    context                                  Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
                                              For choose_best_facilities, there are three settings.
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                
+
                                                  .. code-block:: python
-                                    
+
                                                      # Example Usage
                                                         context = {"extent": {"xmin": 3164569.408035,
                                                                             "ymin": -9187921.892449,
@@ -1259,20 +1259,20 @@ def create_viewshed(
 
                                  The default value is True.
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                 feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
                                  If overwrite is True in context, new layer will overwrite existing layer.
                                  If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                      Optional dict. Additional settings such as processing extent and output spatial reference.
                                  For create_viewshed, there are three settings.
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                  - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                
+
                                      .. code-block:: python
-                                    
+
                                          # Example Usage
                                          context = {"extent": {"xmin": 3164569.408035,
                                                              "ymin": -9187921.892449,
@@ -1393,20 +1393,20 @@ def create_watersheds(
 
                                  The default value is True.
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                 feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
                                  If overwrite is True in context, new layer will overwrite existing layer.
                                  If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                      Optional dict. Additional settings such as processing extent and output spatial reference.
                                  For create_watersheds, there are three settings.
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                  - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                
+
                                      .. code-block:: python
-                                    
+
                                          # Example Usage
                                          context = {"extent": {"xmin": 3164569.408035,
                                                              "ymin": -9187921.892449,
@@ -1529,20 +1529,20 @@ def trace_downstream(
     generalize                              Optional boolean. Determines if the output trace downstream lines will be smoothed
                                             into simpler lines or conform to the cell edges of the original DEM.
     -------------------------------------   ---------------------------------------------------------
-    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                            feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                            feature layer will cause the new layer to be appended to the Feature Service.
                                             If overwrite is True in context, new layer will overwrite existing layer.
                                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------   ---------------------------------------------------------
-    context                                 Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
                                             For trace_downstream, there are three settings.
 
                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                            
+
                                                 .. code-block:: python
-                                                
+
                                                     # Example Usage
                                                     context = {"extent": {"xmin": 3164569.408035,
                                                                         "ymin": -9187921.892449,

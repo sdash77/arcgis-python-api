@@ -77,20 +77,20 @@ def calculate_density(
     -------------------------    ---------------------------------------------------------
     num_classes                  Optional int. This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classification_type parameter.
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                 feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
                                  If overwrite is True in context, new layer will overwrite existing layer.
                                  If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                      Optional dict. Additional settings such as processing extent and output spatial reference.
                                  For calculate_density, there are three settings.
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                  - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                
+
                                      .. code-block:: python
-                                    
+
                                          # Example Usage
                                          context = {"extent": {"xmin": 3164569.408035,
                                                              "ymin": -9187921.892449,
@@ -198,20 +198,20 @@ def summarize_center_and_dispersion(
                             distribution calculations. The group_field can be of
                             integer, date, or string type.
     --------------------    ---------------------------------------------------------
-    output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                            feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                            feature layer will cause the new layer to be appended to the Feature Service.
                             If overwrite is True in context, new layer will overwrite existing layer.
                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     --------------------    ---------------------------------------------------------
-    context                 Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                 Optional dict. Additional settings such as processing extent and output spatial reference.
                             For summarize_center_and_dispersion, there are three settings.
 
                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                        
+
                                 .. code-block:: python
-                            
+
                                     # Example Usage
                                     context = {"extent": {"xmin": 3164569.408035,
                                                         "ymin": -9187921.892449,
@@ -317,20 +317,20 @@ def find_point_clusters(
 
                             The default is 'Miles'.
     --------------------    ---------------------------------------------------------
-    output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                            feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                            feature layer will cause the new layer to be appended to the Feature Service.
                             If overwrite is True in context, new layer will overwrite existing layer.
                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     --------------------    ---------------------------------------------------------
-    context                 Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                 Optional dict. Additional settings such as processing extent and output spatial reference.
                             For find_point_clusters, there are three settings.
 
                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                        
+
                                 .. code-block:: python
-                            
+
                                     # Example Usage
                                     context = {"extent": {"xmin": 3164569.408035,
                                                         "ymin": -9187921.892449,
@@ -440,20 +440,20 @@ def find_hot_spots(
                                                                             you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
                                                                             The number of points that fall within each polygon are counted, and the point count in each polygon is analyzed. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------------------------------------     ---------------------------------------------------------
-    output_name                                                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                                                            feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                                                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                                            feature layer will cause the new layer to be appended to the Feature Service.
                                                                             If overwrite is True in context, new layer will overwrite existing layer.
                                                                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------------------------------------     ---------------------------------------------------------
-    context                                                                 Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                                                                 Optional dict. Additional settings such as processing extent and output spatial reference.
                                                                             For find_hot_spots, there are three settings.
 
                                                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                                                            
+
                                                                                 .. code-block:: python
-                                                                                
+
                                                                                     # Example Usage
                                                                                     context = {"extent": {"xmin": 3164569.408035,
                                                                                                         "ymin": -9187921.892449,
@@ -611,20 +611,20 @@ def find_outliers(
 
                                                                         Choice list: ['Meters', 'Miles', 'Feet', 'Kilometers']
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    output_name                                                         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                                                        feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                                                         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                                        feature layer will cause the new layer to be appended to the Feature Service.
                                                                         If overwrite is True in context, new layer will overwrite existing layer.
                                                                         If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    context                                                             Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                                                             Optional dict. Additional settings such as processing extent and output spatial reference.
                                                                         For find_outliers, there are three settings.
 
                                                                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                                                         - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                                                        
+
                                                                             .. code-block:: python
-                                                                            
+
                                                                                 # Example Usage
                                                                                 context = {"extent": {"xmin": 3164569.408035,
                                                                                                     "ymin": -9187921.892449,
@@ -814,20 +814,20 @@ def interpolate_points(
 
                                  If supplied, the output ``predicted_point_layer`` will contain predictions at the specified locations. See :ref:`Feature Input<FeatureInput>`.
     ---------------------------  -------------------------------------------------------------------------------------------
-    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing 
-                                 feature layer will cause the new layer to be appended to the Feature Service. 
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
                                  If overwrite is True in context, new layer will overwrite existing layer.
                                  If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Additional settings such as processing extent and output spatial reference. 
+    context                      Optional dict. Additional settings such as processing extent and output spatial reference.
                                  For interpolate_points, there are three settings.
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                  - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
-                                
+
                                      .. code-block:: python
-                                    
+
                                          # Example Usage
                                          context = {"extent": {"xmin": 3164569.408035,
                                                              "ymin": -9187921.892449,

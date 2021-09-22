@@ -380,7 +380,7 @@ class Version(object):
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required string.
-                                Values: 
+                                Values:
                                 + edit - calls the `start_editing` method and creates a lock
                                 + read - calls the `start_reading` method and creates a lock
                                 + None - terminates all sessions and lets a user view the version information (default)

@@ -376,10 +376,10 @@ class AttachmentManager(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         oid                 Required string of the object id
-        ===============     ====================================================================     
+        ===============     ====================================================================
 
         :result:
-            A list of attachements   
+            A list of attachements
 
         """
         return self._layer._list_attachments(oid)["attachmentInfos"]
@@ -480,7 +480,7 @@ class AttachmentManager(object):
     def add(self, oid, file_path, keywords=None):
         """
         Adds an attachment to a :class:`~arcgis.features.FeatureLayer`
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -488,11 +488,11 @@ class AttachmentManager(object):
         ---------------     --------------------------------------------------------------------
         file_path           Required string. Path to attachement file
         ---------------     --------------------------------------------------------------------
-        keywords            Optional string. Sets a text value that is stored as the keywords 
+        keywords            Optional string. Sets a text value that is stored as the keywords
                             value for the attachment.
         ===============     ====================================================================
-        
-        :return: 
+
+        :return:
             A JSON Repsonse stating 'success' or 'error'
 
         """
@@ -518,7 +518,7 @@ class AttachmentManager(object):
     def update(self, oid, attachment_id, file_path):
         """
         Updates an existing attachment with a new file
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -528,7 +528,7 @@ class AttachmentManager(object):
         ---------------     --------------------------------------------------------------------
         file_path           Required string. Path to attachement file
         ===============     ====================================================================
-  
+
         :result:
            JSON response stating 'success' or 'error'
         """
@@ -568,10 +568,10 @@ class SyncManager(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        replica_id          Required string. replicaId returned by the feature service when 
+        replica_id          Required string. replicaId returned by the feature service when
                             the replica was created.
         ===============     ====================================================================
-        
+
         :return:
             The replica information
         """
@@ -600,11 +600,11 @@ class SyncManager(object):
         transformations=None,
     ):
         """
-        The create operation is performed on a :class:`~arcgis.features.FeatureLayerCollection` resource. 
+        The create operation is performed on a :class:`~arcgis.features.FeatureLayerCollection` resource.
         This operationcreates the replica between the feature dataset and a client based on a client-supplied
         replica definition. It requires the Sync capability. See Sync overview for more
         information on sync. The response for create includes replicaID, replica generation
-        number, and data similar to the response from the :meth:`arcgis.features.FeatureLayerCollection.query` 
+        number, and data similar to the response from the :meth:`arcgis.features.FeatureLayerCollection.query`
         operation. The create operation returns a response of type esriReplicaResponseTypeData,
         as the response has data for the layers in the replica. If the operation is called to
         register existing data by using replicaOptions, the response type will be
@@ -832,7 +832,7 @@ class SyncManager(object):
         ==================     ====================================================================
 
 
-        :return: 
+        :return:
             Boolean when future is False and Future object when future is True
 
         """
@@ -1926,11 +1926,11 @@ class FeatureLayerCollectionManager(_GISResource):
                             For layer level modifications, run updates on each individual feature
                             service layer object.
         ---------------     --------------------------------------------------------------------
-        future              Optional, If True, a future object will be returns and the process 
-                            will not wait for the task to complete. 
+        future              Optional, If True, a future object will be returns and the process
+                            will not wait for the task to complete.
                             The default is False, which means wait for results.
         ===============     ====================================================================
-        
+
         :return:
            JSON message as dictionary when `future=False`
            when `future=True`, ```concurrent.futures.Future``` is returned.
@@ -1974,8 +1974,8 @@ class FeatureLayerCollectionManager(_GISResource):
                             For layer level modifications, run updates on each individual feature
                             service layer object.
         ---------------     --------------------------------------------------------------------
-        future              Optional, If True, a future object will be returns and the process 
-                            will not wait for the task to complete. 
+        future              Optional, If True, a future object will be returns and the process
+                            will not wait for the task to complete.
                             The default is False, which means wait for results.
         ===============     ====================================================================
 
@@ -2078,8 +2078,8 @@ class FeatureLayerCollectionManager(_GISResource):
                             For layer level modifications, run updates on each individual feature
                             service layer object.
         ---------------     --------------------------------------------------------------------
-        future              Optional, If True, a future object will be returns and the process 
-                            will not wait for the task to complete. 
+        future              Optional, If True, a future object will be returns and the process
+                            will not wait for the task to complete.
                             The default is False, which means wait for results.
         ===============     ====================================================================
 
@@ -2417,7 +2417,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
 class FeatureLayerManager(_GISResource):
     """
-    Allows updating the definition (if access permits) of a :class:`~arcgis.features.FeatureLayer`. 
+    Allows updating the definition (if access permits) of a :class:`~arcgis.features.FeatureLayer`.
     This class is not created by users
     directly.
     An instance of this class, called 'manager', is available as a property of the :class:`~arcgis.features.FeatureLayer`
@@ -2439,10 +2439,10 @@ class FeatureLayerManager(_GISResource):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         item                Required of type :class:`~arcgis.features.FeatureService` that represents
-                            a :class:`~arcgis.features.FeatureLayerCollection`.       
+                            a :class:`~arcgis.features.FeatureLayerCollection`.
         ---------------     --------------------------------------------------------------------
-        layer_id            Required string. Id of the layer in the 
-                            :class:`~arcgis.features.FeatureLayerCollection` 
+        layer_id            Required string. Id of the layer in the
+                            :class:`~arcgis.features.FeatureLayerCollection`
         ===============     ====================================================================
 
         :return:
@@ -2474,7 +2474,7 @@ class FeatureLayerManager(_GISResource):
 
         This function will allow users to change add additional values
         to an already published service.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -2526,8 +2526,8 @@ class FeatureLayerManager(_GISResource):
                             For layer level modifications, run updates on each individual feature
                             service layer object.
         ---------------     --------------------------------------------------------------------
-        future              Optional, If True, a future object will be returns and the process 
-                            will not wait for the task to complete. 
+        future              Optional, If True, a future object will be returns and the process
+                            will not wait for the task to complete.
                             The default is False, which means wait for results.
         ===============     ====================================================================
 
@@ -2567,7 +2567,7 @@ class FeatureLayerManager(_GISResource):
         error code and description.
         See: https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
         for additional information on this function.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -2577,8 +2577,8 @@ class FeatureLayerManager(_GISResource):
                             service layer object.
                             Only include the items you want to remove from the FeatureService or layer.
         ---------------     --------------------------------------------------------------------
-        future              Optional, If True, a future object will be returns and the process 
-                            will not wait for the task to complete. 
+        future              Optional, If True, a future object will be returns and the process
+                            will not wait for the task to complete.
                             The default is False, which means wait for results.
         ===============     ====================================================================
 
@@ -2617,7 +2617,7 @@ class FeatureLayerManager(_GISResource):
         response indicating success or failure with error code and description.
         See: https://developers.arcgis.com/rest/services-reference/truncate-feature-layer-.htm # noqa
         for additional information on this function.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -2628,7 +2628,7 @@ class FeatureLayerManager(_GISResource):
                             default is False. It is recommended to set asynchronous=True for
                             large datasets.
         ---------------     --------------------------------------------------------------------
-        wait                Optional boolean. If True, then wait to pause the process until 
+        wait                Optional boolean. If True, then wait to pause the process until
                             asynchronous operation is completed. Default is True.
         ===============     ====================================================================
 

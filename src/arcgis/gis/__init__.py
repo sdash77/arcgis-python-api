@@ -1825,19 +1825,19 @@ class DatastoreManager(object):
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
-        value                   Required bool. 
+        value                   Required bool.
                                 Values: True | False
                                 .. note::
-                                    If you specify the property as ``True``, users will not be able 
-                                    to publish ``geoprocessing services`` and ``geocode services`` 
-                                    from composite locators. These service types require data to be 
+                                    If you specify the property as ``True``, users will not be able
+                                    to publish ``geoprocessing services`` and ``geocode services``
+                                    from composite locators. These service types require data to be
                                     copied to the server.
-                                    As a workaround, you can temporarily set the property to ``False``, 
+                                    As a workaround, you can temporarily set the property to ``False``,
                                     publish the service, and then set the property back to ``True``.
         ==================      ====================================================================
 
         :return: A bool
-         
+
         """
         params = {"f": "json"}
         path = self._admin_url + "/data/config"
@@ -8601,7 +8601,7 @@ class Group(dict):
         value                   Required bool.
                                 Values: True (protect group) | False (unprotect)
         ==================      ====================================================================
-        
+
         :return: True if group currently protected, False if unprotected
         """
         return self["protected"]
@@ -9552,7 +9552,8 @@ class User(dict):
     def esri_access(self, value):
         """
         See main ``esri_access`` property docstring
-        """        if self._portal.is_arcgisonline:
+        """
+        if self._portal.is_arcgisonline:
             if value == True:
                 ret = self._portal.update_user(self._user_id, user_type="both")
             else:

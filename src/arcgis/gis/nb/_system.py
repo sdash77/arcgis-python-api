@@ -577,7 +577,7 @@ class SystemManager(object):
         some of its intricate behavior. This resource is a container for
         these properties. The properties are available to all server
         objects and extensions through the server environment interface.
-        
+
         Sets the ArcGIS Notebook Server has configuration properties that govern
         some of its intricate behavior. This resource is a container for
         these properties. The properties are available to all server

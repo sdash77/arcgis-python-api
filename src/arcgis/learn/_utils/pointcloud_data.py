@@ -2895,7 +2895,12 @@ def predict_h5(self, path, output_path, **kwargs):
     if "xyz" in features_to_keep:
         features_to_keep.remove("xyz")
     point_cloud_dataset = PointCloudDataset(
-        path, None, None, "", extra_features=features_to_keep, attributes=attributes,
+        path,
+        None,
+        None,
+        "",
+        extra_features=features_to_keep,
+        attributes=attributes,
     )
     if progressor is not None:
         progressor.set_total_blocks(len(point_cloud_dataset))

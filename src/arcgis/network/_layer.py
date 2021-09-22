@@ -234,7 +234,10 @@ class NetworkLayer(Layer):
         network dataset or in the portal if the GIS server is federated"""
         url = self._url + "/retrieveTravelModes"
         params = {"f": "json"}
-        return self._con.get(path=url, params=params,)
+        return self._con.get(
+            path=url,
+            params=params,
+        )
 
 
 ###########################################################################

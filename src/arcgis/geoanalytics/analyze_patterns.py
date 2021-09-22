@@ -1487,8 +1487,8 @@ def create_space_time_cube(
     future                                                                           Optional boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ============================================================================     ===================================================================================================
 
-    :return: 
-        Dict with url containing the path to Output Space Time Cube (netCDF) dataFile. 
+    :return:
+        Dict with url containing the path to Output Space Time Cube (netCDF) dataFile.
         When you browse to the output url, your netCDF will automatically download to your local machine.
 
     .. code-block:: python

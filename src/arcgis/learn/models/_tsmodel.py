@@ -808,12 +808,16 @@ class TimeSeriesModel(ArcGISModel):
             raise Exception("Basic Sequence not found!")
 
         while index < len(prediction_sequence_list):
-            if prediction_sequence_list[index] in [
-                "",
-                None,
-                "null",
-                "None",
-            ] or np.isnan(prediction_sequence_list[index]):
+            if (
+                prediction_sequence_list[index]
+                in [
+                    "",
+                    None,
+                    "null",
+                    "None",
+                ]
+                or np.isnan(prediction_sequence_list[index])
+            ):
                 value = self._predict(np.array(big_bunch))
                 prediction_sequence_list[index] = value
 

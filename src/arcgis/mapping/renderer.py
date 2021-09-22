@@ -114,11 +114,11 @@ class _DotDensity(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        value               Required string. 
+        value               Required string.
                             Values: "o" | "+" | "d" | "s" | "x"
         ===============     ====================================================================
 
-        :return: 
+        :return:
             The string representing the dot shape
             {
             "o": "Circle",  # default
@@ -169,13 +169,13 @@ class _DotDensity(object):
     def ref_scale(self):
         """
         Get/Set the reference scale
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required int or float.
         ===============     ====================================================================
-        
+
         :return: Int or float value depicting the current reference scale
         """
         return self._ref_scale
