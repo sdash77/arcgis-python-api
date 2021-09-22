@@ -434,25 +434,16 @@ class Connection(object):
                     legacy=False,
                 )
             else:
-                self._session.auth = EsriGenTokenAuth(
-                    token_url=self._token_url,
-                    referer=self._referer,
+
+                self._session.auth = EsriBuiltInAuth(
+                    url=self._baseurl,
                     username=self._username,
                     password=self._password,
-                    portal_auth=pauth,
-                    time_out=self._timeout,
-                    verify_cert=self._verify_cert,
+                    expiration=self._timeout,
                     legacy=True,
+                    verify_cert=self._verify_cert,
+                    referer=self._referer,
                 )
-                # self._session.auth = EsriBuiltInAuth(
-                # url=self._baseurl,
-                # username=self._username,
-                # password=self._password,
-                # expiration=self._timeout,
-                # legacy=False,
-                # verify_cert=self._verify_cert,
-                # referer=self._referer,
-                # )
         elif self._auth.lower() == "basic_realm":
             self._session.auth = EsriBasicAuth(
                 username=self._username,
