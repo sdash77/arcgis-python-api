@@ -2004,6 +2004,16 @@ def prepare_data(
                 \na folder "images" should be present in the supplied path to work with "Imagenet" data_type. """
                 )
 
+        if (
+            dataset_type in ["Labeled_Tiles", "MultiLabeled_Tiles"]
+            and resize_to is None
+            and emd.get("CropTileMode", "Fixed_Size") == "Variable_Size"
+        ):
+            resize_to = chip_size
+            kwargs_transforms["size"] = resize_to
+            # Applying SQUISH ResizeMethod to avoid reflection padding
+            kwargs_transforms["resize_method"] = ResizeMethod.SQUISH
+
         if data_folders is None and images_df is None:
             data = (
                 ArcGISImageList.from_folder(path / "images")

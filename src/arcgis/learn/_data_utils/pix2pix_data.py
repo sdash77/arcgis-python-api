@@ -707,7 +707,7 @@ def rgb_or_ms(im_path):
     Function that returns the imagery type (RGB or ms) of an image.
     """
     try:
-        import gdal
+        from osgeo import gdal
 
         ds = gdal.Open(im_path)
         if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:

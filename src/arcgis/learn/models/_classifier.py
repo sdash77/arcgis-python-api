@@ -369,8 +369,12 @@ class FeatureClassifier(ArcGISModel):
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
         _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
-        _emd_template["CropSizeFixed"] = 1  # hardcoded
-        _emd_template["BlackenAroundFeature"] = 0  # hardcoded
+        _emd_template["CropSizeFixed"] = int(
+            self._data._emd.get("CropTileMode", "Fixed_Size") == "Fixed_Size"
+        )
+        _emd_template["BlackenAroundFeature"] = int(
+            self._data._emd.get("BlackenAroundFeature", False)
+        )
         _emd_template["ImageSpaceUsed"] = "MAP_SPACE"
         _emd_template["Classes"] = []
         class_data = {}
@@ -961,6 +965,7 @@ class FeatureClassifier(ArcGISModel):
         """
         Classifies the exported images and updates the feature layer with the prediction results in the ``output_label_field``.
         Works with RGB images only.
+        Deprecated since version 1.9.1: Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -1599,7 +1604,7 @@ class FeatureClassifier(ArcGISModel):
         """
         Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
         and updates the feature layer with the prediction results in the ``output_label_field``.
-        Deprecated, please use arcgis.learn.classify_objects() instead.
+        Deprecated, Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
 
         ====================================     ====================================================================
         **Argument**                             **Description**

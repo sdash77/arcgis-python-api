@@ -245,6 +245,10 @@ class ImageCaptioner(ArcGISModel):
             norm_stats.append(k.tolist())
         _emd_template["DataAttributes"]["norm_stats"] = list(norm_stats)
 
+        _emd_template["CropSizeFixed"] = 1
+        _emd_template["BlackenAroundFeature"] = 0
+        _emd_template["SingleLabelFieldFound"] = "Caption"
+
         return _emd_template
 
     def predict(self, path, visualize=True, **kwargs):
@@ -342,7 +346,7 @@ class ImageCaptioner(ArcGISModel):
         from fastai.text.transform import Vocab
 
         super().load(name_or_path)
-        model_path = self.learn.path.parent / "models"
+        model_path = self.learn.path / "models"
         path_like = "/" in name_or_path or "\\" in name_or_path
         name = Path(name_or_path).name if path_like else name_or_path
         if path_like:
