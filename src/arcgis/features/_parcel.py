@@ -650,8 +650,7 @@ class ParcelFabricManager(object):
         elif extent is None:
             pass
         elif not extent is None:
-            raise ValueError(
-                "Parameter `extent` must be None, Envelope or dict.")
+            raise ValueError("Parameter `extent` must be None, Envelope or dict.")
         if moment is None:
             moment = int(time.time())
         gdb_version = self._version.properties.versionName
@@ -996,7 +995,9 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def reassign_features_to_record(self, source_record, target_record, delete_source_record):
+    def reassign_features_to_record(
+        self, source_record, target_record, delete_source_record
+    ):
         """
         Assigns the specified parcel features to the specified record. If
         parcel polygons are assigned, the record polygon will be updated to
