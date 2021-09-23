@@ -204,7 +204,10 @@ class Survey:
         if save_folder is None:
             save_folder = tempfile.gettempdir()
         isinstance(self._ssi, Item)
-        eitem = self._ssi.export(title=title, export_format=export_format,)
+        eitem = self._ssi.export(
+            title=title,
+            export_format=export_format,
+        )
         save_file = eitem.download(save_path=save_folder)
         eitem.delete(force=True)
         return save_file

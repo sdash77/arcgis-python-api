@@ -339,7 +339,11 @@ class NotebookManager(object):
 
         for k, v in kwargs.items():
             params[k] = v
-        res = self._con.post(url, params, files={"manifestFile": manifest},)
+        res = self._con.post(
+            url,
+            params,
+            files={"manifestFile": manifest},
+        )
         return res
 
 
@@ -475,7 +479,11 @@ class Runtime(object):
 
         if len(params) == 1:
             return False
-        res = self._con.post(url, params, files={"manifestFile": manifest},)
+        res = self._con.post(
+            url,
+            params,
+            files={"manifestFile": manifest},
+        )
         if "status" in res:
             return res["status"] == "success"
         return res

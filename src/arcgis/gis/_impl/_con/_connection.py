@@ -189,7 +189,7 @@ class Connection(object):
         if self._key_file is None and self._cert_file is None:
             auth_check = self._auth_check(baseurl)
         else:
-            auth_check = ['']
+            auth_check = [""]
         if username is None and password is None and self._portal_connection is None:
             self._auth = "ANON"
         elif (not username is None and not password is None) and len(
@@ -326,7 +326,9 @@ class Connection(object):
             set(
                 [
                     s.get(
-                        root + pt, params=params, verify=self._verify_cert,
+                        root + pt,
+                        params=params,
+                        verify=self._verify_cert,
                     ).headers.get("www-authenticate", "")
                     for pt in ["/info", "/rest/info", "/sharing/rest/info"]
                 ]

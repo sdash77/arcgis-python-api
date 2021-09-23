@@ -275,7 +275,9 @@ kwargs = {
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    "extras_require": {"gp": ["dill"],},
+    "extras_require": {
+        "gp": ["dill"],
+    },
     # extras_require={
     #     'dev': ['check-manifest'],
     #     'test': ['coverage'],
