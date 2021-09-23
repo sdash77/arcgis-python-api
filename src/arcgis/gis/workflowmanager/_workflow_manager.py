@@ -18,7 +18,7 @@ def _underscore_to_camelcase(name):
 
 class WorkflowManagerAdmin:
     """
-    Represents a a series of CRUD functions for Workflow Manager Items
+    Represents a series of CRUD functions for Workflow Manager Items
 
     ===============     ====================================================================
     **Argument**        **Description**
@@ -125,7 +125,7 @@ class WorkflowManagerAdmin:
 
         :return:
             success object
-        
+
         """
 
         url = "{base}/admin/{id}/upgrade?token={token}".format(
@@ -156,7 +156,7 @@ class WorkflowManagerAdmin:
 
         :return:
             success object
-            
+
         """
 
         url = "{base}/admin/{id}?token={token}".format(
@@ -184,7 +184,7 @@ class WorkflowManagerAdmin:
 
         :return:
             boolean
-            
+
         """
 
         url = "{base}/checkStatus?token={token}".format(
@@ -265,7 +265,7 @@ class JobManager:
 
     def close(self, job_ids):
         """
-        Closes a single or multiple jobs with specific JobIDs
+        Closes a single or multiple jobs with specific Job IDs
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -275,7 +275,7 @@ class JobManager:
 
         :return:
             success object
-            
+
         """
         try:
             url = "{base}/jobs/manage?token={token}".format(
@@ -351,7 +351,7 @@ class JobManager:
 
         :return:
             Workflow Manager :class:`~arcgis.gis.workflowmanager.Job`
-        
+
         """
         job_object = {
             "numberOfJobs": count,
@@ -408,7 +408,7 @@ class JobManager:
 
         :return:
             status code
-            
+
         """
         try:
             res = Job.delete_attachment(
@@ -437,7 +437,7 @@ class JobManager:
 
         :return:
             Workflow Manager :class:`Job Diagram <arcgis.gis.workflowmanager.JobDiagram>` object
-            
+
         """
         try:
             return JobDiagram.get(
@@ -462,7 +462,7 @@ class JobManager:
 
         :return:
             Workflow Manager :class:`Job <arcgis.gis.workflowmanager.Job>` Object
-            
+
         """
         try:
             url = f"{self._url}/jobs/{id}"
@@ -510,7 +510,7 @@ class JobManager:
 
         :return:
             `List <https://docs.python.org/3/library/stdtypes.html#list>`_ of search results
-            
+
         """
         try:
             search_object = {
@@ -603,7 +603,7 @@ class JobManager:
 
         :return:
           success object
-          
+
         """
         try:
             url = "{base}/jobs/manage?token={token}".format(
@@ -628,7 +628,7 @@ class JobManager:
 
         :return:
             success object
-            
+
         """
         try:
             url = "{base}/jobs/{jobId}/location?token={token}".format(
@@ -695,7 +695,7 @@ class JobManager:
 
         :return:
             success object
-            
+
         """
         try:
             url = "{base}/jobs/manage?token={token}".format(
@@ -797,10 +797,10 @@ class WorkflowManager:
     def jobs(self):
         """
         The job manager for a workflow item.
-        
+
         :return:
             :class:`~arcgis.gis.workflowmanager.JobManager` object
-            
+
         """
 
         return self.job_manager
@@ -885,7 +885,7 @@ class WorkflowManager:
 
         :return:
             A `list <https://docs.python.org/3/library/stdtypes.html#list>`_ of the assignable :attr:`~assarcgis.gis.workflowmanager.WorkflowManager.user` objects
-            
+
         """
         try:
             user_array = json.loads(
@@ -912,7 +912,7 @@ class WorkflowManager:
         :return:
             A `list <https://docs.python.org/3/library/stdtypes.html#list>`_ of
             the assignable :class:`~arcgis.gis.workflowmanager.Group` objects
-            
+
         """
         try:
             group_array = json.loads(
@@ -937,7 +937,7 @@ class WorkflowManager:
 
         :return:
             `List <https://docs.python.org/3/library/stdtypes.html#list>`_
-            
+
         """
         try:
             return json.loads(
@@ -957,9 +957,9 @@ class WorkflowManager:
         Returns an list of all user :class:`groups <arcgis.gis.workflowmanager.Group>`
         stored in Workflow Manager
 
-        :return: 
+        :return:
             `List <https://docs.python.org/3/library/stdtypes.html#list>`_
-            
+
         """
         try:
             group_array = json.loads(
@@ -989,7 +989,7 @@ class WorkflowManager:
 
         :return:
             `List <https://docs.python.org/3/library/stdtypes.html#list>`_
-            
+
         """
         params = {"token": self._gis._con.token}
         if search_type is not None:
@@ -1007,16 +1007,15 @@ class WorkflowManager:
             self._handle_error(sys.exc_info())
 
     @property
-
     def job_templates(self):
-        
+
         """
         Gets all the job templates in a workflow item.
 
         :return:
             List of all current :class:`job templates <arcgis.gis.workflowmanager.JobTemplate>`
             in the Workflow Manager (required information for create_job call).
-        
+
         """
         try:
             a = self._gis._con.get(
@@ -1048,7 +1047,7 @@ class WorkflowManager:
         :return:
             `List <https://docs.python.org/3/library/stdtypes.html#list>`_ of all current
             :class:`diagrams <arcgis.gis.workflowmanager.JobDiagram>` in the Workflow Manager
-            
+
         """
         try:
             diagram_array = json.loads(
@@ -1077,7 +1076,7 @@ class WorkflowManager:
 
         :return:
             success object
-        
+
         """
         url = "{base}/settings?token={token}".format(
             base=self._url, token=self._gis._con.token
@@ -1111,7 +1110,7 @@ class WorkflowManager:
 
         :return:
             Workflow Manager :class:`Role <arcgis.gis.workflowmanager.WMRole>` Object
-            
+
         """
         try:
             return WMRole.get(
@@ -1136,7 +1135,7 @@ class WorkflowManager:
 
         :return:
             Workflow Manager :class:`JobTemplate <arcgis.gis.workflowmanager.JobTemplate>` Object
-            
+
         """
         try:
             return JobTemplate.get(
@@ -1161,7 +1160,7 @@ class WorkflowManager:
 
         :return:
             status code
-            
+
         """
         try:
             res = JobTemplate.delete(
@@ -1189,7 +1188,7 @@ class WorkflowManager:
 
         :return:
             Workflow Manager user profile
-            
+
         """
         try:
             return arcgis.gis.User(self._gis, username)
@@ -1208,7 +1207,7 @@ class WorkflowManager:
 
         :return:
             Workflow Manager :class:`~arcgis.gis.workflowmanager.Group` Object
-            
+
         """
         try:
             wmx_group = Group.get(
@@ -1239,7 +1238,7 @@ class WorkflowManager:
 
         :return:
             boolean
-            
+
         """
         url = "{base}/community/groups/{groupid}?token={token}".format(
             base=self._url, groupid=group_id, token=self._gis._con.token
@@ -1275,7 +1274,7 @@ class WorkflowManager:
 
         :return:
              Workflow Manager :class:`~arcgis.gis.workflowmanager.JobDiagram` Object
-             
+
         """
         try:
             return JobDiagram.get(
@@ -1302,7 +1301,7 @@ class WorkflowManager:
 
         :return:
             Workflow Manager :class:`Role <arcgis.gis.workflowmanager.WMRole>` Object
-            
+
         """
         try:
             url = "{base}/community/roles/{name}?token={token}".format(
@@ -1381,7 +1380,7 @@ class WorkflowManager:
 
         :return:
             Workflow Manager :class:`~arcgis.gis.workflowmanager.JobTemplate` ID
-            
+
         """
         try:
             if default_due_date is None:
@@ -1434,7 +1433,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        body                Required object. :class:`Job Template <arcgis.gis.workflowmanger.JobTemplate>` 
+        body                Required object. :class:`Job Template <arcgis.gis.workflowmanger.JobTemplate>`
                             body. Existing Job Template object that inherits required/optional fields.
         ===============     ====================================================================
 
@@ -1491,7 +1490,7 @@ class WorkflowManager:
 
         :return:
             :class:`Workflow Manager Diagram <arcgis.gis.workflowmanager.JobDiagram>` ID
-            
+
         """
         try:
             url = "{base}/diagrams?token={token}".format(
@@ -1531,7 +1530,7 @@ class WorkflowManager:
 
         :return:
             success object
-            
+
         """
         try:
             url = "{base}/diagrams/{diagramid}?token={token}".format(
@@ -1579,7 +1578,7 @@ class WorkflowManager:
 
         :return:
             :class:`Workflow Manager Diagram <arcgis.gis.workflowmanager.JobDiagram>` ID
-            
+
         """
         try:
             url = "{base}/diagrams/{diagramid}?token={token}".format(
@@ -1593,10 +1592,10 @@ class WorkflowManager:
     def saved_searches(self):
         """
         The Saved Searches manager for a workflow item.
-        
+
         :return:
             :class:`~arcgis.gis.workflowmanager.SavedSearchesManager`
-            
+
         """
 
         return self.saved_searches_manager
@@ -1611,7 +1610,7 @@ class WorkflowManager:
 
         :return:
             `list <https://docs.python.org/3/library/stdtypes.html#list>`_
-            
+
         """
 
         url = "{base}/tableDefinitions?token={token}".format(
@@ -1725,7 +1724,7 @@ class SavedSearchesManager:
 
         :return:
             Saved Search ID
-            
+
         """
         try:
             url = "{base}/searches?token={token}".format(
@@ -1815,7 +1814,7 @@ class SavedSearchesManager:
             >>> workflow_manager.create_saved_search(name="name",
                                                     definition={
                                                         "start": 0,
-                                                        "fields": ["job_status"],      
+                                                        "fields": ["job_status"],
                                                         "displayNames": ["Status"  ],
                                                         "sortFields": [{"field": "job_status",
                                                                         "sortOrder": "Asc:}]
@@ -1859,12 +1858,12 @@ class SavedSearchesManager:
 
 class Job(object):
     """
-    Helper class for managing Workflow Manager jobs in a workflow item. This class is 
+    Helper class for managing Workflow Manager jobs in a workflow item. This class is
     not created by users directly. An instance of this class, can be created by calling
     the :meth:`get <arcgis.gis.workflowmanager.JobManager.get>` method of the
-    ``Job Manager`` with the appropriate job ID. The 
-    :class:`~arcgis.gis.workflowmanager.JobManager` is accessible as the 
-    :attr:`~arcgis.gis.workflowmanager.WorkflowManager.jobs` property of the 
+    ``Job Manager`` with the appropriate job ID. The
+    :class:`~arcgis.gis.workflowmanager.JobManager` is accessible as the
+    :attr:`~arcgis.gis.workflowmanager.WorkflowManager.jobs` property of the
     :class:`~arcgis.gis.workflowmanager.WorkflowManager`.
 
     """
@@ -1979,7 +1978,7 @@ class Job(object):
 
         :return:
             Job Attachment
-            
+
         """
 
         url = "{base}/jobs/{jobId}/attachments/{attachmentId}".format(
@@ -2006,7 +2005,7 @@ class Job(object):
 
         :return:
             Job Attachment
-            
+
         """
         url = "{base}/jobs/{jobId}/attachments".format(
             base=self._url, jobId=self.job_id
@@ -2039,7 +2038,7 @@ class Job(object):
 
         :return:
             `List <https://docs.python.org/3/library/stdtypes.html#list>`_ list of job attachments
-            
+
         """
         url = "{base}/jobs/{jobId}/attachmentslinked?token={token}".format(
             base=self._url, jobId=self.job_id, token=self._gis._con.token
@@ -2073,7 +2072,7 @@ class Job(object):
 
         :return:
             success
-            
+
         """
         url = "{base}/jobs/{jobId}/attachments/{attachmentid}".format(
             base=self._url, jobId=self.job_id, attachmentid=attachment_id
@@ -2124,7 +2123,7 @@ class Job(object):
 
         :return:
             success object
-            
+
         """
 
         if step_id is None:
@@ -2168,7 +2167,7 @@ class Job(object):
 
         :return:
             success object
-            
+
         """
 
         url = "{base}/jobs/{jobId}/action?token={token}".format(
@@ -2202,7 +2201,7 @@ class Job(object):
 
         :return:
             `list <https://docs.python.org/3/library/stdtypes.html#list>`_ of attachments
-            
+
         """
 
         url = "{base}/jobs/{jobId}/attachments?token={token}".format(
@@ -2218,7 +2217,7 @@ class Job(object):
 
         :return:
             success object
-        
+
         """
 
         url = "{base}/jobs/{jobId}/history?token={token}".format(
@@ -2281,7 +2280,7 @@ class Job(object):
 class WMRole(object):
     """
     Represents a Workflow Manager Role object with accompanying GET, POST, and DELETE methods
-    
+
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
@@ -2327,13 +2326,14 @@ class WMRole(object):
 class JobTemplate(object):
     """
     Represents a Workflow Manager Job Template object with accompanying GET, POST, and DELETE methods
-    
+
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
     init_data           data object representing relevant parameters for GET or POST calls
     ===============     ====================================================================
     """
+
     _camelCase_to_underscore = _camelCase_to_underscore
     _underscore_to_camelcase = _underscore_to_camelcase
 
@@ -2450,7 +2450,7 @@ class JobTemplate(object):
 class Group(object):
     """
     Represents a Workflow Manager Group object with accompanying GET, POST, and DELETE methods
-    
+
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
@@ -2595,7 +2595,7 @@ class JobDiagram(object):
 class JobLocation(object):
     """
     Represents a Workflow Manager Job Location object with accompanying GET, POST, and DELETE methods
-    
+
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
