@@ -11,15 +11,18 @@ def _run_async(fn, **inputs):
 
 class EditFeatureJob(object):
     """
-    Represents a Single Editing Job.  The `EditFeatureJob` class allows for the asynchronous operation
-    of `edit_features` task.
-    This class is not intended for users to call directly.
+    Represents a Single Editing Job.  The `EditFeatureJob` class allows for the
+    asynchronous operation of the :meth:`~arcgis.features.FeatureLayer.edit_features`
+    method. This class is not intended for users to initialize directly, but is
+    retuned by :meth:`~arcgis.features.FeatureLayer.edit_features` when `future=True`.
 
 
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
     future            Future. The future request.
+    ----------------  ---------------------------------------------------------------
+    connection        The GIS connection object.
     ================  ===============================================================
 
     """
