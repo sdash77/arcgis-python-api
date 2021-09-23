@@ -996,6 +996,54 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
+    def reassign_features_to_record(self, source_record, target_record, delete_source_record):
+        """
+        Assigns the specified parcel features to the specified record. If
+        parcel polygons are assigned, the record polygon will be updated to
+        match the cumulative geometry of all the parcels associated to it.
+        The Created By Record or Retired By Record attribute field of the
+        parcel features is updated with the global ID of the assigned
+        record.
+
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        source_record            Required List. The parcel features to assign to the specified record.
+                                    Can be parcels, parcel polygons, parcel points, and parcel lines.
+
+
+                                    :Syntax: ``parcelFeatures=[{"id":"<guid>","layerId":"<layerID>"},{...}]``
+
+        --------------------     --------------------------------------------------------------------
+        target_record            Required String. The record that will be assigned to the specified
+                                    parcel features.
+        --------------------     --------------------------------------------------------------------
+        delete_source_record     Required String. Represents the record field to update on the parcel
+                                    features. Either the Created By Record or Retired By Record field is
+                                    to be updated with the global ID of the assigned record.
+
+                                    Allowed Values: `CreatedByRecord` or `RetiredByRecord`
+        ====================     ====================================================================
+
+        :returns: Boolean
+
+        """
+        url = "{base}/reassignFeaturesToRecord".format(base=self._url)
+        params = {
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
+            "sourceRecord": source_record,
+            "targetRecord": target_record,
+            "deleteSourceRecord": delete_source_record,
+            "f": "json",
+        }
+        res = self._con.post(url, params)
+        if "success" in res:
+            return res["success"]
+        return res
+
+    # ----------------------------------------------------------------------
+
     def _run_async(self, fn, **inputs):
         """runs the inputs asynchronously"""
         import concurrent.futures
