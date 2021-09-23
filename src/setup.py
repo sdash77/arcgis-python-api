@@ -47,6 +47,7 @@ if conda_install_mode:
     dependencies = []
 else:
     dependencies = [
+        "urllib3 >=1.25.10,<1.26.0",
         "cachetools",
         "six",
         "lxml",
@@ -274,9 +275,7 @@ kwargs = {
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    "extras_require": {
-        "gp": ["dill"],
-    },
+    "extras_require": {"gp": ["dill"],},
     # extras_require={
     #     'dev': ['check-manifest'],
     #     'test': ['coverage'],

@@ -339,14 +339,7 @@ class NotebookManager(object):
 
         for k, v in kwargs.items():
             params[k] = v
-        res = self._con.post(
-            url,
-            params,
-            files={"manifestFile": manifest},
-            add_headers=[
-                ("X-Esri-Authorization", "bearer {token}".format(token=self._con.token))
-            ],
-        )
+        res = self._con.post(url, params, files={"manifestFile": manifest},)
         return res
 
 
@@ -482,14 +475,7 @@ class Runtime(object):
 
         if len(params) == 1:
             return False
-        res = self._con.post(
-            url,
-            params,
-            files={"manifestFile": manifest},
-            add_headers=[
-                ("X-Esri-Authorization", "bearer {token}".format(token=self._con.token))
-            ],
-        )
+        res = self._con.post(url, params, files={"manifestFile": manifest},)
         if "status" in res:
             return res["status"] == "success"
         return res

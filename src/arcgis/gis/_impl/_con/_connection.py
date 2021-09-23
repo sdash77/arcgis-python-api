@@ -186,7 +186,10 @@ class Connection(object):
         self._client_id = kwargs.pop("client_id", None)
         self._client_secret = kwargs.pop("client_secret", None)
         self._token_url = kwargs.pop("token_url", None)
-        auth_check = self._auth_check(baseurl)
+        if self._key_file is None and self._cert_file is None:
+            auth_check = self._auth_check(baseurl)
+        else:
+            auth_check = ['']
         if username is None and password is None and self._portal_connection is None:
             self._auth = "ANON"
         elif (not username is None and not password is None) and len(
@@ -323,9 +326,7 @@ class Connection(object):
             set(
                 [
                     s.get(
-                        root + pt,
-                        params=params,
-                        verify=self._verify_cert,
+                        root + pt, params=params, verify=self._verify_cert,
                     ).headers.get("www-authenticate", "")
                     for pt in ["/info", "/rest/info", "/sharing/rest/info"]
                 ]
@@ -460,7 +461,7 @@ class Connection(object):
                     username=self._username,
                     password=self._password,
                     expiration=self._timeout,
-                    legacy=True,
+                    legacy=False,
                     verify_cert=self._verify_cert,
                     referer=self._referer,
                 )
@@ -480,24 +481,24 @@ class Connection(object):
                 username=self._username,
                 password=self._password,
                 verify_cert=self._verify_cert,
-                legacy=True,
+                legacy=False,
             )
         elif self._auth.lower() == "pro":
-            self._session.auth = GuessAuth(None, None)
+            self._session.auth = GuessAuth(None, None, legacy=False)
 
         else:
 
             if HAS_SSPI:
                 try:
                     self._session.auth = EsriWindowsAuth(
-                        verify_cert=self._verify_cert, legacy=True
+                        verify_cert=self._verify_cert, legacy=False
                     )
                 except:
                     ...
             elif HAS_KERBEROS:
                 try:
                     self._session.auth = EsriKerberosAuth(
-                        verify_cert=self._verify_cert,
+                        verify_cert=self._verify_cert, legacy=False
                     )
                 except:
                     ...
@@ -542,9 +543,6 @@ class Connection(object):
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
         url = path
-        token = kwargs.pop("token", _DEFAULT_TOKEN)
-        token_as_header = kwargs.pop("token_as_header", False)
-        token_header = kwargs.pop("token_header", "X-Esri-Authorization")
         if url.find("://") == -1:
             if url.startswith("/") == False and self._baseurl.endswith("/") == False:
                 url = "/" + url
@@ -553,8 +551,6 @@ class Connection(object):
             url = url.replace("http://", "https://")
         if params is None:
             params = {}
-        # if self._auth == "IWA":
-        #    self._session = None
         if self._session is None:
             self._create_session()
 

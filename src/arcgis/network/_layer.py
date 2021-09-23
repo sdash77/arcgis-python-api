@@ -234,10 +234,7 @@ class NetworkLayer(Layer):
         network dataset or in the portal if the GIS server is federated"""
         url = self._url + "/retrieveTravelModes"
         params = {"f": "json"}
-        return self._con.get(
-            path=url,
-            params=params,
-        )
+        return self._con.get(path=url, params=params,)
 
 
 ###########################################################################
@@ -590,10 +587,7 @@ class RouteLayer(NetworkLayer):
         if not preserve_objectid is None:
             params["preserveObjectID"] = preserve_objectid
         if future:
-            f = self._run_async(
-                self._con.post,
-                **{"path": url, "postdata": params, "token": self._gis._con.token},
-            )
+            f = self._run_async(self._con.post, **{"path": url, "postdata": params},)
             return NAJob(future=f, task="RouteLayer Solve")
         return self._con.post(path=url, postdata=params)  # ,
 
@@ -902,10 +896,7 @@ class ServiceAreaLayer(NetworkLayer):
         if not preserve_objectid is None:
             params["preserveObjectID"] = preserve_objectid
         if future:
-            f = self._run_async(
-                self._con.post,
-                **{"path": url, "postdata": params, "token": self._gis._con.token},
-            )
+            f = self._run_async(self._con.post, **{"path": url, "postdata": params},)
             return NAJob(future=f, task="Solve Service Area")
         return self._con.post(path=url, postdata=params)
 

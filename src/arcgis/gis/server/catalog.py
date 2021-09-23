@@ -205,10 +205,7 @@ class ServicesDirectory(BaseServer):
                 data.append(
                     [s["name"].split("/")[-1], """<a href="%s">Service</a>""" % url]
                 )
-        # for service in self.list(folder=folder):
-        # name = os.path.basename(os.path.dirname(service._url))
-        # data.append([name, a_template % (service._url, self._con.token)])
-        # del service
+
         df = pd.DataFrame(data=data, columns=columns)
         if as_html:
             table = (
