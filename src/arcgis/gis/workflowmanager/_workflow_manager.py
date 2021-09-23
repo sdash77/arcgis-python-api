@@ -18,7 +18,7 @@ def _underscore_to_camelcase(name):
 
 class WorkflowManagerAdmin:
     """
-    Represents a a series of CRUD functions for Workflow Manager Items
+    Represents a series of CRUD functions for Workflow Manager Items
 
     ===============     ====================================================================
     **Argument**        **Description**
@@ -265,7 +265,7 @@ class JobManager:
 
     def close(self, job_ids):
         """
-        Closes a single or multiple jobs with specific JobIDs
+        Closes a single or multiple jobs with specific Job IDs
 
         ===============     ====================================================================
         **Argument**        **Description**

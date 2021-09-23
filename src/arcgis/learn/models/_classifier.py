@@ -369,8 +369,12 @@ class FeatureClassifier(ArcGISModel):
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
         _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
-        _emd_template["CropSizeFixed"] = 1  # hardcoded
-        _emd_template["BlackenAroundFeature"] = 0  # hardcoded
+        _emd_template["CropSizeFixed"] = int(
+            self._data._emd.get("CropTileMode", "Fixed_Size") == "Fixed_Size"
+        )
+        _emd_template["BlackenAroundFeature"] = int(
+            self._data._emd.get("BlackenAroundFeature", False)
+        )
         _emd_template["ImageSpaceUsed"] = "MAP_SPACE"
         _emd_template["Classes"] = []
         class_data = {}
