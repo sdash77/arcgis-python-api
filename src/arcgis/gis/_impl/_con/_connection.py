@@ -20,8 +20,11 @@ if sys.platform == "win32":
     try:
         import certifi_win32
 
-        certifi_win32.generate_pem()
         certifi_win32.wincerts.where()
+
+        if certifi_win32.wincerts.verify_combined_pem() == False:
+            certifi_win32.generate_pem()
+
     except ImportError:
         pass
 
@@ -180,7 +183,11 @@ class Connection(object):
             self._auth = "PRO"
             portal_url = arcpy.GetActivePortalURL()
             if portal_url.lower().find("/sharing/rest") == -1:
-                self._baseurl = arcpy.GetActivePortalURL() + "/sharing/rest"
+                if arcpy.GetActivePortalURL().endswith("/"):
+
+                    self._baseurl = arcpy.GetActivePortalURL() + "sharing/rest"
+                else:
+                    self._baseurl = arcpy.GetActivePortalURL() + "/sharing/rest"
             else:
                 self._baseurl = arcpy.GetActivePortalURL()
         elif self._cert_file or (self._cert_file and self._key_file):
@@ -1910,9 +1917,19 @@ class Connection(object):
             return "AGOL"
         elif baseurl.lower().find("/sharing/rest") > -1:
             if baseurl.endswith("/"):
-                res = self.get(baseurl + "info", params={"f": "json"}, add_token=False)
+                try:
+                    res = self.get(
+                        baseurl + "info", params={"f": "json"}, add_token=False
+                    )
+                except:
+                    res = self.get(baseurl + "info", params={"f": "json"})
             else:
-                res = self.get(baseurl + "/info", params={"f": "json"}, add_token=False)
+                try:
+                    res = self.get(
+                        baseurl + "/info", params={"f": "json"}, add_token=False
+                    )
+                except:
+                    res = self.get(baseurl + "/info", params={"f": "json"})
             if (
                 self._token_url is None
                 and res is not None

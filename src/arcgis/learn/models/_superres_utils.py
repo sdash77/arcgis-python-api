@@ -11,6 +11,7 @@ try:
     from fastai.torch_core import requires_grad, children
     from fastprogress.fastprogress import progress_bar
     from .._utils.superres import psnr, ssim
+    from .._utils.common import ArcGISMSImage
 
     HAS_FASTAI = True
 except Exception as e:
@@ -24,7 +25,7 @@ except Exception as e:
 def resize_one(fn, i, path_lr, size, path_hr, img_size):
     dest = path_lr / fn.relative_to(path_hr)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    img = PIL.Image.open(fn)
+    img = PIL.Image.fromarray(ArcGISMSImage.read_image(fn))
     targ_sz = resize_to(img, size, use_min=True)
     img = img.resize(targ_sz, resample=PIL.Image.BILINEAR).convert("RGB")
     # img = img.resize((img_size,img_size), resample=PIL.Image.BILINEAR).convert('RGB')

@@ -65,6 +65,7 @@ def _raster_input(raster, raster2=None):
                                     )
                                 if isinstance(raster2._lazy_token, str):
                                     url = url + "?token=" + raster2._lazy_token
+                                raster2 = _replace_raster_url(raster2._fn, url)
                             except:
                                 if "url" in raster2._lyr_dict:
                                     url = raster2._lyr_dict["url"]

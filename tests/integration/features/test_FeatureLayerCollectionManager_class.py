@@ -275,6 +275,88 @@ class Test_FeatureLayerCollectionManager_portal(unittest.TestCase):
     @unittest.skipIf(
         test_skip, "Test condition not met. Check if old outputs are present"
     )
+    def test_overwrite_HFS_using_excel(self):
+        """
+        Publish a feature layer with excel.
+        Update the excel and overwrite the feature service.
+        Ensure the contents are updated, itemid remains same.
+        *Note: does not work if hosted table
+        :return:
+        """
+        # region publish feature layer if not found
+        data_item = PortalUtils.search_portal_item(
+            self.gis, "set1_overwrite_HFS_excel", "excel"
+        )
+        if data_item is None:
+            # upload data item
+            data_path = os.path.join(
+                self.qalab_cls_path, "set1_overwrite_HFS_excel.xlsx"
+            )
+            data_item = self.gis.content.add({}, data=data_path)
+            self.assertIsNotNone(data_item, "Cannot add data item")
+
+        wfl_item = PortalUtils.search_portal_item(
+            self.gis, "set1_overwrite_HFS_excel", "Feature Service"
+        )
+        if wfl_item is None:
+            # publish the data item
+            wfl_item = data_item.publish()
+            self.assertIsNotNone(wfl_item, "Cannot publish data into a feature service")
+        # endregion
+
+        # region delete all features in feature layer
+        flayer = wfl_item.layers[0]
+        delete_result = flayer.delete_features(where="1=1")
+        self.assertIsNotNone(delete_result, "Unable to delete features before ovewrite")
+        num_features_after_delete = flayer.query(return_count_only=True)
+        self.assertEqual(
+            num_features_after_delete, 0, "Num features not 0 after delete all"
+        )
+        # endregion
+
+        try:
+            # access feature layer coll manager
+            flc_mgr = FeatureLayerCollectionManager.fromitem(wfl_item)
+
+            # overwrite the feature layer
+            new_data_path = os.path.join(
+                self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_excel.xlsx"
+            )
+            overwrite_result = flc_mgr.overwrite(new_data_path)
+            self.assertIsNotNone(
+                overwrite_result, "Calling publish with overwrite True returns None"
+            )
+
+            # verify content is updated
+            num_features_after_overwrite = flayer.query(return_count_only=True)
+            self.assertGreater(
+                num_features_after_overwrite, 0, "Overwrite failed to add new features"
+            )
+
+            # verify number of features and attributes
+            fset = flayer.query()
+            overwritten_flayer_df = fset.sdf
+
+            # add two extra columns to account for x,y geometries that get added
+            self.assertEqual(
+                (20, 8),
+                overwritten_flayer_df.shape,
+                "The number of rows cols of overwritten feature layer is not more than original",
+            )
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_overwrite_HFS_using_fgdb(self):
         """
         Publish a feature layer with file geodatabase.
@@ -698,6 +780,87 @@ class Test_FeatureLayerCollectionManager_online(unittest.TestCase):
             # overwrite the feature layer
             new_data_path = os.path.join(
                 self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_csv.csv"
+            )
+            overwrite_result = flc_mgr.overwrite(new_data_path)
+            self.assertIsNotNone(
+                overwrite_result, "Calling publish with overwrite True returns None"
+            )
+
+            # verify content is updated
+            num_features_after_overwrite = flayer.query(return_count_only=True)
+            self.assertGreater(
+                num_features_after_overwrite, 0, "Overwrite failed to add new features"
+            )
+
+            # verify number of features and attributes
+            fset = flayer.query()
+            overwritten_flayer_df = fset.sdf
+
+            # add two extra columns to account for x,y geometries that get added
+            self.assertEqual(
+                (20, 8),
+                overwritten_flayer_df.shape,
+                "The number of rows cols of overwritten feature layer is not more than original",
+            )
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
+    def test_overwrite_HFS_using_excel(self):
+        """
+        Publish a feature layer with excel.
+        Update the excel and overwrite the feature service.
+        Ensure the contents are updated, itemid remains same.
+        :return:
+        """
+        # region publish feature layer if not found
+        data_item = PortalUtils.search_portal_item(
+            self.gis, "set1_overwrite_HFS_excel", "Excel"
+        )
+        if data_item is None:
+            # upload data item
+            data_path = os.path.join(
+                self.qalab_cls_path, "set1_overwrite_HFS_excel.xlsx"
+            )
+            data_item = self.gis.content.add({}, data=data_path)
+            self.assertIsNotNone(data_item, "Cannot add data item")
+
+        wfl_item = PortalUtils.search_portal_item(
+            self.gis, "set1_overwrite_HFS_excel", "Feature Service"
+        )
+        if wfl_item is None:
+            # publish the data item
+            wfl_item = data_item.publish()
+            self.assertIsNotNone(wfl_item, "Cannot publish data into a feature service")
+        # endregion
+
+        # region delete all features in feature layer
+        flayer = wfl_item.layers[0]
+        delete_result = flayer.delete_features(where="1=1")
+        self.assertIsNotNone(delete_result, "Unable to delete features before ovewrite")
+        num_features_after_delete = flayer.query(return_count_only=True)
+        self.assertEqual(
+            num_features_after_delete, 0, "Num features not 0 after delete all"
+        )
+        # endregion
+
+        try:
+            # access feature layer coll manager
+            flc_mgr = FeatureLayerCollectionManager.fromitem(wfl_item)
+
+            # overwrite the feature layer
+            new_data_path = os.path.join(
+                self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_excel.xlsx"
             )
             overwrite_result = flc_mgr.overwrite(new_data_path)
             self.assertIsNotNone(
