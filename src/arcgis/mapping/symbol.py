@@ -5,7 +5,7 @@ The ``Symbology`` class generates Symbol Types for the :class:`~arcgis.gis.GIS` 
 """
 import json
 import arcgis
-from arcgis.features import FeatureCollection, FeatureSet, SpatialDataFrame
+from arcgis.features import FeatureCollection, FeatureSet
 from arcgis.gis import GIS
 from arcgis.geometry import _types
 

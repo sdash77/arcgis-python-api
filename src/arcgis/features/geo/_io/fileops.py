@@ -877,7 +877,7 @@ def to_featureclass(
 # --------------------------------------------------------------------------
 def _pyshp_to_shapefile(df, out_path, out_name):
     """
-    Saves a SpatialDataFrame to a Shapefile using pyshp
+    Saves a Spatially Enabled DataFrame to a Shapefile using pyshp
 
     :Parameters:
      :df: spatial dataframe
@@ -993,7 +993,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
 # --------------------------------------------------------------------------
 def _pyshp2(df, out_path, out_name):
     """
-    Saves a SpatialDataFrame to a Shapefile using pyshp v2.0
+    Saves a Spatially Enabled DataFrame to a Shapefile using pyshp v2.0
 
     :Parameters:
      :df: spatial dataframe

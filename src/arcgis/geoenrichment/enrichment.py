@@ -5,7 +5,7 @@ from typing import Any, Union
 
 from arcgis import __version__
 from arcgis import env
-from arcgis.features import SpatialDataFrame, FeatureSet, GeoAccessor, GeoSeriesAccessor
+from arcgis.features import FeatureSet, GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry
 from arcgis.gis import GIS
 from arcgis._impl.common._deprecate import deprecated
@@ -1181,7 +1181,7 @@ def _enrich_gis(
             areas.append(area_dict)
 
     # chunking if len > 100
-    if isinstance(areas, (SpatialDataFrame, pd.DataFrame, list)) and len(areas) > 100:
+    if isinstance(areas, (pd.DataFrame, list)) and len(areas) > 100:
         import concurrent.futures
 
         parts = []
@@ -1214,7 +1214,7 @@ def _enrich_gis(
                 f.exception() for f in futures.done if not f.exception() is None
             ]
             raise Exception(json.dumps(exceptions))
-        if isinstance(areas, (SpatialDataFrame, pd.DataFrame)):
+        if isinstance(areas, pd.DataFrame):
             enrich_res = pd.concat(results)
             if len(enrich_res) != len(study_areas):
                 if "OBJECTID" in enrich_res.columns:
