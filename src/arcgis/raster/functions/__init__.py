@@ -466,11 +466,13 @@ def arg_statistics(
     --------------------------------     --------------------------------------------------------------------
     stat_type                                Optional string. one of "max", "min", "median", "duration"
     --------------------------------     --------------------------------------------------------------------
-    min_value                                Optional float, required if the type is duration
+    min_value                                Optional float, required if the stat_type is "duration"
     --------------------------------     --------------------------------------------------------------------
-    max_value                                Optional float, required if the type is duration
+    max_value                                Optional float, required if the stat_type is "duration"
     --------------------------------     --------------------------------------------------------------------
-    undefined_class                          Optional int, required if the type is maximum or minimum
+    undefined_class                          Optional int, required if the stat_type is "max" or "min"
+    --------------------------------     --------------------------------------------------------------------
+    astype                                   Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -524,6 +526,8 @@ def arg_max(rasters, undefined_class=None, astype=None):
     rasters                                  Required Raster/ImageryLayer objects filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
     undefined_class                          int, required
+    --------------------------------     --------------------------------------------------------------------
+    astype                                   Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -550,6 +554,8 @@ def arg_min(rasters, undefined_class=None, astype=None):
     rasters                                  Required Raster/ImageryLayer objects filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
     undefined_class                          int, required
+    --------------------------------     --------------------------------------------------------------------
+    astype                                   Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -581,6 +587,8 @@ def arg_median(rasters, undefined_class=None, astype=None):
     rasters                                  Required Raster/ImageryLayer objects filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
     undefined_class                          int, required
+    --------------------------------     --------------------------------------------------------------------
+    astype                                   Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -609,6 +617,8 @@ def duration(
     rasters                                  Required Raster/ImageryLayer objects filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
     undefined_class                          int, required
+    --------------------------------     --------------------------------------------------------------------
+    astype                                   Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
 
     :return: The output raster with the function applied to it.
@@ -1992,6 +2002,15 @@ def convolution(raster, kernel=None, astype=None):
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
+    HAS_NUMPY = True
+    try:
+        import numpy as np
+    except ImportError:
+        HAS_NUMPY = False
+
+    if (HAS_NUMPY) and isinstance(kernel, np.ndarray):
+        kernel = kernel.tolist()
+
     if isinstance(kernel, int):
         template_dict["rasterFunctionArguments"]["Type"] = kernel
     elif isinstance(kernel, list):
@@ -2001,9 +2020,10 @@ def convolution(raster, kernel=None, astype=None):
         template_dict["rasterFunctionArguments"]["Columns"] = numcols
         template_dict["rasterFunctionArguments"]["Rows"] = numrows
         template_dict["rasterFunctionArguments"]["Kernel"] = flattened
+        template_dict["rasterFunctionArguments"]["Type"] = -1
     else:
         raise RuntimeError(
-            "Invalid kernel type - pass int or list of list: [[][][]...]"
+            "Invalid kernel type - pass well known kernel from arcgis.raster.kernels or list of list: [[][][]...] or a numpy array representing the kernel"
         )
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -2076,6 +2096,13 @@ def NDVI(raster, visible_band=2, ir_band=1, astype=None):
     --------------------------------     --------------------------------------------------------------------
     astype                                   Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
+
+    .. note::
+
+        The following equation is used by the NDVI function to generate a 0 200 range 8 bit result:
+        NDVI = ((IR - R)/(IR + R)) * 100 + 100
+
+        If you need the specific pixel values (-1.0 to 1.0), use the lowercase ndvi method.
 
     :return: The output raster with the function applied.
 
@@ -6731,10 +6758,6 @@ def focal_statistics(
     astype=None,
 ):
     """
-    The Red-Edge Simple Ratio (SRre) is a vegetation index for estimating the
-    amount of healthy and stressed vegetation. It is the ratio of light scattered
-    in the NIR and red-edge bands, which reduces the effects of atmosphere and topography.
-
     The focal_statistics function calculates focal statistics for each pixel of an image based on a defined focal neighborhood.
     For more information, see `statistics function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-function.htm>`__.
 
@@ -6870,27 +6893,27 @@ def stretch(
     --------------------------------     --------------------------------------------------------------------
     raster                                  Required input Raster/ImageryLayer object
     --------------------------------     --------------------------------------------------------------------
-    stretch_type                            str, one of None, StdDev, Histogram, MinMax, PercentClip, 9 = Sigmoid
+    stretch_type                            Optional string, one of None, StdDev, Histogram, MinMax, PercentClip, 9 = Sigmoid
     --------------------------------     --------------------------------------------------------------------
-    min                                     float
+    min                                     Optional float
     --------------------------------     --------------------------------------------------------------------
-    max                                     float
+    max                                     Optional float
     --------------------------------     --------------------------------------------------------------------
-    num_stddev                              float (e.g. 2.5)
+    num_stddev                              Optional float (e.g. 2.5)
     --------------------------------     --------------------------------------------------------------------
-    statistics                              float (e.g. 2.5)[<min1>, <max1>, <mean1>, <standardDeviation1>], //[float, float, float, float][<min2>, <max2>, <mean2>, <standardDeviation2>]],
+    statistics                              Optional float (e.g. 2.5)[<min1>, <max1>, <mean1>, <standardDeviation1>], //[float, float, float, float][<min2>, <max2>, <mean2>, <standardDeviation2>]],
     --------------------------------     --------------------------------------------------------------------
-    dra                                     boolean. derive statistics from current request, Statistics parameter is ignored when DRA is true
+    dra                                     Optional boolean. derive statistics from current request, Statistics parameter is ignored when DRA is true
     --------------------------------     --------------------------------------------------------------------
-    min_percent                             float (e.g. 0.25), applicable to PercentClip
+    min_percent                             Optional float (e.g. 0.25), applicable to PercentClip
     --------------------------------     --------------------------------------------------------------------
-    max_percent                             float (e.g. 0.5), applicable to PercentClip
+    max_percent                             Optional float (e.g. 0.5), applicable to PercentClip
     --------------------------------     --------------------------------------------------------------------
-    gamma                                   list of floats
+    gamma                                   Optional list of floats
     --------------------------------     --------------------------------------------------------------------
-    compute_gamma                           optional, applicable to any stretch type when "UseGamma" is "true"
+    compute_gamma                           Optional boolean, applicable to any stretch type when "UseGamma" is "true"
     --------------------------------     --------------------------------------------------------------------
-    sigmoid_strength_level                  int (1~6), applicable to Sigmoid
+    sigmoid_strength_level                  Optional integer (1~6), applicable to Sigmoid
     --------------------------------     --------------------------------------------------------------------
     astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     --------------------------------     --------------------------------------------------------------------
@@ -9056,56 +9079,10 @@ def generate_trend(
     polynomial_order                        Optional Integer. The polynomial order number to use in the trend fitting. This parameter specifies the
                                             polynomial order. The default value is 2, or second-order polynomial. This parameter is only included in the trend analysis for a polynomial regression (regression_type=2).
     --------------------------------     --------------------------------------------------------------------
-    inore_no_data                           Optional Boolean. Specifies whether NoData values are ignored in the analysis.
+    ignore_nodata                           Optional Boolean. Specifies whether NoData values are ignored in the analysis.
 
                                             - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels. This is the default.
                                             - False : The analysis will result in NoData if there are any NoData values for the pixels along the given dimension.
-    --------------------------------     --------------------------------------------------------------------
-    end_angle                               Optional float, default is 90. Specified when neighborhood_type is Wedge
-    --------------------------------     --------------------------------------------------------------------
-    neighborhood_values                     Specified when neighborhood_type is Irregular or Weight.
-                                            It can be a list of lists, in which the width and height will be automatically set from the columns and rows 
-                                            of the two dimensional list, respectively. 
-                                            Alternatively, it can be a one dimensional list obtained from flattening a two dimensional list. In this case, 
-                                            the dimensions need to be specified explicitly with the width and height parameters.
-    --------------------------------     --------------------------------------------------------------------
-    stat_type                               Optional int, default is 3(Mean)
-
-                                            There are 11 types of statistics available:
-                                            1=Majority, 2=Maximum, 3=Mean , 4=Median, 5= Minimum, 6 = Minority,
-                                            7=Range, 8=Standard deviation, 9=Sum, 10=Variety, 12=Percentile
-
-                                            - Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
-
-                                            - Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
-
-                                            - Mean = Calculates the mean (average value) of the cells in the neighborhood.
-
-                                            - Median = Calculates the median of the cells in the neighborhood.
-
-                                            - Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
-
-                                            - Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
-
-                                            - Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
-
-                                            - Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
-
-                                            - Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
-
-                                            - Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
-
-                                            - Percentile = Calculates a specified percentile of the cells in the neighborhood.
-    --------------------------------     --------------------------------------------------------------------
-    ignore_nodata                          Optional boolean, default is True.
-
-                                            - True - Specifies that if a NoData value exists within a neighborhood, \
-                                            the NoData value will be ignored. Only cells within the neighborhood \
-                                            that have data values will be used in determining the output value. \
-                                            This is the default.
-
-                                            - False - Specifies that if any cell in a neighborhood has a value of \
-                                            NoData, the output for the processing cell will be NoData.
     --------------------------------     --------------------------------------------------------------------
     rmse                                    Optional Boolean. Specifies whether to generate the root mean square error (RMSE) of the trend fit line.
 
@@ -9891,6 +9868,9 @@ def aggregate(
                                             - False : The layer will have dimension values. This is the default.
     --------------------------------     --------------------------------------------------------------------
     percentile_value                     Optional float. The percentile to calculate. The default is 90, indicating the 90th percentile. The values can range from 0 to 100. The 0th percentile is essentially equivalent to the minimum statistic, and the 100th percentile is equivalent to maximum. A value of 50 will produce essentially the same result as the median statistic. This option is only honored if the aggregation_function parameter is set to PERCENTILE.
+
+                                         Example:
+                                            90
     --------------------------------     --------------------------------------------------------------------
     percentile_interpolation_type        Optional string. Specifies the method of percentile interpolation that will be used when there is an even number of values from the input raster to be calculated.
 
@@ -9900,6 +9880,9 @@ def aggregate(
 
                                             - LINEAR  : The weighted average of the two surrounding values from the desired
                                               percentile will be used. In this case, the output pixel type will be floating point.
+
+                                         Example:
+                                            NEAREST
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -9913,6 +9896,7 @@ def aggregate(
         # Usage Example 2: Calculates the aggregate of the input raster based on the specified interval range.
 
         aggregate_op = aggregate(raster,
+                                 aggregation_function="MEDIAN",
                                  aggregation_definition_type="INTERVAL_RANGES",
                                  interval_ranges=[{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
                                                   {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}
@@ -11310,7 +11294,7 @@ def contour(
     --------------------------------     --------------------------------------------------------------------
     nth_contour_line_in_bold             Optional int. The nth contour line that would be rendered in bold. The default value is 5; thus, every 5th contour line is bold.
     --------------------------------     --------------------------------------------------------------------
-    z_factor                             Note that it is not necessary to have the ground x,y and surface z-units be consistent for this tool. The default value is 1.
+    z_factor                             The unit conversion factor used when generating contours. The default value is 1.
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
