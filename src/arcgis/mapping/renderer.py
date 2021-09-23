@@ -11,7 +11,7 @@ from arcgis.gis import GIS
 from arcgis.geometry import _types
 from arcgis.mapping._utils import _get_list_value
 from arcgis.mapping.symbol import create_symbol, _cmap2rgb
-import pandas as pd
+
 
 __all__ = ["generate_renderer"]
 
@@ -543,6 +543,8 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
 
 
     """
+    import pandas as pd
+
     v = []
     if isinstance(sdf_or_list, pd.DataFrame) and "trans_info_field" in kwargs:
         trans_info_field = kwargs["trans_info_field"]
