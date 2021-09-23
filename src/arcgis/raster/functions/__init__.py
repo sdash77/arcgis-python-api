@@ -1010,6 +1010,7 @@ def pvi(raster, band_indexes="4 3 0.3 0.5", astype=None):
     """
     Perpendicular Vegetation Index
     PVI = (NIR-a*Red-b)/(sqrt(1+a^2))
+    where a = slope of the soil line and b = gradient of the soil line.
 
     The arguments for this function are as follows:
 
@@ -1045,7 +1046,7 @@ def gvitm(raster, band_indexes="1 2 3 4 5 6", astype=None):
      --------------------------------     --------------------------------------------------------------------
      band_indexes                            Optional string/list of band indexes.
 
-                                             * "NIR RED", e.g., "4 3" or [4,3].
+                                             * "Band1 Band2 Band3 Band4 Band5 Band7", e.g., "1 2 3 4 5 6" or [1,2,3,4,5,6]
      --------------------------------     --------------------------------------------------------------------
      astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
      ================================     ====================================================================
@@ -1297,7 +1298,7 @@ def cire(raster, band_indexes="7 6", astype=None):
     --------------------------------     --------------------------------------------------------------------
     band_indexes                             Optional string/list of band indexes.
 
-                                             * "NIR RedEdge", e.g., "7.6" or [7,6]
+                                             * "NIR RedEdge", e.g., "7 6" or [7,6]
     --------------------------------     --------------------------------------------------------------------
     astype                                   Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
@@ -1490,6 +1491,7 @@ def wndwi(raster, band_indexes="2 5 6 0.5", astype=None):
     Supported from 10.8.
 
     WNDWI = [Green – α * NIR – (1 – α) * SWIR ] / [Green + α * NIR + (1 – α) * SWIR]
+    where α = a weighted coefficient ranging from 0 to 1.
 
     The arguments for this function are as follows:
 
