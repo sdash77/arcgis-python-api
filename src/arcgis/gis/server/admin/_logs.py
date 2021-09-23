@@ -4,7 +4,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 from .._common import BaseServer
 
 
@@ -183,46 +183,46 @@ class LogManager(BaseServer):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        start_time             Optional string. The most recent time to query.  Default is now.
+        start_time             Optional String. The most recent time to query.  Default is now.
                                Time can be specified in milliseconds since UNIX epoch, or as an
                                ArcGIS Server timestamp. For example { "startTime": "2011-08-01T15:17:20,123", ... },
                                { "startTime": 1312237040123, ... }, respectively.
         ------------------     --------------------------------------------------------------------
-        end_time               Optional string. The oldest time to include in the result set. You
+        end_time               Optional String. The oldest time to include in the result set. You
                                can use this to limit the query to the last n minutes or hours as
                                needed. Default is the beginning of all logging.
         ------------------     --------------------------------------------------------------------
-        since_server_start     Optional string. Gets only the records written since the server
+        since_server_start     Optional String. Gets only the records written since the server
                                started (True).  The default is False.
         ------------------     --------------------------------------------------------------------
-        level                  Optional string. Gets only the records with a log level at or more
+        level                  Optional String. Gets only the records with a log level at or more
                                severe than the level declared here. Can be one of (in severity
                                order): DEBUG, VERBOSE, FINE, INFO, WARNING, SEVERE. The
                                default is WARNING.
         ------------------     --------------------------------------------------------------------
-        services               Optional string. Query records related to a specific service.
+        services               Optional String. Query records related to a specific service.
                                The default is all.
         ------------------     --------------------------------------------------------------------
-        machines               Optional string. Query records related to a specific machine.
+        machines               Optional String. Query records related to a specific machine.
                                The default is all.
         ------------------     --------------------------------------------------------------------
-        server                 Optional string. Query records related to a specific server.
+        server                 Optional String. Query records related to a specific server.
                                The default is all.
         ------------------     --------------------------------------------------------------------
-        codes                  Optional string. Gets only the records with the specified code.
+        codes                  Optional String. Gets only the records with the specified code.
                                The default is all.  See http://server.arcgis.com/en/server/latest/administer/windows/log-codes-overview.htm
         ------------------     --------------------------------------------------------------------
-        process_IDs            Optional string. Query by the machine process ID that logged the event.
+        process_IDs            Optional String. Query by the machine process ID that logged the event.
         ------------------     --------------------------------------------------------------------
-        export                 Optional string. Boolean indicating whether to export the query
+        export                 Optional String. Boolean indicating whether to export the query
                                results.  The default is False (don't export).
         ------------------     --------------------------------------------------------------------
-        export_type            Optional string. The export file type. CSV or TAB are the choices,
+        export_type            Optional String. The export file type. CSV or TAB are the choices,
                                CSV is the default.
         ------------------     --------------------------------------------------------------------
-        out_path               Optional string. The path to download the log file to.
+        out_path               Optional String. The path to download the log file to.
         ------------------     --------------------------------------------------------------------
-        max_records_return     Optional int. The maximum amount of records to return. Default is 5000
+        max_records_return     Optional Int. The maximum amount of records to return. Default is 5000
         ==================     ====================================================================
 
         :return:
@@ -268,13 +268,17 @@ class LogManager(BaseServer):
         logs = self._con.post(path=url, postdata=params)
         # determine if more logs are available to query
         has_more = logs["hasMore"]
+
         # If the hasMore member of the response object is true,
         # pass the last item time as the startTime parameter
         # for the next request to get the next set of records
         while max_records_return > 1:
             if has_more:
-                # get new start time from last item time
-                params["startTime"] = list(logs["logMessages"])[-1]["time"]
+                # get new start time from last item time.
+                # add one second so the last item is not the first one in new query
+                params["startTime"] = list(logs["logMessages"])[-1]["time"] + timedelta(
+                    seconds=1
+                )
                 # page size is 5000 or less
                 params["pageSize"] = (
                     max_records_return if max_records_return <= 5000 else 5000
