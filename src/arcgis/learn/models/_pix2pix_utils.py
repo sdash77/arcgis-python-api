@@ -554,8 +554,8 @@ class Pix2PixPerceptualTrainer(LearnerCallback):
             )
         percep_loss = percep_loss / 3
         loss_D = 0.5 * (
-            torch.mean(self.crit1(self.D(real_A, real_B), True))
-            + torch.mean(self.crit1(self.D(fake_B, real_A), False))
+            torch.mean(self.crit(self.D(real_A, real_B), True))
+            + torch.mean(self.crit(self.D(fake_B, real_A), False))
         ) + (0.1 * percep_loss)
 
         self.d_smter.add_value(loss_D.detach().cpu())
