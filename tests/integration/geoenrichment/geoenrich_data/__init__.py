@@ -1,7 +1,11 @@
 from pathlib import Path
 
-from arcgis.features import GeoAccessor
-import pandas as pd
+try:
+    import pandas as pd
+except:
+    pd = None
+from arcgis.features import GeoAccessor, GeoSeriesAccessor
+
 
 from .agol import gis_agol
 
