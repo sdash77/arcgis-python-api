@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import csv
 from datetime import datetime, timedelta
+from urllib.parse import _DefragResultBase
 from .._common import BaseServer
 
 
@@ -190,9 +191,12 @@ class LogManager(BaseServer):
         ------------------     --------------------------------------------------------------------
         end_time               Optional String. The oldest time to include in the result set. You
                                can use this to limit the query to the last n minutes or hours as
-                               needed. Default is the beginning of all logging.
+                               needed.
+
+                               If ```sinceLastStart``` is true, the default is all logs since the
+                               server was started.
         ------------------     --------------------------------------------------------------------
-        since_server_start     Optional String. Gets only the records written since the server
+        since_server_start     Optional Bool. Gets only the records written since the server
                                started (True).  The default is False.
         ------------------     --------------------------------------------------------------------
         level                  Optional String. Gets only the records with a log level at or more
@@ -253,6 +257,8 @@ class LogManager(BaseServer):
         url = "{url}/query".format(url=self._url)
         if start_time is not None and isinstance(start_time, datetime):
             params["startTime"] = start_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
+        else:
+            params["startTime"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S,%f")
         if end_time is not None and isinstance(end_time, datetime):
             params["endTime"] = end_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
         if level.upper() in allowed_levels:
@@ -270,16 +276,16 @@ class LogManager(BaseServer):
         has_more = logs["hasMore"]
 
         # If the hasMore member of the response object is true,
-        # pass the last item time as the startTime parameter
+        # pass the end time as the startTime parameter
         # for the next request to get the next set of records
+        loop = 0
         while max_records_return > 1:
             if has_more:
-                # get new start time from last item time.
-                # add one second so the last item is not the first one in new query
-                start_time = datetime.fromtimestamp(
-                    list(logs["logMessages"])[-1]["time"] / 1e3
-                ) + timedelta(seconds=1)
-                params["startTime"] = start_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
+                # get new start time from logs endTime in first loop then from new_logs endTime after
+                params["startTime"] = (
+                    logs["endTime"] if loop == 0 else new_logs["endTime"]
+                )
+                loop = 1
                 # page size is 5000 or less
                 params["pageSize"] = (
                     max_records_return if max_records_return < 5000 else 5000
