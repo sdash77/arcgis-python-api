@@ -4,8 +4,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import csv
-from datetime import datetime, timedelta
-from urllib.parse import _DefragResultBase
+from datetime import datetime
 from .._common import BaseServer
 
 
