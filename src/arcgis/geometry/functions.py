@@ -3,7 +3,18 @@ The ``Functions`` module is used to take :class:`~arcgis.geometry.Geometry` type
 :class:`~arcgis.geometry.Geometry` type results.
 """
 from enum import Enum
+import json
+
 import arcgis.env
+from arcgis.gis import GIS
+from arcgis.geometry import (
+    MultiPoint,
+    Polyline,
+    Point,
+    Polygon,
+    SpatialReference,
+    Geometry,
+)
 
 
 class AreaUnits(Enum):
@@ -100,13 +111,13 @@ class LengthUnits(Enum):
 
 # -------------------------------------------------------------------------
 def areas_and_lengths(
-    polygons,
-    length_unit,
-    area_unit,
-    calculation_type,
-    spatial_ref=4326,
-    gis=None,
-    future=False,
+    polygons: Polygon,
+    length_unit: str,
+    area_unit: str,
+    calculation_type: str,
+    spatial_ref: int = 4326,
+    gis: GIS = None,
+    future: bool = False,
 ):
     """
     The ``areas_and_lengths`` function calculates areas and perimeter lengths
@@ -194,7 +205,11 @@ def areas_and_lengths(
 
 # -------------------------------------------------------------------------
 def auto_complete(
-    polygons=None, polylines=None, spatial_ref=None, gis=None, future=False
+    polygons: Polygon = None,
+    polylines: Polyline = None,
+    spatial_ref: SpatialReference = None,
+    gis: arcgis.gis.GIS = None,
+    future: bool = False,
 ):
     """
     The ``auto_complete`` function simplifies the process of
@@ -225,16 +240,16 @@ def auto_complete(
 
 
 def buffer(
-    geometries,
-    in_sr,
-    distances,
-    unit,
-    out_sr=None,
-    buffer_sr=None,
-    union_results=None,
-    geodesic=None,
-    gis=None,
-    future=False,
+    geometries: list,
+    in_sr: int or dict,
+    distances: float,
+    unit: str,
+    out_sr: int or dict = None,
+    buffer_sr: float = None,
+    union_results: bool = None,
+    geodesic: bool = None,
+    gis: arcgis.gis.GIS = None,
+    future: bool = False,
 ):
     """
     The ``buffer`` function is performed on a geometry service resource
@@ -311,7 +326,12 @@ def buffer(
     )
 
 
-def convex_hull(geometries, spatial_ref=None, gis=None, future=False):
+def convex_hull(
+    geometries: list(Point or Polyline or Polygon or MultiPoint),
+    spatial_ref: SpatialReference or dict = None,
+    gis: GIS = None,
+    future: bool = False,
+):
     """
     The `convex_hull` function is performed on a :class:`~arcgis.geometry.Geometry` service
     resource. It returns the convex hull of the input geometry. The
@@ -344,7 +364,13 @@ def convex_hull(geometries, spatial_ref=None, gis=None, future=False):
     return gis._tools.geometry.convex_hull(geometries, spatial_ref, future=future)
 
 
-def cut(cutter, target, spatial_ref=None, gis=None, future=False):
+def cut(
+    cutter: Polyline,
+    target: list(Polyline or Polygon),
+    spatial_ref: SpatialReference or dict = None,
+    gis: GIS = None,
+    future: bool = False,
+):
     """
     The `cut` function is performed on a :class:`~arcgis.geometry.Geometry` service resource. This
     function splits the target :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` where it is
@@ -387,13 +413,13 @@ def cut(cutter, target, spatial_ref=None, gis=None, future=False):
 
 
 def densify(
-    geometries,
-    spatial_ref,
-    max_segment_length,
-    length_unit,
-    geodesic=False,
-    gis=None,
-    future=False,
+    geometries: list(Point, MultiPoint, Polyline, Polygon),
+    spatial_ref: int,
+    max_segment_length: float,
+    length_unit: str,
+    geodesic: bool = False,
+    gis: GIS = None,
+    future: bool = False,
 ):
     """
     The ``densify`` function is performed using the :class:`~arcgis.gis.GIS` geometry engine.
@@ -464,7 +490,13 @@ def densify(
     )
 
 
-def difference(geometries, spatial_ref, geometry, gis=None, future=False):
+def difference(
+    geometries: list(Point, MultiPoint, Polyline, Polygon),
+    spatial_ref: SpatialReference or dict,
+    geometry: Geometry,
+    gis: GIS = None,
+    future: bool = False,
+):
     """
     The ``difference`` function is performed on a geometry service
     resource. This function constructs the set-theoretic difference
@@ -505,13 +537,13 @@ def difference(geometries, spatial_ref, geometry, gis=None, future=False):
 
 
 def distance(
-    spatial_ref,
-    geometry1,
-    geometry2,
-    distance_unit="",
-    geodesic=False,
-    gis=None,
-    future=False,
+    spatial_ref: SpatialReference or dict,
+    geometry1: Geometry,
+    geometry2: Geometry,
+    distance_unit: str = "",
+    geodesic: bool = False,
+    gis: GIS = None,
+    future: bool = False,
 ):
     """
     The ``distance`` function is performed on a geometry service resource.
@@ -557,7 +589,12 @@ def distance(
 
 
 def find_transformation(
-    in_sr, out_sr, extent_of_interest=None, num_of_results=1, gis=None, future=False
+    in_sr: int or dict,
+    out_sr: int or dict,
+    extent_of_interest: dict = None,
+    num_of_results: int = 1,
+    gis: GIS = None,
+    future: bool = False,
 ):
     """
     The ``find_transformations`` function is performed on a :class:`~arcgis.geometry.Geometry`
@@ -618,7 +655,12 @@ def find_transformation(
 
 
 def from_geo_coordinate_string(
-    spatial_ref, strings, conversion_type, conversion_mode=None, gis=None, future=False
+    spatial_ref: SpatialReference or dict,
+    strings: list(str),
+    conversion_type: str,
+    conversion_mode: str = None,
+    gis: GIS = None,
+    future: bool = False,
 ):
     """
     The ``from_geo_coordinate_string`` function is performed on a :class:`~arcgis.geometry.Geometry`
@@ -694,7 +736,12 @@ def from_geo_coordinate_string(
 
 
 def generalize(
-    spatial_ref, geometries, max_deviation, deviation_unit, gis=None, future=False
+    spatial_ref: SpatialReference or dict,
+    geometries: list(Geometry),
+    max_deviation: int,
+    deviation_unit: str,
+    gis: GIS = None,
+    future: bool = False,
 ):
     """
     The ``generalize`` function is performed on a :class:`~arcgis.geometry.Geometry` service
@@ -738,7 +785,13 @@ def generalize(
     )
 
 
-def intersect(spatial_ref, geometries, geometry, gis=None, future=False):
+def intersect(
+    spatial_ref: SpatialReference or dict,
+    geometries: list(Geometry),
+    geometry: Geometry,
+    gis: GIS = None,
+    future: bool = False,
+):
     """
     The ``intersect`` function is performed on a :class:`~arcgis.geometry.Geometry` service
     resource. This function constructs the set-theoretic intersection
@@ -779,7 +832,12 @@ def intersect(spatial_ref, geometries, geometry, gis=None, future=False):
     )
 
 
-def label_points(spatial_ref, polygons, gis=None, future=False):
+def label_points(
+    spatial_ref: SpatialReference or dict,
+    polygons: list(Polygon),
+    gis: GIS = None,
+    future: bool = False,
+):
     """
     The ``label_points`` function is performed on a :class:`~arcgis.geometry.Geometry` service
     resource. The ``labelPoints`` function calculates an interior :class:`~arcgis.geometry.Point`
@@ -808,7 +866,12 @@ def label_points(spatial_ref, polygons, gis=None, future=False):
 
 
 def lengths(
-    spatial_ref, polylines, length_unit, calculation_type, gis=None, future=False
+    spatial_ref: SpatialReference or dict,
+    polylines: Polyline,
+    length_unit: str,
+    calculation_type: str,
+    gis: GIS = None,
+    future: bool = False,
 ):
     """
     The ``lengths`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
@@ -864,15 +927,15 @@ def lengths(
 
 
 def offset(
-    geometries,
-    offset_distance,
-    offset_unit,
-    offset_how="esriGeometryOffsetRounded",
-    bevel_ratio=10,
-    simplify_result=False,
-    spatial_ref=None,
-    gis=None,
-    future=False,
+    geometries: list(Point, MultiPoint, Polyline, Polygon),
+    offset_distance: float,
+    offset_unit: str,
+    offset_how: str = "esriGeometryOffsetRounded",
+    bevel_ratio: int = 10,
+    simplify_result: bool = False,
+    spatial_ref: SpatialReference or dict = None,
+    gis: GIS = None,
+    future: bool = False,
 ):
     """
     The ``offset`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
@@ -961,13 +1024,13 @@ def offset(
 
 
 def project(
-    geometries,
-    in_sr,
-    out_sr,
-    transformation="",
-    transform_forward=False,
-    gis=None,
-    future=False,
+    geometries: list(Point, MultiPoint, Polyline, Polygon),
+    in_sr: int or dict,
+    out_sr: int or dict,
+    transformation: str = "",
+    transform_forward: bool = False,
+    gis: GIS = None,
+    future: bool = False,
 ):
     """
     The ``project`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
@@ -1028,13 +1091,13 @@ def project(
 
 
 def relation(
-    geometries1,
-    geometries2,
-    spatial_ref,
-    spatial_relation="esriGeometryRelationIntersection",
-    relation_param="",
-    gis=None,
-    future=False,
+    geometries1: list(Geometry),
+    geometries2: list(Geometry),
+    spatial_ref: SpatialReference or dict,
+    spatial_relation: str = "esriGeometryRelationIntersection",
+    relation_param: str = "",
+    gis: GIS = None,
+    future: bool = False,
 ):
     """
     The ``relation`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
@@ -1094,7 +1157,13 @@ def relation(
     )
 
 
-def reshape(spatial_ref, target, reshaper, gis=None, future=False):
+def reshape(
+    spatial_ref: SpatialReference or dict,
+    target: Polyline or Polygon,
+    reshaper: Polyline,
+    gis: GIS = None,
+    future: bool = False,
+):
     """
     The ``reshape`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
     It reshapes a :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` feature by constructing a
@@ -1124,7 +1193,12 @@ def reshape(spatial_ref, target, reshaper, gis=None, future=False):
     return gis._tools.geometry.reshape(spatial_ref, target, reshaper, future=future)
 
 
-def simplify(spatial_ref, geometries, gis=None, future=False):
+def simplify(
+    spatial_ref: SpatialReference or dict,
+    geometries: list(Point, MultiPoint, Polyline, Polygon),
+    gis: GIS = None,
+    future: bool = False,
+):
     """
     The ``simplify`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
     ``simplify`` permanently alters the input geometry so that the geometry
@@ -1154,15 +1228,15 @@ def simplify(spatial_ref, geometries, gis=None, future=False):
 
 
 def to_geo_coordinate_string(
-    spatial_ref,
-    coordinates,
-    conversion_type,
-    conversion_mode="mgrsDefault",
-    num_of_digits=None,
-    rounding=True,
-    add_spaces=True,
-    gis=None,
-    future=False,
+    spatial_ref: SpatialReference or dict,
+    coordinates: json,
+    conversion_type: str,
+    conversion_mode: str = "mgrsDefault",
+    num_of_digits: int = None,
+    rounding: bool = True,
+    add_spaces: bool = True,
+    gis: GIS = None,
+    future: bool = False,
 ):
     """
     The ``to_geo_coordinate_string`` function is performed on a :class:`~arcgis.geometry.Geometry`
@@ -1261,7 +1335,12 @@ def to_geo_coordinate_string(
 
 
 def trim_extend(
-    spatial_ref, polylines, trim_extend_to, extend_how=0, gis=None, future=False
+    spatial_ref: SpatialReference or dict,
+    polylines: list(Polyline),
+    trim_extend_to: Polyline,
+    extend_how: int = 0,
+    gis: GIS = None,
+    future: bool = False,
 ):
     """
     The ``trim_extend`` function is performed on a :class:`~arcgis.geometry.Geometry` service
@@ -1329,7 +1408,12 @@ def trim_extend(
     )
 
 
-def union(spatial_ref, geometries, gis=None, future=False):
+def union(
+    spatial_ref: SpatialReference or dict,
+    geometries: list(Point, MultiPoint, Polyline, Polygon),
+    gis: GIS = None,
+    future: bool = False,
+):
     """
     The ``union`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
     This function constructs the set-theoretic union of the geometries

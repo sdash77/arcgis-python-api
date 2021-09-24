@@ -9,7 +9,7 @@ from . import MultiPoint, Geometry
 GEOM_TYPES = (Point, Polygon, Polyline, MultiPoint)
 __all__ = ["scale", "rotate", "skew", "translate"]
 # -------------------------------------------------------------------------
-def scale(geom, *scale_factor):
+def scale(geom: Geometry, *scale_factor: int):
     """
     Create a scaling transform from a scalar value (float)
 
@@ -66,7 +66,7 @@ def scale(geom, *scale_factor):
 
 
 # -------------------------------------------------------------------------
-def rotate(geom, theta):
+def rotate(geom: Geometry, theta: float):
     """
     rotates a geometry counter-clockwise by some degree theta
 
@@ -118,7 +118,7 @@ def rotate(geom, theta):
 
 
 # -------------------------------------------------------------------------
-def skew(geom, x_angle=0, y_angle=0):
+def skew(geom: Geometry, x_angle: float = 0, y_angle: float = 0):
     """
     Create a skew transform along one or both axes.
 
@@ -178,7 +178,7 @@ def skew(geom, x_angle=0, y_angle=0):
 
 
 # -------------------------------------------------------------------------
-def translate(geom, x_offset, y_offset):
+def translate(geom: Geometry, x_offset: float, y_offset: float):
     """
     Moves a geometry by some distance
 

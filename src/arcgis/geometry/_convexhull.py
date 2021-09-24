@@ -13,12 +13,12 @@ TURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)
 import math
 
 
-def cmp_to_symbol(val, other_val):
+def cmp_to_symbol(val: int, other_val: int):
     """returns the symbol representing the relationship between two values"""
     return "=><"[(val > other_val) - (val < other_val)]
 
 
-def turn(p, q, r):
+def turn(p: list, q: list, r: list):
     """Returns -1, 0, 1 if p,q,r forms a right, straight, or left turn."""
     a = (q[0] - p[0]) * (r[1] - p[1]) - (r[0] - p[0]) * (q[1] - p[1])
     b = 0
@@ -101,7 +101,7 @@ def _next_hull_pt_pair(hulls, pair):
 # """calculates the euclidean distance"""
 
 
-def convex_hull(pts):
+def convex_hull(pts: list):
     """Returns the points on the convex hull of pts in CCW order."""
     for m in (1 << (1 << t) for t in xrange(len(pts))):
         hulls = [_graham_scan(pts[i : i + m]) for i in xrange(0, len(pts), m)]
@@ -114,7 +114,7 @@ def convex_hull(pts):
     return hull
 
 
-def convex_hull_GS(points):
+def convex_hull_GS(points: list):
     """
     Returns points on convex hull in CCW order according to Graham's scan algorithm.
     """
