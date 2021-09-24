@@ -1141,8 +1141,10 @@ class EnterpriseUsers(BasePortalAdmin):
             "viewer": "viewerUT",
             "fieldworker": "fieldWorkerUT",
         }
-        if user_license.lower() in user_license_lu:
+        if user_license and user_license.lower() in user_license_lu:
             user_license = user_license_lu[user_license.lower()]
+        else:
+            user_license = user_license_lu["creator"]
         if role.lower() in role_lu:
             role = role_lu[role.lower()]
 

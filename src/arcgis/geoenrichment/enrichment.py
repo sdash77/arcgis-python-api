@@ -338,34 +338,32 @@ class Country(object):
         # stash for use later
         self._ba_cntry = ba.get_country(iso3, year=year)
 
-        # legacy parameter support
-        portal_url = kwargs["purl"] if "purl" in kwargs else None
-
         # if the source is a GIS set a few more properties
         if isinstance(self._gis, GIS):
 
             # get the helper services to work with
             hlp_svcs = self._gis.properties["helperServices"]
 
-            # if ArcGIS Online hosted notebook environment
-            if portal_url is not None:
-                self._base_url = portal_url
+            # legacy parameter support
+            if "purl" in kwargs:
+                self._base_url = kwargs["purl"]
 
-            # otherwise, get the url if available and roll back to AGOL in a pinch
+            # otherwise, get the url if available
             else:
-                if "geoenrichment" in hlp_svcs:
-                    self._base_url = hlp_svcs["geoenrichment"]["url"]
-                else:
-                    self._base_url = "http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver"
+                assert (
+                    "geoenrichment" in hlp_svcs.keys()
+                ), "Geoenrichment does not appear to be configured for your portal."
+                self._base_url = hlp_svcs["geoenrichment"]["url"]
 
-            # if a hosted notebook environment, get the private service url if set
-            if self._gis._is_hosted_nb_home:
+            # if a hosted notebook environment, get the private service url
+            if gis._is_hosted_nb_home:
                 res = self._gis._private_service_url(self._base_url)
-                self._base_url = (
+                prv_url = (
                     res["privateServiceUrl"]
                     if "privateServiceUrl" in res
                     else res["serviceUrl"]
                 )
+                self._base_url = prv_url
 
             # set the dataset_id to the default
             self._dataset_id = self._ba_cntry.properties.default_dataset

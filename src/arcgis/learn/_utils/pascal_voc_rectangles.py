@@ -103,7 +103,7 @@ def show_batch_object_detection(
     self, rows=5, ds_type=DatasetType.Train, reverse=False, **kwargs
 ):
     """
-    This function randomly picks a few training chips and visualized them.
+    This function randomly picks a few training chips and visualizes them.
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
@@ -136,7 +136,7 @@ def show_batch_pascal_voc_rectangles(
     self, rows=3, alpha=1, **kwargs
 ):  # parameters adjusted in kwargs
     """
-    This function randomly picks a few training chips and visualized them.
+    This function randomly picks a few training chips and visualizes them.
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------

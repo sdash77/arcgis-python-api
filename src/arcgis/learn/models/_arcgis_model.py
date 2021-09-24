@@ -282,6 +282,11 @@ class SaveModelCallback(TrackerCallback):
         self.every = every
         self.name = name
         self.load_best_at_end = load_best_at_end
+
+        # set some default value of best epoch attribute
+        self.best_epoch = 0
+        self.learn._best_epoch = 0
+
         if self.every not in ["improvement", "epoch"]:
             warn(
                 'SaveModel every {} is invalid, falling back to "improvement".'.format(
@@ -299,6 +304,11 @@ class SaveModelCallback(TrackerCallback):
         # do not save model after early stopping kicks in.
         if not kwargs.get("stop_training", False):
             current = self.get_monitor_value()
+
+            if isinstance(current, torch.Tensor):
+                if current.is_cuda:
+                    current = current.cpu()
+
             # if a better checkpoint is found.
             better_checkpoint = current is not None and self.operator(
                 current, self.best
@@ -308,9 +318,6 @@ class SaveModelCallback(TrackerCallback):
                 self.learn._best_epoch = epoch
                 self.best = current
 
-            if isinstance(current, torch.Tensor):
-                if current.is_cuda:
-                    current = current.cpu()
             self.current = current
 
             if self.every == "epoch":
@@ -343,7 +350,7 @@ class SaveModelCallback(TrackerCallback):
                 self.model.load(f"{self.name}_epoch_{self.best_epoch}")
             except FileNotFoundError:
                 # logging this to notify about possible errors.
-                logger.log(50, "Cannot load best model.")
+                print("Could not load the best model.")
 
             try:
                 self.model.save(
@@ -351,7 +358,7 @@ class SaveModelCallback(TrackerCallback):
                 )
             except:
                 # logging this to notify about possible errors.
-                logger.log(50, "Encountered error in saving checkpoint.")
+                print("Encountered error in saving checkpoint.")
 
 
 # Multispectral Models Specific resources start #
