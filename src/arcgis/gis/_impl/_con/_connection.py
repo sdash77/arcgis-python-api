@@ -48,7 +48,7 @@ from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.auth import EsriSession
-from arcgis.auth import EsriBuiltInAuth, EsriGenTokenAuth
+from arcgis.auth import EsriBuiltInAuth, EsriGenTokenAuth, ArcGISProAuth
 
 try:
     from arcgis.auth import EsriWindowsAuth
@@ -158,6 +158,7 @@ class Connection(object):
         ):
             self._referer = None
         elif baseurl.lower() == "pro":
+            self._auth = "PRO"
             try:
                 self._referer = arcpy.GetSigninToken().pop("referer", "http")
             except:
@@ -186,11 +187,19 @@ class Connection(object):
         self._client_id = kwargs.pop("client_id", None)
         self._client_secret = kwargs.pop("client_secret", None)
         self._token_url = kwargs.pop("token_url", None)
+        if str(baseurl).lower() != "pro":
+            self._auth = "PRO"
+            auth_check = [""]
         if self._key_file is None and self._cert_file is None:
             auth_check = self._auth_check(baseurl)
         else:
             auth_check = [""]
-        if username is None and password is None and self._portal_connection is None:
+        if (
+            username is None
+            and password is None
+            and self._portal_connection is None
+            and str(baseurl).lower() != "pro"
+        ):
             self._auth = "ANON"
         elif (not username is None and not password is None) and len(
             username.split("\\")
@@ -301,6 +310,8 @@ class Connection(object):
     def _auth_check(self, url):
         import requests
 
+        if str(url).lower() == "pro":
+            return [""]
         if self._cert_file and self._key_file:
             cert = (self._cert_file, self._key_file)
 
@@ -486,7 +497,11 @@ class Connection(object):
                 legacy=False,
             )
         elif self._auth.lower() == "pro":
-            self._session.auth = GuessAuth(None, None, legacy=False)
+            from arcgis.auth import ArcGISProAuth
+
+            self._session.auth = (
+                GuessAuth(None, None, legacy=False) + ArcGISProAuth()
+            )  # GuessAuth(None, None, legacy=False)
 
         else:
 

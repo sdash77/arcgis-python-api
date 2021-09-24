@@ -20,10 +20,11 @@ try:
 except ImportError:
     HAS_KERBEROS = False
 from arcgis.auth import EsriBasicAuth
+from arcgis.auth._auth._schain import SupportMultiAuth
 from requests_toolbelt.auth import _digest_auth_compat as auth_compat, http_proxy_digest
 
 
-class GuessAuth(auth.AuthBase):
+class GuessAuth(auth.AuthBase, SupportMultiAuth):
     """Guesses the auth type by the WWW-Authentication header."""
 
     _try_auth_count = None
