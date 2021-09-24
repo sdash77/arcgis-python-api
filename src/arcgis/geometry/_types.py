@@ -4,7 +4,7 @@ New Geometries Classes
 import copy
 import json
 import ujson as _ujson
-import arcgis
+from . import Geometry, MultiPoint, Point, Polygon, Polyline, SpatialReference
 
 try:
     import numpy as np
@@ -856,8 +856,8 @@ class Geometry(BaseGeometry):
     @classmethod
     def from_shapely(
         cls,
-        shapely_geometry: arcgis.geometry.Geometry,
-        spatial_reference: arcgis.geometry.SpatialReference = None,
+        shapely_geometry: Geometry,
+        spatial_reference: SpatialReference = None,
     ):
         """
         The ``from_shapely`` method creates a Python API Geometry object from a Shapely geometry object.
@@ -1686,9 +1686,7 @@ class Geometry(BaseGeometry):
 
     # Functions#############################################################
     # ----------------------------------------------------------------------
-    def angle_distance_to(
-        self, second_geometry: arcgis.geometry.Geometry, method: str = "GEODESIC"
-    ):
+    def angle_distance_to(self, second_geometry: Geometry, method: str = "GEODESIC"):
         """
         The ``angle_distance_to`` method retrieves a tuple of angle and distance to another
         :class:`~arcgis.geometry.Point` using a measurement type.
@@ -1813,7 +1811,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def contains(self, second_geometry: arcgis.geometry.Geometry, relation: str = None):
+    def contains(self, second_geometry: Geometry, relation: str = None):
         """
         The ``contain`` method indicates if the base :class:`~arcgis.geometry.Geometry` object contains the comparison
         :class:`~arcgis.geometry.Geometry` object.
@@ -1937,7 +1935,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def crosses(self, second_geometry: arcgis.geometry.Geometry):
+    def crosses(self, second_geometry: Geometry):
         """
         The ``crosses`` method indicates if the two :class:`~arcgis.geometry.Geometry` objects intersect in a
         geometry of a lesser shape type.
@@ -1967,7 +1965,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def cut(self, cutter: arcgis.geometry.Polyline):
+    def cut(self, cutter: Polyline):
         """
         The ``cut`` method splits this :class:`~arcgis.geometry.Geometry` object into a part left of the cutting
         :class:`~arcgis.geometry.Polyline` and a part right of it.
@@ -2045,7 +2043,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def difference(self, second_geometry: arcgis.geometry.Geometry):
+    def difference(self, second_geometry: Geometry):
         """
         The ``difference`` method constructs the :class:`~arcgis.geometry.Geometry` object that is composed only of the
         region unique to the base geometry but not part of the other geometry.
@@ -2078,7 +2076,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def disjoint(self, second_geometry: arcgis.geometry.Geometry):
+    def disjoint(self, second_geometry: Geometry):
         """
         The ``disjoint`` method indicates if the base and comparison :class:`~arcgis.geometry.Geometry` objects share no
         :class:`~arcgis.geometry.Point` objects in common.
@@ -2109,7 +2107,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def distance_to(self, second_geometry: arcgis.geometry.Geometry):
+    def distance_to(self, second_geometry: Geometry):
         """
         The ``distance_to`` method retrieves the minimum distance between two :class:`~arcgis.geometry.Geometry` objects. If the
         geometries intersect, the minimum distance is 0.
@@ -2143,7 +2141,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def equals(self, second_geometry: arcgis.geometry.Geometry):
+    def equals(self, second_geometry: Geometry):
         """
         The ``equals`` method indicates if the base and comparison :class:`~arcgis.geometry.Geometry` objects are of the
         same shape type and define the same set of points in the plane. This is
@@ -2290,7 +2288,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def intersect(self, second_geometry: arcgis.geometry.Geometry, dimension: int = 1):
+    def intersect(self, second_geometry: Geometry, dimension: int = 1):
         """
         The ``intersect`` method constructs a :class:`~arcgis.geometry.Geometry` object that is the geometric
         intersection of the two input geometries. Different dimension values can be used to create
@@ -2361,9 +2359,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def measure_on_line(
-        self, second_geometry: arcgis.geometry.Geometry, as_percentage: bool = False
-    ):
+    def measure_on_line(self, second_geometry: Geometry, as_percentage: bool = False):
         """
         The ``measure_on_line`` retrieves a measure from the start :class:`~arcgis.geometry.Point` of this line to
         the ``in_point``.
@@ -2406,7 +2402,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def overlaps(self, second_geometry: arcgis.geometry.Geometry):
+    def overlaps(self, second_geometry: Geometry):
         """
         The ``overlaps`` method indicates if the intersection of the two :class:`~arcgis.geometry.Geometry` objects has
         the same shape type as one of the input geometries and is **not** equivalent to
@@ -2534,7 +2530,7 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def project_as(
         self,
-        spatial_reference: arcgis.geometry.SpatialReference,
+        spatial_reference: SpatialReference or dict,
         transformation_name: str = None,
     ):
         """
@@ -2659,7 +2655,7 @@ class Geometry(BaseGeometry):
 
     # ----------------------------------------------------------------------
     def query_point_and_distance(
-        self, second_geometry: arcgis.geometry.Geometry, use_percentage: bool = False
+        self, second_geometry: Geometry, use_percentage: bool = False
     ):
         """
         The ``query_point_and_distance`` method finds the :class:`~arcgis.geometry.Point` on the
@@ -2751,7 +2747,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def snap_to_line(self, second_geometry: arcgis.geometry.Geometry):
+    def snap_to_line(self, second_geometry: Geometry):
         """
         The ``snap_to_line`` method retrieves a new :class:`~arcgis.geometry.Point` based on `in_point` snapped to this
         :class:`~arcgis.geometry.Geometry` object.
@@ -2777,7 +2773,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def symmetric_difference(self, second_geometry: arcgis.geometry.Geometry):
+    def symmetric_difference(self, second_geometry: Geometry):
         """
         The ``symmetric_difference`` method constructs a new :class:`~arcgis.geometry.Geometry` object that is the union
         of two geometries minus the intersection of those geometries.
@@ -2816,7 +2812,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def touches(self, second_geometry: arcgis.geometry.Geometry):
+    def touches(self, second_geometry: Geometry):
         """
         The ``touches`` method indicates if the boundaries of the two :class:`~arcgis.geometry.Geometry` objects
         intersect.
@@ -2847,7 +2843,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def union(self, second_geometry: arcgis.geometry.Geometry):
+    def union(self, second_geometry: Geometry):
         """
         The ``union`` method constructs the :class:`~arcgis.geometry.Geometry` object that is the set-theoretic union
         of the input geometries.
@@ -2878,7 +2874,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def within(self, second_geometry: arcgis.geometry.Geometry, relation: str = None):
+    def within(self, second_geometry: Geometry, relation: str = None):
         """
         The ``within`` method indicates if the base :class:`~arcgis.geometry.Geometry` object is within the comparison
         :class:`~arcgis.geometry.Geometry` object.

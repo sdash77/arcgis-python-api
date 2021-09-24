@@ -5,8 +5,7 @@ layers.
 """
 
 from inspect import GEN_CLOSED
-from . import Geometry
-from arcgis.geometry import Geometry, SpatialReference
+from . import Geometry, SpatialReference
 
 # esriSpatialRelIntersects | esriSpatialRelContains | esriSpatialRelCrosses | esriSpatialRelEnvelopeIntersects | \
 # esriSpatialRelIndexIntersects | esriSpatialRelOverlaps | esriSpatialRelTouches | esriSpatialRelWithin

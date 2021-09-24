@@ -7,7 +7,7 @@ import json
 
 import arcgis.env
 from arcgis.gis import GIS
-from arcgis.geometry import (
+from . import (
     MultiPoint,
     Polyline,
     Point,
