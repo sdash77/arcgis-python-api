@@ -518,19 +518,21 @@ def distance(
     It reports the `2D Euclidean` or `geodesic` distance between the two
     :class:`~arcgis.geometry.Geometry` objects.
 
-
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
-    geometry1        The :class:`~arcgis.geometry.Geometry` object from which the distance is measured.
-                      The structure of each geometry in the array is the
+    geometry1         The :class:`~arcgis.geometry.Geometry` object from which the distance is
+                      measured. The structure of each geometry in the array is the
                       same as the structure of the JSON geometry objects returned by
                       the ArcGIS REST API.
     ----------------  -------------------------------------------------------------------------------
-    geometry2        The :class:`~arcgis.geometry.Geometry` object to which the distance is measured.
-                      The structure of each geometry in the array is the
+    geometry2         The :class:`~arcgis.geometry.Geometry` object to which the distance is
+                      measured. The structure of each geometry in the array is the
                       same as the structure of the JSON geometry objects returned by
                       the ArcGIS REST API.
+    ----------------  -------------------------------------------------------------------------------
+    distance_unit     Optional. One of :class:`~arcgis.geometry.functions.LengthUnits` enumeration
+                      members, or integer. .
     ----------------  -------------------------------------------------------------------------------
     geodesic          If ``geodesic`` is set to true, then the geodesic distance
                       between the ``geometry1`` and ``geometry2`` geometries is returned.
@@ -538,9 +540,11 @@ def distance(
                       the ellipsoid of the earth. If ``geodesic`` is set to false or not
                       specified, the planar distance is returned. The default value is false.
     ----------------  -------------------------------------------------------------------------------
-    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known
+                      ID or JSON object
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            An optional Boolean. This operation determines if the job is run asynchronously
+                      or not.
     ================  ===============================================================================
 
     :returns:
