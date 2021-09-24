@@ -4348,7 +4348,7 @@ class FeatureLayerCollection(_GISResource):
         wait=False,
         out_path=None,
         transformations=None,
-        time_reference_unknown_client=None
+        time_reference_unknown_client=None,
     ):
         """
         The createReplica operation is performed on a feature service

@@ -611,7 +611,7 @@ class SyncManager(object):
                                             False. This parameter is only applicable if the feature service has
                                             attachments.
         -----------------------------       --------------------------------------------------------------------
-        return_attachments_databy_url       If True, a reference to a URL will be provided for each attachment           
+        return_attachments_databy_url       If True, a reference to a URL will be provided for each attachment
                                             returned from create method. Otherwise, attachments are embedded in
                                             the response. The default is True. This parameter is only applicable
                                             if the feature service has attachments and if return_attachments is
