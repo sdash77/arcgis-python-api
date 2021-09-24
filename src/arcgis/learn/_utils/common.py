@@ -36,7 +36,7 @@ except Exception:
     pass
 
 
-def read_image(path, resize_to: int = None):
+def read_image(path, resize_to: int = None, keep_raw=False):
     """
     path: file path of image on disk.
 
@@ -56,7 +56,7 @@ def read_image(path, resize_to: int = None):
             from osgeo import gdal
 
             ds = gdal.Open(path)
-            if resize_to is None:
+            if resize_to is None or keep_raw:
                 arr = ds.ReadAsArray()
             else:
                 gdal_dtype = ds.GetRasterBand(1).DataType
@@ -77,7 +77,7 @@ def read_image(path, resize_to: int = None):
                     yRes=dy_new,
                 )
                 arr = ds_new.ReadAsArray()
-            if len(arr.shape) > 2:
+            if len(arr.shape) > 2 and not keep_raw:
                 arr = np.rollaxis(arr, 0, 3)
             return arr
     except Exception as _gdal_error:
@@ -160,8 +160,8 @@ class ArcGISMSImage(Image):
         return cls(x)
 
     @staticmethod
-    def read_image(path):
-        return read_image(path)
+    def read_image(path, keep_raw=False):
+        return read_image(path, keep_raw=keep_raw)
 
     @classmethod
     def open(cls, path, cast_to=np.float32, div=None, imagery_type=None):

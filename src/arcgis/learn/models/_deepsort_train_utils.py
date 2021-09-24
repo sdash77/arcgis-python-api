@@ -435,7 +435,7 @@ class Accuracy(Callback):
 
     def on_epoch_end(self, last_metrics, **kwargs):
         "Set the final result in `last_metrics`."
-        return add_metrics(last_metrics, 1.0 * self.correct / self.count)
+        return add_metrics(last_metrics, (1.0 * self.correct) / self.count)
 
 
 def _get_metrics():
