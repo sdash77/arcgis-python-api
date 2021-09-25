@@ -532,7 +532,9 @@ def distance(
                       the ArcGIS REST API.
     ----------------  -------------------------------------------------------------------------------
     distance_unit     Optional. One of :class:`~arcgis.geometry.functions.LengthUnits` enumeration
-                      members, or integer. .
+                      members. See Geometry Service
+                      `distance <https://developers.arcgis.com/rest/services-reference/enterprise/distance.htm>`_
+                      for full details.
     ----------------  -------------------------------------------------------------------------------
     geodesic          If ``geodesic`` is set to true, then the geodesic distance
                       between the ``geometry1`` and ``geometry2`` geometries is returned.
