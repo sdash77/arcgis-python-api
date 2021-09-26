@@ -12,7 +12,6 @@ try:
     import torch
     import cv2
     import numpy as np
-    from PIL import Image
     import matplotlib.pyplot as plt
     from numpy import mod
     from torch import resize_as_
@@ -176,6 +175,11 @@ class DeepSort(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
         """
         self._check_requisites()
+        from fastai.basic_data import DatasetType
+
+        if self.learn.dl(DatasetType.Valid).batch_size > len(self.learn.data.valid_ds):
+            rows = min(rows, len(self.learn.data.valid_ds))
+
         self.learn.show_results(rows=rows)
         if _IS_ARCGISPRONOTEBOOK:
             plt.show()

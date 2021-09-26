@@ -1458,6 +1458,7 @@ from importlib import reload, import_module
 import json
 import os
 import sys
+import arcpy
 sys.path.append(os.path.dirname(__file__))
 import numpy as np
 
@@ -1504,6 +1505,11 @@ features = {
             'name': 'Class',
             'type': 'esriFieldTypeString',
             'alias': 'Class'
+        },
+        {
+            'name': 'Confidence',
+            'type': 'esriFieldTypeDouble',
+            'alias': 'Confidence'
         }
     ],
     'features': []
@@ -1520,6 +1526,11 @@ fields = {
             'name': 'Class',
             'type': 'esriFieldTypeString',
             'alias': 'Class'
+        },
+        {
+            'name': 'Confidence',
+            'type': 'esriFieldTypeDouble',
+            'alias': 'Confidence'
         },
         {
             'name': 'Shape',
@@ -1681,6 +1692,11 @@ class ArcGISObjectClassifier:
                         'alias': 'Class'
                     },
                     {
+                        'name': 'Confidence',
+                        'type': 'esriFieldTypeDouble',
+                        'alias': 'Confidence'
+                    },
+                    {
                         'name': 'Shape',
                         'type': 'esriFieldTypeGeometry',
                         'alias': 'Shape'
@@ -1693,7 +1709,12 @@ class ArcGISObjectClassifier:
                 'type': 'esriFieldTypeString',
                 'alias': 'Label'
             }
-        )
+        )         
+
+        if "MetaDataMode" in self.json_info and self.json_info["MetaDataMode"] == "MultiLabeled_Tiles":
+            for item in fields['fields']:
+                if item['name'] == 'Confidence':
+                    item['type'] = 'esriFieldTypeString'
 
         return json.dumps(fields)
 
@@ -1710,22 +1731,23 @@ class ArcGISObjectClassifier:
             rasters_pixels[i][np.where(rasters_mask[i] == 0)] = 0
 
         pixelBlocks['rasters_pixels'] = rasters_pixels
-
+        
         polygon_list, labels = self.child_object_detector.vectorize(**pixelBlocks)
 
         features['features'] = []
 
         features['fieldAliases'].update({
-            'Label':'Label'
+            'Label': 'Label'
         })
 
-        features['fields'].append(
-            {
+        Labelfield = {
                 'name': 'Label',
                 'type': 'esriFieldTypeString',
                 'alias': 'Label'
-            }
-        )
+        }
+
+        if not Labelfield in features['fields']:
+            features['fields'].append(Labelfield)
 
         for i in range(len(polygon_list)):
 
@@ -1741,8 +1763,9 @@ class ArcGISObjectClassifier:
             features['features'].append({
                 'attributes': {
                     'OID': i + 1,
+                    'Confidence': str(1.0),
                     'Label': labels[i],
-                    'Classname': labels[i]
+                    'Classname': "random"
                 },
                 'geometry': {
                     'rings': rings

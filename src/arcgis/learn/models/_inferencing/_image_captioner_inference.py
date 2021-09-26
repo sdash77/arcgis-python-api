@@ -55,7 +55,7 @@ class ChildObjectDetector:
 
         # Using arcgis.learn FeatureClassifer from_model function.
         self.cf = ImageCaptioner.from_model(emd_path=model)
-        self.model = self.cf.learn.model
+        self.model = self.cf.learn.model.to(self.device)
         self.model.eval()
 
     def getParameterInfo(self, required_parameters):
@@ -90,9 +90,9 @@ class ChildObjectDetector:
         else:
             self.batch_size = int(self.emd["BatchSize"])
 
-        self.beam_width = int(scalars.get("beam_width", 5))  # Default 0.5 threshold
+        self.beam_width = int(scalars.get("beam_width", 5))
 
-        self.max_length = int(scalars.get("max_length", 20))  # Default 0.5 threshold
+        self.max_length = int(scalars.get("max_length", 20))
 
         return {
             # CropSizeFixed is a boolean value parameter (1 or 0) in the emd file, representing whether the size of
@@ -140,11 +140,9 @@ class ChildObjectDetector:
         # Convert to torch tensor, set device and convert to float
         batch_images = torch.tensor(batch_images).to(self.device).float()
 
-        # the second element in the passed tuple is hardcoded to make fastai's pred_batch work
         _, labels, _ = self.cf.learn.model.sample(
             batch_images.to(self.device), self.beam_width, self.max_length
         )
-        # predictions: torch.tensor(B,C), where B is the batch size and C is the number of classes
 
         # Appending this ring for all the features in the batch
         rings = [
