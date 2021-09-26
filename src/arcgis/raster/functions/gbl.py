@@ -661,9 +661,9 @@ def zonal_statistics(
     percentile_interpolation_type="AUTO_DETECT",
 ):
 
-    """"
+    """
     Calculates statistics on values of a raster within the zones of another dataset.
-    For more information,
+    For more information see,
      https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/zonal-statistics-global-function.htm
 
     Parameters
