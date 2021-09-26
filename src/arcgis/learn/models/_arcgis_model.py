@@ -63,6 +63,13 @@ try:
     from ... import __version__ as ArcGISLearnVersion
     from ._pointcnn_utils import AverageMetric
     from fastai.core import camel2snake
+
+    # EarlyStoppingCallback should run as one
+    # of the first callback so that stop training flag is set
+    # and other callbacks can behave accordingly.
+    # e.g: Do not checkpoint final model after early stopping.
+    EarlyStoppingCallback._order = -10
+
 except ImportError as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -199,7 +206,11 @@ def _set_multigpu_callback(model):
 
 
 def _set_ddp_multigpu(model):
-    parser = argparse.ArgumentParser()
+    try:
+        parser = argparse.ArgumentParser()
+    except IndexError:
+        model._multigpu_training = False
+        return
     parser.add_argument("--local_rank", type=int)
     args, unknown = parser.parse_known_args()
     if "RANK" in os.environ and "WORLD_SIZE" in os.environ:
@@ -271,6 +282,11 @@ class SaveModelCallback(TrackerCallback):
         self.every = every
         self.name = name
         self.load_best_at_end = load_best_at_end
+
+        # set some default value of best epoch attribute
+        self.best_epoch = 0
+        self.learn._best_epoch = 0
+
         if self.every not in ["improvement", "epoch"]:
             warn(
                 'SaveModel every {} is invalid, falling back to "improvement".'.format(
@@ -285,24 +301,34 @@ class SaveModelCallback(TrackerCallback):
         if int(os.environ.get("RANK", 0)):
             return
 
-        current = self.get_monitor_value()
-        if isinstance(current, torch.Tensor):
-            if current.is_cuda:
-                current = current.cpu()
-        self.current = current
-        if self.every == "epoch":
-            self.model._save(
-                f"{self.name}_epoch_{epoch}",
-                zip_files=False,
-                save_html=False,
-                compute_metrics=False,
+        # do not save model after early stopping kicks in.
+        if not kwargs.get("stop_training", False):
+            current = self.get_monitor_value()
+
+            if isinstance(current, torch.Tensor):
+                if current.is_cuda:
+                    current = current.cpu()
+
+            # if a better checkpoint is found.
+            better_checkpoint = current is not None and self.operator(
+                current, self.best
             )
-        else:  # every="improvement"
-            if current is not None and self.operator(current, self.best):
-                if arcgis.env.verbose:
-                    print("saving checkpoint.")
+            if better_checkpoint:
                 self.best_epoch = epoch
+                self.learn._best_epoch = epoch
                 self.best = current
+
+            self.current = current
+
+            if self.every == "epoch":
+                self.model._save(
+                    f"{self.name}_epoch_{epoch}",
+                    zip_files=False,
+                    save_html=False,
+                    compute_metrics=False,
+                )
+            # every improvement
+            elif better_checkpoint:
                 self.remove_previous()
                 self.model._save(
                     f"{self.name}_epoch_{epoch}",
@@ -319,18 +345,20 @@ class SaveModelCallback(TrackerCallback):
 
     def on_train_end(self, **kwargs):
         "Load the best model."
-        if self.every == "improvement" and self.load_best_at_end:
+        if self.load_best_at_end:
             try:
-                self.model.load("{}".format(self.name))
+                self.model.load(f"{self.name}_epoch_{self.best_epoch}")
             except FileNotFoundError:
-                pass
+                # logging this to notify about possible errors.
+                print("Could not load the best model.")
 
             try:
                 self.model.save(
                     f"{self.name}_epoch_{self.best_epoch}", compute_metrics=False
                 )
             except:
-                pass
+                # logging this to notify about possible errors.
+                print("Encountered error in saving checkpoint.")
 
 
 # Multispectral Models Specific resources start #
@@ -861,6 +889,9 @@ class ArcGISModel(object):
                                 to list the available metrics to set here.
         =====================   ===========================================
         """
+        if os.environ.get("BLOCK_MODEL_TRAINING", 0) == "1":
+            raise Exception(f"This model cannot be trained in ArcGIS Online Notebooks")
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             self._check_requisites()
@@ -907,11 +938,14 @@ class ArcGISModel(object):
                     )
                 )
             if checkpoint:
+                self._is_checkpointed = checkpoint
                 from datetime import datetime
 
                 now = datetime.now()
                 if checkpoint != True and checkpoint != "all":
-                    raise Exception("Checkpoint can only be set to a boolean or 'all'")
+                    raise Exception(
+                        "Checkpoint can only be set to a boolean, or 'all'."
+                    )
                 every = "improvement" if checkpoint is True else "epoch"
                 save_callback_params = kwargs.get(
                     "save_callback_params", {"monitor": monitor, "every": every}
@@ -1035,10 +1069,7 @@ class ArcGISModel(object):
             if checkpoint_callback != []:
                 checkpoint_callback = checkpoint_callback[0]
                 key = getattr(self, "monitor", "valid_loss")
-                if checkpoint_callback.every == "improvement":
-                    val = checkpoint_callback.best
-                else:
-                    val = checkpoint_callback.current
+                val = checkpoint_callback.best
                 if isinstance(val, torch.Tensor):
                     val = val.cpu().item()
                 else:

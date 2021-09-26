@@ -318,15 +318,18 @@ class PointCNN(ArcGISModel):
         return {"accuracy": self._get_model_metrics()}
 
     def _get_model_metrics(self, **kwargs):
-        checkpoint = kwargs.get("checkpoint", True)
+        checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
+            return 0.0
+
+        if len(self.learn.recorder.metrics) == 0:
             return 0.0
 
         model_accuracy = self.learn.recorder.metrics[-1][0]
         if checkpoint:
             val_losses = self.learn.recorder.val_losses
             model_accuracy = self.learn.recorder.metrics[
-                val_losses.index(min(val_losses))
+                self.learn._best_epoch  # index using best epoch.
             ][0]
 
         return float(model_accuracy)

@@ -376,12 +376,16 @@ class ModelExtension(ArcGISModel):
             }
 
     def _get_model_metrics(self, **kwargs):
-        checkpoint = kwargs.get("checkpoint", True)
+        checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
             return 0.0
+
+        if len(self.learn.recorder.metrics) == 0:
+            return 0.0
+
         model_accuracy = self.learn.recorder.metrics[-1][0]
         if checkpoint:
-            model_accuracy = np.max(self.learn.recorder.metrics)
+            model_accuracy = self.learn.recorder.metrics[self.learn._best_epoch][0]
         return float(model_accuracy)
 
     def _get_y(self, bbox, clas):
@@ -468,7 +472,7 @@ class ModelExtension(ArcGISModel):
 
     def _per_class_metrics(self):
         """
-        Computer per class precision, recall and f1-score on validation set.
+        Computes per class precision, recall and f1-score on validation set.
         """
         try:
             self._check_requisites()

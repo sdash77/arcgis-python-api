@@ -1300,6 +1300,7 @@ def copy_raster(
     context=None,
     raster_type_name=None,
     raster_type_params=None,
+    md_to_upload=None,
     *,
     gis=None,
     future=False,
@@ -1321,8 +1322,8 @@ def copy_raster(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    input_raster                         Required raster layer or string. The input raster layer to be copied to.
-                                         Path to a local raster dataset can also be given to create hosted imagery 
+    input_raster                         Required raster layer or string or list. The input raster layer to be copied to.
+                                         Path to a local raster dataset(s) can also be given to create hosted imagery 
                                          layers on enterprise and AGOL.
     --------------------------------     --------------------------------------------------------------------
     output_cellsize                      Required dict. The cell size and unit for the output imagery layer.
@@ -1415,7 +1416,10 @@ def copy_raster(
                                          "Sentinel-2"," SkySat", "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer",
                                          "UAV/UAS", "WordView-1", "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", 
                                          "Aerial", "ScannedAerial","ZY3-CRESDA"]
-                                         
+
+                                         If an existing mosaic dataset is being published as an 
+                                         imagery layer using the ``md_to_upload`` parameter, the
+                                         ``raster_type_name`` parameter can be set to None as it is not required.
 
                                          Example:
                                             "QuickBird"
@@ -1454,6 +1458,22 @@ def copy_raster(
                                             {"productType":"All","processingTemplate":"Pansharpen",
                                             "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
                                             "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
+    --------------------------------     --------------------------------------------------------------------
+    md_to_upload                         Optional string. Path to the existing mosaic dataset to be published 
+                                         as an imagery layer.
+
+                                         To publish an existing mosaic dataset, specify the path to the input 
+                                         data of the mosaic in the ``input_raster`` parameter. 
+                                         The data will be uploaded to ArcGIS Online.
+
+                                         ``raster_type_name`` parameter can be set to None as it is not required to 
+                                         publish an imagery layer from a mosaic dataset.
+
+                                         .. note::
+                                                Option available only on ArcGIS online
+
+                                         Example:
+                                            "./data/temp_uploaded.gdb/test"
     --------------------------------     --------------------------------------------------------------------
     gis                                  Optional GIS object. If not specified, the currently active connection
                                          is used.
@@ -1556,6 +1576,18 @@ def copy_raster(
                                      output_name="output_name",
                                      gis=gis)
 
+        # Usage Example 10: This example publishes an existing mosaic dataset as a tiled imagery layer in ArcGIS Online.
+        # (To create dynamic imagery layer set the tiles_only keyword argument to False)
+
+        # Specify the actual source data path referenced by the uploaded mosaic dataset using input_raster parameter.
+        # The data would be uploaded to the ArcGIS Online's user store from this path.
+        
+        landsat_mosaic = copy_raster(input_raster=[r"C:\data\landsat_data_folder"],
+                                     output_name="mosaic_datset_op",
+                                     context={"upload_properties":{"displayProgress":True}},
+                                     md_to_upload=r"C:\data\md.gdb\landsat",
+                                     gis = gis)
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -1577,6 +1609,7 @@ def copy_raster(
         future=future,
         raster_type_name=raster_type_name,
         raster_type_params=raster_type_params,
+        md_to_upload=md_to_upload,
         **kwargs
     )
 
@@ -3109,6 +3142,7 @@ def create_image_collection(
     raster_type_params=None,
     out_sr=None,
     context=None,
+    md_to_upload=None,
     *,
     gis=None,
     future=False,
@@ -3152,6 +3186,7 @@ def create_image_collection(
                                          - An image service URL
                                          - Shared data path (this path must be accessible by the server)
                                          - Name of a folder on the portal
+                                         - Path to local raster dataset(s)
 
                                          The function can create hosted imagery layers on enterprise and AGOL from 
                                          local raster datasets by uploading the data to the server.
@@ -3167,7 +3202,11 @@ def create_image_collection(
                                          "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer", "UAV/UAS", "WordView-1"
                                          "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
                                          "ZY3-CRESDA"]         
-                                         
+
+                                         If an existing mosaic dataset is being published as a 
+                                         dynamic imagery layer using the ``md_to_upload`` parameter, the
+                                         ``raster_type_name`` parameter can be set to None as it is not required.
+
 
                                          Example:
                                             "QuickBird"
@@ -3270,6 +3309,30 @@ def create_image_collection(
                                             | "defineNodata":True,                                            
                                             | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
                                             | "buildOverview":True}
+
+                                         | The context parameter can be used to add new fields when creating \
+                                         the image collection.
+
+
+                                         Example:
+                                            | {"fields": [{"name": "cloud_cover", "type": "Long"},
+                                            | {"name": "cloud_shadow_count", "type": "Long"}]}
+    ------------------                   --------------------------------------------------------------------
+    md_to_upload                         Optional string. Path to the existing mosaic dataset to be published 
+                                         as a hosted dynamic imagery layer.
+
+                                         To publish an existing mosaic dataset, specify the path to the input 
+                                         data of the mosaic in the ``input_rasters`` parameter. 
+                                         The data will be uploaded to ArcGIS Online.
+
+                                         ``raster_type_name`` parameter can be set to None as it is not required to 
+                                         publish an imagery layer from a mosaic dataset.
+
+                                         .. note::
+                                                Option available only on ArcGIS online
+
+                                         Example:
+                                            "./data/temp_uploaded.gdb/test"
     ------------------                   --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------                   --------------------------------------------------------------------
@@ -3792,6 +3855,18 @@ def create_image_collection(
                                                              context={"image_collection_properties":{"imageCollectionType":"Satellite"},"byref":True},
                                                              gis = gis)
 
+        # Usage Example 10: This example publishes an existing mosaic dataset as a dynamic imagery layer in ArcGIS Online. 
+
+        # Specify the actual source data path referenced by the uploaded mosaic dataset using input_rasters parameter. The data would be uploaded 
+        # to the ArcGIS Online's user store from this path. 
+
+        landsat_mosaic  = create_image_collection(image_collection="landsat_image_collection",
+                                                  input_rasters=[r"C:\data\landsat_data_folder"],
+                                                  raster_type_name=None,
+                                                  context={"upload_properties":{"displayProgress":True}},
+                                                  md_to_upload=r"C:\data\md.gdb\landsat",
+                                                  gis=gis)
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -3804,6 +3879,7 @@ def create_image_collection(
         out_sr=out_sr,
         context=context,
         future=future,
+        md_to_upload=md_to_upload,
         **kwargs
     )
 

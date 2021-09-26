@@ -71,11 +71,14 @@ tests/integration/test-results/
 /*.wpu
 tests/geckodriver.log
 tests/.coverage*
+**/*.pytest_cache
 
 #Any builds from setup.py for pip go in a dist folder
 /src/dist
 
 /tests/integration/df_accessor/test_from_fc.py
 
-
 /src/*.pfx
+
+# any dotenv files
+**/.env

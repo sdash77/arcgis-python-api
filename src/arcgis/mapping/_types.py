@@ -3289,10 +3289,11 @@ class OfflineMapAreaManager(object):
                 feature_services = list(feature_services.values())
         # region call the SetupMapArea tool
         # pkg_tb.setup_map_area(map_area_item_id, map_layers_to_ignore=None, tile_services=None, feature_services=None, gis=None, future=False)
+        ts = tile_services if tile_services else lods
         setup_oma_result = pkg_tb.setup_map_area(
             map_area_item_id=oma_result,
             map_layers_to_ignore=map_layers_to_ignore,
-            tile_services=lods,
+            tile_services=ts,
             feature_services=feature_services,
             gis=self._gis,
             future=True,

@@ -32,13 +32,13 @@ try:
 
     import numpy as np
     import cv2, os
-    from PIL import Image
     from types import SimpleNamespace
     from os import makedirs
     from os.path import join, isdir, isfile
 
     from torch.autograd import Variable
     import torch.nn.functional as F
+    from .._utils.object_tracking_data import get_image_for_tracking
 
     HAS_FASTAI = True
 except Exception as e:
@@ -104,7 +104,7 @@ class SiamMask(ArcGISModel):
 
         self._is_multispectral = False
 
-        pretrained_path = kwargs.get("pretrained_path")
+        pretrained_path = kwargs.get("pretrained_path", None)
         self.cfg = {}
         self.anchors = {
             "stride": 8,
@@ -139,7 +139,12 @@ class SiamMask(ArcGISModel):
                 file_name="SiamMask_DAVIS.pth",
             )
             model = Custom(anchors=self.anchors, pretrain=False)
+
             model = load_pretrain(model, file_path)
+
+            if pretrained_path is not None:
+                self.load(pretrained_path)
+
             self.learn = Learner(data=data, model=model)
             self._backend = "pytorch"
             self._data = data
@@ -434,7 +439,7 @@ class SiamMask(ArcGISModel):
             return None
         self._check_requisites()
         track_list_copy = copy.deepcopy(self.track_list)
-        state_list_copy = copy.deepcopy(self.state_list)
+        state_list_copy = self.state_list
         num_tracks_copy = self.num_tracks
 
         self.track_list = []
@@ -450,25 +455,65 @@ class SiamMask(ArcGISModel):
         frame_id = data[0].split("\\")[-1].split(".")[1]
         json_data = self.learn.data.valid_ds.show_batch_data[folder_name][frame_id]
         bbox = json_data[list(json_data.keys())[0]]
+
+        all_images = []
+        folder_path = os.path.join(base_folder, "JPEGImages", folder_name)
         all_images = glob.glob(
             os.path.join(base_folder, "JPEGImages", folder_name, "*.jpg")
         )
+        if not os.path.isdir(folder_path):
+            folder_path = os.path.join(base_folder, "images")
+            combined_images = [
+                file
+                for file in os.listdir(folder_path)
+                if file.endswith(".png")
+                or file.endswith(".jpg")
+                or file.endswith(".tif")
+            ]
+            if len(combined_images) > 0:
+                ext = os.path.splitext(combined_images[0])[-1]
+                if ext != ".tif":
+                    ext = ".png"
+
+                all_images = [
+                    os.path.join(folder_path, file)
+                    for file in combined_images
+                    if os.path.isfile(
+                        os.path.join(
+                            base_folder,
+                            "labels",
+                            folder_name,
+                            os.path.splitext(file)[0] + ext,
+                        )
+                    )
+                ]
+
         image_counter = 0
         track_id_set = set()
+
         if (len(all_images) // 3) < rows:
             rows = len(all_images) // 3
+
+        if rows <= 0:
+            rows = 1
 
         fig, axes = plt.subplots(
             nrows=rows, ncols=3, squeeze=False, figsize=(20, rows * 3)
         )
 
         for idx in range(0, rows):
+
             if len(all_images) == image_counter:
                 break
+
             for j in range(0, 3):
+
+                if len(all_images) == image_counter:
+                    break
+
                 if image_counter == 0:
                     img_path = all_images[image_counter]
-                    image = cv2.imread(img_path, 1)
+                    image = get_image_for_tracking(img_path)
                     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                     x, y = int(bbox[0]), int(bbox[1])
                     x1, y1 = int(bbox[2]) - int(bbox[0]), int(bbox[3]) - int(bbox[1])
@@ -485,7 +530,7 @@ class SiamMask(ArcGISModel):
                     self.init(image, detections)
                 else:
                     img_path = all_images[image_counter]
-                    image = cv2.imread(img_path, 1)
+                    image = get_image_for_tracking(img_path)
                     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                     tracks = self.update(image)
                     for track in tracks:
@@ -541,11 +586,38 @@ class SiamMask(ArcGISModel):
         data = self.learn.data
         sep = os.sep
         for folder in data.val_folders.keys():
+            is_pro_data = False
             all_images = glob.glob(
                 os.path.join(data.path, "JPEGImages", folder, "*.jpg")
             )
+
+            if len(all_images) == 0:
+                for ext in [".jpg", ".png", ".tif"]:
+                    all_images = glob.glob(os.path.join(data.path, "images", "*" + ext))
+                    if len(all_images) != 0:
+                        is_pro_data = True
+                        break
+
             init = False
             for img in all_images:
+                anno, ext = os.path.splitext((os.path.basename(img)))
+                if ext != ".tif":
+                    ext = ".png"
+
+                if not is_pro_data:
+                    anno = img.replace("JPEGImages", "Annotations").replace(
+                        "jpg", "png"
+                    )
+                else:
+                    anno = os.path.join(data.path, "labels", folder, anno + ext)
+
+                if not os.path.isfile(anno):
+                    continue
+
+                anno_img = get_image_for_tracking(anno, grayscale=True)
+                if len(np.unique(anno_img)) < 2:
+                    continue
+
                 objects = data.val_folders[folder].keys()
                 img_name = img.split(sep)[-1].split(".")[0]
                 gt_bboxes = []
@@ -557,12 +629,8 @@ class SiamMask(ArcGISModel):
                             gt_bboxes.append(gt_bbox)
                             break
 
-                image = cv2.imread(img, 1)
+                image = get_image_for_tracking(img)
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                anno = img.replace("JPEGImages", "Annotations").replace("jpg", "png")
-                anno_img = cv2.imread(anno, 0)
-                if len(np.unique(anno_img)) < 2:
-                    continue
 
                 detections = []
                 for bbox in gt_bboxes:
@@ -622,6 +690,11 @@ class SiamMask(ArcGISModel):
 
         f_measure = get_f_measure(tp, fp, fn)
         mean_iou = np.mean(all_ious, axis=0)
+
+        self.track_list = []
+        self.state_list = {}
+        self.num_tracks = 0
+
         return {"mean_IOU": mean_iou, "f_measure": f_measure}
 
 

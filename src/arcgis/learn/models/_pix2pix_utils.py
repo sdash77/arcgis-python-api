@@ -128,6 +128,20 @@ class GeneratorUNet(nn.Module):
 ##############################
 
 
+class DiscriminatorBlock(nn.Module):
+    def __init__(self, in_filters, out_filters, normalization=True):
+        super(DiscriminatorBlock, self).__init__()
+        """Returns downsampling layers of each discriminator block"""
+        layers = [nn.Conv2d(in_filters, out_filters, 4, stride=2, padding=1)]
+        if normalization:
+            layers.append(nn.BatchNorm2d(out_filters))
+        layers.append(nn.LeakyReLU(0.2, inplace=True))
+        self.model = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.model(x)
+
+
 class Discriminator(nn.Module):
     def __init__(self, in_channels=3):
         super(Discriminator, self).__init__()
@@ -155,12 +169,40 @@ class Discriminator(nn.Module):
         return self.model(img_input)
 
 
+class PerceptualLossDiscriminator(nn.Module):
+    def __init__(self, in_channels=3):
+        super(PerceptualLossDiscriminator, self).__init__()
+
+        self.disc_blk_1 = DiscriminatorBlock(in_channels * 2, 64, normalization=False)
+        self.disc_blk_2 = DiscriminatorBlock(64, 128)
+        self.disc_blk_3 = DiscriminatorBlock(128, 256)
+        self.disc_blk_4 = DiscriminatorBlock(256, 512)
+        self.final = nn.Sequential(
+            nn.ZeroPad2d((1, 0, 1, 0)),
+            nn.Conv2d(512, 1, 4, padding=1, bias=False),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, img_A, img_B):
+        # Concatenate image and condition image by channels to produce input
+        img_input = torch.cat((img_A, img_B), 1)
+        disc_1 = self.disc_blk_1(img_input)
+        disc_2 = self.disc_blk_2(disc_1)
+        disc_3 = self.disc_blk_3(disc_2)
+        disc_4 = self.disc_blk_4(disc_3)
+        return self.final(disc_4)
+
+
 class pix2pix(nn.Module):
-    def __init__(self, ch_in: int, ch_out: int):
+    def __init__(self, ch_in: int, ch_out: int, perceptual_loss: bool = False):
         super().__init__()
 
-        self.D = Discriminator(ch_in)
+        if perceptual_loss:
+            self.D = PerceptualLossDiscriminator(ch_in)
+        else:
+            self.D = Discriminator(ch_in)
         self.G = GeneratorUNet(ch_in, ch_out)
+        self.perceptual_loss = perceptual_loss
         self.arcgis_results = False
 
     def forward(self, real_A, real_B):
@@ -199,6 +241,118 @@ class Adaptivel1Loss(nn.Module):
             else output.new_zeros(*output.size())
         )
         return self.crit1(output, targ, **kwargs)
+
+
+class RMSELog(nn.Module):
+    def __init__(self):
+        super(RMSELog, self).__init__()
+
+    def forward(self, fake, real):
+        eps = 1e-7
+        real = F.relu(real)
+        fake = F.relu(fake)
+        loss = torch.sqrt(
+            torch.mean(torch.abs(torch.log(real + eps) - torch.log(fake + eps)) ** 2)
+        )
+        return loss
+
+
+class get_activation_from_layers:
+    def __init__(self, name):
+        self.name = name
+
+    def get_activation(self):
+        activation = {}
+
+        def hook(model, input, output):
+            activation[self.name] = output.detach()
+
+        return hook, activation
+
+
+class Pix2PixPerceptualLoss(nn.Module):
+    def __init__(
+        self,
+        cgan: nn.Module,
+        lambda_A: float = 100.0,
+        lambda_B: float = 100.0,
+        lambda_idt: float = 0.5,
+        lsgan: bool = False,
+    ):
+        super().__init__()
+        self.cgan, self.l_A, self.l_B, self.l_idt = cgan, lambda_A, lambda_B, lambda_idt
+        self.crit = AdaptiveLoss(F.binary_cross_entropy_with_logits)
+        self.crit1 = Adaptivel1Loss(F.mse_loss)
+        self.rmse_log = RMSELog()
+
+    def set_input(self, input):
+        self.real_A, self.real_B = input
+
+    def forward(self, output, target):
+        fake_B = output[0]
+
+        self.gen_loss = self.crit(self.cgan.D(fake_B, self.real_A), True)
+        self.l1_loss = torch.mean(F.l1_loss(fake_B, self.real_B))
+        self.rmse_log_loss = self.rmse_log(self.real_B, fake_B)
+
+        activ1 = get_activation_from_layers("disc_blk_1")
+        j1, k1 = activ1.get_activation()
+        hook1 = self.cgan.D.disc_blk_1.register_forward_hook(j1)
+        ten1 = self.cgan.D(self.real_B, self.real_B)
+        k1 = k1["disc_blk_1"]
+        hook1.remove()
+
+        activ2 = get_activation_from_layers("disc_blk_1")
+        j2, k2 = activ2.get_activation()
+        hook2 = self.cgan.D.disc_blk_1.register_forward_hook(j2)
+        ten2 = self.cgan.D(fake_B, fake_B)
+        k2 = k2["disc_blk_1"]
+        hook2.remove()
+
+        activ3 = get_activation_from_layers("disc_blk_2")
+        j3, k3 = activ3.get_activation()
+        hook3 = self.cgan.D.disc_blk_2.register_forward_hook(j3)
+        ten3 = self.cgan.D(self.real_B, self.real_B)
+        k3 = k3["disc_blk_2"]
+        hook3.remove()
+
+        activ4 = get_activation_from_layers("disc_blk_2")
+        j4, k4 = activ4.get_activation()
+        hook4 = self.cgan.D.disc_blk_2.register_forward_hook(j4)
+        ten4 = self.cgan.D(fake_B, fake_B)
+        k4 = k4["disc_blk_2"]
+        hook4.remove()
+
+        activ5 = get_activation_from_layers("disc_blk_3")
+        j5, k5 = activ5.get_activation()
+        hook5 = self.cgan.D.disc_blk_3.register_forward_hook(j5)
+        ten5 = self.cgan.D(self.real_B, self.real_B)
+        k5 = k5["disc_blk_3"]
+        hook5.remove()
+
+        activ6 = get_activation_from_layers("disc_blk_3")
+        j6, k6 = activ6.get_activation()
+        hook6 = self.cgan.D.disc_blk_3.register_forward_hook(j6)
+        ten6 = self.cgan.D(fake_B, fake_B)
+        k6 = k6["disc_blk_3"]
+        hook6.remove()
+
+        percep_loss, percep_loss1, percep_loss2, percep_loss3 = 0, 0, 0, 0
+        for i in range(k1.shape[0]):
+            percep_loss1 += F.l1_loss(k1[i, :, :, :], k2[i, :, :, :])
+            percep_loss2 += F.l1_loss(k3[i, :, :, :], k4[i, :, :, :])
+            percep_loss3 += F.l1_loss(k5[i, :, :, :], k6[i, :, :, :])
+            percep_loss += (
+                (5 * percep_loss1) + (1.5 * percep_loss2) + (1 * percep_loss3)
+            )
+        self.perceptual_loss = percep_loss / 3
+
+        return (
+            self.gen_loss
+            + (self.l_A * self.l1_loss)
+            + self.perceptual_loss
+            + self.rmse_log_loss
+        )
 
 
 class pix2pixLoss(nn.Module):
@@ -292,6 +446,139 @@ class pix2pixTrainer(LearnerCallback):
         return add_metrics(
             last_metrics,
             [s.smooth for s in [self.gen_smter, self.l1_smter, self.d_smter]],
+        )
+
+
+class Pix2PixPerceptualTrainer(LearnerCallback):
+    _order = -20  # Need to run before the Recorder
+
+    def _set_trainable(self, D=False):
+        gen = not D
+        requires_grad(self.learn.model.G, gen)
+        requires_grad(self.learn.model.D, D)
+        if not gen:
+            self.opt_D.lr, self.opt_D.mom = self.learn.opt.lr, self.learn.opt.mom
+            self.opt_D.wd, self.opt_D.beta = self.learn.opt.wd, self.learn.opt.beta
+
+    def on_train_begin(self, **kwargs):
+        self.G = self.learn.model.G
+        self.D = self.learn.model.D
+        self.crit = self.learn.loss_func.crit
+        self.crit1 = self.learn.loss_func.crit1
+
+        if not getattr(self, "opt_G", None):
+            self.opt_G = self.learn.opt.new([nn.Sequential(*flatten_model(self.G))])
+        else:
+            self.opt_G.lr, self.opt_G.wd = self.opt.lr, self.opt.wd
+            self.opt_G.mom, self.opt_G.beta = self.opt.mom, self.opt.beta
+
+        if not getattr(self, "opt_D", None):
+            self.opt_D = self.learn.opt.new([nn.Sequential(*flatten_model(self.D))])
+
+        self.learn.opt.opt = self.opt_G.opt
+        self._set_trainable()
+        self.gen_smter, self.l1_smter = SmoothenValue(0.98), SmoothenValue(0.98)
+        self.d_smter, self.rmselog_smter = SmoothenValue(0.98), SmoothenValue(0.98)
+        self.percep_smter = SmoothenValue(0.98)
+        self.recorder.add_metric_names(
+            ["gen_loss", "l1_loss", "D_loss", "rmse_log_loss", "perceptual_loss"]
+        )
+
+    def on_batch_begin(self, last_input, **kwargs):
+        self.learn.loss_func.set_input(last_input)
+
+    def on_backward_begin(self, **kwargs):
+        self.l1_smter.add_value(self.loss_func.l1_loss.detach().cpu())
+        self.gen_smter.add_value(self.loss_func.gen_loss.detach().cpu())
+        self.rmselog_smter.add_value(self.loss_func.rmse_log_loss.detach().cpu())
+        self.percep_smter.add_value(self.loss_func.perceptual_loss.detach().cpu())
+
+    def on_batch_end(self, last_input, last_output, **kwargs):
+        self.G.zero_grad()
+        fake_B = last_output[0].detach()
+        real_A, real_B = last_input
+
+        self._set_trainable(D=True)
+
+        self.D.zero_grad()
+
+        activ1 = get_activation_from_layers("disc_blk_1")
+        j1, k1 = activ1.get_activation()
+        hook1 = self.D.disc_blk_1.register_forward_hook(j1)
+        ten1 = self.D(real_B, real_B)
+        k1 = k1["disc_blk_1"]
+        hook1.remove()
+
+        activ2 = get_activation_from_layers("disc_blk_1")
+        j2, k2 = activ1.get_activation()
+        hook2 = self.D.disc_blk_1.register_forward_hook(j2)
+        ten2 = self.D(fake_B, fake_B)
+        k2 = k2["disc_blk_1"]
+        hook2.remove()
+
+        activ3 = get_activation_from_layers("disc_blk_2")
+        j3, k3 = activ3.get_activation()
+        hook3 = self.D.disc_blk_2.register_forward_hook(j3)
+        ten3 = self.D(real_B, real_B)
+        k3 = k3["disc_blk_2"]
+        hook3.remove()
+
+        activ4 = get_activation_from_layers("disc_blk_2")
+        j4, k4 = activ4.get_activation()
+        hook4 = self.D.disc_blk_2.register_forward_hook(j4)
+        ten4 = self.D(fake_B, fake_B)
+        k4 = k4["disc_blk_2"]
+        hook4.remove()
+
+        activ5 = get_activation_from_layers("disc_blk_3")
+        j5, k5 = activ5.get_activation()
+        hook5 = self.D.disc_blk_3.register_forward_hook(j5)
+        ten5 = self.D(real_B, real_B)
+        k5 = k5["disc_blk_3"]
+        hook5.remove()
+
+        activ6 = get_activation_from_layers("disc_blk_3")
+        j6, k6 = activ6.get_activation()
+        hook6 = self.D.disc_blk_3.register_forward_hook(j6)
+        ten6 = self.D(fake_B, fake_B)
+        k6 = k6["disc_blk_3"]
+        hook6.remove()
+
+        percep_loss, percep_loss1, percep_loss2, percep_loss3 = 0, 0, 0, 0
+        for i in range(k1.shape[0]):
+            percep_loss1 += F.l1_loss(k1[i, :, :, :], k2[i, :, :, :])
+            percep_loss2 += F.l1_loss(k3[i, :, :, :], k4[i, :, :, :])
+            percep_loss3 += F.l1_loss(k5[i, :, :, :], k6[i, :, :, :])
+            percep_loss += (
+                (5 * percep_loss1) + (1.5 * percep_loss2) + (1 * percep_loss3)
+            )
+        percep_loss = percep_loss / 3
+        loss_D = 0.5 * (
+            torch.mean(self.crit(self.D(real_A, real_B), True))
+            + torch.mean(self.crit(self.D(fake_B, real_A), False))
+        ) + (0.1 * percep_loss)
+
+        self.d_smter.add_value(loss_D.detach().cpu())
+        if self.learn.model.training == True:
+            loss_D.backward()
+
+        self.opt_D.step()
+
+        self._set_trainable()
+
+    def on_epoch_end(self, last_metrics, **kwargs):
+        return add_metrics(
+            last_metrics,
+            [
+                s.smooth
+                for s in [
+                    self.gen_smter,
+                    self.l1_smter,
+                    self.d_smter,
+                    self.rmselog_smter,
+                    self.percep_smter,
+                ]
+            ],
         )
 
 

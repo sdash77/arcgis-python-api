@@ -716,8 +716,11 @@ class MultiTaskRoadExtractor(ArcGISModel):
         }
 
     def _get_model_metrics(self, **kwargs):
-        checkpoint = kwargs.get("checkpoint", True)
+        checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
+            return 0.0, 0.0
+
+        if len(self.learn.recorder.metrics) == 0:
             return 0.0, 0.0
 
         try:

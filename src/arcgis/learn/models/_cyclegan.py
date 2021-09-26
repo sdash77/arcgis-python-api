@@ -14,7 +14,12 @@ try:
         compute_fid_metric,
     )
     from ._cyclegan_utils import CycleGAN as CycleGAN_model
-    from .._utils.cyclegan import ImageTuple, ImageTupleList, ImageTupleListMS
+    from .._utils.cyclegan import (
+        ImageTuple,
+        ImageTupleList,
+        ImageTupleListMS,
+        show_results,
+    )
     from .._utils.common import (
         get_multispectral_data_params_from_emd,
         _get_emd_path,
@@ -205,20 +210,18 @@ class CycleGAN(ArcGISModel):
                     ][_stat].tolist()
         return _emd_template
 
-    def show_results(self, rows=5):
+    def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
 
         """
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
-        self.learn.model.arcgis_results = True
-        self.learn.show_results(rows=rows)
+        show_results(self, rows, **kwargs)
         if _IS_ARCGISPRONOTEBOOK:
             from matplotlib import pyplot as plt
 
             plt.show()
-        self.learn.model.arcgis_results = False
 
     def predict(self, img_path, convert_to):
         """
@@ -273,7 +276,7 @@ class CycleGAN(ArcGISModel):
         fid_b = "None"
 
         if self._data._imagery_type_a == "ms" and self._data._imagery_type_b == "ms":
-            logger.error("FID metric not supported for multispectral imagery type")
+            print("FID metric is not supported for multispectral imagery type")
         else:
             if self._data._imagery_type_a == "RGB" and self._data.n_channel == 3:
                 fid_a = "{0:1.4e}".format(compute_fid_metric(self, self._data, "a"))

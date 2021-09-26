@@ -1,26 +1,40 @@
 from __future__ import division
-from torch.utils.data import Dataset
-import random
-import logging
-import math
-import sys
-from collections import namedtuple
-from IPython.display import clear_output
 
-pyv = sys.version[0]
+from arcgis.learn._utils.common import ArcGISMSImage
 
-from os.path import join, isdir
-from os import mkdir, makedirs
-import os
-import json
+try:
+    import random
+    import logging
+    import math
+    import sys
+    from collections import namedtuple
+    from IPython.display import clear_output
 
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-from torch.utils.data import DataLoader
-from .pointcloud_data import get_device
-from fastai.data_block import DataBunch
-import types
+    pyv = sys.version[0]
+
+    from os.path import join, isdir
+    from os import mkdir, makedirs
+    import os
+    import json
+    import traceback
+    import cv2
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from torch.utils.data import Dataset
+    from torch.utils.data import DataLoader
+    from .pointcloud_data import get_device
+    from fastai.data_block import DataBunch
+    import types
+    from PIL import Image
+    from .env import (
+        raise_fastai_import_error,
+        HAS_GDAL,
+        gdal_import_exception,
+        GDAL_INSTALL_MESSAGE,
+    )
+except Exception:
+    import_exception = traceback.format_exc()
+    pass
 
 sample_random = random.Random()
 sample_random.seed(123456)
@@ -31,6 +45,29 @@ Center = namedtuple("Center", "x y w h")
 image_name_len = 0
 
 sep = os.sep
+
+
+def get_image_for_tracking(path, grayscale=False):
+    path = str(os.path.abspath(path))
+    if not os.path.exists:
+        raise Exception(
+            f"The image path {path} could not be found on disk, please verify your training data."
+        )
+
+    img = ArcGISMSImage.read_image(path, keep_raw=True)
+    if img is None: return None
+    
+    if len(img.shape) >= 3:
+        dim = img.shape[0]
+        if dim == 2:
+            img = np.dstack((img[1], img[0]))[0]
+        elif dim > 2:
+            img = np.dstack((img[2], img[1], img[0]))
+
+    if grayscale is True and len(img.shape) == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+    return img
 
 
 def corner2center(corner):
@@ -745,9 +782,10 @@ class DataSets(Dataset):
             "anchor_target": self.anchor_target.__dict__,
             "num": self.num // num_epoch,
         }
+        self._img_exts = [".jpg", ".png", ".tif"]
 
     def imread(self, path):
-        img = cv2.imread(path)
+        img = get_image_for_tracking(path)
 
         if self.origin_size == self.template_size:
             return img, 1.0
@@ -818,7 +856,9 @@ class DataSets(Dataset):
 
         search_image, scale_x = self.imread(search[0])
         if dataset.has_mask and not neg:
-            search_mask = (cv2.imread(search[2], 0) > 0).astype(np.float32)
+            search_mask = (
+                get_image_for_tracking(search[2], grayscale=True) > 0
+            ).astype(np.float32)
         else:
             search_mask = np.zeros(search_image.shape[:2], dtype=np.float32)
 
@@ -912,9 +952,61 @@ class DataSets(Dataset):
                 folder_name,
                 str(frame_number)[6 - img_len :] + ".jpg",
             )
-            image = cv2.imread(img_path)
+
+            image = get_image_for_tracking(img_path)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            # print(display_data)
+
+            bbox = display_data[1]
+            cv2.rectangle(
+                image,
+                (int(bbox[0]), int(bbox[1])),
+                (int(bbox[2]) - int(bbox[0]), int(bbox[3] - int(bbox[1]))),
+                (255, 0, 0),
+                2,
+            )
+
+            overlay = image.copy()
+            cv2.drawContours(overlay, display_data[0], -1, (0, 0, 255), -1)
+
+            image_new = cv2.addWeighted(overlay, 0.5, image, 1, 0)
+            axes[i].set_xticks([])
+            axes[i].set_yticks([])
+            axes[i].imshow(image_new)
+
+    def _show_pro(self, idx, axes=None):
+        global image_name_len
+        if axes is None:
+            _, axes = plt.subplots(1, 2, figsize=(15, 7))
+
+        for i, id in enumerate(idx):
+            data, img_len, ann = self.__getitem__(id, debug=False, show_batch=True)
+            sep = os.sep
+
+            base_folder = data[0].split("crop")[0]
+            folder_name = data[0].split(sep)[-2]
+            frame_id = data[0].split(sep)[-1].split(".")[1]
+            frame_number = data[0].split(sep)[-1].split(".")[0]
+            mask_name = folder_name + sep + "000" + str(frame_number)[9 - img_len :]
+            for key in list(ann[folder_name].keys()):
+                for cnt in ann[folder_name][key]:
+                    if cnt["mask_name"] == mask_name:
+                        display_data = (cnt["display_mask"], cnt["bbox"])
+                        break
+
+            for ext in self._img_exts:
+                try:
+                    img_path = os.path.join(
+                        base_folder,
+                        "images",
+                        "000" + str(frame_number)[9 - img_len :] + ext,
+                    )
+                    if os.path.isfile(img_path):
+                        break
+                except:
+                    continue
+
+            image = get_image_for_tracking(img_path)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             bbox = display_data[1]
             cv2.rectangle(
                 image,
@@ -1025,6 +1117,68 @@ def crop_like_SiamFCx(
     return x
 
 
+def crop_video_pro(video, v, crop_path, data_path, instanc_size):
+    video_crop_base_path = join(crop_path, video)
+    if not isdir(video_crop_base_path):
+        makedirs(video_crop_base_path)
+
+    anno_base_path = join(data_path, "labels")
+    img_base_path = join(data_path, "images")
+
+    for trackid, o in enumerate(list(v)):
+        obj = v[o]
+        for frame in obj:
+            file_name = frame["file_name"]
+            ann_ext = frame["ext"]
+            ann_path = join(join(anno_base_path, video), file_name + ann_ext)
+            img_path = join(img_base_path, file_name + ann_ext)
+
+            if not os.path.isfile(img_path) and ann_ext == ".png":
+                img_path = join(img_base_path, file_name + ".jpg")
+
+            label = get_image_for_tracking(ann_path, grayscale=True)
+
+            im = get_image_for_tracking(img_path)
+            if im is None:
+                continue
+
+            avg_chans = np.mean(im, axis=(0, 1))
+            bbox = frame["bbox"]
+            bbox[2] += bbox[0]
+            bbox[3] += bbox[1]
+            x = crop_like_SiamFCx(
+                im, bbox, instanc_size=instanc_size, padding=avg_chans
+            )
+
+            cv2.imwrite(
+                join(
+                    video_crop_base_path,
+                    "{:06d}.{:02d}.x.jpg".format(
+                        int(file_name.split(sep)[-1]), trackid
+                    ),
+                ),
+                x,
+            )
+
+            mask = crop_like_SiamFCx(
+                (label == int(o)).astype(np.float32),
+                bbox,
+                instanc_size=instanc_size,
+                padding=0,
+            )
+            mask = ((mask > 0.2) * 255).astype(np.uint8)
+            x[:, :, 0] = mask + (mask == 0) * x[:, :, 0]
+            cv2.imwrite(
+                join(
+                    video_crop_base_path,
+                    "{:06d}.{:02d}.m.png".format(
+                        int(file_name.split(sep)[-1]), trackid
+                    ),
+                ),
+                mask,
+            )
+
+
 def crop_video(video, v, crop_path, data_path, instanc_size):
     video_crop_base_path = join(crop_path, video)
     if not isdir(video_crop_base_path):
@@ -1039,8 +1193,8 @@ def crop_video(video, v, crop_path, data_path, instanc_size):
             file_name = frame["file_name"]
             ann_path = join(anno_base_path, file_name + ".png")
             img_path = join(img_base_path, file_name + ".jpg")
-            im = cv2.imread(img_path)
-            label = cv2.imread(ann_path, 0)
+            im = get_image_for_tracking(img_path)
+            label = get_image_for_tracking(ann_path, grayscale=True)
             avg_chans = np.mean(im, axis=(0, 1))
             bbox = frame["bbox"]
             bbox[2] += bbox[0]
@@ -1116,7 +1270,6 @@ def train_val_split(dataset):
                 snippet[frame_name] = bbox
             video[trackid] = snippet
         snippets[k] = video
-
     return snippets
 
 
@@ -1171,6 +1324,228 @@ def check_data_sanity(path):
         )
 
 
+def check_pro_data_sanity(path):
+    if not os.path.isdir(path):
+        raise Exception(f"Invalid directory. Please check the path {path}")
+
+    ann_dir_path = os.path.join(path, "labels")
+    if not os.path.isdir(ann_dir_path):
+        raise Exception(
+            f"Invalid directory. Please check the "
+            f"annotation folder path {ann_dir_path}. "
+            "Please make sure the folder name is labels"
+        )
+
+    img_dir_path = os.path.join(path, "images")
+    if not os.path.isdir(img_dir_path):
+        raise Exception(
+            f"Invalid directory. Please check the "
+            f"images folder path {img_dir_path}. "
+            "Please make sure the folder name is images"
+        )
+
+    total = 0
+    seq_paths = [
+        f.path
+        for f in os.scandir(ann_dir_path)
+        if f.is_dir() and len(os.listdir(f.path)) != 0
+    ]
+    for idx, seq_path in enumerate(seq_paths):
+        annotations = [
+            file
+            for file in os.listdir(seq_path)
+            if file.endswith(".png") or file.endswith(".jpg") or file.endswith(".tif")
+        ]
+        if len(annotations) > 0:
+            total += 1
+
+    if total <= 1:
+        raise Exception(
+            f"Please input at least two sequences in the {path.name}"
+            " directory namely 'labels'."
+        )
+
+
+def prepare_pro_data(path, batch_size, val_split_pct, **kwargs):
+    check_pro_data_sanity(path)
+    global image_name_len
+    data_dir = path
+    ann_dir = os.path.join(path, "labels")
+    img_dir = os.path.join(path, "images")
+    seq_paths = [
+        f.path
+        for f in os.scandir(ann_dir)
+        if f.is_dir() and len(os.listdir(f.path)) != 0
+    ]
+    num_obj = 0
+    num_ann = 0
+    all_objects = 0
+    print("Extracting info")
+    ann_dict = {}
+    total = len(seq_paths)
+    for idx, seq_path in enumerate(seq_paths):
+        seq_name = os.path.basename(seq_path)
+        annotation_files = [
+            file
+            for file in os.listdir(seq_path)
+            if file.endswith(".png") or file.endswith(".jpg") or file.endswith(".tif")
+        ]
+        annotations = []
+        instanceIds = []
+        for annotation in annotation_files:
+            ann_filename = os.path.join(seq_path, annotation)
+            file_name_suffix = os.path.basename(ann_filename)
+            file_name_suffix_split = os.path.splitext(file_name_suffix)[0]
+            file_name_ext = os.path.splitext(file_name_suffix)[1]
+            image_name_len = len(file_name_suffix_split)
+
+            img = get_image_for_tracking(ann_filename, grayscale=True)
+
+            if img is None:
+                continue
+
+            h, w = img.shape[:2]
+            objects = dict()
+            for instanceId in np.unique(img):
+                if instanceId == 0:
+                    continue
+                instance_obj = Instance(img, instanceId)
+                instance_obj_dict = instance_obj.toDict()
+                mask = (img == instanceId).astype(np.uint8)
+                contour, _ = cv2.findContours(
+                    mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE
+                )
+                polygons = [c.reshape(-1).tolist() for c in contour]
+                instance_obj_dict["display_mask"] = contour
+                instance_obj_dict["contours"] = [p for p in polygons if len(p) > 4]
+                if (
+                    len(instance_obj_dict["contours"])
+                    and instance_obj_dict["pixelCount"] > 1000
+                ):
+                    objects[instanceId] = instance_obj_dict
+
+            for objId in objects:
+                if len(objects[objId]) == 0:
+                    continue
+                obj = objects[objId]
+                len_p = [len(p) for p in obj["contours"]]
+                if min(len_p) <= 4:
+                    print("Warning: invalid contours.")
+                    continue
+                ann = dict()
+                ann["h"] = h
+                ann["w"] = w
+                ann["file_name"] = file_name_suffix_split
+                ann["id"] = int(objId)
+                ann["segmentation"] = obj["contours"]
+                ann["iscrowd"] = 0
+                ann["display_mask"] = obj["display_mask"]
+                ann["area"] = obj["pixelCount"]
+                ann["bbox"] = xyxy_to_xywh(polys_to_boxes([obj["contours"]])).tolist()[
+                    0
+                ]
+                ann["mask_name"] = seq_name + os.sep + file_name_suffix_split
+                ann["ext"] = file_name_ext
+                annotations.append(ann)
+                all_objects += 1
+                instanceIds.append(objId)
+                num_ann += 1
+
+        instanceIds = sorted(set(instanceIds))
+        num_obj += len(instanceIds)
+        video_ann = {str(iId): [] for iId in instanceIds}
+        for ann in annotations:
+            video_ann[str(ann["id"])].append(ann)
+
+        ann_dict[seq_name] = video_ann
+        printProgressBar(idx, total)
+
+    items = list(ann_dict.items())
+    train_dict = dict(items)
+
+    clear_output()
+    crop_path = os.path.join(path, "crop")
+    if not os.path.isdir(crop_path):
+        os.mkdir(crop_path)
+    set_crop_base_path = join(crop_path)
+    set_img_base_path = data_dir
+    n_video = len(train_dict)
+
+    print("Applying transformations..")
+
+    total = len(train_dict.keys())
+    ind_pb = 0
+    for k, v in train_dict.items():
+        try:
+            crop_video_pro(k, v, set_crop_base_path, set_img_base_path, 511)
+        except Exception as e:
+            print(e)
+            break
+        ind_pb += 1
+        printProgressBar(ind_pb, total)
+
+    val_set = int(((n_video * (val_split_pct * 10)) / 100) * 10)
+    val_all_obj = int(((all_objects * (val_split_pct * 10)) / 100) * 10)
+    if val_set == 0:
+        val_set = 1
+
+    def num_anns(elem):
+        ann_dict = elem[1]
+        val = 0
+        for k, v in ann_dict.items():
+            val = val + len(v)
+        return val
+
+    items = sorted(items, key=num_anns, reverse=True)
+    train_dict = dict(items[:-val_set])
+    snippets = train_val_split(train_dict)
+    train = {k: v for (k, v) in snippets.items()}
+    val_dict = dict(items[-val_set:])
+
+    snippets = train_val_split(val_dict)
+    val = {k: v for (k, v) in snippets.items()}
+
+    if all_objects == 0:
+        raise Exception(
+            "Not enough valid data. Please ensure the labels are correct and enough data is present."
+        )
+
+    train_set = DataSets(path, train, all_objects, 5, image_name_len, ann_dict)
+    val_set = DataSets(path, val, val_all_obj, 5, image_name_len)
+
+    train_set.shuffle()
+    val_set.shuffle()
+    init_kwargs = {}
+    train_dl = DataLoader(
+        train_set,
+        batch_size=batch_size,
+        num_workers=0,
+        pin_memory=True,
+        sampler=None,
+        **init_kwargs,
+    )
+
+    valid_dl = DataLoader(
+        val_set,
+        batch_size=batch_size,
+        num_workers=0,
+        pin_memory=True,
+        sampler=None,
+        **init_kwargs,
+    )
+
+    device = get_device()
+    data = DataBunch(train_dl, valid_dl, device=device)
+    data.path = path
+    data.infos = data.train_ds.infos
+    data.show_batch = types.MethodType(_show_batch_pro, data)
+    data._dataset_type = "ObjectTracking"
+    data.train_folders = train
+    data.val_folders = val
+    clear_output()
+    return data
+
+
 def prepare_object_tracking_data(path, batch_size, val_split_pct, **kwargs):
     check_data_sanity(path)
     global image_name_len
@@ -1199,7 +1574,7 @@ def prepare_object_tracking_data(path, batch_size, val_split_pct, **kwargs):
             mask_name = video + os.sep + frame
             mask_filename = os.path.join(ann_dir, file_name + ".png")
             image_name_len = len(frame)
-            img = cv2.imread(mask_filename, 0)
+            img = get_image_for_tracking(mask_filename, grayscale=True)
             if img is None:
                 continue
             h, w = img.shape[:2]
@@ -1244,11 +1619,11 @@ def prepare_object_tracking_data(path, batch_size, val_split_pct, **kwargs):
                     0
                 ]
                 ann["mask_name"] = mask_name
-
                 annotations.append(ann)
                 all_objects += 1
                 instanceIds.append(objId)
                 num_ann += 1
+
         instanceIds = sorted(set(instanceIds))
         num_obj += len(instanceIds)
         video_ann = {str(iId): [] for iId in instanceIds}
@@ -1277,8 +1652,8 @@ def prepare_object_tracking_data(path, batch_size, val_split_pct, **kwargs):
         except Exception as e:
             print(e)
             break
-        printProgressBar(ind_pb, total)
         ind_pb += 1
+        printProgressBar(ind_pb, total)
 
     val_set = int(((n_video * (val_split_pct * 10)) / 100) * 10)
     val_all_obj = int(((all_objects * (val_split_pct * 10)) / 100) * 10)
@@ -1302,8 +1677,14 @@ def prepare_object_tracking_data(path, batch_size, val_split_pct, **kwargs):
     snippets = train_val_split(val_dict)
     val = {k: v for (k, v) in snippets.items()}
 
+    if all_objects == 0:
+        raise Exception(
+            "Not enough valid data. Please ensure the labels are correct and enough data is present."
+        )
+
     train_set = DataSets(path, train, all_objects, 5, image_name_len, ann_dict)
     val_set = DataSets(path, val, val_all_obj, 5, image_name_len)
+
     train_set.shuffle()
     val_set.shuffle()
     init_kwargs = {}
@@ -1343,5 +1724,15 @@ def show_batch(self, rows=4, **kwargs):
     ind = 0
     for idx in range(0, len(img_idxs), 2):
         self.train_ds.show([img_idxs[idx], img_idxs[idx + 1]], axes[ind])
+        ind += 1
+    pass
+
+
+def _show_batch_pro(self, rows=4, **kwargs):
+    img_idxs = [random.randint(0, len(self.train_ds) - 1) for k in range(rows * 2)]
+    fig, axes = plt.subplots(nrows=rows, ncols=2, squeeze=False, figsize=(20, rows * 5))
+    ind = 0
+    for idx in range(0, len(img_idxs), 2):
+        self.train_ds._show_pro([img_idxs[idx], img_idxs[idx + 1]], axes[ind])
         ind += 1
     pass
