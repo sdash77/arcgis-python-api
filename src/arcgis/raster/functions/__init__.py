@@ -2455,7 +2455,7 @@ def local(
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     rasters                              Required list of Raster/ImageryLayer object. If a scalar is needed for the
-                                         operation, the scalar can be a double.
+                                         operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     operation                            Optional int. Specifies the operation to be used.
                                          see reference `here <https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriGeoAnalysisFunctionEnum.htm>`__.
@@ -2515,7 +2515,9 @@ def local(
     :return: The output raster with the function applied.
 
     .. code-block:: python
+
         # Usage Example 1: Executes the mean function on a list of input rasters.
+
         mean_raster = local([raster1, raster2, raster3], operation=68)
     """
     # redacted - The local function works on single band or the first band of an image only, and the output is single band.
@@ -4822,14 +4824,15 @@ def med(
     percentile_interpolation_type="AUTO_DETECT",
 ):
     """
-    The med function calculates the median of the inputs.
+    The med function calculates the middle value of the pixels on a pixel-by-pixel basis.
+
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
-                                         operation, the scalar can be a double.
+                                         operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
 
@@ -4856,6 +4859,7 @@ def med(
     ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
     --------------------------------     --------------------------------------------------------------------
     astype                               Optional string. Specifies the output pixel type.
+
                                          Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     --------------------------------     --------------------------------------------------------------------
     process_as_multiband                 Optional boolean. Set to True to process as multiband.
@@ -6335,8 +6339,11 @@ def percentile(
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
+
     .. code-block:: python
+
         # Usage Example 1: Calculates the 90th percentile on a list of input rasters.
+
         percentile_raster = percentile([raster1, raster2, raster3], percentile_value=90)
     """
 
