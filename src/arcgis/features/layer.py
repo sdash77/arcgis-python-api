@@ -2640,12 +2640,12 @@ class FeatureLayer(Layer):
                                     ===========     ===================================
 
         ---------------------   --------------------------------------------------------------------------------------
-        future                  Optional Boolean.  If `True` and the `FeatureLayer` has `supportsAsyncApplyEdits` set to `True`,
-                                then edits can be applied asynchronously.
+        future                  Optional Boolean.  If `True` and the `FeatureLayer` has `supportsAsyncApplyEdits` set
+                                to `True`, then edits can be applied asynchronously.
         =====================   ======================================================================================
 
         :return:
-            A dictionary of the edited layer
+            A dictionary by default, or :class:`~arcgis.features._async.EditFeatureJob` if `future=True`.
 
 
         """

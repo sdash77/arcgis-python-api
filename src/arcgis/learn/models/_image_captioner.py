@@ -235,6 +235,14 @@ class ImageCaptioner(ArcGISModel):
         _emd_template["ModelType"] = "ImageCaptioner"
         # Inference function of object classifier.
         _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
+
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISImageCaptioner.py"
+        else:
+            _emd_template[
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageCaptioner.py"
+
         # add encoder parameters
         _emd_template["ModelParameters"]["decoder_params"] = self.decoder_params
         # chip size
