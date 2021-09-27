@@ -263,7 +263,7 @@ class SingleShotDetector(ArcGISModel):
                         centroid = new_centroid.copy()
 
                     centroid = np.sort(np.max(centroid, axis=1))
-                    centroid = centroid[centroid!=0]
+                    centroid = centroid[centroid != 0]
 
                     # find grid size
 
