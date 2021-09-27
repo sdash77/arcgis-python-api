@@ -145,7 +145,7 @@ class NAJob(object):
         """
         returns the GP status
 
-        :returns: String
+        :return: String
         """
         return self._future.done()
 
@@ -157,7 +157,7 @@ class NAJob(object):
         return False, otherwise the call will be cancelled and the method
         will return True.
 
-        :returns: boolean
+        :return: boolean
         """
 
         if self.done():
@@ -171,7 +171,7 @@ class NAJob(object):
         """
         Return True if the call was successfully cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.cancelled()
 
@@ -180,7 +180,7 @@ class NAJob(object):
         """
         Return True if the call is currently being executed and cannot be cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.running()
 
@@ -189,7 +189,7 @@ class NAJob(object):
         """
         Return True if the call was successfully cancelled or finished running.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.done()
 
@@ -199,7 +199,7 @@ class NAJob(object):
         Return the value returned by the call. If the call hasn't yet completed
         then this method will wait.
 
-        :returns: object
+        :return: object
         """
         if self.cancelled():
             return None
@@ -1377,7 +1377,7 @@ class ODCostMatrixLayer(NetworkLayer):
         future                                   Optional boolean. If True, the result will be a `SolveJob` object and results will be returned asynchronously.
         ====================================     ====================================================================
 
-        :returns: Dictionary or `NAJob` when `future=True`
+        :return: Dictionary or `NAJob` when `future=True`
 
         """
         if not self.properties.layerType == "esriNAServerODCostMatrixLayer":
@@ -1475,7 +1475,7 @@ class ODCostMatrixLayer(NetworkLayer):
         Identify all the valid travel modes that have been defined on the
         network dataset or in the portal if the GIS server is federated
 
-        :returns: Dictionary
+        :return: Dictionary
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -1589,7 +1589,7 @@ class NetworkDataset(_GISResource):
         """
         List of OD Cost Matrix Layers
 
-        :returns: List
+        :return: List
         """
         if self._odCostMatrix is None:
             self._load_layers()

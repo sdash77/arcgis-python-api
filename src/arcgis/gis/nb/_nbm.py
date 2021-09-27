@@ -56,7 +56,7 @@ class NotebookManager(object):
         """
         Returns a list of notebook instances on the Notebook Server
 
-        :returns: List of :class:`~arcgis.gis.nb.Notebook` objects
+        :return: List of :class:`~arcgis.gis.nb.Notebook` objects
 
         """
         return [
@@ -119,7 +119,7 @@ class NotebookManager(object):
         """
         runs the job asynchronously
 
-        :returns: Job object
+        :return: Job object
         """
         from arcgis._impl._async.jobs import Job
 
@@ -190,7 +190,7 @@ class NotebookManager(object):
                                 returns a notebook job that will let you view the results as needed.
         ====================    ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         from arcgis.gis import Item
@@ -397,7 +397,7 @@ class Runtime(object):
         """
         Deletes the current runtime from the ArcGIS Notebook Server
 
-        :returns: boolean
+        :return: boolean
 
         """
         url = self._url + "/unregister"
@@ -497,7 +497,7 @@ class Runtime(object):
         authors who open notebooks using this runtime are able to import
         any of the libraries in the manifest into their notebooks.
 
-        :returns: List of Dictionaries
+        :return: List of Dictionaries
 
         """
         url = self._url + "/manifest"
@@ -565,7 +565,7 @@ class Notebook(object):
         idleNotebookThreshold property. The default value for that property
         is 24 hours.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         params = {"f": "json"}

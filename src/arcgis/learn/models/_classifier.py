@@ -138,7 +138,7 @@ class FeatureClassifier(ArcGISModel):
                             valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
 
-    :returns: `FeatureClassifier` Object
+    :return: `FeatureClassifier` Object
     """
 
     def __init__(
@@ -327,7 +327,7 @@ class FeatureClassifier(ArcGISModel):
                                 be set to True.
         =====================   ===========================================
 
-        :returns: prediction label and confidence
+        :return: prediction label and confidence
         """
         img = open_image(img_path)
         pred = self.learn.predict(img)
@@ -416,7 +416,7 @@ class FeatureClassifier(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `FeatureClassifier` Object
+        :return: `FeatureClassifier` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -683,7 +683,7 @@ class FeatureClassifier(ArcGISModel):
         confidence_field        Optional String. The field name to use to add confidence.
         =====================   ===========================================
 
-        :returns: `FeatureCollection` Object
+        :return: `FeatureCollection` Object
         """
         return self._create_feature_layer(
             self._extract_images_geo_data(folder),

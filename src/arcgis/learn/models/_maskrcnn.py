@@ -189,7 +189,7 @@ class MaskRCNN(ArcGISModel):
                                     Default: 0.25
     =============================   =============================================
 
-    :returns: ``MaskRCNN`` Object
+    :return: ``MaskRCNN`` Object
     """
 
     def __init__(
@@ -403,7 +403,7 @@ class MaskRCNN(ArcGISModel):
 
         =====================   ===========================================
 
-        :returns: `MaskRCNN` Object
+        :return: `MaskRCNN` Object
         """
 
         emd_path = _get_emd_path(emd_path)
@@ -752,7 +752,7 @@ class MaskRCNN(ArcGISModel):
                                 average precision otherwise returns mean
                                 average precision.
         =====================   ===========================================
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
         if mean:

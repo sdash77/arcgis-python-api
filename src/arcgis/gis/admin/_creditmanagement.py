@@ -89,7 +89,7 @@ class CreditManager(object):
                                         is provided, it sets user to unlimited credits.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: Boolean. True if successful else False
 
         """
         if hasattr(username, "username"):
@@ -119,7 +119,7 @@ class CreditManager(object):
         username                        Required string.The name of the user to set to unlimited credits.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: Boolean. True if successful else False
 
         """
         if hasattr(username, "username"):

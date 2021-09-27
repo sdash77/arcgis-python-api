@@ -221,7 +221,7 @@ class _GeoEnrichment(object):
                                full name.
         ==================     ====================================================================
 
-        :returns: Pandas' DataFrame or Dictionary (as_dict == True)
+        :return: Pandas' DataFrame or Dictionary (as_dict == True)
         """
         params = {"f": "json"}
         countries = self.countries()
@@ -366,7 +366,7 @@ class _GeoEnrichment(object):
                                output that is returned.
         ==================     ====================================================================
 
-        :returns: dictionary, describing the requested return data.
+        :return: dictionary, describing the requested return data.
         """
         import pandas as pd
 
@@ -417,7 +417,7 @@ class _GeoEnrichment(object):
                                Example: United States as US
         ==================     ====================================================================
 
-        :returns: Panda's DataFrame
+        :return: Panda's DataFrame
         """
         import pandas as pd
 
@@ -541,7 +541,7 @@ class _GeoEnrichment(object):
                                       SpatailDataFrame or Pandas' DataFrame.
         =========================     ====================================================================
 
-        :returns: Spatial DataFrame, Panda's DataFrame, or a dictionary (on error)
+        :return: Spatial DataFrame, Panda's DataFrame, or a dictionary (on error)
         """
         if _is_geoenabled(study_areas):
             study_areas = [{"FeatureSet": study_areas.spatial.__feature_set__}]
@@ -926,7 +926,7 @@ class _GeoEnrichment(object):
         For a given country, the standard geography level returns information
         relating to the area in question.
 
-        :returns: dictionary
+        :return: dictionary
 
         """
         as_dict = True
@@ -983,7 +983,7 @@ class _GeoEnrichment(object):
         users to determine how to break up the calls accordingly to ensure all data
         is returned.
 
-        :returns: Pandas' DataFrame
+        :return: Pandas' DataFrame
         """
         if self._limits is None:
             limits_resp = self._gis._con.get(
@@ -1122,7 +1122,7 @@ class _GeoEnrichment(object):
                                    DataFrame, else it is a FeatureSet
         ======================     ====================================================================
 
-        :returns: Spatial or Pandas Dataframe on success, dictionary on failure.
+        :return: Spatial or Pandas Dataframe on success, dictionary on failure.
 
         """
         url = self._base_url + self._url_standard_geography_query_execute

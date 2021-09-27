@@ -2856,7 +2856,7 @@ class Transform3d(object):
                             Default: 0.0.
     =====================   ===========================================
 
-    :returns: `Transform3d` object
+    :return: `Transform3d` object
     """
 
     def __init__(

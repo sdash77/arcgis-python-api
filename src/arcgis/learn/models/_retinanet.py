@@ -93,7 +93,7 @@ class RetinaNet(ArcGISModel):
                             saved.
     =====================   ===========================================
 
-    :returns: `RetinaNet` Object
+    :return: `RetinaNet` Object
     """
 
     def __init__(
@@ -255,7 +255,7 @@ class RetinaNet(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `RetinaNet` Object
+        :return: `RetinaNet` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -519,7 +519,7 @@ class RetinaNet(ArcGISModel):
                                 trained on).
         =====================   ===========================================
 
-        :returns: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
+        :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
         """
 
         if not HAS_OPENCV:
@@ -703,7 +703,7 @@ class RetinaNet(ArcGISModel):
                                 average precision.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
         aps = compute_class_AP(

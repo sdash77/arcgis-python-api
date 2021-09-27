@@ -42,7 +42,7 @@ class MetadataManager(object):
                                         values are: inspire,iso19139-3.2,fgdc,iso19139,arcgis, or iso19115
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         lookup = {
@@ -66,7 +66,7 @@ class MetadataManager(object):
         """
         This operation turns off metadata for items.
 
-        :returns: boolean
+        :return: boolean
         """
 
         params = {"metadataEditable": False, "metadataFormats": ""}
@@ -85,7 +85,7 @@ class MetadataManager(object):
                                         values are: inspire,iso19139-3.2,fgdc,iso19139,arcgis, or iso19115
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         lookup = {

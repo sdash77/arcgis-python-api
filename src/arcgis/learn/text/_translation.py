@@ -54,7 +54,7 @@ class TextTranslator(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :returns: `TextTranslator` Object
+    :return: `TextTranslator` Object
     """
 
     #: supported transformer architectures
@@ -137,7 +137,7 @@ class TextTranslator(InferenceOnlyModel):
                                 Default value is set to False.
         =====================   ===========================================
 
-        :returns: a list or a list of list containing the translation of the input prompt(s) / sentence(s) to the target language
+        :return: a list or a list of list containing the translation of the input prompt(s) / sentence(s) to the target language
         """
         results = []
         num_return_sequences = kwargs.get("num_return_sequences", 1)
@@ -186,7 +186,7 @@ class TextTranslator(InferenceOnlyModel):
                                 model files on the local disk.
         =====================   ===========================================
 
-        :returns: Absolute path for the saved model
+        :return: Absolute path for the saved model
         """
         if "\\" in name_or_path or "/" in name_or_path:
             path = name_or_path

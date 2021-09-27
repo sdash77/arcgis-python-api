@@ -77,7 +77,13 @@ class LogManager(object):
         """
         Get/set the current log settings.
 
-        :returns: PropertyMap
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Required dict. A dictionary with the key/values pairs to modify settings.
+        ==================     ====================================================================
+
+        :return: PropertyMap
         """
         params = {"f": "json"}
         url = self._url + "/settings"
@@ -91,15 +97,7 @@ class LogManager(object):
     @settings.setter
     def settings(self, value):
         """
-        Get/set the current log settings.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  dict. A dictionary with the key/values pairs to modify settings.
-        ==================     ====================================================================
-
-        :returns: PropertyMap
+        See main ``settings`` property docstring.
         """
         params = {"f": "json"}
         current = dict(self.settings)

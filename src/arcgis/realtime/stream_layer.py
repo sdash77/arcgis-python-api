@@ -36,7 +36,7 @@ class StreamLayer(Layer):
 
     @property
     def out_sr(self):
-        """The spatial reference of the streamed features"""
+        """Get/Set the spatial reference of the streamed features"""
         return self._out_sr
 
     @out_sr.setter
@@ -46,7 +46,7 @@ class StreamLayer(Layer):
     @property
     def filter(self):
         """
-        Property used for filtering the streamed features so they meet spatial and SQL like criteria,
+        Get/Set property used for filtering the streamed features so they meet spatial and SQL like criteria,
         and return the specified fields
         """
         return self._filter

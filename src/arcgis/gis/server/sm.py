@@ -62,7 +62,7 @@ class ServerManager(object):
            :class:`~arcgis.server.ServicesDirectory` class, which returns a variety of services, such as a ``Feature Service``,
            ``Map Service``, ``Vector Tile``, ``Geoprocessing Service``, etc.
 
-        :returns:
+        :return:
            A list of all servers (in the form of admin service objects) found in the :class:`~arcgis.gis.GIS`.
         """
 
