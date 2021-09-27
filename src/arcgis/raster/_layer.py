@@ -187,23 +187,21 @@ class ImageryLayerCacheManager(_GISResource):
                             replace the existing ones when merging bundles.
         ===============     ====================================================
 
-        :return: A JSON response as a dictionary indicating 'success' or 'error'
+        :return: A dictionary
 
         .. code-block:: python
 
             # Example Usage
-            >>> imported_tiles = ImageryLayerCacheManager.delete_tiles(item = item1,
-                                                                       levels = "11-20",
-                                                                       extent = {
-                                                                                "xmin":6224324.092137296,
-                                                                                "ymin":487347.5253569535,
-                                                                                "xmax":11473407.698535524,
-                                                                                "ymax":4239488.369818687
-                                                                                },
-                                                                       merge = True
-                                                                      )
-            >>> type(imported_tiles)
-            <Dictionary>
+            imported_tiles = img_lyr_cache_manager.import_tiles(item = item1,
+                                                                levels = "11-20",
+                                                                extent = {
+                                                                            "xmin":6224324.092137296,
+                                                                            "ymin":487347.5253569535,
+                                                                            "xmax":11473407.698535524,
+                                                                            "ymax":4239488.369818687
+                                                                         },
+                                                                merge = True
+                                                                )
         """
         params = {
             "f": "json",
@@ -257,18 +255,15 @@ class ImageryLayerCacheManager(_GISResource):
         .. code-block:: python
 
             # Example Usage
-            >>> updated_tiles = ImageryLayerCacheManager.delete_tiles(item = item1,
-                                                                       levels = "11-20",
-                                                                       extent = {
-                                                                                "xmin":6224324.092137296,
-                                                                                "ymin":487347.5253569535,
-                                                                                "xmax":11473407.698535524,
-                                                                                "ymax":4239488.369818687
-                                                                                },
-                                                                       merge = True
-                                                                      )
-            >>> type(updated_tiles)
-            <Dictionary>
+            updated_tiles = img_lyr_cache_manager.update_tiles(levels = "11-20",
+                                                               extent = {
+                                                                            "xmin":6224324.092137296,
+                                                                            "ymin":487347.5253569535,
+                                                                            "xmax":11473407.698535524,
+                                                                            "ymax":4239488.369818687
+                                                                        },
+                                                               merge = True
+                                                               )
         """
         if self._gis._portal.is_arcgisonline:
             url = "%s/updateTiles" % self._url
@@ -397,21 +392,19 @@ class ImageryLayerCacheManager(_GISResource):
         ===============     ====================================================
 
         :return:
-           JSON dictionary indicating 'success' or 'error'
+           A dictionary
 
         .. code-block:: python
 
             # Example Usage
-            >>> deleted_tiles = ImageryLayerCacheManager.delete_tiles(levels = "11-20",
-                                                                      extent = {
-                                                                                "xmin":6224324.092137296,
-                                                                                "ymin":487347.5253569535,
-                                                                                "xmax":11473407.698535524,
-                                                                                "ymax":4239488.369818687
-                                                                                }
-                                                                      )
-            >>> type(deleted_tiles)
-            <Dictionary>
+            deleted_tiles = img_lyr_cache_manager.delete_tiles(levels = "11-20",
+                                                               extent = {
+                                                                            "xmin":6224324.092137296,
+                                                                            "ymin":487347.5253569535,
+                                                                            "xmax":11473407.698535524,
+                                                                            "ymax":4239488.369818687
+                                                                        }
+                                                               )
 
         """
         params = {
@@ -485,14 +478,14 @@ class ImageryLayer(Layer):
 
     The ``ImageryLayer`` class can be used to represent an image service resource as a layer.
     An ``ImageryLayer`` object retrieves and
-    displays data from image services. ``ImageryLayer`` allows you to and apply server defined or client-defined raste
+    displays data from image services. ``ImageryLayer`` allows you to and apply server defined or client-defined raster
     functions (e.g. remap, colormap), and mosaic rules.
 
-    ``ImageryLayer`` objects can also be created using raster datasets or raster products present in datastore registered with the server/active GIS
+    ``ImageryLayer`` objects can also be created using raster datasets or raster products present in datastores registered with the server/active GIS
     (types: ``fileShares``, ``cloudStores``, ``rasterStores``).
     To learn more about datastores, visit the
     `What is ArcGIS Data Store? <https://enterprise.arcgis.com/en/portal/latest/administer/windows/what-is-arcgis-data-store.htm>`_
-    page in the ArcGIS REST API documentation.
+    page in the ArcGIS Enterprise documentation.
 
     Usage: ``arcgis.raster.ImageryLayer(url, gis=gis)``
 
@@ -517,43 +510,29 @@ class ImageryLayer(Layer):
                                                 should be enabled in the active GIS connection
 
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional. GIS of the ImageryLayer object.
+    gis                                      Optional. :class:`~arcgis.gis.GIS` of the ImageryLayer object.
     ====================================     ====================================================================
 
-    **Examples:**
-
-    # Example create through search
-
     .. code-block:: python
+
+        # Example Usage
 
         # Imagery layer items are available as content in the GIS. Items can be searched using gis.content.search()
         # This snippet creates an imagery layer using the 'layers' property of the searched Imagery Layer Item
         img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
 
-    # Example create through URL
-
-    .. code-block:: python
         # Create an imagery layer from an image service url
         img_lyr = ImageryLayer("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer", gis=gis)
 
-    # Example create through file
-
-    .. code-block:: python
         # Create an imagery layer from a .tif file present in user's registered fileShare datastore
         # (Requires RasterRendering service to be enabled in the active GIS)
         img_lyr = ImageryLayer("/fileShares/data/Amberg.tif", gis=gis)
 
-    # Example create through public GeoTIFF
-
-    .. code-block:: python
         # Create an imagery layer from a publicly accesible Cloud-Optimized GeoTIFF
         # (Requires RasterRendering service to be enabled in the active GIS)
         img_lyr = ImageryLayer("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/43/M/BP/2021/6/S2A_43MBP_20210622_0_L2A/B08.tif",
                                 gis=gis)
 
-    # Example add image layer to map
-
-    .. code-block:: python
         # Overlay an imagery layer on the 'MapView' widget
         map = gis.map()
         map.add_layer(img_lyr)
@@ -633,10 +612,10 @@ class ImageryLayer(Layer):
         """
         The ``rasters`` property creates a Raster Manager for this layer.
         Used to create an instance of the manager and help perform edit methods on the
-        Imange Layer.
+        ImageryLayer.
 
         :return:
-        An instance of :class:`~arcgis.raster.RasterManager` for the Image Layer
+        An instance of :class:`~arcgis.raster.RasterManager` for the ImageryLayer
         """
         if str(self.properties["capabilities"]).lower().find("edit") > -1:
             return RasterManager(self)
@@ -682,7 +661,7 @@ class ImageryLayer(Layer):
     @property
     def tiles(self):
         """
-        The ``tiles`` property creates an Imagery Tile Manager for this layer.
+        The ``tiles`` property creates an ImageryTileManager for this layer.
         This manager helps perform edits on the tiles of the Image Layer.
 
         :return: An :class:`~arcgis.raster.ImageryTileManager` for this Image Layer
@@ -696,8 +675,6 @@ class ImageryLayer(Layer):
     def service(self):
         """
         The ``service`` property represents the service backing this imagery layer (if user can administer the service).
-
-        :return: A :class:`~arcgis.raster.AdminServiceGen` for the user
         """
         try:
             from arcgis.gis.server._service._adminfactory import AdminServiceGen
@@ -709,16 +686,16 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def catalog_item(self, id):
         """
-        The ``catalog_item`` returns a single raster catalog item associated with the specified id
+        The ``catalog_item`` method returns a single raster catalog item associated with the specified ID
 
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        id                    required integer. The id is the 'raster id'.
+        id                    Required integer. The 'raster ID'.
         =================     ====================================================================
 
-        :return:
-            A :class:`~arcgis.raster.RasterCatalogItem` associated with the id
+        :returns:
+            :class:`~arcgis.raster.RasterCatalogItem` associated with the ID
         """
         if self._datastore_raster:
             raise RuntimeError(
@@ -768,13 +745,6 @@ class ImageryLayer(Layer):
 
         :return:
             An :class:`~arcgis.raster.ImageryLayer` object
-
-        .. code-block:: python
-
-            # Imagery layer items are available as content in the GIS. Items can be searched using gis.content.search()
-            # This snippet creates an imagery layer using the 'layers' property of the searched Imagery Layer Item
-            img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
-
         """
         if not item.type == "Image Service":
             raise TypeError("item must be a type of Image Service, not " + item.type)
@@ -787,10 +757,7 @@ class ImageryLayer(Layer):
         Get/Set the area of interest.
         Used for displaying the :class:`~arcgis.raster.ImageryLayer` when queried.
 
-        ..note:
-            An extent dictionary needs to be passed in with a Spatial Reference
-
-        :return: A dcitionary of the extent of the Image Layer
+        :return: A dictionary
         """
         if self._extent is None:
             if "initialExtent" in self.properties:
@@ -868,6 +835,7 @@ class ImageryLayer(Layer):
     def band_count(self):
         """
         Get the band count of the :class:`~arcgis.raster.ImageryLayer`.
+
         :return: An Integer
         """
         band_count = self.properties.bandCount
@@ -903,7 +871,7 @@ class ImageryLayer(Layer):
 
         :Syntax:
 
-            my_hist = imagery_layer.histograms()
+            my_hist = imagery_layer.histograms
 
         :return:
             | #Structure of the return value for a two band imagery layer
@@ -1003,7 +971,7 @@ class ImageryLayer(Layer):
                                 indicate a correct bandCount value.
         =================     ====================================================================
 
-        :return: A JSON Dictionary indicating 'success' or 'error'
+        :return: A dictionary
 
         """
         if (
@@ -1067,7 +1035,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def metadata(self):
-        """The ``metadata`` property returns the image service's XML metadata file"""
+        """Get the Image Service's XML metadata file"""
         url = "{url}/info/metadata".format(url=self._url)
         params = {"f": "json"}
         if self._datastore_raster:
@@ -1078,14 +1046,14 @@ class ImageryLayer(Layer):
     def project(self, geometries, in_sr, out_sr):
         """
         The ``project`` method is performed on an :class:`~arcgis.raster.ImageryLayer` object.
-        This method projects an array of input geometries from the input
+        This operation projects a list of input geometries from the input
         spatial reference to the output spatial reference. The response
         order of geometries is in the same order as they were requested.
 
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        geometries            required dictionary. The array of geometries to be projected.
+        geometries            required list. The list of geometries to be projected.
         -----------------     --------------------------------------------------------------------
         in_sr                 required string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``in_sr``
                               can accept a
@@ -1114,7 +1082,7 @@ class ImageryLayer(Layer):
                                     conflicts with wkid
         =================     ====================================================================
 
-        :return: A JSON dictionary, indicating 'success' or 'error'
+        :return: A dictionary
 
 
         """
@@ -1258,21 +1226,19 @@ class ImageryLayer(Layer):
                                             as the service provider.
         ============================    ====================================================================
 
-        :return: A JSON dictionary indicating 'success' or 'error'
+        :return: A dictionary
 
         .. code-block:: python
 
             # Example Usage
-            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
-            >>> identified = img_layer.identify(geometry = polygon1,
-                                                pixel_size = '0.18,0.18',
-                                                return_geometry = True,
-                                                return_pixel_values = False,
-                                                max_item_count = 5,
-                                                slice_id = 1,
-                                                )
-            >>> type(identified)
-            <Dictionary>
+            img_layer = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            identified = img_layer.identify(geometry=polygon_obj,
+                                            pixel_size="0.18,0.18",
+                                            return_geometry=True,
+                                            return_pixel_values=False,
+                                            max_item_count=5,
+                                            slice_id=1,
+                                            )
         """
         if self.tiles_only:
             raise RuntimeError(
@@ -1360,7 +1326,7 @@ class ImageryLayer(Layer):
         area_unit=None,
     ):
         """
-        The ``measure`` function lets a user measure distance, direction, area,
+        The ``measure`` method lets a user measure distance, direction, area,
         perimeter, and height from an image layer. The result of this
         operation includes the name of the raster dataset being used,
         sensor name, and measured values.
@@ -1466,20 +1432,15 @@ class ImageryLayer(Layer):
                               SquareKilometers`
         =================     ====================================================================
 
-        :return: A JSON dictionary indicating 'success' or 'error'
+        :return: A dictionary
 
         .. code-block:: python
 
             # Example Usage
-            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
-            >>> measured = img_layer.measure(from_geometry = point1,
-                                            top_geometry = point2,
-                                            linear_unit = "Meters",
-                                            angular_unit = "DURadians",
-                                            area_unit = "SquareMeters"
-                                            )
-            >>> type(measured)
-            <Dictionary>
+            img_layer = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            measured = img_layer.measure(from_geometry=point1,
+                                         to_geometry=point2,
+                                         measure_operation="HeightFromTopAndTopShadow")
         """
         if self.tiles_only:
             raise RuntimeError(
@@ -1552,7 +1513,7 @@ class ImageryLayer(Layer):
                               layer by the selection sql statement. Any legal SQL where clause
                               operating on the fields in the raster
         -----------------     --------------------------------------------------------------------
-        geometry              optional :class:`~arcgis.geometry.Filter`. To filter results by a spatial
+        geometry              optional arcgis.geometry.filters. To filter results by a spatial
                               relationship with another geometry
         -----------------     --------------------------------------------------------------------
         time                  optional datetime, date, or timestamp. A temporal filter to this
@@ -1651,11 +1612,9 @@ class ImageryLayer(Layer):
         .. code-block:: python
 
             # Example Usage
-            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
-            >>> filtered_img_lyr = img_layer.filterby(time_filter = [1627417239146],
-                                                  lock_rasters = True)
-            >>> type(filtered_img_lyr)
-            <arcgis.raster.ImageryLayer>
+            img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            filtered_img_lyr = img_lyr.filter_by(time=[1627417239146],
+                                                lock_rasters=True)
 
         """
         if self.tiles_only:
@@ -2321,18 +2280,10 @@ class ImageryLayer(Layer):
 
         .. code-block:: python
 
-            # Usage Example of an advanced query returning the number of features in the query
+            # Usage Example
 
-            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
-            >>> search_count = feature_layer.query(where = "OBJECTID=1",
-                                                  out_fields = ["FieldName1, FieldName2"],
-                                                  pixel_size='0.18,0.18',
-                                                  return_count_only = True)
-
-            >>> type(search_count)
-            <Integer>
-            >>> search_count
-            <149>
+            img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            search_res = img_lyr.query(where="OBJECTID=1")
 
         """
 
@@ -2501,7 +2452,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def get_download_info(self, raster_ids, polygon=None, extent=None, out_format=None):
         """
-        The ``get_download_info`` operation returns information (the file ID)
+        The ``get_download_info`` method returns information (the file ID)
         that can be used to download the raw raster files that are
         associated with a specified set of rasters in the raster catalog.
 
@@ -2528,7 +2479,7 @@ class ImageryLayer(Layer):
                               Example: out_format='TIFF'
         =================     ====================================================================
 
-        :return: A dictionary indicating 'success' or 'error'
+        :return: A dictionary
         """
         if self.tiles_only:
             raise RuntimeError(
@@ -2568,7 +2519,7 @@ class ImageryLayer(Layer):
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
         download_info         Required dictionary. This is derived from the
-                              :attr:`~arcgis.raster.ImageryLayer.get_download_info`
+                              :attr:`~arcgis.raster.ImageryLayer.get_download_info` method.
         -----------------     --------------------------------------------------------------------
         out_folder            Optional string. Path to the file save location. If the value is
                               None, the OS temporary directory is used.
@@ -2622,8 +2573,8 @@ class ImageryLayer(Layer):
     def compute_pixel_location(self, raster_id, geometries, spatial_reference):
         """
 
-        The ``compute_pixel_location`` calculates corresponding pixel location
-        in column and row on specific raster catalog item.
+        The ``compute_pixel_location`` method calculates pixel location
+        in column and row on specific raster catalog item based on given input geometry.
 
         .. note::
             A prerequisite is that the raster catalog item has valid ``icsToPixel`` resource.
@@ -2636,8 +2587,8 @@ class ImageryLayer(Layer):
                               image coordinate system will be used during the calculation and
                               which raster does the column and row of results represent.
         -----------------     --------------------------------------------------------------------
-        geometries            Required array of geometries for computing pixel locations.
-                              All geometries in this array should be of the type defined by ``geometryType``.
+        geometries            Required list of geometries for computing pixel locations.
+                              All geometries in this list should be of the type defined by ``geometryType``.
 
         -----------------     --------------------------------------------------------------------
         spatial_reference     Required string, dictionary,
@@ -2655,8 +2606,8 @@ class ImageryLayer(Layer):
         =================     ====================================================================
 
         :return: A dictionary. The result of this operation includes x and y values for the column
-                  and row of each input geometry. It also includes a z value for the height at given
-                  location based on elevation info that the catalog raster item has.
+                 and row of each input geometry. It also includes a z value for the height at given
+                 location based on elevation info that the catalog raster item has.
 
 
         """
@@ -2685,7 +2636,7 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        muldidef              Optional array. Multidimensional definition used for querying
+        muldidef              Optional list. Multidimensional definition used for querying
                               dimensional slices of the input image service.
 
                               See the
@@ -2702,8 +2653,6 @@ class ImageryLayer(Layer):
 
             multidimensional_definition = [{"variableName":"salinity","dimensionName":"StdZ","values":[-5000]}]
             multidimensional_lyr_input.slices(multidimensional_definition)
-
-
 
         """
         url = self._url + "/slices"
@@ -2766,16 +2715,10 @@ class ImageryLayer(Layer):
         as a list of dictionaries corresponding to each band.
 
         .. note::
-            ``get_histograms`` can return a histogram for each variable if used with multidimensional ImageryLayer
+            * ``get_histograms`` can return a histogram for each variable if used with multidimensional ImageryLayer \
             object by specifying value for variable parameter.
-
-        .. note::
-            If histogram is not found, returns None. In this case, call the
-            :attr:`~arcgis.raster.ImageryLayer.compute_histograms` method.
-
-        .. note::
-            ``get_histograms`` is an enhanced version of the histograms property on the ``ImageryLayer`` class
-            with additional variable parameter.
+            * If histogram is not found, returns None. In this case, call the :attr:`~arcgis.raster.ImageryLayer.compute_histograms` method.
+            * ``get_histograms`` is an enhanced version of the :attr:`~arcgis.raster.ImageryLayer.histograms` property on the ``ImageryLayer`` class with additional variable parameter.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -2789,19 +2732,17 @@ class ImageryLayer(Layer):
 
         :return: A list
 
-        .. code block:: python
+        Example Structure of the return value:
 
-            my_hist = imagery_layer.histograms(variable="water_temp")
+            | [{"size":256,
+            |   "min":560,
+            |   "max":24568,
+            |   "counts": [10,99,56,42200,125,....]}] # length of this list corresponds "size"
 
-            Structure of the return value:
-            [{"size":256,
-            "min":560,
-            "max":24568,
-            counts: [10,99,56,42200,125,....]
-            }
-            ]
-
-            #length of this list corresponds 'size'
+        .. code-block:: python
+            
+            # Example Usage
+            my_hist = imagery_layer.get_histograms(variable="water_temp")
 
         """
         if self.properties.hasHistograms:
@@ -3162,9 +3103,9 @@ class ImageryLayer(Layer):
         ============================    ====================================================================
         **Argument**                    **Description**
         ----------------------------    --------------------------------------------------------------------
-        geometry                        Required :class:`~arcgis.geometry.Polygon` or ``Extent``. A geometry that
-                                        defines the geometry
-                                        within which the histogram is computed.
+        geometry                        Required :class:`~arcgis.geometry.Geometry` (:class:`~arcgis.geometry.Polygon`
+                                        or :class:`~arcgis.geometry.Envelope`).
+                                        A geometry that defines the geometry within which the statistics and histograms are computed.
         ----------------------------    --------------------------------------------------------------------
         mosaic_rule                     Optional dictionary.  Specifies the mosaic rule when defining how
                                         individual images should be mosaicked. When a mosaic rule is not
@@ -3226,12 +3167,12 @@ class ImageryLayer(Layer):
             # Usage Example 1: Compute the stats and histograms in the specified area of interest for a time instant.
 
             aoi = {
-            "spatialReference": {"wkid": 32610},
-            "xmax": 725000,
-            "xmin": 720000,
-            "ymax": 4300000,
-            "ymin": 4250000,
-            }
+                    "spatialReference": {"wkid": 32610},
+                    "xmax": 725000,
+                    "xmin": 720000,
+                    "ymax": 4300000,
+                    "ymin": 4250000
+                  }
 
             aoi_geometry = Geometry(aoi)
 
@@ -3244,12 +3185,12 @@ class ImageryLayer(Layer):
             # Usage Example 2: Compute the stats and histograms in the specified area of interest for a time extent.
 
             aoi = {
-            "spatialReference": {"wkid": 32610},
-            "xmax": 725000,
-            "xmin": 720000,
-            "ymax": 4300000,
-            "ymin": 4250000,
-            }
+                    "spatialReference": {"wkid": 32610},
+                    "xmax": 725000,
+                    "xmin": 720000,
+                    "ymax": 4300000,
+                    "ymin": 4250000
+                  }
 
             aoi_geometry = Geometry(aoi)
 
@@ -3347,7 +3288,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def legend(self, band_ids=None, rendering_rule=None, as_html=False):
         """
-        The ``legend`` information includes the symbol images and labels for
+        The ``legend`` method retrieves the legend information. The information includes the symbol images and labels for
         each symbol.
 
         .. note::
@@ -3436,14 +3377,14 @@ class ImageryLayer(Layer):
         rendering_rule      Optional dictionary. Specifies the rendering rule for how the
                             requested image should be rendered.
                             See the
-                            `raster function objects <https://developers.arcgis.com/documentation/common-data-types/raster-function-objects.htm>`_
+                            `Raster function objects <https://developers.arcgis.com/documentation/common-data-types/raster-function-objects.htm>`_
                             page in the ArcGIS REST API documentation for JSON syntax and examples.
         ---------------     --------------------------------------------------------------------
-        variable            Optional String. This parameter can be used to request a
+        variable            Optional string. This parameter can be used to request a
                             colormap for each variable for an image service that has
                             multidimensional information. It will return a colormap
                             for the whole image service if not specified. Eligible variable names
-                            can be queried from ``multidimensional_info`` property of the
+                            can be queried from :attr:`~arcgis.raster.ImageryLayer.multidimensional_info` property of the
                             :class:`~arcgis.raster.ImageryLayer` object.
 
                             .. note::
@@ -3451,7 +3392,7 @@ class ImageryLayer(Layer):
 
         ===============     ====================================================================
 
-        :return: A dictionary of the colormap information
+        :return: A dictionary
         """
         if self.properties.hasColormap:
             url = self._url + "/colormap"
@@ -3492,6 +3433,22 @@ class ImageryLayer(Layer):
                             as the structure of the JSON geometry objects returned by the
                             ArcGIS REST API.
 
+                            :Syntax:
+                            | {
+                            |     "classes":  [  // A list of classes
+                            |           {
+                            |             "id" : <id>,
+                            |             "name" : "<name>",
+                            |             "geometry" : <geometry> //polygon
+                            |           },
+                            |           {
+                            |             "id" : <id>,
+                            |             "name" : "<name>",
+                            |             "geometry" : <geometry>  //polygon
+                            |           }
+                            |           ...
+                            |                 ]
+                            | }
         ---------------     --------------------------------------------------------------------
         mosaic_rule         Optional string. Specifies the mosaic rule when defining how
                             individual images should be mosaicked. When a mosaic rule is not
@@ -3529,26 +3486,24 @@ class ImageryLayer(Layer):
         .. code-block:: python
 
             # Example Usage
-            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
-            >>> stats = img_lyr.compute_stats(descriptions = { "classes":  [
-                                                                        {
+
+            img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+
+            stats = img_lyr.compute_class_stats(descriptions={"classes": [
+                                                                    {
                                                                         "id" : <id1>,
                                                                         "name" : "<name1>",
                                                                         "geometry" : <polygon1>
-                                                                        },
-                                                                        {
+                                                                    },
+                                                                    {
                                                                         "id" : <id2>,
                                                                         "name" : "<name2>",
-                                                                         "geometry" : <polygon2>
-                                                                        }
+                                                                        "geometry" : <polygon2>
+                                                                    }
                                                                         ]
                                                             },
-                                            pixel_size = {"x": 0.18, "y": 0.18}
+                                                pixel_size = {"x": 0.18, "y": 0.18}
                                             )
-            >>> type(stats)
-            <Dictionary>
-
-
 
         """
         if self.tiles_only:
@@ -3588,15 +3543,15 @@ class ImageryLayer(Layer):
         process_as_multidimensional=False,
     ):
         """
-        The ``compute_histograms`` method creates an array of histograms for all raster bands computed for the
+        The ``compute_histograms`` method returns a list of histograms for all raster bands computed for the
         :class:`~arcgis.raster.ImageryLayer` from the given extent.
 
         ============================    ====================================================================
         **Arguments**                   **Description**
         ----------------------------    --------------------------------------------------------------------
-        geometry                        Required :class:`~arcgis.Geometry.Polygon` or ``Extent``.
-                                        A geometry that defines the geometry
-                                        within which the histogram is computed.
+        geometry                        Required :class:`~arcgis.geometry.Geometry` (:class:`~arcgis.geometry.Polygon`
+                                        or :class:`~arcgis.geometry.Envelope`).
+                                        A geometry that defines the geometry within which the histogram is computed.
         ----------------------------    --------------------------------------------------------------------
         mosaic_rule                     Optional string. Specifies the mosaic rule when defining how
                                         individual images should be mosaicked. When a mosaic rule is not
@@ -3668,12 +3623,12 @@ class ImageryLayer(Layer):
             # Usage Example 1: Compute the histograms in the specified area of interest for a time instant.
             
             aoi = {
-            "spatialReference": {"wkid": 32610},
-            "xmax": 725000,
-            "xmin": 720000,
-            "ymax": 4300000,
-            "ymin": 4250000,
-            }
+                    "spatialReference": {"wkid": 32610},
+                    "xmax": 725000,
+                    "xmin": 720000,
+                    "ymax": 4300000,
+                    "ymin": 4250000
+                  }
 
             aoi_geometry = Geometry(aoi)
 
@@ -3686,12 +3641,12 @@ class ImageryLayer(Layer):
             # Usage Example 2: Compute the histograms in the specified area of interest for a time extent.
 
             aoi = {
-            "spatialReference": {"wkid": 32610},
-            "xmax": 725000,
-            "xmin": 720000,
-            "ymax": 4300000,
-            "ymin": 4250000,
-            }
+                    "spatialReference": {"wkid": 32610},
+                    "xmax": 725000,
+                    "xmin": 720000,
+                    "ymax": 4300000,
+                    "ymin": 4250000
+                  }
 
             aoi_geometry = Geometry(aoi)
 
@@ -3772,15 +3727,14 @@ class ImageryLayer(Layer):
         given geometry.
 
         .. note::
-            When the input geometry is a :class:`~arcgis.geometry.Polyline`,
-            :class:`~arcgis.geometry.Envelope`, or
-            :class:`~arcgis.geometry.Polygon`, sampling is based on ``sample_count`` or ``sample_distance``; when the
+            * When the input geometry is a :class:`~arcgis.geometry.Polyline`, \
+            :class:`~arcgis.geometry.Envelope`, or \
+            :class:`~arcgis.geometry.Polygon`, sampling is based on ``sample_count`` or ``sample_distance``; when the \
             input geometry is a :class:`~arcgis.geometry.Point` or :class:`~arcgis.geometry.MultiPoint`,\
             the point or points are used directly.
 
-        .. note::
-            The number of sample locations in the response is based on the
-            ``sample_distance`` or ``sample_count`` parameter and cannot exceed the limit of
+            * The number of sample locations in the response is based on the \
+            ``sample_distance`` or ``sample_count`` parameter and cannot exceed the limit of \
             the image layer (the default is 1000, which is an approximate limit).
 
         =======================  =======================================================================
@@ -3845,20 +3799,6 @@ class ImageryLayer(Layer):
 
         :return:
             A list of samples
-
-        .. code-block:: python
-
-            # Example Usage
-            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
-            >>> samples = img_layer.filterby(geometry = poly1,
-                                         geometry_type = 'polygon',
-                                         sample_distance = 1000,
-                                         sample_count = 500,
-                                         pixel_size='0.18,0.18',
-                                         interpolation = "RSP_BilinearInterpolation"
-                                         )
-            >>> type(samples)
-            <List>
         """
         if self.tiles_only:
             raise RuntimeError(
@@ -3925,7 +3865,7 @@ class ImageryLayer(Layer):
         =================     ====================================================================
 
         :return:
-            The key properties of the :class:`~arcgis.raster.ImageryLayer`
+            A dictionary representing the key properties of the :class:`~arcgis.raster.ImageryLayer`
         """
         url = self._url + "/keyProperties"
         params = {"f": "json"}
@@ -4132,12 +4072,12 @@ class ImageryLayer(Layer):
         The ``calculate_volume`` method performs volumetric calculation on an elevation service.
 
         .. note::
-            If a service does not have vertical spatial reference and z unit is not in meters, user
-            needs to apply a conversion factor when interpreting results.
+
+            * If a service does not have vertical spatial reference and z unit is not in meters, user \
+            needs to apply a conversion factor when interpreting results. \
             The results are always in square meters (area) and cubic meters (volume).
 
-        .. note::
-            The ``calculate_volume`` method is only available in 10.7+.
+            * The ``calculate_volume`` method is only available in 10.7+.
 
         =================       ====================================================================
         **Argument**            **Description**
@@ -4243,7 +4183,7 @@ class ImageryLayer(Layer):
                                 4326
         =================     ====================================================================
 
-        :return:A dictionary representing the boundary geometry shape.
+        :return: A dictionary representing the boundary geometry shape.
 
         """
         if (
@@ -4425,61 +4365,64 @@ class ImageryLayer(Layer):
 
     def first(self):
         """
-        The ``first`` method retrieves overlapping pixels at the same location that are resolved by picking the first
-        image.
+        The ``first`` method returns this :class:`~arcgis.raster.ImageryLayer` with mosaic operation set to ``first`` (overlapping
+        pixels at the same location are resolved by picking the first image)
 
-        :return: This :class:`~arcgis.raster.ImageryLayer` with mosaic operation set to ``first``
+        :return: An :class:`~arcgis.raster.ImageryLayer` object
         """
         return self._mosaic_operation("first")
 
     def last(self):
         """
-        The ``last`` method resolves overlapping pixels at the same location by picking the last image
+        The ``last`` method returns this :class:`~arcgis.raster.ImageryLayer` with mosaic operation set to ``last`` (overlapping
+        pixels at the same location are resolved by picking the last image)
 
-        :return: The current :class:`~arcgis.raster.ImageryLayer` with mosaic operation set to ``last``
-
+        :return: An :class:`~arcgis.raster.ImageryLayer` object
         """
         return self._mosaic_operation("last")
 
     def min(self):
         """
-        The ``min`` method resolves overlapping pixels at the same location by picking the min pixel value.
+        The ``min`` method returns this :class:`~arcgis.raster.ImageryLayer` with mosaic operation set to ``min`` (overlapping
+        pixels at the same location are resolved by picking the min pixel value)
 
-        :return: The :class:`~arcgis.raster.ImageryLayer` with mosaic operation set to ``min``
+        :return: An :class:`~arcgis.raster.ImageryLayer` object
         """
         return self._mosaic_operation("min")
 
     def max(self):
         """
-        The ``max`` method resolves the overlapping pixels at the same location by picking the max pixel value.
+        The ``max`` method returns this :class:`~arcgis.raster.ImageryLayer` with mosaic operation set to ``max`` (overlapping
+        pixels at the same location are resolved by picking the max pixel value)
 
-        :return: The current :class:`~arcgis.raster.ImageryLayer` with mosaic operation set to ``max``
+        :return: An :class:`~arcgis.raster.ImageryLayer` object
         """
         return self._mosaic_operation("max")
 
     def mean(self):
         """
-        The ``mean`` method resolves overlapping pixels at the same location by choosing the mean of all
-        overlapping pixels.
+        The ``mean`` method returns this :class:`~arcgis.raster.ImageryLayer` with mosaic operation set to ``mean`` (overlapping
+        pixels at the same location are resolved by choosing the mean of all overlapping pixels)
 
-        :return: The current :class:`~arcgis.raster.ImageryLayer` with mosaic operation set to ``mean``
+        :return: An :class:`~arcgis.raster.ImageryLayer` object
         """
         return self._mosaic_operation("mean")
 
     def blend(self):
         """
-        The ``blend`` method retrieves overlapping pixels at the same location are resolved by blending all
-        overlapping pixels.
+        The ``blend`` method returns this :class:`~arcgis.raster.ImageryLayer` with mosaic operation set to ``blend`` (overlapping
+        pixels at the same location are resolved by blending all overlapping pixels)
 
-        :return: This :class:`~arcgis.raster.ImageryLayer` object with mosaic operation set to ``blend``
+        :return: An :class:`~arcgis.raster.ImageryLayer` object
         """
         return self._mosaic_operation("blend")
 
     def sum(self):
         """
-        The ``sum`` method resolves overlapping pixels at the same location  by adding up all overlapping pixel values.
+        The ``sum`` method returns this :class:`~arcgis.raster.ImageryLayer` with mosaic operation set to ``sum`` (overlapping
+        pixels at the same location are resolved by adding up all overlapping pixel values)
 
-        :return: The current :class:`~arcgis.raster.imageryLayer` with mosaic operation set to ``sum``
+        :return: An :class:`~arcgis.raster.ImageryLayer` object
         """
         return self._mosaic_operation("sum")
 
@@ -4548,14 +4491,12 @@ class ImageryLayer(Layer):
 
         .. code-block:: python
 
-            # Usage Example of an advanced query returning the number of features in the query
+            # Usage Example
 
-            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
-            >>> img_lyr.save(output_name = "saved_imagery_layer",
-                             for_viz = False,
-                             process_as_multidimensional = True,
-                             build_transpose = True,
-                             future = True)
+            img_lyr.save(output_name="saved_imagery_layer",
+                         process_as_multidimensional=True,
+                         build_transpose=True,
+                         gis=gis)
         """
         g = _arcgis.env.active_gis if gis is None else gis
         layer_extent_set = False
@@ -4718,17 +4659,13 @@ class ImageryLayer(Layer):
 
         .. code-block:: python
 
-            # Usage Example of an advanced query returning the number of features in the query
+            # Usage Example
 
-            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
-            >>> feature_layer = img_lyr.to_features(output_type = "Polygon",
-                                                    simplify = False,
-                                                    output_name = "new_feature_layer",
-                                                    create_multipart_freatures = True,
-                                                    future = False
-                                                    )
-            >>> type(feature_layer)
-            <arcgis.features.FeatureLayer>
+            feature_layer = img_lyr.to_features(output_type="Polygon",
+                                                simplify = False,
+                                                output_name="new_feature_layer",
+                                                create_multipart_freatures = True,
+                                                )
 
         """
         g = _arcgis.env.active_gis if gis is None else gis
@@ -4751,7 +4688,7 @@ class ImageryLayer(Layer):
     def draw_graph(self, show_attributes=False, graph_size="14.25, 15.25"):
         """
         The ``draw_graph`` method displays a structural representation of the function chain and it's
-        raster input values. If ``show_attributes`` is set to ``True``, then the ``draw_graph`` function also
+        raster input values. If ``show_attributes`` is set to ``True``, then the ``draw_graph`` method also
         displays the attributes
         of all the functions in the function chain, representing the rasters in a blue rectangular
         box, attributes in green rectangular box and the raster function names in yellow.
@@ -4759,13 +4696,13 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        show_attributes       optional boolean. If ``True``, the graph displayed includes all the
+        show_attributes       Optional boolean. If ``True``, the graph displayed includes all the
                               attributes of the function and not only it's function name and raster
                               inputs
-                              Set to False by default, to display only he raster function name and
+                              Set to False by default, to display only the raster function name and
                               the raster inputs to it.
         -----------------     --------------------------------------------------------------------
-        graph_size            optional string. Maximum width and height of drawing, in inches,
+        graph_size            Optional string. Maximum width and height of drawing, in inches,
                               seperated by a comma. If only a single number is given, this is used
                               for both the width and the height. If defined and the drawing is
                               larger than the given size, the drawing is uniformly scaled down so
@@ -6241,6 +6178,7 @@ class ImageryLayer(Layer):
     ):
         """
         The ``plot_histograms`` method is used to plot the histograms for the :class:`~arcgis.raster.ImageryLayer`.
+        
         Image histograms visually summarize the distribution of a continuous numeric variable by measuring
         the frequency at which certain values appear in the image. The x-axis in the image histogram is a 
         number line that displays the range of image pixel values that has been split into number ranges, 
@@ -6248,16 +6186,15 @@ class ImageryLayer(Layer):
         of the bin; the height of the bar represents the number of pixels that fall into that range. 
         Understanding the distribution of your data is an important step in the data exploration process.
 
-        The ``plot_histograms`` method can be used for plotting the band-wise image histogram charts of any
+        This method can be used for plotting the band-wise image histogram charts of any
         :class:`~arcgis.raster.ImageryLayer` published with mosaic datasets or a raster dataset.
 
         ============================    ====================================================================
         **Arguments**                   **Description**
         ----------------------------    --------------------------------------------------------------------
-        geometry                        Optional :class:`~arcgis.geometry.Polygon` or ``Extent``. A
-                                        :class:`~arcgis.geometry.Geometry` that defines the geometry
-                                        within which the histogram is computed. The geometry can be an
-                                        envelope or a polygon.
+        geometry                        Optional :class:`~arcgis.geometry.Geometry` (:class:`~arcgis.geometry.Polygon`
+                                        or :class:`~arcgis.geometry.Envelope`).
+                                        A geometry that defines the geometry within which the histogram is computed.
 
                                         .. note::
                                             If not provided, then the full extent of the
@@ -6350,12 +6287,12 @@ class ImageryLayer(Layer):
 
             raster1.plot_histograms(pixel_size="0.18, 0.18",
                                     bands=[1, 2, 3],
-                                    plot_properties = {"figsize":(15,15)},
-                                    subplot_properties = [
-                                                 {"color":"r"},
-                                                 {"color":"g"},
-                                                 {"color":"b","edgecolor":"w"}
-                                                ],
+                                    plot_properties={"figsize":(15,15)},
+                                    subplot_properties=[
+                                                        {"color":"r"},
+                                                        {"color":"g"},
+                                                        {"color":"b","edgecolor":"w"}
+                                                       ],
                                     )
         
         """
@@ -6707,8 +6644,7 @@ class Raster:
     A ``Raster`` object is a variable that references a raster.
     It can be used to query the properties of the raster dataset.
 
-    .. note::
-        Usage: ``arcgis.raster.Raster(path, is_multidimensional=False,  engine=None, gis=None)``
+    Usage: ``arcgis.raster.Raster(path, is_multidimensional=False,  engine=None, gis=None)``
 
     The ``Raster`` class can work with arcpy engine or image server engine. By default,
     if the path is a local path, then the Raster class uses the arcpy engine
@@ -6730,7 +6666,8 @@ class Raster:
 
                                                 path = "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/43/M/BP/2021/6/S2A_43MBP_20210622_0_L2A/B08.tif"
 
-                                             **Note:** When working with datastore rasters or non image service urls, RasterRendering service
+                                             .. note::
+                                             When working with datastore rasters or non image service urls, RasterRendering service
                                              should be enabled in the active GIS connection
     ------------------------------------     --------------------------------------------------------------------
     is_multidimensional                      Optional boolean. Determines whether the input raster will be
@@ -6796,6 +6733,7 @@ class Raster:
         # (Requires RasterRendering service to be enabled in the active GIS)
         raster = Raster("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/43/M/BP/2021/6/S2A_43MBP_20210622_0_L2A/B08.tif",
                         gis=gis)
+        map.add_layer(raster)
 
         # Overlay a local .tif file
         raster = Raster(r"./data/Amberg.tif")
@@ -6903,8 +6841,7 @@ class Raster:
     @property
     def extent(self):
         """
-        Get/Set the area of interest. Used for displaying the
-            :class:`~arcgis.raster.Raster when queried.
+        Get/Set the area of interest. Used for displaying the :class:`~arcgis.raster.Raster` when queried.
 
         :return: The extent of the Raster as a dictionary
 
@@ -6920,8 +6857,8 @@ class Raster:
     @property
     def cmap(self):
         """
-        Get/Set what matplotlib colormap to apply to the raster when displaying a 1 band raster
-        in a :class:`~arcgis.widgets.MapView` widget.
+        Get/Set what matplotlib colormap to apply to the raster (when displaying a 1 band raster
+        in a :class:`~arcgis.widgets.MapView` widget).
 
         .. note::
             The ``cmap`` value must be a string. See :attr:`arcgis.mapping.symbol.display_colormaps`
@@ -6989,7 +6926,7 @@ class Raster:
     @property
     def opacity(self):
         """
-        Get/Set what opacity to apply when displaying in a
+        Get/Set what opacity to apply when displaying the raster in a
         :class:`~arcgis.widgets.MapView` widget.
 
         .. note::
@@ -7085,7 +7022,7 @@ class Raster:
     @property
     def name(self):
         """
-        The ``name`` property`` returns the name of the raster.
+        The ``name`` property returns the name of the raster.
 
         :return:
             A String
@@ -7126,7 +7063,7 @@ class Raster:
     @property
     def mean_cell_width(self):
         """
-        The ``mean_cell_width`` returns the cell size in the x direction.
+        The ``mean_cell_width`` property returns the cell size in the x direction.
 
         :return:
             A float
@@ -7136,7 +7073,7 @@ class Raster:
     @property
     def mean_cell_height(self):
         """
-        The ``mean_cell_height`` returns the cell size in the y direction.
+        The ``mean_cell_height`` property returns the cell size in the y direction.
 
         :return:
             A float
@@ -7146,7 +7083,7 @@ class Raster:
     @property
     def multidimensional_info(self):
         """
-        The ``multidimensional_info`` returns the multidimensional information of the raster dataset,
+        The ``multidimensional_info`` property returns the multidimensional information of the raster dataset,
         including variable names, descriptions and units, and dimension names, units, intervals, units, and ranges.
         """
         return self._engine_obj.multidimensional_info
@@ -7217,9 +7154,8 @@ class Raster:
         The ``variables`` property returns the variable names and their dimensions in the multidimensional raster
         dataset.
 
-        .. note::
-            For example, a multidimensional raster containing temperature data over 24 months would
-            return the following: ['temp(StdTime=24)']
+        For example, a multidimensional raster containing temperature data over 24 months would
+        return the following: ['temp(StdTime=24)']
 
         :return:
             A list of names and dimensions.
@@ -7261,7 +7197,7 @@ class Raster:
     @property
     def compression_type(self):
         """
-        The ``compression_type`` returns the compression type of the raster.
+        The ``compression_type`` property returns the compression type of the raster.
 
         :return:
             A string
@@ -7301,7 +7237,7 @@ class Raster:
     @property
     def uncompressed_size(self):
         """
-        The ``uncompressed_size`` returns the size of the referenced raster dataset on disk.
+        The ``uncompressed_size`` property returns the size of the referenced raster dataset on disk.
 
         :return:
             A float
@@ -7464,7 +7400,7 @@ class Raster:
 
     def get_raster_bands(self, band_ids_or_names=None):
         """
-        The ``get_raster_bands`` retrieves a :class:`~arcgis.raster.Raster` object for each band specified in a
+        The ``get_raster_bands`` method returns a :class:`~arcgis.raster.Raster` object for each band specified in a
         multiband raster.
 
         =================     ====================================================================
@@ -7475,7 +7411,7 @@ class Raster:
         =================     ====================================================================
 
         :return:
-            A :class:`~arcgis.raster.Raster` object
+            A list of :class:`~arcgis.raster.Raster` objects (or a single :class:`~arcgis.raster.Raster` object if only one band is specified)
 
         .. code-block:: python
 
@@ -7489,7 +7425,7 @@ class Raster:
 
     def get_variable_attributes(self, variable_name):
         """
-        The ``get_variable_attributes`` method retrieves the attribute information of a variable, such as
+        The ``get_variable_attributes`` method returns the attribute information of a variable, such as
         description, unit, etc.
 
         =================     ====================================================================
@@ -7596,7 +7532,7 @@ class Raster:
         The ``rename_variable`` method renames the given variable name.
 
         .. note::
-            The ``rename_variable`` method operation is not supported on image services.
+            The ``rename_variable`` operation is not supported on image services.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -7812,7 +7748,7 @@ class Raster:
         self, variable, new_dimension_name, dimension_value, dimension_attributes=None
     ):
         """
-        The ``add_dimension`` adds a new dimension to a given variable.
+        The ``add_dimension`` method adds a new dimension to a given variable.
 
         .. note::
             The ``add_dimension`` operation is not supported on image services
@@ -7877,13 +7813,13 @@ class Raster:
     def set_colormap(self, color_map, variable_name=None):
 
         """
-        The ``set_colormap`` sets the color map for the raster.
+        The ``set_colormap`` method sets the color map for the raster.
 
         .. note::
-            If the raster is multidimensional, it sets the color map for a variable.
 
-        .. note::
-            The ``set_colormap`` operation is not supported on image services
+            * If the raster is multidimensional, it sets the color map for a variable.
+
+            * The ``set_colormap`` operation is not supported on image services
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -7951,8 +7887,8 @@ class Raster:
     def set_statistics(self, statistics_obj, variable_name=None):
         """
         The ``set_statistics`` method sets the statistics for the raster.
-        If the raster is multiband, ``set_statistics`` sets the statistics for each band.
-        If the raster is multidimensional, ``set_statistics`` sets the statistics for a variable.
+        If the raster is multiband, it sets the statistics for each band.
+        If the raster is multidimensional, it sets the statistics for a variable.
 
         .. note::
             The ``set_statistics`` operation is not supported on image services.
@@ -8084,7 +8020,7 @@ class Raster:
 
     def append_slices(self, md_raster=None):
         """
-        The ``append_slices`` appends the slices from another multidimensional raster.
+        The ``append_slices`` method appends the slices from another multidimensional raster.
 
         .. note::
             The ``add_dimension`` operation is not supported on image services
@@ -8126,7 +8062,7 @@ class Raster:
 
     def set_variable_attributes(self, variable_name, variable_attributes):
         """
-        The ``set_variable_attributes`` sets the attribute information of a variable in a multidimensional raster.
+        The ``set_variable_attributes`` method sets the attribute information of a variable in a multidimensional raster.
         For example, description, unit, and so on.
 
         .. note::
@@ -8163,15 +8099,14 @@ class Raster:
 
     def summarize(self, geometry, pixel_size=None):
         """
-        The ``summarize`` operation retrieves the statistics of a :class:`~arcgis.raster.Raster` for a given geometry.
+        The ``summarize`` method retrieves the statistics of a :class:`~arcgis.raster.Raster` for a given geometry.
 
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        geometry              Required :class:`~arcgis.geometry.Polygon` or ``Extent``. A
-                              :class:`~arcgis.geometry.Geometry` that defines the geometry
-                              within which the histogram is computed. The geometry can be an
-                              envelope or a polygon.
+        geometry              Required :class:`~arcgis.geometry.Geometry` (:class:`~arcgis.geometry.Polygon`
+                              or :class:`~arcgis.geometry.Envelope`).
+                              A geometry that defines the geometry within which the statistics are computed.
         -----------------     --------------------------------------------------------------------
         pixel_size            optional string or dict. The pixel level being used (or the
                               resolution being looked at). If pixel size is not specified, then
@@ -8226,14 +8161,13 @@ class Raster:
         **kwargs,
     ):
         """
-        When run using image_server engine, ``save`` persists this :class:`~arcgis.raster.Raster` to the
+        When run using image_server engine, ``save`` method persists this :class:`~arcgis.raster.Raster` to the
         :class:`~arcgis.gis.GIS` as an :class:`~arcgis.raster.ImageryLayer` item.
 
-        .. note::
-            If ``for_viz`` is ``True``, a new :class:`~arcgis.gis.Item` is created that uses the applied raster
-            functions for visualization at display resolution using on-the-fly image processing.
-            If ``for_viz`` is ``False``, distributed raster analysis is used for generating a new raster information
-            product by applying raster functions at source resolution across the extent of the output imagery layer.
+        If ``for_viz`` is ``True``, a new :class:`~arcgis.gis.Item` is created that uses the applied raster
+        functions for visualization at display resolution using on-the-fly image processing.
+        If ``for_viz`` is ``False``, distributed raster analysis is used for generating a new raster information
+        product by applying raster functions at source resolution across the extent of the output imagery layer.
 
         .. note::
             When run using arcpy engine, ``save`` persists this raster to location specified in ``output_name``.
@@ -8333,7 +8267,8 @@ class Raster:
         subplot_properties=None,
     ):
         """
-        The ``plot_histograms`` method plots the image histograms.
+        The ``plot_histograms`` method plots the image histograms of a raster.
+        
         Image histograms visually summarize the distribution of a continuous numeric variable by measuring
         the frequency at which certain values appear in the image. The x-axis in the image histogram is a 
         number line that displays the range of image pixel values that has been split into number ranges, 
@@ -8341,21 +8276,20 @@ class Raster:
         of the bin; the height of the bar represents the number of pixels that fall into that range. 
         Understanding the distribution of your data is an important step in the data exploration process.
     
-        .. note::
-            ``plot_histograms`` can be used for plotting the band-wise image histogram charts of any
-            :class:`~arcgis.raster.Raster` object.
+        ``plot_histograms`` can be used for plotting the band-wise image histogram charts of any
+        :class:`~arcgis.raster.Raster` object.
     
         ============================    ====================================================================
         **Arguments**                   **Description**
         ----------------------------    --------------------------------------------------------------------
-        geometry                        optional :class:`~arcgis.geometry.Polygon` or ``Extent``.
-                                        A :class:`~arcgis.geometry.Geometry` that defines the geometry
-                                        within which the histogram is computed. The geometry can be an
-                                        envelope or a polygon. If not provided, then the full extent of the 
+        geometry                        Optional :class:`~arcgis.geometry.Geometry` (:class:`~arcgis.geometry.Polygon`
+                                        or :class:`~arcgis.geometry.Envelope`).
+                                        A geometry that defines the geometry within which the histogram is computed. 
+                                        
+                                        If not provided, then the full extent of the 
                                         raster will be used for the computation.
 
-                                        .. note::
-                                            This parameter is honoured if the raster uses ``image_server`` engine.
+                                        **Note:** This parameter is honoured if the raster uses ``image_server`` engine.
         ----------------------------    --------------------------------------------------------------------
         pixel_size                      optional string or dictionary. The pixel level being used (or the
                                         resolution being looked at). If pixel size is not specified, then
@@ -8673,7 +8607,7 @@ class Raster:
         show_attributes       optional boolean. If True, the graph displayed includes all the
                               attributes of the function and not only it's function name and raster
                               inputs
-                              Set to False by default, to display only he raster function name and
+                              Set to False by default, to display only the raster function name and
                               the raster inputs to it.
         -----------------     --------------------------------------------------------------------
         graph_size            optional string. Maximum width and height of drawing, in inches,
@@ -11312,7 +11246,7 @@ from ._util import _local_function_template, _get_geometry, _get_extent
 
 class RasterCollection:
     """
-    The ``RasterCollection`` class allows a group of rasters to be sorted and
+    The ``RasterCollection`` object allows a group of rasters to be sorted and
     filtered easily, and prepares a collection for additional processing and analysis.
 
     ====================================     ====================================================================
@@ -11344,7 +11278,7 @@ class RasterCollection:
 
                                                 - ``image_server`` : Use the Image Server engine for processing.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS of the RasterCollection object.
+    gis                                      Optional :class:`~arcgis.gis.GIS` of the RasterCollection object.
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional. Additional properties to control the creation of RasterCollection.
                                              The context parameter would be honoured by all other collections created from this
@@ -11516,7 +11450,7 @@ class RasterCollection:
     def set_engine(self, engine):
         """
         The ``set_engine`` method can be used to change the back end engine of the
-        :class:`~arcgis.raster.RasterCollection` object.
+        :class:`~arcgis.raster.RasterCollection`.
         """
         return RasterCollection(
             rasters=self._ras_coll_engine_obj._rasters,
@@ -11531,7 +11465,7 @@ class RasterCollection:
     @property
     def count(self):
         """
-        The ``count`` property returns the count of items in the ``RasterCollection`` object.
+        The ``count`` property returns the count of items in the ``RasterCollection``.
 
         :return:
             An integer
@@ -11541,7 +11475,7 @@ class RasterCollection:
     @property
     def fields(self):
         """
-        The ``fields`` property returns the fields available in the ``RasterCollection`` objects.
+        The ``fields`` property returns the fields available in the ``RasterCollection``.
 
         :return:
             A list of available fields
@@ -11583,7 +11517,8 @@ class RasterCollection:
         stac_api              Required string. URL of the STAC API root endpoint. The STAC API where
                               the search needs to be performed.
 
-                              | Note: Currently only Landsat-8 STAC Item queries are supported for this method.
+                              .. note::
+                                Currently only Landsat-8 STAC Item queries are supported for this method.
 
                               Example:
                                     "https://earth-search.aws.element84.com/v0"
@@ -11593,18 +11528,18 @@ class RasterCollection:
                               on the specification of the STAC API in use and the request_method
                               parameter value).
 
-                              For the “bbox” query parameter, `arcgis.geometry.Envelope <https://developers.arcgis.com/python/api-reference/arcgis.geometry.html#envelope>`__
-                              and `arcgis.geometry.Polygon <https://developers.arcgis.com/python/api-reference/arcgis.geometry.html#polygon>`__
+                              For the “bbox” query parameter, :class:`~arcgis.geometry.Envelope`
+                              and :class:`~arcgis.geometry.Polygon`
                               objects are also accepted (in any spatial reference).
 
                               Example:
-                                    `| {
+                                    | {
                                     |   "collections": ["landsat-8-l1-c1"],
                                     |   "bbox": [-110,39.5,-105,40.5],
                                     |   "query": {"eo:cloud_cover": {"lt": 30}},
                                     |   "datetime": "2020-10-05T00:00:00Z/2020-10-18T12:31:12Z",
                                     |   "limit": 10
-                                    | }`
+                                    | }
         -----------------     --------------------------------------------------------------------
         attribute_dict        Optional dictionary. The attribute information to be added to each
                               (STAC Item) raster returned from the query. For each key-value pair, the key is
@@ -11662,10 +11597,12 @@ class RasterCollection:
                               Example:
                                     "image_server"
 
-                              **Note:** When using image_server engine, RasterRendering service should be enabled \
-                                        in the active GIS connection.
+                              .. note:: 
+                              
+                                When using ``image_server`` engine, RasterRendering service should be enabled \
+                                in the active GIS connection.
         -----------------     --------------------------------------------------------------------
-        gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
+        gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================
 
         :return: A :class:`~arcgis.raster.RasterCollection` object
@@ -11858,9 +11795,11 @@ class RasterCollection:
                                     |   "Extent":"bbox"
                                     | }
 
-                              **Note:** If ‘Geometry’ is not specified in the attribute_dict then it would
-                              be automatically added for each Raster in the RasterCollection based
-                              on its STAC Item ‘geometry’ property and would be in Spatial reference: ``{'wkid':4326}``.
+                              .. note::
+                                If ‘Geometry’ is not specified in the ``attribute_dict`` then it would
+                                be automatically added for each Raster in the ``RasterCollection`` based
+                                on its STAC Item ‘geometry’ property and would be in
+                                Spatial reference: ``{'wkid':4326}``.
         -----------------     --------------------------------------------------------------------
         request_params        Optional dictionary. This parameter can be used to set the properties
                               for making the STAC Item/Catalog requests. These are the `requests.get() method <https://requests.readthedocs.io/en/master/api/#requests.get>`__
@@ -11881,8 +11820,9 @@ class RasterCollection:
                               Example:
                                     "image_server"
 
-                              **Note:** When using image_server engine, RasterRendering service should be enabled \
-                                        in the active GIS connection.
+                              .. note:: 
+                                    When using ``image_server`` engine, RasterRendering service should be enabled \
+                                    in the active GIS connection.
         -----------------     --------------------------------------------------------------------
         gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
         =================     ====================================================================
@@ -12007,7 +11947,7 @@ class RasterCollection:
         context=None,
     ):
         """
-        The ``filter_by`` filter a :class:`~arcgis.raster.RasterCollection` based on attribute and/or spatial queries.
+        The ``filter_by`` method filters a :class:`~arcgis.raster.RasterCollection` based on attribute and/or spatial queries.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12069,7 +12009,7 @@ class RasterCollection:
         context=None,
     ):
         """
-        The ``filter_by_time`` filters a :class:`~arcgis.raster.RasterCollection` by time.
+        The ``filter_by_time`` method filters a :class:`~arcgis.raster.RasterCollection` by time.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12140,9 +12080,8 @@ class RasterCollection:
         The ``filter_by_calendar_range`` method filters the :class:`~arcgis.raster.RasterCollection` by a
         ``calendar_field`` and its start and end value (inclusive).
 
-        .. note::
-            For example, if you would like to select all the rasters that have the time stamp on
-            Monday, specify ``calendar_field`` as 'DAY_OF_WEEK' and put start and end to 1.
+        For example, if you would like to select all the rasters that have the time stamp on
+        Monday, specify ``calendar_field`` as 'DAY_OF_WEEK' and put start and end to 1.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12219,7 +12158,7 @@ class RasterCollection:
 
     def filter_by_geometry(self, query_geometry_or_extent, context=None):
         """
-        The ``filter_by_geometry`` filters the :class:`~arcgis.raster.RasterCollection` so that only those that
+        The ``filter_by_geometry`` method filters the :class:`~arcgis.raster.RasterCollection` such that only those rasters that
         intersect with the geometry will be returned.
 
         ====================================     ====================================================================
@@ -12257,12 +12196,12 @@ class RasterCollection:
             # Usage Example: Filters the raster collection based on specified geometry.
 
             aoi = {
-            "spatialReference": {"wkid": 32610},
-            "xmax": 725000,
-            "xmin": 720000,
-            "ymax": 4300000,
-            "ymin": 4250000,
-            }
+                    "spatialReference": {"wkid": 32610},
+                    "xmax": 725000,
+                    "xmin": 720000,
+                    "ymax": 4300000,
+                    "ymin": 4250000
+                  }
 
             aoi_geometry = Geometry(aoi)
 
@@ -12451,7 +12390,7 @@ class RasterCollection:
 
     def sort(self, field_name, ascending=True, context=None):
         """
-        The ``sort`` method sorts the collection of :class:`~arcgis.raster.Raster` objects by a field name and returns
+        The ``sort`` method sorts the :class:`~arcgis.raster.RasterCollection` by a field name and returns
         a :class:`~arcgis.raster.RasterCollection` that is in the order specified.
 
         ====================================     ====================================================================
@@ -12493,7 +12432,7 @@ class RasterCollection:
     def get_field_values(self, field_name, max_count=0):
         """
         The ``get_field_values`` method retrieves the values of a specified field from the
-        :class:`~arcgis.raster.RasterCollection` object.
+        :class:`~arcgis.raster.RasterCollection`.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12516,7 +12455,7 @@ class RasterCollection:
 
     def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
         """
-        The ``to_multidimensional_raster`` returns a multidimensional raster dataset, in which each item in the
+        The ``to_multidimensional_raster`` method returns a multidimensional raster dataset, in which each item in the
         :class:`~arcgis.raster.RasterCollection` is a slice in the multidimensional raster.
 
         ====================================     ====================================================================
@@ -12595,7 +12534,7 @@ class RasterCollection:
                                                     - False : The method will result in NoData if there are any NoData values.
         ====================================     ====================================================================
 
-        :return: a Raster object
+        :return: a :class:`~arcgis.raster.Raster` object
         """
         return self._ras_coll_engine_obj.min(ignore_nodata=ignore_nodata)
 
@@ -12604,13 +12543,12 @@ class RasterCollection:
         The ``median`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the
         median pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
 
-        .. note::
-            For example, if there are ten raster items in the raster collection,
-            each with four bands, the median method will calculate the median pixel value
-            that occurs across all raster items for band 1, for band 2, for band 3,
-            and for band 4; a four-band raster is returned. Band numbers are matched
-            between raster items using the band index, so the items in the raster
-            collection must follow the same band order.
+        For example, if there are ten raster items in the raster collection,
+        each with four bands, the median method will calculate the median pixel value
+        that occurs across all raster items for band 1, for band 2, for band 3,
+        and for band 4; a four-band raster is returned. Band numbers are matched
+        between raster items using the band index, so the items in the raster
+        collection must follow the same band order.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12630,13 +12568,12 @@ class RasterCollection:
         The ``mean`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the average
         pixel values for that band across all rasters in the raster collection.
 
-        .. note::
-            For example, if there are ten raster items in the :class:`~arcgis.raster.RasterCollection`,
-            each with four bands, the mean method will calculate the mean pixel value
-            that occurs across all raster items for band 1, for band 2, for band 3,
-            and for band 4; a four-band raster is returned. Band numbers are matched
-            between raster items using the band index, so the items in the raster
-            collection must follow the same band order.
+        For example, if there are ten raster items in the :class:`~arcgis.raster.RasterCollection`,
+        each with four bands, the mean method will calculate the mean pixel value
+        that occurs across all raster items for band 1, for band 2, for band 3,
+        and for band 4; a four-band raster is returned. Band numbers are matched
+        between raster items using the band index, so the items in the raster
+        collection must follow the same band order.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12653,18 +12590,17 @@ class RasterCollection:
 
     def majority(self, ignore_nodata=True):
         """
-        The ``majority`` method returns a raster object in which each band contains the pixel
+        The ``majority`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the pixel
         value that occurs most frequently for that band across all
         rasters in the raster collection.
 
-        .. note::
-            For example, if there are ten raster items in the :class:`~arcgis.raster.RasterCollection`,
-            each with four bands, the majority method will determine the
-            pixel value that occurs most frequently across all raster
-            items for band 1, for band 2, for band 3, and for band 4;
-            a four-band raster is returned. Band numbers are matched
-            between raster items using the band index, so the items
-            in the raster collection must follow the same band order.
+        For example, if there are ten raster items in the :class:`~arcgis.raster.RasterCollection`,
+        each with four bands, the majority method will determine the
+        pixel value that occurs most frequently across all raster
+        items for band 1, for band 2, for band 3, and for band 4;
+        a four-band raster is returned. Band numbers are matched
+        between raster items using the band index, so the items
+        in the raster collection must follow the same band order.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12685,13 +12621,12 @@ class RasterCollection:
         The ``sum`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the sum
         of pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
 
-        .. note::
-            For example, if there are ten raster items in the raster collection,
-            each with four bands, the sum method will calculate the sum of pixel
-            values for each pixel that occurs across all raster items for band 1,
-            band 2, band 3, and band 4; a four-band raster is returned.
-            Band numbers are matched between raster items using the band index,
-            so the items in the raster collection must follow the same band order.
+        For example, if there are ten raster items in the raster collection,
+        each with four bands, the sum method will calculate the sum of pixel
+        values for each pixel that occurs across all raster items for band 1,
+        band 2, band 3, and band 4; a four-band raster is returned.
+        Band numbers are matched between raster items using the band index,
+        so the items in the raster collection must follow the same band order.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12790,7 +12725,7 @@ class RasterCollection:
     def select_bands(self, band_ids_or_names, context=None):
         """
         The ``select_bands`` method selects a list of bands from every :class:`~arcgis.raster.Raster` item in a
-        :class:`~arcgis.raster.RasterCollection` and returns a raster collection that contains raster items with only
+        :class:`~arcgis.raster.RasterCollection` and returns a raster collection that contains :class:`~arcgis.raster.Raster` items with only
         the selected bands.
 
         ====================================     ====================================================================
@@ -15013,20 +14948,18 @@ class ImageryTileManager(object):
         .. code-block:: python
 
             # Example Usage
-            >>> exported = ImageryTileManager.export(tile_package = True,
-                                                     levels = "11-20",
-                                                     extent = {
-                                                                "xmin":6224324.092137296,
-                                                                "ymin":487347.5253569535,
-                                                                "xmax":11473407.698535524,
-                                                                "ymax":4239488.369818687
-                                                               },
-                                                     merge = True,
-                                                     optimize_for_size = True,
-                                                     export_by = "Scale"
-                                                     )
-            >>> type(exported)
-            <Dictionary>
+            exported = img_tile_manager.export(tile_package = True,
+                                               levels = "11-20",
+                                               extent = {
+                                                       "xmin":6224324.092137296,
+                                                       "ymin":487347.5253569535,
+                                                       "xmax":11473407.698535524,
+                                                       "ymax":4239488.369818687
+                                                       },
+                                               merge = True,
+                                               optimize_for_size = True,
+                                               export_by = "Scale"
+                                               )
         """
         if self._service.properties["exportTilesAllowed"] == False:
             return None
@@ -15154,20 +15087,18 @@ class ImageryTileManager(object):
         .. code-block:: python
 
             # Example Usage
-            >>> size_estimate = ImageryTileManager.estimate_size(tile_package = True,
-                                                                 levels = "11-20",
-                                                                 extent = {
-                                                                            "xmin":6224324.092137296,
-                                                                            "ymin":487347.5253569535,
-                                                                            "xmax":11473407.698535524,
-                                                                            "ymax":4239488.369818687
-                                                                            },
-                                                                merge = True,
-                                                                optimize_for_size = True,
-                                                                export_by = "Scale"
-                                                                )
-            >>> type(size_estimate)
-            <Dictionary>
+            size_estimate = img_tile_manager.estimate_size(tile_package = True,
+                                                           levels = "11-20",
+                                                           extent = {
+                                                                        "xmin":6224324.092137296,
+                                                                        "ymin":487347.5253569535,
+                                                                        "xmax":11473407.698535524,
+                                                                        "ymax":4239488.369818687
+                                                                    },
+                                                           merge = True,
+                                                           optimize_for_size = True,
+                                                           export_by = "Scale"
+                                                           )
         """
         if self._service.properties["exportTilesAllowed"] == False:
             return None
@@ -15324,7 +15255,7 @@ class ImageryTileManager(object):
 ########################################################################
 class RasterCatalogItem(object):
     """
-    The ``RasterCatalogItem`` class represents a single catalog item on an ``Image Layer``. ``RasterCatalogItem``
+    The ``RasterCatalogItem`` object represents a single catalog item on an ``ImageryLayer``. ``RasterCatalogItem``
     is only to be used with :class:`~arcgis.raster.ImageryLayer` objects that have ``Catalog`` in the layer's
     capabilities property.
 
@@ -15391,7 +15322,7 @@ class RasterCatalogItem(object):
     @property
     def properties(self):
         """
-        The ``properties`` property retrieves the :class:`~arcgis.raster.Raster` object's properties.
+        The ``properties`` property retrieves the object's properties.
 
         :return:
             Raster properties
@@ -15436,7 +15367,7 @@ class RasterCatalogItem(object):
     @property
     def info(self):
         """
-        The ``info`` property returns information about the associated :class:`~arcgis.raster.Raster`
+        The ``info`` property returns information about the associated raster
         such as its width, height, number of bands, and pixel type.
 
         :return:
@@ -15450,8 +15381,8 @@ class RasterCatalogItem(object):
     @property
     def key_properties(self):
         """
-        The raster ``key_properties`` property returns key properties of the
-        associated :class:`~arcgis.raster.ImageryLayer` in an image layer.
+        The ``key_properties`` property returns key properties of the
+        associated raster in an imagery layer.
 
         :return:
             Key properties of a :class:`~arcgis.raster.Raster` object
@@ -15464,7 +15395,7 @@ class RasterCatalogItem(object):
     @property
     def thumbnail(self):
         """
-        The ``thumbnail`` property returns a thumbnail of the current :class:`~arcgis.raster.Raster` item.
+        The ``thumbnail`` property returns a thumbnail of the current item.
 
         :return:
             A thumbnail
@@ -15624,7 +15555,7 @@ class RasterCatalogItem(object):
     @property
     def metadata(self):
         """
-        The ``metadata`` property returns metadata of the image layer or a
+        The ``metadata`` property returns metadata of the imagery layer or a
         raster catalog item.
 
         .. note::
@@ -15667,8 +15598,7 @@ class RasterManager(object):
     The ``RasterManager`` class allows users to update, add, and delete rasters to an
     :class:`~arcgis.raster.ImageryLayer` object.
 
-    .. note::
-        The functions are only available if the layer has 'Edit' on it's capabilities property.
+    The functions are only available if the layer has 'Edit' on it's capabilities property.
 
     .. note ::
         This class is not created by users directly. An instance of this class, called ``rasters``,
@@ -15729,7 +15659,7 @@ class RasterManager(object):
                                                 ``item_ids=<itemId1>,<itemId2>``
 
                                             Example:
-                                                item_ids= "ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
+                                                item_ids= "ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,\
                                                            ib740c7bb-e2d0-4106-9fea-12fa7d3a482c"
 
         -------------------------------     --------------------------------------------------------------------
@@ -15758,7 +15688,7 @@ class RasterManager(object):
                                             
                                             Values: 
 
-                                                `false,true`
+                                                `False,True`
         -------------------------------     --------------------------------------------------------------------
         build_thumbnail                     If True, generates a thumbnail for the rasters. The default is False.
                                             
@@ -15834,34 +15764,30 @@ class RasterManager(object):
         .. code-block:: python
 
             # Example Usage
-            >>> added = RasterManager.add(item_ids= "ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
-                                                               ib740c7bb-e2d0-4106-9fea-12fa7d3a482c",
-                                        service_url= "http://myserver/arcgis/services/Portland/ImageServer",
-                                        raster_type = `Raster Dataset, CADRG/ECRG, CIB,DTED, Image Layer, Map Service,
-                                                                   NITF, WCS, WMS`,
-                                        build_thumbnail = True,
-                                        minimum_cell_size_factor=0.1,
-                                        maximum_cell_size_factor=10,
-                                        attributes = {
-                                                                "MinPS": 0,
-                                                                "MaxPS": 20;
-                                                                "Year" : 2002,
-                                                                "State" : "Florida"
-                                                    },
-                                        geodata_transforms = [
-                                                                        {
-                                                                         "geodataTransform" : "<geodataTransformName1>",
-                                                                         "geodataTransformArguments" : {<geodataTransformArguments1>}
-                                                                        },
-                                                                        {
-                                                                         "geodataTransform" : "<geodataTransformName2>",
-                                                                         "geodataTransformArguments" : {<geodataTransformArguments2>}
-                                                                        }
-                                                            ]
-                                        geodata_transform_apply_method = 'esriGeodataTransformApplyOverwrite`
-                                        )
-            >>> type(added)
-            <Dictionary>
+            added = raster_manager.add(item_ids= "ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,ib740c7bb-e2d0-4106-9fea-12fa7d3a482c",
+                                       service_url = "http://myserver/arcgis/services/Portland/ImageServer",
+                                       raster_type = "Raster Dataset",
+                                       build_thumbnail = True,
+                                       minimum_cell_size_factor = 0.1,
+                                       maximum_cell_size_factor = 10,
+                                       attributes = {
+                                                        "MinPS": 0,
+                                                        "MaxPS": 20;
+                                                        "Year" : 2002,
+                                                        "State" : "Florida"
+                                                   },
+                                       geodata_transforms = [
+                                                                {
+                                                                 "geodataTransform" : "<geodataTransformName1>",
+                                                                 "geodataTransformArguments" : {<geodataTransformArguments1>}
+                                                                },
+                                                                {
+                                                                 "geodataTransform" : "<geodataTransformName2>",
+                                                                 "geodataTransformArguments" : {<geodataTransformArguments2>}
+                                                                }
+                                                           ],
+                                       geodata_transform_apply_method = "esriGeodataTransformApplyOverwrite"
+                                       )
         """
 
         return self._service._add_rasters(
@@ -15881,7 +15807,7 @@ class RasterManager(object):
     # ----------------------------------------------------------------------
     def delete(self, raster_ids):
         """
-        The ``delete`` operation deletes one or more rasters in an image layer.
+        The ``delete`` operation deletes one or more rasters in an imagery layer.
 
         =================     ====================================================================
         **Argument**          **Description**
@@ -15986,33 +15912,30 @@ class RasterManager(object):
         .. code-block:: python
 
             # Example Usage
-            >>> updated = RasterManager.update(raster_ids = 087631,
-                                              item_ids= "ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
-                                                        ib740c7bb-e2d0-4106-9fea-12fa7d3a482c",
-                                              service_url= "http://myserver/arcgis/services/Portland/ImageServer",
-                                              build_thumbnail = True,
-                                              minimum_cell_size_factor=0.1,
-                                              maximum_cell_size_factor=10,
-                                              attributes = {
-                                                                "MinPS": 0,
-                                                                "MaxPS": 20;
-                                                                "Year" : 2002,
-                                                                "State" : "Florida"
-                                                          },
-                                              geodata_transforms = [
-                                                                        {
-                                                                         "geodataTransform" : "<geodataTransformName1>",
-                                                                         "geodataTransformArguments" : {<geodataTransformArguments1>}
-                                                                        },
-                                                                        {
-                                                                         "geodataTransform" : "<geodataTransformName2>",
-                                                                         "geodataTransformArguments" : {<geodataTransformArguments2>}
-                                                                        }
-                                                                  ]
-                                              apply_method = 'esriGeodataTransformApplyOverwrite`
+            updated = raster_manager.update(raster_ids = 087631,
+                                            item_ids = "ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,ib740c7bb-e2d0-4106-9fea-12fa7d3a482c",
+                                            service_url = "http://myserver/arcgis/services/Portland/ImageServer",
+                                            build_thumbnail = True,
+                                            minimum_cell_size_factor = 0.1,
+                                            maximum_cell_size_factor = 10,
+                                            attributes = {
+                                                            "MinPS": 0,
+                                                            "MaxPS": 20;
+                                                            "Year" : 2002,
+                                                            "State" : "Florida"
+                                                         },
+                                            geodata_transforms = [
+                                                                      {
+                                                                       "geodataTransform" : "<geodataTransformName1>",
+                                                                       "geodataTransformArguments" : {<geodataTransformArguments1>}
+                                                                      },
+                                                                      {
+                                                                       "geodataTransform" : "<geodataTransformName2>",
+                                                                       "geodataTransformArguments" : {<geodataTransformArguments2>}
+                                                                      }
+                                                                 ],
+                                            apply_method = "esriGeodataTransformApplyOverwrite"
                                         )
-            >>> type(updated)
-            <Dictionary>
 
         """
         return self._service._update_raster(

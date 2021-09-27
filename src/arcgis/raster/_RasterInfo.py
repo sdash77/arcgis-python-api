@@ -13,10 +13,9 @@ class RasterInfo(object):
     or by calling an :class:`~arcgis.raster.ImageryLayer` or :class:`~arcgis.raster.Raster` object's
     ``raster_info`` property.
 
-    .. note::
-        Information about the raster can also be set through the following properties available on the ``RasterInfo``
-        object: ``band_count``, ``extent``, ``pixel_size_x``, ``pixel_size_y``, ``pixel_type``, ``block_height``,
-        ``block_width``, ``no_data_values``, ``spatial_reference``
+    Information about the raster can also be set through the following properties available on the ``RasterInfo``
+    object: ``band_count``, ``extent``, ``pixel_size_x``, ``pixel_size_y``, ``pixel_type``, ``block_height``,
+    ``block_width``, ``no_data_values``, ``spatial_reference``
 
     To construct a ``RasterInfo`` object from a dictionary, use the ``from_dict`` method on this class.
 
@@ -34,7 +33,7 @@ class RasterInfo(object):
         rinfo_based_ras.save(r"C:\data\persisted_raster.crf")
 
     RasterInfo object can also be used in raster functions that take in raster info as a parameter. (does not require arcpy)
-    example: As value to the raster_info parameter for arcgis.raster.functions.constant_raster() and arcgis.raster.functions.random_raster()
+    example: As value to the raster_info parameter for :meth:`arcgis.raster.functions.constant_raster` and :meth:`arcgis.raster.functions.random_raster`
 
     """
 
@@ -81,8 +80,7 @@ class RasterInfo(object):
     @property
     def pixel_type(self):
         """
-        Get/Set information about the pixel type of a :class:`~arcgis.raster.Raster`
-        object.
+        Get/Set information about the pixel type of a raster.
         """
         return self._pixel_type
 
@@ -93,7 +91,7 @@ class RasterInfo(object):
     @property
     def pixel_size_x(self):
         """
-        Get/Set information about the pixel size of a :class:`~arcgis.raster.Raster` in
+        Get/Set information about the pixel size of a raster in
         x direction.
         """
         return self._pixel_size_x
@@ -105,7 +103,7 @@ class RasterInfo(object):
     @property
     def pixel_size_y(self):
         """
-        Get/Set information about the pixel size of a :class:`~arcgis.raster.Raster` in
+        Get/Set information about the pixel size of a raster in
         the y direction.
         """
         return self._pixel_size_y
@@ -117,8 +115,7 @@ class RasterInfo(object):
     @property
     def block_height(self):
         """
-        Get/Set information about the block height of the :class:`~arcgis.raster.Raster`
-        object.
+        Get/Set information about the block height of a raster.
         """
         return self._block_height
 
@@ -129,8 +126,7 @@ class RasterInfo(object):
     @property
     def block_width(self):
         """
-        Get/Set information about the block width of a :class:`~arcgis.raster.Raster`
-        object.
+        Get/Set information about the block width of a raster.
         """
         return self._block_width
 
@@ -141,8 +137,8 @@ class RasterInfo(object):
     @property
     def no_data_values(self):
         """
-        Get/Set information about the ``no_data_values`` property of a
-        :class:`~arcgis.raster.Raster` object.
+        Get/Set information about the ``no_data_values`` of a
+        raster.
         """
         return self._no_data_values
 
@@ -154,7 +150,7 @@ class RasterInfo(object):
     def spatial_reference(self):
         """
         The ``spatial_reference`` property retrieves information about the spatial reference of a
-        :class:`~arcgis.raster.Raster` object.
+        raster.
         """
         return self._spatial_reference
 
@@ -164,8 +160,7 @@ class RasterInfo(object):
 
     def to_dict(self):
         """
-        The ``to_dict`` method is used to return a :class:`~arcgis.raster.RasterInfo` object back to a dictionary
-        format.
+        The ``to_dict`` method is used to return Raster Info in dictionary format.
         """
         # rinfo_dict = self.__dict__
         new_rinfo_dict = {}
@@ -194,7 +189,7 @@ class RasterInfo(object):
 
     def from_dict(self, raster_info_dict):
         """
-        The ``from_dict`` function used to initialise a :class:`~arcgis.raster.RasterInfo` object from a raster info
+        The ``from_dict`` method can be used to initialise a :class:`~arcgis.raster.RasterInfo` object from a raster info
         dictionary.
 
         .. code-block:: python
