@@ -47,7 +47,7 @@ class Pix2Pix(ArcGISModel):
                             Default set to False.
     =====================   ===========================================
 
-    :returns: `Pix2Pix` Object
+    :return: `Pix2Pix` Object
     """
 
     def __init__(
@@ -108,7 +108,7 @@ class Pix2Pix(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `Pix2Pix` Object
+        :return: `Pix2Pix` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

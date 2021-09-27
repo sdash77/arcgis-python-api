@@ -122,7 +122,7 @@ class UnetClassifier(ArcGISModel):
                             Default: []
     =====================   ===========================================
 
-    :returns: `UnetClassifier` Object
+    :return: `UnetClassifier` Object
     """
 
     def __init__(
@@ -337,7 +337,7 @@ class UnetClassifier(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `UnetClassifier` Object
+        :return: `UnetClassifier` Object
         """
         return cls.from_emd(data, emd_path)
 
@@ -357,7 +357,7 @@ class UnetClassifier(ArcGISModel):
                                 file.
         =====================   ===========================================
 
-        :returns: `UnetClassifier` Object
+        :return: `UnetClassifier` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -511,7 +511,7 @@ class UnetClassifier(ArcGISModel):
                                 True.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
         num_classes = torch.arange(self._data.c)

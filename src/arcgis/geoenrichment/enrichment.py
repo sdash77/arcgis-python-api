@@ -935,7 +935,7 @@ def _data_collections(
                            dictionary, else the value will returns as a Python DataFrame.
     ==================     ====================================================================
 
-    :returns: dictionary, describing the requested return data.
+    :return: dictionary, describing the requested return data.
     """
     if gis is None:
         gis = env.active_gis
@@ -956,7 +956,7 @@ def service_limits(gis=None):
     """
     Returns a Pandas' DataFrame describing limitations for each input parameter.
 
-    :returns: Pandas DataFrame
+    :return: Pandas DataFrame
     """
     pass
 
@@ -1062,7 +1062,7 @@ def enrich(
     Performance Tip: If you wish to speed up the operation and don't care about the geometries, set
     return_geometry=False
 
-    :returns: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
+    :return: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
     """
     pass
 
@@ -1281,7 +1281,7 @@ def _find_report(country, gis=None):
                            have the ability to consume credits
     ==================     ====================================================================
 
-    :returns: Panda's DataFrame
+    :return: Panda's DataFrame
     """
     if gis is None:
         gis = env.active_gis
@@ -1581,7 +1581,7 @@ def standard_geography_query(
                                have the ability to consume credits
     ======================     ====================================================================
 
-    :returns: Spatial or Pandas Dataframe on success, FeatureSet, or dictionary on failure.
+    :return: Spatial or Pandas Dataframe on success, FeatureSet, or dictionary on failure.
 
     """
     pass

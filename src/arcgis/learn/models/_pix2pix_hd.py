@@ -72,7 +72,7 @@ class Pix2PixHD(ArcGISModel):
     lambda_feat             weight for feature matching loss.
     =====================   ===========================================
 
-    :returns: `Pix2PixHD` Object
+    :return: `Pix2PixHD` Object
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
@@ -134,7 +134,7 @@ class Pix2PixHD(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `Pix2PixHD` Object
+        :return: `Pix2PixHD` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

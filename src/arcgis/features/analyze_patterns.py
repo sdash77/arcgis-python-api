@@ -77,12 +77,28 @@ def calculate_density(
     -------------------------    ---------------------------------------------------------
     num_classes                  Optional int. This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classification_type parameter.
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string. Additional properties such as output feature service name.
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
+                                 If overwrite is True in context, new layer will overwrite existing layer.
+                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional string. Additional settings such as processing extent and output spatial reference. For calculate_density, there are two settings.
+    context                      Optional dict. Additional settings such as processing extent and output spatial reference.
+                                 For calculate_density, there are three settings.
 
-                                 #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the input_layer that intersect the bounding box will be analyzed.
-                                 #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
+                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+
+                                     .. code-block:: python
+
+                                         # Example Usage
+                                         context = {"extent": {"xmin": 3164569.408035,
+                                                             "ymin": -9187921.892449,
+                                                             "xmax": 3174104.927313,
+                                                             "ymax": -9175500.875353,
+                                                             "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                     "outSR": {"wkid": 3857},
+                                                     "overwrite": True}
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -92,7 +108,7 @@ def calculate_density(
     =========================    =========================================================
 
 
-    :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -182,11 +198,28 @@ def summarize_center_and_dispersion(
                             distribution calculations. The group_field can be of
                             integer, date, or string type.
     --------------------    ---------------------------------------------------------
-    output_name             Optional string. Additional properties such as output
-                            feature service name.
+    output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                            feature layer will cause the new layer to be appended to the Feature Service.
+                            If overwrite is True in context, new layer will overwrite existing layer.
+                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     --------------------    ---------------------------------------------------------
-    context                 Optional string. Additional settings such as processing
-                            extent and output spatial reference.
+    context                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                            For summarize_center_and_dispersion, there are three settings.
+
+                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+
+                                .. code-block:: python
+
+                                    # Example Usage
+                                    context = {"extent": {"xmin": 3164569.408035,
+                                                        "ymin": -9187921.892449,
+                                                        "xmax": 3174104.927313,
+                                                        "ymax": -9175500.875353,
+                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                "outSR": {"wkid": 3857},
+                                                "overwrite": True}
     --------------------    ---------------------------------------------------------
     gis                     Optional, the GIS on which this tool runs. If not
                             specified, the active GIS is used.
@@ -196,12 +229,13 @@ def summarize_center_and_dispersion(
     future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================    =========================================================
 
-    :returns: Python dictionary with the following keys:
-        "central_feature_result_layer" : layer (FeatureCollection)
-        "mean_feature_result_layer" : layer (FeatureCollection)
-        "median_feature_result_layer" : layer (FeatureCollection)
-        "ellipse_feature_result_layer" : layer (FeatureCollection)
+    :return: Python dictionary with the following keys:
+        "central_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        "mean_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        "ellipse_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         "process_info" : list of messages
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -284,15 +318,28 @@ def find_point_clusters(
 
                             The default is 'Miles'.
     --------------------    ---------------------------------------------------------
-    output_name             Optional string. If provided, the method will create a
-                            feature service of the results. You define the name of
-                            the service. If ``output_name`` is not supplied, the method
-                            will return a feature collection.
+    output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                            feature layer will cause the new layer to be appended to the Feature Service.
+                            If overwrite is True in context, new layer will overwrite existing layer.
+                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     --------------------    ---------------------------------------------------------
-    context                 Optional string. Context contains additional settings that affect method execution. For ``find_point_clusters``, there are two settings.
+    context                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                            For find_point_clusters, there are three settings.
 
-                            #. Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be buffered.
-                            #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+
+                                .. code-block:: python
+
+                                    # Example Usage
+                                    context = {"extent": {"xmin": 3164569.408035,
+                                                        "ymin": -9187921.892449,
+                                                        "xmax": 3174104.927313,
+                                                        "ymax": -9175500.875353,
+                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                "outSR": {"wkid": 3857},
+                                                "overwrite": True}
     --------------------    ---------------------------------------------------------
     gis                     Optional, the GIS on which this tool runs. If not
                             specified, the active GIS is used.
@@ -302,7 +349,7 @@ def find_point_clusters(
     future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================    =========================================================
 
-    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature collection.
+    :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -366,67 +413,82 @@ def find_hot_spots(
     Features that are beige are not part of a statistically significant cluster; the spatial pattern associated with these features could very likely
     be the result of random processes and random chance.
 
-    ===================================================================    =========================================================
-    **Argument**                                                           **Description**
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    analysis_layer (Required if the analysis_layer contains polygons)      Required layer. The point or polygon feature layer for which hot spots will be calculated. See :ref:`Feature Input<FeatureInput>`.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    analysis_field                                                         Optional string. The numeric field that will be analyzed. The field you select might represent:
+    ===================================================================     =========================================================
+    **Argument**                                                            **Description**
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    analysis_layer (Required if the analysis_layer contains polygons)       Required layer. The point or polygon feature layer for which hot spots will be calculated. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    analysis_field                                                          Optional string. The numeric field that will be analyzed. The field you select might represent:
 
-                                                                            + counts (such as the number of traffic accidents)
-                                                                            + rates (such as the number of crimes per square mile)
-                                                                            + averages (such as the mean math test score)
-                                                                            + indices (such as a customer satisfaction score)
+                                                                                + counts (such as the number of traffic accidents)
+                                                                                + rates (such as the number of crimes per square mile)
+                                                                                + averages (such as the mean math test score)
+                                                                                + indices (such as a customer satisfaction score)
 
-                                                                           If an ``analysis_field`` is not supplied, hot spot results are based on point densities only.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    divided_by_field                                                       Optional string. The numeric field in the ``analysis_layer`` that will be used to normalize your data.
-                                                                           For example, if your points represent crimes, dividing by total population would result in an analysis of crimes per capita rather than raw crime counts.
+                                                                            If an ``analysis_field`` is not supplied, hot spot results are based on point densities only.
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    divided_by_field                                                        Optional string. The numeric field in the ``analysis_layer`` that will be used to normalize your data.
+                                                                            For example, if your points represent crimes, dividing by total population would result in an analysis of crimes per capita rather than raw crime counts.
 
-                                                                           You can use esriPopulation to geoenrich each area feature with the most recent population values, which will then be
-                                                                           used as the attribute to divide by. This option will use credits.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    bounding_polygon_layer                                                 Optional layer. When the analysis layer is points and no ``analysis_field`` is specified, you can provide polygons features that define where incidents could have occurred.
-                                                                           For example, if you are analyzing boating accidents in a harbor, the outline of the harbor might provide a good boundary for where accidents could occur.
-                                                                           When no bounding areas are provided, only locations with at least one point will be included in the analysis. See :ref:`Feature Input<FeatureInput>`.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    aggregation_polygon_layer                                              Optional layer. When the ``analysis_layer`` contains points and no ``analysis_field`` is specified,
-                                                                           you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
-                                                                           The number of points that fall within each polygon are counted, and the point count in each polygon is analyzed. See :ref:`Feature Input<FeatureInput>`.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    output_name                                                            Optional string. If provided, the task will create a feature service of the results.
-                                                                           You define the name of the service. If ``output_name`` is not supplied, the task will return a feature collection.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    context                                                                Optional string. Context contains additional settings that affects method execution. For ``find_hot_spots``, there are two settings.
+                                                                            You can use esriPopulation to geoenrich each area feature with the most recent population values, which will then be
+                                                                            used as the attribute to divide by. This option will use credits.
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    bounding_polygon_layer                                                  Optional layer. When the analysis layer is points and no ``analysis_field`` is specified, you can provide polygons features that define where incidents could have occurred.
+                                                                            For example, if you are analyzing boating accidents in a harbor, the outline of the harbor might provide a good boundary for where accidents could occur.
+                                                                            When no bounding areas are provided, only locations with at least one point will be included in the analysis. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    aggregation_polygon_layer                                               Optional layer. When the ``analysis_layer`` contains points and no ``analysis_field`` is specified,
+                                                                            you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
+                                                                            The number of points that fall within each polygon are counted, and the point count in each polygon is analyzed. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    output_name                                                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                                            feature layer will cause the new layer to be appended to the Feature Service.
+                                                                            If overwrite is True in context, new layer will overwrite existing layer.
+                                                                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    context                                                                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                                            For find_hot_spots, there are three settings.
 
-                                                                           #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``analysis_layer`` that intersect the bounding box will be analyzed.
-                                                                           #. Output Spatial Reference (``outSR``) - the data will be projected into the output spatial reference prior to analysis.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    gis                                                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    estimate                                                               Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    shape_type                                                             Optional string. The shape of the polygon mesh the input features will be aggregated into.
+                                                                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                                                            * ``Fishnet``-The input features will be aggregated into a grid of square (fishnet) cells.
-                                                                            * ``Hexagon``-The input features will be aggregated into a grid of hexagonal cells.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    cell_size                                                              Optional float. The size of the grid cells used to aggregate your features.
-                                                                           When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    cell_size_unit                                                         Optional string. The units of the ``cell_size`` value. You must provide a value if ``cell_size`` has been set.
+                                                                                .. code-block:: python
 
-                                                                           Choice list: ['Meters', 'Miles', 'Feet', 'Kilometers']
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    distance_band                                                          Optional float. The spatial extent of the analysis neighborhood. This value determines which features are analyzed together
-                                                                           in order to assess local clustering.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    distance_band_unit                                                     Optional string. The units of the ``distance_band`` value. You must provide a value if ``distance_band`` has been set.
-    -------------------------------------------------------------------    ---------------------------------------------------------
-    future                                                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    ===================================================================    =========================================================
+                                                                                    # Example Usage
+                                                                                    context = {"extent": {"xmin": 3164569.408035,
+                                                                                                        "ymin": -9187921.892449,
+                                                                                                        "xmax": 3174104.927313,
+                                                                                                        "ymax": -9175500.875353,
+                                                                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                                                "outSR": {"wkid": 3857},
+                                                                                                "overwrite": True}
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    gis                                                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    estimate                                                                Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    shape_type                                                              Optional string. The shape of the polygon mesh the input features will be aggregated into.
 
-    :returns: result_layer : feature layer Item if output_name is specified, else a dictionary with a Feature Collection and processing messages.
+                                                                             * ``Fishnet``-The input features will be aggregated into a grid of square (fishnet) cells.
+                                                                             * ``Hexagon``-The input features will be aggregated into a grid of hexagonal cells.
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    cell_size                                                               Optional float. The size of the grid cells used to aggregate your features.
+                                                                            When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    cell_size_unit                                                          Optional string. The units of the ``cell_size`` value. You must provide a value if ``cell_size`` has been set.
+
+                                                                            Choice list: ['Meters', 'Miles', 'Feet', 'Kilometers']
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    distance_band                                                           Optional float. The spatial extent of the analysis neighborhood. This value determines which features are analyzed together
+                                                                            in order to assess local clustering.
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    distance_band_unit                                                      Optional string. The units of the ``distance_band`` value. You must provide a value if ``distance_band`` has been set.
+    -------------------------------------------------------------------     ---------------------------------------------------------
+    future                                                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    ===================================================================     =========================================================
+
+    :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else a dictionary with a :class:`~arcgis.features.FeatureCollection` and processing messages.
 
     .. code-block:: python
 
@@ -550,31 +612,47 @@ def find_outliers(
 
                                                                         Choice list: ['Meters', 'Miles', 'Feet', 'Kilometers']
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    output_name                                                         Optional string. If provided, the method will create a feature service of the results. You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
+    output_name                                                         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                                        feature layer will cause the new layer to be appended to the Feature Service.
+                                                                        If overwrite is True in context, new layer will overwrite existing layer.
+                                                                        If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    context                                                             Context contains additional settings that affect task execution. For ``find_outliers``, there are two settings:
+    context                                                             Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                                        For find_outliers, there are three settings.
 
-                                                                        #. Extent (extent) a bounding box that defines the analysis area. Only those features in the ``analysis_layer`` that intersect the bounding box will be analyzed.
+                                                                        - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                                        - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                                                        #. Output Spatial Reference (outSR) the data will be projected into the output spatial reference prior to analysis.
+                                                                            .. code-block:: python
+
+                                                                                # Example Usage
+                                                                                context = {"extent": {"xmin": 3164569.408035,
+                                                                                                    "ymin": -9187921.892449,
+                                                                                                    "xmax": 3174104.927313,
+                                                                                                    "ymax": -9175500.875353,
+                                                                                                    "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                                            "outSR": {"wkid": 3857},
+                                                                                            "overwrite": True}
     ------------------------------------------------------------------  ---------------------------------------------------------------
     estimate                                                            Optional boolean. Returns the number of credit for the operation.
     ------------------------------------------------------------------  ---------------------------------------------------------------
     future                                                              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ==================================================================  ===============================================================
 
-    :Returns:
-    Item if output_name is set. else results in a dict with the following keys:
+    :return:
+        :class:`~arcgis.features.FeatureLayer` if output_name is set. else results in a dict with the following keys:
 
-       "find_outliers_result_layer" : layer (FeatureCollection)
+        "find_outliers_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-       "process_info" : list of messages
+        "process_info" : list of messages
+
     .. code-block:: python
 
-         #USAGE EXAMPLE: To find statistically significant outliers within the collision clusters.
-         outliers = find_outliers(analysis_layer=collisions,
-                                  shape_type='fishnet',
-                                  output_name='find outliers')
+        #USAGE EXAMPLE: To find statistically significant outliers within the collision clusters.
+        outliers = find_outliers(analysis_layer=collisions,
+                                shape_type='fishnet',
+                                output_name='find outliers')
 
     """
     distance_band_units = band_units
@@ -738,10 +816,28 @@ def interpolate_points(
 
                                  If supplied, the output ``predicted_point_layer`` will contain predictions at the specified locations. See :ref:`Feature Input<FeatureInput>`.
     ---------------------------  -------------------------------------------------------------------------------------------
-    output_name                  Optional string. If provided, the method will create a feature service of the results.
-                                 You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    context                      Optional string. Additional settings such as processing extent and output spatial reference.
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
+                                 If overwrite is True in context, new layer will overwrite existing layer.
+                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    -------------------------    ---------------------------------------------------------
+    context                      Optional dict. Additional settings such as processing extent and output spatial reference.
+                                 For interpolate_points, there are three settings.
+
+                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+
+                                     .. code-block:: python
+
+                                         # Example Usage
+                                         context = {"extent": {"xmin": 3164569.408035,
+                                                             "ymin": -9187921.892449,
+                                                             "xmax": 3174104.927313,
+                                                             "ymax": -9175500.875353,
+                                                             "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                     "outSR": {"wkid": 3857},
+                                                     "overwrite": True}
     ---------------------------  -------------------------------------------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ---------------------------  -------------------------------------------------------------------------------------------
@@ -750,13 +846,13 @@ def interpolate_points(
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ===========================  ===========================================================================================
 
-    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Python dictionary with the following keys:
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
 
-        "result_layer" : layer (FeatureCollection)
+        "result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        "prediction_error" : layer (FeatureCollection)
+        "prediction_error" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        "predicted_point_layer" : layer (FeatureCollection)
+        "predicted_point_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 

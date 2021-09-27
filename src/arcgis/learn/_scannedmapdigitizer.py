@@ -1062,7 +1062,7 @@ def find_current_timestamp():
     """
     Creates a string representing the current timestamp
 
-    :returns:
+    :return:
         timestamp_str: Current timestamp string in the format "%H_%M_%S_%f"
     """
     datetime_obj = datetime.now()
