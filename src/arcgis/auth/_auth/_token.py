@@ -95,9 +95,7 @@ class ArcGISProAuth(AuthBase, SupportMultiAuth):
 
     def __init__(self, legacy: bool = False):
         try:
-            import arcpy
-
-            self._arcpy = arcpy
+            self._arcpy = LazyLoader("arcpy", strict=True)
             self.legacy = legacy
             self._invalid_token_urls = set()
             self._401_counters = dict()

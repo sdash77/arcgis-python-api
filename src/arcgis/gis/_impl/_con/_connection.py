@@ -1488,6 +1488,8 @@ class Connection(object):
             return self._session.auth.token
         elif isinstance(self._session.auth, EsriGenTokenAuth):
             return self._session.auth.token()
+        elif isinstance(self._session.auth, ArcGISProAuth):
+            return self._session.auth.token
         if str(self._auth).lower() in ["builtin", "oauth"]:
             if self._expiration is None or self._expiration <= 5:
                 self._expiration = 6
