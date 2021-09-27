@@ -1519,6 +1519,7 @@ class ArcGISModel(object):
                     "CycleGAN",
                     "Pix2Pix",
                     "SuperResolution",
+                    "ImageCaptioner",
                 ]
                 or save_inference_file
             ):
