@@ -49,6 +49,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.auth import EsriSession
 from arcgis.auth import EsriBuiltInAuth, EsriGenTokenAuth, ArcGISProAuth
+from arcgis.auth._auth._notebook import EsriNotebookAuth
 
 try:
     from arcgis.auth import EsriWindowsAuth
@@ -66,7 +67,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "1.9.1"
+__version__ = "2.0.0"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 
@@ -127,8 +128,8 @@ class Connection(object):
         """
         from arcgis.gis import GIS
 
-        self._proxy = kwargs.get("proxy", None)
-        self._timeout = kwargs.get("timeout", 600)
+        self._proxy = kwargs.pop("proxy", None)
+        self._timeout = kwargs.pop("timeout", 600)
         self._all_ssl = kwargs.pop("all_ssl", True)
         self.trust_env = kwargs.pop("trust_env", None)
         if baseurl:
