@@ -694,7 +694,7 @@ class ImageryLayer(Layer):
         id                    Required integer. The 'raster ID'.
         =================     ====================================================================
 
-        :returns:
+        :return:
             :class:`~arcgis.raster.RasterCatalogItem` associated with the ID
         """
         if self._datastore_raster:
@@ -8048,7 +8048,7 @@ class Raster:
                               exist in both rasters.
         =================     ====================================================================
 
-        :returns (string): A string containing the variable names and the associated dimensions in the multidimensional raster.
+        :return (string): A string containing the variable names and the associated dimensions in the multidimensional raster.
                            For example, if the resulting raster has 10 time slices with precipitation data, it will return 'prcp(StdTime=10)'.
 
         .. code-block:: python
