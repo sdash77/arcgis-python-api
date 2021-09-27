@@ -262,6 +262,9 @@ class SingleShotDetector(ArcGISModel):
                         avg = new_avg
                         centroid = new_centroid.copy()
 
+                    centroid = np.sort(np.max(centroid, axis=1))
+                    centroid = centroid[centroid!=0]
+
                     # find grid size
 
                     grids = list(
@@ -269,7 +272,7 @@ class SingleShotDetector(ArcGISModel):
                             int,
                             map(
                                 round,
-                                data.chip_size / np.sort(np.max(centroid, axis=1)),
+                                data.chip_size / centroid,
                             ),
                         )
                     )
