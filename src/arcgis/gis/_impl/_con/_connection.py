@@ -345,7 +345,9 @@ class Connection(object):
             set(
                 [
                     s.get(
-                        root + pt, params=params, verify=self._verify_cert,
+                        root + pt,
+                        params=params,
+                        verify=self._verify_cert,
                     ).headers.get("www-authenticate", "")
                     for pt in ["/info", "/rest/info", "/sharing/rest/info"]
                 ]
@@ -1068,7 +1070,7 @@ class Connection(object):
         ---------------------------   -----------------------------------------------------
         timeout                       optional Integer. The number of seconds to timeout a service without a response.  The default is 600 seconds.
         ---------------------------   -----------------------------------------------------
-        return_raw_response           Optional boolean. Returns the requests.Response object. 
+        return_raw_response           Optional boolean. Returns the requests.Response object.
         ===========================   =====================================================
 
         :returns: data returned from the URL call.
