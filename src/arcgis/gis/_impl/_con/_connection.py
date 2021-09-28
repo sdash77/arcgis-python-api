@@ -345,9 +345,7 @@ class Connection(object):
             set(
                 [
                     s.get(
-                        root + pt,
-                        params=params,
-                        verify=self._verify_cert,
+                        root + pt, params=params, verify=self._verify_cert,
                     ).headers.get("www-authenticate", "")
                     for pt in ["/info", "/rest/info", "/sharing/rest/info"]
                 ]
@@ -567,10 +565,13 @@ class Connection(object):
         ---------------------------   -----------------------------------------------------
         json_encode                   optional Boolean.  When False, the JSON values will not be encoded.
         ---------------------------   -----------------------------------------------------
-        ignore_error_key              otional Boolean. The default is False. If true, JSON will be returned and no exception is raised when 'error' is present in the response
+        ignore_error_key              optional Boolean. The default is False. If true, JSON will be returned and no exception is raised when 'error' is present in the response
+        ---------------------------   -----------------------------------------------------
+        return_raw_response           optional Boolean. Returns the requests' Response object.
         ===========================   =====================================================
         """
         ignore_error_key = kwargs.pop("ignore_error_key", False)
+        return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
@@ -646,7 +647,8 @@ class Connection(object):
             import traceback
 
             raise Exception("An unknown error occurred: %s" % traceback.format_exc())
-
+        if return_raw_response:
+            return resp
         return self._handle_response(
             resp,
             file_name,
@@ -855,11 +857,14 @@ class Connection(object):
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
         ---------------------------   -----------------------------------------------------
         timeout                       optional Integer. Timeout in seconds
+        ---------------------------   -----------------------------------------------------
+        return_raw_response           Optional Boolean. If True, returns the requests.Response object.
         ===========================   =====================================================
 
         :returns: data returned from the URL call.
         """
         timeout = kwargs.pop("timeout", self._timeout)
+        return_raw_response = kwargs.pop("return_raw_response", False)
         retry_count = 0
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
@@ -993,6 +998,8 @@ class Connection(object):
 
             raise Exception("An unknown error occurred: %s" % traceback.format_exc())
         retry_count = 0
+        if return_raw_response:
+            return resp
         return self._handle_response(
             resp=resp,
             out_path=out_path,
@@ -1060,12 +1067,15 @@ class Connection(object):
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
         ---------------------------   -----------------------------------------------------
         timeout                       optional Integer. The number of seconds to timeout a service without a response.  The default is 600 seconds.
+        ---------------------------   -----------------------------------------------------
+        return_raw_response           Optional boolean. Returns the requests.Response object. 
         ===========================   =====================================================
 
         :returns: data returned from the URL call.
 
         """
         timeout = kwargs.pop("timeout", self._timeout)
+        return_raw_response = kwargs.pop("return_raw_response", False)
         retry_count = 0
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
@@ -1196,6 +1206,8 @@ class Connection(object):
 
             raise Exception("An unknown error occurred: %s" % traceback.format_exc())
         retry_count = 0
+        if return_raw_response:
+            return resp
         return self._handle_response(
             resp=resp,
             out_path=out_path,
@@ -1248,15 +1260,15 @@ class Connection(object):
         **Optional Parameters**       **Description**
         ---------------------------   -----------------------------------------------------
         add_token                     optional boolean.  True means try to add the boolean,
-                                      else do not add a ?token=<foo> to the call.
+                                      else do not add a ?token=<foo> to the call. (deprecated)
         ---------------------------   -----------------------------------------------------
         token_as_header               Optional boolean.  If True, the token will go into
                                       the header as `Authorization` header.  This can be
-                                      overwritten using the `token_header` parameter
+                                      overwritten using the `token_header` parameter. (deprecated)
         ---------------------------   -----------------------------------------------------
         token_header                  Optional String. If provided and token_as_header is
                                       True, authentication token will be placed in this
-                                      instead on URL string.
+                                      instead on URL string. (deprecated)
         ---------------------------   -----------------------------------------------------
         try_json                      optional boolean.  If true, the call adds the ?f=json.
         ---------------------------   -----------------------------------------------------
@@ -1266,24 +1278,24 @@ class Connection(object):
         post_json                     optional bool. If True, the data is pushed in the request's json parameter.  This is an edge case for Workflow Manager. The default is `False`.
         ---------------------------   -----------------------------------------------------
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
+        ---------------------------   -----------------------------------------------------
+        return_raw_response           Optional boolean. When true, it returns the requests.Response object
         ===========================   =====================================================
 
         :returns: dict or string depending on the response
 
         """
-        token = kwargs.pop("token", _DEFAULT_TOKEN)
+
+        return_raw_response = kwargs.pop("return_raw_response", False)
         post_json = kwargs.pop("post_json", False)
         json_encode = kwargs.pop("json_encode", True)
         out_path = kwargs.pop("out_path", None)
         file_name = kwargs.pop("file_name", None)
-        token_as_header = kwargs.pop("token_as_header", True)
-        token_header = kwargs.pop("token_header", "X-Esri-Authorization")
         if params is None:
             params = {}
         if self._session is None:
             self._create_session()
         try_json = kwargs.pop("try_json", True)
-        add_token = kwargs.pop("add_token", True)
         if url.find("://") == -1:
             url = self._baseurl + url
         if kwargs.pop("ssl", False):
@@ -1334,6 +1346,8 @@ class Connection(object):
         else:
             resp = self._session.put(url=url, data=params, cert=cert, files=files)
         #
+        if return_raw_response:
+            return resp
         return self._handle_response(
             resp=resp,
             out_path=out_path,
@@ -1373,11 +1387,13 @@ class Connection(object):
         ---------------------------   -----------------------------------------------------
         ssl                           optional boolean. If true all calls are forced to be
                                       https.
+        return_raw_response           Optional Boolean.  Returns the raw requests.Response object
         ===========================   =====================================================
 
         :returns: dict or string depending on the response
         """
         out_path = kwargs.pop("out_path", None)
+        return_raw_response = kwargs.pop("return_raw_response", False)
         file_name = kwargs.pop("file_name", None)
         if params is None:
             params = {}
@@ -1393,6 +1409,8 @@ class Connection(object):
             params["f"] = "json"
 
         resp = self._session.delete(url=url, data=params)
+        if return_raw_response:
+            return resp
         return self._handle_response(
             resp=resp,
             out_path=out_path,
