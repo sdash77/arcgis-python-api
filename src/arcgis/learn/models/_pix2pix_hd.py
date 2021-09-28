@@ -179,7 +179,7 @@ class Pix2PixHD(ArcGISModel):
             data.resize_to = chip_size
             data.norm_stats = norm_stats
 
-            return cls(data, **model_params, pretrained_path=str(model_file))
+        return cls(data, **model_params, pretrained_path=str(model_file))
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
