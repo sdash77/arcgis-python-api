@@ -260,19 +260,21 @@ class NamedArea(object):
 
 class Country(object):
     """
-    The Country object enables access to data and methods for a specific country. This
+    Enables access to data and methods for a specific country. This
     class can reference country data and methods available using data accessed through
-    both a Web GIS and a local installation of ArcGIS Pro with the Business Analyst
-    extension and local country data installed. Specifying this source is accomplished
-    using the ``gis`` parameter when instantiating. If using the keyword 'Pro'
-    (``GIS('Pro')``), ``Country`` will try to use ArcGIS Pro with Business Analyst
+    both a Web GIS and a local installation of `ArcGIS Pro with the Business Analyst
+    extension and local country data` installed. Specifying this source is accomplished
+    using the ``gis`` parameter when instantiating
+    (See :meth:`~arcgis.geoenrichment.Country.get`). If using the keyword ``Pro``,
+    ``Country`` will try to use ArcGIS Pro with Business Analyst
     and will error if the specified country is not available locally. Available
-    countries can be discovered using the ``get_countries`` method.
+    countries can be discovered using the :func:`~arcgis.geoenrichment.get_countries`
+    function.
 
     .. note::
         Currently, when using a `GIS('Pro')` instance, only the ``data_collections``
-        and ``enrich_variables`` properties to discover of available enrichment
-        variables are supported.
+        and ``enrich_variables`` properties are supported to discover available
+        enrichment variables.
 
     """
 
@@ -288,27 +290,28 @@ class Country(object):
         name              Required string. The country name, two letter code or
                           three letter ISO3 code identifying the country.
         ----------------  --------------------------------------------------------
-        gis               Optional ``arcgis.gis.GIS`` object instance. This
+        gis               Optional :class:`~arcgis.gis.GIS` instance. This
                           specifies what GIS country sources are available based
-                          on the GIS source, a Web GIS (ArcGIS Online or ArcGIS
-                          Enterprise) or ArcGIS Pro with the Business Analyst
-                          extension and at least one country data pack. If not
-                          explicitly specified, it tries to use an active GIS
-                          already created in the Python session. If an active
+                          on the GIS source, a Web GIS (either `ArcGIS Online` or
+                          `ArcGIS Enterprise`) or `ArcGIS Pro with the Business 
+                          Analyst extension and at least one country data pack`.
+                          If not explicitly specified, it tries to use an active 
+                          GIS already created in the Python session. If an active
                           GIS is not available, it then tries to use local
-                          resources, ArcGIS Pro with Business and at least one
-                          country dataset installed locally. Finally, if
+                          resources, ArcGIS Pro with Business Analyst and at least
+                          one country dataset installed locally. Finally, if
                           neither of these (Pro or an active GIS) are available,
-                          a GIS object instance must be explicitly provided.
+                          a :class:`~arcgis.gis.GIS` object instance must be
+                          explicitly provided.
         ----------------  --------------------------------------------------------
-        year              Optional integer explicitly specifying the vintage
+        year              Optional integer. Explicitly specifying the vintage
                           (year) of data to use. This option is only available
                           when using a `'local'` GIS source, and will be
                           ignored if used with a Web GIS source.
         ================  ========================================================
 
         :return:
-            ``arcgis.geoenrichment.Country`` instance for the requested country.
+            :class:`~arcgis.geoenrichment.Country` instance for the requested country.
         """
         return cls(name, gis, year)
 
