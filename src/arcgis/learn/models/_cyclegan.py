@@ -264,7 +264,8 @@ class CycleGAN(ArcGISModel):
         elif convert_to == "B" or convert_to == "b":
             pred_img = pred_tuple[1][1] / 2 + 0.5
 
-        pred_img = transforms.ToPILImage()(pred_img).convert("RGB")
+        pred_img = ArcGISMSImage(pred_img)
+        pred_img = pred_img.show()
         self.learn.model.arcgis_results = False
         return pred_img
 
