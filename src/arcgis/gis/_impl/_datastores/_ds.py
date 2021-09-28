@@ -74,7 +74,7 @@ class PortalDataStore(object):
 
             >>> datastore_manager.describe(item= datastore_object1, server_id="server_name", path = "path_name")
 
-        :returns:
+        :return:
             A :class:`~arcgis.gis._impl..StatusJob` object
 
         """
@@ -109,7 +109,7 @@ class PortalDataStore(object):
         """
         Checks the status of an export job
 
-        :returns: dict
+        :return: dict
         """
         params = {}
         if job_id:
@@ -140,7 +140,7 @@ class PortalDataStore(object):
         """
         The ``properties`` property retrieves the properties of the current :class:`~arcgis.gis.DataStore` object
 
-        :returns:
+        :return:
            A list of the :class:`~arcgis.gis.DataStore` object properties
         """
         if self._properties is None:
@@ -182,7 +182,7 @@ class PortalDataStore(object):
 
             >>> datastore_manager.register(datastore_object1, "server_name")
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         .. note::
@@ -214,7 +214,7 @@ class PortalDataStore(object):
         and remove all previously published layers in preparation for the
         deregistration of a data store.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = "{base}/allDatasets".format(base=self._url)
@@ -247,7 +247,7 @@ class PortalDataStore(object):
 
             >>> datastore_manager.delete_layers(datastore_object)
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         """
@@ -294,7 +294,7 @@ class PortalDataStore(object):
 
             >>> datastore_manager.layers(datastore_object1)
 
-        :returns: A List of bulk-published :class:`~arcgis.gis.Layer` objects
+        :return: A List of bulk-published :class:`~arcgis.gis.Layer` objects
 
         """
 
@@ -344,7 +344,7 @@ class PortalDataStore(object):
 
             >>> datastore_manager.publish(config= {"required" : "dictionary"}, server_id= "server_name")
 
-        :returns:
+        :return:
             A :class:`~arcgis.gis._impl._jb.StatusJob` object
 
         """
@@ -396,7 +396,7 @@ class PortalDataStore(object):
 
             >>> datastore_manager.servers(datastore_object1)
 
-        :returns:
+        :return:
             A List with the serverID, server name, server URL, and admin URLs
 
         """
@@ -464,7 +464,7 @@ class PortalDataStore(object):
 
             >>> datastore_manager.publish_layers(datastore_object1, srv_config= {"required" : "dictionary"})
 
-        :returns:
+        :return:
             Boolean when `future=False` else a :class:`~arcgis.gis._impl._jb.StatusJob` object
 
         """
@@ -518,7 +518,7 @@ class PortalDataStore(object):
 
             >>> datastore_manager.unregister(datastore_object1, "server_id")
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         """
@@ -566,7 +566,7 @@ class PortalDataStore(object):
 
             >>> datastore_manager.refresh_server(datastore_object1, "server_id")
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         """
@@ -614,7 +614,7 @@ class PortalDataStore(object):
 
             >>> datastore_manager.validate("server_name")
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         """

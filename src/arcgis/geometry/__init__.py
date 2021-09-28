@@ -6,10 +6,15 @@ geometries between different representations.
 Several functions accept geometries represented as dictionaries and the geometry objects in this module behave like them
 as well as support the '.' (dot) notation providing attribute access.
 
-Example:
+..note::
+    It is recommended to have ArcPy or Shapely downloaded for most Geometry methods and property usage.
+
+**Examples**:
+
+# Example Point
 
 .. code-block:: python
-
+    
     >>> pt = Point({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})
     >>> print (pt.is_valid)
     True
@@ -20,10 +25,9 @@ Example:
     >>> print (pt.x, pt.y)
     (-118.15,33.80)
 
-Example Polyline:
+# Example Polyline
 
 .. code-block:: python
-
 
     >>> line = {
       "paths" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832]],
@@ -36,7 +40,7 @@ Example Polyline:
     >>> print(polyline.is_valid)
     True
 
-Example of invalid geometry:
+# Example INVALID Geometry
 
 .. code-block:: python
 
@@ -52,12 +56,14 @@ Example of invalid geometry:
     >>>print(polyline.is_valid)
     False
 
-The same pattern can be used repeated for Polygon, MultiPoint and SpatialReference.
+The same patterna can be repeated for Polygon, MultiPoint and SpatialReference.
 
-You can create a Geometry even when you don't know the exact type. The Geometry constructor is able to figure out the
+You can create a Geometry even when you don't know the exact type. The Geometry constructor can find the
 geometry type and returns the correct type as the example below demonstrates:
 
 .. code-block:: python
+
+    # Example Unknown Geometry Type
 
     >>> geom = Geometry({
       "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],

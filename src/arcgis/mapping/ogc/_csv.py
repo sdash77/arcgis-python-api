@@ -143,7 +143,9 @@ class CSVLayer(BaseOpenData):
         """
         Get/Set the Renderer of the CSV Layer
 
-        :returns: InsensitiveDict
+        :return:
+            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
+            A varients of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -161,7 +163,9 @@ class CSVLayer(BaseOpenData):
         """
         Get/Set the Renderer of the CSV Layer
 
-        :returns: InsensitiveDict
+        :return:
+            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
+            A varients of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -194,7 +198,7 @@ class CSVLayer(BaseOpenData):
         `\r`          tab
         ===========   ==========================================
 
-        :returns: string
+        :return: string
 
         """
         if self._delimiter is None:
@@ -204,25 +208,8 @@ class CSVLayer(BaseOpenData):
     # ----------------------------------------------------------------------
     @delimiter.setter
     def delimiter(self, value):
-        r"""
-        Gets/Sets the delimiter for the CSV Layer.  The default is `,`
-
-        ===========   ==========================================
-        **Values**    **Description**
-        -----------   ------------------------------------------
-        ,             Comma
-        -----------   ------------------------------------------
-        " "           space
-        -----------   ------------------------------------------
-        ;             semicolon
-        -----------   ------------------------------------------
-        |             pipe
-        -----------   ------------------------------------------
-        `\r`          tab
-        ===========   ==========================================
-
-        :returns: string
-
+        """
+        See main ``delimiter`` property docstring
         """
         if value in [",", " ", ";", "|", "\r"] and self._delimiter != value:
             self._delimiter = value
@@ -233,7 +220,7 @@ class CSVLayer(BaseOpenData):
         """
         Returns the fields values for the CSV source.
 
-        :returns: list of strings
+        :return: list of strings
         """
         import numpy as np
         import datetime
@@ -341,6 +328,6 @@ class CSVLayer(BaseOpenData):
         """
         returns the CSV file as a DataFrame
 
-        :returns: Pandas' DataFrame
+        :return: Pandas' DataFrame
         """
         return self._df(False)

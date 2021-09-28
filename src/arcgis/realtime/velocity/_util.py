@@ -123,7 +123,7 @@ class _Util:
         :param id: unique id of a task
         Return True if the task was successfully stopped.
 
-        :returns: boolean
+        :return: boolean
          a dictionary with error details.
         """
         path = f"{task_type}/{id}/stop"
