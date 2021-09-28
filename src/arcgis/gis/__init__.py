@@ -311,6 +311,7 @@ class GIS(object):
         self._referer = kwargs.pop("referer", None)
         self._timeout = kwargs.pop("timeout", 600)  # default timeout is 600 seconds
         custom_auth = kwargs.pop("custom_auth", None)
+        custom_adapter = kwargs.pop("adapter", None)
         self._expiration = kwargs.pop("expiration", None)
         from arcgis._impl.tools import _Tools
 
@@ -442,6 +443,7 @@ class GIS(object):
                 trust_env=kwargs.get("trust_env", None),
                 timeout=self._timeout,
                 proxy=kwargs.get("proxy", None),
+                custom_adapter=custom_adapter,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -462,6 +464,7 @@ class GIS(object):
                     trust_env=kwargs.get("trust_env", None),
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
                 )
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
@@ -532,6 +535,7 @@ class GIS(object):
                         client_secret=client_secret,
                         timeout=self._timeout,
                         proxy=kwargs.get("proxy", None),
+                        custom_adapter=custom_adapter,
                     )
                     self._portal = pp
         except:

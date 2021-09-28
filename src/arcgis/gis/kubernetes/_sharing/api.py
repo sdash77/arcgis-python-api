@@ -55,6 +55,7 @@ class KbertnetesPy(object):
         client_secret = kwargs.get("client_secret", None)
         trust_env = kwargs.get("trust_env", None)
         self._timeout = kwargs.pop("timeout", 600)
+        custom_adapter = kwargs.pop("custom_adapter", None)
         url = url.strip()  # be permissive in accepting home app urls
         homepos = url.find("/home")
         if homepos != -1:
@@ -132,6 +133,7 @@ class KbertnetesPy(object):
                     token=token,
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
                 )
             else:
                 self.con = Connection(
@@ -154,6 +156,7 @@ class KbertnetesPy(object):
                     token=token,
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
                 )
         # self.get_version(True)
         self.get_properties(True)

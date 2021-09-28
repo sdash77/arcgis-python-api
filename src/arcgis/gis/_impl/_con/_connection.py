@@ -98,6 +98,7 @@ class Connection(object):
     _auth = None
     _product = None
     _custom_auth = None
+    _custom_adapter = None
     # ----------------------------------------------------------------------
     def __init__(self, baseurl=None, username=None, password=None, **kwargs):
         """initializer
@@ -132,6 +133,7 @@ class Connection(object):
         self._timeout = kwargs.pop("timeout", 600)
         self._all_ssl = kwargs.pop("all_ssl", True)
         self.trust_env = kwargs.pop("trust_env", None)
+        self._custom_adapter = kwargs.pop("custom_adapter", None)
         if baseurl:
             while baseurl.endswith("/"):
                 baseurl = baseurl[:-1]
@@ -331,6 +333,11 @@ class Connection(object):
         s.cert = cert
         s.verify = self._verify_cert
         s.trust_env = True
+        if self._custom_adapter:
+            for k, v in self._custom_adapter.items():
+                s.mount(k, v)
+        if self._custom_auth:
+            s.auth = self._custom_auth
         parsed = self._parsed(url)
         root = fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
         params = {"f": "json"}
@@ -411,7 +418,7 @@ class Connection(object):
         else:
             cert = None
 
-        self._session = EsriSession(cert=cert)
+        self._session = EsriSession(cert=cert, verify_cert=self._verify_cert)
         self._session.verify = self._verify_cert
         self._session.stream = True
         self._session.trust_env = self.trust_env
@@ -420,17 +427,23 @@ class Connection(object):
 
         from urllib3.util import Retry
 
-        a = requests.adapters.HTTPAdapter(
-            max_retries=Retry(
-                total=2,
-                backoff_factor=1,
-                method_whitelist=frozenset(
-                    ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
-                ),
+        if self._custom_adapter is None:
+
+            a = requests.adapters.HTTPAdapter(
+                max_retries=Retry(
+                    total=2,
+                    backoff_factor=1,
+                    method_whitelist=frozenset(
+                        ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
+                    ),
+                )
             )
-        )
-        self._session.mount("http://", a)
-        self._session.mount("https://", a)
+            self._session.mount("http://", a)
+            self._session.mount("https://", a)
+        else:
+            for k, v in self._custom_adapter.items():
+                self._session.mount(k, v)
+
         if self._referer is None and (
             self._portal_connection
             and str(self._portal_connection._auth).lower() == "home"
@@ -503,8 +516,9 @@ class Connection(object):
             self._session.auth = (
                 GuessAuth(None, None, legacy=False) + ArcGISProAuth()
             )  # GuessAuth(None, None, legacy=False)
+        elif not self._cert_file and not self._key_file:
 
-        else:
+            # else:
 
             if HAS_SSPI:
                 try:
