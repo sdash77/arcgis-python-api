@@ -48,7 +48,7 @@ from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.auth import EsriSession
-from arcgis.auth import EsriBuiltInAuth, EsriGenTokenAuth, ArcGISProAuth
+from arcgis.auth import EsriBuiltInAuth, EsriGenTokenAuth, ArcGISProAuth, EsriOAuth2Auth
 from arcgis.auth._auth._notebook import EsriNotebookAuth
 
 try:
@@ -201,9 +201,12 @@ class Connection(object):
             username is None
             and password is None
             and self._portal_connection is None
+            and self._client_id is None
             and str(baseurl).lower() != "pro"
         ):
             self._auth = "ANON"
+        elif self._client_id:
+            self._auth = "OAUTH"
         elif (not username is None and not password is None) and len(
             username.split("\\")
         ) > 1:
@@ -273,31 +276,32 @@ class Connection(object):
             )
             self._auth = "BUILTIN"
         elif self._client_id:
-            self._product = self._check_product()
-            if self._product in ["PORTAL", "AGOL"]:
-                resp = self.post("/portals/self", {"f": "json"}, add_token=False)
-                issaml = resp.get("samlEnabled", False)
-                isoauth = resp.get("supportsOAuth", False)
-            else:
-                resp = None
-                issaml = False
-                isoauth = False
-            self._auth = "OAUTH"
-            parsed = urlparse(self._baseurl)
-            wa = parsed.path
-            if wa.startswith("/"):
-                wa = wa[1:].split("/")[0]
-            else:
-                wa = wa.split("/")[0]
-            if len(wa) > 0:
-                self._token_url = "https://%s/%s/sharing/rest/oauth2/token" % (
-                    parsed.netloc,
-                    wa,
-                )
-            else:
-                self._token_url = "https://%s/sharing/rest/oauth2/token" % (
-                    parsed.netloc
-                )
+            self._product = "PORTAL"
+        # self._product = self._check_product()
+        # if self._product in ["PORTAL", "AGOL"]:
+        # resp = self.post("/portals/self", {"f": "json"}, add_token=False)
+        # issaml = resp.get("samlEnabled", False)
+        # isoauth = resp.get("supportsOAuth", False)
+        # else:
+        # resp = None
+        # issaml = False
+        # isoauth = False
+        # self._auth = "OAUTH"
+        # parsed = urlparse(self._baseurl)
+        # wa = parsed.path
+        # if wa.startswith("/"):
+        # wa = wa[1:].split("/")[0]
+        # else:
+        # wa = wa.split("/")[0]
+        # if len(wa) > 0:
+        # self._token_url = "https://%s/%s/sharing/rest/oauth2/token" % (
+        # parsed.netloc,
+        # wa,
+        # )
+        # else:
+        # self._token_url = "https://%s/sharing/rest/oauth2/token" % (
+        # parsed.netloc
+        # )
 
         else:
             self._product = self._check_product()
@@ -345,9 +349,7 @@ class Connection(object):
             set(
                 [
                     s.get(
-                        root + pt,
-                        params=params,
-                        verify=self._verify_cert,
+                        root + pt, params=params, verify=self._verify_cert,
                     ).headers.get("www-authenticate", "")
                     for pt in ["/info", "/rest/info", "/sharing/rest/info"]
                 ]
@@ -466,6 +468,17 @@ class Connection(object):
         if self._custom_auth:
             self._session.auth = self._custom_auth
             self._auth = "CUSTOM"
+        elif self._auth.lower() == "oauth":
+            self._session.auth = EsriOAuth2Auth(
+                base_url=self._baseurl,
+                client_id=self._client_id,
+                client_secret=self._client_secret,
+                username=self._username,
+                password=self._password,
+                referer=self._referer,
+                expiration=self._expiration,
+                verify_cert=self._verify_cert,
+            )
         elif self._auth.lower() == "builtin":
             if self._check_product() == "SERVER":
                 pauth = None
@@ -511,7 +524,6 @@ class Connection(object):
                 legacy=False,
             )
         elif self._auth.lower() == "pro":
-            from arcgis.auth import ArcGISProAuth
 
             self._session.auth = (
                 GuessAuth(None, None, legacy=False) + ArcGISProAuth()
