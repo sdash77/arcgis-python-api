@@ -349,7 +349,9 @@ class Connection(object):
             set(
                 [
                     s.get(
-                        root + pt, params=params, verify=self._verify_cert,
+                        root + pt,
+                        params=params,
+                        verify=self._verify_cert,
                     ).headers.get("www-authenticate", "")
                     for pt in ["/info", "/rest/info", "/sharing/rest/info"]
                 ]
