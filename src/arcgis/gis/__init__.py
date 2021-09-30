@@ -18,6 +18,7 @@ import zipfile
 import configparser
 from contextlib import contextmanager
 import functools
+
 from datetime import datetime
 import logging
 from typing import Tuple, Any, Dict, List
@@ -444,6 +445,7 @@ class GIS(object):
                 timeout=self._timeout,
                 proxy=kwargs.get("proxy", None),
                 custom_adapter=custom_adapter,
+                token=self._utoken,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -465,16 +467,18 @@ class GIS(object):
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
+                    token=self._utoken,
                 )
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
                 self._portal.con._session.headers.pop("Referer", None)
-            if not (self._utoken is None):
-                self._portal.con._token = self._utoken
-                self._portal.con.token = self._utoken
-                self._portal.con._auth = "HOME"
-
+            """
+            #if not (self._utoken is None):
+                #self._portal.con._token = self._utoken
+                #self._portal.con.token = self._utoken
+            #    self._portal.con._auth = "HOME"
+            """
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
                 raise RuntimeError(
@@ -530,23 +534,19 @@ class GIS(object):
                         expiration=self._expiration,
                         referer=self._referer,
                         custom_auth=custom_auth,
-                        # token=self._utoken,
                         trust_env=kwargs.get("trust_env", None),
                         client_secret=client_secret,
                         timeout=self._timeout,
                         proxy=kwargs.get("proxy", None),
                         custom_adapter=custom_adapter,
+                        token=self._utoken,
                     )
                     self._portal = pp
         except:
             pass
 
         force_refresh = False
-        if not (self._utoken is None) and self._portal.con._auth != "HOME":
-            self._portal.con._token = self._utoken
-            self._portal.con._auth = "BUILTIN"
-            force_refresh = True
-        elif self._portal.con._auth == "HOME":
+        if self._portal.con._auth in ["HOME", "USER_TOKEN"]:
             force_refresh = True
 
         # If a token was injected, then force refresh to get updated properties
@@ -3914,7 +3914,6 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     @property
     def me(self):
-
         """
         The ``me`` property retrieves the information of the logged in :class:`~arcgis.gis.User` object.
         """

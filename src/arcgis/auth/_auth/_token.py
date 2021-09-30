@@ -271,7 +271,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         if self._auth_token:
             params = {
                 "grant_type": "suspend_session",
-                "client_id": "arcgispro",
+                "client_id": self._clientid,  # "arcgispro",
                 "refresh_token": self._auth_token["refresh_token"],
                 "f": "json",
             }
@@ -515,7 +515,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         self._auth_token = self._oauth.refresh_token(
             token_url=self._token_url,
             verify=self._verify_cert,
-            **{"client_id": "arcgispro"},
+            **{"client_id": self._clientid},  # "arcgispro"},
         )
         if "expires_at" in self._auth_token:
             self._expiration_time = _dt.datetime.fromtimestamp(
