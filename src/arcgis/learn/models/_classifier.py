@@ -604,6 +604,11 @@ class FeatureClassifier(ArcGISModel):
         if num_examples == 1:
             num_examples = 2
         learn_temp = copy.copy(self.learn)
+        from arcgis.learn._utils.labeled_tiles import plot_multi_top_losses_modified
+
+        ClassificationInterpretation.plot_multi_top_losses = (
+            plot_multi_top_losses_modified
+        )
         interp = ClassificationInterpretation.from_learner(learn_temp)
         heatmap = True
         if self._backend == "tensorflow":
@@ -612,6 +617,11 @@ class FeatureClassifier(ArcGISModel):
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
+                    # Add plt.show to avoid issues from previous plots from other method
+                    try:
+                        plt.show()
+                    except:
+                        pass
                     interp.plot_multi_top_losses(num_examples, figsize=(5, 5))
             except IndexError:
                 from IPython.display import clear_output
