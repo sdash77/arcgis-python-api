@@ -10,6 +10,7 @@ import warnings
 import traceback
 import pandas as pd
 from functools import partial
+from .._utils.common import always_warn
 
 
 HAS_FASTAI = True
@@ -275,6 +276,7 @@ class TextDataObject:
         process_labels=False,
         remove_html_tags=False,
         remove_urls=False,
+        **kwargs
     ):
         if not HAS_FASTAI:
             _raise_fastai_exception(import_exception)
@@ -318,16 +320,37 @@ class TextDataObject:
                 remove_urls,
             )
         else:
-            validation_indexes = random.sample(
-                range(train_df.shape[0]), round(val_split_pct * train_df.shape[0])
-            )
-            training_indexes = list(
-                set([i for i in range(train_df.shape[0])]) - set(validation_indexes)
-            )
+            if len(label_cols) == 1 and kwargs.get('stratify')!=False:
+                label_col = label_cols[0]
+                from sklearn.model_selection import train_test_split
+                x,y = train_df[text_cols], train_df[label_col]
+                unique_labels = y.value_counts()[y.value_counts()==1].index.tolist()
+                # req_instances_per_class = int(0.8/val_split_pct)
+                # classes_below_req_intances = y.value_counts()[y.value_counts()<req_instances_per_class].index.tolist()
+                # if len(classes_below_req_intances)>0:
+#                     always_warn(f'For valid statification all classes should have more than {req_instances_per_class} data points, \
+# class(es) {",".join(classes_below_req_intances)} in your data does not meet the condition.')
 
-            temp_df = copy.deepcopy(train_df)
-            train_df = temp_df.loc[training_indexes]
-            valid_df = temp_df.loc[validation_indexes]
+                for label in unique_labels: #duplicating datapoints with unique classes.
+                    idx = y[y==label].index.tolist()[0]
+                    train_df = train_df.append(train_df.iloc[idx])
+                train_df.reset_index(drop=True, inplace=True)
+                x,y = train_df[text_cols], train_df[label_col]
+                X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=val_split_pct, stratify=y)
+                train_df = pd.concat([X_train, y_train], axis=1)
+                valid_df = pd.concat([X_test, y_test], axis=1)
+                temp_df = pd.DataFrame()
+            else: 
+                validation_indexes = random.sample(
+                    range(train_df.shape[0]), round(val_split_pct * train_df.shape[0])
+                )
+                training_indexes = list(
+                    set([i for i in range(train_df.shape[0])]) - set(validation_indexes)
+                )
+
+                temp_df = copy.deepcopy(train_df)
+                train_df = temp_df.loc[training_indexes]
+                valid_df = temp_df.loc[validation_indexes]
             # Removing rows with empty strings in the text_cols from the training and validation data
             train_df[text_cols].replace("", np.nan, inplace=True)
             train_df.dropna(inplace=True)
@@ -336,6 +359,14 @@ class TextDataObject:
             # Resetting dataframe indexes for training anf validation dataframe
             train_df.reset_index(drop=True, inplace=True)
             valid_df.reset_index(drop=True, inplace=True)
+#             if len(label_cols) == 1:
+#                 train_labels = set(train_df[label_cols[0]].to_list())
+#                 val_labels = set(valid_df[label_cols[0]].to_list())
+#                 if train_labels != val_labels:
+#                     always_warn(f'Validation dataset classes {val_labels} does not match the training dataset \
+# classes {train_labels}, you could use "stratify=True" with prepare_data or try increasing \
+# the minority class samples. Model metrics will only be calculated based on the classes \
+# present in validation dataset.')
             del temp_df
         if len(label_cols) > 1:
             text_data.classes = label_cols
