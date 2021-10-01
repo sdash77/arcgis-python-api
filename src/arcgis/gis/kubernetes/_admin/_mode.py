@@ -30,7 +30,7 @@ class Mode(_BaseKube):
         description            Optional String. The description of the action.
         ==================     ====================================================================
 
-        :return: dict
+        :return: Boolean. True if successful else False.
 
 
         """

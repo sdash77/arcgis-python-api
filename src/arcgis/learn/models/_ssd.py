@@ -149,7 +149,7 @@ class SingleShotDetector(ArcGISModel):
                             valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
 
-    :returns: `SingleShotDetector` Object
+    :return: `SingleShotDetector` Object
     """
 
     def __init__(
@@ -262,6 +262,9 @@ class SingleShotDetector(ArcGISModel):
                         avg = new_avg
                         centroid = new_centroid.copy()
 
+                    centroid = np.sort(np.max(centroid, axis=1))
+                    centroid = centroid[centroid != 0]
+
                     # find grid size
 
                     grids = list(
@@ -269,7 +272,7 @@ class SingleShotDetector(ArcGISModel):
                             int,
                             map(
                                 round,
-                                data.chip_size / np.sort(np.max(centroid, axis=1)),
+                                data.chip_size / centroid,
                             ),
                         )
                     )
@@ -400,7 +403,7 @@ class SingleShotDetector(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `SingleShotDetector` Object
+        :return: `SingleShotDetector` Object
         """
         return cls.from_emd(data, emd_path)
 
@@ -421,7 +424,7 @@ class SingleShotDetector(ArcGISModel):
                                 file.
         =====================   ===========================================
 
-        :returns: `SingleShotDetector` Object
+        :return: `SingleShotDetector` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -597,9 +600,10 @@ class SingleShotDetector(ArcGISModel):
         try:
             gt_overlap, gt_idx = self._map_to_ground_truth(overlaps, print_it)
         except Exception as e:
-            return torch.tensor(0.0, requires_grad=True).to(self._device), torch.tensor(
-                0.0, requires_grad=True
-            ).to(self._device)
+            return (
+                torch.tensor(0.0, requires_grad=True).to(self._device),
+                torch.tensor(0.0, requires_grad=True).to(self._device),
+            )
         gt_clas = clas[gt_idx]
         pos = gt_overlap > 0.4
         pos_idx = torch.nonzero(pos)[:, 0]
@@ -891,7 +895,7 @@ class SingleShotDetector(ArcGISModel):
                                 trained on).
         =====================   ===========================================
 
-        :returns: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
+        :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
         """
         if not HAS_OPENCV:
             raise Exception(
@@ -1122,7 +1126,7 @@ class SingleShotDetector(ArcGISModel):
                                 average precision.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
 

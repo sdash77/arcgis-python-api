@@ -37,7 +37,7 @@ class CategoryManager(object):
     @property
     def schema(self):
         """
-        Get/Sets the catagory schema for a GIS.
+        Get/Set the catagory schema for a GIS.
 
         When schema is used as a getter, then operation returns the GIS'
         defined category schema is any.
@@ -84,44 +84,7 @@ class CategoryManager(object):
     @schema.setter
     def schema(self, value):
         """
-        Get/Sets the catagory schema for a GIS.
-
-        When schema is used as a getter, then operation returns the GIS'
-        defined category schema is any.
-
-        When schema is used as a setter, the parameter:
-
-        =======================    =============================================================
-        **Argument**               **Description**
-        -----------------------    -------------------------------------------------------------
-        value                      optional list. The schema list.
-                                   Syntax Example:
-                                   [
-                                    {
-                                      "title": "Themes",
-                                      "categories": [
-                                        {
-                                          "title": "Basemaps",
-                                          "categories": [
-                                            {"title": "Partner Basemap"},
-                                            {
-                                              "title": "Esri Basemaps",
-                                              "categories": [
-                                                {"title": "Esri Redlands Basemap"},
-                                                {"title": "Esri Highland Basemap"}
-                                              ]
-                                            }
-                                          ]
-                                        },
-                                    {
-                                      "title": "Region",
-                                      "categories": [
-                                        {"title": "US"},
-                                        {"title": "World"}
-                                      ]
-                                    }]}]
-        =======================    =============================================================
-
+        See main ``schema`` property docstring
         """
         params = {"f": "json"}
         if value is not None:
@@ -148,7 +111,7 @@ class CategoryManager(object):
                                    categories
         =======================    =============================================================
 
-        :returns: boolean
+        :return: Boolean. True if successful else False
 
         """
         from arcgis.gis import Item
@@ -177,6 +140,8 @@ class CategoryManager(object):
         category                   Required String. Assigns a category value to the items.
         =======================    =============================================================
 
+        :return: Dictionary indicating 'success' or 'error'
+
         .. code-block:: python
 
             >>> item = [gis.content.get("<item id 1>"),
@@ -186,7 +151,6 @@ class CategoryManager(object):
             [{'results': [{'itemId': '<item id 1>', 'success': True}]},
              {'results': [{'itemId': '<item id 2>', 'success': True}]}]
 
-        :returns: dict
 
         """
         from arcgis.gis import Item

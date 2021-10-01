@@ -62,11 +62,16 @@ class LinkNet(ArcGISModel):
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
-    :returns: `LinkNet` Object
+    :return: `LinkNet` Object
     """
 
     def __init__(
-        self, data, backbone=None, pretrained_path=None, *args, **kwargs,
+        self,
+        data,
+        backbone=None,
+        pretrained_path=None,
+        *args,
+        **kwargs,
     ):
         # Set default backbone to be 'resnet34'
         if backbone is None:
@@ -220,7 +225,7 @@ class LinkNet(ArcGISModel):
                                 object from `prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
-        :returns: `LinkNet` Object
+        :return: `LinkNet` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

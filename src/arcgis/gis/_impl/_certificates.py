@@ -32,7 +32,7 @@ class CertificateManager(object):
         """
         The ``properties`` method retrieves the properties of the certificate
 
-        :returns:
+        :return:
             A list of the certificate properties
         """
         self._init()
@@ -61,6 +61,9 @@ class CertificateManager(object):
         certificate	  Required String. Base64-encoded certificate text, enclosed between `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
         ================  ===============================================================================
 
+        :return:
+            A boolean indicating success (True), or failure (False)
+
         .. code-block:: python
 
             # Usage Example
@@ -68,9 +71,6 @@ class CertificateManager(object):
             >>> gis.admin.certificates.add(name="certificate_name",
             >>>                            domain = "domain_name",
             >>>                            certificate = "certificate_text")
-
-        :returns:
-            A boolean indicating success (True), or failure (False)
 
         """
         url = self._url + "/register"
@@ -106,7 +106,7 @@ class CertificateManager(object):
 
             >>> gis.admin.certificates.get(cert_id= "certificate_id")
 
-        :returns:
+        :return:
             A Dictionary (if found), else None
 
         The dictionary contains the following information:
@@ -145,14 +145,14 @@ class CertificateManager(object):
         cert_id           Required String.  The ID of the certificate to delete.
         ================  ===============================================================================
 
+        :return:
+            A boolean indicating success (True), or failure (False)
+
         .. code-block:: python
 
             # Usage Example
 
             >>> gis.admin.certificates.delete(cert_id="certificate_id")
-
-        :returns:
-            A boolean indicating success (True), or failure (False)
 
         """
         url = self._url + "/{cert_id}/unregister".format(cert_id=cert_id)
@@ -182,6 +182,9 @@ class CertificateManager(object):
                           -----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
         ================  ===============================================================================
 
+        :return:
+            A boolean indicating success (True), or failure (False)
+
         .. code-block:: python
 
             # Usage Example
@@ -190,9 +193,6 @@ class CertificateManager(object):
             >>>                               name = "certificate_name",
             >>>                               domain ="certificate_domain",
             >>>                               certificate = "certificate_text")
-
-        :returns:
-            A boolean indicating success (True), or failure (False)
 
         """
         url = self._url + "/{cert_id}/update".format(cert_id=cert_id)
@@ -218,7 +218,7 @@ class CertificateManager(object):
         """
         The ``certificates`` property retrieves the list of certificates registered with the organization
 
-        :returns:
+        :return:
             A List containing the information of registered certificates
         """
         return self.properties.certificates

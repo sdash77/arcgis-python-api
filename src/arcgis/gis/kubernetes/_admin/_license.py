@@ -37,7 +37,7 @@ class LicenseManager:
                                the current authorizations.
         ==================     ====================================================================
 
-        :return: Bool
+        :return: Boolean. True if successful else False.
 
         """
         url = f"{self._url}/validateLicense"

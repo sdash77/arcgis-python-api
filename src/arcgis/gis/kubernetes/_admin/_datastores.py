@@ -42,7 +42,7 @@ class DataStore(_BaseKube):
         """
         Removes the datastore from the Kubernetes Site
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         if self.properties.systemManaged == False:
@@ -72,7 +72,7 @@ class DataStore(_BaseKube):
         primary while also downgrading the existing primary to act as
         standby. This operation may take some time to complete.
 
-        :returns: Boolean
+        :return: Boolean
         """
         url = self._url + "/switchRole"
         params = {"f": "json"}

@@ -85,7 +85,7 @@ class SpatialIndex:
 
         :bbox: tuple - (xmin,ymin,xmax,ymax)
 
-        :returns: list
+        :return: List of the intersecting features
         """
         if self._stype.lower() in ["rtree"]:
             return list(self._index.intersection(bbox))
@@ -125,7 +125,7 @@ class SpatialIndex:
 
         **This applies only to the R-Tree implementation of the spatial index.**
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         if hasattr(self._index, "flush"):

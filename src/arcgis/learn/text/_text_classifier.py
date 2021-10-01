@@ -125,7 +125,7 @@ class TextClassifier(ArcGISModel):
                             (DLPK) or Esri Model Definition(EMD) file.
     =====================   ===========================================
 
-    :returns: `TextClassifier` Object
+    :return: `TextClassifier` Object
     """
 
     # supported transformer backbones
@@ -286,7 +286,7 @@ class TextClassifier(ArcGISModel):
                                 https://huggingface.co/transformers/pretrained_models.html
         =====================   ===========================================
 
-        :returns: a tuple containing the available models for the given transformer backbone
+        :return: a tuple containing the available models for the given transformer backbone
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
@@ -318,7 +318,7 @@ class TextClassifier(ArcGISModel):
 
         =====================   ===========================================
 
-        :returns: `TextClassifier` Object
+        :return: `TextClassifier` Object
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
@@ -353,7 +353,7 @@ class TextClassifier(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `TextClassifier` model Object
+        :return: `TextClassifier` model Object
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
@@ -456,7 +456,7 @@ class TextClassifier(ArcGISModel):
                                 Learning Package (DLPK) file while saving the model.
         =====================   ===========================================
 
-        :returns: the qualified path at which the model is saved
+        :return: the qualified path at which the model is saved
         """
         from ..models._arcgis_model import _create_zip
 
@@ -526,7 +526,7 @@ class TextClassifier(ArcGISModel):
                                 Number of rows to print.
         =====================   ===========================================
 
-        :returns: dataframe
+        :return: dataframe
         """
         self._check_requisites()
         if kwargs.get("thresh") is None and self.is_multilabel_problem:
@@ -538,7 +538,7 @@ class TextClassifier(ArcGISModel):
         Calculates the following  metric:
             * accuracy:   the number of correctly predicted labels in the validation set
                           divided by the total number of items in the validation set
-        :returns: a floating point number depicting the accuracy of the classification model.
+        :return: a floating point number depicting the accuracy of the classification model.
         """
         try:
             self._check_requisites()
@@ -630,7 +630,7 @@ class TextClassifier(ArcGISModel):
                                 of 0.25 is set.
         =====================   ===========================================
 
-        :returns: * In case of single label classification problem, a tuple containing
+        :return: * In case of single label classification problem, a tuple containing
                   the text, its predicted class label and the confidence score.
 
                   * In case of multi label classification problem, a tuple containing
@@ -710,7 +710,7 @@ class TextClassifier(ArcGISModel):
 
     def metrics_per_label(self):
         """
-        :returns: precision, recall and f1 score for each label in the classification model.
+        :return: precision, recall and f1 score for each label in the classification model.
         """
         try:
             self._check_requisites()
@@ -789,7 +789,7 @@ samples. Metrics are only bieng calculated for classes present in the validation
 
     def get_misclassified_records(self):
         """
-        :returns: get misclassified records for this classification model.
+        :return: get misclassified records for this classification model.
         """
         self._check_requisites()
         validation_dataframe = self._data._valid_df

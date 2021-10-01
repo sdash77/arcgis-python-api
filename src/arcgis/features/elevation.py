@@ -66,7 +66,7 @@ def profile(
     future                                   Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
     =====================================    ===========================================================================
 
-    :Returns: Output Profile as a FeatureSet
+    :return: Output Profile as a FeatureSet
 
     .. code-block:: python
 
@@ -187,7 +187,7 @@ def viewshed(
     future                             Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
     ===============================    =========================================================
 
-    :returns: output_viewshed - Output Viewshed as a FeatureSet (polygons of visible areas for a given set of input observation points.)
+    :return: output_viewshed - Output Viewshed as a FeatureSet (polygons of visible areas for a given set of input observation points.)
 
     .. code-block:: python
 
@@ -263,7 +263,7 @@ def summarize_elevation(
     future                       Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
     =========================    =========================================================
 
-    :returns: result_layer : Output Summary as a FeatureSet
+    :return: result_layer : Output Summary as a FeatureSet
 
     .. code-block:: python
 

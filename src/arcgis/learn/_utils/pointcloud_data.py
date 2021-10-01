@@ -37,6 +37,7 @@ import shutil
 import copy
 from functools import partial
 import re
+import warnings
 
 logger = logging.getLogger()
 
@@ -894,7 +895,9 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
         keys = [k for k in keys if is_class_present(classes_of_interest, k, self.meta)]
 
     if len(keys) == 0:
-        logger.warn("No blocks remains after filtering based on `classes_of_interest`")
+        warnings.warn(
+            "No blocks remains after filtering based on `classes_of_interest`"
+        )
     keys = [k for k in keys if "train" in Path(k).parts]
     random.shuffle(keys)
 
@@ -1316,7 +1319,9 @@ def prepare_las_data(
         meta_file = {}
         meta_file["files"] = {}
         all_classes = set()
+        folder_classes = {}
         for itn in mb:
+            current_folder_classes = set()
             folder = folders[itn]
             path = output_path / Path(folder).stem
             total = 0
@@ -1348,6 +1353,9 @@ def prepare_las_data(
                     new_file.close()
                     unique_classes = np.unique(label_seg[i][: data_num[i]]).tolist()
                     all_classes = all_classes.union(unique_classes)
+                    current_folder_classes = current_folder_classes.union(
+                        unique_classes
+                    )
                     all_unique_classes.append(unique_classes)
                     total_points.append(int(data_num[i]))
                     file_idxs.append(i)
@@ -1357,6 +1365,7 @@ def prepare_las_data(
                     "unique_classes": all_unique_classes,
                     "total_points": total_points,
                 }
+                folder_classes[Path(folder).name] = list(current_folder_classes)
                 file.close()
                 os.remove(fn)
         meta_file["num_classes"] = len(all_classes)
@@ -1365,6 +1374,7 @@ def prepare_las_data(
         meta_file["num_extra_dim"] = len(extra_features)
         meta_file["extra_features"] = extra_features
         meta_file["block_size"] = block_size
+        meta_file["folder_classes"] = folder_classes
         with open(output_path / "meta.json", "w") as f:
             json.dump(meta_file, f)
 
@@ -1475,6 +1485,52 @@ def filter_files(fname, meta, classes_to_check, min_points):
     return is_present
 
 
+def raise_class_mismatch_warning(train_classes, valid_classes, remap_classes):
+
+    train_classes_mapped = list(set([remap_classes.get(c, c) for c in train_classes]))
+    valid_classes_mapped = list(set([remap_classes.get(c, c) for c in valid_classes]))
+
+    if sorted(train_classes) != sorted(valid_classes) and remap_classes == {}:
+        warnings.warn(
+            "Classes in your training and validation datasets are not same. "
+            "This will not affect training but will result in poor validation metrics. "
+            f"Got class codes {train_classes} in training dataset and {valid_classes} in validation dataset. "
+            "The model will be trained on union of the two class lists."
+            "If required, use the `remap_classes` parameter to map the extra class to one of the other classes."
+        )
+
+    elif sorted(train_classes_mapped) != sorted(valid_classes_mapped):
+        warnings.warn(
+            "Classes in your training and validation datasets are not same. "
+            "Remapped classes do not match. "
+            f"Got mapped class codes {train_classes_mapped} in training dataset and "
+            f"{valid_classes_mapped} in validation dataset. "
+        )
+
+
+def merge_classes(json_train, json_val, remap_classes):
+    class_train = [c["classCode"] for c in json_train["classification"]["table"]]
+    class_val = [c["classCode"] for c in json_val["classification"]["table"]]
+    if sorted(class_train) != sorted(class_val):
+        raise_class_mismatch_warning(class_train, class_val, remap_classes)
+    classification = json_train["classification"]
+
+    for c in json_val["classification"]["table"]:
+        if c["classCode"] not in class_train:
+            classification["table"].append(c)
+
+    classification["table"] = sorted(
+        classification["table"], key=lambda x: x["classCode"]
+    )
+    classification["max"] = max(
+        json_train["classification"]["max"], json_val["classification"]["max"]
+    )
+    classification["min"] = min(
+        json_train["classification"]["min"], json_val["classification"]["min"]
+    )
+    return classification
+
+
 # Prepare data called in _data.py
 def pointcloud_prepare_data(
     path,
@@ -1507,15 +1563,22 @@ def pointcloud_prepare_data(
     if dataset_type == "PointCloud":
         if already_split:
             # write code to merge json.
-            # TODO:: CHANGE THIS TO MERGE TRAIN and VAL statistics
             with open(path / "train" / "Statistics.json") as f:
-                json_file = json.load(f)
+                json_train = json.load(f)
+
+            with open(path / "val" / "Statistics.json") as f:
+                json_val = json.load(f)
+
+            classification = merge_classes(
+                json_train, json_val, kwargs.get("remap_classes", {})
+            )
+            json_train["classification"] = classification
 
             pointcloud_dataset_train = PointCloudDataset(
-                path, class_mapping, json_file, folder="train", **kwargs
+                path, class_mapping, json_train, folder="train", **kwargs
             )
             pointcloud_dataset_val = PointCloudDataset(
-                path, class_mapping, json_file, folder="val", **kwargs
+                path, class_mapping, json_train, folder="val", **kwargs
             )
             train_dl = DataLoader(
                 pointcloud_dataset_train, batch_size=batch_size, **databunch_kwargs
@@ -1589,6 +1652,13 @@ def pointcloud_prepare_data(
             raise Exception(
                 "`background_classcode can only be used when `classes_of_interest` is passed."
             )
+
+        if "folder_classes" in meta.keys():
+            folder_classes = meta["folder_classes"]
+            if sorted(folder_classes["train"]) != sorted(folder_classes["val"]):
+                raise_class_mismatch_warning(
+                    folder_classes["train"], folder_classes["val"], remap_classes
+                )
 
         if remap_classes != {}:
             to_be_remapped = list(remap_classes.keys())
@@ -1744,7 +1814,7 @@ def pointcloud_prepare_data(
         )
         if classes_of_interest != [] or min_points > 0:
             if old_exported_data_warning:
-                logger.warning(
+                warnings.warn(
                     "You are using exported data from an older version of the library. "
                     "Ignoring `classes_of_interest` and `min_points` parameters. "
                     "To use these features, please export your data again."
@@ -2351,7 +2421,7 @@ def raise_maxpoint_warning(
     if not save_html:
         if idx_file == 0:
             if "max_display_point" not in kwargs.keys():
-                logger.warning(
+                warnings.warn(
                     f"Randomly sampling {max_display_point} points for visualization. You can adjust this using the `max_display_point` parameter."
                 )
 
@@ -2786,7 +2856,7 @@ class Transform3d(object):
                             Default: 0.0.
     =====================   ===========================================
 
-    :returns: `Transform3d` object
+    :return: `Transform3d` object
     """
 
     def __init__(

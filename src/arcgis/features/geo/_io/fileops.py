@@ -153,7 +153,8 @@ def from_url(url: str) -> list:
     ---------------------------     --------------------------------------------------------------------
     url                             Required String. The web location of the compressed shapefile.
     ===========================     ====================================================================
-    :returns: List[pd.DataFrame]
+
+    :return: List[pd.DataFrame]
 
     """
 
@@ -299,7 +300,7 @@ def from_table(filename, **kwargs):
                         from the input with a new value.
     ===============     ====================================================
 
-    :returns: pd.DataFrame
+    :return: pd.DataFrame
 
     """
     filename = _ensure_path_string(filename)
@@ -352,7 +353,7 @@ def to_table(geo, location, overwrite=True):
                                     the table exists, and exception will be raised.
     ===========================     ====================================================================
 
-    :returns: String
+    :return: String
     """
     out_location = os.path.dirname(location)
     fc_name = os.path.basename(location)
@@ -455,7 +456,7 @@ def from_featureclass(filename, **kwargs):
                                     `arcpy` to work.
     ===========================     ====================================================================
 
-    :returns: pandas.core.frame.DataFrame
+    :return: pandas.core.frame.DataFrame
 
     """
     from arcgis.geometry import _types
@@ -704,7 +705,7 @@ def to_featureclass(
     ===============     ====================================================
 
 
-    :returns: string
+    :return: A string
 
     """
     out_location = os.path.dirname(location)

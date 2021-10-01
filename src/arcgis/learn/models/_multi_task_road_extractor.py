@@ -123,11 +123,16 @@ class MultiTaskRoadExtractor(ArcGISModel):
                                     Default:8
     =============================   =============================================
 
-    :returns: `MultiTaskRoadExtractor` Object
+    :return: `MultiTaskRoadExtractor` Object
     """
 
     def __init__(
-        self, data, backbone=None, pretrained_path=None, *args, **kwargs,
+        self,
+        data,
+        backbone=None,
+        pretrained_path=None,
+        *args,
+        **kwargs,
     ):
         # if data.sub_dataset_type != "RoadOrientation":
         #    raise Exception(
@@ -454,7 +459,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
                                 True.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         # self._check_requisites()
         if hasattr(self.learn.data, "emd") and (self._learning_rate is None):
@@ -489,7 +494,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         return "<%s>" % (type(self).__name__)
 
     def _get_road_orient_data(self, data, **kwargs):
-        # if (not self._data._imagery_type in ['RGB', 'ASSUMED_RGB']):
+        #    if (not self._data._imagery_type in ['RGB', 'ASSUMED_RGB']):
         #    # TODO: Implement Road Orientation model for MS imagery
         #    raise NotImplementedError('Road Orientation Model does not suppport Multispectral imagery yet!')
         road_data_obj = ClassifiedTilesData(
@@ -632,7 +637,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `Multi-Task Road Extractor` Object
+        :return: `Multi-Task Road Extractor` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

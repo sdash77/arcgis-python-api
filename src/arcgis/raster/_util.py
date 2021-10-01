@@ -1108,7 +1108,7 @@ def _upload(path, description=None, gis=None):
     description         Optional string. Descriptive text for the uploaded item.
     ===============     ====================================================================
 
-    :returns: A tuple of (Boolean, dict)
+    :return: A tuple of (Boolean, dict)
 
     """
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]

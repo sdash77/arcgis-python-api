@@ -986,7 +986,7 @@ def prepare_tabulardata(
                             a prefix for saving trained models and checkpoints.
     =====================   ===========================================
 
-    :returns: `TabularData` object
+    :return: `TabularData` object
 
     """
     if input_features is None and (
@@ -1273,7 +1273,7 @@ def prepare_data(
                             val_split_pct.
     =====================   ===========================================
 
-    :returns: data object
+    :return: data object
 
     """
     emd = {}
@@ -2053,7 +2053,17 @@ def prepare_data(
                     f"""Could not find a folder "images" in "{os.path.abspath(path)}",
                 \na folder "images" should be present in the supplied path to work with "Imagenet" data_type. """
                 )
-                
+
+        if (
+            dataset_type in ["Labeled_Tiles", "MultiLabeled_Tiles"]
+            and resize_to is None
+            and emd.get("CropTileMode", "Fixed_Size") == "Variable_Size"
+        ):
+            resize_to = chip_size
+            kwargs_transforms["size"] = resize_to
+            # Applying SQUISH ResizeMethod to avoid reflection padding
+            kwargs_transforms["resize_method"] = ResizeMethod.SQUISH
+
         if data_folders is None and images_df is None:
             if dataset_type=='Labeled_Tiles' and kwargs.get('stratify')!=False:
                 data = (

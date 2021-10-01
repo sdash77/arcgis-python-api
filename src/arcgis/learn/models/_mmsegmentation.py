@@ -215,7 +215,7 @@ class MMSegmentation(ModelExtension):
                             saved.
     =====================   ===========================================
 
-    :returns: ``MMSegmentation`` Object
+    :return: ``MMSegmentation`` Object
     """
 
     def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
@@ -310,7 +310,7 @@ class MMSegmentation(ModelExtension):
 
         =====================   ===========================================
 
-        :returns: `MMSegmentation` Object
+        :return: `MMSegmentation` Object
         """
         emd_path = _get_emd_path(emd_path)
 

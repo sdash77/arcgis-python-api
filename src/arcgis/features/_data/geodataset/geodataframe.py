@@ -1317,7 +1317,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         sr                      Optional int.  The wkid number of the spatial reference.
         ====================    =========================================================
 
-        :returns: SpatialDataFrame
+        :return: SpatialDataFrame
 
         """
         from .io.fileops import _from_xy
@@ -1346,7 +1346,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                                 specified, the active GIS's first geocoder is used.
         ====================    =========================================================
 
-        :returns: SpatialDataFrame
+        :return: SpatialDataFrame
 
 
 
@@ -1418,7 +1418,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         sr                      Optional SpatialReference. A spatial reference object
         ====================    =========================================================
 
-        :returns: SpatialDataFrame
+        :return: SpatialDataFrame
 
         """
         from .io import from_featureclass
@@ -1446,7 +1446,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         layer            required FeatureLayer/Table. This is the service endpoint object.
         ==============   ==============================================================
 
-        :returns: SpatialDataFrame for feature layers with geometry and Panda's Dataframe for tables
+        :return: SpatialDataFrame for feature layers with geometry and Panda's Dataframe for tables
 
         """
         from .io import from_layer
@@ -1472,7 +1472,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         skip_invalids           Optional boolean. If True, any bad rows will be ignored.
         ====================    =========================================================
 
-        :returns: string
+        :return: A string
 
         """
         from .io import to_featureclass
@@ -1595,7 +1595,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         global_id_field        Optional string. The Global ID field of the dataset.
         =====================  ===============================================================
 
-        :returns: FeatureCollection object
+        :return: :class:`~arcgis.features.FeatureCollection`
         """
         from arcgis.features import FeatureCollection
         import uuid
@@ -1808,7 +1808,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                                         service
         ===========================     ====================================================================
 
-        :returns: FeatureLayer
+        :return: :class:`~arcgis.features.FeatureLayer`
 
         """
         from arcgis import env
@@ -1845,7 +1845,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                                         DataFrame.
         ===========================     ====================================================================
 
-        :returns: SpatialDataFrame
+        :return: SpatialDataFrame
 
         """
         if inplace:
@@ -2030,7 +2030,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                                         place (do not create a new object)
         ===========================     ====================================================================
 
-        :returns: SpatialDataFrame
+        :return: SpatialDataFrame
 
         """
         if HASARCPY:
@@ -2084,7 +2084,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                                         to the dataframe with the results of the select by location.
         ===========================     ====================================================================
 
-        :returns: SpatialDataFrame
+        :return: SpatialDataFrame
 
         """
         if isinstance(other, Geometry):
@@ -2112,7 +2112,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         other                           Required SpatialDataFrame. Another SpatialDataFrame to combine.
         ===========================     ====================================================================
 
-        :returns: SpatialDataFrame
+        :return: SpatialDataFrame
 
         """
         if (
@@ -2146,7 +2146,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                                         place (do not create a new object)
         ===========================     ====================================================================
 
-        :returns: SpatialDataFrame
+        :return: SpatialDataFrame
         """
         if inplace:
             df = self
