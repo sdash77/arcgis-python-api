@@ -1,6 +1,8 @@
 from ._feed import Feed
 from ._util import _Util
+import logging
 
+_LOGGER = logging.getLogger(__name__)
 
 class FeedsManager:
     """
@@ -26,8 +28,15 @@ class FeedsManager:
         :return: returns a collection of all configured Feed tasks
         """
         all_feeds_response = self._util._get_request("feeds")
-        feed_items = [Feed(self._gis, self._util, feed) for feed in all_feeds_response]
-        return feed_items
+        if all_feeds_response is not None and type(all_feeds_response) is list:
+            feed_items = [Feed(self._gis, self._util, feed) for feed in all_feeds_response]
+            return feed_items
+        elif all_feeds_response is None:
+            _LOGGER.warning("No Feed items found for the user.")
+            return []
+        else:
+            raise Exception(f"Error retrieving Feed items. Velocity response: ${all_feeds_response}")
+
 
     # ----------------------------------------------------------------------
     def get(self, id):
