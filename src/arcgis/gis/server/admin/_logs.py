@@ -278,6 +278,7 @@ class LogManager(BaseServer):
         # pass the end time as the startTime parameter
         # for the next request to get the next set of records
         loop = 0
+        new_logs = {}
         while max_records_return > 1:
             if has_more:
                 # get new start time from logs endTime in first loop then from new_logs endTime after
@@ -297,6 +298,8 @@ class LogManager(BaseServer):
                 # append new log messages to logs to return
                 for log_message in new_logs["logMessages"]:
                     logs["logMessages"].append(log_message)
+                else:
+                    break
         # if export true then no values returned, file written to
         if export is True and out_path is not None:
 
