@@ -62,7 +62,7 @@ def _inspect_function_inputs(fn, **params):
     a new dictionary.  This method is used primarily to validate GP services and ensure
     that the parameters given are supported in the current version of the tool.
 
-    :returns: dictionary
+    :return: dictionary
 
     Example:
 
@@ -2183,13 +2183,17 @@ class _FeatureAnalysisTools(BaseAnalytics):
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        input_layer       Required FeatureLayer. The multipoint, line, or polygon features that will be used to generate centroid point features.
+        input_layer       Required :class:`~arcgis.features.FeatureLayer`.
+                          The multipoint, line, or polygon features that will be used to
+                          generate centroid point features.
         ----------------  ---------------------------------------------------------------
         point_location    Optional Boolean. A Boolean value that determines the output location of the points.
 
 
-                          + true - Output points will be the nearest point to the actual centroid, but located inside or contained by the bounds of the input feature.
-                          + false - Output point locations will be determined by the calculated geometric center of each input feature. This is the default.
+                          + true - Output points will be the nearest point to the actual centroid,
+                            but located inside or contained by the bounds of the input feature.
+                          + false - Output point locations will be determined by the calculated geometric
+                            center of each input feature. This is the default.
 
 
         ----------------  ---------------------------------------------------------------
@@ -2200,7 +2204,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         estimate          Optional Boolean. Returns the number of credit for the operation.
         ================  ===============================================================
 
-        :Returns: output_layer - Feature Layer or Feature Collection
+        :return: output_layer - :class:`~arcgis.features.FeatureLayer` or :class:`~arcgis.features.FeatureCollection`
 
         """
         task = "FindCentroids"
@@ -2716,7 +2720,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                 credits for the current task.
         ====================    =========================================================
 
-        :returns: Python dictionary with the following keys:
+        :return: Python dictionary with the following keys:
             "point_clusters_result_layer" : layer (FeatureCollection)
             "process_info" : list of messages
         """
@@ -3516,7 +3520,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                 credits for the current task.
         ====================    =========================================================
 
-        :returns:
+        :return:
         If an output_name is provided, a
 
         Python dictionary with the following keys:
@@ -4096,7 +4100,7 @@ class _PackagingTools(object):
         future                     Optional Boolean.  If true, the operation will occur in an asynchronous manner.
         ========================   ====================================================================
 
-        :returns: ToolOutput or GPJob
+        :return: ToolOutput or GPJob
 
         """
         import uuid
@@ -4134,7 +4138,7 @@ class _PackagingTools(object):
         packages                                                                    List Items.  A JSON array consisting of packages that need to be refreshed, specified with the ID of each package item. Packages can belong to different map areas. A package item should only be listed if you are the owner of the package item or organization administrators.
         =========================================================================   ===========================================================================
 
-        :returns: Job, ToolOutput or Dict
+        :return: Job, ToolOutput or Dict
 
         """
         res = []
@@ -4215,7 +4219,7 @@ class _PackagingTools(object):
                                                                                     ]
         =========================================================================   ===========================================================================
 
-        :returns: Job, ToolOutput or Dict
+        :return: Job, ToolOutput or Dict
 
 
         """
@@ -4388,7 +4392,7 @@ class _HydrologyTool:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns:
+        :return:
 
 
         """
@@ -4479,7 +4483,7 @@ class _HydrologyTool:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns:
+        :return:
 
         """
         tool = self._tbx.watershed
@@ -4815,7 +4819,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -4927,7 +4931,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5030,7 +5034,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Dictionary
+        :return: Dictionary
 
         """
         gis = self._gis
@@ -5113,7 +5117,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5210,7 +5214,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5296,7 +5300,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5429,7 +5433,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5528,7 +5532,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5584,7 +5588,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
 
         """
@@ -5630,7 +5634,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
 
 
@@ -5696,7 +5700,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: GPJob or Pandas' DataFrame
+        :return: GPJob or Pandas' DataFrame
 
         """
         gis = self._gis
@@ -5730,7 +5734,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -5770,7 +5774,7 @@ class _OrthoMappingTools:
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :return: Named Tuple
 
         """
         gis = self._gis
@@ -9199,7 +9203,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         """
         Lists the deep learning models registered with the site
 
-        :returns: List
+        :return: List
 
         """
         task = "ListDeepLearningModels"

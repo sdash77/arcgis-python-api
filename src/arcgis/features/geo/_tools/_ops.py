@@ -62,7 +62,7 @@ def contains(sdf, other, relation="CLEMENTINI"):
                                  PROPER - Boundaries of geometries must not intersect.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -122,7 +122,7 @@ def crosses(sdf, other):
     other                        Required Spatially Enabled DataFrame or arcgis.Geometry.  This is the selecting data.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -177,7 +177,7 @@ def disjoint(sdf, other):
     other                        Required Spatially Enabled DataFrame or arcgis.Geometry.  This is the selecting data.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -233,7 +233,7 @@ def equals(sdf, other):
     other                        Required Spatially Enabled DataFrame or arcgis.Geometry.  This is the selecting data.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -289,7 +289,7 @@ def overlaps(sdf, other):
     other                        Required Spatially Enabled DataFrame or arcgis.Geometry.  This is the selecting data.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -348,7 +348,7 @@ def touches(sdf, other):
     other                        Required Spatially Enabled DataFrame or arcgis.Geometry.  This is the selecting data.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -413,7 +413,7 @@ def within(sdf, other, relation="CLEMENTINI"):
                                  PROPER - Boundaries of geometries must not intersect.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY

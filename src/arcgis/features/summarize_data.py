@@ -35,74 +35,110 @@ def aggregate_points(
 
     The Aggregate Points task works with a layer of point features and a layer of polygon features. It first figures out which points fall within each polygon's area.
     After determining this point-in-polygon spatial relationship, statistics about all points in the polygon are calculated and assigned to the area. The most basic statistic is the count of the number of points within the polygon, but you can get other statistics as well.
+
     For example, if your points represented coffee shops and each point has a TOTAL_SALES attribute, you can get statistics like the sum of all TOTAL_SALES within the polygon, or the minimum or maximum TOTAL_SALES value, or the standard deviation of all sales within the polygon.
 
-    ====================================     ====================================================================
-    **Parameter**                            **Description**
-    ------------------------------------     --------------------------------------------------------------------
-    point_layer                              Required point layer. The point features that will be aggregated into the polygons in the polygon_layer. See :ref:`Feature Input<FeatureInput>`.
-    ------------------------------------     --------------------------------------------------------------------
-    polygon_layer                            Optional polygon layer. The polygon features (areas) into which the input points will be aggregated. See :ref:`Feature Input<FeatureInput>`. The `polygon_layer` is **required** if the `bin_type`, `bin_size` and `bin_size_unit` are not specified.
-    ------------------------------------     --------------------------------------------------------------------
-    keep_boundaries_with_no_points           Optional boolean. A Boolean value that specifies whether the polygons that have no points within them should be returned in the output. The default is true.
-    ------------------------------------     --------------------------------------------------------------------
-    summary_fields                           Optional list of strings. A list of field names and statistical summary type that you wish to calculate for all points within each polygon.
-                                             Note that the count of points within each polygon is always returned.
-                                             summary type is one of the following:
+    ====================================    ====================================================================
+    **Parameter**                           **Description**
+    ------------------------------------    --------------------------------------------------------------------
+    point_layer                             Required point layer. The point features that will be aggregated
+                                            into the polygons in the polygon_layer. See :ref:`Feature Input<FeatureInput>`.
+    ------------------------------------    --------------------------------------------------------------------
+    polygon_layer                           Optional polygon layer. The polygon features (areas) into which the input points will be aggregated. See :ref:`Feature Input<FeatureInput>`. The `polygon_layer` is **required** if the `bin_type`, `bin_size` and `bin_size_unit` are not specified.
+    ------------------------------------    --------------------------------------------------------------------
+    keep_boundaries_with_no_points          Optional boolean. A Boolean value that specifies whether the polygons that have no points within them should be returned in the output. The default is true.
+    ------------------------------------    --------------------------------------------------------------------
+    summary_fields                          Optional list of strings. A list of field names and statistical summary type that you wish to calculate for all points within each polygon.
+                                            Note that the count of points within each polygon is always returned.
+                                            summary type is one of the following:
 
-                                             * Sum - Adds the total value of all the points in each polygon
-                                             * Mean - Calculates the average of all the points in each polygon.
-                                             * Min - Finds the smallest value of all the points in each polygon.
-                                             * Max - Finds the largest value of all the points in each polygon.
-                                             * Stddev - Finds the standard deviation of all the points in each polygon.
-                                             Example [fieldName1 summaryType1,fieldName2 summaryType2].
-    ------------------------------------     --------------------------------------------------------------------
-    group_by_field                           Optional string. A field name in the point_layer. Points that have the same value for the group by field will have their own counts and summary field statistics. You can create statistical groups using an attribute in the analysis layer. For example, if you are aggregating crimes to neighborhood boundaries, you may have an attribute Crime_type with five different crime types. Each unique crime type forms a group, and the statistics you choose will be calculated for each unique value of Crime_type. When you choose a grouping attribute, two results are created: the result layer and a related table containing the statistics.
-    ------------------------------------     --------------------------------------------------------------------
-    minority_majority                        Optional boolean. This boolean parameter is applicable only when a group_by_field is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values for each group field within each boundary are calculated. Two new fields are added to the aggregated_layer prefixed with Majority_ and Minority_.
-                                             The default is false.
-    ------------------------------------     --------------------------------------------------------------------
-    percent_points                           Optional boolean. This boolean parameter is applicable only when a group_by_field is specified. If set to true, the percentage count of points for each unique group_by_field value is calculated. A new field is added to the group summary output table containing the percentages of each attribute value within each group. If minority_majority is true, two additional fields are added to the aggregated_layer containing the percentages of the minority and majority attribute values within each group.
-    ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional string. Output Features Name (str). Optional parameter.
-    ------------------------------------     --------------------------------------------------------------------
-    context                                  Optional dict. Additional settings such as processing extent and output spatial reference. For aggregate_points, there are three settings.
+                                            * Sum - Adds the total value of all the points in each polygon
+                                            * Mean - Calculates the average of all the points in each polygon.
+                                            * Min - Finds the smallest value of all the points in each polygon.
+                                            * Max - Finds the largest value of all the points in each polygon.
+                                            * Stddev - Finds the standard deviation of all the points in each polygon.
+                                            Example [fieldName1 summaryType1,fieldName2 summaryType2].
+    ------------------------------------    --------------------------------------------------------------------
+    group_by_field                          Optional string. A field name in the point_layer. Points that have
+                                            the same value for the group by field will have their own counts and
+                                            summary field statistics. You can create statistical groups using an
+                                            attribute in the analysis layer.
+                                            For example, if you are aggregating crimes to neighborhood boundaries,
+                                            you may have an attribute Crime_type with five different crime types.
+                                            Each unique crime type forms a group, and the statistics you choose will
+                                            be calculated for each unique value of Crime_type. When you choose
+                                            a grouping attribute, two results are created: the result layer and a
+                                            related table containing the statistics.
+    ------------------------------------    --------------------------------------------------------------------
+    minority_majority                       Optional boolean. This boolean parameter is applicable only when a
+                                            group_by_field is specified. If true, the minority (least dominant) or
+                                            the majority (most dominant) attribute values for each group field
+                                            within each boundary are calculated. Two new fields are added to the
+                                            aggregated_layer prefixed with Majority_ and Minority_.
+                                            The default is false.
+    ------------------------------------    --------------------------------------------------------------------
+    percent_points                          Optional boolean. This boolean parameter is applicable only when a
+                                            group_by_field is specified. If set to true, the percentage count of
+                                            points for each unique group_by_field value is calculated.
+                                            A new field is added to the group summary output table containing the
+                                            percentages of each attribute value within each group.
 
-                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                            If minority_majority is true, two additional fields are added to the
+                                            aggregated_layer containing the percentages of the minority and majority
+                                            attribute values within each group.
+    ------------------------------------    --------------------------------------------------------------------
+    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                            feature layer will cause the new layer to be appended to the Feature Service.
+                                            If overwrite is True in context, new layer will overwrite existing layer.
+                                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    ------------------------------------    --------------------------------------------------------------------
+    context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                            For aggregate_points, there are three settings.
 
-                                                    .. code-block:: python
+                                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+
+                                                .. code-block:: python
+
                                                     # Example Usage
-
                                                     context = {"extent": {"xmin": 3164569.408035,
-                                                                            "ymin": -9187921.892449,
-                                                                            "xmax": 3174104.927313,
-                                                                            "ymax": -9175500.875353,
-                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                        "ymin": -9187921.892449,
+                                                                        "xmax": 3174104.927313,
+                                                                        "ymax": -9175500.875353,
+                                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
                                                                 "outSR": {"wkid": 3857},
                                                                 "overwrite": True}
-    ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    ------------------------------------     --------------------------------------------------------------------
-    estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
-    ------------------------------------     --------------------------------------------------------------------
-    future                                   Optional Boolean. When True, the task will be performed asynchronously.
-    ------------------------------------     --------------------------------------------------------------------
-    bin_type                                 Optional String. The type of bin that will be generated and points will be aggregated into. Bin options are as follows: Hexagon and Square.
-                                             Square is the Default. When generating bins, for Square, the number and units specified determine the height and length of the square.
-                                             For Hexagon, the number and units specified determine the distance between parallel sides. Either `bin_type` or `polygon_layer` must be
-                                             specified. If `bin_type` is chosen, then `bin_size` and `bin_size_unit` specifying the size of the bins must be included.
-    ------------------------------------     --------------------------------------------------------------------
-    bin_size                                 Optional Float. The distance for the bins of type `bin_type` that the `point_layer` will be aggregated into. When generating bins for
-                                             `Square` the number and units specified determine the height and length of the square. For `Hexagon`, the number and units specified
-                                             determine the distance between parallel sides.
-    ------------------------------------     --------------------------------------------------------------------
-    bin_size_unit                            Optional String. The linear unit to be used with the distance value specified in `bin_size`.
-                                             Values: `Meters, Kilometers, Feet, Miles, NauticalMiles, or Yards`
-    ====================================     ====================================================================
+    ------------------------------------    --------------------------------------------------------------------
+    gis                                     Optional, the GIS on which this tool runs.
+                                            If not specified, the active GIS is used.
+    ------------------------------------    --------------------------------------------------------------------
+    estimate                                Optional Boolean. If True, the number of credits to run the operation
+                                            will be returned.
+    ------------------------------------    --------------------------------------------------------------------
+    future                                  Optional Boolean. When True, the task will be performed asynchronously.
+    ------------------------------------    --------------------------------------------------------------------
+    bin_type                                Optional String. The type of bin that will be generated and points
+                                            will be aggregated into. Bin options are as follows: Hexagon and Square.
+                                            Square is the Default. When generating bins, for Square, the number and
+                                            units specified determine the height and length of the square.
+                                            For Hexagon, the number and units specified determine the distance
+                                            between parallel sides. Either `bin_type` or `polygon_layer` must be
+                                            specified. If `bin_type` is chosen, then `bin_size` and `bin_size_unit`
+                                            specifying the size of the bins must be included.
+    ------------------------------------    --------------------------------------------------------------------
+    bin_size                                Optional Float. The distance for the bins of type
+                                            `bin_type` that the `point_layer` will be aggregated into.
+                                            When generating bins for `Square` the number and units specified determine
+                                            the height and length of the square. For `Hexagon`, the number and units
+                                            specified determine the distance between parallel sides.
+    ------------------------------------    --------------------------------------------------------------------
+    bin_size_unit                           Optional String. The linear unit to be used with the distance value
+                                            specified in `bin_size`.
+                                            Values: `Meters, Kilometers, Feet, Miles, NauticalMiles, or Yards`
+    ====================================    ====================================================================
 
-    :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
 
     .. code-block:: python
@@ -178,182 +214,184 @@ def summarize_nearby(
     * Calculate the number of freeway access ramps within a one-mile driving distance of a proposed new store location to use as a measure of
       store accessibility.
 
-    =========================    ====================================================================================================================
-    **Parameter**                **Description**
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    sum_nearby_layer             Required feature layer. Point, line, or polygon features from which distances will be measured to features in the ``summary_layer``. See :ref:`Feature Input<FeatureInput>`.
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    summary_layer                Required layer. Point, line, or polygon features. Features in this layer that are within the specified distance to features in the ``sum_nearby_layer`` will be summarized. See :ref:`Feature Input<FeatureInput>`.
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    near_type                    Optional string.
-                                 Defines what kind of distance measurement you want to use, either straight-line distance, travel
-                                 time or travel distance along a street network using various modes of transportation known as travel modes.
-                                 The default is ``StraightLine``.
+    =========================   ====================================================================================================================
+    **Parameter**               **Description**
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    sum_nearby_layer            Required feature layer. Point, line, or polygon features from which distances will be measured to features in the ``summary_layer``. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    summary_layer               Required layer. Point, line, or polygon features. Features in this layer that are within the specified distance to features in the ``sum_nearby_layer`` will be summarized. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    near_type                   Optional string.
+                                Defines what kind of distance measurement you want to use, either straight-line distance, travel
+                                time or travel distance along a street network using various modes of transportation known as travel modes.
+                                The default is ``StraightLine``.
 
-                                 Choice list:
+                                Choice list:
 
-                                 * ``StraightLine``,
-                                 * ``Driving Distance``,
-                                 * ``Driving Time``,
-                                 * ``Rural Driving Distance``,
-                                 * ``Rural Driving Time``,
-                                 * ``Trucking Distance``,
-                                 * ``Trucking Time``,
-                                 * ``Walking Distance``,
-                                 * ``Walking Time``
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    distances                    Optional list of float values. Defines the search distance for 'StraightLine' and distance-based travel modes, or time
-                                 duration for time-based travel modes. You can enter single or multiple values, separating each value with a space.
-                                 Features that are within (or equal to) the distances you enter will be summarized. The unit for `distances` is
-                                 supplied by the units parameter.
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    units                        Optional string. If :attr:`near_type` is `StraightLine` or a distance-based travel mode, this is the linear unit to be
-                                 used with the distance value(s) specified in distances.
+                                * ``StraightLine``,
+                                * ``Driving Distance``,
+                                * ``Driving Time``,
+                                * ``Rural Driving Distance``,
+                                * ``Rural Driving Time``,
+                                * ``Trucking Distance``,
+                                * ``Trucking Time``,
+                                * ``Walking Distance``,
+                                * ``Walking Time``
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    distances                   Optional list of float values. Defines the search distance for 'StraightLine' and distance-based travel modes, or time
+                                duration for time-based travel modes. You can enter single or multiple values, separating each value with a space.
+                                Features that are within (or equal to) the distances you enter will be summarized. The unit for `distances` is
+                                supplied by the units parameter.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    units                       Optional string. If :attr:`near_type` is `StraightLine` or a distance-based travel mode, this is the linear unit to be
+                                used with the distance value(s) specified in distances.
 
-                                 Choice list:
-                                 | [``Meters``, ``Kilometers``, ``Feet``, ``Yards``, ``Miles``]
+                                Choice list:
+                                | [``Meters``, ``Kilometers``, ``Feet``, ``Yards``, ``Miles``]
 
-                                 If ``near_type`` is a time-based travel mode, the following values can be used as units:
+                                If ``near_type`` is a time-based travel mode, the following values can be used as units:
 
-                                 Choice list:
+                                Choice list:
 
-                                 | [``Seconds``, ``Minutes``, ``Hours``]
+                                | [``Seconds``, ``Minutes``, ``Hours``]
 
-                                 The default is 'Meters'.
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    time_of_day                  Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use traffic in the analysis,
-                                 set ``near_type`` to a travel mode object whose impedance_attribute_name property is set to travel_time and assign a value
-                                 to ``time_of_day``. (A travel mode with other impedance_attribute_name values don't support traffic.) The ``time_of_day`` value represents
-                                 the time at which travel begins, or departs, from the origin points. The time is specified as datetime.datetime.
+                                The default is 'Meters'.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    time_of_day                 Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use traffic in the analysis,
+                                set ``near_type`` to a travel mode object whose impedance_attribute_name property is set to travel_time and assign a value
+                                to ``time_of_day``. (A travel mode with other impedance_attribute_name values don't support traffic.) The ``time_of_day`` value represents
+                                the time at which travel begins, or departs, from the origin points. The time is specified as datetime.datetime.
 
-                                 The service supports two kinds of traffic: typical and live. Typical traffic references travel speeds that are made up of historical
-                                 averages for each five-minute interval spanning a week. Live traffic retrieves speeds from a traffic feed that processes phone probe
-                                 records, sensors, and other data sources to record actual travel speeds and predict speeds for the near future.
+                                The service supports two kinds of traffic: typical and live. Typical traffic references travel speeds that are made up of historical
+                                averages for each five-minute interval spanning a week. Live traffic retrieves speeds from a traffic feed that processes phone probe
+                                records, sensors, and other data sources to record actual travel speeds and predict speeds for the near future.
 
-                                 The `data coverage <http://www.arcgis.com/home/webmap/viewer.html?webmap=b7a893e8e1e04311bd925ea25cb8d7c7>`_ page shows the countries
-                                 Esri currently provides traffic data for.
+                                The `data coverage <http://www.arcgis.com/home/webmap/viewer.html?webmap=b7a893e8e1e04311bd925ea25cb8d7c7>`_ page shows the countries
+                                Esri currently provides traffic data for.
 
-                                 Typical Traffic:
+                                Typical Traffic:
 
-                                 To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day
-                                 of the week to one of the following dates from 1990:
+                                To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day
+                                of the week to one of the following dates from 1990:
 
-                                 * Monday - 1/1/1990
-                                 * Tuesday - 1/2/1990
-                                 * Wednesday - 1/3/1990
-                                 * Thursday - 1/4/1990
-                                 * Friday - 1/5/1990
-                                 * Saturday - 1/6/1990
-                                 * Sunday - 1/7/1990
-                                 Set the time and date as datetime.datetime.
+                                * Monday - 1/1/1990
+                                * Tuesday - 1/2/1990
+                                * Wednesday - 1/3/1990
+                                * Thursday - 1/4/1990
+                                * Friday - 1/5/1990
+                                * Saturday - 1/6/1990
+                                * Sunday - 1/7/1990
+                                Set the time and date as datetime.datetime.
 
-                                 For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to
-                                 datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
+                                For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to
+                                datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
 
-                                 Live Traffic:
+                                Live Traffic:
 
-                                 To use live traffic when and where it is available, choose a time and date and convert to datetime.
+                                To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                 Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
-                                 specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window,
-                                 the task falls back to typical traffic speeds.
+                                Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window,
+                                the task falls back to typical traffic speeds.
 
-                                 Examples:
-                                 from datetime import datetime
+                                Examples:
+                                from datetime import datetime
 
-                                 * ``time_of_day``- datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
-                                 * ``time_of_day``- datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
-                                 * ``time_of_day``- datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014,
-                                   live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
-                                 * ``time_of_day``- datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015,
-                                   live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+                                * ``time_of_day``- datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
+                                * ``time_of_day``- datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
+                                * ``time_of_day``- datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014,
+                                live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+                                * ``time_of_day``- datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015,
+                                live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    time_zone_for_time_of_day   Optional string. Specify the time zone or zones of the ``time_of_day`` parameter.
 
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    time_zone_for_time_of_day     Optional string. Specify the time zone or zones of the ``time_of_day`` parameter.
+                                Choice list: ['GeoLocal', 'UTC']
 
-                                  Choice list: ['GeoLocal', 'UTC']
+                                GeoLocal-refers to the time zone in which the originsLayer points are located.
 
-                                  GeoLocal-refers to the time zone in which the originsLayer points are located.
+                                UTC-refers to Coordinated Universal Time.
 
-                                  UTC-refers to Coordinated Universal Time.
+                                The default is 'GeoLocal'.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    return_boundaries           Optional boolean. If true, the ``result_layer`` will contain areas defined by the specified ``near_type``. For example, if using 'StraightLine' of 5 miles,
+                                the ``result_layer`` will contain areas with a 5 mile radius around the input ``sum_nearby_layer`` features.
 
-                                  The default is 'GeoLocal'.
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    return_boundaries            Optional boolean. If true, the ``result_layer`` will contain areas defined by the specified ``near_type``. For example, if using 'StraightLine' of 5 miles,
-                                 the ``result_layer`` will contain areas with a 5 mile radius around the input ``sum_nearby_layer`` features.
+                                If False, the ``result_ayer`` will contain the same features as the ``sum_nearby_layer``.
 
-                                 If False, the ``result_ayer`` will contain the same features as the ``sum_nearby_layer``.
+                                The default is True.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    sum_shape                   Optional boolean. A boolean value that instructs the task to calculate statistics based on shape type of the ``summary_layer``,
+                                such as the length of lines or areas of polygons of the ``summary_layer`` within each polygon in ``sum_within_layer``.
 
-                                 The default is True.
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    sum_shape                    Optional boolean. A boolean value that instructs the task to calculate statistics based on shape type of the ``summary_layer``,
-                                 such as the length of lines or areas of polygons of the ``summary_layer`` within each polygon in ``sum_within_layer``.
+                                The default is True.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    shape_units                 Optional string. If ``sum_shape`` is true, you must specify the units of the shape summary.
+                                Values:
 
-                                 The default is True.
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    shape_units                  Optional string. If ``sum_shape`` is true, you must specify the units of the shape summary.
-                                 Values:
+                                * When ``summary_layer`` contains polygons: Values: ['Acres', 'Hectares', 'SquareMeters', 'SquareKilometers', 'SquareFeet', 'SquareYards', 'SquareMiles']
+                                * When ``summary_layer`` contains lines: Values: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    summary_fields              Optional list of strings.A list of field names and statistical summary types that you want to calculate.
+                                Note that the count is always returned by default.
 
-                                 When ``summary_layer`` contains polygons: Values: ['Acres', 'Hectares', 'SquareMeters', 'SquareKilometers', 'SquareFeet', 'SquareYards', 'SquareMiles']
-                                 When ``summary_layer`` contains lines: Values: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    summary_fields               Optional list of strings.A list of field names and statistical summary types that you want to calculate.
-                                 Note that the count is always returned by default.
+                                fieldName is the name of one of the numeric fields found in the input join layer.
 
-                                 fieldName is the name of one of the numeric fields found in the input join layer.
+                                statisticType is one of the following:
 
-                                 statisticType is one of the following:
+                                * ``SUM``-Adds the total value of all the points in each polygon
+                                * ``MEAN``-Calculates the average of all the points in each polygon
+                                * ``MIN``-Finds the smallest value of all the points in each polygon
+                                * ``MAX``-Finds the largest value of all the points in each polygon
+                                * ``STDDEV``-Finds the standard deviation of all the points in each polygon
 
-                                 * ``SUM``-Adds the total value of all the points in each polygon
-                                 * ``MEAN``-Calculates the average of all the points in each polygon
-                                 * ``MIN``-Finds the smallest value of all the points in each polygon
-                                 * ``MAX``-Finds the largest value of all the points in each polygon
-                                 * ``STDDEV``-Finds the standard deviation of all the points in each polygon
+                                Example: ["fieldName summaryType","fieldName summaryType", ...]
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    group_by_field              Optional string. This is a field of the ``summary_layer`` features that you can use to calculate statistics separately for each unique attribute value.
+                                For example, suppose the ``summary_layer`` contains point locations of businesses that store hazardous materials, and one of the fields is HazardClass
+                                containing codes that describe the type of hazardous material stored. To calculate summaries by each unique value of HazardClass, use HazardClass as
+                                the ``group_by_field`` field.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    minority_majority           Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified. If true, the minority (least dominant) or the
+                                majority (most dominant) attribute values for each group field within each nearby area are calculated. Two new fields are added to
+                                the ``result_layer`` prefixed with Majority_ and Minority_.
 
-                                 Example: ["fieldName summaryType","fieldName summaryType", ...]
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    group_by_field               Optional string. This is a field of the ``summary_layer`` features that you can use to calculate statistics separately for each unique attribute value.
-                                 For example, suppose the ``summary_layer`` contains point locations of businesses that store hazardous materials, and one of the fields is HazardClass
-                                 containing codes that describe the type of hazardous material stored. To calculate summaries by each unique value of HazardClass, use HazardClass as
-                                 the ``group_by_field`` field.
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    minority_majority            Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified. If true, the minority (least dominant) or the
-                                 majority (most dominant) attribute values for each group field within each nearby area are calculated. Two new fields are added to
-                                 the ``result_layer`` prefixed with Majority_ and Minority_.
+                                The default is False.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    percent_shape               Optional boolean. This Boolean parameter is applicable only when a ``group_by_field`` is specified. If set to true,
+                                the percentage of each unique ``group_by_field`` value is calculated for each ``sum_nearby_layer`` feature.
 
-                                 The default is False.
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    percent_shape                Optional boolean. This Boolean parameter is applicable only when a ``group_by_field`` is specified. If set to true,
-                                 the percentage of each unique ``group_by_field`` value is calculated for each ``sum_nearby_layer`` feature.
+                                The default is False.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    output_name                 Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                feature layer will cause the new layer to be appended to the Feature Service.
+                                If overwrite is True in context, new layer will overwrite existing layer.
+                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    context                     Optional dict. Additional settings such as processing extent and output spatial reference.
+                                For summarize_nearby, there are three settings.
 
-                                 The default is False.
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    output_name                  Optional string. If provided, the task will create a feature service of the results. You define the name of the service.
-                                 If ``output_name`` is not supplied, the task will return a feature collection.
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    context                      Optional dict. Additional settings such as processing extent and output spatial reference. For summarize_nearby, there are three settings.
+                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                    .. code-block:: python
 
-                                 .. code-block:: python
-                                    # Example Usage
-
-                                    context = {"extent": {"xmin": 3164569.408035,
+                                        # Example Usage
+                                        context = {"extent": {"xmin": 3164569.408035,
                                                             "ymin": -9187921.892449,
                                                             "xmax": 3174104.927313,
                                                             "ymax": -9175500.875353,
                                                             "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                "outSR": {"wkid": 3857},
-                                                "overwrite": True}
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    estimate                     Optional boolean. Returns the number of credit for the operation.
-    -------------------------    --------------------------------------------------------------------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    =========================    ====================================================================================================================
+                                                    "outSR": {"wkid": 3857},
+                                                    "overwrite": True}
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    estimate                    Optional boolean. Returns the number of credit for the operation.
+    -------------------------   --------------------------------------------------------------------------------------------------------------------
+    future                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    =========================   ====================================================================================================================
 
-    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
 
          dict with the following keys:
 
@@ -463,25 +501,39 @@ def summarize_center_and_dispersion(
                             distribution calculations. The ``group_field`` can be of
                             integer, date, or string type.
     --------------------    ---------------------------------------------------------
-    output_name             Optional string. If provided, the method will create a feature service of the results.
-                            You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
+    output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                            feature layer will cause the new layer to be appended to the Feature Service.
+                            If overwrite is True in context, new layer will overwrite existing layer.
+                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     --------------------    ---------------------------------------------------------
-    context                 Optional string. Context contains additional settings that affect task execution. For ``summarize_center_and_dispersion``, there are two settings.
+    context                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                            For summarize_center_and_dispersion, there are three settings.
 
-                            #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be buffered.
-                            #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
-                            #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+
+                                .. code-block:: python
+
+                                    # Example Usage
+                                    context = {"extent": {"xmin": 3164569.408035,
+                                                        "ymin": -9187921.892449,
+                                                        "xmax": 3174104.927313,
+                                                        "ymax": -9175500.875353,
+                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                "outSR": {"wkid": 3857},
+                                                "overwrite": True}
     --------------------    ---------------------------------------------------------
     estimate                Optional boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
     future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================    =========================================================
 
-    :returns: list of items if ``output_name`` is supplied else, a Python dictionary with the following keys:
-        "central_feature_result_layer" : layer (FeatureCollection)
-        "mean_feature_result_layer" : layer (FeatureCollection)
-        "median_feature_result_layer" : layer (FeatureCollection)
-        "ellipse_feature_result_layer" : layer (FeatureCollection)
+    :return: list of items if ``output_name`` is supplied else, a Python dictionary with the following keys:
+        "central_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        "mean_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        "ellipse_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 
@@ -551,92 +603,95 @@ def summarize_within(
     boundaries (the ``sum_within_layer``). Not only can you count the number of features, you can calculate
     simple statistics about the attributes of the features in the ``summary_layer``, such as sum, mean, minimum, maximum, and so on.
 
-    =====================================    =========================================================
-    **Argument**                             **Description**
-    -------------------------------------    ---------------------------------------------------------
-    sum_within_layer                         Required feature layer. The polygon features. Features, or
-                                             portions of features, in the ``summary_layer`` (below) that fall within
-                                             the boundaries of these polygons will be summarized. See :ref:`Feature Input<FeatureInput>`.
-    -------------------------------------    ---------------------------------------------------------
-    summary_layer                            Required feature layer. Point, line, or polygon features that will be summarized for each polygon in the ``sum_within_layer``.
-                                             See :ref:`Feature Input<FeatureInput>`.
-    -------------------------------------    ---------------------------------------------------------
-    sum_shape                                Optional boolean. A boolean value that instructs the task to calculate statistics
-                                             based on shape type of the ``summary_layer``, such as the length of lines or areas of
-                                             polygons of the ``summary_layer`` within each polygon in ``sum_within_layer``.
+    =====================================   =========================================================
+    **Argument**                            **Description**
+    -------------------------------------   ---------------------------------------------------------
+    sum_within_layer                        Required feature layer. The polygon features. Features, or
+                                            portions of features, in the ``summary_layer`` (below) that fall within
+                                            the boundaries of these polygons will be summarized. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------   ---------------------------------------------------------
+    summary_layer                           Required feature layer. Point, line, or polygon features that will be summarized for each polygon in the ``sum_within_layer``.
+                                            See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------   ---------------------------------------------------------
+    sum_shape                               Optional boolean. A boolean value that instructs the task to calculate statistics
+                                            based on shape type of the ``summary_layer``, such as the length of lines or areas of
+                                            polygons of the ``summary_layer`` within each polygon in ``sum_within_layer``.
 
-                                             The default is True.
-    -------------------------------------    ---------------------------------------------------------
-    shape_units                              Optional string. Specify units to summarize the length or areas when ``sum_shape`` is set to true. Units is not required to summarize
-                                             points.
+                                            The default is True.
+    -------------------------------------   ---------------------------------------------------------
+    shape_units                             Optional string. Specify units to summarize the length or areas when ``sum_shape`` is set to true. Units is not required to summarize
+                                            points.
 
-                                             When ``summary_layer`` contains polygons: ['Acres', 'Hectares', 'SquareMeters', 'SquareKilometers', 'SquareMiles', 'SquareYards', 'SquareFeet']
+                                            * When ``summary_layer`` contains polygons: ['Acres', 'Hectares', 'SquareMeters', 'SquareKilometers', 'SquareMiles', 'SquareYards', 'SquareFeet']
 
-                                             When ``summary_layer`` contains lines: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
-    -------------------------------------    ---------------------------------------------------------
-    summary_fields                           Optional list of strings. A list of field names and statistical summary type that you wish
-                                             to calculate for all features in the ``summary_layer`` that are within each polygon in the ``sum_within_layer`` .
+                                            * When ``summary_layer`` contains lines: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+    -------------------------------------   ---------------------------------------------------------
+    summary_fields                          Optional list of strings. A list of field names and statistical summary type that you wish
+                                            to calculate for all features in the ``summary_layer`` that are within each polygon in the ``sum_within_layer`` .
 
-                                             Example: ["fieldname1 summary", "fieldname2 summary"]
-    -------------------------------------    ---------------------------------------------------------
-    group_by_field                           Optional string. This is a field of the ``summary_layer`` features that you can use to calculate statistics separately
-                                             for each unique attribute value. For example, suppose the ``sum_within_layer`` contains city boundaries and
-                                             the ``summary_layer`` features are parcels. One of the fields of the parcels is Status which contains
-                                             two values: VACANT and OCCUPIED. To calculate the total area of vacant and occupied parcels within the
-                                             boundaries of cities, use Status as the ``group_by_field`` field.
-    -------------------------------------    ---------------------------------------------------------
-    minority_majority                        Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified.
-                                             If true, the minority (least dominant) or the majority (most dominant) attribute values for each group
-                                             field are calculated. Two new fields are added to the ``result_layer`` prefixed with Majority_ and Minority_.
+                                            Example: ["fieldname1 summary", "fieldname2 summary"]
+    -------------------------------------   ---------------------------------------------------------
+    group_by_field                          Optional string. This is a field of the ``summary_layer`` features that you can use to calculate statistics separately
+                                            for each unique attribute value. For example, suppose the ``sum_within_layer`` contains city boundaries and
+                                            the ``summary_layer`` features are parcels. One of the fields of the parcels is Status which contains
+                                            two values: VACANT and OCCUPIED. To calculate the total area of vacant and occupied parcels within the
+                                            boundaries of cities, use Status as the ``group_by_field`` field.
+    -------------------------------------   ---------------------------------------------------------
+    minority_majority                       Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified.
+                                            If true, the minority (least dominant) or the majority (most dominant) attribute values for each group
+                                            field are calculated. Two new fields are added to the ``result_layer`` prefixed with Majority_ and Minority_.
 
-                                             The default is False.
-    -------------------------------------    ---------------------------------------------------------
-    percent_shape                            Optional boolean. This Boolean parameter is applicable only when a ``group_by_field`` is specified.
-                                             If set to true, the percentage of each unique ``group_by_field`` value is calculated for
-                                             each ``sum_within_layer`` polygon.
+                                            The default is False.
+    -------------------------------------   ---------------------------------------------------------
+    percent_shape                           Optional boolean. This Boolean parameter is applicable only when a ``group_by_field`` is specified.
+                                            If set to true, the percentage of each unique ``group_by_field`` value is calculated for
+                                            each ``sum_within_layer`` polygon.
 
-                                             The default is False.
-    -------------------------------------    ---------------------------------------------------------
-    output_name                              Optional string. If provided, the method will create a feature service of the results.
-                                             You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
-    -------------------------------------    ---------------------------------------------------------
-    context                                  Optional dict. Additional settings such as processing extent and output spatial reference. For summarize_within, there are three settings.
+                                            The default is False.
+    -------------------------------------   ---------------------------------------------------------
+    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                            feature layer will cause the new layer to be appended to the Feature Service.
+                                            If overwrite is True in context, new layer will overwrite existing layer.
+                                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    -------------------------------------   ---------------------------------------------------------
+    context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                            For summarize_within, there are three settings.
 
-                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                             .. code-block:: python
-                                                # Example Usage
+                                                .. code-block:: python
 
-                                                context = {"extent": {"xmin": 3164569.408035,
+                                                    # Example Usage
+                                                    context = {"extent": {"xmin": 3164569.408035,
                                                                         "ymin": -9187921.892449,
                                                                         "xmax": 3174104.927313,
                                                                         "ymax": -9175500.875353,
                                                                         "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                            "outSR": {"wkid": 3857},
-                                                            "overwrite": True}
-    -------------------------------------    ---------------------------------------------------------
-    estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
-    -------------------------------------    ---------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    -------------------------------------    ---------------------------------------------------------
-    bin_type                                 Required string. The type of bin used to calculate density.
+                                                                "outSR": {"wkid": 3857},
+                                                                "overwrite": True}
+    -------------------------------------   ---------------------------------------------------------
+    estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
+    -------------------------------------   ---------------------------------------------------------
+    future                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    -------------------------------------   ---------------------------------------------------------
+    bin_type                                Required string. The type of bin used to calculate density.
 
-                                             Choice list: ['Hexagon', 'Square'].
-    -------------------------------------    ---------------------------------------------------------
-    bin_size                                 Required float. The distance for the bins that the ``input_layer`` will be analyzed using.
-                                             When generating bins, for Square, the number and units specified determine the
-                                             height and length of the square. For ``Hexagon``, the number and units specified
-                                             determine the distance between parallel sides.
-    -------------------------------------    ---------------------------------------------------------
-    bin_size_unit                            Required string. The distance unit for the bins for which the density will be calculated.
-                                             The linear unit to be used with the value specified in ``bin_size``.
+                                            Choice list: ['Hexagon', 'Square'].
+    -------------------------------------   ---------------------------------------------------------
+    bin_size                                Required float. The distance for the bins that the ``input_layer`` will be analyzed using.
+                                            When generating bins, for Square, the number and units specified determine the
+                                            height and length of the square. For ``Hexagon``, the number and units specified
+                                            determine the distance between parallel sides.
+    -------------------------------------   ---------------------------------------------------------
+    bin_size_unit                           Required string. The distance unit for the bins for which the density will be calculated.
+                                            The linear unit to be used with the value specified in ``bin_size``.
 
-                                             The default is 'Meters'.
-    =====================================    =========================================================
+                                            The default is 'Meters'.
+    =====================================   =========================================================
 
-    :returns: Item if ``output_name`` is set. else results in a Python dict with the following keys:
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
 
         dict with the following keys:
 
@@ -707,97 +762,99 @@ def join_features(
     The ``join_features`` method works with two layers and joins the attributes
     from one feature to another based on spatial and attribute relationships.
 
-    ============================================================================================     =================================================================================================================================
-    **Parameter**                                                                                    **Description**
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    target_layer                                                                                     Required layer. The point, line, polygon or table layer that will have attributes from
-                                                                                                     the ``join_layer`` appended to its table. See :ref:`Feature Input<FeatureInput>`.
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    join_layer                                                                                       Required layer. The point, line, polygon or table layer that will be joined to the ``target_layer``. See :ref:`Feature Input<FeatureInput>`.
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    spatial_relationship                                                                             Required string. Defines the spatial relationship used to spatially join features.
+    ============================================================================================    =================================================================================================================================
+    **Parameter**                                                                                   **Description**
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    target_layer                                                                                    Required layer. The point, line, polygon or table layer that will have attributes from
+                                                                                                    the ``join_layer`` appended to its table. See :ref:`Feature Input<FeatureInput>`.
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    join_layer                                                                                      Required layer. The point, line, polygon or table layer that will be joined to the ``target_layer``. See :ref:`Feature Input<FeatureInput>`.
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    spatial_relationship                                                                            Required string. Defines the spatial relationship used to spatially join features.
 
-                                                                                                     Choice list: ['identicalto', 'intersects', 'completelycontains', 'completelywithin', 'withindistance']
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    spatial_relationship_distance (Required if ``spatial_relationship`` is withindistance)           Optional float. A float value used for the search distance to determine if the target features are near or within a
-                                                                                                     specified distance of the join features.
-                                                                                                     This is only applied if Within a distance of is the selected ``spatial_relationship``.
-                                                                                                     You can only enter a single distance value. The units of the distance values are supplied by the
-                                                                                                     ``spatial_relationship_distance_units`` parameter.
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    spatial_relationship_distance_units (Required if ``spatial_relationship`` is withindistance)     Optional string. The linear unit to be used with the distance value specified in ``spatial_relationship_distance``.
+                                                                                                    Choice list: ['identicalto', 'intersects', 'completelycontains', 'completelywithin', 'withindistance']
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    spatial_relationship_distance                                                                   Optional float. A float value used for the search distance to determine if the target features are near or within a
+    (Required if ``spatial_relationship`` is withindistance)                                        specified distance of the join features.
+                                                                                                    This is only applied if Within a distance of is the selected ``spatial_relationship``.
+                                                                                                    You can only enter a single distance value. The units of the distance values are supplied by the
+                                                                                                    ``spatial_relationship_distance_units`` parameter.
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    spatial_relationship_distance_units                                                             Optional string. The linear unit to be used with the distance value specified in ``spatial_relationship_distance``.
+    (Required if ``spatial_relationship`` is withindistance)                                        Choice list: ['Miles', 'Yards', 'Feet', 'NauticalMiles', 'Meters', 'Kilometers']
 
-                                                                                                     Choice list: ['Miles', 'Yards', 'Feet', 'NauticalMiles', 'Meters', 'Kilometers']
+                                                                                                    The default is 'Miles'.
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    attribute_relationship                                                                          Optional list of dicts. Defines an attribute relationship used to join features. Features are matched when the field
+                                                                                                    values in the join layer are equal to field values in the target layer.
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    join_operation                                                                                  Optional string. A string representing the type of join that will be applied.
 
-                                                                                                     The default is 'Miles'.
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    attribute_relationship                                                                           Optional list of dicts. Defines an attribute relationship used to join features. Features are matched when the field
-                                                                                                     values in the join layer are equal to field values in the target layer.
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    join_operation                                                                                   Optional string. A string representing the type of join that will be applied.
+                                                                                                    Choice list: ['JoinOneToOne', 'JoinOneToMany']
 
-                                                                                                     Choice list: ['JoinOneToOne', 'JoinOneToMany']
+                                                                                                    * ``JoinOneToOne`` - If multiple join features are found that have the same relationships with a
+                                                                                                        single target feature, the attributes from the multiple join features will be aggregated using
+                                                                                                        the specified summary statistics. For example, if a point target feature is found within two
+                                                                                                        separate polygon join features, the attributes from the two polygons will be aggregated before
+                                                                                                        being transferred to the output point feature class. If one polygon has an attribute value of
+                                                                                                        3 and the other has a value of 7, and a SummaryField of sum is selected, the aggregated value
+                                                                                                        in the output feature class will be 10. There will always be a Count field calculated, with a
+                                                                                                        value of 2, for the number of features specified. This is the default.
 
-                                                                                                        * ``JoinOneToOne`` - If multiple join features are found that have the same relationships with a
-                                                                                                          single target feature, the attributes from the multiple join features will be aggregated using
-                                                                                                          the specified summary statistics. For example, if a point target feature is found within two
-                                                                                                          separate polygon join features, the attributes from the two polygons will be aggregated before
-                                                                                                          being transferred to the output point feature class. If one polygon has an attribute value of
-                                                                                                          3 and the other has a value of 7, and a SummaryField of sum is selected, the aggregated value
-                                                                                                          in the output feature class will be 10. There will always be a Count field calculated, with a
-                                                                                                          value of 2, for the number of features specified. This is the default.
+                                                                                                    * ``JoinOneToMany`` - If multiple join features are found that have the same relationship with
+                                                                                                        a single target feature, the output feature class will contain multiple copies (records) of
+                                                                                                        the target feature. For example, if a single point target feature is found within two separate
+                                                                                                        polygon join features, the output feature class will contain two copies of the target feature:
+                                                                                                        one record with the attributes of the first polygon, and another record with the attributes of
+                                                                                                        the second polygon. There are no summary statistics calculated with this method.
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    summary_fields                                                                                  Optional list of dicts. A list of field names and statistical summary types that you want to calculate.
+                                                                                                    Note that the count is always returned by default.
 
-                                                                                                        * ``JoinOneToMany`` - If multiple join features are found that have the same relationship with
-                                                                                                          a single target feature, the output feature class will contain multiple copies (records) of
-                                                                                                          the target feature. For example, if a single point target feature is found within two separate
-                                                                                                          polygon join features, the output feature class will contain two copies of the target feature:
-                                                                                                          one record with the attributes of the first polygon, and another record with the attributes of
-                                                                                                          the second polygon. There are no summary statistics calculated with this method.
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    summary_fields                                                                                   Optional list of dicts. A list of field names and statistical summary types that you want to calculate.
-                                                                                                     Note that the count is always returned by default.
+                                                                                                    fieldName is the name of one of the numeric fields found in the input join layer.
 
-                                                                                                     fieldName is the name of one of the numeric fields found in the input join layer.
+                                                                                                    statisticType is one of the following:
 
-                                                                                                     statisticType is one of the following:
+                                                                                                    * ``SUM`` - Adds the total value of all the points in each polygon
+                                                                                                    * ``MEAN`` - Calculates the average of all the points in each polygon
+                                                                                                    * ``MIN`` - Finds the smallest value of all the points in each polygon
+                                                                                                    * ``MAX`` - Finds the largest value of all the points in each polygon
+                                                                                                    * ``STDDEV`` - Finds the standard deviation of all the points in each polygon
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    output_name                                                                                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                                                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                                                                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                                                                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    context                                                                                         Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                                                                    For join_features, there are three settings.
 
-                                                                                                        * ``SUM`` - Adds the total value of all the points in each polygon
-                                                                                                        * ``MEAN`` - Calculates the average of all the points in each polygon
-                                                                                                        * ``MIN`` - Finds the smallest value of all the points in each polygon
-                                                                                                        * ``MAX`` - Finds the largest value of all the points in each polygon
-                                                                                                        * ``STDDEV`` - Finds the standard deviation of all the points in each polygon
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    output_name                                                                                      Optional string. If provided, the method will create a feature service of the results. You define the name of the service.
-                                                                                                     If ``output_name`` is not supplied, the task will return a feature collection.
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    context                                                                                          Optional dict. Additional settings such as processing extent and output spatial reference. For join_features, there are three settings.
+                                                                                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                                                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                                                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                                                                                     - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                                                                                     - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                                                     - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                                                                        .. code-block:: python
 
-                                                                                                     .. code-block:: python
-                                                                                                        # Example Usage
-
-                                                                                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                                                            # Example Usage
+                                                                                                            context = {"extent": {"xmin": 3164569.408035,
                                                                                                                                 "ymin": -9187921.892449,
                                                                                                                                 "xmax": 3174104.927313,
                                                                                                                                 "ymax": -9175500.875353,
                                                                                                                                 "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                                                                                    "outSR": {"wkid": 3857},
-                                                                                                                    "overwrite": True}
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    estimate                                                                                         Optional boolean. If True, the number of credits to run the operation will be returned.
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    future                                                                                           Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    join_type                                                                                        Optional String.  Determines the type of join performed on the datasets.  The allowed values are INNER or LEFT.
-    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    records_to_match                                                                                 Optional Dict. Defines how two features are joined.
-                                                                                                     Example: {"groupByFields":"","orderByFields":"objectid ASC","topCount":1}
-    ============================================================================================     =================================================================================================================================
+                                                                                                                        "outSR": {"wkid": 3857},
+                                                                                                                        "overwrite": True}
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    estimate                                                                                        Optional boolean. If True, the number of credits to run the operation will be returned.
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    future                                                                                          Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    join_type                                                                                       Optional String.  Determines the type of join performed on the datasets.  The allowed values are INNER or LEFT.
+    --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+    records_to_match                                                                                Optional Dict. Defines how two features are joined.
+                                                                                                    Example: {"groupByFields":"","orderByFields":"objectid ASC","topCount":1}
+    ============================================================================================    =================================================================================================================================
 
-    :returns: result_layer : feature layer Item if ``output_name`` is specified, else feature collection.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 

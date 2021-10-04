@@ -71,7 +71,7 @@ class AGOLUsageReports(BasePortalAdmin):
         ===============     ====================================================
 
 
-        :returns: Async Job Object or Item
+        :return: Async Job Object or Item
 
         """
         url = f"{self._gis._portal.resturl}community/users/{self._gis.users.me.username}/report"

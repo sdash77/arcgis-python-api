@@ -324,7 +324,7 @@ class KbertnetesPy(object):
         group_id      required string, The group id to remove the thumbnail for.
         ============  ======================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = f"community/groups/{group_id}/deleteThumbnail"

@@ -272,7 +272,7 @@ def dice(
                             'macro': macro dice coefficient is calculate.
                             Default 'micro'.
     =====================   ===========================================
-    :returns: Dice Coefficient->Rank 0 torch.tensor
+    :return: Dice Coefficient->Rank 0 torch.tensor
     """
     if (
         isinstance(preds, (List, Tuple))
@@ -456,8 +456,9 @@ class MixUpLoss(nn.Module):
 
     def forward(self, output, target):
         if len(target.size()) >= 5:
-            loss1, loss2 = self.crit(output, target[:, 0].long()), self.crit(
-                output, target[:, 1].long()
+            loss1, loss2 = (
+                self.crit(output, target[:, 0].long()),
+                self.crit(output, target[:, 1].long()),
             )
             lambd = target[:, 2].contiguous().view(-1)
             d = (loss1 * lambd + loss2 * (1 - lambd)).mean()

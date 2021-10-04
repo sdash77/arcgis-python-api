@@ -134,22 +134,23 @@ def run_python_script(
     param_as_input    Optional Boolean. If True, the user_variable will be added if a method past. If False, the variable will not be given into the method.
     ================  ===============================================================
 
-    :returns: list of dictionary of messages from the code provided.
+    :return: Dictionary of messages from the code provided.
 
     .. code-block:: python
 
-            # Usage Example: Execute calculate_density tool using run_python_script.
+        # Usage Example: Execute calculate_density tool using run_python_script.
 
-            def density():
-                def code(ss=None):
-                    import time
-                    if ss is None:
-                        ss = user_variables['ss']
-                    res = geoanalytics.describe_dataset(input_layer=layers[0],
-                               extent_output=True,
-                               sample_size=ss)
-                res.write.format('webgis').save('RunPythonScriptTest_{0}'.format(time.time()))
-            run_python_script(code=code, layers=[lyr0], parameters={'ss' : 10000})
+        def density():
+            def code(ss=None):
+                import time
+                if ss is None:
+                    ss = user_variables['ss']
+                res = geoanalytics.describe_dataset(input_layer=layers[0],
+                            extent_output=True,
+                            sample_size=ss)
+            res.write.format('webgis').save('RunPythonScriptTest_{0}'.format(time.time()))
+        run_python_script(code=code, layers=[lyr0], parameters={'ss' : 10000})
+
     """
     if layers is None:
         layers = []
@@ -298,27 +299,27 @@ def dissolve_boundaries(
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
-    :returns: result_layer : Output Features as feature layer collection item.
+    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayerCollection`.
 
     .. code-block:: python
 
-            # Usage Example: This example dissolves boundaries of soil areas in Nebraska if they have
-            # the same solubility. For dissolved features, it calculates the sum of the quadrat area,
-            # the mean soil depth, and an example of the quadrat description.
+        # Usage Example: This example dissolves boundaries of soil areas in Nebraska if they have
+        # the same solubility. For dissolved features, it calculates the sum of the quadrat area,
+        # the mean soil depth, and an example of the quadrat description.
 
-            arcgis.env.out_spatial_reference = 3310
-            arcgis.env.output_datastore= "relational"
-            arcgis.env.defaultAggregations= True
+        arcgis.env.out_spatial_reference = 3310
+        arcgis.env.output_datastore= "relational"
+        arcgis.env.defaultAggregations= True
 
-            summary_fields = [{"statisticType" : "Sum", "onStatisticField" : "quadrat_area_km2"},
-                            {"statisticType" : "Mean", "onStatisticField" : "soil_depth_cm"},
-                            {"statisticType" : "Any", "onStatisticField" : "quadrat_desc"}]
+        summary_fields = [{"statisticType" : "Sum", "onStatisticField" : "quadrat_area_km2"},
+                        {"statisticType" : "Mean", "onStatisticField" : "soil_depth_cm"},
+                        {"statisticType" : "Any", "onStatisticField" : "quadrat_desc"}]
 
-            dissolve_result = dissolve_boundaries(input_layer=study_area_lyr,
-                                                  dissolve_fields="soil_suitability",
-                                                  summary_fields=summary_fields,
-                                                  multipart=True,
-                                                  output_name="Soil_Suitability_dissolved")
+        dissolve_result = dissolve_boundaries(input_layer=study_area_lyr,
+                                                dissolve_fields="soil_suitability",
+                                                summary_fields=summary_fields,
+                                                multipart=True,
+                                                output_name="Soil_Suitability_dissolved")
     """
 
     input_layer = _prevent_bds_item(input_layer)
@@ -476,16 +477,16 @@ def merge_layers(
                       The default value is 'False'.
     ================  ===============================================================
 
-    :returns: result_layer : Output Features as feature layer item.
+    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
 
-            # Usage Example: To merge census blocks from two states into one output layer.
+        # Usage Example: To merge census blocks from two states into one output layer.
 
-            merge_result = merge_layers(input_layer=il_block,
-                                       merge_layer=wi_block,
-                                       merge_attributes=[{"mergeLayerField" : "State_Code", "mergeType" : "Match", "mergeValue" : "statecode"}],
-                                       output_name="IL_WI_Census_Blocks")
+        merge_result = merge_layers(input_layer=il_block,
+                                    merge_layer=wi_block,
+                                    merge_attributes=[{"mergeLayerField" : "State_Code", "mergeType" : "Match", "mergeValue" : "statecode"}],
+                                    output_name="IL_WI_Census_Blocks")
     """
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "MergeLayers"
@@ -598,16 +599,16 @@ def clip_layer(
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
-    :returns: feature layer collection
+    :return: :class:`~arcgis.features.FeatureLayerCollection`
 
     .. code-block:: python
 
-            # Usage Example: To clip the buffered area in the shape of Capitol Hill boundary.
+        # Usage Example: To clip the buffered area in the shape of Capitol Hill boundary.
 
-            clipped = clip_layer(input_layer=buffer,
-                                 clip_layer=boundary,
-                                 output_name="clipped_buffer",
-                                 context={"extent":{'xmin': -77.50941999999998,'ymin': 38.389560000000074,'xmax': -76.50941999999998,'ymax': 39.389560000000074,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
+        clipped = clip_layer(input_layer=buffer,
+                                clip_layer=boundary,
+                                output_name="clipped_buffer",
+                                context={"extent":{'xmin': -77.50941999999998,'ymin': 38.389560000000074,'xmax': -76.50941999999998,'ymax': 39.389560000000074,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
 
     """
     input_layer = _prevent_bds_item(input_layer)
@@ -773,16 +774,16 @@ def overlay_data(
                             The default value is 'False'.
     ======================  ===============================================================================
 
-    :returns: result_layer : Output Features as feature layer item.
+    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
 
-            # Usage Example: To find the intersecting areas between watersheds and grazing land in Missouri.
+        # Usage Example: To find the intersecting areas between watersheds and grazing land in Missouri.
 
-            overlay_result = manage_data.overlay_data(input_layer=grazing_land,
-                                          overlay_layer=watersheds_layer,
-                                          overlay_type="Intersect",
-                                          output_name="Watershed_intersections")
+        overlay_result = manage_data.overlay_data(input_layer=grazing_land,
+                                        overlay_layer=watersheds_layer,
+                                        overlay_type="Intersect",
+                                        output_name="Watershed_intersections")
     """
     kwargs = locals()
     input_layer = _prevent_bds_item(input_layer)
@@ -930,7 +931,7 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
                       execution.
     ================  ===============================================================
 
-    :returns: boolean
+    :return: True or an error
 
     """
     kwargs = locals()
@@ -957,7 +958,6 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
         return True
     except:
         raise
-    return False
 
 
 def calculate_fields(
@@ -1040,16 +1040,16 @@ def calculate_fields(
     =================================================   ===============================================================
 
 
-    :returns: feature layer collection
+    :return: :class:`~arcgis.features.FeatureLayerCollection`
 
     .. code-block:: python
 
-            # Usage Example: To find maximum of the two attributes of an input layer.
+        # Usage Example: To find maximum of the two attributes of an input layer.
 
-            result = calculate_fields(input_layer=lyr,
-                                      field_name="avg",
-                                      data_type="Double",
-                                      expression='max($feature["InputValue"],$feature["Value2"])')
+        result = calculate_fields(input_layer=lyr,
+                                    field_name="avg",
+                                    data_type="Double",
+                                    expression='max($feature["InputValue"],$feature["Value2"])')
     """
     kwargs = locals()
     input_layer = _prevent_bds_item(input_layer)
@@ -1163,13 +1163,13 @@ def copy_to_data_store(
                                  The default value is 'False'.
     ==========================   ===============================================================
 
-    :returns: result_layer : Output Features as feature layer item.
+    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
 
-            # Usage Example: To copy input layer to a data store.
-            copy_result = copy_to_data_store(input_layer=earthquakes,
-                                             output_name="copy earthquakes data")
+        # Usage Example: To copy input layer to a data store.
+        copy_result = copy_to_data_store(input_layer=earthquakes,
+                                            output_name="copy earthquakes data")
     """
     input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis

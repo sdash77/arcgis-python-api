@@ -183,7 +183,7 @@ def _handle_response(res, stype, gis, as_dict):
     as_dict             Required Boolean. If True, the response comes back as a dictionary.
     ================    ===============================================================
 
-    :returns: List
+    :return: List
 
     """
     from arcgis.gis import GIS, Item, User, Group

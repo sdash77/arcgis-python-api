@@ -59,7 +59,7 @@ class FillMask(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :returns: `FillMask` Object
+    :return: `FillMask` Object
     """
 
     #: supported transformer architectures
@@ -124,7 +124,7 @@ class FillMask(InferenceOnlyModel):
                                 progress bar depicting the items processed so far.
         =====================   ===========================================
 
-        :returns: A list or a list of list of :obj:`dict`: Each result comes as list of dictionaries with the following keys:
+        :return: A list or a list of list of :obj:`dict`: Each result comes as list of dictionaries with the following keys:
 
             - **sequence** (:obj:`str`)  -- The corresponding input with the mask token prediction.
             - **score** (:obj:`float`)   -- The corresponding probability.

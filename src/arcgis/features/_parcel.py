@@ -126,7 +126,7 @@ class ParcelFabricManager(object):
                                  they do not want to use the current moment
         ====================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean. True if successful otherwise False
 
         """
         url = "{base}/assignFeaturesToRecord".format(base=self._url)
@@ -185,7 +185,7 @@ class ParcelFabricManager(object):
         ====================     ====================================================================
 
 
-        :return: Boolean
+        :return: Boolean. True if successful else False
 
         """
         url = "{base}/build".format(base=self._url)
@@ -269,7 +269,7 @@ class ParcelFabricManager(object):
                                     being clipped.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
 
         """
@@ -360,7 +360,7 @@ class ParcelFabricManager(object):
         ====================     ====================================================================
 
 
-        :return: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         if moment is None:
@@ -447,7 +447,7 @@ class ParcelFabricManager(object):
         parcel_subtype              Optional Integer. Represents the target parcel subtype.
         =======================     ====================================================================
 
-        :returns: boolean
+        :return: Dictionary indicating 'success' or 'error'
 
 
         """
@@ -500,7 +500,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Boolean. True if successful else False
 
 
         """
@@ -542,7 +542,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean. True if success else False
 
 
         """
@@ -593,7 +593,7 @@ class ParcelFabricManager(object):
                                     current.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         if moment is None:
@@ -643,7 +643,7 @@ class ParcelFabricManager(object):
                                     in which to create seeds.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         from arcgis.geometry import Envelope
@@ -707,7 +707,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         if parcel_subtype is None:
@@ -784,7 +784,7 @@ class ParcelFabricManager(object):
                                         The default is False.
         ============================    ====================================================================
 
-        :return: Dictionary
+        :return: Boolean. True if successful else False
 
         """
         url = "{base}/analyzeByLeastSquaresAdjustment".format(base=self._url)
@@ -849,7 +849,7 @@ class ParcelFabricManager(object):
                                  The default is False.
         ====================     ====================================================================
 
-        :return: Dictionary
+        :return: Boolean. True if successful else False
 
         """
 
@@ -928,7 +928,7 @@ class ParcelFabricManager(object):
         divide_cogo_line_bearing    Optional Float. Bearing of the divide line (decimal degrees north azimuth).
         =========================== ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
 
         """
