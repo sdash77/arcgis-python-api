@@ -11,6 +11,7 @@ from ._types import (
     MapImageLayer,
     MapImageLayerManager,
     VectorTileLayer,
+    VectorTileLayerManager,
     OfflineMapAreaManager,
     PackagingJob,
 )
@@ -41,6 +42,7 @@ __all__ = [
     "MapImageLayer",
     "MapImageLayerManager",
     "VectorTileLayer",
+    "VectorTileLayerManager",
     "export_map",
     "get_layout_templates",
     "OfflineMapAreaManager",

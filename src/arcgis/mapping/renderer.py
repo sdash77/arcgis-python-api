@@ -93,9 +93,15 @@ class _DotDensity(object):
     @property
     def background(self):
         """
-        Returns the background color
+        Get/Set the background color
 
-        :returns: List
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string. Color to set the background to.
+        ===============     ====================================================================
+
+        :return: List
 
         """
         return self._bg_color
@@ -104,7 +110,24 @@ class _DotDensity(object):
     @property
     def shape(self):
         """
-        Returns the shape of the dots
+        Get/Set the shape of the dots
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string.
+                            Values: "o" | "+" | "d" | "s" | "x"
+        ===============     ====================================================================
+
+        :return:
+            The string representing the dot shape
+            {
+            "o": "Circle",  # default
+            "+": "Cross",
+            "d": "Diamond",
+            "s": "Square",
+            "x": "X",
+            }
         """
         return self._dot_shape
 
@@ -127,7 +150,7 @@ class _DotDensity(object):
     # ----------------------------------------------------------------------
     @property
     def unit(self):
-        """gets/sets the units"""
+        """Get/Set the units"""
         return self._unit
 
     # ----------------------------------------------------------------------
@@ -139,13 +162,23 @@ class _DotDensity(object):
     # ----------------------------------------------------------------------
     @property
     def size(self):
-        """returns the size of the dots"""
+        """Get/Set the size of the dots"""
         return self._dot_size
 
     # ----------------------------------------------------------------------
     @property
     def ref_scale(self):
-        """reference scale"""
+        """
+        Get/Set the reference scale
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required int or float.
+        ===============     ====================================================================
+
+        :return: Int or float value depicting the current reference scale
+        """
         return self._ref_scale
 
     # ----------------------------------------------------------------------
@@ -236,7 +269,7 @@ class _DotDensity(object):
         alpha               Optional float. A value between 0-1 that determines the symbol opacity.
         ===============     ====================================================================
 
-        :returns: Boolean
+        :return: True if successful otherwise error message
 
         """
         mapped_names = [n["field"].lower() for n in self.attributes]
@@ -249,7 +282,6 @@ class _DotDensity(object):
             return True
         else:
             raise ValueError("Field not found in dataset.")
-        return False
 
     # ----------------------------------------------------------------------
     def remove_attribute(self, field):
@@ -262,7 +294,7 @@ class _DotDensity(object):
         field               Required String.  Name of the dataset field
         ===============     ====================================================================
 
-        :returns: Boolean
+        :return:True if successful else False
 
         """
         mapped_names = [n["field"].lower() for n in self.attributes if "field" in n]
@@ -306,7 +338,7 @@ class _DotDensity(object):
     @property
     def dot_value(self):
         """
-        Get/Sets what each dot is worth. This should be an float/integer.
+        Get/Set what each dot is worth. This should be an float/integer.
         """
         return self._dot_value
 
@@ -917,7 +949,7 @@ def generate_renderer(
     ======================  =========================================================
 
 
-    :returns: dict
+    :return: A dictionary of the renderer.
 
     """
     import numpy as np

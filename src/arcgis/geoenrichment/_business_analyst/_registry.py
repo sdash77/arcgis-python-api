@@ -48,6 +48,7 @@ def get_first_child_key_str(key_path, pattern) -> str:
     Based on the pattern provided, find the key with a matching string in it.
     :param key_path: Full string path to the key.
     :param pattern: Pattern to be located.
+
     :return: Full path of the first key path matching the provided pattern.
     """
     # get a list of paths to keys under the parent key path provided
@@ -105,6 +106,7 @@ def get_ba_key_value(
     :param locator_key: Locator key.
     :param three_letter_country_identifier: Three letter country identification code.
     :param year: Four digit year describing the vintage of the data.
+
     :return: Key value.
     """
     # get the registry key string path
@@ -123,6 +125,7 @@ def get_ba_network_dataset_path(
     """
     Get the path to the transportation network dataset.
     :param three_letter_country_identifier: Three letter country identification code.
+
     :return: String describing resource location.
     """
     return Path(

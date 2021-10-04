@@ -103,7 +103,7 @@ class FullyConnectedNetwork(ArcGISModel):
                             If not specified, then calculated using fastai.
     =====================   ===========================================
 
-    :returns: `FullyConnectedNetwork` Object
+    :return: `FullyConnectedNetwork` Object
     """
 
     def __init__(self, data, layers=None, emb_szs=None, **kwargs):
@@ -155,7 +155,7 @@ class FullyConnectedNetwork(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `FullyConnectedNetwork` Object
+        :return: `FullyConnectedNetwork` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -779,7 +779,7 @@ class FullyConnectedNetwork(ArcGISModel):
                                 Number of rows to print.
         =====================   ===========================================
 
-        :returns: dataframe
+        :return: dataframe
         """
         self._check_requisites()
         min_size = len(self._data._validation_indexes)

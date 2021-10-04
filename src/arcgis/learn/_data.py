@@ -786,7 +786,7 @@ def prepare_textdata(
                             for saving trained models and checkpoints.
     =====================   ===========================================
 
-    :returns: `TextData` object
+    :return: `TextData` object
 
     """
     # allowed_tasks = ["classification", "summarization", "translation",
@@ -968,7 +968,7 @@ def prepare_tabulardata(
                             a prefix for saving trained models and checkpoints.
     =====================   ===========================================
 
-    :returns: `TabularData` object
+    :return: `TabularData` object
 
     """
     if input_features is None and (
@@ -1243,7 +1243,7 @@ def prepare_data(
                             Applicable only for dataset_type='PointCloud'.
     =====================   ===========================================
 
-    :returns: data object
+    :return: data object
 
     """
     emd = {}

@@ -56,6 +56,7 @@ else:
             """Property-like getter implementation.
 
             :return: property instance if requested on class or value/cached value if requested on instance.
+
             :rtype: Union[cached_property[_T], _T]
             :raises TypeError: call without calling __set_name__ or no '__dict__' attribute
             """

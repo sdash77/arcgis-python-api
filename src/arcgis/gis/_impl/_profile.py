@@ -184,7 +184,7 @@ class ProfileManager(object):
         """
         The ``list`` method retrieves a list of profile names in the configuration file
 
-        :returns:
+        :return:
             List if `as_df=False` or Pandas DataFrame if `as_df=True`
         """
         if self._cfg_exists and as_df == False:
@@ -217,14 +217,14 @@ class ProfileManager(object):
         profile           Required String. The name of the profile to get the information about.
         ================  ====================================================================
 
+        :return:
+            A dictionary
+
         .. code-block:: python
 
             # Usage Example
 
             >>> gis.ProfileManager.get("profile_name")
-
-        :returns:
-            A dictionary
 
         """
         profile_file = self._cfg_file_path
@@ -262,14 +262,14 @@ class ProfileManager(object):
         profile           Required String. The name of the profile to delete.
         ================  ====================================================================
 
+        :return:
+            A boolean indicating success (True), or failure (False)
+
         .. code-block:: python
 
             # Usage Example
 
             >>> gis.ProfileManager.delete("profile_name")
-
-        :returns:
-            A boolean indicating success (True), or failure (False)
         """
         import keyring
 
@@ -329,6 +329,9 @@ class ProfileManager(object):
         client_id         Optional String.  The client ID for oauth login.
         ================  ====================================================================
 
+        :return:
+            A boolean indicating success (True), or failure (False)
+
         .. code-block:: python
 
             # Usage Example
@@ -336,9 +339,6 @@ class ProfileManager(object):
             >>> gis.ProfileManager.update(profile = "profile_name1",
             >>>                           username = "User12345",
             >>>                           key_file = "new_key_file")
-
-        :returns:
-            A boolean indicating success (True), or failure (False)
 
         """
         if profile not in self.list():
@@ -384,6 +384,9 @@ class ProfileManager(object):
         client_id         Optional String.  The client ID for oauth login.
         ================  ====================================================================
 
+        :return:
+            A boolean indicating success (True), or failure (False)
+
         .. code-block:: python
 
             # Usage Example
@@ -394,9 +397,6 @@ class ProfileManager(object):
             >>>                           password = "Password1234",
             >>>                           key_file = "key_file",
             >>>                           cert_fle = "cert_file_name")
-
-        :returns:
-            A boolean indicating success (True), or failure (False)
 
         """
         try:
@@ -439,6 +439,8 @@ class ProfileManager(object):
         gis               Required GIS. The connection object to update the profile with.
         ================  ====================================================================
 
+        :return: Boolean. True if successful else False
+
         .. code-block:: python
 
             # Usage Example
@@ -446,7 +448,6 @@ class ProfileManager(object):
             >>> gis = GIS("pro")
             >>> gis.ProfileManager.save_as("Profile_name", gis)
 
-        :returns: Boolean
 
         """
         from arcgis.gis import GIS
@@ -484,8 +485,6 @@ class ProfileManager(object):
                 cert_file=cf,
                 client_id=ci,
             )
-
-        return False
 
     # ----------------------------------------------------------------------
     def _retrieve(self, profile):

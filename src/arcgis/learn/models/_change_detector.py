@@ -47,7 +47,7 @@ class ChangeDetector(ArcGISModel):
                             saved.
     =====================   ===========================================
 
-    :returns: ``ChangeDetector`` object
+    :return: ``ChangeDetector`` object
     """
 
     def __init__(
@@ -122,7 +122,7 @@ class ChangeDetector(ArcGISModel):
                                 None for inferencing.
         =====================   ===========================================
 
-        :returns: ``ChangeDetector`` Object
+        :return: ``ChangeDetector`` Object
         """
         emd_path = _get_emd_path(emd_path)
         emd_path = Path(emd_path)
@@ -293,7 +293,7 @@ class ChangeDetector(ArcGISModel):
                                 prediction file on the disk. Default False.
         =====================   ===========================================
 
-        :returns: PyTorch Tensor of the change mask.
+        :return: PyTorch Tensor of the change mask.
         """
         from .._utils.change_detection_data import predict
 

@@ -2856,7 +2856,7 @@ class Transform3d(object):
                             Default: 0.0.
     =====================   ===========================================
 
-    :returns: `Transform3d` object
+    :return: `Transform3d` object
     """
 
     def __init__(
@@ -2959,7 +2959,7 @@ def predict_h5(self, path, output_path, **kwargs):
         )
         data.pc_type = "PointCloud"
         if not hasattr(data, "idx2class"):
-            data.idx2class = {i: c for i, c in enumerate(sorted(data.classes))}
+            data.idx2class = {v: k for k, v in data.class2idx.items()}
     else:
         api_model = False
     if "xyz" in features_to_keep:

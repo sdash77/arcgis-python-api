@@ -33,7 +33,7 @@ class ContainerNotebook(object):
         """
         The container notebook properties
 
-        :returns: PropertyMap
+        :return: PropertyMap
         """
         params = {"f": "json"}
         return PropertyMap(self._con.get(self._url, params))
@@ -41,7 +41,7 @@ class ContainerNotebook(object):
     def close(self) -> bool:
         """This operation stops a running notebook
 
-        :returns: Bool
+        :return: Bool
         """
         url = f"{self._url}/close"
         params = {"f": "json"}
@@ -124,7 +124,7 @@ class DirectoryManager(object):
         directory_type	       The type of directory. Values: DATA | WORKSPACE | OUTPUT
         ==================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         params = {"f": "json", "name": name, "path": path, "type": directory_type}
@@ -146,7 +146,7 @@ class DirectoryManager(object):
         directory_id           Required String.  The directory ID to remove.
         ==================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         params = {"f": "json"}
@@ -222,7 +222,7 @@ class WebAdaptor(object):
     def unregister(self):
         """
         Unregisters a WebAdaptor for the Notebook Server
-        :returns: boolean
+        :return: boolean
         """
         url = self._url + "/unregister"
         params = {"f": "json"}
@@ -307,7 +307,7 @@ class WebAdaptorManager(object):
         description            Optional String. The optional web adapter description.
         ==================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         params = {
@@ -329,20 +329,6 @@ class WebAdaptorManager(object):
     @property
     def config(self) -> Dict[str, Any]:
         """
-        Gets the Web Adaptors configuration which is a resource of all the
-        configuration parameters shared across all the Web Adaptors in the
-        site. Most importantly, this resource lists the shared key that is
-        used by all the Web Adaptors to encrypt key data bits for the
-        incoming requests to the server.
-        """
-        url = self._url + "/config"
-        params = {"f": "json"}
-        return self._con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    @config.setter
-    def config(self, config) -> None:
-        """
         This is a property that allows for the retreival and manipulation of web adaptors.
 
         You can use this operation to change the Web Adaptor configuration
@@ -358,7 +344,16 @@ class WebAdaptorManager(object):
 
         :return:
             A boolean indicating success (True), else a Python dictionary containing an error message.
+        """
+        url = self._url + "/config"
+        params = {"f": "json"}
+        return self._con.get(url, params)
 
+    # ----------------------------------------------------------------------
+    @config.setter
+    def config(self, config) -> None:
+        """
+        See main ``config`` property docstring.
         """
         url = self._url + "/config/update"
         params = {"f": "json", "webAdaptorConfig": config}
@@ -442,7 +437,7 @@ class Container(object):
         to provide information about current notebook sessions.
 
 
-        :returns: list of dict
+        :return: list of dict
 
         ==================     ====================================================================
         **Response**           **Description**
@@ -486,7 +481,7 @@ class Container(object):
         """
         Returns the container logs
 
-        :returns: List[str]
+        :return: List[str]
         """
         params = {"f": "json", "tail": count}
         url = f"{self._url}/logs"
@@ -496,7 +491,7 @@ class Container(object):
         """
         Stops the container
 
-        :returns: bool
+        :return: bool
         """
         url = f"{self._url}/terminateContainer"
         params = {"f": "json"}
@@ -507,7 +502,7 @@ class Container(object):
         """
         Returns information about the current container
 
-        :returns:Dict[str,Any]
+        :return:Dict[str,Any]
 
         """
         url = self._url + "/statistics"
@@ -519,7 +514,7 @@ class Container(object):
         """
         Terminates the current container
 
-        :returns: boolean
+        :return: boolean
         """
         url = self._url + "/terminateContainer"
         params = {"f": "json"}
@@ -583,7 +578,16 @@ class SystemManager(object):
         these properties. The properties are available to all server
         objects and extensions through the server environment interface.
 
+        Sets the ArcGIS Notebook Server has configuration properties that govern
+        some of its intricate behavior. This resource is a container for
+        these properties. The properties are available to all server
+        objects and extensions through the server environment interface.
 
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required property.
+        ===============     ====================================================================
         The available properties are as follows:
 
             + WebContextURL - Defines the web front-end as seen by your users. Example: https://mydomain.com/gis
@@ -592,7 +596,7 @@ class SystemManager(object):
             + containerCreatedThreshold - Specifies the time (in minutes) after which an empty container is closed automatically.
             + webSocketSize - Specifies the amount of memory (in MB) available to ArcGIS Notebooks for WebSocket communication
 
-        :returns: PropertyMap
+        :return: PropertyMap
         """
         if self._properties is None:
             self._init()
@@ -604,7 +608,7 @@ class SystemManager(object):
         """
         returns statistics about the current state of the notebook server
 
-        :returns: Dictionary
+        :return: Dictionary
         """
         try:
             url = self._url + "/statistics/mostRecent"
@@ -622,21 +626,7 @@ class SystemManager(object):
     @properties.setter
     def properties(self, value) -> None:
         """
-        Sets the ArcGIS Notebook Server has configuration properties that govern
-        some of its intricate behavior. This resource is a container for
-        these properties. The properties are available to all server
-        objects and extensions through the server environment interface.
-
-
-        The available properties are as follows:
-
-            + WebContextURL - Defines the web front-end as seen by your users. Example: https://mydomain.com/gis
-            + maxContainersPerNode - The default maximum number of containers that can be opened on a notebook server machine assuming the machine has the necessary CPU/Memory resources to support the containers.
-            + idleNotebookThreshold - Specifies the time (in minutes) after which idle notebooks are closed automatically.
-            + containerCreatedThreshold - Specifies the time (in minutes) after which an empty container is closed automatically.
-            + webSocketSize - Specifies the amount of memory (in MB) available to ArcGIS Notebooks for WebSocket communication
-
-        :returns: PropertyMap
+        See main ``properties`` property docstring
         """
         properties: {
             "dockerConnectionPort": 2375,
@@ -667,7 +657,7 @@ class SystemManager(object):
         """
         Returns a list of active containers.
 
-        :returns: List of :class:`containers <arcgis.gis.nb.Container>`
+        :return: List of :class:`containers <arcgis.gis.nb.Container>`
         """
         container = []
         url = self._url + "/containers"
@@ -716,7 +706,7 @@ class SystemManager(object):
         creates a new job entry that can be queried for its current status
         and messages.
 
-        :returns: list
+        :return: list
 
         """
         url = self._url + "/jobs"
@@ -736,7 +726,7 @@ class SystemManager(object):
         can only view and delete their own jobs.
         Only jobs in completed or failed states will be cleaned up.
 
-        :returns: Boolean
+        :return: Boolean
         """
         params = {"f": "json"}
         url = self._url + "/jobs/deleteAll"
@@ -763,7 +753,7 @@ class SystemManager(object):
                                This is only valid on 10.9+.
         ==================     ====================================================================
 
-        :returns: list
+        :return: list
 
         """
         url = self._url + "/jobs"
@@ -778,7 +768,7 @@ class SystemManager(object):
     def directories(self) -> DirectoryManager:
         """Provides access to registering directories
 
-        :returns: :class:`~arcgis.gis.nb.DirectoryManager`
+        :return: :class:`~arcgis.gis.nb.DirectoryManager`
         """
         if self._dir is None:
             url = self._url + "/directories"
@@ -798,7 +788,7 @@ class SystemManager(object):
         job_id                 Required String. The unique identifier of the job.
         ==================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         url = self._url + "/jobs/{jid}".format(jid=job_id)
@@ -825,7 +815,7 @@ class SystemManager(object):
         implementation is built on top of a file system and stores all the
         configurations in a hierarchy of folders and files.
 
-        :returns: dict
+        :return: dict
 
         """
         url = self._url + "/configStore"

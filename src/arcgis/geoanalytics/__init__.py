@@ -64,7 +64,7 @@ def define_output_datastore(datastore=None, template=None):
                                  be written to a file in the big data file share.
     ==========================   ===============================================================
 
-    :returns: Boolean
+    :return: Boolean with True indicating success
 
     """
     import arcgis
@@ -104,7 +104,6 @@ def define_output_datastore(datastore=None, template=None):
     else:
         arcgis.env.output_datastore = None
         return True
-    return False
 
 
 def is_supported(gis=None):
