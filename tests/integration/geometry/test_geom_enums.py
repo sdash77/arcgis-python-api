@@ -9,7 +9,7 @@ from arcgis.geometry import (
     AreaUnits,
 )
 
-PROFILES = ['your_online_profile', 'your_enterprise_profile']
+PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
 
 class TestGeometryServiceWithEnums(unittest.TestCase):
@@ -44,11 +44,11 @@ class TestGeometryServiceWithEnums(unittest.TestCase):
                 area_unit=AreaUnits.ACRES,
                 calculation_type="preserveShape",
             )
-            assert 'areas' in res
-            assert 'lengths' in res
+            assert "areas" in res
+            assert "lengths" in res
 
     def test_area_units(self):
-        assert AreaUnits.SQUAREINCHES.value == {'areaUnit': 'esriSquareInches'}
+        assert AreaUnits.SQUAREINCHES.value == {"areaUnit": "esriSquareInches"}
 
     def test_length_units(self):
         assert LengthUnits.BRITISH1936FOOT.value == 9095
