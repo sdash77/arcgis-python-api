@@ -6246,7 +6246,7 @@ class ContentManager(object):
         ================  ==========================================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------------------------
-        df                Required string. Pandas dataframe or arcgis.SpatialDataFrame
+        df                Required DataFrame. Pandas dataframe
         ----------------  --------------------------------------------------------------------------
         address_fields    Optional dictionary. Dictionary containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }.
         ----------------  --------------------------------------------------------------------------
@@ -6361,7 +6361,7 @@ class ContentManager(object):
             warnings.warn(
                 "`item_id` is not allowed at this version of Portal, please use Enterprise 10.8.1+"
             )
-        from arcgis.features import FeatureCollection, SpatialDataFrame, FeatureSet
+        from arcgis.features import FeatureCollection, FeatureSet
 
         from arcgis._impl.common._utils import zipws
 
@@ -6385,16 +6385,12 @@ class ContentManager(object):
             has_pyshp = False
         if isinstance(df, FeatureSet):
             df = df.sdf
-        if (
-            has_arcpy == False
-            and has_pyshp == False
-            and (isinstance(df, SpatialDataFrame) or _is_geoenabled(df))
-        ):
+        if has_arcpy == False and has_pyshp == False and _is_geoenabled(df):
             raise Exception(
                 "Spatially enabled DataFrame's must have either pyshp or"
                 + " arcpy available to use import_data"
             )
-        elif isinstance(df, SpatialDataFrame) or _is_geoenabled(df):
+        elif _is_geoenabled(df):
             import random
             import string
 
@@ -6417,14 +6413,10 @@ class ContentManager(object):
                     **{"out_folder_path": temp_dir, "out_name": name},
                 )
                 fgdb = result[0]
-                if isinstance(df, SpatialDataFrame):
-                    ds = df.to_featureclass(
-                        out_location=fgdb, out_name=os.path.basename(temp_dir)
-                    )
-                else:
-                    ds = df.spatial.to_featureclass(
-                        location=os.path.join(fgdb, os.path.basename(temp_dir))
-                    )
+
+                ds = df.spatial.to_featureclass(
+                    location=os.path.join(fgdb, os.path.basename(temp_dir))
+                )
 
                 zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
                 item = self.add(
@@ -6456,12 +6448,8 @@ class ContentManager(object):
                     random.choice(string.ascii_lowercase),
                     uuid4().hex[:5],
                 )
-                if isinstance(df, SpatialDataFrame):
-                    ds = df.to_featureclass(out_location=temp_dir, out_name=name)
-                else:
-                    ds = df.spatial.to_featureclass(
-                        location=os.path.join(temp_dir, name)
-                    )
+
+                ds = df.spatial.to_featureclass(location=os.path.join(temp_dir, name))
                 zip_shp = zipws(path=temp_dir, outfile=temp_zip, keep=False)
                 item = self.add(
                     item_properties={"title": title, "tags": tags},
