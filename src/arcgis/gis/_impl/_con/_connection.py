@@ -183,7 +183,11 @@ class Connection(object):
             self._auth = "PRO"
             portal_url = arcpy.GetActivePortalURL()
             if portal_url.lower().find("/sharing/rest") == -1:
-                self._baseurl = arcpy.GetActivePortalURL() + "/sharing/rest"
+                if arcpy.GetActivePortalURL().endswith("/"):
+
+                    self._baseurl = arcpy.GetActivePortalURL() + "sharing/rest"
+                else:
+                    self._baseurl = arcpy.GetActivePortalURL() + "/sharing/rest"
             else:
                 self._baseurl = arcpy.GetActivePortalURL()
         elif self._cert_file or (self._cert_file and self._key_file):
@@ -703,7 +707,7 @@ class Connection(object):
         timeout                       optional Integer. Timeout in seconds
         ===========================   =====================================================
 
-        :returns: data returned from the URL call.
+        :return: data returned from the URL call.
         """
         timeout = kwargs.pop("timeout", self._timeout)
         retry_count = 0
@@ -925,7 +929,7 @@ class Connection(object):
         timeout                       optional Integer. The number of seconds to timeout a service without a response.  The default is 600 seconds.
         ===========================   =====================================================
 
-        :returns: data returned from the URL call.
+        :return: data returned from the URL call.
 
         """
         timeout = kwargs.pop("timeout", self._timeout)
@@ -1139,7 +1143,7 @@ class Connection(object):
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
         ===========================   =====================================================
 
-        :returns: dict or string depending on the response
+        :return: dict or string depending on the response
 
         """
         token = kwargs.pop("token", _DEFAULT_TOKEN)
@@ -1263,7 +1267,7 @@ class Connection(object):
                                       https.
         ===========================   =====================================================
 
-        :returns: dict or string depending on the response
+        :return: dict or string depending on the response
         """
         out_path = kwargs.pop("out_path", None)
         file_name = kwargs.pop("file_name", None)
@@ -1406,7 +1410,7 @@ class Connection(object):
     # ----------------------------------------------------------------------
     @property
     def token(self):
-        """Gets a Token"""
+        """Get/Set a Token"""
         if str(self._auth).lower() in ["builtin", "oauth"]:
             if self._expiration is None or self._expiration <= 5:
                 self._expiration = 6
@@ -1913,9 +1917,19 @@ class Connection(object):
             return "AGOL"
         elif baseurl.lower().find("/sharing/rest") > -1:
             if baseurl.endswith("/"):
-                res = self.get(baseurl + "info", params={"f": "json"}, add_token=False)
+                try:
+                    res = self.get(
+                        baseurl + "info", params={"f": "json"}, add_token=False
+                    )
+                except:
+                    res = self.get(baseurl + "info", params={"f": "json"})
             else:
-                res = self.get(baseurl + "/info", params={"f": "json"}, add_token=False)
+                try:
+                    res = self.get(
+                        baseurl + "/info", params={"f": "json"}, add_token=False
+                    )
+                except:
+                    res = self.get(baseurl + "/info", params={"f": "json"})
             if (
                 self._token_url is None
                 and res is not None

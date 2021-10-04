@@ -121,7 +121,7 @@ class AutoML(object):
 
     =====================   ===========================================
 
-    :returns: `AutoML` Object
+    :return: `AutoML` Object
     """
 
     def __init__(
@@ -180,9 +180,9 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            #if mode == "Explain":
+            # if mode == "Explain":
             #    explain_level = 2
-            #else:
+            # else:
             explain_level = 2
             self._model = base_AutoML(
                 mode=mode,
@@ -410,7 +410,7 @@ class AutoML(object):
                                 file.
         =====================   ===========================================
 
-        :returns: `AutoML` Object
+        :return: `AutoML` Object
         """
         emd_path = _get_emd_path(emd_path)
         if not HAS_SK_LEARN:

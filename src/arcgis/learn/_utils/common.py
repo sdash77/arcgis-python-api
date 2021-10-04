@@ -36,7 +36,7 @@ except Exception:
     pass
 
 
-def read_image(path, resize_to: int = None):
+def read_image(path, resize_to: int = None, keep_raw=False):
     """
     path: file path of image on disk.
 
@@ -56,7 +56,7 @@ def read_image(path, resize_to: int = None):
             from osgeo import gdal
 
             ds = gdal.Open(path)
-            if resize_to is None:
+            if resize_to is None or keep_raw:
                 arr = ds.ReadAsArray()
             else:
                 gdal_dtype = ds.GetRasterBand(1).DataType
@@ -77,7 +77,7 @@ def read_image(path, resize_to: int = None):
                     yRes=dy_new,
                 )
                 arr = ds_new.ReadAsArray()
-            if len(arr.shape) > 2:
+            if len(arr.shape) > 2 and not keep_raw:
                 arr = np.rollaxis(arr, 0, 3)
             return arr
     except Exception as _gdal_error:
@@ -97,7 +97,10 @@ def read_image(path, resize_to: int = None):
     try:
         from skimage.io import imread
 
-        return np.array(PIL.Image.open(path).convert("RGB"))
+        with PIL.Image.open(path).convert("RGB") as im:
+            arr = np.array(im)
+            im.close()
+        return arr
     except Exception as _pillow_error:
         pillow_error = str(_pillow_error)
 
@@ -111,7 +114,9 @@ def read_image(path, resize_to: int = None):
 
 
 class ArcGISMSImage(Image):
-    def show(self, ax=None, rgb_bands=None, show_axis=False, title=None):
+    def show(
+        self, ax=None, rgb_bands=None, show_axis=False, title=None, return_ax=False
+    ):
         if rgb_bands is None:
             rgb_bands = getattr(self, "rgb_bands", [0, 1, 2])
         if ax is None:
@@ -129,6 +134,8 @@ class ArcGISMSImage(Image):
         ax.imshow(data_to_plot)
         if title is not None:
             ax.set_title(title)
+        if return_ax:
+            return ax
 
     def print_method(self):
         return self.show()
@@ -157,8 +164,8 @@ class ArcGISMSImage(Image):
         return cls(x)
 
     @staticmethod
-    def read_image(path):
-        return read_image(path)
+    def read_image(path, keep_raw=False):
+        return read_image(path, keep_raw=keep_raw)
 
     @classmethod
     def open(cls, path, cast_to=np.float32, div=None, imagery_type=None):
@@ -190,8 +197,9 @@ class ArcGISMSImage(Image):
                     warnings.simplefilter(
                         "ignore", UserWarning
                     )  # EXIF warning from TiffPlugin
-                    x = PIL.Image.open(path).convert("RGB")
-                x = pil2tensor(x, cast_to)
+                    with PIL.Image.open(path).convert("RGB") as im:
+                        x = pil2tensor(im, cast_to)
+                        im.close()
                 read = True
             except Exception as _pillow_error:
                 pillow_error = str(_pillow_error)
@@ -220,8 +228,9 @@ class ArcGISMSImage(Image):
                 if isinstance(div, tuple):
                     min_values, max_values = div
                     if not isinstance(min_values, torch.Tensor):
-                        min_values, max_values = torch.tensor(min_values), torch.tensor(
-                            max_values
+                        min_values, max_values = (
+                            torch.tensor(min_values),
+                            torch.tensor(max_values),
                         )
                     for i in range(x.shape[0]):
                         arr = x[i, :, :]
@@ -242,6 +251,10 @@ class ArcGISImageList(ImageList):
 
     def open(self, fn):
         return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
+
+
+class ArcGISImageListRGB(ArcGISImageList):
+    _div = 255
 
 
 def get_multispectral_data_params_from_emd(data, emd):
@@ -451,10 +464,13 @@ def get_percent_minmax(imagetensor_batch, min_clip=0.0025, max_clip=0.005):
         v = get_band_percent_minmax(_imagetensor_batch[i].unique(), min_clip, max_clip)
         min_vals.append(v[0])
         max_vals.append(v[1])
-    return torch.tensor(
-        min_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
-    ), torch.tensor(
-        max_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
+    return (
+        torch.tensor(
+            min_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
+        ),
+        torch.tensor(
+            max_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
+        ),
     )
 
 

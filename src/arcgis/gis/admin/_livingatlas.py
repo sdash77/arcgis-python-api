@@ -142,8 +142,8 @@ class LivingAtlas(BasePortalAdmin):
         The content includes valuable maps, data layers, tools, services and
         apps for geographic analysis.
 
-        :returns:
-           boolean. `True` if enabled. `False` if failed to enable.
+        :return:
+           Boolean. `True` if enabled. `False` if failed to enable.
 
         """
         url = self._url + "/share"
@@ -159,8 +159,8 @@ class LivingAtlas(BasePortalAdmin):
         """
         Disables the Public Living Atlas content.
 
-        :returns:
-           boolean. True means disabled, False means failure to disable.
+        :return:
+           Boolean. True means disabled, False means failure to disable.
 
         """
         url = self._url + "/unshare"
@@ -252,7 +252,7 @@ class LivingAtlas(BasePortalAdmin):
         password            Required string. The credentials for the user above.
         ===============     ====================================================
 
-        :return: boolean
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/update" % self._url
@@ -287,7 +287,7 @@ class LivingAtlas(BasePortalAdmin):
         password            Required string. The credentials for the user above.
         ===============     ====================================================
 
-        :return: boolean
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/update" % self._url
@@ -332,8 +332,9 @@ class LivingAtlas(BasePortalAdmin):
                             default is https://www.arcgis.com
         ===============     ====================================================
 
-        :returns:
-          boolean
+        :return:
+          Boolean. True if successful else False.
+
         """
         if online_url is None:
             online_url = "https://www.arcgis.com"

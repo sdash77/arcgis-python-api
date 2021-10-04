@@ -326,7 +326,7 @@ def build_multivariable_grid(
     future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
 
-    :returns: boolean
+    :return: boolean
 
     .. code-block:: python
 
@@ -590,7 +590,7 @@ def aggregate_points(
                                                           results. The GPJob can be queried on the status of the execution.
     =================================================     ========================================================================
 
-    :returns: result_layer : Output Features as feature layer item.
+    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
 
@@ -748,19 +748,19 @@ def describe_dataset(
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
-    :returns: a named tuple with the following keys if ``return_tuple`` is set to 'True':
+    :return: a named tuple with the following keys if ``return_tuple`` is set to 'True':
 
       "output_json" : dict
 
-      "output" : Table
+      "output" : :class:`~arcgis.features.Table`
 
-      "extent_layer" : feature layer
+      "extent_layer" : :class:`~arcgis.features.FeatureLayer`
 
-      "sample_layer" : feature layer
+      "sample_layer" : :class:`~arcgis.features.FeatureLayer`
 
       "process_info" : list
 
-    else returns a feature layer of the results.
+    else returns a :class:`~arcgis.features.FeatureLayer` of the results.
 
     .. code-block:: python
 
@@ -1021,7 +1021,7 @@ def join_features(
                                                                                                                 This parameter is available at ArcGIS Enterprise **10.9+**.
     ==========================================================================================================  =============================================================================================
 
-    :Returns: Output Features as Feature Layer Collection Item
+    :return: Output Features as :class:`~arcgis.features.FeatureLayerCollection`
 
     .. code-block:: python
 
@@ -1284,7 +1284,7 @@ def reconstruct_tracks(
                                                                                             The default is `None`.
     ======================================================================================  ===============================================================
 
-    :returns: feature layer collection item
+    :return: :class:`~arcgis.features.FeatureLayerCollection`
 
     .. code-block:: python
 
@@ -1477,7 +1477,7 @@ def summarize_attributes(
                                                                                  input points are time-enabled and of time type instant.
     ===========================================================================  ===============================================================
 
-    :returns: feature layer collection
+    :return: :class:`~arcgis.features.FeatureLayerCollection`
 
     .. code-block:: python
 
@@ -1735,7 +1735,7 @@ def summarize_within(
     future                                                                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ===========================================================================  ===============================================================
 
-    :returns: result_layer : Output Features as feature layer item.
+    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
 

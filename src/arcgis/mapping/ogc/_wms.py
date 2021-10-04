@@ -70,7 +70,7 @@ class WMSLayer(BaseOGC):
         """
         Returns the properties of the Layer.
 
-        :returns: PropertyMap
+        :return: PropertyMap
         """
         if self._properties is None:
 

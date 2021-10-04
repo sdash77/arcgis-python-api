@@ -60,7 +60,7 @@ class Federation(BasePortalAdmin):
         password                        Required string. password of the username above.
         ===========================     ====================================================================
 
-        :returns: dict, server response with server ID
+        :return: Dictionary indicating 'success' or 'error'
         """
         fedurl = "%s/servers/federate" % self._url
         params = {
@@ -99,9 +99,7 @@ class Federation(BasePortalAdmin):
         server_id                       Required string. The unique ID of the server
         ===========================     ====================================================================
 
-        :returns: boolean
-
-
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/servers/%s/unfederate" % (self._url, server_id)
@@ -137,7 +135,7 @@ class Federation(BasePortalAdmin):
                                         Values are: GeoAnalytics, RasterAnalytics, ImageHosting, NotebookServer, MissionServer, WorkflowManager, or None
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         role_allow = [
@@ -180,7 +178,7 @@ class Federation(BasePortalAdmin):
         server_id                       Required string. The unique ID of the server
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary
 
         """
         params = {"f": "json"}

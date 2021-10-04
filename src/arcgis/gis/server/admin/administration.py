@@ -734,7 +734,7 @@ class Server(BaseServer):
         administrative operations such as adding and removing machines from a
         site are still available in READ_ONLY mode.
 
-        :returns: `Mode` class
+        :return: `Mode` class
         """
         if self.resources is None:
             self._init()

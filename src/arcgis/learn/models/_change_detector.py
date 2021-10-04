@@ -47,7 +47,7 @@ class ChangeDetector(ArcGISModel):
                             saved.
     =====================   ===========================================
 
-    :returns: ``ChangeDetector`` object
+    :return: ``ChangeDetector`` object
     """
 
     def __init__(
@@ -102,7 +102,7 @@ class ChangeDetector(ArcGISModel):
 
     @staticmethod
     def _supported_datasets():
-        return ["ChangeDetection"]
+        return ["ChangeDetection", "Classified_Tiles"]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -122,7 +122,7 @@ class ChangeDetector(ArcGISModel):
                                 None for inferencing.
         =====================   ===========================================
 
-        :returns: ``ChangeDetector`` Object
+        :return: ``ChangeDetector`` Object
         """
         emd_path = _get_emd_path(emd_path)
         emd_path = Path(emd_path)
@@ -161,6 +161,9 @@ class ChangeDetector(ArcGISModel):
     def _get_model_metrics(self, **kwargs):
         checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
+            return [0.0, 0.0, 0.0]
+
+        if len(self.learn.recorder.metrics) == 0:
             return [0.0, 0.0, 0.0]
 
         model_accuracy = self.learn.recorder.metrics[-1]
@@ -290,7 +293,7 @@ class ChangeDetector(ArcGISModel):
                                 prediction file on the disk. Default False.
         =====================   ===========================================
 
-        :returns: PyTorch Tensor of the change mask.
+        :return: PyTorch Tensor of the change mask.
         """
         from .._utils.change_detection_data import predict
 

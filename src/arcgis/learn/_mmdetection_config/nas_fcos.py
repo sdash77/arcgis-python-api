@@ -15,7 +15,6 @@
 # nas_fcos_nashead_r50_caffe_fpn_gn-head_4x4_1x_coco.py, box AP=39.4
 model = dict(
     type="NASFCOS",
-    pretrained="open-mmlab://detectron2/resnet50_caffe",
     backbone=dict(
         type="ResNet",
         depth=50,
@@ -24,6 +23,9 @@ model = dict(
         frozen_stages=1,
         norm_cfg=dict(type="BN", requires_grad=False, eps=0),
         style="caffe",
+        init_cfg=dict(
+            type="Pretrained", checkpoint="open-mmlab://detectron2/resnet50_caffe"
+        ),
     ),
     neck=dict(
         type="NASFCOS_FPN",

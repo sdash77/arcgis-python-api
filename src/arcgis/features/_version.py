@@ -83,13 +83,13 @@ class VersionManager(object):
         permission          Optional String. The access permissions of the new version. The
                             default access permission is public.
 
-                            Values: private, public, protected, or hidden
+                            Values: "private" | "public" | "protected" | "hidden"
         ---------------     --------------------------------------------------------------------
         description         Optional String. The description of the new version
         ===============     ====================================================================
 
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         params = {
@@ -121,7 +121,7 @@ class VersionManager(object):
         ===============     ====================================================================
 
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         if isinstance(version, Version):
@@ -184,7 +184,7 @@ class VersionManager(object):
                             returned.
         ===============     ====================================================================
 
-        :return: dict
+        :return: Dictionary indication 'success' or 'error'
 
         """
         url = "%s/versionInfos" % self._url
@@ -292,7 +292,7 @@ class Version(object):
         """
         Provides access to a validation manager.
 
-        :returns: ValidationManager
+        :return: :class:`~arcgis.features.ValidationManager`
         """
         if self._validation is None:
             from arcgis.mapping import MapImageLayer
@@ -315,7 +315,7 @@ class Version(object):
         """
         Provides access to a parcel fabric manager
 
-        :returns: ParcelFabricManager
+        :return: :class:`~arcgis.features.ParcelFabricManager`
         """
         if (
             "controllerDatasetLayers" in self._flc.properties
@@ -376,18 +376,21 @@ class Version(object):
         The `mode` allows versoin editors to start and stop edit, read, or
         view mode.
 
-        Allowed Values:
-
-            + edit - calls the `start_editing` method and creates a lock
-            + read - calls the `start_reading` method and creates a lock
-            + None - terminates all sessions and lets a user view the version information (default)
-
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+                                Values:
+                                + edit - calls the `start_editing` method and creates a lock
+                                + read - calls the `start_reading` method and creates a lock
+                                + None - terminates all sessions and lets a user view the version information (default)
+        ==================      ====================================================================
 
         """
         if (
             "isBeingEdited" in self.properties
             and self.properties.isBeingEdited
-            and "isBeingRed" in self.properties
+            and "isBeingRead" in self.properties
             and self.properties.isBeingRead
         ):
             self._mode = "edit"
@@ -395,7 +398,7 @@ class Version(object):
         elif (
             "isBeingEdited" in self.properties
             and self.properties.isBeingEdited == False
-            and "isBeingRed" in self.properties
+            and "isBeingRead" in self.properties
             and self.properties.isBeingRead
         ):
             self._mode = "read"
@@ -459,7 +462,7 @@ class Version(object):
         """
         Deletes the current version
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/delete" % os.path.dirname(os.path.dirname(self._url))
@@ -483,6 +486,13 @@ class Version(object):
         """
         Get/Set the Property to Save the Changes.
 
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required bool.
+                                Values: True | False
+        ==================      ====================================================================
+
         When set to true, any edits performed on the version will be saved.
         """
         return self._save
@@ -503,7 +513,7 @@ class Version(object):
         """
         Starts an edit session for the current user.
 
-        :returns: boolean
+        :return: Boolean. True if successful else False.
         """
         if (
             "isBeingEdited" in self.properties
@@ -540,7 +550,7 @@ class Version(object):
         ===============     ====================================================================
 
 
-        :returns: boolean
+        :return: Boolean. True if successful else False.
 
         """
         self._properties = None
@@ -569,7 +579,7 @@ class Version(object):
         is enabled, it will prevent other users from editing or reconciling the
         version.
 
-        :returns: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         self._properties = None
@@ -592,7 +602,7 @@ class Version(object):
         """
         Stops and releases a reading session.
 
-        :returns: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         self._properties = None
@@ -629,7 +639,7 @@ class Version(object):
                             all forward moments will be trimmed.
         ===============     ====================================================================
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/deleteForwardEdits" % self._url
@@ -703,7 +713,7 @@ class Version(object):
 
         ==================     ====================================================================
 
-        :returns: Boolean, String where the Boolean is the Success and the String is the Moment
+        :return: Boolean and String. Bool: True if successful else False. String: the moment
 
         """
         url = "%s/restoreRows" % self._url
@@ -736,7 +746,7 @@ class Version(object):
         ===============     ====================================================================
 
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/alter" % self._url
@@ -781,7 +791,7 @@ class Version(object):
         ===============     ====================================================================
 
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/differences" % self._url
@@ -841,7 +851,7 @@ class Version(object):
         ===============     ====================================================================
 
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
 
         """
@@ -865,7 +875,7 @@ class Version(object):
         If the default version has been modified in the interim, the client
         will have to reconcile again before posting.
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         if self._mode == "edit":
@@ -945,7 +955,7 @@ class Version(object):
                                 value is true.
         =====================   ===========================================
 
-        :returns: dictionary
+        :return: Dictionary
 
         """
         if self._mode == "edit":

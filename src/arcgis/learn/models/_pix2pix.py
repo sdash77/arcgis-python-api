@@ -47,7 +47,7 @@ class Pix2Pix(ArcGISModel):
                             Default set to False.
     =====================   ===========================================
 
-    :returns: `Pix2Pix` Object
+    :return: `Pix2Pix` Object
     """
 
     def __init__(
@@ -108,7 +108,7 @@ class Pix2Pix(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `Pix2Pix` Object
+        :return: `Pix2Pix` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -216,6 +216,8 @@ class Pix2Pix(ArcGISModel):
         """
         Computes Peak Signal-to-Noise Ratio (PSNR) and
         Structural Similarity Index Measure (SSIM) on validation set.
+        Additionally, computes Frechet Inception Distance (FID) for
+        RGB imagery only.
 
         """
         psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress)

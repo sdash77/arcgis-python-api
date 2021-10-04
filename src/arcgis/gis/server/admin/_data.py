@@ -112,17 +112,7 @@ class DataStoreManager(BaseServer):
         copy data to the site when publishing. Rather, the publisher is
         required to register data items through which the service being
         published can reference data. Values: true | false
-        """
 
-        """ jenn note -- need link or list of the possible data store configuration properties."""
-        params = {"f": "json"}
-        url = self._url + "/config"
-        return self._con.get(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    @config.setter
-    def config(self, config):
-        """
         This operation allows you to update the data store configuration
         You can use this to allow or block the automatic copying of data
         to the server at publish time
@@ -135,7 +125,18 @@ class DataStoreManager(BaseServer):
 
         :return:
            JSON dictionary of the set configuration properties.
+        """
 
+        """ jenn note -- need link or list of the possible data store configuration properties."""
+        params = {"f": "json"}
+        url = self._url + "/config"
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    @config.setter
+    def config(self, config):
+        """
+        See main ``config`` property docstring.
         """
         if config is None:
             config = {}
@@ -901,15 +902,7 @@ class Datastore(BaseServer):
         """
         Gets the hints resource for a big data file share. Hints
         are advanced parameters to control the generation of a manifest.
-        """
-        params = {"download": True, "read": True}
-        url = self._url + "/hints"
-        return self._con.get(path=url, params=params)
 
-    # ---------------------------------------------------------------------
-    @hints.setter
-    def hints(self, hints):
-        """
         Sets the hints resource for a big data file share. Hints
         are advanced parameters to control the generation of a manifest.
 
@@ -929,7 +922,16 @@ class Datastore(BaseServer):
         ------------------     --------------------------------------------------------------------
         hints                  Required string. The hints file to be uploaded.
         ==================     ====================================================================
+        """
+        params = {"download": True, "read": True}
+        url = self._url + "/hints"
+        return self._con.get(path=url, params=params)
 
+    # ---------------------------------------------------------------------
+    @hints.setter
+    def hints(self, hints):
+        """
+        See main ``hints`` property docstring.
         """
         params = {"f": "json"}
         files = {"hints": hints}
@@ -1029,7 +1031,7 @@ class Datastore(BaseServer):
         regenerate a manifest if you have added new data or if you have
         uploaded a hints file using the edit resource.
 
-        :returns: Boolean. True = Success, False = Failure
+        :return: Boolean. True = Success, False = Failure
 
         """
         url = self._datastore._url + "/regenerate"

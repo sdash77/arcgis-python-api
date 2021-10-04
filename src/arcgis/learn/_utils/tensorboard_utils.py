@@ -86,10 +86,10 @@ class ArcGISTBCallback(
             self._arcgis_model.learn.model.arcgis_results = True
             fig1 = self.show_results(rows=rows)
             self._arcgis_model.learn.model.arcgis_results = False
-        elif (type(self._arcgis_model).__name__) == "Pix2Pix":
-            self._arcgis_model.learn.model.arcgis_results = True
-            fig1 = self.show_results(rows=rows)
-            self._arcgis_model.learn.model.arcgis_results = False
+        elif (type(self._arcgis_model).__name__) == "Pix2Pix" or (
+            type(self._arcgis_model).__name__
+        ) == "Pix2PixHD":
+            fig1 = self.show_results_pix2pix(rows=rows)
         else:
             return
 
@@ -157,8 +157,6 @@ class ArcGISTBCallback(
         elif (type(self._arcgis_model).__name__) == "SuperResolution":
             fig1 = self.img_img_show_xyzs(xs, ys, zs)
         elif (type(self._arcgis_model).__name__) == "CycleGAN":
-            fig1 = self.img_tuple_show_xyzs(xs, ys, zs)
-        elif (type(self._arcgis_model).__name__) == "Pix2Pix":
             fig1 = self.img_tuple_show_xyzs(xs, ys, zs)
         return fig1
 
@@ -395,3 +393,63 @@ class ArcGISTBCallback(
             zs = [ds.y.reconstruct(z) for z in preds]
         fig1 = self.show_xyzs(xs, ys, zs, **kwargs)
         return fig1
+
+    def show_results_pix2pix(self, rows, **kwargs):
+        from .common import get_nbatches, get_top_padding, ArcGISMSImage
+        from .._data_utils.pix2pix_data import denormalize, display_row
+
+        self._arcgis_model.learn.model.eval()
+        x_batch, y_batch = get_nbatches(
+            self._arcgis_model._data.valid_dl,
+            math.ceil(rows / self._arcgis_model._data.batch_size),
+        )
+        x_A, x_B = [x[0] for x in x_batch], [x[1] for x in x_batch]
+
+        x_A = torch.cat(x_A)
+        x_B = torch.cat(x_B)
+
+        top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
+        activ = []
+
+        for i in range(0, x_B.shape[0], self._arcgis_model._data.batch_size):
+            with torch.no_grad():
+                preds = self._arcgis_model.learn.model(
+                    x_A[i : i + self._arcgis_model._data.batch_size].detach(),
+                    x_B[i : i + self._arcgis_model._data.batch_size].detach(),
+                )
+            activ.append(preds[0])
+
+        activations = torch.cat(activ)
+        if self._arcgis_model._data.label_nc == 0:
+            x_A = denormalize(x_A.cpu(), *self._arcgis_model._data.norm_stats)
+        x_B = denormalize(x_B.cpu(), *self._arcgis_model._data.norm_stats)
+        activations = denormalize(
+            activations.cpu(), *self._arcgis_model._data.norm_stats
+        )
+        rows = min(rows, x_A.shape[0])
+
+        fig, axs = plt.subplots(
+            nrows=rows, ncols=3, figsize=(4 * 5, rows * 5), squeeze=False
+        )
+        plt.subplots_adjust(top=top)
+        axs[0, 0].title.set_text("Input")
+        axs[0, 1].title.set_text("Ground Truth")
+        axs[0, 2].title.set_text("Prediction")
+        from fastai.vision import image2np
+
+        for r in range(rows):
+            if self._arcgis_model._data._is_multispectral:
+                display_row(
+                    axs[r],
+                    (
+                        ArcGISMSImage(x_A[r]),
+                        ArcGISMSImage(x_B[r]),
+                        ArcGISMSImage(activations[r]),
+                    ),
+                )
+            else:
+                display_row(
+                    axs[r],
+                    (image2np(x_A[r]), image2np(x_B[r]), image2np(activations[r])),
+                )
+        return fig
