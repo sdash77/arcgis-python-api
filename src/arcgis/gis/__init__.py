@@ -470,15 +470,8 @@ class GIS(object):
                     token=self._utoken,
                 )
             if self._is_hosted_nb_home:
-                # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
                 self._portal.con._session.headers.pop("Referer", None)
-            """
-            #if not (self._utoken is None):
-                #self._portal.con._token = self._utoken
-                #self._portal.con.token = self._utoken
-            #    self._portal.con._auth = "HOME"
-            """
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
                 raise RuntimeError(
@@ -821,6 +814,7 @@ class GIS(object):
                 assert required_json_keys.issubset(json_data)
                 self._url = json_data["privatePortalUrl"]
                 self._public_portal_url = json_data["publicPortalUrl"]
+                self._referer = json_data.get("referer", "")
                 if "token" in json_data:
                     self._utoken = json_data["token"]
                 self._expiration = json_data.get("expiration", None)

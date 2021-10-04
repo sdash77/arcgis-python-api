@@ -327,18 +327,17 @@ class Connection(object):
         parsed = self._parsed(url)
         root = fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
         params = {"f": "json"}
-        return list(
-            set(
-                [
-                    s.get(
-                        root + pt,
-                        params=params,
-                        verify=self._verify_cert,
-                    ).headers.get("www-authenticate", "")
-                    for pt in ["/info", "/rest/info", "/sharing/rest/info"]
-                ]
-            )
-        )
+        results = []
+        for pt in ["/info", "/rest/info", "/sharing/rest/info"]:
+            try:
+
+                www_auth = s.get(
+                    root + pt, params=params, verify=self._verify_cert,
+                ).headers.get("www-authenticate", "")
+                results.append(www_auth)
+            except:
+                results.append("")
+        return list(set(results))
 
     # ----------------------------------------------------------------------
     def _validate_url(self, url):
