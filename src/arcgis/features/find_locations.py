@@ -14,22 +14,30 @@ create_viewshed creates areas that are visible based on locations you specify.
 create_watersheds creates catchment areas based on locations you specify.
 trace_downstream determines the flow paths in a downstream direction from the locations you specify
 """
+from datetime import datetime
 import json
 import logging
+from re import U
+from typing import List, Optional, Union
 import arcgis as _arcgis
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer
+from arcgis.gis import GIS
 import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
 
 _logger = logging.getLogger()
 # --------------------------------------------------------------------------
 def find_existing_locations(
-    input_layers=None,
-    expressions=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layers: Optional[
+        Union[List[FeatureLayer], List[FeatureCollection], List[str]]
+    ] = None,
+    expressions: Optional[dict] = None,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/find_existing_locations/find_existing_locations.png
@@ -312,13 +320,15 @@ def find_existing_locations(
 
 # --------------------------------------------------------------------------
 def derive_new_locations(
-    input_layers=[],
-    expressions=[],
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layers: Optional[
+        Union[List[FeatureLayer], List[FeatureCollection], List[str]]
+    ] = [],
+    expressions: Optional[dict] = [],
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/derive_new_locations/derive_new_locations.png
@@ -597,16 +607,16 @@ def derive_new_locations(
 
 # --------------------------------------------------------------------------
 def find_similar_locations(
-    input_layer,
-    search_layer,
-    analysis_fields=[],
-    input_query=None,
-    number_of_results=0,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[List[FeatureLayer], List[FeatureCollection], List[str]],
+    search_layer: Union[FeatureLayer, str],
+    analysis_fields: Optional[List[str]] = [],
+    input_query: Optional[str] = None,
+    number_of_results: int = 0,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/find_similar_locations/find_similar_locations.png
@@ -738,13 +748,13 @@ def find_similar_locations(
 
 # --------------------------------------------------------------------------
 def find_centroids(
-    input_layer,
-    point_location=False,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[List[FeatureLayer], List[FeatureCollection], List[str]],
+    point_location: bool = False,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/find_centroids/find_centroids.png
@@ -830,33 +840,39 @@ def find_centroids(
 
 # --------------------------------------------------------------------------
 def choose_best_facilities(
-    goal="Allocate",
-    demand_locations_layer=None,
-    demand=1,
-    demand_field=None,
-    max_travel_range=2147483647,
-    max_travel_range_field=None,
-    max_travel_range_units="Minutes",
-    travel_mode=None,
-    time_of_day=None,
-    time_zone_for_time_of_day="GeoLocal",
-    travel_direction="FacilityToDemand",
-    required_facilities_layer=None,
-    required_facilities_capacity=2147483647,
-    required_facilities_capacity_field=None,
-    candidate_facilities_layer=None,
-    candidate_count=1,
-    candidate_facilities_capacity=2147483647,
-    candidate_facilities_capacity_field=None,
-    percent_demand_coverage=100,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    point_barrier_layer=None,
-    line_barrier_layer=None,
-    polygon_barrier_layer=None,
-    future=False,
+    goal: str = "Allocate",
+    demand_locations_layer: Optional[
+        Union[FeatureLayer, FeatureCollection, str]
+    ] = None,
+    demand: float = 1,
+    demand_field: Optional[str] = None,
+    max_travel_range: float = 2147483647,
+    max_travel_range_field: Optional[str] = None,
+    max_travel_range_units: str = "Minutes",
+    travel_mode: Optional[str] = None,
+    time_of_day: Optional[datetime] = None,
+    time_zone_for_time_of_day: str = "GeoLocal",
+    travel_direction: str = "FacilityToDemand",
+    required_facilities_layer: Optional[
+        Union[FeatureLayer, FeatureCollection, str]
+    ] = None,
+    required_facilities_capacity: float = 2147483647,
+    required_facilities_capacity_field: Optional[str] = None,
+    candidate_facilities_layer: Optional[
+        Union[FeatureLayer, FeatureCollection, str]
+    ] = None,
+    candidate_count: float = 1,
+    candidate_facilities_capacity: float = 2147483647,
+    candidate_facilities_capacity_field: Optional[str] = None,
+    percent_demand_coverage: float = 100,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    point_barrier_layer: Optional[Union[FeatureLayer, FeatureCollection, str]] = None,
+    line_barrier_layer: Optional[Union[FeatureLayer, FeatureCollection, str]] = None,
+    polygon_barrier_layer: Optional[Union[FeatureLayer, FeatureCollection, str]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/choose_best_facilities/choose_best_facilities.png
@@ -1164,20 +1180,20 @@ def choose_best_facilities(
 
 # --------------------------------------------------------------------------
 def create_viewshed(
-    input_layer,
-    dem_resolution="Finest",
-    maximum_distance=None,
-    max_distance_units="Meters",
-    observer_height=None,
-    observer_height_units="Meters",
-    target_height=None,
-    target_height_units="Meters",
-    generalize=True,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[FeatureLayer, FeatureCollection, str],
+    dem_resolution: str = "Finest",
+    maximum_distance: Optional[float] = None,
+    max_distance_units: str = "Meters",
+    observer_height: Optional[float] = None,
+    observer_height_units: str = "Meters",
+    target_height: Optional[float] = None,
+    target_height_units: str = "Meters",
+    generalize: bool = True,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/create_viewshed/create_viewshed.png
@@ -1329,16 +1345,16 @@ def create_viewshed(
 
 # --------------------------------------------------------------------------
 def create_watersheds(
-    input_layer,
-    search_distance=None,
-    search_units="Meters",
-    source_database="FINEST",
-    generalize=True,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Optional[Union[FeatureLayer, FeatureCollection, str]],
+    search_distance: Optional[float] = None,
+    search_units: str = "Meters",
+    source_database: str = "FINEST",
+    generalize: bool = True,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/create_watersheds/create_watersheds.png
@@ -1459,19 +1475,21 @@ def create_watersheds(
 
 # --------------------------------------------------------------------------
 def trace_downstream(
-    input_layer,
-    split_distance=None,
-    split_units="Kilometers",
-    max_distance=None,
-    max_distance_units="Kilometers",
-    bounding_polygon_layer=None,
-    source_database=None,
-    generalize=True,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[FeatureLayer, FeatureCollection, str],
+    split_distance: Optional[float] = None,
+    split_units: str = "Kilometers",
+    max_distance: Optional[float] = None,
+    max_distance_units: str = "Kilometers",
+    bounding_polygon_layer: Optional[
+        Union[FeatureLayer, FeatureCollection, str]
+    ] = None,
+    source_database: Optional[str] = None,
+    generalize: bool = True,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/trace_downstream/trace_downstream.png

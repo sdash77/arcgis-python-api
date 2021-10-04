@@ -6,25 +6,28 @@ enrich_layer retrieves information about the people, places, and businesses in a
 travel time or distance from a location.
 """
 
+from typing import List, Optional, Union
 import arcgis as _arcgis
+from arcgis.features.feature import FeatureCollection
+from arcgis.gis import GIS
 import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
 
 # --------------------------------------------------------------------------
 def enrich_layer(
-    input_layer,
-    data_collections=[],
-    analysis_variables=[],
-    country=None,
-    buffer_type=None,
-    distance=None,
-    units=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    return_boundaries=False,
-    future=False,
+    input_layer: Union[FeatureCollection, str],
+    data_collections: Optional[List[str]] = [],
+    analysis_variables: Optional[List[str]] = [],
+    country: Optional[str] = None,
+    buffer_type: Optional[str] = None,
+    distance: Optional[float] = None,
+    units: Optional[str] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    return_boundaries: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/enrich_layer/enrich_layer.png

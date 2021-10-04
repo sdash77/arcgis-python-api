@@ -4,6 +4,8 @@ to represent features and collection of features.
 """
 import copy
 import json
+from typing import List, Optional, Union
+from pandas.core.frame import DataFrame
 import ujson as _ujson
 import os
 import re
@@ -61,7 +63,7 @@ class Feature(object):
             self._dict["attributes"] = attributes
 
     # ----------------------------------------------------------------------
-    def set_value(self, field_name, value):
+    def set_value(self, field_name: str, value: str):
         """
         Sets an attribute value for a given field name.
 
@@ -110,7 +112,7 @@ class Feature(object):
         return True
 
     # ----------------------------------------------------------------------
-    def get_value(self, field_name):
+    def get_value(self, field_name: str):
         """
         Retrieves the value for a specified field name.
 
@@ -274,7 +276,7 @@ class Feature(object):
 
     # ----------------------------------------------------------------------
     @classmethod
-    def from_json(cls, json_str):
+    def from_json(cls, json_str: str):
         """
         Creates a Feature object from a JSON string.
 
@@ -289,7 +291,7 @@ class Feature(object):
 
     # ----------------------------------------------------------------------
     @classmethod
-    def from_dict(cls, feature, sr=None):
+    def from_dict(cls, feature: str, sr: Optional[dict] = None):
         """
         Creates a Feature object from a dictionary.
 
@@ -849,7 +851,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_json(json_str):
+    def from_json(json_str: str):
         """
         Creates a Feature Set objects from a JSON string.
 
@@ -865,7 +867,7 @@ class FeatureSet(object):
         return FeatureSet.from_dict(_ujson.loads(json_str))
 
     @staticmethod
-    def from_dataframe(df):
+    def from_dataframe(df: DataFrame):
         """
         The ``from_dataframe`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
         Pandas' DataFrame or :class:`~arcgis.features.SpatialDataFrame`
@@ -1133,7 +1135,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_dict(featureset_dict):
+    def from_dict(featureset_dict: dict):
         """
         Creates a Feature Set objects from a dictionary.
 
@@ -1202,7 +1204,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @spatial_reference.setter
-    def spatial_reference(self, value):
+    def spatial_reference(self, value: Optional[Union[SpatialReference, int, str]]):
         """
         See main ``spatial_reference`` property docstring
         """
@@ -1235,7 +1237,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @has_z.setter
-    def has_z(self, value):
+    def has_z(self, value: Optional[bool]):
         """
         See main ``has_z`` property docstring
         """
@@ -1262,7 +1264,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @has_m.setter
-    def has_m(self, value):
+    def has_m(self, value: Optional[bool]):
         """
         See main ``has_m`` property docstring
         """
@@ -1289,7 +1291,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @geometry_type.setter
-    def geometry_type(self, value):
+    def geometry_type(self, value: Optional[str]):
         """
         See main ``geometry_type`` property docstring
         """
@@ -1315,7 +1317,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @object_id_field_name.setter
-    def object_id_field_name(self, value):
+    def object_id_field_name(self, value: Optional[str]):
         """
         See main ``object_id_field_name`` property docstring
         """
@@ -1341,7 +1343,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @global_id_field_name.setter
-    def global_id_field_name(self, value):
+    def global_id_field_name(self, value: Optional[str]):
         """
         See main ``global_id_field_name`` property docstring
         """
@@ -1366,14 +1368,14 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @display_field_name.setter
-    def display_field_name(self, value):
+    def display_field_name(self, value: Optional[str]):
         """
         See main ``display_field_name`` property docstring
         """
         self._display_field_name = value
 
     # ----------------------------------------------------------------------
-    def save(self, save_location, out_name, encoding=None):
+    def save(self, save_location: str, out_name: str, encoding: Optional[str] = None):
         """
         The ``save`` method saves a Feature Set object to a
         :class:`~arcgis.features.Feature` class on disk.
@@ -1515,7 +1517,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @fields.setter
-    def fields(self, fields):
+    def fields(self, fields: Optional[dict]):
         """
         See main ``fields`` property docstring
         """
@@ -1572,9 +1574,7 @@ class FeatureCollection(Layer):
                     "layers"
                 ][0]["layerDefinition"]["fields"]
 
-            return FeatureSet.from_dict(
-                self.properties["layers"][0]["featureSet"],
-            )
+            return FeatureSet.from_dict(self.properties["layers"][0]["featureSet"],)
         else:
             if "fields" in self.properties["layerDefinition"]:
                 self.properties["featureSet"]["fields"] = self.properties[
@@ -1584,7 +1584,9 @@ class FeatureCollection(Layer):
             return FeatureSet.from_dict(self.properties["featureSet"])
 
     @staticmethod
-    def from_featureset(fset, symbol=None, name=None):
+    def from_featureset(
+        fset, symbol: Optional[dict] = None, name: Optional[str] = None
+    ):
         """
         Creates a :class:`~arcgis.features.FeatureCollection` object from a :class:`~arcgis.features.FeatureSet` object.
 
