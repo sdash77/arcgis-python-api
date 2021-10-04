@@ -75,7 +75,7 @@ class ServiceManager(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def _folder(self):
-        """returns current folder"""
+        """Get/Set current folder"""
         return self._folderName
 
     # ----------------------------------------------------------------------
@@ -151,7 +151,7 @@ class ServiceManager(BaseServer):
                             to write the backup file.
         =================   ====================================================
 
-        :returns: string to the save location.
+        :return: string to the save location.
 
         """
         if os.path.isdir(folder) == False:
@@ -175,7 +175,7 @@ class ServiceManager(BaseServer):
                             .agssiteservices.
         =================   ====================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         folder = os.path.dirname(file_path)
@@ -1022,7 +1022,7 @@ class Service(BaseServer):
            + 'ArcObjects11': means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
            + 'DMaps': means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         allowed_providers = ["ArcObjects", "ArcObjects11", "DMaps"]
@@ -1375,9 +1375,10 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def iteminformation(self):
-        """returns the item information
+        """
+        Returns the item information
 
-        :returns: ItemInformationManager
+        :return: ItemInformationManager
 
         """
         if self._ii is None:
@@ -1456,7 +1457,7 @@ class JobManager(BaseServer):
         ===============     ====================================================================
 
 
-        :returns: List of `Job`
+        :return: List of `Job`
 
         """
         url = "{base}/query".format(base=self._url)
@@ -1505,7 +1506,7 @@ class JobManager(BaseServer):
         geoprocessing service that currently carry a status of NEW,
         SUBMITTED, or WAITING.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = "{base}/purgeQueue".format(base=self._url)
@@ -1534,7 +1535,7 @@ class Job(BaseServer):
         """
         Cancels the current job from the server
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = "{base}/cancel".format(base=self._url)
@@ -1549,7 +1550,7 @@ class Job(BaseServer):
         """
         Deletes the current job from the server
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = "{base}/cancel".format(base=self._url)
@@ -1586,7 +1587,7 @@ class ItemInformationManager(BaseServer):
     def delete(self):
         """Deletes the item information.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = "{base}/delete".format(base=self._url)
@@ -1609,7 +1610,7 @@ class ItemInformationManager(BaseServer):
                             file must be uploaded.
         ===============     ====================================================================
 
-        :returns: Dict
+        :return: Dict
 
         """
         f = {"file": info_file}
@@ -1669,7 +1670,7 @@ class ItemInformationManager(BaseServer):
            + serverPath - Path to the document after publishing
                           completes.
 
-        :returns: Dict
+        :return: Dict
 
         """
         url = "{base}/manifest/manifest.json".format(base=self._url)
@@ -1683,7 +1684,7 @@ class ItemInformationManager(BaseServer):
         """
         Gets/Sets the Item Information for a serivce.
 
-        :returns: Dict
+        :return: Dict
 
         """
         url = "{base}".format(base=self._url)
@@ -1696,7 +1697,7 @@ class ItemInformationManager(BaseServer):
         """
         Gets/Sets the Item Information for a serivce.
 
-        :returns: Dict
+        :return: Dict
 
         """
         url = "{base}/edit".format(base=self._url)

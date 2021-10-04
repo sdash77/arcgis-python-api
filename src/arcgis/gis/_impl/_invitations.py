@@ -38,7 +38,7 @@ class InvitationManager(object):
         """
         The ``list`` method retrieves all the organization's invitations.
 
-        :returns:
+        :return:
             A List of the organization's invitations
 
         """
@@ -60,7 +60,7 @@ class InvitationManager(object):
         """
         The ``get`` method retrieves information about a single invitation.
 
-        :returns:
+        :return:
             A dictionary
 
         """
@@ -86,7 +86,7 @@ class InvitationManager(object):
         The ``manage_invitations`` method allows users to Accept/Decline invitations by providing a list of
         invitation IDs.
 
-        :returns:
+        :return:
             A List of invitation IDs
         """
         results = []
@@ -101,7 +101,7 @@ class InvitationManager(object):
         """
         The ``delete`` method deletes an invitation by ID
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
         """
         url = self._url + "/{id}/delete".format(id=invite_id)

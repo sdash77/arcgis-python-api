@@ -59,7 +59,7 @@ class LogManager(object):
         up disk space. However, it is not required that you invoke this operation because
         the server periodically purges old logs.
 
-        :return: boolean
+        :return: Boolean. True if successful else False.
 
         """
         params = {
@@ -77,7 +77,13 @@ class LogManager(object):
         """
         Get/set the current log settings.
 
-        :returns: PropertyMap
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  dict. A dictionary with the key/values pairs to modify settings.
+        ==================     ====================================================================
+
+        :return: PropertyMap
         """
         params = {"f": "json"}
         url = self._url + "/settings"
@@ -91,15 +97,7 @@ class LogManager(object):
     @settings.setter
     def settings(self, value):
         """
-        Get/set the current log settings.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  dict. A dictionary with the key/values pairs to modify settings.
-        ==================     ====================================================================
-
-        :returns: PropertyMap
+        See main ``settings`` property docstring.
         """
         assert isinstance(value, (dict, PropertyMap))
         params = {"f": "json"}

@@ -89,7 +89,7 @@ def inspect_function_inputs(fn, **params):
     a new dictionary.  This method is used primarily to validate GP services and ensure
     that the parameters given are supported in the current version of the tool.
 
-    :returns: dictionary
+    :return: dictionary
 
     Example:
 

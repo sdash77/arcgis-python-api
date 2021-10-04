@@ -403,8 +403,11 @@ class Pix2PixHDDataset(Dataset):
         if axes is None:
             _, axes = plt.subplots(1, 2, figsize=(15, 7))
 
-        self.image_A.show(axes[0])
-        self.image_B.show(axes[1])
+        if self.label_nc == True:
+            self.image_A.show(axes[0])
+        else:
+            self.image_A.show(axes[0], rgb_bands=rgb_bands)
+        self.image_B.show(axes[1], rgb_bands=rgb_bands)
 
 
 def create_train_val_sets(
@@ -555,7 +558,8 @@ def prepare_pix2pix_data(
     return data
 
 
-def show_batch(self, rows=4):
+def show_batch(self, rows=4, **kwargs):
+    rgb_bands = kwargs.get("rgb_bands", None)
     fig, axes = plt.subplots(nrows=rows, ncols=2, squeeze=False, figsize=(20, rows * 5))
     top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
     plt.subplots_adjust(top=top)
@@ -564,7 +568,7 @@ def show_batch(self, rows=4):
     axes[0, 1].title.set_text("Target")
     img_idxs = [random.randint(0, len(self.train_ds) - 1) for k in range(rows)]
     for idx, im_idx in enumerate(img_idxs):
-        self.train_ds.show(im_idx, axes[idx])
+        self.train_ds.show(im_idx, axes[idx], rgb_bands)
 
 
 def to_device(z, device):
@@ -697,8 +701,8 @@ def predict(self, img_path):
         )
 
     pred_denorm = denormalize(prediction, *self._data.norm_stats)
-    pred_denorm = transforms.ToPILImage()(pred_denorm).convert("RGB")
-
+    pred_denorm = ArcGISMSImage(pred_denorm)
+    pred_denorm = pred_denorm.show()
     return pred_denorm
 
 

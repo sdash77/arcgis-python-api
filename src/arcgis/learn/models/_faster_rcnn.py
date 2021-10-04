@@ -488,7 +488,7 @@ class FasterRCNN(ModelExtension):
                                     Default: 0.25
     =============================   =============================================
 
-    :returns: ``FasterRCNN`` Object
+    :return: ``FasterRCNN`` Object
     """
 
     def __init__(self, data, backbone="resnet50", pretrained_path=None, **kwargs):
@@ -575,7 +575,7 @@ class FasterRCNN(ModelExtension):
 
         =====================   ===========================================
 
-        :returns: `FasterRCNN` Object
+        :return: `FasterRCNN` Object
         """
         emd_path = _get_emd_path(emd_path)
 
@@ -690,7 +690,7 @@ class FasterRCNN(ModelExtension):
                                 trained on).
         =====================   ===========================================
 
-        :returns: Returns a tuple with predictions, labels and optionally confidence scores
+        :return: Returns a tuple with predictions, labels and optionally confidence scores
                   if return_scores=True. The predicted bounding boxes are returned as a list
                   of lists containing the  xmin, ymin, width and height of each predicted object
                   in each image. The labels are returned as a list of class values and the
@@ -816,7 +816,7 @@ class FasterRCNN(ModelExtension):
                                 average precision.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):

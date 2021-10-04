@@ -54,7 +54,7 @@ class Job(object):
         """
         Return True if the call was successfully cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.cancelled()
 
@@ -63,7 +63,7 @@ class Job(object):
         """
         Return True if the call is currently being executed and cannot be cancelled.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.running()
 
@@ -72,7 +72,7 @@ class Job(object):
         """
         Return True if the call was successfully cancelled or finished running.
 
-        :returns: boolean
+        :return: boolean
         """
         return self._future.done()
 

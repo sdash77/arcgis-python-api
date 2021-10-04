@@ -158,7 +158,7 @@ def calculate_motion_statistics(
                             The default value is 'False'.
     ======================  ===============================================================
 
-    :returns: result_layer : Output Features as feature layer item.
+    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
 
     """
 
@@ -301,7 +301,7 @@ def enrich_from_grid(
                             The default value is 'False'.
     ======================  ===============================================================
 
-    :returns: result_layer : Output Features as feature layer item.
+    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
 
