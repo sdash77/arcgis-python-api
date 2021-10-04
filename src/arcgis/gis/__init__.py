@@ -12370,11 +12370,12 @@ class Item(dict):
         overwrite              Optional boolean.   If True, the hosted feature service is overwritten.
                                Only available in ArcGIS Enterprise 10.5+ and ArcGIS Online.
         -------------------    ---------------------------------------------------------------
-        file_type              Optional string.  Some formats are not automatically detected, when this occurs, the
-                               file_type can be specified: serviceDefinition,shapefile,csv,
-                               tilePackage, featureService, featureCollection, fileGeodatabase,
-                               geojson, scenepackage, vectortilepackage, imageCollection,
-                               mapService, and sqliteGeodatabase are valid entries. This is an
+        file_type              Optional string.  Some formats are not automatically detected,
+                               when this occurs, the file_type can be specified: 
+                               serviceDefinition, shapefile, csv, excel, tilePackage, 
+                               featureService, featureCollection, fileGeodatabase, geojson,
+                               scenepackage, vectortilepackage, imageCollection, mapService,
+                               and sqliteGeodatabase are valid entries. This is an
                                optional parameter.
         -------------------    ---------------------------------------------------------------
         build_initial_cache    Optional boolean.  The boolean value (default False), if true

@@ -2959,18 +2959,13 @@ def predict_h5(self, path, output_path, **kwargs):
         )
         data.pc_type = "PointCloud"
         if not hasattr(data, "idx2class"):
-            data.idx2class = {i: c for i, c in enumerate(sorted(data.classes))}
+            data.idx2class = {v: k for k, v in data.class2idx.items()}
     else:
         api_model = False
     if "xyz" in features_to_keep:
         features_to_keep.remove("xyz")
     point_cloud_dataset = PointCloudDataset(
-        path,
-        None,
-        None,
-        "",
-        extra_features=features_to_keep,
-        attributes=attributes,
+        path, None, None, "", extra_features=features_to_keep, attributes=attributes,
     )
     if progressor is not None:
         progressor.set_total_blocks(len(point_cloud_dataset))
