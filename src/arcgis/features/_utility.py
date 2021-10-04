@@ -1,4 +1,5 @@
-from typing import List, Optional, Union
+from __future__ import annotations
+from typing import Any, Optional, Union
 from arcgis.gis import GIS
 from arcgis import env
 from arcgis._impl.common._mixins import PropertyMap
@@ -64,9 +65,9 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def trace(
         self,
-        locations: List[str],
+        locations: list[str],
         trace_type: str,
-        fields: Optional[List[str]] = None,
+        fields: Optional[list[str]] = None,
         moment: Optional[str] = None,
         configuration: Optional[str] = None,
         result_type: Optional[str] = None,
@@ -232,7 +233,7 @@ class UtilityNetworkManager(object):
         subnetwork_name: str,
         trace_configuration: Optional[str] = None,
         export_acknowlegement: bool = False,
-        fields: Optional[List[str]] = None,
+        fields: Optional[list[str]] = None,
         result_type: Optional[str] = None,
         moment: Optional[str] = None,
     ):
@@ -289,7 +290,7 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def query_overrides(
         self,
-        attribute_ids: Optional[List[str]] = None,
+        attribute_ids: Optional[list[str]] = None,
         all_attributes: bool = False,
         all_connectivity: bool = False,
     ):
@@ -322,7 +323,7 @@ class UtilityNetworkManager(object):
         containment_associations: bool = False,
         count: int = 200,
         extent: bool = False,
-        out_sr: Optional[Union[int, dict]] = None,
+        out_sr: Optional[Union[int, dict[str, Any]]] = None,
         moment: Optional[str] = None,
     ):
         """
@@ -406,7 +407,10 @@ class UtilityNetworkManager(object):
 
     # ----------------------------------------------------------------------
     def validate_topology(
-        self, envelope: dict, run_async: bool = False, return_edits: bool = False
+        self,
+        envelope: dict[str, Any],
+        run_async: bool = False,
+        return_edits: bool = False,
     ):
         """
         Validating the network topology for a utility network maintains
@@ -435,8 +439,8 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def apply_overrides(
         self,
-        adds: Optional[Union[List, dict]] = None,
-        deletes: Optional[Union[List, dict]] = None,
+        adds: Optional[Union[list, dict[str, Any]]] = None,
+        deletes: Optional[Union[list, dict[str, Any]]] = None,
     ):
         """
         Network attributes support the ability to have their values

@@ -1,6 +1,7 @@
+from __future__ import annotations
 import os
 import time
-from typing import List, Optional, Union
+from typing import Any, Optional, Union
 import uuid
 from arcgis.features.feature import FeatureSet
 from arcgis.gis import GIS
@@ -688,7 +689,7 @@ class Version(object):
         return False
 
     # ----------------------------------------------------------------------
-    def restore(self, rows: List[dict]):
+    def restore(self, rows: list[dict[str, Any]]):
         """
         The `restore` method allows users to restore rows from a common
         ancestor version.  This method is intended to be used when a
@@ -822,7 +823,7 @@ class Version(object):
     # ----------------------------------------------------------------------
     def inspect(
         self,
-        conflicts: List[dict],
+        conflicts: list[dict[str, Any]],
         inspect_all: bool = False,
         set_inspected: bool = False,
     ):
@@ -927,7 +928,7 @@ class Version(object):
     def edit(
         self,
         layer: FeatureLayer,
-        adds: Optional[Union[FeatureSet, List]] = None,
+        adds: Optional[Union[FeatureSet, list]] = None,
         updates=None,
         deletes=None,
         use_global_ids=False,

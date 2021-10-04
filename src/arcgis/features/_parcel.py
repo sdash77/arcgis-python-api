@@ -1,5 +1,6 @@
+from __future__ import annotations
 import time
-from typing import List, Optional
+from typing import Any, Optional
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features import FeatureLayer, FeatureLayerCollection
 from arcgis.features._version import Version, VersionManager
@@ -96,7 +97,7 @@ class ParcelFabricManager(object):
 
     def assign_to_record(
         self,
-        features: List[dict],
+        features: list[dict[str, Any]],
         record: str,
         write_attribute: str,
         moment: Optional[int] = None,
@@ -157,7 +158,7 @@ class ParcelFabricManager(object):
 
     def build(
         self,
-        extent: Optional[dict] = None,
+        extent: Optional[dict[str, Any]] = None,
         moment: Optional[str] = None,
         return_errors: bool = False,
         record: Optional[str] = None,

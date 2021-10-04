@@ -1,4 +1,5 @@
-from typing import List, Optional
+from __future__ import annotations
+from typing import Any, Optional
 from arcgis.gis import GIS
 from arcgis.env import active_gis
 from arcgis._impl.common._mixins import PropertyMap
@@ -58,7 +59,7 @@ class ValidationManager(object):
     # ----------------------------------------------------------------------
     def update_error(
         self,
-        error_features: List[dict],
+        error_features: list[dict[str, Any]],
         version: Optional[str] = None,
         return_edits: Optional[bool] = None,
         **kwargs,
@@ -139,10 +140,10 @@ class ValidationManager(object):
     # ----------------------------------------------------------------------
     def evaluate(
         self,
-        evaluation: List[str],
-        area: Optional[dict] = None,
+        evaluation: list[str],
+        area: Optional[dict[str, Any]] = None,
         changes_in_version: bool = False,
-        selection: Optional[List[dict]] = None,
+        selection: Optional[list[dict[str, Any]]] = None,
         return_edits: bool = False,
     ):
         """
