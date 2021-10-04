@@ -857,7 +857,9 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     @classmethod
     def from_shapely(
-        cls, shapely_geometry: Geometry, spatial_reference: Optional[dict] = None,
+        cls,
+        shapely_geometry: Geometry,
+        spatial_reference: Optional[dict] = None,
     ):
         """
         Creates a Python API Geometry object from a Shapely geometry object.
