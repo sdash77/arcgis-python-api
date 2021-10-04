@@ -4,6 +4,7 @@ The ``Functions`` module is used to take :class:`~arcgis.geometry.Geometry` type
 """
 from enum import Enum
 import json
+from typing import Any, Dict, List, NewType, Optional, Union
 
 import arcgis.env
 from arcgis.gis import GIS
@@ -116,7 +117,7 @@ def areas_and_lengths(
     area_unit: str,
     calculation_type: str,
     spatial_ref: int = 4326,
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -205,10 +206,10 @@ def areas_and_lengths(
 
 # -------------------------------------------------------------------------
 def auto_complete(
-    polygons: Polygon = None,
-    polylines: Polyline = None,
-    spatial_ref: SpatialReference = None,
-    gis: arcgis.gis.GIS = None,
+    polygons: Optional[Polygon] = None,
+    polylines: Optional[Polyline] = None,
+    spatial_ref: Optional[SpatialReference] = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -241,14 +242,14 @@ def auto_complete(
 
 def buffer(
     geometries: list,
-    in_sr: int or dict,
+    in_sr: Union[int, Dict],
     distances: float,
     unit: str,
-    out_sr: int or dict = None,
-    buffer_sr: float = None,
-    union_results: bool = None,
-    geodesic: bool = None,
-    gis: arcgis.gis.GIS = None,
+    out_sr: Optional[Union[int, Dict[str, Any]]] = None,
+    buffer_sr: Optional[float] = None,
+    union_results: Optional[bool] = None,
+    geodesic: Optional[bool] = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -327,9 +328,9 @@ def buffer(
 
 
 def convex_hull(
-    geometries: list(Point or Polyline or Polygon or MultiPoint),
-    spatial_ref: SpatialReference or dict = None,
-    gis: GIS = None,
+    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
+    spatial_ref: Optional[Union[int, Dict[str, Any]]] = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -366,9 +367,9 @@ def convex_hull(
 
 def cut(
     cutter: Polyline,
-    target: list(Polyline or Polygon),
-    spatial_ref: SpatialReference or dict = None,
-    gis: GIS = None,
+    target: Union[List[Polyline], List[Polygon]],
+    spatial_ref: Optional[Union[int, Dict[str, Any]]] = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -392,7 +393,7 @@ def cut(
                         polyline is the same as the structure of the JSON polyline
                         objects returned by the ArcGIS REST API.
     ----------------  -------------------------------------------------------------------------------
-    geometries        The array of :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` to be cut.
+    target            The array of :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` to be cut.
                       The structure of the geometry is the same as the structure of the
                       JSON geometry objects returned by the ArcGIS REST API. The
                       spatial reference of the target geometry array is specified by
@@ -413,12 +414,12 @@ def cut(
 
 
 def densify(
-    geometries: list(Point, MultiPoint, Polyline, Polygon),
-    spatial_ref: int,
-    max_segment_length: float,
-    length_unit: str,
+    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    max_segment_length: Optional[float],
+    length_unit: Optional[str],
     geodesic: bool = False,
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -491,10 +492,10 @@ def densify(
 
 
 def difference(
-    geometries: list(Point, MultiPoint, Polyline, Polygon),
-    spatial_ref: SpatialReference or dict,
+    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
     geometry: Geometry,
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -537,12 +538,12 @@ def difference(
 
 
 def distance(
-    spatial_ref: SpatialReference or dict,
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
     geometry1: Geometry,
     geometry2: Geometry,
     distance_unit: str = "",
     geodesic: bool = False,
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -589,11 +590,11 @@ def distance(
 
 
 def find_transformation(
-    in_sr: int or dict,
-    out_sr: int or dict,
-    extent_of_interest: dict = None,
+    in_sr: Optional[Union[int, Dict[str, Any]]],
+    out_sr: Optional[Union[int, Dict[str, Any]]],
+    extent_of_interest: Optional[dict] = None,
     num_of_results: int = 1,
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -655,11 +656,11 @@ def find_transformation(
 
 
 def from_geo_coordinate_string(
-    spatial_ref: SpatialReference or dict,
-    strings: list(str),
-    conversion_type: str,
-    conversion_mode: str = None,
-    gis: GIS = None,
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    strings: List[str],
+    conversion_type: Optional[str],
+    conversion_mode: Optional[str] = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -736,11 +737,11 @@ def from_geo_coordinate_string(
 
 
 def generalize(
-    spatial_ref: SpatialReference or dict,
-    geometries: list(Geometry),
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    geometries: List[Geometry],
     max_deviation: int,
     deviation_unit: str,
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -786,10 +787,10 @@ def generalize(
 
 
 def intersect(
-    spatial_ref: SpatialReference or dict,
-    geometries: list(Geometry),
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    geometries: List[Geometry],
     geometry: Geometry,
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -833,9 +834,9 @@ def intersect(
 
 
 def label_points(
-    spatial_ref: SpatialReference or dict,
-    polygons: list(Polygon),
-    gis: GIS = None,
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    polygons: List[Polygon],
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -866,11 +867,11 @@ def label_points(
 
 
 def lengths(
-    spatial_ref: SpatialReference or dict,
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
     polylines: Polyline,
     length_unit: str,
     calculation_type: str,
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -927,14 +928,14 @@ def lengths(
 
 
 def offset(
-    geometries: list(Point, MultiPoint, Polyline, Polygon),
+    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
     offset_distance: float,
     offset_unit: str,
     offset_how: str = "esriGeometryOffsetRounded",
     bevel_ratio: int = 10,
     simplify_result: bool = False,
-    spatial_ref: SpatialReference or dict = None,
-    gis: GIS = None,
+    spatial_ref: Optional[Union[int, Dict[str, Any]]] = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -1024,12 +1025,12 @@ def offset(
 
 
 def project(
-    geometries: list(Point, MultiPoint, Polyline, Polygon),
-    in_sr: int or dict,
-    out_sr: int or dict,
+    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
+    in_sr: Optional[Union[int, Dict[str, Any]]],
+    out_sr: Optional[Union[int, Dict[str, Any]]],
     transformation: str = "",
     transform_forward: bool = False,
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -1091,12 +1092,12 @@ def project(
 
 
 def relation(
-    geometries1: list(Geometry),
-    geometries2: list(Geometry),
-    spatial_ref: SpatialReference or dict,
+    geometries1: List[Geometry],
+    geometries2: List[Geometry],
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
     spatial_relation: str = "esriGeometryRelationIntersection",
     relation_param: str = "",
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -1158,10 +1159,10 @@ def relation(
 
 
 def reshape(
-    spatial_ref: SpatialReference or dict,
-    target: Polyline or Polygon,
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    target: Union[Polyline, Polygon],
     reshaper: Polyline,
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -1194,9 +1195,9 @@ def reshape(
 
 
 def simplify(
-    spatial_ref: SpatialReference or dict,
-    geometries: list(Point, MultiPoint, Polyline, Polygon),
-    gis: GIS = None,
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -1228,14 +1229,14 @@ def simplify(
 
 
 def to_geo_coordinate_string(
-    spatial_ref: SpatialReference or dict,
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
     coordinates: json,
     conversion_type: str,
     conversion_mode: str = "mgrsDefault",
-    num_of_digits: int = None,
+    num_of_digits: Optional[int] = None,
     rounding: bool = True,
     add_spaces: bool = True,
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -1335,11 +1336,11 @@ def to_geo_coordinate_string(
 
 
 def trim_extend(
-    spatial_ref: SpatialReference or dict,
-    polylines: list(Polyline),
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    polylines: List[Polyline],
     trim_extend_to: Polyline,
     extend_how: int = 0,
-    gis: GIS = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """
@@ -1409,9 +1410,9 @@ def trim_extend(
 
 
 def union(
-    spatial_ref: SpatialReference or dict,
-    geometries: list(Point, MultiPoint, Polyline, Polygon),
-    gis: GIS = None,
+    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
+    gis: Optional[GIS] = None,
     future: bool = False,
 ):
     """

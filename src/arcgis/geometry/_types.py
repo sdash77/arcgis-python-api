@@ -3,6 +3,7 @@ New Geometries Classes
 """
 import copy
 import json
+from typing import List, Optional, Union
 import ujson as _ujson
 from . import Geometry, MultiPoint, Point, Polygon, Polyline, SpatialReference
 
@@ -855,9 +856,7 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     @classmethod
     def from_shapely(
-        cls,
-        shapely_geometry: Geometry,
-        spatial_reference: SpatialReference = None,
+        cls, shapely_geometry: Geometry, spatial_reference: Optional[dict] = None,
     ):
         """
         The ``from_shapely`` method creates a Python API Geometry object from a Shapely geometry object.
@@ -1053,7 +1052,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def _shoelace_area(self, parts: list):
+    def _shoelace_area(self, parts: Union[List[float], List[int]]):
         """calculates the shoelace area"""
         area = 0.0
         area_parts = []
@@ -1776,7 +1775,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def clip(self, envelope: tuple(float, float, float, float)):
+    def clip(self, envelope: tuple(float)):
         """
         The ``clip`` method constructs the intersection of the :class:`~arcgis.geometry.Geometry` object and the
         specified extent.
@@ -1811,7 +1810,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def contains(self, second_geometry: Geometry, relation: str = None):
+    def contains(self, second_geometry: Geometry, relation: Optional[str] = None):
         """
         The ``contain`` method indicates if the base :class:`~arcgis.geometry.Geometry` object contains the comparison
         :class:`~arcgis.geometry.Geometry` object.
@@ -2198,7 +2197,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def get_area(self, method: str, units: str = None):
+    def get_area(self, method: str, units: Optional[str] = None):
         """
         The ``get_area`` method retrieves the area of the :class:`~arcgis.geometry.Geometry` using a measurement type.
 
@@ -2264,7 +2263,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def get_part(self, index: int = None):
+    def get_part(self, index: Optional[int] = None):
         """
         The ``get_part`` method retrieves an array of :class:`~arcgis.geometry.Point` objects for a particular part of
         a :class:`~arcgis.geometry.Geometry` object or an array containing a number of arrays, one for each part.
@@ -2530,7 +2529,7 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def project_as(
         self,
-        spatial_reference: SpatialReference or dict,
+        spatial_reference: Union[dict, SpatialReference],
         transformation_name: str = None,
     ):
         """
@@ -2874,7 +2873,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def within(self, second_geometry: Geometry, relation: str = None):
+    def within(self, second_geometry: Geometry, relation: Optional[str] = None):
         """
         The ``within`` method indicates if the base :class:`~arcgis.geometry.Geometry` object is within the comparison
         :class:`~arcgis.geometry.Geometry` object.
@@ -2962,7 +2961,7 @@ class MultiPoint(Geometry):
         return self._type
 
     # ----------------------------------------------------------------------
-    def svg(self, scale_factor: float = 1.0, fill_color: str = None):
+    def svg(self, scale_factor: float = 1.0, fill_color: Optional[str] = None):
         """
         The ``svg`` method returns a group of SVG circle element for the ``MultiPoint`` geometry.
 
@@ -3079,7 +3078,7 @@ class Point(Geometry):
         return self._type
 
     # ----------------------------------------------------------------------
-    def svg(self, scale_factor: float = 1, fill_color: str = None):
+    def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
         """
         The ``svg`` method returns a SVG circle element for the ``Point`` geometry.
 
@@ -3190,7 +3189,7 @@ class Polygon(Geometry):
         self.update(kwargs)
 
     # ----------------------------------------------------------------------
-    def svg(self, scale_factor: float = 1, fill_color: str = None):
+    def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
         """
         The ``svg`` method retrieves SVG polygon element.
 
@@ -3333,7 +3332,7 @@ class Polyline(Geometry):
         self.update(kwargs)
 
     # ----------------------------------------------------------------------
-    def svg(self, scale_factor: float = 1, stroke_color: str = None):
+    def svg(self, scale_factor: float = 1, stroke_color: Optional[str] = None):
         """
         The ``svg`` method retrieves SVG polyline element for the LineString geometry.
 
@@ -3471,7 +3470,7 @@ class Envelope(Geometry):
     # def __hash__(self):
     #    return hash(json.dumps(dict(self)))
     # ----------------------------------------------------------------------
-    def svg(self, scale_factor: float = 1, fill_color: str = None):
+    def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
         """
         The ``svg`` method returns a SVG envelope element for the ``Envelope`` geometry.
 
@@ -3707,7 +3706,7 @@ class SpatialReference(BaseGeometry):
     # ----------------------------------------------------------------------
     _repr_svg_ = None
     # ----------------------------------------------------------------------
-    def svg(self, scale_factor: float = 1, fill_color: str = None):
+    def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
         """
         The ``svg`` method retrieves SVG polygon element for a ``SpatialReference`` field.
 
