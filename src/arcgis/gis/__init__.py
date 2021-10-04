@@ -12368,8 +12368,8 @@ class Item(dict):
                                Only available in ArcGIS Enterprise 10.5+ and ArcGIS Online.
         -------------------    ---------------------------------------------------------------
         file_type              Optional string.  Some formats are not automatically detected,
-                               when this occurs, the file_type can be specified: 
-                               serviceDefinition, shapefile, csv, excel, tilePackage, 
+                               when this occurs, the file_type can be specified:
+                               serviceDefinition, shapefile, csv, excel, tilePackage,
                                featureService, featureCollection, fileGeodatabase, geojson,
                                scenepackage, vectortilepackage, imageCollection, mapService,
                                and sqliteGeodatabase are valid entries. This is an

@@ -4,6 +4,7 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class BigDataAnalyticsManager:
     """
     Used to manage Big Data Analytics
@@ -30,7 +31,10 @@ class BigDataAnalyticsManager:
         :return: returns a collection of all configured Big Data Analytics items
         """
         all_bigdata_analytics_response = self._util._get_request("analytics/bigdata")
-        if all_bigdata_analytics_response is not None and type(all_bigdata_analytics_response) is list:
+        if (
+            all_bigdata_analytics_response is not None
+            and type(all_bigdata_analytics_response) is list
+        ):
             bigdata_analytics_items = [
                 BigDataAnalytics(self._gis, self._util, bigdata_item)
                 for bigdata_item in all_bigdata_analytics_response
@@ -40,7 +44,9 @@ class BigDataAnalyticsManager:
             _LOGGER.warning("No Big-data Analytic items found for the user.")
             return []
         else:
-            raise Exception(f"Error retrieving Big-data Analytic items. Velocity response: ${all_bigdata_analytics_response}")
+            raise Exception(
+                f"Error retrieving Big-data Analytic items. Velocity response: ${all_bigdata_analytics_response}"
+            )
 
     # ----------------------------------------------------------------------
     def get(self, id):

@@ -4,6 +4,7 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class FeedsManager:
     """
     Used to manage Feeds
@@ -29,14 +30,17 @@ class FeedsManager:
         """
         all_feeds_response = self._util._get_request("feeds")
         if all_feeds_response is not None and type(all_feeds_response) is list:
-            feed_items = [Feed(self._gis, self._util, feed) for feed in all_feeds_response]
+            feed_items = [
+                Feed(self._gis, self._util, feed) for feed in all_feeds_response
+            ]
             return feed_items
         elif all_feeds_response is None:
             _LOGGER.warning("No Feed items found for the user.")
             return []
         else:
-            raise Exception(f"Error retrieving Feed items. Velocity response: ${all_feeds_response}")
-
+            raise Exception(
+                f"Error retrieving Feed items. Velocity response: ${all_feeds_response}"
+            )
 
     # ----------------------------------------------------------------------
     def get(self, id):
