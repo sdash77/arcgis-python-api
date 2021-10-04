@@ -253,7 +253,7 @@ class Portal(object):
         group_id      required string, The group id to remove the thumbnail for.
         ============  ======================================
 
-        :returns: Boolean
+        :return: Boolean. True if successful else False
 
         """
         url = f"community/groups/{group_id}/deleteThumbnail"
@@ -482,8 +482,11 @@ class Portal(object):
         tags=None,
         snippet=None,
     ):
-        """Creates service.
+        """
+        Creates service.
+
          #"Create,Delete,Query,Update,Editing",
+
         :return:
              The item id of the created service item if successful, None if unsuccessful.
         """
@@ -638,7 +641,7 @@ class Portal(object):
         ================  ========================================================
 
         :return:
-            a dict containing group properties
+            A dictionary containing group properties
         """
 
         return self.create_group_from_dict(
@@ -691,7 +694,7 @@ class Portal(object):
         ================  ========================================================
 
         :return:
-            a boolean, indicating success
+            A boolean. True indicating success
 
         """
         path = "content/users/" + owner
@@ -714,15 +717,15 @@ class Portal(object):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        item_id           required string, unique identifier for the item
+        item_id           Required string, unique identifier for the item
         ----------------  --------------------------------------------------------
-        owner             required string, owner of the item currently
+        owner             Required string, owner of the item currently
         ----------------  --------------------------------------------------------
-        folder            optional string, folder containing the item.  Defaults to the root folder.
+        folder            Optional string, folder containing the item.  Defaults to the root folder.
         ================  ========================================================
 
         :return:
-            a tuple containing a boolean and a dict with details
+            A tuple containing a boolean and a dict with details
         """
         path = "content/users/" + owner
         if folder:
@@ -742,18 +745,18 @@ class Portal(object):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        item_id           required string, unique identifier for the item
+        item_id           Required string, unique identifier for the item
         ----------------  --------------------------------------------------------
-        owner             required string, owner of the item currently
+        owner             Required string, owner of the item currently
         ----------------  --------------------------------------------------------
-        folder            optional string, folder containing the item.  Defaults to the root folder.
+        folder            Optional string, folder containing the item.  Defaults to the root folder.
         ----------------  --------------------------------------------------------
-        enable            optional boolean, True to enable delete protection, False to
+        enable            Optional boolean, True to enable delete protection, False to
                           to disable it
         ================  ========================================================
 
         :return:
-            dict with key "success" containing boolean whether process completed or not
+            A dictionary with key "success" containing boolean whether process completed or not
 
 
         """
@@ -774,16 +777,16 @@ class Portal(object):
     ):
         """Shares public item with the specified list of groups belonging to caller
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        item_id           required string, unique identifier for the item
-        ----------------  --------------------------------------------------------
-        groups            optional string,
-                          comma-separated list of group IDs with which the item will be shared.
-        ----------------  --------------------------------------------------------
-        allow_members_to_edit  optional boolean to allow item to be shared with groups that allow shared update
-        ================  ========================================================
+        =====================   ========================================================
+        **Argument**            **Description**
+        ---------------------   --------------------------------------------------------
+        item_id                 Required string, unique identifier for the item
+        ---------------------   --------------------------------------------------------
+        groups                  Optional string,
+                                comma-separated list of group IDs with which the item will be shared.
+        ---------------------   --------------------------------------------------------
+        allow_members_to_edit   Optional boolean to allow item to be shared with groups that allow shared update
+        =====================   ========================================================
 
         :return:
             dict with key "notSharedWith" containing array of groups with which the item could not be shared.

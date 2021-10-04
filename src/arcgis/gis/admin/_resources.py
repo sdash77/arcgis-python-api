@@ -51,7 +51,7 @@ class PortalResourceManager(object):
                           Values: public, org, orgprivate
         ================  ===============================================================
 
-        :returns:
+        :return:
            boolean
         """
         access = kwargs.pop("access", None)
@@ -102,7 +102,7 @@ class PortalResourceManager(object):
         key               optional string, look up key for file to delete
         ================  ===============================================================
 
-        :returns:
+        :return:
            boolean
         """
         postdata = {
@@ -132,7 +132,7 @@ class PortalResourceManager(object):
                           Default: 100
         ================  ===============================================================
 
-        :returns:
+        :return:
            boolean
         """
         postdata = {"f": "json", "start": start, "num": num}

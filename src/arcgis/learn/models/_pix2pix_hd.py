@@ -72,13 +72,13 @@ class Pix2PixHD(ArcGISModel):
     lambda_feat             weight for feature matching loss.
     =====================   ===========================================
 
-    :returns: `Pix2PixHD` Object
+    :return: `Pix2PixHD` Object
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
         super().__init__(data)
+        self._check_dataset_support(data)
         # input_nc=3, output_nc=3,
-
         vgg_loss = kwargs.get("vgg_loss", True)
         lambda_feat = kwargs.get("lambda_feat", 10.0)
 
@@ -134,7 +134,7 @@ class Pix2PixHD(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `Pix2PixHD` Object
+        :return: `Pix2PixHD` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -179,7 +179,7 @@ class Pix2PixHD(ArcGISModel):
             data.resize_to = chip_size
             data.norm_stats = norm_stats
 
-            return cls(data, **model_params, pretrained_path=str(model_file))
+        return cls(data, **model_params, pretrained_path=str(model_file))
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
@@ -250,3 +250,12 @@ class Pix2PixHD(ArcGISModel):
                 "SSIM": "{0:1.4e}".format(ssim),
                 "FID": "{0:1.4e}".format(fid),
             }
+
+    @property
+    def supported_datasets(self):
+        """Supported dataset types for this model."""
+        return Pix2PixHD._supported_datasets()
+
+    @staticmethod
+    def _supported_datasets():
+        return ["Pix2Pix", "Export_Tiles"]
