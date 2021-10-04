@@ -667,9 +667,7 @@ def predict(self, img_path):
     img_path = Path(img_path)
     if self._data.label_nc == 0:
         raw_img = ArcGISMSImage.open(
-            img_path,
-            imagery_type=self._data.imagery_type,
-            div=255
+            img_path, imagery_type=self._data.imagery_type, div=255
         )
     else:
         raw_img = ImageSegment(ArcGISMSImage.open(img_path).data)
@@ -709,7 +707,7 @@ def rgb_or_ms(im_path):
     Function that returns the imagery type (RGB or ms) of an image.
     """
     try:
-        import gdal
+        from osgeo import gdal
 
         ds = gdal.Open(im_path)
         if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
