@@ -2,12 +2,12 @@
 The ``Functions`` module is used to take :class:`~arcgis.geometry.Geometry` types as parameters and return
 :class:`~arcgis.geometry.Geometry` type results.
 """
+from __future__ import annotations
 from enum import Enum
 import json
 from typing import Any, Optional, Union
 from arcpy.arcobjects.arcobjects import Geometry, Point, SpatialReference
 from arcpy.arcobjects.geometries import Multipoint, Polygon, Polyline
-from __future__ import annotations
 import arcgis.env
 from arcgis.gis import GIS
 

@@ -1,6 +1,7 @@
 """
 New Geometries Classes
 """
+from __future__ import annotations
 import copy
 import json
 from typing import Any, Optional, Union
@@ -8,7 +9,6 @@ import ujson as _ujson
 from arcpy.arcobjects.arcobjects import Geometry, Point, SpatialReference
 
 from arcpy.arcobjects.geometries import Multipoint, Polygon, Polyline
-from __future__ import annotations
 
 try:
     import numpy as np
