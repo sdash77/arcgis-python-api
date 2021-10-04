@@ -6,7 +6,8 @@ layers.
 
 from inspect import GEN_CLOSED
 from typing import Union
-from . import Geometry, SpatialReference
+from arcpy.arcobjects.arcobjects import Geometry, SpatialReference
+
 
 # esriSpatialRelIntersects | esriSpatialRelContains | esriSpatialRelCrosses | esriSpatialRelEnvelopeIntersects | \
 # esriSpatialRelIndexIntersects | esriSpatialRelOverlaps | esriSpatialRelTouches | esriSpatialRelWithin

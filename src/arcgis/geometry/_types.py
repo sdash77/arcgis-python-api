@@ -3,9 +3,12 @@ New Geometries Classes
 """
 import copy
 import json
-from typing import List, Optional, Union
+from typing import Any, Optional, Union
 import ujson as _ujson
-from . import Geometry, MultiPoint, Point, Polygon, Polyline, SpatialReference
+from arcpy.arcobjects.arcobjects import Geometry, Point, SpatialReference
+
+from arcpy.arcobjects.geometries import Multipoint, Polygon, Polyline
+from __future__ import annotations
 
 try:
     import numpy as np
@@ -859,7 +862,7 @@ class Geometry(BaseGeometry):
     def from_shapely(
         cls,
         shapely_geometry: Geometry,
-        spatial_reference: Optional[dict] = None,
+        spatial_reference: Optional[dict[str, Any]] = None,
     ):
         """
         Creates a Python API Geometry object from a Shapely geometry object.
@@ -1057,7 +1060,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def _shoelace_area(self, parts: Union[List[float], List[int]]):
+    def _shoelace_area(self, parts: Union[list[float], list[int]]):
         """calculates the shoelace area"""
         area = 0.0
         area_parts = []
@@ -2534,7 +2537,7 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def project_as(
         self,
-        spatial_reference: Union[dict, SpatialReference],
+        spatial_reference: Union[dict[str, Any], SpatialReference],
         transformation_name: str = None,
     ):
         """

@@ -4,18 +4,12 @@ The ``Functions`` module is used to take :class:`~arcgis.geometry.Geometry` type
 """
 from enum import Enum
 import json
-from typing import Any, Dict, List, NewType, Optional, Union
-
+from typing import Any, Optional, Union
+from arcpy.arcobjects.arcobjects import Geometry, Point, SpatialReference
+from arcpy.arcobjects.geometries import Multipoint, Polygon, Polyline
+from __future__ import annotations
 import arcgis.env
 from arcgis.gis import GIS
-from . import (
-    MultiPoint,
-    Polyline,
-    Point,
-    Polygon,
-    SpatialReference,
-    Geometry,
-)
 
 
 class AreaUnits(Enum):
@@ -242,10 +236,10 @@ def auto_complete(
 
 def buffer(
     geometries: list,
-    in_sr: Union[int, Dict],
+    in_sr: Union[int, dict[str, Any]],
     distances: float,
     unit: str,
-    out_sr: Optional[Union[int, Dict[str, Any]]] = None,
+    out_sr: Optional[Union[int, dict[str, Any]]] = None,
     buffer_sr: Optional[float] = None,
     union_results: Optional[bool] = None,
     geodesic: Optional[bool] = None,
@@ -328,8 +322,8 @@ def buffer(
 
 
 def convex_hull(
-    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
-    spatial_ref: Optional[Union[int, Dict[str, Any]]] = None,
+    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
     gis: Optional[GIS] = None,
     future: bool = False,
 ):
@@ -367,8 +361,8 @@ def convex_hull(
 
 def cut(
     cutter: Polyline,
-    target: Union[List[Polyline], List[Polygon]],
-    spatial_ref: Optional[Union[int, Dict[str, Any]]] = None,
+    target: Union[list[Polyline], list[Polygon]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
     gis: Optional[GIS] = None,
     future: bool = False,
 ):
@@ -414,8 +408,8 @@ def cut(
 
 
 def densify(
-    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
     max_segment_length: Optional[float],
     length_unit: Optional[str],
     geodesic: bool = False,
@@ -492,8 +486,8 @@ def densify(
 
 
 def difference(
-    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
     geometry: Geometry,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -538,7 +532,7 @@ def difference(
 
 
 def distance(
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
     geometry1: Geometry,
     geometry2: Geometry,
     distance_unit: str = "",
@@ -590,9 +584,9 @@ def distance(
 
 
 def find_transformation(
-    in_sr: Optional[Union[int, Dict[str, Any]]],
-    out_sr: Optional[Union[int, Dict[str, Any]]],
-    extent_of_interest: Optional[dict] = None,
+    in_sr: Optional[Union[int, dict[str, Any]]],
+    out_sr: Optional[Union[int, dict[str, Any]]],
+    extent_of_interest: Optional[dict[str, Any]] = None,
     num_of_results: int = 1,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -656,8 +650,8 @@ def find_transformation(
 
 
 def from_geo_coordinate_string(
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
-    strings: List[str],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    strings: list[str],
     conversion_type: Optional[str],
     conversion_mode: Optional[str] = None,
     gis: Optional[GIS] = None,
@@ -737,8 +731,8 @@ def from_geo_coordinate_string(
 
 
 def generalize(
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
-    geometries: List[Geometry],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    geometries: list[Geometry],
     max_deviation: int,
     deviation_unit: str,
     gis: Optional[GIS] = None,
@@ -787,8 +781,8 @@ def generalize(
 
 
 def intersect(
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
-    geometries: List[Geometry],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    geometries: list[Geometry],
     geometry: Geometry,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -834,8 +828,8 @@ def intersect(
 
 
 def label_points(
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
-    polygons: List[Polygon],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    polygons: list[Polygon],
     gis: Optional[GIS] = None,
     future: bool = False,
 ):
@@ -867,7 +861,7 @@ def label_points(
 
 
 def lengths(
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
     polylines: Polyline,
     length_unit: str,
     calculation_type: str,
@@ -928,13 +922,13 @@ def lengths(
 
 
 def offset(
-    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
+    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
     offset_distance: float,
     offset_unit: str,
     offset_how: str = "esriGeometryOffsetRounded",
     bevel_ratio: int = 10,
     simplify_result: bool = False,
-    spatial_ref: Optional[Union[int, Dict[str, Any]]] = None,
+    spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
     gis: Optional[GIS] = None,
     future: bool = False,
 ):
@@ -1025,9 +1019,9 @@ def offset(
 
 
 def project(
-    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
-    in_sr: Optional[Union[int, Dict[str, Any]]],
-    out_sr: Optional[Union[int, Dict[str, Any]]],
+    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
+    in_sr: Optional[Union[int, dict[str, Any]]],
+    out_sr: Optional[Union[int, dict[str, Any]]],
     transformation: str = "",
     transform_forward: bool = False,
     gis: Optional[GIS] = None,
@@ -1092,9 +1086,9 @@ def project(
 
 
 def relation(
-    geometries1: List[Geometry],
-    geometries2: List[Geometry],
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    geometries1: list[Geometry],
+    geometries2: list[Geometry],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
     spatial_relation: str = "esriGeometryRelationIntersection",
     relation_param: str = "",
     gis: Optional[GIS] = None,
@@ -1159,7 +1153,7 @@ def relation(
 
 
 def reshape(
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
     target: Union[Polyline, Polygon],
     reshaper: Polyline,
     gis: Optional[GIS] = None,
@@ -1195,8 +1189,8 @@ def reshape(
 
 
 def simplify(
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
-    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
     gis: Optional[GIS] = None,
     future: bool = False,
 ):
@@ -1229,7 +1223,7 @@ def simplify(
 
 
 def to_geo_coordinate_string(
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
     coordinates: json,
     conversion_type: str,
     conversion_mode: str = "mgrsDefault",
@@ -1336,8 +1330,8 @@ def to_geo_coordinate_string(
 
 
 def trim_extend(
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
-    polylines: List[Polyline],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    polylines: list[Polyline],
     trim_extend_to: Polyline,
     extend_how: int = 0,
     gis: Optional[GIS] = None,
@@ -1410,8 +1404,8 @@ def trim_extend(
 
 
 def union(
-    spatial_ref: Optional[Union[int, Dict[str, Any]]],
-    geometries: Union[List[Polygon], List[Polyline], List[MultiPoint], List[Point]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
     gis: Optional[GIS] = None,
     future: bool = False,
 ):
