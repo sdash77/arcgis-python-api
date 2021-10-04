@@ -6,26 +6,29 @@ find_hot_spots identifies statistically significant clustering in the spatial pa
 interpolate_points predicts values at new locations based on measurements found in a collection of points.
 """
 
+from typing import Optional
 import arcgis as _arcgis
+from arcgis.features.layer import FeatureLayer
+from arcgis.gis import GIS
 from .._impl.common._utils import inspect_function_inputs
 
 # --------------------------------------------------------------------------
 def calculate_density(
-    input_layer,
-    field=None,
-    cell_size=None,
-    cell_size_units="Meters",
-    radius=None,
-    radius_units=None,
-    bounding_polygon_layer=None,
-    area_units=None,
-    classification_type="EqualInterval",
-    num_classes=10,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: FeatureLayer,
+    field: Optional[str] = None,
+    cell_size: Optional[float] = None,
+    cell_size_units: str = "Meters",
+    radius: Optional[float] = None,
+    radius_units: Optional[str] = None,
+    bounding_polygon_layer: Optional[FeatureLayer] = None,
+    area_units: Optional[str] = None,
+    classification_type: str = "EqualInterval",
+    num_classes: int = 10,
+    output_name: Optional[str] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/cal_density_standard/calculate_density.png

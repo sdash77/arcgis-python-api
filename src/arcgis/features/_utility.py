@@ -1,3 +1,4 @@
+from typing import List, Optional, Union
 from arcgis.gis import GIS
 from arcgis import env
 from arcgis._impl.common._mixins import PropertyMap
@@ -63,12 +64,12 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def trace(
         self,
-        locations,
-        trace_type,
-        fields=None,
-        moment=None,
-        configuration=None,
-        result_type=None,
+        locations: List[str],
+        trace_type: str,
+        fields: Optional[List[str]] = None,
+        moment: Optional[str] = None,
+        configuration: Optional[str] = None,
+        result_type: Optional[str] = None,
     ):
         """
         A trace refers to a pre-configured algorithm that systematically
@@ -131,7 +132,7 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def enable_topology(self, error_count=10000):
+    def enable_topology(self, error_count: int = 10000):
         """
         Enabling the network topology for a utility network is done on the
         **DEFAULT** version. Enabling is **not** supported in named versions.
@@ -159,7 +160,9 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def disable_subnetwork_controller(self, network_source_id, global_id, terminal_id):
+    def disable_subnetwork_controller(
+        self, network_source_id: str, global_id: str, terminal_id: str
+    ):
         """
         A subnetwork controller (or simply, a source or a sink) is the
         origin (or destination) of resource flow for a subpart of the
@@ -186,14 +189,14 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def enable_subnetwork_controller(
         self,
-        network_source_id,
-        global_id,
-        terminal_id,
-        subnetwork_controller_name,
-        tier_name,
-        subnetwork_name=None,
-        description=None,
-        notes=None,
+        network_source_id: str,
+        global_id: str,
+        terminal_id: str,
+        subnetwork_controller_name: str,
+        tier_name: str,
+        subnetwork_name: Optional[str] = None,
+        description: Optional[str] = None,
+        notes: Optional[str] = None,
     ):
         """
         A subnetwork controller is the origin (or destination) of resource
@@ -224,14 +227,14 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def export_subnetwork(
         self,
-        domain_name,
-        tier_name,
-        subnetwork_name,
-        trace_configuration=None,
-        export_acknowlegement=False,
-        fields=None,
-        result_type=None,
-        moment=None,
+        domain_name: str,
+        tier_name: str,
+        subnetwork_name: str,
+        trace_configuration: Optional[str] = None,
+        export_acknowlegement: bool = False,
+        fields: Optional[List[str]] = None,
+        result_type: Optional[str] = None,
+        moment: Optional[str] = None,
     ):
         """
         The `export_subnetwork` operation is used to export information
@@ -262,7 +265,9 @@ class UtilityNetworkManager(object):
 
     # ----------------------------------------------------------------------
     def query_network_moments(
-        self, moments_to_return="fullValidateTopology", moment=None
+        self,
+        moments_to_return: str = "fullValidateTopology",
+        moment: Optional[str] = None,
     ):
         """
         The `query_network_moments` operation returns the moments related
@@ -283,7 +288,10 @@ class UtilityNetworkManager(object):
 
     # ----------------------------------------------------------------------
     def query_overrides(
-        self, attribute_ids=None, all_attributes=False, all_connectivity=False
+        self,
+        attribute_ids: Optional[List[str]] = None,
+        all_attributes: bool = False,
+        all_connectivity: bool = False,
     ):
         """
         Network attributes support the ability to have their values
@@ -309,13 +317,13 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def synthesize_association_geometries(
         self,
-        attachment_associations=False,
-        connectivity_associations=False,
-        containment_associations=False,
-        count=200,
-        extent=False,
-        out_sr=None,
-        moment=None,
+        attachment_associations: bool = False,
+        connectivity_associations: bool = False,
+        containment_associations: bool = False,
+        count: int = 200,
+        extent: bool = False,
+        out_sr: Optional[Union[int, dict]] = None,
+        moment: Optional[str] = None,
     ):
         """
         The `synthesize_association_geometries` operation is used to export
@@ -363,12 +371,12 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def update_subnetwork(
         self,
-        domain_name,
-        tier_name,
-        subnetwork_name=None,
-        all_subnetwork_tier=False,
-        continue_on_failure=False,
-        trace_configuration=None,
+        domain_name: str,
+        tier_name: str,
+        subnetwork_name: str = None,
+        all_subnetwork_tier: bool = False,
+        continue_on_failure: bool = False,
+        trace_configuration: Optional[str] = None,
     ):
         """
         A subnetwork is updated by calling the `update_subnetwork` operation.
@@ -397,7 +405,9 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)["success"]
 
     # ----------------------------------------------------------------------
-    def validate_topology(self, envelope, run_async=False, return_edits=False):
+    def validate_topology(
+        self, envelope: dict, run_async: bool = False, return_edits: bool = False
+    ):
         """
         Validating the network topology for a utility network maintains
         consistency between feature editing space and network topology space.
@@ -423,7 +433,11 @@ class UtilityNetworkManager(object):
             return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def apply_overrides(self, adds=None, deletes=None):
+    def apply_overrides(
+        self,
+        adds: Optional[Union[List, dict]] = None,
+        deletes: Optional[Union[List, dict]] = None,
+    ):
         """
         Network attributes support the ability to have their values
         overridden without having to edit features and validate the network

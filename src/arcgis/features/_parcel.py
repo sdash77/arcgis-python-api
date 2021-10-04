@@ -1,4 +1,5 @@
 import time
+from typing import List, Optional
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features import FeatureLayer, FeatureLayerCollection
 from arcgis.features._version import Version, VersionManager
@@ -93,7 +94,13 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def assign_to_record(self, features, record, write_attribute, moment=None):
+    def assign_to_record(
+        self,
+        features: List[dict],
+        record: str,
+        write_attribute: str,
+        moment: Optional[int] = None,
+    ):
         """
         Assigns the specified parcel features to the specified record. If
         parcel polygons are assigned, the record polygon will be updated to
@@ -148,7 +155,13 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def build(self, extent=None, moment=None, return_errors=False, record=None):
+    def build(
+        self,
+        extent: Optional[dict] = None,
+        moment: Optional[str] = None,
+        return_errors: bool = False,
+        record: Optional[str] = None,
+    ):
         """
         A `build` will fix known parcel fabric errors.
 

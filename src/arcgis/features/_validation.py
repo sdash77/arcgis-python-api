@@ -1,3 +1,4 @@
+from typing import List, Optional
 from arcgis.gis import GIS
 from arcgis.env import active_gis
 from arcgis._impl.common._mixins import PropertyMap
@@ -55,7 +56,13 @@ class ValidationManager(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    def update_error(self, error_features, version=None, return_edits=None, **kwargs):
+    def update_error(
+        self,
+        error_features: List[dict],
+        version: Optional[str] = None,
+        return_edits: Optional[bool] = None,
+        **kwargs,
+    ):
         """
         Updates errors on the validation tables.
 
@@ -132,11 +139,11 @@ class ValidationManager(object):
     # ----------------------------------------------------------------------
     def evaluate(
         self,
-        evaluation,
-        area=None,
-        changes_in_version=False,
-        selection=None,
-        return_edits=False,
+        evaluation: List[str],
+        area: Optional[dict] = None,
+        changes_in_version: bool = False,
+        selection: Optional[List[dict]] = None,
+        return_edits: bool = False,
     ):
         """
         Runs the topology rules and returns new errors if they exist.
