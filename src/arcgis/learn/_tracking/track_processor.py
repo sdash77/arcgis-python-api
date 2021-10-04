@@ -104,7 +104,7 @@ class TrackProcessor:
                             successful recovery.
     =====================   ===========================================
 
-    :returns: `TrackProcessor` Object
+    :return: `TrackProcessor` Object
     """
 
     def __init__(
@@ -162,7 +162,7 @@ class TrackProcessor:
                                 before initialization.
         =====================   ===========================================
 
-        :returns: None
+        :return: None
         """
 
         # reset = True
@@ -189,7 +189,7 @@ class TrackProcessor:
                                 tracks needed for post processing.
         =====================   ===========================================
 
-        :returns: 1D list with updated state of track objects
+        :return: 1D list with updated state of track objects
         """
 
         dets = _track_processor.update(frame, dets)

@@ -98,7 +98,7 @@ class Site(BasePortalAdmin):
 
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/createNewSite" % url
@@ -139,7 +139,7 @@ class Site(BasePortalAdmin):
                                         where the exported site configuration will be written.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         .. code-block:: python
 
@@ -179,7 +179,7 @@ class Site(BasePortalAdmin):
         location                        Required string. A file path to an exported configuration.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/importSite" % self._url
@@ -230,7 +230,7 @@ class Site(BasePortalAdmin):
                                         of the existing portal site.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/joinSite" % self._url

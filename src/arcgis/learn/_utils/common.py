@@ -114,7 +114,9 @@ def read_image(path, resize_to: int = None, keep_raw=False):
 
 
 class ArcGISMSImage(Image):
-    def show(self, ax=None, rgb_bands=None, show_axis=False, title=None):
+    def show(
+        self, ax=None, rgb_bands=None, show_axis=False, title=None, return_ax=False
+    ):
         if rgb_bands is None:
             rgb_bands = getattr(self, "rgb_bands", [0, 1, 2])
         if ax is None:
@@ -132,6 +134,8 @@ class ArcGISMSImage(Image):
         ax.imshow(data_to_plot)
         if title is not None:
             ax.set_title(title)
+        if return_ax:
+            return ax
 
     def print_method(self):
         return self.show()
@@ -224,8 +228,9 @@ class ArcGISMSImage(Image):
                 if isinstance(div, tuple):
                     min_values, max_values = div
                     if not isinstance(min_values, torch.Tensor):
-                        min_values, max_values = torch.tensor(min_values), torch.tensor(
-                            max_values
+                        min_values, max_values = (
+                            torch.tensor(min_values),
+                            torch.tensor(max_values),
                         )
                     for i in range(x.shape[0]):
                         arr = x[i, :, :]
@@ -459,10 +464,13 @@ def get_percent_minmax(imagetensor_batch, min_clip=0.0025, max_clip=0.005):
         v = get_band_percent_minmax(_imagetensor_batch[i].unique(), min_clip, max_clip)
         min_vals.append(v[0])
         max_vals.append(v[1])
-    return torch.tensor(
-        min_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
-    ), torch.tensor(
-        max_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
+    return (
+        torch.tensor(
+            min_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
+        ),
+        torch.tensor(
+            max_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
+        ),
     )
 
 

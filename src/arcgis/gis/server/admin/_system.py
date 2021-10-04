@@ -88,7 +88,7 @@ class SystemManager(BaseServer):
     # ----------------------------------------------------------------------
     def directories(self):
         """
-        :returns:
+        :return:
             The server directory object in a list.
         """
         return DirectoryManager(system=self)
@@ -104,7 +104,7 @@ class SystemManager(BaseServer):
         name                   Required string. The name of the registered directory.
         ==================     ====================================================================
 
-        :returns:
+        :return:
             The ArcGIS Server directory as an object.
 
         """
@@ -1155,7 +1155,7 @@ class DirectoryManager(object):
         """
         returns the current service directory properties for the server.
 
-        :returns: dict
+        :return: dict
         """
         return self._system._services_directory
 

@@ -13,11 +13,16 @@ def scale(geom: Geometry, *scale_factor: int):
     """
     Create a scaling transform from a scalar value (float)
 
-    Parameters:
-    :scale_factor: The scaling factor. A scalar value will
-     scale in both dimensions equally.
-    :Output:
-     dictionary or arcgis.Geomerty
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    geom                Required class:`~arcgis.geometry.Geometry object or dictionary.
+    ---------------     --------------------------------------------------------------------
+    scale_factor        Required int. A scalar value will scale in both dimensions equally
+    ===============     ====================================================================
+
+    :return:
+        Dictionary or class:`~arcgis.geometry.Geometry` object
     """
     import numpy as np
 
@@ -68,13 +73,18 @@ def scale(geom: Geometry, *scale_factor: int):
 # -------------------------------------------------------------------------
 def rotate(geom: Geometry, theta: float):
     """
-    rotates a geometry counter-clockwise by some degree theta
+    Rotates a geometry counter-clockwise by some degree theta
 
-    Parameters:
-     :geom: - Geometry to rotate
-     :theta: - angle of rotation
-    Ouput:
-     dict or arcgis.Geometry
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    geom                Required class:`~arcgis.geometry.Geometry object or dictionary.
+    ---------------     --------------------------------------------------------------------
+    theta               Required angle of rotation
+    ===============     ====================================================================
+
+    :return:
+        Dictionary or class:`~arcgis.geometry.Geometry` object
     """
     import numpy as np
 
@@ -122,12 +132,18 @@ def skew(geom: Geometry, x_angle: float = 0, y_angle: float = 0):
     """
     Create a skew transform along one or both axes.
 
-    Parameters:
-     :geom: geometry to alter (dictionary or arcgis.Geometry)
-     :x_angle: angle to skew in the x coordinate
-     :y_angle: angle to skew in the y coordinate
-    Output:
-     dictionary or arcgis.Geometry
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    geom                Required class:`~arcgis.geometry.Geometry object or dictionary.
+    ---------------     --------------------------------------------------------------------
+    x_angle             Required angle to skew in the x-coordinates
+    ---------------     --------------------------------------------------------------------
+    y_angle             Required angle to skew in the y-coordinates
+    ===============     ====================================================================
+
+    :return:
+        Dictionary or class:`~arcgis.geometry.Geometry` object
     """
     import numpy as np
 
@@ -182,12 +198,18 @@ def translate(geom: Geometry, x_offset: float, y_offset: float):
     """
     Moves a geometry by some distance
 
-    Parameters:
-     :geom: dictionary or arcgis.Geometry to move
-     :x_offset: distance to move the coordinates in the x direction
-     :y_offset: distance to move the coordinates in the y direction
-    Output:
-     dictionary or arcgis.Geometry
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    geom                Required class:`~arcgis.geometry.Geometry object or dictionary.
+    ---------------     --------------------------------------------------------------------
+    x_offset            Required int. Distance to move coordinates in the x-direction
+    ---------------     --------------------------------------------------------------------
+    y_offset            Required int. Distance to move coordinates in the y-direction
+    ===============     ====================================================================
+
+    :return:
+        Dictionary or class:`~arcgis.geometry.Geometry` object
     """
     import numpy as np
 
