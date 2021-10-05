@@ -3,14 +3,19 @@ These tools are used to identify areas that meet a number of different criteria 
 
 find_similar_locations finds locations most similar to one or more reference locations based on criteria you specify.
 """
+from __future__ import annotations
 import json as _json
-
 import logging as _logging
+from typing import Any, Optional, Union
+from datetime import datetime
 import arcgis as _arcgis
 from arcgis import env as _env
-from arcgis.features import FeatureSet as _FeatureSet
+from arcgis.geocoding._functions import Geocoder
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.common._utils import inspect_function_inputs
+from arcgis.gis import GIS, Item
 from ._util import (
     _id_generator,
     _feature_input,
@@ -19,7 +24,6 @@ from ._util import (
     GAJob,
     _prevent_bds_item,
 )
-import datetime
 
 _log = _logging.getLogger(__name__)
 
@@ -27,17 +31,24 @@ _use_async = True
 
 
 def geocode_locations(
-    input_layer,
-    country=None,
-    category=None,
-    include_attributes=True,
-    locator_parameters=None,
-    output_name=None,
-    geocode_service=None,
-    geocode_parameters=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    country: Optional[str] = None,
+    category: Optional[str] = None,
+    include_attributes: bool = True,
+    locator_parameters: Optional[dict[str, Any]] = None,
+    output_name: Optional[str] = None,
+    geocode_service: Optional[Union[str, Geocoder]] = None,
+    geocode_parameters: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/geocode_locations/geocode_locations.png
@@ -268,18 +279,25 @@ def geocode_locations(
 
 
 def detect_incidents(
-    input_layer,
-    track_fields,
-    start_condition_expression,
-    end_condition_expression=None,
-    output_mode="AllFeatures",
-    time_boundary_split=None,
-    time_split_unit=None,
-    time_reference=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    track_fields: str,
+    start_condition_expression: str,
+    end_condition_expression: Optional[str] = None,
+    output_mode: str = "AllFeatures",
+    time_boundary_split: Optional[int] = None,
+    time_split_unit: Optional[str] = None,
+    time_reference: Optional[datetime] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
 
@@ -476,22 +494,29 @@ def detect_incidents(
 
 
 def find_dwell_locations(
-    input_layer,
-    track_fields,
-    distance_tolerance,
-    distance_unit,
-    time_tolerance,
-    time_unit,
-    summary_fields=None,
-    method="Planar",
-    dwell_type="DwellMeanCenters",
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    time_boundary_split=None,
-    time_boundary_unit=None,
-    time_boundary_ref=None,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    track_fields: str,
+    distance_tolerance: float,
+    distance_unit: str,
+    time_tolerance: int,
+    time_unit: str,
+    summary_fields: Optional[list[dict[str, Any]]] = None,
+    method: str = "Planar",
+    dwell_type: str = "DwellMeanCenters",
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    time_boundary_split: Optional[int] = None,
+    time_boundary_unit: Optional[str] = None,
+    time_boundary_ref: Optional[datetime] = None,
 ):
 
     """
@@ -742,18 +767,32 @@ def find_dwell_locations(
 
 
 def find_similar_locations(
-    input_layer,
-    search_layer,
-    analysis_fields,
-    most_or_least_similar="MostSimilar",
-    match_method="AttributeValues",
-    number_of_results=10,
-    append_fields=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    return_tuple=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    search_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    analysis_fields: str,
+    most_or_least_similar: str = "MostSimilar",
+    match_method: str = "AttributeValues",
+    number_of_results: int = 10,
+    append_fields: str = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    return_tuple: bool = False,
 ):
     """
     .. image:: _static/images/find_similar_locations/find_similar_locations.png

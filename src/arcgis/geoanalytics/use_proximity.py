@@ -3,12 +3,16 @@ These tools help answer one of the most common questions posed in spatial analys
 
 ```create_buffers()``` creates areas of a specified distance from features.
 """
+from __future__ import annotations
 import json as _json
 
 import logging as _logging
+from typing import Any, Optional, Union
 import arcgis as _arcgis
-from arcgis.features import FeatureSet as _FeatureSet, FeatureCollection
+from arcgis.features import FeatureSet, FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis.gis import GIS, Item
 from ._util import (
     _id_generator,
     _feature_input,
@@ -26,17 +30,24 @@ _use_async = True
 
 
 def group_by_proximity(
-    input_layer,
-    spatial_relationship,
-    spatial_near_distance=None,
-    spatial_near_distance_unit=None,
-    temporal_relationship=None,
-    temporal_near_distance=None,
-    temporal_near_distance_unit=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    spatial_relationship: str,
+    spatial_near_distance: Optional[float] = None,
+    spatial_near_distance_unit: Optional[str] = None,
+    temporal_relationship: Optional[str] = None,
+    temporal_near_distance: Optional[float] = None,
+    temporal_near_distance_unit: Optional[str] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The Group By Proximity tool groups features that are within spatial
@@ -168,22 +179,38 @@ def group_by_proximity(
 
 
 def trace_proximity_events(
-    input_points,
-    spatial_search_distance,
-    spatial_search_distance_unit,
-    temporal_search_distance,
-    temporal_search_distance_unit,
-    entity_id_field=None,
-    entities_of_interest_ids=None,
-    entities_of_interest_layer=None,
-    distance_method="Planar",
-    include_tracks_layer=False,
-    max_trace_depth=None,
-    attribute_match_criteria=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    future=False,
+    input_points: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    spatial_search_distance: float,
+    spatial_search_distance_unit: str,
+    temporal_search_distance: float,
+    temporal_search_distance_unit: str,
+    entity_id_field: Optional[str] = None,
+    entities_of_interest_ids: Optional[list[str]] = None,
+    entities_of_interest_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    distance_method: str = "Planar",
+    include_tracks_layer: bool = False,
+    max_trace_depth: Optional[int] = None,
+    attribute_match_criteria: Optional[str] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The Trace Proximity Events task analyzes time-enabled point features representing moving entities.
@@ -260,7 +287,7 @@ def trace_proximity_events(
         and "layers" in input_points.properties
         and len(input_points.properties.layers) > 0
     ):
-        input_points = _FeatureSet.from_dict(
+        input_points = FeatureSet.from_dict(
             featureset_dict=input_points._lazy_properties.layers[0].featureSet
         )
     if (
@@ -268,7 +295,7 @@ def trace_proximity_events(
         and "layers" in entities_of_interest_layer.properties
         and len(entities_of_interest_layer.layers) > 0
     ):
-        entities_of_interest_layer = _FeatureSet.from_dict(
+        entities_of_interest_layer = FeatureSet.from_dict(
             featureset_dict=entities_of_interest_layer._lazy_properties.layers[
                 0
             ].featureSet
@@ -357,19 +384,26 @@ def trace_proximity_events(
 
 
 def create_buffers(
-    input_layer,
-    distance=1,
-    distance_unit="Miles",
-    field=None,
-    method="Planar",
-    dissolve_option="None",
-    dissolve_fields=None,
-    summary_fields=None,
-    multipart=False,
-    output_name=None,
-    context=None,
-    gis=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    distance: float = 1,
+    distance_unit: str = "Miles",
+    field: Optional[str] = None,
+    method: str = "Planar",
+    dissolve_option: str = "None",
+    dissolve_fields: Optional[str] = None,
+    summary_fields: Optional[list[dict[str, Any]]] = None,
+    multipart: bool = False,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
 
@@ -499,7 +533,7 @@ def create_buffers(
         and "layers" in input_layer.properties
         and len(input_layer.properties.layers) > 0
     ):
-        input_layer = _FeatureSet.from_dict(
+        input_layer = FeatureSet.from_dict(
             featureset_dict=input_layer._lazy_properties.layers[0].featureSet
         )
     kwargs = {
