@@ -75,7 +75,7 @@ class InferenceOnlyModel:
                                 model files on the local disk.
         =====================   ===========================================
 
-        :returns: Absolute path for the saved model
+        :return: Absolute path for the saved model
         """
 
         if "\\" in name_or_path or "/" in name_or_path:
@@ -100,7 +100,7 @@ class InferenceOnlyModel:
                                 with saved model files.
         =====================   ===========================================
 
-        :returns: SequenceToSequence Object
+        :return: SequenceToSequence Object
         """
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:

@@ -62,7 +62,7 @@ class QuestionAnswering(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :returns: `QuestionAnswering` Object
+    :return: `QuestionAnswering` Object
     """
 
     #: supported transformer architectures
@@ -114,7 +114,7 @@ class QuestionAnswering(InferenceOnlyModel):
                                 Default value is set to False
         =====================   ===========================================
 
-        :returns: a list or a list of list containing the answer(s) for the input question(s)
+        :return: a list or a list of list containing the answer(s) for the input question(s)
         """
         results, kwargs_dict = [], {}
 

@@ -5,7 +5,7 @@ The ``Symbology`` class generates Symbol Types for the :class:`~arcgis.gis.GIS` 
 """
 import json
 import arcgis
-from arcgis.features import FeatureCollection, FeatureSet, SpatialDataFrame
+from arcgis.features import FeatureCollection, FeatureSet
 from arcgis.gis import GIS
 from arcgis.geometry import _types
 
@@ -412,7 +412,7 @@ def show_styles(geometry_type):
     """
     The ``show_styles`` method retrieves the available styles for a given geometry type as a Pandas dataframe.
 
-    :returns:
+    :return:
         A Pandas Dataframe
     """
     import pandas as pd
@@ -706,7 +706,7 @@ def create_symbol(
     miter_limit           Optional string. Size threshold for showing mitered line joins.
     ====================  =========================================================
 
-    :returns: Dictionary
+    :return: Dictionary
 
     """
     import numpy as np

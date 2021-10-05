@@ -55,8 +55,9 @@ def get_image_for_tracking(path, grayscale=False):
         )
 
     img = ArcGISMSImage.read_image(path, keep_raw=True)
-    if img is None: return None
-    
+    if img is None:
+        return None
+
     if len(img.shape) >= 3:
         dim = img.shape[0]
         if dim == 2:

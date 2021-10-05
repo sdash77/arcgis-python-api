@@ -16,7 +16,6 @@ from arcgis.features import (
     FeatureCollection,
     FeatureLayerCollection,
     FeatureSet,
-    SpatialDataFrame,
 )
 from arcgis.geoprocessing import LinearUnit, DataFile, RasterData
 
@@ -1144,8 +1143,6 @@ class Toolbox(_AsyncResource):
                         params[key] = value.to_dict()
                     elif _is_geoenabled(value) or hasattr(value, "spatial"):
                         params[key] = value.spatial.__feature_set__
-                    elif type(value) in [SpatialDataFrame]:
-                        params[key] = value.__feature_set__
                     elif type(value) == str:
                         try:
                             klass = py_type  # type[value]

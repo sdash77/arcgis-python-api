@@ -1270,7 +1270,7 @@ def flow_direction(
                                          output_flow_direction_service and output_drop_service.
     ================================     ====================================================================
 
-    :returns: output raster with function applied
+    :return: output raster with function applied
 
     .. code-block:: python
 
@@ -4419,7 +4419,7 @@ def boundary_clean(input_raster, sort_type="NO_SORT", number_of_runs="TWO_WAY"):
                                            once, according to the sorting type.
     ================================     ====================================================================
 
-    :returns: output raster with function applied
+    :return: output raster with function applied
 
     .. code-block:: python
 
@@ -4637,7 +4637,7 @@ def viewshed(
                                          input_observer_features.
     ================================     ====================================================================
 
-    :returns: output raster with function applied
+    :return: output raster with function applied
 
     """
     layer1, input_raster, raster_ra1 = _raster_input(input_raster)

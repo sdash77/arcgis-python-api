@@ -73,7 +73,7 @@ class ImageCaptioner(ArcGISModel):
                                 - 'pretrained_emb': If true, it will use fasttext embeddings.
     =====================   ===========================================
 
-    :returns: `ImageCaptioner` Object
+    :return: `ImageCaptioner` Object
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
@@ -124,7 +124,7 @@ class ImageCaptioner(ArcGISModel):
                                 None for inferencing.
         =====================   ===========================================
 
-        :returns: `ImageCaptioner` Object
+        :return: `ImageCaptioner` Object
         """
 
         from fastai.text.transform import Vocab
@@ -235,6 +235,14 @@ class ImageCaptioner(ArcGISModel):
         _emd_template["ModelType"] = "ImageCaptioner"
         # Inference function of object classifier.
         _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
+
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISImageCaptioner.py"
+        else:
+            _emd_template[
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageCaptioner.py"
+
         # add encoder parameters
         _emd_template["ModelParameters"]["decoder_params"] = self.decoder_params
         # chip size

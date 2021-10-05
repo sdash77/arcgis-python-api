@@ -9833,7 +9833,7 @@ def interpolate_irregular_data(
                                          If gis parameter is not specified the output of interpolate_irregular_data() cannot be displayed.
     ================================     ====================================================================
 
-    :returns: output raster with function applied
+    :return: output raster with function applied
 
     """
     from arcgis.geoprocessing._support import _layer_input
@@ -11062,7 +11062,7 @@ def rasterize_features(
                                            larger of the features.
     ================================     ====================================================================
 
-    :returns: output raster with function applied
+    :return: output raster with function applied
 
     """
     layer, raster, raster_ra = _raster_input(raster)
@@ -11128,7 +11128,7 @@ def rasterize_features(
 #    cell_size                            Optional int. The cell size for the output raster dataset.
 #    ================================     ====================================================================
 
-#    :returns: output raster with function applied
+#    :return: output raster with function applied
 
 #    """
 #    layer, raster, raster_ra = _raster_input(raster)
@@ -11217,7 +11217,7 @@ def reproject(
                                          parameters to define the output envelope.
     ================================     ====================================================================
 
-    :returns: output raster with function applied
+    :return: output raster with function applied
 
     """
     layer, raster, raster_ra = _raster_input(raster)

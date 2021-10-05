@@ -4,9 +4,10 @@ import pytest
 from ..geoenrichment_country_tests import *
 from ..geoenrich_data import gis_agol
 
+
 @pytest.fixture
 def usa():
-    return Country.get('USA', gis=gis_agol)
+    return Country.get("USA", gis=gis_agol)
 
 
 def test_usa_agol() -> None:

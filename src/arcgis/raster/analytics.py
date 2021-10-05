@@ -3347,7 +3347,7 @@ def create_image_collection(
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ==================                   ====================================================================
 
-    :returns: The imagery layer item
+    :return: The imagery layer item
 
 +-----------------------------------------------------------------------------------------------------------------------------------------------+
 |     Supported Raster Types                                                                                                                    |
@@ -4003,7 +4003,7 @@ def add_image(
                                          results will be returned asynchronously.
     ==================                   ====================================================================
 
-    :returns: The imagery layer item
+    :return: The imagery layer item
 
     .. code-block:: python
 
@@ -4057,7 +4057,7 @@ def delete_image(image_collection, where, *, gis=None, future=False, **kwargs):
                            results will be returned asynchronously.
     ==================     ====================================================================
 
-    :returns: The imagery layer url
+    :return: The imagery layer url
 
     .. code-block:: python
 
@@ -4099,7 +4099,7 @@ def delete_image_collection(image_collection, *, gis=None, future=False, **kwarg
                            results will be returned asynchronously.
     ==================     ====================================================================
 
-    :returns: Boolean value indicating whether the deletion was successful or not.
+    :return: Boolean value indicating whether the deletion was successful or not.
 
     .. code-block:: python
 

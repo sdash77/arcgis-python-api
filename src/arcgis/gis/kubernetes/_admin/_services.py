@@ -53,7 +53,7 @@ class KubeService(object):
         ===============     ====================================================================
 
 
-        :returns: boolean
+        :return: boolean
         """
         lu = {"dmaps": "DMaps", "arcobjects11": "ArcObjects11"}
         provider = lu[provider.lower()]
@@ -69,7 +69,7 @@ class KubeService(object):
         """
         Removes the service from the hosting server
 
-        :returns: bool
+        :return: bool
 
         """
         url = f"{self._url}/delete"
@@ -100,7 +100,7 @@ class KubeService(object):
         """
         Starts the service
 
-        :returns: bool
+        :return: bool
         """
 
         url = f"{self._url}/start"
@@ -112,7 +112,7 @@ class KubeService(object):
         """
         Stops the service
 
-        :returns: bool
+        :return: bool
         """
 
         url = f"{self._url}/stop"
@@ -123,7 +123,7 @@ class KubeService(object):
     def restart(self) -> bool:
         """
         Recycles the current service
-        :returns: Bool
+        :return: Bool
         """
         self.stop()
         return self.start()
@@ -154,18 +154,7 @@ class KubeService(object):
     @scaling.setter
     def scaling(self, value: Dict[str, Any]):
         """
-        This resource returns the scaling and resource allocation for a
-        specific GIS service microservice. When used to update the service,
-        it updates the scaling (replicas min and max) and resource allocation
-        (cpuMin, cpuMax, memoryMin, memoryMax).
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        value               Required Dict[str, Any]. The service scaling properties.
-        ===============     ====================================================================
-
-        :return: Dict[str, Any]
+        See main ``scaling`` property docstring
         """
         url = f"{self._url}/scaling/edit"
         params = {
@@ -202,19 +191,7 @@ class KubeService(object):
     @properties.setter
     def properties(self, properties: dict):
         """
-
-        To edit a service, you need to submit the complete JSON representation of
-        the service, which includes the updates to the service properties. Editing
-        a service can cause the service to be restarted with updated properties.
-
-        The edit settings of a service contains the following four sections:
-
-        + Service Description Properties - Common properties that are shared by all services. These properties typically identify a specific service.
-        + Service Framework Properties - Properties targets towards the framework that hosts the GIS service. They define the life cycle and load balancing of the service.
-        + Service Type Properties - Properties targeted towards the core service type as seen by the server administrator. Since these properties are associated with a server object, they vary across the service types.
-        + Extension Properties - Represent the extensions that are enabled on the service.
-
-        :return: Boolean
+        See main ``properties`` property docstring.
         """
         historic = dict(self.properties)
         historic.update(properties)
@@ -263,14 +240,7 @@ class ServicesManager(object):
     @services_properties.setter
     def services_properties(self, properties: dict):
         """
-        This resource is used to provide default settings for new services
-        when they are published to the server. You can use the update
-        operation to change the default settings. However, updating the
-        default properties for services won't change the properties of any
-        pre-existing services in your organization. To update these services,
-        you must edit the individual service's properties.
-
-
+        See main ``service_properties`` docstring
         """
         res = self._con.post(
             self._url + "/properties", {"f": "json", "properties": properties}
@@ -284,7 +254,7 @@ class ServicesManager(object):
         """
         The proeprties of the manager.
 
-        :returns: dict
+        :return: dict
         """
         url = self._url
         params = {"f": "json"}
@@ -337,7 +307,7 @@ class ServicesManager(object):
         """
         returns a list of folder names
 
-        :returns: List[str]
+        :return: List[str]
 
         """
         return self.properties.get("folders", [])
@@ -348,7 +318,7 @@ class ServicesManager(object):
         """
         This resource provides metadata about all service types and extensions that can be enabled.
 
-        :returns: Dict
+        :return: Dict
 
         """
         if self._types is None:
@@ -382,7 +352,7 @@ class ServicesManager(object):
         """
         This operation checks if a folder or service exists on the server.
 
-        :returns: dict
+        :return: dict
         """
         params = {
             "f": "json",
@@ -526,7 +496,7 @@ class ServicesManager(object):
         during site creation. This operation should only be performed if either the System or
         Utility service fails to be created with the site.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = f"{self._url}/refreshAutodeployedServices"
