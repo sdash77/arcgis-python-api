@@ -27,7 +27,7 @@ def test_upload_item_id():
 def test_append_upload_id():
     upload_id = "da78c9fb55bb5e44e44c6f88ee7d4ee4"
     mfl = MockFeatureLayer()
-    FeatureLayer.append(mfl, upload_id=upload_id)
+    FeatureLayer.append(mfl, upload_id=upload_id, upsert=True)
 
     expected_url = f"{mfl.url}/append"
     expected_postdata = dict(_common_postdata)
