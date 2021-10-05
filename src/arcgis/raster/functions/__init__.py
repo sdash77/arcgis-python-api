@@ -2496,7 +2496,7 @@ def local(
 
                                          Parameter is honoured only if operation is 94 or 93 (Percentile operation)
     --------------------------------     --------------------------------------------------------------------
-    percentile_interpolation_type        Optional str. Specifies the method of interpolation to be used when
+    percentile_interpolation_type        Optional string. Specifies the method of interpolation to be used when
                                          the specified percentile value lies between two input cell values.
 
                                          - AUTO_DETECT-If the input rasters are of integer pixel type, the NEAREST
@@ -4864,7 +4864,7 @@ def med(
     --------------------------------     --------------------------------------------------------------------
     process_as_multiband                 Optional boolean. Set to True to process as multiband.
     --------------------------------     --------------------------------------------------------------------
-    percentile_interpolation_type        Optional str. Specifies the method of interpolation to be used when
+    percentile_interpolation_type        Optional string. Specifies the method of interpolation to be used when
                                          the median lies between two input cell values.
 
                                          - AUTO_DETECT-If the input rasters are of integer pixel type, the NEAREST
@@ -6295,7 +6295,7 @@ def percentile(
                                          statistic, and the 100th percentile is equivalent to maximum. A value of 50 will produce
                                          essentially the same result as the median statistic.
     --------------------------------     --------------------------------------------------------------------
-    percentile_interpolation_type        Optional str. Specifies the method of interpolation to be used when
+    percentile_interpolation_type        Optional string. Specifies the method of interpolation to be used when
                                          the specified percentile value lies between two input cell values.
 
                                          - AUTO_DETECT-If the input rasters are of integer pixel type, the NEAREST

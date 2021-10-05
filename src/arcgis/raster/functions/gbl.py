@@ -683,7 +683,7 @@ def zonal_statistics(
                             Raster, it is deemed that there is insufficient information to perform \
                             statistical calculations for all the pixels in that zone; therefore, the \
                             entire zone will receive the NoData value on the output raster.
-    :param statistics_type: Optional str. Statistic type to be calculated. Default is MEAN
+    :param statistics_type: Optional string. Statistic type to be calculated. Default is MEAN
 
                             - MEAN-Calculates the average of all pixels in the Value Raster that belong to \
                             the same zone as the output pixel.
