@@ -82,7 +82,7 @@ class KubeSecurityCert(object):
         """
         Lists all the certificates currently configured with the organization
 
-        :returns: List
+        :return: List
         """
         url = self._url + "/identity"
         params = {"f": "json"}
@@ -111,7 +111,7 @@ class KubeSecurityCert(object):
         Ingress controller by setting the certificate name property via the
         update operation.
 
-        :returns: bool
+        :return: bool
         """
         params = {
             "f": "json",
@@ -128,7 +128,7 @@ class KubeSecurityCert(object):
     def trust_certs(self) -> list:
         """
         Lists all the trust certificates configured with the organization
-        :returns: list
+        :return: list
         """
         params = {"f": "json"}
 
@@ -143,7 +143,7 @@ class KubeSecurityCert(object):
         certificate is imported, the corresponding pods that will use the
         certificate are automatically restarted.
 
-        :returns: bool
+        :return: bool
         """
         params = {"f": "json", "certificateName": name}
         files = {"trustCertificateFile": cert}
@@ -274,7 +274,7 @@ class KubeSecuritySAML(object):
         """
         This get/sets the SAML certification information.
 
-        :returns: dict
+        :return: dict
 
         """
         return dict(self.properties)
@@ -285,7 +285,7 @@ class KubeSecuritySAML(object):
         """
         This get/sets the SAML certification information.
 
-        :returns: dict
+        :return: dict
         """
         url = self.url + "/update"
         params = {"f": "json", "ingressSecurityConfig": value}
@@ -375,7 +375,7 @@ class KubeSecurityIngress(object):
         """
         gets/sets the ingress configuration properties
 
-        :returns: dict
+        :return: dict
 
         """
         return dict(self.properties)
@@ -386,7 +386,7 @@ class KubeSecurityIngress(object):
         """
         gets/sets the ingress configuration properties
 
-        :returns: dict
+        :return: dict
         """
         url = self.url + "/update"
         params = {"f": "json", "samlSecurityConfig": value}
@@ -504,7 +504,7 @@ class KubeSecurityConfig(object):
                                documentation.
         ==================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
         """
         url = f"{self._url}/testIdentityStore"
         params = {
@@ -529,7 +529,7 @@ class KubeSecurityConfig(object):
         role_store             Optional dict. pecifies the role (group) store properties. This parameter accepts as input all the properties as defined in the ArcGIS for Kubernetes help doctumentation.
         ==================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
         """
         url = f"{self._url}/updateIdentityStore"
         params = {
@@ -632,7 +632,7 @@ class KubeSecurity(object):
     def ingress(self) -> "KubeSecurityIngress":
         """Returns a manager to configure the ingress settings.
 
-        :returns: KubeSecurityIngress
+        :return: KubeSecurityIngress
         """
         if self._ingress is None:
             url = self._url + "/ingress"
@@ -645,7 +645,7 @@ class KubeSecurity(object):
         """
         Returns a manager to work with the SAML settings for the organization
 
-        :returns: KubeSecuritySAML
+        :return: KubeSecuritySAML
         """
         if self._saml is None:
             url = self._url + "/saml"

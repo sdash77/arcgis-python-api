@@ -133,7 +133,7 @@ class Indexer(_BaseKube):
         issues. If indexing is in progress, you can monitor the status by
         refreshing the page.
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json"}
@@ -227,7 +227,7 @@ class SystemManager(_BaseKube):
         This resource allows an administrator the ability to manage
         disaster recovery settings.
 
-        :returns: RecoveryManager
+        :return: RecoveryManager
         """
         if self._recovery is None:
             url = f"{self._url}/disasterrecovery"
@@ -247,7 +247,7 @@ class SystemManager(_BaseKube):
         """
         The licenses resource lists the current license level of ArcGIS Server and all authorized extensions.
 
-        :returns: List[Dict[str, Any]]
+        :return: List[Dict[str, Any]]
         """
         raise NotImplemented("Not Implemented in 1.9.0")
 
@@ -259,7 +259,7 @@ class SystemManager(_BaseKube):
         The languages resource provides a list of current languages for an
         organization.
 
-        :returns: LanguageManager
+        :return: LanguageManager
 
         """
         return LanguageManager(url=f"{self._url}/content", gis=self._gis)
@@ -309,7 +309,7 @@ class SystemManager(_BaseKube):
         """
         Allows user to manage the site's indexer
 
-        :returns: `Indexer`
+        :return: `Indexer`
         """
         if self._indexer is None:
 

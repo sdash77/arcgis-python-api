@@ -823,7 +823,7 @@ class WorkflowManager:
         mode                    Optional String.
         ======================  ===============================================================
 
-        :returns: String
+        :return: String
         """
         url = f"{self._url}/evaluateArcade?token={self._gis._con.token}"
         params = {
@@ -2236,7 +2236,7 @@ class Job(object):
     @property
     def location(self):
         """
-        Returns the job location for the user-defined job
+        Get/Set the job location for the user-defined job
 
         :return:
             Workflow Manager :class:`~arcgis.gis.workflowmanager.JobLocation` object

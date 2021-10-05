@@ -142,7 +142,7 @@ class AttachmentManager(object):
                                     records that are beyond `maxRecordCount` property.
         =========================   ===============================================================
 
-        :returns: list of downloaded files
+        :return: A Pandas DataFrame or Dict of the attachements of the :class:`~arcgis.features.FeatureLayer`
 
         """
         import copy
@@ -324,11 +324,10 @@ class AttachmentManager(object):
                 return df
         else:
             return rows
-        return None
 
     def _download_all(self, object_ids=None, save_folder=None, attachment_types=None):
         """
-        downloads all attachments to a specific folder
+        Downloads all attachments to a specific folder
 
         =========================   ===============================================================
         **Arguement**               **Description**
@@ -343,7 +342,7 @@ class AttachmentManager(object):
                                     **Example:** image/jpeg
         =========================   ===============================================================
 
-        :returns: list of downloaded files
+        :return: path to the file where the attachements have downloaded
 
         """
         results = []
@@ -370,35 +369,45 @@ class AttachmentManager(object):
         return results
 
     def get_list(self, oid):
-        """returns the list of attachements for a given OBJECT ID"""
+        """
+        Get the list of attachements for a given OBJECT ID
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        oid                 Required string of the object id
+        ===============     ====================================================================
+
+        :result:
+            A list of attachements
+
+        """
         return self._layer._list_attachments(oid)["attachmentInfos"]
 
     def download(self, oid=None, attachment_id=None, save_path=None):
         """
-        downloads attachment and returns it's path on disk.
+        Downloads attachment and returns it's path on disk.
 
         The download tool works as follows:
 
-            1). if nothing is given, all attachments will be downloaded
+            * If nothing is given, all attachments will be downloaded
                - example: download()
-            2). If a single oid and attachment_id are given, the single file will download
-            3). If a list of oid values are given, all the attachments for those object ids will be saved locally.
-
-
+            * If a single oid and attachment_id are given, the single file will download
+            * If a list of oid values are given, all the attachments for those object ids will be saved locally.
 
         =========================   ===============================================================
         **Arguement**               **Description**
         -------------------------   ---------------------------------------------------------------
-        oid                         optional list/string. A list of object Ids or a single value
+        oid                         Optional list/string. A list of object Ids or a single value
                                     to download data from.
         -------------------------   ---------------------------------------------------------------
-        attachment_id               optional string. Id of the attachment to download. This is only
+        attachment_id               Optional string. Id of the attachment to download. This is only
                                     honored if return_all is False.
         -------------------------   ---------------------------------------------------------------
-        save_folder                 optional string. Path to save data to.
+        save_folder                 Optional string. Path to save data to.
         =========================   ===============================================================
 
-        :returns: list of downloaded files
+        :return: A path to the folder where the attachement are saved
 
 
         """
@@ -469,43 +478,68 @@ class AttachmentManager(object):
             return self._download_all(object_ids=oid, save_folder=save_path)
 
     def add(self, oid, file_path, keywords=None):
-        """Adds an attachment to a feature layer
-        Input:
-          oid - string - OBJECTID value to add attachment to
-          file_path - string - path to file
-          keywords - sring - Sets a text value that is stored as the keywords value for the attachment.
-        Output:
-          JSON Repsonse
+        """
+        Adds an attachment to a :class:`~arcgis.features.FeatureLayer`
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        oid                 Required string of the object ID
+        ---------------     --------------------------------------------------------------------
+        file_path           Required string. Path to attachement file
+        ---------------     --------------------------------------------------------------------
+        keywords            Optional string. Sets a text value that is stored as the keywords
+                            value for the attachment.
+        ===============     ====================================================================
+
+        :return:
+            A JSON Repsonse stating 'success' or 'error'
+
         """
         return self._layer._add_attachment(oid, file_path, keywords=keywords)
 
     def delete(self, oid, attachment_id):
-        """removes an attachment from a feature
-        Input:
-          oid - integer or string - id of feature
-          attachment_id - integer - id of attachment to erase
-        Output:
-           JSON response
+        """
+        Removes an attachment from a :class:`~arcgis.gis.FeatureLayer`
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        oid                 Required string of the object ID
+        ---------------     --------------------------------------------------------------------
+        attachment_id       Required string. Id of attachment to delete
+        ===============     ====================================================================
+
+        :result:
+           JSON response stating 'success' or 'error'
         """
         return self._layer._delete_attachment(oid, attachment_id)
 
     def update(self, oid, attachment_id, file_path):
-        """updates an existing attachment with a new file
-        Inputs:
-           oid - string/integer - Unique record ID
-           attachment_id - integer - Unique attachment identifier
-           file_path - string - path to new attachment
-        Output:
-           JSON response
+        """
+        Updates an existing attachment with a new file
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        oid                 Required string of the object ID
+        ---------------     --------------------------------------------------------------------
+        attachment_id       Required string. Id of the attachement to update
+        ---------------     --------------------------------------------------------------------
+        file_path           Required string. Path to attachement file
+        ===============     ====================================================================
+
+        :result:
+           JSON response stating 'success' or 'error'
         """
         return self._layer._update_attachment(oid, attachment_id, file_path)
 
 
 class SyncManager(object):
     """
-    Manager class for manipulating replicas for syncing disconnected editing of feature layers.
+    Manager class for manipulating replicas for syncing disconnected editing of :class:`~arcgis.features.FeatureLayer`s.
     This class is not created by users directly.
-    An instance of this class, called 'replicas', is available as a property of the FeatureLayerCollection object,
+    An instance of this class, called 'replicas', is available as a property of the :class:`~arcgis.features.FeatureLayerCollection` object,
     if the layer is sync enabled / supports disconnected editing.
     Users call methods on this 'replicas' object to manipulate (create, synchronize, unregister) replicas.
     """
@@ -531,10 +565,15 @@ class SyncManager(object):
     # ----------------------------------------------------------------------
     def get(self, replica_id):
         """
-        returns replica metadata for a specific replica.
-        Inputs:
-           replica_id - The replicaID returned by the feature service
-                        when the replica was created.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        replica_id          Required string. replicaId returned by the feature service when
+                            the replica was created.
+        ===============     ====================================================================
+
+        :return:
+            The replica information
         """
         return self._fs._replica_info(replica_id)
 
@@ -562,16 +601,16 @@ class SyncManager(object):
         time_reference_unknown_client=None,
     ):
         """
-            The create operation is performed on a feature layer collection resource. This operation
-            creates the replica between the feature dataset and a client based on a client-supplied
-            replica definition. It requires the Sync capability. See Sync overview for more
-            information on sync. The response for create includes replicaID, replica generation
-            number, and data similar to the response from the feature layer collection query
-            operation. The create operation returns a response of type esriReplicaResponseTypeData,
-            as the response has data for the layers in the replica. If the operation is called to
-            register existing data by using replicaOptions, the response type will be
-            esriReplicaResponseTypeInfo, and the response will not contain data for the layers in
-            the replica.
+        The create operation is performed on a :class:`~arcgis.features.FeatureLayerCollection` resource.
+        This operationcreates the replica between the feature dataset and a client based on a client-supplied
+        replica definition. It requires the Sync capability. See Sync overview for more
+        information on sync. The response for create includes replicaID, replica generation
+        number, and data similar to the response from the :meth:`arcgis.features.FeatureLayerCollection.query`
+        operation. The create operation returns a response of type esriReplicaResponseTypeData,
+        as the response has data for the layers in the replica. If the operation is called to
+        register existing data by using replicaOptions, the response type will be
+        esriReplicaResponseTypeInfo, and the response will not contain data for the layers in
+        the replica.
 
 
         =============================       ====================================================================
@@ -704,12 +743,12 @@ class SyncManager(object):
 
 
         :return:
-           Required. JSON response if POST request made successfully. Otherwise, return None.
+           JSON response if POST request made successfully. Otherwise, return None.
 
 
         .. code-block:: python  (optional)
 
-           USAGE EXAMPLE: Create a replica on server with geometry_filter specified.
+           # USAGE EXAMPLE: Create a replica on server with geometry_filter specified.
 
            geom_filter = {'geometry':'8608022.3,1006191.2,8937015.9,1498443.1',
                           'geometryType':'esriGeometryEnvelope'}
@@ -820,7 +859,8 @@ class SyncManager(object):
         ==================     ====================================================================
 
 
-        :returns: Boolean when future is False and Future object when future is True
+        :return:
+            Boolean when future is False and Future object when future is True
 
         """
         return self._fs._cleanup_change_tracking(
@@ -875,7 +915,26 @@ class SyncManager(object):
     def create_replica_item(
         self, replica_name, item, destination_gis, layers=None, extent=None
     ):
-        """creates a replicated service from a parent to another GIS"""
+        """
+        Creates a replicated service from a parent to another GIS.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        replica_name        Optional string. Name for replicated item in other GIS
+        ---------------     --------------------------------------------------------------------
+        item                Required Item to replicate
+        ---------------     --------------------------------------------------------------------
+        destination_gis     Required GIS object
+        ---------------     --------------------------------------------------------------------
+        layers              Optional dict. Layers to replicate in the item
+        ---------------     --------------------------------------------------------------------
+        extent              Optional dict. Depicts the geometry extent for an item.
+        ===============     ====================================================================
+
+        :return:
+            The published replica item created
+        """
         import tempfile
         import os
         from ..gis import Item
@@ -934,17 +993,23 @@ class SyncManager(object):
 
     def sync_replicated_items(self, parent, child, replica_name):
         """
-        synchronizes two replicated items between portals
+        Synchronizes two replicated items between portals
 
-        Paramters:
-         :parent: arcgis.gis.Item class that points to a feature service
-          who is the parent (source) dataset.
-         :child: arcgis.gis.Item class that points to the child replica
-         :replica_name: name of the replica to synchronize
-        Output:
-         boolean value. True means service is up to date/synchronized,
-         False means the synchronization failed.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        parent              Required :class:`~arcgis.gis.Item` that points to the feature service
+                            that is the parent dataset. (source)
+        ---------------     --------------------------------------------------------------------
+        child               Required :class:`~arcgis.gis.Item` that points to the feature service
+                            that is the child dataset. (target)
+        ---------------     --------------------------------------------------------------------
+        replica_name        Required string. Name of either parent or child Item
+        ===============     ====================================================================
 
+        :result:
+            Boolean value. True means service is up to date/synchronized,
+            False means the synchronization failed.
 
         """
         from ..gis import Item
@@ -1024,7 +1089,6 @@ class SyncManager(object):
                 )
         else:
             return False
-        return False
 
 
 ###########################################################################
@@ -1056,7 +1120,7 @@ class WebHook(object):
         """
         Returns the WebHook's properties
 
-        :returns: PropertyMap
+        :return: :class:`~arcgis._impl.common.PropertyMap`
         """
         if self._properties is None:
             self._properties = PropertyMap(
@@ -1145,7 +1209,7 @@ class WebHook(object):
         =====================================    ===========================================================================
 
 
-        :returns: dict
+        :return: Response of edit as a dict.
 
         """
         props = dict(self.properties)
@@ -1176,7 +1240,7 @@ class WebHook(object):
         """
         Deletes the current webhook from the system
 
-        :returns: bool
+        :return: Boolean, True if successful
         """
         url = f"{self._url}/delete"
         params = {"f": "json"}
@@ -1188,7 +1252,7 @@ class WebHook(object):
 class WebHookServiceManager(object):
     """
     The `WebHookServiceManager` allows owners and administrators wire feature
-    service specific events to feature layer collections.
+    service specific events to :class:`~arcgis.features.FeatureLayerCollection`.
     """
 
     _fc = None
@@ -1212,15 +1276,19 @@ class WebHookServiceManager(object):
     # ----------------------------------------------------------------------
     @property
     def properties(self) -> PropertyMap:
-        """returns the properties for the WebHook Service Manager"""
+        """
+        Gets the properties for the WebHook Service Manager and returns
+        a :class:`~arcgis._impl.common.PropertyMap` object
+        """
         return PropertyMap(self._gis._con.post(self._url, {"f": "json"}))
 
     # ----------------------------------------------------------------------
     @property
     def list(self) -> tuple:
-        """Returns a list of web hooks on the Feature Layer Collection
+        """
+        Get a list of web hooks on the :class:`~arcgis.features.FeatureLayerCollection`
 
-        :returns: tuple[WebHook]
+        :return: tuple[WebHook]
         """
         resp = self._gis._con.post(self._url, {"f": "json"})
         ret = [
@@ -1241,7 +1309,7 @@ class WebHookServiceManager(object):
     ) -> WebHook:
         """
 
-        Creates a New Feature Collection Web Hook
+        Creates a new Feature Collection Web Hook
 
 
         =====================================    ===========================================================================
@@ -1309,7 +1377,7 @@ class WebHookServiceManager(object):
         `FeatureServiceDefinitionChanged`        Any time a feature service is changed
         =====================================    ===========================================================================
 
-        :returns: `WebHook`
+        :return: A :class:`~arcgis.features.WebHook` object
 
         """
         url = f"{self._url}/create"
@@ -1340,7 +1408,7 @@ class WebHookServiceManager(object):
         activated, payloads will be delivered to the payload URL when the
         webhook is invoked.
 
-        :returns: bool
+        :return: Bool, True if successful
 
         """
         url = f"{self._url}/activateAll"
@@ -1352,7 +1420,7 @@ class WebHookServiceManager(object):
         """
         The `disable_hooks` will turn off all web hooks for the current service.
 
-        :returns: bool
+        :return: Bool, True if successful
 
         """
         url = f"{self._url}/deactivateAll"
@@ -1364,7 +1432,7 @@ class WebHookServiceManager(object):
         """
         The `delete_all_hooks` operation will permanently remove the specified webhook.
 
-        :returns: bool
+        :return: Bool, True if successful
 
         """
         url = f"{self._url}/deleteAll"
@@ -1375,9 +1443,9 @@ class WebHookServiceManager(object):
 ###########################################################################
 class FeatureLayerCollectionManager(_GISResource):
     """
-    Allows updating the definition (if access permits) of a feature layer collection.
+    Allows updating the definition (if access permits) of a :class:`~arcgis.features.FeatureLayerCollection`.
     This class is not created by users directly.
-    An instance of this class, called 'manager', is available as a property of the FeatureLayerCollection object.
+    An instance of this class, called 'manager', is available as a property of the :class:`~arcgis.features.FeatureLayerCollection` object.
 
     Users call methods on this 'manager' object to manage the feature layer collection.
     """
@@ -1447,7 +1515,7 @@ class FeatureLayerCollectionManager(_GISResource):
         """
         Returns a dictionary can be used for service generation.
 
-        :returns: dict or None (if not supported on the service)
+        :return: dict or None (if not supported on the service)
 
         """
         return self._generate_mapservice_definition()
@@ -1460,7 +1528,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         If a service does not support this operation, None is returned.
 
-        :returns:
+        :return:
            dictionary
         """
         params = {
@@ -1564,7 +1632,7 @@ class FeatureLayerCollectionManager(_GISResource):
                                                        capabilities="Query,Update,Delete")
 
         :return:
-            Returns the newly created item for the view.
+            Returns the newly created :class:`~arcgis.gis.Item` for the view.
         """
 
         import os
@@ -1877,14 +1945,23 @@ class FeatureLayerCollectionManager(_GISResource):
         This function will allow users to change or add additional values
         to an already published service.
 
-        Input:
-           json_dict - part to add to host service.  The part format can
-                       be derived from the properties property.  For
-                       layer level modifications, run updates on each
-                       individual feature service layer object.
-        Output:
-           JSON message as dictionary
-           when `future=True`, concurrent.futures.Future is returned.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        json_dict           Required dict. The part to add to the hosted service. The format
+                            can be derived from the `properties` property.
+                            For layer level modifications, run updates on each individual feature
+                            service layer object.
+        ---------------     --------------------------------------------------------------------
+        future              Optional, If True, a future object will be returns and the process
+                            will not wait for the task to complete.
+                            The default is False, which means wait for results.
+        ===============     ====================================================================
+
+        :return:
+           JSON message as dictionary when `future=False`
+           when `future=True`, ```concurrent.futures.Future``` is returned.
+
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -1916,13 +1993,23 @@ class FeatureLayerCollectionManager(_GISResource):
         operation is a response indicating success or failure with error
         code and description.
 
-        Input:
-           json_dict - part to add to host service.  The part format can
-                       be derived from the properties property.  For
-                       layer level modifications, run updates on each
-                       individual feature service layer object.
-        Output:
-           JSON Message as dictionary
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        json_dict           Required dict. The part to add to the hosted service. The format
+                            can be derived from the `properties` property.
+                            For layer level modifications, run updates on each individual feature
+                            service layer object.
+        ---------------     --------------------------------------------------------------------
+        future              Optional, If True, a future object will be returns and the process
+                            will not wait for the task to complete.
+                            The default is False, which means wait for results.
+        ===============     ====================================================================
+
+        :return:
+           JSON message as dictionary when `future=False`
+           when `future=True`, ```concurrent.futures.Future``` is returned.
+
         """
         definition = None
         if json_dict is not None:
@@ -2009,16 +2096,23 @@ class FeatureLayerCollectionManager(_GISResource):
         error code and description.
         See https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
         for additional information on this function.
-        Input:
-          json_dict - part to add to host service.  The part format can
-                      be derived from the properties property.  For
-                      layer level modifications, run updates on each
-                      individual feature service layer object.  Only
-                      include the items you want to remove from the
-                      FeatureService or layer.
 
-        Output:
-          JSON Message as dictionary
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        json_dict           Required dict. The part to add to the hosted service. The format
+                            can be derived from the `properties` property.
+                            For layer level modifications, run updates on each individual feature
+                            service layer object.
+        ---------------     --------------------------------------------------------------------
+        future              Optional, If True, a future object will be returns and the process
+                            will not wait for the task to complete.
+                            The default is False, which means wait for results.
+        ===============     ====================================================================
+
+        :return:
+           JSON message as dictionary when `future=False`
+           when `future=True`, ```concurrent.futures.Future``` is returned.
 
         """
         params = {
@@ -2056,7 +2150,13 @@ class FeatureLayerCollectionManager(_GISResource):
         In addition to overwriting the features, this operation also updates the data of the item used to published this
         layer.
 
-        :param data: path to data_file used to overwrite the hosted feature layer collection
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        data                Required string. Path to the file used to overwrite the hosted
+                            feature layer collection.
+        ===============     ====================================================================
+
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
         # check for outstanding replicas
@@ -2097,16 +2197,10 @@ class FeatureLayerCollectionManager(_GISResource):
                 "overwriteService": "on",
                 "useDescription": "on",
             }
-
-            # append layers and tables and check if empty
-            layers_and_tables = []
-            layers_and_tables.extend(feature_layer_item.layers)
-            layers_and_tables.extend(feature_layer_item.tables)
-            if not layers_and_tables:
-                raise Exception("Must contain layer or table. Empty list.")
-
-            lyr_url_info = "%s/layers" % layers_and_tables[0].container._url
-            fs_url = "%s" % layers_and_tables[0].container._url
+            base_url = feature_layer_item.privateUrl
+            lyr_url_info = "%s/layers" % base_url
+            fs_url = "%s" % base_url
+            # layer_info gets information on the layers and tables of an item
             layer_info = self._gis._con.get(lyr_url_info, {"f": "json"})
             [lyr.pop("fields") for lyr in layer_info["layers"]]
             [lyr.pop("fields") for lyr in layer_info["tables"]]
@@ -2252,8 +2346,9 @@ class FeatureLayerCollectionManager(_GISResource):
                 "overwriteService": "on",
                 "useDescription": "on",
             }
-            lyr_url_info = "%s/layers" % feature_layer_item.layers[0].container._url
-            fs_url = "%s" % feature_layer_item.layers[0].container._url
+            base_url = feature_layer_item.privateUrl
+            lyr_url_info = "%s/layers" % base_url
+            fs_url = "%s" % base_url
             layer_info = self._gis._con.get(lyr_url_info, {"f": "json"})
             [lyr.pop("fields") for lyr in layer_info["layers"]]
             [lyr.pop("fields") for lyr in layer_info["tables"]]
@@ -2344,10 +2439,11 @@ class FeatureLayerCollectionManager(_GISResource):
 
 class FeatureLayerManager(_GISResource):
     """
-    Allows updating the definition (if access permits) of a feature layer. This class is not created by users
+    Allows updating the definition (if access permits) of a :class:`~arcgis.features.FeatureLayer`.
+    This class is not created by users
     directly.
-    An instance of this class, called 'manager', is available as a property of the FeatureLayer object,
-    if the layer can be managed by the user.
+    An instance of this class, called 'manager', is available as a property of the :class:`~arcgis.features.FeatureLayer`
+    object, if the layer can be managed by the user.
     Users call methods on this 'manager' object to manage the feature layer.
     """
 
@@ -2360,8 +2456,20 @@ class FeatureLayerManager(_GISResource):
     def fromitem(cls, item, layer_id=0):
         """
         Creates a FeatureLayerManager object from a GIS Item.
-        The type of item should be a 'Feature Service' that represents a FeatureLayerCollection.
-        The layer_id is the id of the layer in feature layer collection (feature service).
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item                Required of type :class:`~arcgis.features.FeatureService` that represents
+                            a :class:`~arcgis.features.FeatureLayerCollection`.
+        ---------------     --------------------------------------------------------------------
+        layer_id            Required string. Id of the layer in the
+                            :class:`~arcgis.features.FeatureLayerCollection`
+        ===============     ====================================================================
+
+        :return:
+            :class:`~arcgis.features.FeatureLayer` created from the layer provided.
+
         """
         if item.type != "Feature Service":
             raise TypeError("item must be a of type Feature Service, not " + item.type)
@@ -2384,20 +2492,22 @@ class FeatureLayerManager(_GISResource):
     def add_to_definition(self, json_dict, future=False):
         """
         The addToDefinition operation supports adding a definition
-        property to a hosted feature layer. The result of this
-        operation is a response indicating success or failure with error
-        code and description.
+        property to a hosted feature layer.
 
         This function will allow users to change add additional values
         to an already published service.
 
-        Input:
-           json_dict - part to add to host service.  The part format can
-                       be derived from the asDictionary property.  For
-                       layer level modifications, run updates on each
-                       individual feature service layer object.
-        Output:
-           JSON message as dictionary
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        json_dict           Required dict. The part to add to the hosted service. The format
+                            can be derived from the `properties` property.
+                            For layer level modifications, run updates on each individual feature
+                            service layer object.
+        ===============     ====================================================================
+
+        :return:
+           JSON message as dictionary indicating 'success' or 'error'
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -2430,13 +2540,21 @@ class FeatureLayerManager(_GISResource):
         operation is a response indicating success or failure with error
         code and description.
 
-        Input:
-           json_dict - part to add to host service.  The part format can
-                       be derived from the asDictionary property.  For
-                       layer level modifications, run updates on each
-                       individual feature service layer object.
-        Output:
-           JSON Message as dictionary
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        json_dict           Required dict. The part to add to the hosted service. The format
+                            can be derived from the `properties` property.
+                            For layer level modifications, run updates on each individual feature
+                            service layer object.
+        ---------------     --------------------------------------------------------------------
+        future              Optional, If True, a future object will be returns and the process
+                            will not wait for the task to complete.
+                            The default is False, which means wait for results.
+        ===============     ====================================================================
+
+        :return:
+           JSON Message as dictionary indicating 'success' or 'error'
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -2471,16 +2589,23 @@ class FeatureLayerManager(_GISResource):
         error code and description.
         See: https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
         for additional information on this function.
-        Input:
-           json_dict - part to add to host service.  The part format can
-                       be derived from the asDictionary property.  For
-                       layer level modifications, run updates on each
-                       individual feature service layer object.  Only
-                       include the items you want to remove from the
-                       FeatureService or layer.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        json_dict           Required dict. The part to add to the hosted service. The format
+                            can be derived from the `properties` property.
+                            For layer level modifications, run updates on each individual feature
+                            service layer object.
+                            Only include the items you want to remove from the FeatureService or layer.
+        ---------------     --------------------------------------------------------------------
+        future              Optional, If True, a future object will be returns and the process
+                            will not wait for the task to complete.
+                            The default is False, which means wait for results.
+        ===============     ====================================================================
 
         Output:
-           JSON Message as dictionary
+           JSON Message as dictionary indicating 'success' or 'error'
 
         """
 
@@ -2514,18 +2639,23 @@ class FeatureLayerManager(_GISResource):
         response indicating success or failure with error code and description.
         See: https://developers.arcgis.com/rest/services-reference/truncate-feature-layer-.htm # noqa
         for additional information on this function.
-        Input:
-           attachment_only - Deletes all the attachments for this layer.
-                             None of the layer features will be deleted
-                             when attachmentOnly=true.
-           asynchronous - Supports options for asynchronous processing. The
-                   default format is false. It is recommended to set
-                   async=true for larger datasets.
-           wait - if async, wait to pause the process until the async
-                  operation is completed.
 
-        Output:
-           JSON Message as dictionary
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        attachment_only     Optional boolean. If True, deletes all the attachments for this layer.
+                            None of the layer features will be deleted.
+        ---------------     --------------------------------------------------------------------
+        asynchronous        Optional boolean. If True, supports asynchronous processing. The
+                            default is False. It is recommended to set asynchronous=True for
+                            large datasets.
+        ---------------     --------------------------------------------------------------------
+        wait                Optional boolean. If True, then wait to pause the process until
+                            asynchronous operation is completed. Default is True.
+        ===============     ====================================================================
+
+        :return:
+           JSON Message as dictionary indicatiing 'success' or 'error'
 
         """
         params = {"f": "json", "attachmentOnly": attachment_only, "async": asynchronous}
@@ -2556,7 +2686,8 @@ class FeatureLayerManager(_GISResource):
 
     # ----------------------------------------------------------------------
     def _check_status(self, url: str) -> dict:
-        """Internal method to check the status of the definition change.
+        """
+        Internal method to check the status of the definition change.
 
 
         ===============     ====================================================================

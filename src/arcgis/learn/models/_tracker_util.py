@@ -34,7 +34,7 @@ class Track:
     mask                    Required numpy array. Mask for the tack
     =====================   ===========================================
 
-    :returns: `Track` Object
+    :return: `Track` Object
     """
 
     def __init__(self, id, label, bbox, mask):

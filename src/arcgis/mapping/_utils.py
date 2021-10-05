@@ -110,7 +110,7 @@ export_map.__annotations__ = {
 def get_layout_templates(gis=None):
     """
 
-    The ``get_layout_templates`` function returns the content of the :class:`~arcgis.gis.GIS` object's layout templates.
+    The ``get_layout_templates`` method returns the content of the :class:`~arcgis.gis.GIS` object's layout templates.
 
     .. note::
         The layout templates are formatted as a dictionary.

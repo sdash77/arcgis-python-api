@@ -1781,8 +1781,8 @@ def summarize_raster_within(
                                              set to Percentile.
                                              Parameter available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
-                                             number of values from the input value raster to be calculated are even.
+    percentile_interpolation_type            Optional str. Specifies the method of interpolation to be used when the 
+                                             specified percentile value lies between two input cell values.
                                                 - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
                                                 - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
                                                 - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output pixel type is floating point.
@@ -3347,7 +3347,7 @@ def create_image_collection(
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ==================                   ====================================================================
 
-    :returns: The imagery layer item
+    :return: The imagery layer item
 
 +-----------------------------------------------------------------------------------------------------------------------------------------------+
 |     Supported Raster Types                                                                                                                    |
@@ -4003,7 +4003,7 @@ def add_image(
                                          results will be returned asynchronously.
     ==================                   ====================================================================
 
-    :returns: The imagery layer item
+    :return: The imagery layer item
 
     .. code-block:: python
 
@@ -4057,7 +4057,7 @@ def delete_image(image_collection, where, *, gis=None, future=False, **kwargs):
                            results will be returned asynchronously.
     ==================     ====================================================================
 
-    :returns: The imagery layer url
+    :return: The imagery layer url
 
     .. code-block:: python
 
@@ -4099,7 +4099,7 @@ def delete_image_collection(image_collection, *, gis=None, future=False, **kwarg
                            results will be returned asynchronously.
     ==================     ====================================================================
 
-    :returns: Boolean value indicating whether the deletion was successful or not.
+    :return: Boolean value indicating whether the deletion was successful or not.
 
     .. code-block:: python
 
@@ -8540,12 +8540,12 @@ def zonal_statistics_as_table(
                                              - True - Statistics will be calculated for all dimensions (such as time or depth) \
                                              of a multidimensional image service.
     ------------------------------------     --------------------------------------------------------------------
-    percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
-                                             number of values from the input value raster to be calculated are even.
+    percentile_interpolation_type            Optional str. Specifies the method of interpolation to be used when 
+                                             the specified percentile value lies between two input cell values.
 
                                                 - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
-                                                - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
-                                                - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output pixel type is floating point.
+                                                - NEAREST - Nearest value to the desired percentile.
+                                                - LINEAR - Weighted average of two surrounding values from the desired percentile.
     ------------------------------------     --------------------------------------------------------------------
     output_name                              Optional string. Name of the output feature item or table item to be created.
                                              If not provided, a random name is generated by the method and used as 

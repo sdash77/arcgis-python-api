@@ -121,7 +121,7 @@ class AutoML(object):
 
     =====================   ===========================================
 
-    :returns: `AutoML` Object
+    :return: `AutoML` Object
     """
 
     def __init__(
@@ -410,7 +410,7 @@ class AutoML(object):
                                 file.
         =====================   ===========================================
 
-        :returns: `AutoML` Object
+        :return: `AutoML` Object
         """
         emd_path = _get_emd_path(emd_path)
         if not HAS_SK_LEARN:

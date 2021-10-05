@@ -5,7 +5,7 @@ from typing import Any, Union
 
 from arcgis import __version__
 from arcgis import env
-from arcgis.features import SpatialDataFrame, FeatureSet, GeoAccessor, GeoSeriesAccessor
+from arcgis.features import FeatureSet, GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry
 from arcgis.gis import GIS
 from arcgis._impl.common._deprecate import deprecated
@@ -260,19 +260,24 @@ class NamedArea(object):
 
 class Country(object):
     """
-    The Country object enables access to data and methods for a specific country. This
+    Enables access to data and methods for a specific country. This
     class can reference country data and methods available using data accessed through
-    both a Web GIS and a local installation of ArcGIS Pro with the Business Analyst
-    extension and local country data installed. Specifying this source is accomplished
-    using the ``gis`` parameter when instantiating. If using the keyword 'Pro'
-    (``GIS('Pro')``), ``Country`` will try to use ArcGIS Pro with Business Analyst
+    both a Web GIS and a local installation of `ArcGIS Pro with the Business Analyst
+    extension and local country data` installed. Specifying this source is accomplished
+    using the ``gis`` parameter when instantiating
+    (See :meth:`~arcgis.geoenrichment.Country.get`). If using the keyword ``Pro``,
+    ``Country`` will try to use ArcGIS Pro with Business Analyst
     and will error if the specified country is not available locally. Available
-    countries can be discovered using the ``get_countries`` method.
+    countries can be discovered using the :func:`~arcgis.geoenrichment.get_countries`
+    function.
 
     .. note::
         Currently, when using a `GIS('Pro')` instance, only the ``data_collections``
-        and ``enrich_variables`` properties to discover of available enrichment
-        variables are supported.
+        and ``enrich_variables`` properties are supported to discover available
+        enrichment variables.
+
+        Currently, when using a ``GIS('Pro')`` instance, only the ``data_collections``
+        and ``enrich_variables`` properties  are supported.
 
     """
 
@@ -288,27 +293,28 @@ class Country(object):
         name              Required string. The country name, two letter code or
                           three letter ISO3 code identifying the country.
         ----------------  --------------------------------------------------------
-        gis               Optional ``arcgis.gis.GIS`` object instance. This
+        gis               Optional :class:`~arcgis.gis.GIS` instance. This
                           specifies what GIS country sources are available based
-                          on the GIS source, a Web GIS (ArcGIS Online or ArcGIS
-                          Enterprise) or ArcGIS Pro with the Business Analyst
-                          extension and at least one country data pack. If not
-                          explicitly specified, it tries to use an active GIS
-                          already created in the Python session. If an active
+                          on the GIS source, a Web GIS (either `ArcGIS Online` or
+                          `ArcGIS Enterprise`) or `ArcGIS Pro with the Business
+                          Analyst extension and at least one country data pack`.
+                          If not explicitly specified, it tries to use an active
+                          GIS already created in the Python session. If an active
                           GIS is not available, it then tries to use local
-                          resources, ArcGIS Pro with Business and at least one
-                          country dataset installed locally. Finally, if
+                          resources, ArcGIS Pro with Business Analyst and at least
+                          one country dataset installed locally. Finally, if
                           neither of these (Pro or an active GIS) are available,
-                          a GIS object instance must be explicitly provided.
+                          a :class:`~arcgis.gis.GIS` object instance must be
+                          explicitly provided.
         ----------------  --------------------------------------------------------
-        year              Optional integer explicitly specifying the vintage
+        year              Optional integer. Explicitly specifying the vintage
                           (year) of data to use. This option is only available
                           when using a `'local'` GIS source, and will be
                           ignored if used with a Web GIS source.
         ================  ========================================================
 
         :return:
-            ``arcgis.geoenrichment.Country`` instance for the requested country.
+            :class:`~arcgis.geoenrichment.Country` instance for the requested country.
         """
         return cls(name, gis, year)
 
@@ -742,12 +748,17 @@ def create_report(
 
                            Creating a new output in a Portal for ArcGIS Instance:
 
-                           return_type = {'user' : 'testUser',
-                                          'folder' : 'FolderName',
-                                          'title' : 'Report Title',
-                                          'item_properties' : '<properties>',
-                                          'url' : 'https://hostname.domain.com/webadaptor',
-                                          'token' : 'token', 'referrer' : 'referrer'}
+                           .. code-block:: python
+                               return_type = {
+                                   'user' : 'testUser',
+                                    'folder' : 'FolderName',
+                                    'title' : 'Report Title',
+                                    'item_properties' : '<properties>',
+                                    'url' : 'https://hostname.domain.com/webadaptor',
+                                    'token' : 'token',
+                                    'referrer' : 'referrer'
+                               }
+
     ------------------     --------------------------------------------------------------------
     use_data               Optional dictionary. This parameter explicitly specify the country
                            or dataset to query. When all input features specified in the
@@ -935,7 +946,7 @@ def _data_collections(
                            dictionary, else the value will returns as a Python DataFrame.
     ==================     ====================================================================
 
-    :returns: dictionary, describing the requested return data.
+    :return: dictionary, describing the requested return data.
     """
     if gis is None:
         gis = env.active_gis
@@ -956,7 +967,7 @@ def service_limits(gis=None):
     """
     Returns a Pandas' DataFrame describing limitations for each input parameter.
 
-    :returns: Pandas DataFrame
+    :return: Pandas DataFrame
     """
     pass
 
@@ -1000,23 +1011,41 @@ def enrich(
     study_areas                   Required list, FeatureSet or SpatiallyEnabledDataFrame containing
                                   the input areas to be enriched.
 
-                                  study_areas can be a SpatiallyEnabledDataFrame, FeatureSet or a
-                                  lists of the following types:
+                                  ``study_areas`` can be a Spatially enabled Dataframe, Featureset
+                                  or a list of the following types:
+
                                   * addresses, points of interest, place names or other
-                                  supported locations as strings.
-                                  * dicts such as [{"address":{"Address":"380 New York St.",
-                                  "Admin1":"Redlands","Admin2":"CA","Postal":"92373",
-                                  "CountryCode":"USA"}}] for multiple field addresses
-                                  * arcgis.gis.Geometry instances
-                                  * BufferStudyArea instances. By default, one-mile ring
-                                  buffers are created around the points to collect and append
-                                  enrichment data. You can use BufferStudyArea to change the ring
-                                  buffer size or create drive-time service areas around the points.
-                                  * NamedArea instances to support standard geography. They are
-                                  obtained using Country.subgeographies()/search(). When
-                                  the NamedArea instances should be combined together (union), a list
-                                  of such NamedArea instances should constitute a study area in the
-                                  list of requested study areas.
+                                    supported locations as strings.
+
+                                  * dictionaries for multiple field addresses
+
+                                  .. code-block:: python
+
+                                      [
+                                        {
+                                          "address": {
+                                            "Address":"380 New York St.",
+                                            "Admin1":"Redlands",
+                                            "Admin2":"CA",
+                                            "Postal":"92373",
+                                            "CountryCode":"USA"
+                                          }
+                                        }
+                                      ]
+
+                                  * ``arcgis.gis.Geometry`` instances
+
+                                  * ``BufferStudyArea`` instances. By default, one-mile ring
+                                    buffers are created around the points to collect and append
+                                    enrichment data. You can use ``BufferStudyArea`` to change the
+                                    ring buffer size or create drive-time service areas around the
+                                    points.
+
+                                  * ``NamedArea`` instances to support standard geography. They are
+                                    obtained using ``Country.subgeographies()/search()``. When
+                                    the ``NamedArea`` instances should be combined together (union),
+                                    a list of such NamedArea instances should constitute a study
+                                    area in the list of requested study areas.
     -------------------------     --------------------------------------------------------------------
     data_collections              Optional list. A Data Collection is a preassembled list of
                                   attributes that will be used to enrich the input features.
@@ -1029,7 +1058,7 @@ def enrich(
                                   analysis_variables parameter you can return a subset of variables
                                   enrichment attributes can describe various types of information such
                                   as demographic characteristics and geographic context of the
-                                  locations or areas submitted as input features in study_areas.
+                                  locations or areas submitted as input features in ``study_areas``.
     -------------------------     --------------------------------------------------------------------
     add_derivative_variables      Optional list. This parameter is used to specify an array of string
                                   values that describe what derivative variables to include in the
@@ -1052,15 +1081,14 @@ def enrich(
                                   the response.
     -------------------------     --------------------------------------------------------------------
     gis                           Optional GIS.  If None, the GIS object will be used from the
-                                  arcgis.env.active_gis.  This GIS object must be authenticated and
-                                  have the ability to consume credits
+                                  ``arcgis.env.active_gis``.  This GIS object must be authenticated
+                                  and have the ability to consume credits
     =========================     ====================================================================
 
-    Refer to https://developers.arcgis.com/rest/geoenrichment/api-reference/street-address-locations.htm for
-    the format of intersection_geographies parameter.
+    .. note::
 
-    Performance Tip: If you wish to speed up the operation and don't care about the geometries, set
-    return_geometry=False
+        Please refer to the `Enrich REST endpoint documentation <https://developers.arcgis.com/rest/geoenrichment/api-reference/enrich.htm#ESRI_SECTION2_6A987CF67F914FA39B61BE14BE115F27>`_
+        for the format of ``intersection_geographies`` parameter.
 
     :returns: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
     """
@@ -1181,7 +1209,7 @@ def _enrich_gis(
             areas.append(area_dict)
 
     # chunking if len > 100
-    if isinstance(areas, (SpatialDataFrame, pd.DataFrame, list)) and len(areas) > 100:
+    if isinstance(areas, (pd.DataFrame, list)) and len(areas) > 100:
         import concurrent.futures
 
         parts = []
@@ -1214,7 +1242,7 @@ def _enrich_gis(
                 f.exception() for f in futures.done if not f.exception() is None
             ]
             raise Exception(json.dumps(exceptions))
-        if isinstance(areas, (SpatialDataFrame, pd.DataFrame)):
+        if isinstance(areas, pd.DataFrame):
             enrich_res = pd.concat(results)
             if len(enrich_res) != len(study_areas):
                 if "OBJECTID" in enrich_res.columns:
@@ -1281,7 +1309,7 @@ def _find_report(country, gis=None):
                            have the ability to consume credits
     ==================     ====================================================================
 
-    :returns: Panda's DataFrame
+    :return: Panda's DataFrame
     """
     if gis is None:
         gis = env.active_gis
@@ -1581,7 +1609,7 @@ def standard_geography_query(
                                have the ability to consume credits
     ======================     ====================================================================
 
-    :returns: Spatial or Pandas Dataframe on success, FeatureSet, or dictionary on failure.
+    :return: Spatial or Pandas Dataframe on success, FeatureSet, or dictionary on failure.
 
     """
     pass

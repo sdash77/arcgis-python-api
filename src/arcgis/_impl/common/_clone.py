@@ -1624,8 +1624,8 @@ class CloneNode:
     def add_child(self, node):
         """
         Adds a child node to this node
+
         :param node: <Node> The child node to add
-        :return:
         """
         if node is not None:
             self._children.add(node)
@@ -1635,8 +1635,8 @@ class CloneNode:
     def add_parent(self, node):
         """
         Adds a parent node to this node
+
         :param node: <Node> The parent node to add
-        :return:
         """
         self._parents.add(node)
         if self not in node.children:
@@ -1645,7 +1645,6 @@ class CloneNode:
     def clone(self):
         """
         The method that sub-classes can override to do whatever they need to do
-        :return:
         """
         self._resolved = True
 
@@ -4072,6 +4071,7 @@ class _OperationViewDefintion(_TextItemDefinition):
         """
         Injects the new item ids into the operation view json
         :param clone_mapping: The item id mapping dictionary
+
         :return: the updated json/dict
         """
         app_json = self.data
@@ -4105,6 +4105,7 @@ class _OperationViewDefintion(_TextItemDefinition):
         """
         Parses an operation view json/dict at version 1.2 to find all of the webmap ids
         :param data: The json/dict to parse
+
         :return: A list of webmap ids
         """
         webmap_ids = set()
@@ -4120,6 +4121,7 @@ class _OperationViewDefintion(_TextItemDefinition):
         """
         Parses an operation view json/dict at version 1.2 to find all of the webmap ids
         :param data: The json/dict to parse
+
         :return: A list of layer ids
         """
         layer_ids = set()
@@ -4303,6 +4305,7 @@ class _DashboardDefinition(_TextItemDefinition):
         """
         Parses a dashboard based on version to return the list of webmap ids
         :param data: The json/dict to parse
+
         :return: A list of webmap ids
         """
         if "version" in data:

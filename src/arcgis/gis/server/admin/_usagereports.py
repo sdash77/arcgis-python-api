@@ -58,7 +58,8 @@ class ReportManager(BaseServer):
 
     # ----------------------------------------------------------------------
     def list(self):
-        """Retrieves a list of reports on the server.
+        """
+        Retrieves a list of reports on the server.
 
         :return:
             A list of reports found.
