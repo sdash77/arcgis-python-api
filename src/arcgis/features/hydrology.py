@@ -55,7 +55,7 @@ def _evaluate_spatial_input(input_points):
 
 
 def trace_downstream(
-    input_points: Union[FeatureSet, "DataFrame", FeatureCollection],
+    input_points,
     point_id_field: Optional[str] = None,
     source_database: str = "Finest",
     generalize: bool = False,
