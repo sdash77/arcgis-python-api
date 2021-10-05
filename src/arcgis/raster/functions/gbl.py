@@ -729,7 +729,7 @@ def zonal_statistics(
                              
                              This parameter is honoured only available if the statistics_type parameter is 
                              set to PERCENTILE.
-    :param percentile_interpolation_type: Optional str. Specifies the method of interpolation to be used when the 
+    :param percentile_interpolation_type: Optional string. Specifies the method of interpolation to be used when the 
                                           specified percentile value lies between two input cell values.
                                             - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
                                             - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
