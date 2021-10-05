@@ -6,9 +6,14 @@ import copy
 import json
 from typing import Any, Optional, Union
 import ujson as _ujson
-from arcpy.arcobjects.arcobjects import Geometry, Point, SpatialReference
-
-from arcpy.arcobjects.geometries import Multipoint, Polygon, Polyline
+from arcgis.geometry import (
+    Geometry,
+    Point,
+    SpatialReference,
+    MultiPoint,
+    Polygon,
+    Polyline,
+)
 
 try:
     import numpy as np

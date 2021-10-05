@@ -2,11 +2,11 @@
 Chan's Convex Hull O(n log h)
 https://en.wikipedia.org/wiki/Chan%27s_algorithm
 """
+from __future__ import annotations
 from functools import reduce
 import sys
 from typing import Union
 from scipy.spatial import distance
-from . import Geometry
 
 if sys.version_info.major == 3:
     xrange = range

@@ -6,8 +6,14 @@ from __future__ import annotations
 from enum import Enum
 import json
 from typing import Any, Optional, Union
-from arcpy.arcobjects.arcobjects import Geometry, Point, SpatialReference
-from arcpy.arcobjects.geometries import Multipoint, Polygon, Polyline
+from arcgis.geometry import (
+    Geometry,
+    Point,
+    MultiPoint,
+    Polyline,
+    Polygon,
+    SpatialReference,
+)
 import arcgis.env
 from arcgis.gis import GIS
 
@@ -322,7 +328,7 @@ def buffer(
 
 
 def convex_hull(
-    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -408,7 +414,7 @@ def cut(
 
 
 def densify(
-    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     spatial_ref: Optional[Union[int, dict[str, Any]]],
     max_segment_length: Optional[float],
     length_unit: Optional[str],
@@ -486,7 +492,7 @@ def densify(
 
 
 def difference(
-    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     spatial_ref: Optional[Union[int, dict[str, Any]]],
     geometry: Geometry,
     gis: Optional[GIS] = None,
@@ -922,7 +928,7 @@ def lengths(
 
 
 def offset(
-    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     offset_distance: float,
     offset_unit: str,
     offset_how: str = "esriGeometryOffsetRounded",
@@ -1019,7 +1025,7 @@ def offset(
 
 
 def project(
-    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     in_sr: Optional[Union[int, dict[str, Any]]],
     out_sr: Optional[Union[int, dict[str, Any]]],
     transformation: str = "",
@@ -1190,7 +1196,7 @@ def reshape(
 
 def simplify(
     spatial_ref: Optional[Union[int, dict[str, Any]]],
-    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     gis: Optional[GIS] = None,
     future: bool = False,
 ):
@@ -1405,7 +1411,7 @@ def trim_extend(
 
 def union(
     spatial_ref: Optional[Union[int, dict[str, Any]]],
-    geometries: Union[list[Polygon], list[Polyline], list[Multipoint], list[Point]],
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     gis: Optional[GIS] = None,
     future: bool = False,
 ):
