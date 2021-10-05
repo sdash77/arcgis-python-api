@@ -2,9 +2,10 @@
 In the GIS, entities located in space with a set of properties can be represented as features. This module has the types
 to represent features and collection of features.
 """
+from __future__ import annotations
 import copy
 import json
-from typing import List, Optional, Union
+from typing import Any, Optional, Union
 from pandas.core.frame import DataFrame
 import ujson as _ujson
 import os
@@ -63,7 +64,11 @@ class Feature(object):
             self._dict["attributes"] = attributes
 
     # ----------------------------------------------------------------------
-    def set_value(self, field_name: str, value: str):
+    def set_value(
+        self,
+        field_name: str,
+        value: Union[dict, BaseGeometry, Point, MultiPoint, Polyline, Polygon],
+    ):
         """
         Sets an attribute value for a given field name.
 
@@ -291,7 +296,7 @@ class Feature(object):
 
     # ----------------------------------------------------------------------
     @classmethod
-    def from_dict(cls, feature: str, sr: Optional[dict] = None):
+    def from_dict(cls, feature: str, sr: Optional[dict[str, str]] = None):
         """
         Creates a Feature object from a dictionary.
 
@@ -1135,7 +1140,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_dict(featureset_dict: dict):
+    def from_dict(featureset_dict: dict[str, Any]):
         """
         Creates a Feature Set objects from a dictionary.
 
@@ -1204,7 +1209,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @spatial_reference.setter
-    def spatial_reference(self, value: Optional[Union[SpatialReference, int, str]]):
+    def spatial_reference(self, value: Optional[dict[str, int]]):
         """
         See main ``spatial_reference`` property docstring
         """
@@ -1585,7 +1590,9 @@ class FeatureCollection(Layer):
 
     @staticmethod
     def from_featureset(
-        fset, symbol: Optional[dict] = None, name: Optional[str] = None
+        fset: FeatureSet,
+        symbol: Optional[dict[str, Any]] = None,
+        name: Optional[str] = None,
     ):
         """
         Creates a :class:`~arcgis.features.FeatureCollection` object from a :class:`~arcgis.features.FeatureSet` object.

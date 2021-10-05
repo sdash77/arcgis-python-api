@@ -5,28 +5,44 @@ calculate_density takes known quantities of some phenomenon and spreads these qu
 find_hot_spots identifies statistically significant clustering in the spatial pattern of your data.
 interpolate_points predicts values at new locations based on measurements found in a collection of points.
 """
-
-from typing import List, Optional, Union
+from __future__ import annotations
+from typing import Any, Optional, Union
 import arcgis as _arcgis
-from arcgis.features.feature import FeatureCollection, FeatureSet
-from arcgis.features.layer import FeatureLayer
-from arcgis.gis import GIS
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
+from arcgis.gis import GIS, Item
 from .._impl.common._utils import inspect_function_inputs
 
 # --------------------------------------------------------------------------
 def calculate_density(
-    input_layer: Union[FeatureLayer, str],
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
     field: Optional[str] = None,
     cell_size: Optional[float] = None,
     cell_size_units: str = "Meters",
     radius: Optional[float] = None,
     radius_units: Optional[str] = None,
-    bounding_polygon_layer: Optional[FeatureLayer] = None,
+    bounding_polygon_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
     area_units: Optional[str] = None,
     classification_type: str = "EqualInterval",
     num_classes: int = 10,
-    output_name: Optional[str] = None,
-    context: Optional[dict] = None,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
@@ -158,13 +174,20 @@ def calculate_density(
 
 # --------------------------------------------------------------------------
 def summarize_center_and_dispersion(
-    analysis_layer: Union[str, FeatureCollection],
+    analysis_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
     summarize_type: str,
     ellipse_size: Optional[str] = None,
     weight_field: Optional[str] = None,
     group_field: Optional[str] = None,
-    output_name: Optional[str] = None,
-    context: Optional[dict] = None,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
@@ -264,12 +287,19 @@ def summarize_center_and_dispersion(
 
 # --------------------------------------------------------------------------
 def find_point_clusters(
-    analysis_layer: Union[FeatureCollection, str],
+    analysis_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
     min_features_cluster: int,
     search_distance: Optional[float] = None,
     search_distance_unit: Optional[str] = None,
-    output_name: Optional[str] = None,
-    context: Optional[dict] = None,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
@@ -386,13 +416,38 @@ def find_point_clusters(
 
 # --------------------------------------------------------------------------
 def find_hot_spots(
-    analysis_layer: Union[FeatureCollection, str],
+    analysis_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
     analysis_field: Optional[str] = None,
     divided_by_field: Optional[str] = None,
-    bounding_polygon_layer: Optional[Union[FeatureCollection, str]] = None,
-    aggregation_polygon_layer: Optional[Union[FeatureCollection, str]] = None,
-    output_name: Optional[str] = None,
-    context: Optional[dict] = None,
+    bounding_polygon_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    aggregation_polygon_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
     gis: Optional[GIS] = None,
     estimate: bool = False,
     shape_type: Optional[str] = None,
@@ -531,19 +586,44 @@ def find_hot_spots(
 
 # --------------------------------------------------------------------------
 def find_outliers(
-    analysis_layer: Union[FeatureCollection, str],
+    analysis_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
     analysis_field: Optional[str] = None,
     divided_by_field: Optional[str] = None,
-    bounding_polygon_layer: Optional[Union[FeatureCollection, str]] = None,
-    aggregation_polygon_layer: Optional[Union[FeatureCollection, str]] = None,
+    bounding_polygon_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    aggregation_polygon_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
     permutations: Optional[str] = None,
     shape_type: Optional[str] = None,
     cell_size: Optional[float] = None,
     cell_units: Optional[str] = None,
     distance_band: Optional[float] = None,
     band_units: Optional[str] = None,
-    output_name: Optional[str] = None,
-    context: Optional[dict] = None,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
@@ -687,17 +767,38 @@ def find_outliers(
 
 # --------------------------------------------------------------------------
 def interpolate_points(
-    input_layer: Union[FeatureCollection, str],
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
     field: str,
     interpolate_option: str = "5",
     output_prediction_error: bool = False,
     classification_type: str = "GeometricInterval",
     num_classes: int = 10,
-    class_breaks: Optional[List[float]] = [],
-    bounding_polygon_layer: Union[FeatureCollection, str] = None,
-    predict_at_point_layer: Union[FeatureCollection, str] = None,
-    output_name: Optional[str] = None,
-    context: Optional[dict] = None,
+    class_breaks: Optional[list[float]] = [],
+    bounding_polygon_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ] = None,
+    predict_at_point_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ] = None,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,

@@ -5,25 +5,33 @@ chosen areas.
 enrich_layer retrieves information about the people, places, and businesses in a specific area, or within a selected
 travel time or distance from a location.
 """
-
-from typing import List, Optional, Union
+from __future__ import annotations
+from typing import Any, Optional, Union
 import arcgis as _arcgis
 from arcgis.features.feature import FeatureCollection
-from arcgis.gis import GIS
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
+from arcgis.gis import GIS, Item
 import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
 
 # --------------------------------------------------------------------------
 def enrich_layer(
-    input_layer: Union[FeatureCollection, str],
-    data_collections: Optional[List[str]] = [],
-    analysis_variables: Optional[List[str]] = [],
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    data_collections: Optional[list[str]] = [],
+    analysis_variables: Optional[list[str]] = [],
     country: Optional[str] = None,
     buffer_type: Optional[str] = None,
     distance: Optional[float] = None,
     units: Optional[str] = None,
-    output_name: Optional[str] = None,
-    context: Optional[dict] = None,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
     gis: Optional[GIS] = None,
     estimate: bool = False,
     return_boundaries: bool = False,

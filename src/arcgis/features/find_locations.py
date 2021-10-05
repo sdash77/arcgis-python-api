@@ -14,27 +14,32 @@ create_viewshed creates areas that are visible based on locations you specify.
 create_watersheds creates catchment areas based on locations you specify.
 trace_downstream determines the flow paths in a downstream direction from the locations you specify
 """
+from __future__ import annotations
 from datetime import datetime
-import json
 import logging
 from re import U
-from typing import List, Optional, Union
+from typing import Any, Optional, Union
 import arcgis as _arcgis
 from arcgis.features.feature import FeatureCollection
-from arcgis.features.layer import FeatureLayer
-from arcgis.gis import GIS
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
+from arcgis.gis import GIS, Item
 import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
 
 _logger = logging.getLogger()
 # --------------------------------------------------------------------------
 def find_existing_locations(
-    input_layers: Optional[
-        Union[List[FeatureLayer], List[FeatureCollection], List[str]]
+    input_layers: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
     ] = None,
-    expressions: Optional[dict] = None,
+    expressions: Optional[dict[str, Any]] = None,
     output_name: Optional[Union[FeatureLayer, str]] = None,
-    context: Optional[dict] = None,
+    context: Optional[dict[str, Any]] = None,
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
@@ -320,12 +325,10 @@ def find_existing_locations(
 
 # --------------------------------------------------------------------------
 def derive_new_locations(
-    input_layers: Optional[
-        Union[List[FeatureLayer], List[FeatureCollection], List[str]]
-    ] = [],
-    expressions: Optional[dict] = [],
+    input_layers: Union[list[FeatureLayer], list[FeatureCollection],] = [],
+    expressions: Optional[dict[str, Any]] = [],
     output_name: Optional[Union[FeatureLayer, str]] = None,
-    context: Optional[dict] = None,
+    context: Optional[dict[str, Any]] = None,
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
@@ -607,13 +610,27 @@ def derive_new_locations(
 
 # --------------------------------------------------------------------------
 def find_similar_locations(
-    input_layer: Union[List[FeatureLayer], List[FeatureCollection], List[str]],
-    search_layer: Union[FeatureLayer, str],
-    analysis_fields: Optional[List[str]] = [],
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    search_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    analysis_fields: Optional[list[str]] = [],
     input_query: Optional[str] = None,
     number_of_results: int = 0,
     output_name: Optional[Union[FeatureLayer, str]] = None,
-    context: Optional[dict] = None,
+    context: Optional[dict[str, Any]] = None,
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
@@ -748,10 +765,17 @@ def find_similar_locations(
 
 # --------------------------------------------------------------------------
 def find_centroids(
-    input_layer: Union[List[FeatureLayer], List[FeatureCollection], List[str]],
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
     point_location: bool = False,
     output_name: Optional[Union[FeatureLayer, str]] = None,
-    context: Optional[dict] = None,
+    context: Optional[dict[str, Any]] = None,
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
@@ -842,7 +866,14 @@ def find_centroids(
 def choose_best_facilities(
     goal: str = "Allocate",
     demand_locations_layer: Optional[
-        Union[FeatureLayer, FeatureCollection, str]
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
     ] = None,
     demand: float = 1,
     demand_field: Optional[str] = None,
@@ -854,12 +885,26 @@ def choose_best_facilities(
     time_zone_for_time_of_day: str = "GeoLocal",
     travel_direction: str = "FacilityToDemand",
     required_facilities_layer: Optional[
-        Union[FeatureLayer, FeatureCollection, str]
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
     ] = None,
     required_facilities_capacity: float = 2147483647,
     required_facilities_capacity_field: Optional[str] = None,
     candidate_facilities_layer: Optional[
-        Union[FeatureLayer, FeatureCollection, str]
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
     ] = None,
     candidate_count: float = 1,
     candidate_facilities_capacity: float = 2147483647,
@@ -869,9 +914,36 @@ def choose_best_facilities(
     context: Optional[dict] = None,
     gis: Optional[GIS] = None,
     estimate: bool = False,
-    point_barrier_layer: Optional[Union[FeatureLayer, FeatureCollection, str]] = None,
-    line_barrier_layer: Optional[Union[FeatureLayer, FeatureCollection, str]] = None,
-    polygon_barrier_layer: Optional[Union[FeatureLayer, FeatureCollection, str]] = None,
+    point_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    line_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    polygon_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
     future: bool = False,
 ):
     """
@@ -1099,7 +1171,7 @@ def choose_best_facilities(
                                              A line barrier prohibits travel anywhere the barrier intersects the streets. For example, a parade or protest that blocks traffic across several street
                                              segments can be modeled with a line barrier. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------    ---------------------------------------------------------
-    polygon_barrier_layer                    Optional string. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
+    polygon_barrier_layer                    Optional layer. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
 
                                              One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------    ---------------------------------------------------------
@@ -1180,7 +1252,14 @@ def choose_best_facilities(
 
 # --------------------------------------------------------------------------
 def create_viewshed(
-    input_layer: Union[FeatureLayer, FeatureCollection, str],
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
     dem_resolution: str = "Finest",
     maximum_distance: Optional[float] = None,
     max_distance_units: str = "Meters",
@@ -1345,7 +1424,14 @@ def create_viewshed(
 
 # --------------------------------------------------------------------------
 def create_watersheds(
-    input_layer: Optional[Union[FeatureLayer, FeatureCollection, str]],
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
     search_distance: Optional[float] = None,
     search_units: str = "Meters",
     source_database: str = "FINEST",
@@ -1475,13 +1561,27 @@ def create_watersheds(
 
 # --------------------------------------------------------------------------
 def trace_downstream(
-    input_layer: Union[FeatureLayer, FeatureCollection, str],
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
     split_distance: Optional[float] = None,
     split_units: str = "Kilometers",
     max_distance: Optional[float] = None,
     max_distance_units: str = "Kilometers",
     bounding_polygon_layer: Optional[
-        Union[FeatureLayer, FeatureCollection, str]
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
     ] = None,
     source_database: Optional[str] = None,
     generalize: bool = True,
