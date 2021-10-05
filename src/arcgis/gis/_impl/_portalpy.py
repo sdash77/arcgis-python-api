@@ -1377,15 +1377,17 @@ class Portal(object):
 
         # https://dev04875.esri.com/arcgis/sharing/rest/portals/0123456789ABCDEF/usage?f=json&startTime=1436984519000&endTime=1439576519000&period=1d&vars=num&etype=geocodecnt&stype=geocode&groupby=username%2Cstype%2Cetype
 
-    def get_item_dependencies(self, itemid):
-        return self.con.post(
-            "content/items/" + itemid + "/dependencies", self._postdata()
-        )
+    def get_item_dependencies(self, itemid, num):
+        postdata = self._postdata()
+        postdata["num"] = num
+        return self.con.post("content/items/" + itemid + "/dependencies", postdata)
 
-    def get_item_dependents_to(self, itemid):
+    def get_item_dependents_to(self, itemid, num):
+        postdata = self._postdata()
+        postdata["num"] = num
         return self.con.post(
             "content/items/" + itemid + "/dependencies/listDependentsTo",
-            self._postdata(),
+            postdata,
         )
 
     def invite_group_users(
