@@ -4,6 +4,7 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class RealTimeAnalyticsManager:
     """
     Used to manage Real-Time Analytics
@@ -29,7 +30,10 @@ class RealTimeAnalyticsManager:
         :return: returns a collection of all configured Real-Time Analytics items
         """
         all_realtime_analytics_response = self._util._get_request("analytics/realtime")
-        if all_realtime_analytics_response is not None and type(all_realtime_analytics_response) is list:
+        if (
+            all_realtime_analytics_response is not None
+            and type(all_realtime_analytics_response) is list
+        ):
             realtime_analytics_items = [
                 RealTimeAnalytics(self._gis, self._util, realtime_item)
                 for realtime_item in all_realtime_analytics_response
@@ -39,7 +43,9 @@ class RealTimeAnalyticsManager:
             _LOGGER.warning("No Real-time analytic items found for the user.")
             return []
         else:
-            raise Exception(f"Error retrieving Real-time analytic items. Velocity response: ${all_realtime_analytics_response}")
+            raise Exception(
+                f"Error retrieving Real-time analytic items. Velocity response: ${all_realtime_analytics_response}"
+            )
 
     # ----------------------------------------------------------------------
     def get(self, id):

@@ -5,7 +5,7 @@ from arcgis.gis import GIS
 
 from ..geoenrichment_methods_tests import *
 
-gis = GIS('pro')
+gis = GIS("pro")
 
 
 def test_get_countries_local():
