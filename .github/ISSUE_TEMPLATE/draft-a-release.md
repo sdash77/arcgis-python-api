@@ -25,6 +25,11 @@ assignees: jyaistMap, rwmajor2, achapkowski, AtmaMani, rohitgeo, sandeepgadhwal,
 ----
 
 ## Detailed Steps
+
+### Certification tracker
+ - [ ] This sheet tracks Python API's certification: **<enter url>**
+ - [ ] This sheet tracks Learn module's certification: **<enter url>**
+
 ### Doc and Website release
  - [ ] update [release notes](https://developers.arcgis.com/python/guide/release-notes/) page. Enter PR here: **<paste pr url>**
  - [ ] Review and merge doc PRs
@@ -60,6 +65,10 @@ assignees: jyaistMap, rwmajor2, achapkowski, AtmaMani, rohitgeo, sandeepgadhwal,
   - [ ] post that build # conda package to esri channel. Version url: **<enter url>**
   - [ ] post that build # pip package to pypi.  Version url: **<enter url>**
   - [ ] publish the javascript widget package to npm.  Version url: **<enter url>**
+
+### Building Docker images
+  - [ ] Build Docker image for new version. See [wiki](https://github.com/ArcGIS/geosaurus/wiki/Building-Docker-images-for-Python-API).
+  - [ ] Tag version and latest. Push up the [Docker Hub repo](https://hub.docker.com/r/esridocker/arcgis-api-python-notebook)
 -----
 
 ## Post release actions
