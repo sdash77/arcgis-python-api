@@ -4060,6 +4060,101 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
+    def compute_cache_info(self, out_sr=None):
+        """
+        The ``compute_cache_info`` method computes and generates new image service tile cache
+        schemes for image services.
+        If the corresponding image tile cache scheme is missing, it will also create a new set of
+        cached image tiles in the cache directory of the image service. This operation only
+        generates image tile cache schemes based on raster tiles (LERC2D format).
+
+        .. note::
+            This applies to image services that have dynamic service caching capability enabled.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        out_sr                The spatial reference of the boundary's geometry.
+
+                              The spatial reference can be specified as either a well-known ID or
+                              as a spatial reference JSON object.
+
+                              If the ``out_SR`` is not specified, the boundary will be reported in the
+                              spatial reference of the image service.
+
+                              Example:
+                                4326
+        =================     ====================================================================
+
+        :returns: A dictionary showing volume values for each geometry in the input geometries array
+
+        """
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        url = self._url + "/computeCacheInfo"
+        params = {"f": "json"}
+        if out_sr is not None:
+            params["outSR"] = out_sr
+
+        return self._con.post(path=url, postdata=params, timeout=None)
+
+    def compute_angles(
+        self,
+        raster_id,
+        point=None,
+        angle_name=None,
+        spatial_reference=None
+    ):
+        """
+        The ``compute_angles`` method computes the rotation angle of a raster for a user-specified
+        angle direction, and optionally, a user-specified rotation point and user-specified
+        spatial reference.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        raster_id             required int. Specifies the object ID of the raster catalog which
+                              will determine the raster and image coordinate system to use in a
+                              mosaic dataset.
+        -----------------     --------------------------------------------------------------------
+        point                 optional dictionary. The point geometry that defines the reference
+                              point of rotation to compute the angle direction. By default, takes
+                              the centroid of image as point of rotation.
+        -----------------     --------------------------------------------------------------------
+        angle_name            optional string. Specifies the name (or names) of the rotation
+                              angle to be computed.
+                              Possible options are
+                              - "up"
+                              - "north"
+                              You can specify multiple angle names by separating the names with a
+                              comma. By default, angles are computed for all directions.
+        -----------------     --------------------------------------------------------------------
+        spatial_reference     optional dictionary. Specifies the spatial reference to be used by
+                              the image. By default, the spatial reference of the image is used.
+        =================     ====================================================================
+
+        :returns: A legend as a dictionary by default, or as an HTML table if as_html is True
+        
+        """
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+        
+        url = self._url + "/computeAngles"
+        params = {"rasterId": raster_id, "f":"json"}
+        if point is not None:
+            params["point"] = point
+        if angle_name is not None:
+            params["angleName"] = angle_name
+        if spatial_reference is not None:
+            params["spatialReference"] = spatial_reference
+
+        return self._con.post(path=url, postdata=params, timeout=None)
+
     def calculate_volume(
         self,
         geometries,
