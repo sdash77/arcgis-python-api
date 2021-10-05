@@ -8618,9 +8618,16 @@ class Group(dict):
         return apps
 
     # ----------------------------------------------------------------------
-    def application(self, application_username):
+    def application(self, user: str):
         """
-        The ``application`` property retrieves one group application for the given group.
+        The ``application`` method retrieves one group application for the given group.
+
+        ==================  ====================================
+        **Argument**        **Description**
+        ------------------  ------------------------------------
+        user                Required String. The username of
+                            the user applying to join the group.
+        ==================  ====================================
 
         .. note::
             The ``application`` method is available to administrators of the group or administrators of an organization
@@ -8630,7 +8637,7 @@ class Group(dict):
             path = "%scommunity/groups/%s/applications/%s" % (
                 self._portal.resturl,
                 self.groupid,
-                application_username,
+                user,
             )
             params = {"f": "json"}
             res = self._portal.con.post(path, params)
