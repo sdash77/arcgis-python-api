@@ -1,4 +1,5 @@
 from logging import raiseExceptions
+import os
 import sys
 import unittest
 from arcgis import geometry
@@ -11,7 +12,18 @@ from arcgis.gis import GIS
 gis = GIS(profile="your_online_profile")
 
 # Major cities point layer
-item = gis.content.get("17eaf8891efe4887a0bb9e265c34afb0")
+try:
+    item = gis.content.search("major_cities")[1]
+    assert item
+except:
+    fp = "./major_cities"
+    if os.path.isfile(path=fp):
+        item = gis.content.add(
+            item_properties={"title": "major_cities", "type": "File Geodatabase",},
+            data=fp,
+        )
+        pitem = item.publish()
+
 layer = item.layers[0]
 print(layer)
 
@@ -82,7 +94,21 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """ "
         Test query with return_m and return_z
         """
-        all_coord_item = gis.content.get("301df20a74b841c7b18b40a6673ff4e6")
+        try:
+            all_coord_item = gis.content.search("Jordan_Aviation")[1]
+            assert all_coord_item
+        except:
+            fp = "./jordan_aviation"
+            if os.path.isfile(path=fp):
+                all_coord_item = gis.content.add(
+                    item_properties={
+                        "title": "Jordan_Aviation",
+                        "type": "File Geodatabase",
+                    },
+                    data=fp,
+                )
+                item.publish()
+
         coord_layer = all_coord_item.layers[0]
 
         return_m = coord_layer.query(return_m=True)
@@ -109,7 +135,20 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """ "
         Test query with historic_moments parameter
         """
-        layer_1 = gis.content.get("5183636f099c48789628226e5730fb13").layers[0]
+        try:
+            item = gis.content.search("Traffic Collisions")[1]
+        except:
+            fp = "./traffic_collisions"
+            if os.path.isfile(path=fp):
+                item = gis.content.add(
+                    item_properties={
+                        "title": "traffic_collisions",
+                        "type": "File Geodatabase",
+                    },
+                    data=fp,
+                )
+                item.publish()
+        layer_1 = item.layers[0]
         historic = layer_1.query(historic_moment=3)
         assert historic
 

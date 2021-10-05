@@ -1,7 +1,6 @@
+import os
 import sys
 import unittest
-
-from numpy import isin
 
 sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus_main\src")
 
@@ -12,7 +11,20 @@ from arcgis.gis import GIS
 gis = GIS(profile="your_online_profile")
 
 # MapImageLayer
-item = gis.content.get("977b559f957f4df8a56b28b4311afc36")
+try:
+    item = gis.content.search("USA_Demographics_and_Boundaries_2021")[0]
+except:
+    fp = "./demographics_and_boundaries"
+    if os.path.isfile(path=fp):
+        item = gis.content.add(
+            item_properties={
+                "title": "USA_Demographics_and_Boundaries",
+                "type": "File Geodatabase",
+            },
+            data=fp,
+        )
+        pitem = item.publish()
+
 layer = MapImageLayer.fromitem(item)
 print(layer)
 
@@ -31,17 +43,42 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test create_dynamic_layer
         """
         # Must chech that supportDynamicLayers = True in layer properties
-        layer_to_add = {
-            "id": "0135e658729c4b55b76a3e556c70a325",
-            "source": "https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/2",
-            "definitionExpression": "",
-            "drawingInfo": {
-                "renderer": "Simple Renderer",
-                "transparency": "0",
-                "scaleSymbols": True,
-                "showLabels": False,
-            },
-        }
+        try:
+            gis.content.get("0135e658729c4b55b76a3e556c70a325")
+            layer_to_add = {
+                "id": "0135e658729c4b55b76a3e556c70a325",
+                "source": "https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/2",
+                "definitionExpression": "",
+                "drawingInfo": {
+                    "renderer": "Simple Renderer",
+                    "transparency": "0",
+                    "scaleSymbols": True,
+                    "showLabels": False,
+                },
+            }
+        except:
+            fp = "./USA_Map_Server"
+            if os.path.isfile(path=fp):
+                item = gis.content.add(
+                    item_properties={
+                        "title": "USA_Map_Server",
+                        "type": "File Geodatabase",
+                    },
+                    data=fp,
+                )
+                pitem = item.publish()
+
+            layer_to_add = {
+                "id": item.id,
+                "source": pitem.url,
+                "definitionExpression": "",
+                "drawingInfo": {
+                    "renderer": "Simple Renderer",
+                    "transparency": "0",
+                    "scaleSymbols": True,
+                    "showLabels": False,
+                },
+            }
         dynamic = layer.create_dynamic_layer(layer=layer_to_add)
         assert isinstance(dynamic, FeatureLayer)
 
@@ -103,7 +140,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test generate_kml method
         """
         generate = layer.generate_kml(
-            save_location=r"C:\\ipython_workfolder",
+            save_location=r"./",
             name="Map Service Test",
             layers="0,1,3",
             options="composite",
@@ -132,11 +169,11 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Export tiles must be True in layer properties
         """
         size = layer.estimate_export_tiles_size(
-            export_by="LevelID", levels="0-5", asynchronous=False
+            export_by="LevelID", levels="0-3", asynchronous=False
         )
         assert isinstance(size, str)
 
-        export = layer.export_tiles(levels="0-5", export_by="LevelID")
+        export = layer.export_tiles(levels="0-3", export_by="LevelID")
         assert isinstance(export, str)
 
 
