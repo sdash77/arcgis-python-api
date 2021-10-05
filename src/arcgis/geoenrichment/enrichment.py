@@ -5,7 +5,7 @@ from typing import Any, Union
 
 from arcgis import __version__
 from arcgis import env
-from arcgis.features import SpatialDataFrame, FeatureSet, GeoAccessor, GeoSeriesAccessor
+from arcgis.features import FeatureSet, GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry
 from arcgis.gis import GIS
 from arcgis._impl.common._deprecate import deprecated
@@ -317,11 +317,7 @@ class Country(object):
 
     # noinspection PyMissingConstructor
     def __init__(
-        self,
-        iso3: str,
-        gis: GIS = None,
-        year: Union[str, int] = None,
-        **kwargs,
+        self, iso3: str, gis: GIS = None, year: Union[str, int] = None, **kwargs,
     ) -> None:
 
         # handle the caveat of using a GIS('Pro') input
