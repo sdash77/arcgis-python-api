@@ -3,10 +3,15 @@
 These tools are used for data enrichment using geoanalytics
 
 """
+from __future__ import annotations
+from datetime import datetime
 import json as _json
 import logging as _logging
+from typing import Any, Optional, Union
 import arcgis as _arcgis
 from arcgis._impl.common._utils import inspect_function_inputs
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis.geoanalytics._util import (
     _id_generator,
@@ -16,6 +21,7 @@ from arcgis.geoanalytics._util import (
     GAJob,
     _prevent_bds_item,
 )
+from arcgis.gis import GIS, Item
 
 _log = _logging.getLogger(__name__)
 
@@ -23,27 +29,34 @@ _use_async = True
 
 
 def calculate_motion_statistics(
-    input_layer,
-    track_fields,
-    motion_statistics="All",
-    track_history_window=3,
-    idle_tol_dist=None,
-    idle_tol_unit=None,
-    idle_time_tol=None,
-    idle_time_tol_unit=None,
-    time_boundary_split=None,
-    split_unit=None,
-    time_bound_ref=None,
-    dist_method="Geodesic",
-    distance_unit="Meters",
-    duration_unit="Seconds",
-    speed_unit="MetersPerSecond",
-    accel_unit="MetersPerSecondSquared",
-    elev_unit="meters",
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    track_fields: str,
+    motion_statistics: str = "All",
+    track_history_window: int = 3,
+    idle_tol_dist: Optional[float] = None,
+    idle_tol_unit: Optional[str] = None,
+    idle_time_tol: Optional[float] = None,
+    idle_time_tol_unit: Optional[str] = None,
+    time_boundary_split: Optional[float] = None,
+    split_unit: Optional[str] = None,
+    time_bound_ref: Optional[datetime] = None,
+    dist_method: str = "Geodesic",
+    distance_unit: str = "Meters",
+    duration_unit: str = "Seconds",
+    speed_unit: str = "MetersPerSecond",
+    accel_unit: str = "MetersPerSecondSquared",
+    elev_unit: str = "meters",
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     The Calculate Motion Statistics task calculates motion statistics and
@@ -244,13 +257,27 @@ def calculate_motion_statistics(
 
 
 def enrich_from_grid(
-    input_layer,
-    grid_layer,
-    enrichment_attributes=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    grid_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    enrichment_attributes: Optional[str] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/enrich_from_grid/enrich_from_grid.png
