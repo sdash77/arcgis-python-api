@@ -61,12 +61,13 @@ GeoSeriesAccessor
     :members:
     :undoc-members:
 
-SpatialDataFrame
+EditFeatureJob
 --------------
-.. autoclass:: arcgis.features.SpatialDataFrame
+.. autoclass:: arcgis.features._async.EditFeatureJob
+    :inherited-members:
     :members:
     :undoc-members:
-
+    
 Submodules
 --------------
 .. toctree::

@@ -82,7 +82,7 @@ class YOLOv3(ArcGISModel):
                             saved.
     =====================   ===========================================
 
-    :returns: `YOLOv3` Object
+    :return: `YOLOv3` Object
     """
 
     def __init__(self, data=None, pretrained_path=None, **kwargs):
@@ -315,7 +315,7 @@ class YOLOv3(ArcGISModel):
                                 trained on).
         =====================   ===========================================
 
-        :returns: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
+        :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
         """
 
         if not HAS_OPENCV:
@@ -627,7 +627,7 @@ class YOLOv3(ArcGISModel):
                                 average precision.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
         aps = compute_class_AP(
@@ -701,7 +701,7 @@ class YOLOv3(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `YOLOv3` Object
+        :return: `YOLOv3` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

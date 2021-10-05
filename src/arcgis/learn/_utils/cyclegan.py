@@ -16,9 +16,15 @@ from fastai.vision import (
     partial,
     optim,
     ifnone,
+    image2np,
 )
 from fastai.data_block import get_files as gf
-from .._utils.common import ArcGISImageList, ArcGISMSImage, get_top_padding
+from .._utils.common import (
+    ArcGISImageList,
+    ArcGISMSImage,
+    get_top_padding,
+    get_nbatches,
+)
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
@@ -611,3 +617,64 @@ def show_batch(self, rows=4):
     img_idxs = [random.randint(0, len(self.train_ds) - 1) for k in range(rows)]
     for idx, im_idx in enumerate(img_idxs):
         self.train_ds.show(im_idx, axes[idx])
+
+
+def display_row(axes, display, rgb_bands=None):
+    if rgb_bands is None:
+        rgb_bands = [0, 1, 2]
+    for i, ax in enumerate(axes):
+        if type(display[i]) is ArcGISMSImage:
+            display[i].show(ax, rgb_bands)
+        else:
+            ax.imshow(display[i])
+        ax.axis("off")
+
+
+def show_results(self, rows):
+    self.learn.model.eval()
+    x_batch, y_batch = get_nbatches(
+        self._data.valid_dl, math.ceil(rows / self._data.batch_size)
+    )
+    x_A, x_B = [x[0] for x in x_batch], [x[1] for x in x_batch]
+
+    x_A = torch.cat(x_A)
+    x_B = torch.cat(x_B)
+
+    top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
+    activ_A = []
+    activ_B = []
+
+    for i in range(0, x_B.shape[0], self._data.batch_size):
+        with torch.no_grad():
+            preds = self.learn.model(
+                x_A[i : i + self._data.batch_size].detach(),
+                x_B[i : i + self._data.batch_size].detach(),
+            )
+        activ_A.append(preds[0])
+        activ_B.append(preds[1])
+
+    activ_A = torch.cat(activ_A)
+    activ_B = torch.cat(activ_B)
+    x_A = x_A.cpu() / 2 + 0.5
+    x_B = x_B.cpu() / 2 + 0.5
+    activ_A = activ_A.cpu() / 2 + 0.5
+    activ_B = activ_B.cpu() / 2 + 0.5
+    x_A_B = torch.cat([x_A, x_B], 3)
+    activ_A_B = torch.cat([activ_B, activ_A], 3)
+    rows = min(rows, x_A.shape[0])
+
+    fig, axs = plt.subplots(
+        nrows=rows, ncols=2, figsize=(4 * 5, rows * 5), squeeze=False
+    )
+    plt.subplots_adjust(top=top)
+    axs[0, 0].title.set_text("Input")
+    axs[0, 1].title.set_text("Prediction")
+    # axs[0, 2].title.set_text("Prediction")
+    for r in range(rows):
+        if self._data._is_multispectral:
+            display_row(
+                axs[r],
+                (ArcGISMSImage(x_A_B[r]), ArcGISMSImage(activ_A_B[r])),
+            )
+        else:
+            display_row(axs[r], (image2np(x_A_B[r]), image2np(activ_A_B[r])))

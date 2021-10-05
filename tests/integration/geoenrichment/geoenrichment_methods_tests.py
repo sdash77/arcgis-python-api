@@ -1,11 +1,23 @@
 import pandas as pd
 from typing import Union
 
-from arcgis.geoenrichment import Country, get_countries, create_report, enrich, standard_geography_query, service_limits
+from arcgis.geoenrichment import (
+    Country,
+    get_countries,
+    create_report,
+    enrich,
+    standard_geography_query,
+    service_limits,
+)
 from arcgis.gis import GIS
 
-from .geoenrich_data import address_list_str, address_list_json, key_enrich_list_web, block_group_df, \
-    block_group_points_df
+from .geoenrich_data import (
+    address_list_str,
+    address_list_json,
+    key_enrich_list_web,
+    block_group_df,
+    block_group_points_df,
+)
 
 
 def get_countries_test(gis: GIS = None) -> None:
@@ -54,8 +66,8 @@ def enrich_sedf_test(gis: GIS = None) -> None:
 
 
 def get_named_areas_test(gis: GIS = None) -> None:
-    cntry = Country.get('usa', gis=gis)
-    zip90018 = cntry.subgeographies.states['California'].zip5['90018']
+    cntry = Country.get("usa", gis=gis)
+    zip90018 = cntry.subgeographies.states["California"].zip5["90018"]
     assert zip90018
 
 

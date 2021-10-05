@@ -27,7 +27,7 @@ class TestNotebookDataAccess(unittest.TestCase):
         os.makedirs(os.path.join(tempfile.gettempdir(), "tstore"), exist_ok=True)
         nb = NOTEBOOKS[0]
         da = nb.data_access
-        with open(fp, 'w') as writer:
+        with open(fp, "w") as writer:
             writer.write("Hello World!")
             writer.close()
         da.upload(fp)
@@ -36,12 +36,12 @@ class TestNotebookDataAccess(unittest.TestCase):
                 [
                     f.properties.name
                     for f in da.files
-                    if f.properties.name == 'dataset.txt'
+                    if f.properties.name == "dataset.txt"
                 ]
             )
             > 0
         )
-        data = [f for f in da.files if f.properties.name == 'dataset.txt']
+        data = [f for f in da.files if f.properties.name == "dataset.txt"]
         local_file_path = data[0].download()
         assert os.path.isfile(local_file_path)
         os.remove(local_file_path)

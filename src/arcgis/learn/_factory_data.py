@@ -179,7 +179,7 @@ def prepare_data_future(
                                                 the gaussian_thresh
     =====================   ===========================================
 
-    :returns: data object
+    :return: data object
     """
     has_esri_files = ArcgisData._check_esri_files(Path(path))
     if has_esri_files and dataset_type is None:

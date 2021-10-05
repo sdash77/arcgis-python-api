@@ -98,7 +98,7 @@ class SequenceToSequence(ArcGISModel):
                             (DLPK) or Esri Model Definition(EMD) file.
     =====================   ===========================================
 
-    :returns: `SequenceToSequence` model object for sequence_translation task.
+    :return: `SequenceToSequence` model object for sequence_translation task.
     """
 
     # supported transformer backbones
@@ -237,7 +237,7 @@ class SequenceToSequence(ArcGISModel):
                                 https://huggingface.co/transformers/pretrained_models.html
         =====================   ===========================================
 
-        :returns: a tuple containing the available models for the given transformer backbone
+        :return: a tuple containing the available models for the given transformer backbone
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
@@ -269,7 +269,7 @@ class SequenceToSequence(ArcGISModel):
                                 Default value: None
         =====================   ===========================================
 
-        :returns: SequenceToSequence Object
+        :return: SequenceToSequence Object
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
@@ -364,7 +364,7 @@ class SequenceToSequence(ArcGISModel):
                                 Learning Package (DLPK) file while saving the model.
         =====================   ===========================================
 
-        :returns: the qualified path at which the model is saved
+        :return: the qualified path at which the model is saved
         """
 
         from ..models._arcgis_model import _create_zip
@@ -437,7 +437,7 @@ class SequenceToSequence(ArcGISModel):
                                 Number of rows to print.
         =====================   ===========================================
 
-        :returns: dataframe
+        :return: dataframe
         """
         self._check_requisites()
         rows = (
@@ -453,7 +453,7 @@ class SequenceToSequence(ArcGISModel):
             * bleu-score  This value indicates the similarity between model predictions
                           and the ground truth text. Maximum value is 1
 
-        :returns: a dictionary containing the metrics for classification model.
+        :return: a dictionary containing the metrics for classification model.
         """
         try:
             self._check_requisites()
@@ -530,7 +530,7 @@ class SequenceToSequence(ArcGISModel):
                                 Default value is set to 10
         =====================   ===========================================
 
-        :returns: list of tuples(input , predicted output strings).
+        :return: list of tuples(input , predicted output strings).
         """
 
         if isinstance(text_or_list, str):
@@ -579,7 +579,7 @@ class SequenceToSequence(ArcGISModel):
                                 will plot the figure and return nothing.
         =====================   ===========================================
 
-        :returns: matplotlib.figure.Figure
+        :return: matplotlib.figure.Figure
         """
         self._check_requisites()
         import matplotlib.pyplot as plt

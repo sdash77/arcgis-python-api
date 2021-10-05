@@ -18,7 +18,7 @@ def _underscore_to_camelcase(name):
 
 class WorkflowManagerAdmin:
     """
-    Represents a a series of CRUD functions for Workflow Manager Items
+    Represents a series of CRUD functions for Workflow Manager Items
 
     ===============     ====================================================================
     **Argument**        **Description**
@@ -265,7 +265,7 @@ class JobManager:
 
     def close(self, job_ids):
         """
-        Closes a single or multiple jobs with specific JobIDs
+        Closes a single or multiple jobs with specific Job IDs
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -823,7 +823,7 @@ class WorkflowManager:
         mode                    Optional String.
         ======================  ===============================================================
 
-        :returns: String
+        :return: String
         """
         url = f"{self._url}/evaluateArcade?token={self._gis._con.token}"
         params = {
@@ -2236,7 +2236,7 @@ class Job(object):
     @property
     def location(self):
         """
-        Returns the job location for the user-defined job
+        Get/Set the job location for the user-defined job
 
         :return:
             Workflow Manager :class:`~arcgis.gis.workflowmanager.JobLocation` object
