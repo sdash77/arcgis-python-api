@@ -8618,6 +8618,27 @@ class Group(dict):
         return apps
 
     # ----------------------------------------------------------------------
+    def application(self, application_username):
+        """
+        The ``application`` property retrieves one group application for the given group.
+
+        .. note::
+            The ``application`` method is available to administrators of the group or administrators of an organization
+            if the group is part of one.
+        """
+        try:
+            path = "%scommunity/groups/%s/applications/%s" % (
+                self._portal.resturl,
+                self.groupid,
+                application_username,
+            )
+            params = {"f": "json"}
+            res = self._portal.con.post(path, params)
+            return GroupApplication(url=path, gis=self._gis)
+        except:
+            print()
+
+    # ----------------------------------------------------------------------
     @property
     def protected(self):
         """
@@ -8736,23 +8757,23 @@ class GroupApplication(object):
 
     def decline(self):
         """
-        The ``accept`` method is used to manage a :class:`~arcgis.gis.User` application. When a
-        :class:`~arcgis.gis.User` to join a :class:`~arcgis.gis.Group`, a
-        ``GroupApplication`` object is created. Group administrators choose to delete this application
-        using the ``delete`` operation. This operation deletes the application and creates a notification for the user
+        The ``decline`` method is used to manage a :class:`~arcgis.gis.User` application. When a
+        :class:`~arcgis.gis.User` asks to join a :class:`~arcgis.gis.Group`, a
+        ``GroupApplication`` object is created. Group administrators choose to decline this application
+        using the ``decline`` operation. This operation deletes the application and creates a notification for the user
         indicating that the user's group application was declined. This method is very similar to the
         :attr:`~arcgis.gis.GroupApplication.accept` method, which accepts rather than declines the application to
         join a group.
 
         .. note::
-            The ``delete`` method is only available to group owners and administrators.
+            The ``decline`` method is only available to group owners and administrators.
 
         .. code-block:: python
 
             # Usage Example
 
             >>> group_app = group.applications[0]
-            >>> groupapplication.delete()
+            >>> groupapplication.decline()
 
         :return:
            A boolean indicating success (True) or failure (False).
