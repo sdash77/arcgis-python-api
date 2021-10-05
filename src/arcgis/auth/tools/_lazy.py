@@ -1,4 +1,3 @@
-import imp
 import types
 import importlib
 
@@ -33,7 +32,9 @@ class LazyLoader(types.ModuleType):
     def check_module_exists(name: str) -> bool:
         """Checks if a module exists"""
         try:
-            imp.find_module(name)
+            res = importlib.util.find_spec(name)
+            if res is None:
+                return False
             return True
         except:
             return False
