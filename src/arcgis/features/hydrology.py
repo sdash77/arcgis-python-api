@@ -180,7 +180,7 @@ def trace_downstream(
 
 
 def watershed(
-    input_points: Union[FeatureSet, DataFrame, FeatureCollection],
+    input_points,
     point_id_field: Optional[str] = None,
     snap_distance: float = 10,
     snap_distance_units: str = "Meters",
