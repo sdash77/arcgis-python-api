@@ -2,17 +2,16 @@
 Helper classes for managing feature layers and datasets.  These class are not created by users directly.
 Instances of this class, are available as a properties of feature layers and make it easier to manage them.
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 import os
 import json
 import time
 import tempfile
 import collections
-from typing import Tuple
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis.gis import _GISResource
+from arcgis.gis import GIS, _GISResource, Item
 import concurrent.futures as _cf
-from typing import Optional, Dict, List, Any
+from typing import Optional, Any, Union
 
 # pylint: disable=protected-access
 
@@ -30,18 +29,18 @@ class AttachmentManager(object):
 
     def search(
         self,
-        where="1=1",
-        object_ids=None,
-        global_ids=None,
-        attachment_types=None,
-        size=None,
-        keywords=None,
-        show_images=False,
-        as_df=False,
-        return_metadata=False,
-        return_url=False,
-        max_records=None,
-        offset=0,
+        where: str = "1=1",
+        object_ids: Optional[str] = None,
+        global_ids: Optional[str] = None,
+        attachment_types: Optional[str] = None,
+        size: Optional[Union[tuple[int], list[int]]] = None,
+        keywords: Optional[str] = None,
+        show_images: bool = False,
+        as_df: bool = False,
+        return_metadata: bool = False,
+        return_url: bool = False,
+        max_records: Optional[int] = None,
+        offset: int = 0,
     ):
         """
 
@@ -368,7 +367,7 @@ class AttachmentManager(object):
             del row
         return results
 
-    def get_list(self, oid):
+    def get_list(self, oid: str):
         """
         Get the list of attachements for a given OBJECT ID
 
@@ -384,7 +383,12 @@ class AttachmentManager(object):
         """
         return self._layer._list_attachments(oid)["attachmentInfos"]
 
-    def download(self, oid=None, attachment_id=None, save_path=None):
+    def download(
+        self,
+        oid: Optional[str] = None,
+        attachment_id: Optional[str] = None,
+        save_path: Optional[str] = None,
+    ):
         """
         Downloads attachment and returns it's path on disk.
 
@@ -477,7 +481,7 @@ class AttachmentManager(object):
         else:
             return self._download_all(object_ids=oid, save_folder=save_path)
 
-    def add(self, oid, file_path, keywords=None):
+    def add(self, oid: str, file_path: str, keywords: Optional[str] = None):
         """
         Adds an attachment to a :class:`~arcgis.features.FeatureLayer`
 
@@ -498,7 +502,7 @@ class AttachmentManager(object):
         """
         return self._layer._add_attachment(oid, file_path, keywords=keywords)
 
-    def delete(self, oid, attachment_id):
+    def delete(self, oid: str, attachment_id: str):
         """
         Removes an attachment from a :class:`~arcgis.gis.FeatureLayer`
 
@@ -515,7 +519,7 @@ class AttachmentManager(object):
         """
         return self._layer._delete_attachment(oid, attachment_id)
 
-    def update(self, oid, attachment_id, file_path):
+    def update(self, oid: str, attachment_id: str, file_path: str):
         """
         Updates an existing attachment with a new file
 
@@ -553,7 +557,7 @@ class SyncManager(object):
         return self._fs._replicas
 
     # ----------------------------------------------------------------------
-    def unregister(self, replica_id):
+    def unregister(self, replica_id: str):
         """
         unregisters a replica from a feature layer collection
         Inputs:
@@ -563,7 +567,7 @@ class SyncManager(object):
         return self._fs._unregister_replica(replica_id)
 
     # ----------------------------------------------------------------------
-    def get(self, replica_id):
+    def get(self, replica_id: str):
         """
         ===============     ====================================================================
         **Argument**        **Description**
@@ -580,24 +584,24 @@ class SyncManager(object):
     # ----------------------------------------------------------------------
     def create(
         self,
-        replica_name,
-        layers,
-        layer_queries=None,
-        geometry_filter=None,
-        replica_sr=None,
-        transport_type="esriTransportTypeUrl",
-        return_attachments=False,
-        return_attachments_databy_url=False,
-        asynchronous=False,
-        attachments_sync_direction="none",
-        sync_model="none",
-        data_format="json",
-        replica_options=None,
-        wait=False,
-        out_path=None,
-        sync_direction=None,
-        target_type="client",
-        transformations=None,
+        replica_name: str,
+        layers: list[int],
+        layer_queries: Optional[dict[str, Any]] = None,
+        geometry_filter: Optional[dict[str, str]] = None,
+        replica_sr: Optional[Union[dict[str, Any], int]] = None,
+        transport_type: str = "esriTransportTypeUrl",
+        return_attachments: bool = False,
+        return_attachments_databy_url: bool = False,
+        asynchronous: bool = False,
+        attachments_sync_direction: str = "none",
+        sync_model: str = "none",
+        data_format: str = "json",
+        replica_options: Optional[dict[str, Any]] = None,
+        wait: bool = False,
+        out_path: Optional[str] = None,
+        sync_direction: Optional[str] = None,
+        target_type: str = "client",
+        transformations: Optional[list[str]] = None,
     ):
         """
         The create operation is performed on a :class:`~arcgis.features.FeatureLayerCollection` resource.
@@ -784,12 +788,12 @@ class SyncManager(object):
     # ----------------------------------------------------------------------
     def cleanup_change_tracking(
         self,
-        layers,
-        retention_period,
-        period_unit="days",
-        min_server_gen=None,
-        replica_id=None,
-        future=False,
+        layers: list[int],
+        retention_period: int,
+        period_unit: str = "days",
+        min_server_gen: Optional[str] = None,
+        replica_id: Optional[str] = None,
+        future: bool = False,
     ):
         """
 
@@ -848,19 +852,19 @@ class SyncManager(object):
     # ----------------------------------------------------------------------
     def synchronize(
         self,
-        replica_id,
-        transport_type="esriTransportTypeUrl",
-        replica_server_gen=None,
-        return_ids_for_adds=False,
-        edits=None,
-        return_attachment_databy_url=False,
-        asynchronous=False,
-        sync_direction="snapshot",
-        sync_layers="perReplica",
-        edits_upload_id=None,
-        edits_upload_format=None,
-        data_format="json",
-        rollback_on_failure=True,
+        replica_id: str,
+        transport_type: str = "esriTransportTypeUrl",
+        replica_server_gen: Optional[int] = None,
+        return_ids_for_adds: bool = False,
+        edits: Optional[list[dict[str, Any]]] = None,
+        return_attachment_databy_url: bool = False,
+        asynchronous: bool = False,
+        sync_direction: str = "snapshot",
+        sync_layers: str = "perReplica",
+        edits_upload_id: Optional[dict] = None,
+        edits_upload_format: Optional[str] = None,
+        data_format: str = "json",
+        rollback_on_failure: bool = True,
     ):
         """
         synchronizes replica with feature layer collection
@@ -886,7 +890,12 @@ class SyncManager(object):
         )
 
     def create_replica_item(
-        self, replica_name, item, destination_gis, layers=None, extent=None
+        self,
+        replica_name: str,
+        item: Item,
+        destination_gis: GIS,
+        layers: Optional[list[int]] = None,
+        extent: Optional[dict[str, Any]] = None,
     ):
         """
         Creates a replicated service from a parent to another GIS.
@@ -900,7 +909,7 @@ class SyncManager(object):
         ---------------     --------------------------------------------------------------------
         destination_gis     Required GIS object
         ---------------     --------------------------------------------------------------------
-        layers              Optional dict. Layers to replicate in the item
+        layers              Optional list. Layers to replicate in the item
         ---------------     --------------------------------------------------------------------
         extent              Optional dict. Depicts the geometry extent for an item.
         ===============     ====================================================================
@@ -964,7 +973,7 @@ class SyncManager(object):
         published = item.publish()
         return published
 
-    def sync_replicated_items(self, parent, child, replica_name):
+    def sync_replicated_items(self, parent: Item, child: Item, replica_name: str):
         """
         Synchronizes two replicated items between portals
 
@@ -1104,13 +1113,13 @@ class WebHook(object):
     # ----------------------------------------------------------------------
     def edit(
         self,
-        name: str = None,
-        change_types: str = None,
-        hook_url: str = None,
-        signature_key: str = None,
-        active: bool = None,
-        schedule_info: dict = None,
-        payload_format: str = None,
+        name: Optional[str] = None,
+        change_types: Optional[str] = None,
+        hook_url: Optional[str] = None,
+        signature_key: Optional[str] = None,
+        active: Optional[bool] = None,
+        schedule_info: Optional[dict[str, Any]] = None,
+        payload_format: Optional[str] = None,
     ) -> dict:
         """
         Updates the existing WebHook's Properties.
@@ -1275,9 +1284,9 @@ class WebHookServiceManager(object):
         name: str,
         hook_url: str,
         change_types: str = "*",
-        signature_key: str = None,
+        signature_key: Optional[str] = None,
         active: bool = False,
-        schedule_info: dict = None,
+        schedule_info: Optional[dict[str, Any]] = None,
         payload_format: str = "json",
     ) -> WebHook:
         """
@@ -1517,20 +1526,20 @@ class FeatureLayerCollectionManager(_GISResource):
     # ----------------------------------------------------------------------
     def create_view(
         self,
-        name,
-        spatial_reference=None,
-        extent=None,
-        allow_schema_changes=True,
-        updateable=True,
-        capabilities="Query",
-        view_layers=None,
-        view_tables=None,
+        name: str,
+        spatial_reference: Optional[dict[str, Any]] = None,
+        extent: Optional[dict[str, int]] = None,
+        allow_schema_changes: bool = True,
+        updateable: bool = True,
+        capabilities: str = "Query",
+        view_layers: Optional[list[int]] = None,
+        view_tables: Optional[list[int]] = None,
         *,
-        description=None,
-        tags=None,
-        snippet=None,
-        overwrite=None,
-        set_item_id=None,
+        description: Optional[str] = None,
+        tags: Optional[str] = None,
+        snippet: Optional[str] = None,
+        overwrite: Optional[bool] = None,
+        set_item_id: Optional[str] = None,
     ):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
@@ -1908,7 +1917,7 @@ class FeatureLayerCollectionManager(_GISResource):
             self._hydrated = False
 
     # ----------------------------------------------------------------------
-    def add_to_definition(self, json_dict, future=False):
+    def add_to_definition(self, json_dict: dict[str, Any], future: bool = False):
         """
         The add_to_definition operation supports adding a definition
         property to a hosted feature layer collection service. The result of this
@@ -1959,7 +1968,7 @@ class FeatureLayerCollectionManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def update_definition(self, json_dict, future=False):
+    def update_definition(self, json_dict: dict[str, Any], future: bool = False):
         """
         The update_definition operation supports updating a definition
         property in a hosted feature layer collection service. The result of this
@@ -2061,7 +2070,7 @@ class FeatureLayerCollectionManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def delete_from_definition(self, json_dict, future=False):
+    def delete_from_definition(self, json_dict: dict[str, Any], future: bool = False):
         """
         The delete_from_definition operation supports deleting a
         definition property from a hosted feature layer collection service. The result of
@@ -2108,7 +2117,7 @@ class FeatureLayerCollectionManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def overwrite(self, data_file):
+    def overwrite(self, data_file: str):
         """
         Overwrite all the features and layers in a hosted feature layer collection service. This operation removes
         all features but retains the properties (such as metadata, itemID) and capabilities configured on the service.
@@ -2431,7 +2440,7 @@ class FeatureLayerManager(_GISResource):
 
     # ----------------------------------------------------------------------
     @classmethod
-    def fromitem(cls, item, layer_id=0):
+    def fromitem(cls, item: Item, layer_id: int = 0):
         """
         Creates a FeatureLayerManager object from a GIS Item.
 
@@ -2441,7 +2450,7 @@ class FeatureLayerManager(_GISResource):
         item                Required of type :class:`~arcgis.features.FeatureService` that represents
                             a :class:`~arcgis.features.FeatureLayerCollection`.
         ---------------     --------------------------------------------------------------------
-        layer_id            Required string. Id of the layer in the
+        layer_id            Required int. Id of the layer in the
                             :class:`~arcgis.features.FeatureLayerCollection`
         ===============     ====================================================================
 
@@ -2467,7 +2476,7 @@ class FeatureLayerManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def add_to_definition(self, json_dict, future=False):
+    def add_to_definition(self, json_dict: dict[str, Any], future: bool = False):
         """
         The addToDefinition operation supports adding a definition
         property to a hosted feature layer.
@@ -2511,7 +2520,7 @@ class FeatureLayerManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def update_definition(self, json_dict, future=False):
+    def update_definition(self, json_dict: dict[str, Any], future: bool = False):
         """
         The updateDefinition operation supports updating a definition
         property in a hosted feature layer. The result of this
@@ -2559,7 +2568,7 @@ class FeatureLayerManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def delete_from_definition(self, json_dict, future=False):
+    def delete_from_definition(self, json_dict: dict[str, Any], future: bool = False):
         """
         The deleteFromDefinition operation supports deleting a
         definition property from a hosted feature layer. The result of
@@ -2610,7 +2619,12 @@ class FeatureLayerManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def truncate(self, attachment_only=False, asynchronous=False, wait=True):
+    def truncate(
+        self,
+        attachment_only: bool = False,
+        asynchronous: bool = False,
+        wait: bool = True,
+    ):
         """
         The truncate operation supports deleting all features or attachments
         in a hosted feature service layer. The result of this operation is a

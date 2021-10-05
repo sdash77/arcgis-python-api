@@ -1962,7 +1962,10 @@ class FeatureLayer(Layer):
             params["sqlType"] = sql_type
         sql_type = sql_type.lower()
         url = self._url + "/validateSQL"
-        return self._con.post(path=url, postdata=params,)
+        return self._con.post(
+            path=url,
+            postdata=params,
+        )
 
     # ----------------------------------------------------------------------
     def query_related_records(
@@ -2301,8 +2304,10 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-        upload_formats = """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
-            ","
+        upload_formats = (
+            """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
+                ","
+            )
         )
         if upload_format not in upload_formats:
             raise ValueError("Invalid upload format: %s." % upload_format)
@@ -2963,13 +2968,19 @@ class FeatureLayer(Layer):
         ):
             params["async"] = True
             executor = concurrent.futures.ThreadPoolExecutor(1)
-            res = self._con.post(path=url, postdata=params,)
+            res = self._con.post(
+                path=url,
+                postdata=params,
+            )
             future = executor.submit(
                 self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
             )
             executor.shutdown(False)
             return future
-        return self._con.post(path=url, postdata=params,)
+        return self._con.post(
+            path=url,
+            postdata=params,
+        )
 
     # ----------------------------------------------------------------------
     def _query(self, url, params, raw=False, **kwargs):
@@ -2980,7 +2991,10 @@ class FeatureLayer(Layer):
                     path=url, postdata=params, add_token=kwargs.get("add_token", True)
                 )
             else:
-                result = self._con.post(path=url, postdata=params,)
+                result = self._con.post(
+                    path=url,
+                    postdata=params,
+                )
         except Exception as queryException:
             error_list = [
                 "Error performing query operation",
@@ -3051,7 +3065,6 @@ class FeatureLayer(Layer):
     def _query_df(self, url, params, **kwargs):
         """returns results of a query as a pd.DataFrame"""
         import pandas as pd
-        from arcgis.features import GeoAccessor, GeoSeriesAccessor
         import numpy as np
 
         if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
@@ -3093,8 +3106,6 @@ class FeatureLayer(Layer):
 
         def feature_to_row(feature, sr):
             """:return: a feature from a dict"""
-            from arcgis.geometry import Geometry
-
             geom = feature["geometry"] if "geometry" in feature else None
             attribs = feature["attributes"] if "attributes" in feature else {}
             if "centroid" in feature:

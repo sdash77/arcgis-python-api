@@ -7,10 +7,16 @@ create_drive_time_areas finds areas around locations that can be reached within 
 find_nearest identifies those places that are the closest to known locations.
 plan_routes determines the best way to route a fleet of vehicles to visit many stops.
 """
-import json
+from __future__ import annotations
+from datetime import datetime
 import logging
+from re import U
+from typing import Any, Optional, Union
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
+from arcgis.gis import GIS, Item
 import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
 from arcgis import network
@@ -18,23 +24,64 @@ from arcgis import network
 _logger = logging.getLogger()
 # --------------------------------------------------------------------------
 def connect_origins_to_destinations(
-    origins_layer,
-    destinations_layer,
-    measurement_type=None,
-    origins_layer_route_id_field=None,
-    destinations_layer_route_id_field=None,
-    time_of_day=None,
-    time_zone_for_time_of_day="GeoLocal",
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    point_barrier_layer=None,
-    line_barrier_layer=None,
-    polygon_barrier_layer=None,
-    future=False,
-    route_shape="FollowStreets",
-    include_route_layers=False,
+    origins_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    destinations_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    measurement_type: Optional[str] = None,
+    origins_layer_route_id_field: Optional[str] = None,
+    destinations_layer_route_id_field: Optional[str] = None,
+    time_of_day: Optional[datetime] = None,
+    time_zone_for_time_of_day: str = "GeoLocal",
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    point_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    line_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    polygon_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    future: bool = False,
+    route_shape: str = "FollowStreets",
+    include_route_layers: bool = False,
 ):
     """
     .. image:: _static/images/connect_origins_to_destinations/connect_origins_to_destinations.png
@@ -333,19 +380,26 @@ def connect_origins_to_destinations(
 
 # --------------------------------------------------------------------------
 def create_buffers(
-    input_layer,
-    distances=[],
-    field=None,
-    units="Meters",
-    dissolve_type="None",
-    ring_type="Disks",
-    side_type="Full",
-    end_type="Round",
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    distances: Optional[list[str]] = [],
+    field: Optional[str] = None,
+    units: str = "Meters",
+    dissolve_type: str = "None",
+    ring_type: str = "Disks",
+    side_type: str = "Full",
+    end_type: str = "Round",
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/create_buffers/create_buffers.png
@@ -524,24 +578,58 @@ def create_buffers(
 
 # --------------------------------------------------------------------------
 def create_drive_time_areas(
-    input_layer,
-    break_values=[5, 10, 15],
-    break_units="Minutes",
-    travel_mode=None,
-    overlap_policy="Overlap",
-    time_of_day=None,
-    time_zone_for_time_of_day="GeoLocal",
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    point_barrier_layer=None,
-    line_barrier_layer=None,
-    polygon_barrier_layer=None,
-    future=False,
-    travel_direction="AwayFromFacility",
-    show_holes=False,
-    include_reachable_streets=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    break_values: list[int] = [5, 10, 15],
+    break_units: str = "Minutes",
+    travel_mode: Optional[str] = None,
+    overlap_policy: str = "Overlap",
+    time_of_day: Optional[datetime] = None,
+    time_zone_for_time_of_day: str = "GeoLocal",
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    point_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    line_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    polygon_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    future: bool = False,
+    travel_direction: str = "AwayFromFacility",
+    show_holes: bool = False,
+    include_reachable_streets: bool = False,
 ):
     """
     .. image:: _static/images/create_drive_time_areas/create_drive_time_areas.png
@@ -798,23 +886,64 @@ def create_drive_time_areas(
 
 # --------------------------------------------------------------------------
 def find_nearest(
-    analysis_layer,
-    near_layer,
-    measurement_type="StraightLine",
-    max_count=100,
-    search_cutoff=2147483647,
-    search_cutoff_units=None,
-    time_of_day=None,
-    time_zone_for_time_of_day="GeoLocal",
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    include_route_layers=None,
-    point_barrier_layer=None,
-    line_barrier_layer=None,
-    polygon_barrier_layer=None,
-    future=False,
+    analysis_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    near_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    measurement_type: str = "StraightLine",
+    max_count: int = 100,
+    search_cutoff: float = 2147483647,
+    search_cutoff_units: Optional[str] = None,
+    time_of_day: Optional[datetime] = None,
+    time_zone_for_time_of_day: str = "GeoLocal",
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    include_route_layers: Optional[bool] = None,
+    point_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    line_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    polygon_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/find_nearest/find_nearest.png
@@ -1039,27 +1168,77 @@ def find_nearest(
 
 # --------------------------------------------------------------------------
 def plan_routes(
-    stops_layer,
-    route_count,
-    max_stops_per_route,
-    route_start_time,
-    start_layer,
-    start_layer_route_id_field=None,
-    return_to_start=True,
-    end_layer=None,
-    end_layer_route_id_field=None,
-    travel_mode=None,
-    stop_service_time=0,
-    max_route_time=525600,
-    include_route_layers=False,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    point_barrier_layer=None,
-    line_barrier_layer=None,
-    polygon_barrier_layer=None,
-    future=False,
+    stops_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    route_count: int,
+    max_stops_per_route: int,
+    route_start_time: datetime,
+    start_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    start_layer_route_id_field: Optional[str] = None,
+    return_to_start: bool = True,
+    end_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    end_layer_route_id_field: Optional[str] = None,
+    travel_mode: Optional[str] = None,
+    stop_service_time: float = 0,
+    max_route_time: float = 525600,
+    include_route_layers: bool = False,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    point_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    line_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    polygon_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    future: bool = False,
 ):
     """
 

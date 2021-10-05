@@ -6,29 +6,50 @@ aggregate_points calculates statistics about points that fall within specified a
 summarize_nearby calculates statistics for features and their attributes that are within a specified distance.
 summarize_within calculates statistics for area features and attributes that overlap each other.
 """
-import inspect
+from __future__ import annotations
+from datetime import datetime
+from re import U
+from typing import Any, Optional, Union
+
 import arcgis as _arcgis
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
+from arcgis.gis import GIS, Item
 from .._impl.common._utils import _date_handler
 from .._impl.common._utils import inspect_function_inputs
 import arcgis.network as network
 
 # --------------------------------------------------------------------------
 def aggregate_points(
-    point_layer,
-    polygon_layer=None,
-    keep_boundaries_with_no_points=True,
-    summary_fields=[],
-    group_by_field=None,
-    minority_majority=False,
-    percent_points=False,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
-    bin_type=None,
-    bin_size=None,
-    bin_size_unit=None,
+    point_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    polygon_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ] = None,
+    keep_boundaries_with_no_points: bool = True,
+    summary_fields: list[str] = [],
+    group_by_field: Optional[str] = None,
+    minority_majority: bool = False,
+    percent_points: bool = False,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
+    bin_type: Optional[str] = None,
+    bin_size: Optional[float] = None,
+    bin_size_unit: Optional[str] = None,
 ):
     """
     .. image:: _static/images/agg_points_standard/aggregate_points.png
@@ -183,25 +204,39 @@ def aggregate_points(
 
 # --------------------------------------------------------------------------
 def summarize_nearby(
-    sum_nearby_layer,
-    summary_layer,
-    near_type="StraightLine",
-    distances=[],
-    units="Meters",
-    time_of_day=None,
-    time_zone_for_time_of_day="GeoLocal",
-    return_boundaries=True,
-    sum_shape=True,
-    shape_units=None,
-    summary_fields=[],
-    group_by_field=None,
-    minority_majority=False,
-    percent_shape=False,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    sum_nearby_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    summary_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    near_type: str = "StraightLine",
+    distances: Optional[list[str]] = [],
+    units: str = "Meters",
+    time_of_day: Optional[datetime] = None,
+    time_zone_for_time_of_day: str = "GeoLocal",
+    return_boundaries: bool = True,
+    sum_shape: bool = True,
+    shape_units: Optional[str] = None,
+    summary_fields: Optional[list[str]] = [],
+    group_by_field: Optional[str] = None,
+    minority_majority: bool = False,
+    percent_shape: bool = False,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/summarize_nearby/summarize_nearby.png
@@ -457,16 +492,23 @@ def summarize_nearby(
 
 # --------------------------------------------------------------------------
 def summarize_center_and_dispersion(
-    analysis_layer,
-    summarize_type=["CentralFeature"],
-    ellipse_size=None,
-    weight_field=None,
-    group_field=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    analysis_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    summarize_type: list[str] = ["CentralFeature"],
+    ellipse_size: Optional[str] = None,
+    weight_field: Optional[str] = None,
+    group_field: Optional[str] = None,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
 
     """
@@ -568,22 +610,36 @@ def summarize_center_and_dispersion(
 
 # --------------------------------------------------------------------------
 def summarize_within(
-    sum_within_layer,
-    summary_layer,
-    sum_shape=True,
-    shape_units=None,
-    summary_fields=[],
-    group_by_field=None,
-    minority_majority=False,
-    percent_shape=False,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
-    bin_type="Square",
-    bin_size=None,
-    bin_size_unit=None,
+    sum_within_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    summary_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    sum_shape: bool = True,
+    shape_units: Optional[str] = None,
+    summary_fields: Optional[list[str]] = [],
+    group_by_field: Optional[str] = None,
+    minority_majority: bool = False,
+    percent_shape: bool = False,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
+    bin_type: str = "Square",
+    bin_size: Optional[float] = None,
+    bin_size_unit: Optional[str] = None,
 ):
     """
     .. image:: _static/images/summarize_within/summarize_within.png
@@ -740,21 +796,35 @@ def summarize_within(
 
 # --------------------------------------------------------------------------
 def join_features(
-    target_layer,
-    join_layer,
-    spatial_relationship=None,
-    spatial_relationship_distance=None,
-    spatial_relationship_distance_units=None,
-    attribute_relationship=None,
-    join_operation="""JoinOneToOne""",
-    summary_fields=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
-    join_type="INNER",
-    records_to_match=None,
+    target_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    join_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    spatial_relationship: Optional[str] = None,
+    spatial_relationship_distance: Optional[float] = None,
+    spatial_relationship_distance_units: Optional[str] = None,
+    attribute_relationship: Optional[list[dict[str, Any]]] = None,
+    join_operation: str = """JoinOneToOne""",
+    summary_fields: Optional[list[dict[str[Any]]]] = None,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
+    join_type: str = "INNER",
+    records_to_match: Optional[dict[str, Any]] = None,
 ):
     """
     .. image:: _static/images/join_features/join_features.png

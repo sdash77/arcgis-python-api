@@ -325,7 +325,10 @@ def find_existing_locations(
 
 # --------------------------------------------------------------------------
 def derive_new_locations(
-    input_layers: Union[list[FeatureLayer], list[FeatureCollection],] = [],
+    input_layers: Union[
+        list[FeatureLayer],
+        list[FeatureCollection],
+    ] = [],
     expressions: Optional[dict[str, Any]] = [],
     output_name: Optional[Union[FeatureLayer, str]] = None,
     context: Optional[dict[str, Any]] = None,
