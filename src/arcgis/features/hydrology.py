@@ -6,7 +6,6 @@ These functions help you use hydrology analysis.
 import logging as _logging
 from typing import Optional, Union
 
-from pandas.core.frame import DataFrame
 import arcgis
 from arcgis.features.feature import FeatureCollection
 from arcgis.geoprocessing._support import _execute_gp_tool
@@ -56,7 +55,7 @@ def _evaluate_spatial_input(input_points):
 
 
 def trace_downstream(
-    input_points: Union[FeatureSet, DataFrame, FeatureCollection],
+    input_points: Union[FeatureSet, "DataFrame", FeatureCollection],
     point_id_field: Optional[str] = None,
     source_database: str = "Finest",
     generalize: bool = False,

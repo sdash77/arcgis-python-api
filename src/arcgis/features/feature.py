@@ -6,7 +6,6 @@ from __future__ import annotations
 import copy
 import json
 from typing import Any, Optional, Union
-from pandas.core.frame import DataFrame
 import ujson as _ujson
 import os
 import re
@@ -872,7 +871,7 @@ class FeatureSet(object):
         return FeatureSet.from_dict(_ujson.loads(json_str))
 
     @staticmethod
-    def from_dataframe(df: DataFrame):
+    def from_dataframe(df):
         """
         The ``from_dataframe`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
         Pandas' DataFrame or :class:`~arcgis.features.SpatialDataFrame`
