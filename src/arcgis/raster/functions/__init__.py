@@ -2454,7 +2454,7 @@ def local(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer object. If a scalar is needed for the
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     operation                            Optional int. Specifies the operation to be used.
