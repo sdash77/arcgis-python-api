@@ -1377,18 +1377,35 @@ class Portal(object):
 
         # https://dev04875.esri.com/arcgis/sharing/rest/portals/0123456789ABCDEF/usage?f=json&startTime=1436984519000&endTime=1439576519000&period=1d&vars=num&etype=geocodecnt&stype=geocode&groupby=username%2Cstype%2Cetype
 
-    def get_item_dependencies(self, itemid, num):
+    def get_item_dependencies(self, itemid):
         postdata = self._postdata()
-        postdata["num"] = num
-        return self.con.post("content/items/" + itemid + "/dependencies", postdata)
+        data = self.con.post(
+            "content/items/" + itemid + "/dependencies",
+            postdata,
+        )
+        if data["total"] > data["num"] and data["nextStart"] > 0:
+            postdata["num"] = data["total"]
+            return self.con.post(
+                "content/items/" + itemid + "/dependencies",
+                postdata,
+            )
+        else:
+            return data
 
-    def get_item_dependents_to(self, itemid, num):
+    def get_item_dependents_to(self, itemid):
         postdata = self._postdata()
-        postdata["num"] = num
-        return self.con.post(
+        data = self.con.post(
             "content/items/" + itemid + "/dependencies/listDependentsTo",
             postdata,
         )
+        if data["total"] > data["num"] and data["nextStart"] > 0:
+            postdata["num"] = data["total"]
+            return self.con.post(
+                "content/items/" + itemid + "/dependencies/listDependentsTo",
+                postdata,
+            )
+        else:
+            return data
 
     def invite_group_users(
         self, user_names, group_id, role="group_member", expiration=10080

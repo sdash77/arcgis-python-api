@@ -12121,27 +12121,25 @@ class Item(dict):
         else:
             return item_data
 
-    def dependent_upon(self, num=10):
+    def dependent_upon(self):
 
         """
         The ``dependent_upon`` method returns items, urls, etc that this item is dependent on.
-        Specify the number of records to return with parameter ``num``. Default is 10.
 
         .. note::
             This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available only
             with an ArcGIS Enterprise."""
-        return self._portal.get_item_dependencies(self.itemid, num)
+        return self._portal.get_item_dependencies(self.itemid)
 
-    def dependent_to(self, num=10):
+    def dependent_to(self):
         """
         The ``dependent_to`` method returns items, urls, etc that are dependent to this item.
-        Specify the number of records to return with parameter ``num``. Default is 10.
 
         .. note::
             This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available
              only with an ArcGIS Enterprise.
         """
-        return self._portal.get_item_dependents_to(self.itemid, num)
+        return self._portal.get_item_dependents_to(self.itemid)
 
     _RELATIONSHIP_TYPES = frozenset(
         [
