@@ -1392,10 +1392,9 @@ class Portal(object):
                 "content/items/" + itemid + "/dependencies",
                 postdata,
             )
+            # update list of data with new data list
+            data["list"].extend(new_data["list"])
 
-            # update data to include new_data in list
-            for item in new_data["list"]:
-                data["list"].append(item)
             # update data to inlcude correct nextStart and total num
             data["nextStart"] = new_data["nextStart"]
             data["num"] = data["num"] + new_data["num"]
@@ -1421,8 +1420,7 @@ class Portal(object):
             )
 
             # update data to include new_data in list
-            for item in new_data["list"]:
-                data["list"].append(item)
+            data["list"].extend(new_data["list"])
             # update data to inlcude correct nextStart and total num
             data["nextStart"] = new_data["nextStart"]
             data["num"] = data["num"] + new_data["num"]
