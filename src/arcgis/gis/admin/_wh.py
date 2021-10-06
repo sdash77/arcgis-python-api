@@ -1,5 +1,6 @@
 import os
 import json
+from typing import Optional, Union
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
 
@@ -102,7 +103,7 @@ class WebhookManager(object):
         self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def get(self, name):
+    def get(self, name: str):
         """finds a single instance of a webhook by name"""
         for wh in self.list():
             if wh.properties.name.lower() == name.lower():
@@ -112,7 +113,13 @@ class WebhookManager(object):
 
     # ----------------------------------------------------------------------
     def create(
-        self, name, url, events="ALL", number_of_failures=5, days_in_past=5, secret=None
+        self,
+        name: str,
+        url: str,
+        events: Union[list, str] = "ALL",
+        number_of_failures: int = 5,
+        days_in_past: int = 5,
+        secret: Optional[str] = None,
     ):
         """
         Creates a WebHook to monitor REST endpoints and report activities
@@ -375,12 +382,12 @@ class Webhook(object):
     # ----------------------------------------------------------------------
     def update(
         self,
-        name=None,
-        url=None,
-        events=None,
-        number_of_failures=None,
-        days_in_past=None,
-        secret=None,
+        name: Optional[str] = None,
+        url: Optional[str] = None,
+        events: Optional[Union[list, str]] = None,
+        number_of_failures: Optional[int] = None,
+        days_in_past: Optional[int] = None,
+        secret: Optional[str] = None,
     ):
         """
         The Update Webhook operation allows administrators to update any of

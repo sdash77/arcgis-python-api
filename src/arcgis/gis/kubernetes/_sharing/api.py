@@ -1,12 +1,14 @@
 """
 This contains an API to work with and manage the Kubernetes Sharing API
 """
+from __future__ import annotations
 import os
 import copy
 import json
 import imghdr
 import logging
 import tempfile
+from typing import Any, Optional
 import requests
 from urllib.parse import urlparse, urlunparse
 from urllib.request import urlretrieve
@@ -159,7 +161,7 @@ class KbertnetesPy(object):
         self.get_properties(True)
 
     # ----------------------------------------------------------------------
-    def get_properties(self, force=False):
+    def get_properties(self, force: bool = False):
         """Returns the portal properties (using cache unless force=True)."""
 
         # If we've never retrieved the properties before, or the caller is
@@ -198,7 +200,7 @@ class KbertnetesPy(object):
         return copy.deepcopy(self._properties)
 
     # ----------------------------------------------------------------------
-    def get_version(self, force=False):
+    def get_version(self, force: bool = False):
         """Returns the portal version (using cache unless force=True).
 
         .. note::
@@ -274,7 +276,9 @@ class KbertnetesPy(object):
         return {"f": "json"}
 
     # ----------------------------------------------------------------------
-    def add_group_users(self, user_names, group_id, admin_names):
+    def add_group_users(
+        self, user_names: list[str], group_id: str, admin_names: list[str]
+    ):
         """Adds users to the group specified.
 
         .. note::
@@ -314,7 +318,7 @@ class KbertnetesPy(object):
         return resp
 
     # ----------------------------------------------------------------------
-    def delete_group_thumbnail(self, group_id):
+    def delete_group_thumbnail(self, group_id: str):
         """
         Removes the group's thumbnail
 
@@ -337,24 +341,24 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def create_group(
         self,
-        title,
-        tags,
-        description=None,
-        snippet=None,
-        access="public",
-        thumbnail=None,
-        is_invitation_only=False,
-        sort_field="avgRating",
-        sort_order="desc",
-        is_view_only=False,
-        auto_join=False,
-        provider_group_name=None,
-        provider=None,
-        max_file_size=None,
-        users_update_items=False,
-        display_settings=None,
-        is_open_data=False,
-        leaving_disallowed=False,
+        title: str,
+        tags: str,
+        description: Optional[str] = None,
+        snippet: Optional[str] = None,
+        access: str = "public",
+        thumbnail: Optional[str] = None,
+        is_invitation_only: bool = False,
+        sort_field: str = "avgRating",
+        sort_order: str = "desc",
+        is_view_only: bool = False,
+        auto_join: bool = False,
+        provider_group_name: Optional[str] = None,
+        provider: Optional[str] = None,
+        max_file_size: Optional[int] = None,
+        users_update_items: bool = False,
+        display_settings: Optional[str] = None,
+        is_open_data: bool = False,
+        leaving_disallowed: bool = False,
     ):
         """
 
@@ -485,7 +489,9 @@ class KbertnetesPy(object):
             return None
 
     # ----------------------------------------------------------------------
-    def create_group_from_dict(self, group, thumbnail=None):
+    def create_group_from_dict(
+        self, group: dict[str, Any], thumbnail: Optional[str] = None
+    ):
         """Creates a group and returns a group id if successful.
 
         .. note::
@@ -532,7 +538,7 @@ class KbertnetesPy(object):
             return resp["group"]
 
     # ----------------------------------------------------------------------
-    def delete_group(self, group_id):
+    def delete_group(self, group_id: str):
         """Deletes a group.
 
         ================  ========================================================
@@ -552,7 +558,7 @@ class KbertnetesPy(object):
             return resp.get("success")
 
     # ----------------------------------------------------------------------
-    def get_group(self, group_id):
+    def get_group(self, group_id: str):
         """Returns group information for the specified group group_id.
 
         Arguments
@@ -598,7 +604,7 @@ class KbertnetesPy(object):
         )
 
     # ----------------------------------------------------------------------
-    def get_group_thumbnail(self, group_id):
+    def get_group_thumbnail(self, group_id: str):
         """Returns the bytes that make up the thumbnail for the specified group group_id.
 
         Arguments
@@ -627,7 +633,7 @@ class KbertnetesPy(object):
                 )
 
     # ----------------------------------------------------------------------
-    def get_group_members(self, group_id):
+    def get_group_members(self, group_id: str):
         """Returns members of the specified group.
 
         Arguments
@@ -661,7 +667,7 @@ class KbertnetesPy(object):
         )
 
     # ----------------------------------------------------------------------
-    def get_group_content(self, group_id, max_items=10):
+    def get_group_content(self, group_id: str, max_items: int = 10):
         """Returns members of the specified group.
 
         Arguments
@@ -710,7 +716,11 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def invite_group_users(
-        self, user_names, group_id, role="group_member", expiration=10080
+        self,
+        user_names: list[str],
+        group_id: str,
+        role: str = "group_member",
+        expiration: int = 10080,
     ):
         """Invites users to a group.
 
@@ -752,7 +762,7 @@ class KbertnetesPy(object):
             return resp.get("success")
 
     # ----------------------------------------------------------------------
-    def leave_group(self, group_id):
+    def leave_group(self, group_id: str):
         """Removes the logged in user from the specified group.
 
         Requires:
@@ -771,7 +781,7 @@ class KbertnetesPy(object):
             return resp.get("success")
 
     # ----------------------------------------------------------------------
-    def reassign_group(self, group_id, target_owner):
+    def reassign_group(self, group_id: str, target_owner: str):
         """Reassigns a group to another owner.
 
 
@@ -795,7 +805,7 @@ class KbertnetesPy(object):
             return resp.get("success")
 
     # ----------------------------------------------------------------------
-    def remove_group_users(self, user_names, group_id):
+    def remove_group_users(self, user_names: list[str], group_id: str):
         """Remove users from a group.
 
         ================  ========================================================
@@ -822,12 +832,12 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def search_groups(
         self,
-        q,
-        sort_field="title",
-        sort_order="asc",
-        max_groups=1000,
-        outside_org=False,
-        categories=None,
+        q: str,
+        sort_field: str = "title",
+        sort_order: str = "asc",
+        max_groups: int = 1000,
+        outside_org: bool = False,
+        categories: Optional[int] = None,
     ):
         """Searches for portal groups.
 
@@ -931,7 +941,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def share_item_as_group_admin(
-        self, item_id, groups="", allow_members_to_edit=False
+        self, item_id: str, groups: str = "", allow_members_to_edit: bool = False
     ):
         """Shares public item with the specified list of groups belonging to caller
 
@@ -962,7 +972,7 @@ class KbertnetesPy(object):
             return resp
 
     # ----------------------------------------------------------------------
-    def unshare_item_as_group_admin(self, item_id, groups=""):
+    def unshare_item_as_group_admin(self, item_id: str, groups: str = ""):
         """Stops sharing public item with the specified list of groups belonging to caller
 
         ================  ========================================================
@@ -990,63 +1000,63 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def update_group(
         self,
-        group_id,
-        title=None,
-        tags=None,
-        description=None,
-        snippet=None,
-        access=None,
-        is_invitation_only=None,
-        sort_field=None,
-        sort_order=None,
-        is_view_only=None,
-        thumbnail=None,
-        max_file_size=None,
-        users_update_items=None,
-        clear_empty_fields=False,
-        display_settings=None,
-        is_open_data=False,
-        leaving_disallowed=False,
+        group_id: str,
+        title: Optional[str] = None,
+        tags: Optional[str] = None,
+        description: Optional[str] = None,
+        snippet: Optional[str] = None,
+        access: Optional[str] = None,
+        is_invitation_only: Optional[bool] = None,
+        sort_field: Optional[str] = None,
+        sort_order: Optional[str] = None,
+        is_view_only: Optional[bool] = None,
+        thumbnail: Optional[str] = None,
+        max_file_size: Optional[int] = None,
+        users_update_items: Optional[bool] = None,
+        clear_empty_fields: bool = False,
+        display_settings: Optional[str] = None,
+        is_open_data: bool = False,
+        leaving_disallowed: bool = False,
     ):
         """Updates a group.
 
         .. note::
             Only provide the values for the arguments you wish to update.
 
-        ==================  ========================================================
-        **Argument**        **Description**
-        ------------------  --------------------------------------------------------
-        group_id              required string, the group to modify
-        ------------------  --------------------------------------------------------
-        title                 optional string, name of the group
-        ------------------  --------------------------------------------------------
-        tags                  optional string, comma-delimited list of tags
-        ------------------  --------------------------------------------------------
-        description           optional string, describes group in detail
-        ------------------  --------------------------------------------------------
-        snippet               optional string, <250 characters summarizes group
-        ------------------  --------------------------------------------------------
-        access                optional string, can be private, public, or org
-        ------------------  --------------------------------------------------------
-        thumbnail             optional string, URL or file location to group image
-        ------------------  --------------------------------------------------------
-        is_invitation_only    optional boolean, defines whether users can join by request.
-        ------------------  --------------------------------------------------------
-        sort_field            optional string, specifies how shared items with the group are sorted.
-        ------------------  --------------------------------------------------------
-        sort_order            optional string, asc or desc for ascending or descending.
-        ------------------  --------------------------------------------------------
-        is_view_only          optional boolean, defines whether the group is searchable
-        ------------------  ---------------------------------------------------------
-        max_file_size       Optional integer.  This is the maximum file file allowed
-                            be uploaded/shared to a group. Default value is: 1024000
-        ------------------  ---------------------------------------------------------
-        users_update_items  Optional boolean.  Members can update all items in this
-                            group.  Updates to an item can include changes to the
-                            item's description, tags, metadata, as well as content.
-                            This option can't be disabled once the group has
-                            been created. Default is False.
-        ==================  ========================================================
+        ==================      ========================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------
+        group_id                Required string, the group to modify
+        ------------------      --------------------------------------------------------
+        title                   Optional string, name of the group
+        ------------------      --------------------------------------------------------
+        tags                    Optional string, comma-delimited list of tags
+        ------------------      --------------------------------------------------------
+        description             Optional string, describes group in detail
+        ------------------      --------------------------------------------------------
+        snippet                 Optional string, <250 characters summarizes group
+        ------------------      --------------------------------------------------------
+        access                  Optional string, can be private, public, or org
+        ------------------      --------------------------------------------------------
+        thumbnail               Optional string, URL or file location to group image
+        ------------------      --------------------------------------------------------
+        is_invitation_only      Optional boolean, defines whether users can join by request.
+        ------------------      --------------------------------------------------------
+        sort_field              Optional string, specifies how shared items with the group are sorted.
+        ------------------      --------------------------------------------------------
+        sort_order              Optional string, asc or desc for ascending or descending.
+        ------------------      --------------------------------------------------------
+        is_view_only            Optional boolean, defines whether the group is searchable
+        ------------------      ---------------------------------------------------------
+        max_file_size           Optional integer.  This is the maximum file file allowed
+                                be uploaded/shared to a group. Default value is: 1024000
+        ------------------      ---------------------------------------------------------
+        users_update_items      Optional boolean.  Members can update all items in this
+                                group.  Updates to an item can include changes to the
+                                item's description, tags, metadata, as well as content.
+                                This option can't be disabled once the group has
+                                been created. Default is False.
+        ==================      ========================================================
 
         :return:
             a boolean indicating success
@@ -1170,7 +1180,7 @@ class KbertnetesPy(object):
         return self.con.post("community/users", postdata)
 
     # ----------------------------------------------------------------------
-    def get_user(self, username):
+    def get_user(self, username: str):
         """Returns the user information for the specified username.
 
         Arguments
@@ -1224,7 +1234,11 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def get_org_users(
-        self, max_users=1000, exclude_system=True, user_type=None, role=None
+        self,
+        max_users: int = 1000,
+        exclude_system: bool = True,
+        user_type: Optional[str] = None,
+        role: Optional[str] = None,
     ):
         """Returns all users within the portal organization.
 
@@ -1313,14 +1327,15 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def add_item(
         self,
-        item_properties,
-        data=None,
-        thumbnail=None,
-        metadata=None,
-        owner=None,
-        folder=None,
+        item_properties: dict[str, Any],
+        data: Optional[str] = None,
+        thumbnail: Optional[str] = None,
+        metadata: Optional[str] = None,
+        owner: Optional[str] = None,
+        folder: Optional[str] = None,
     ):
-        """Adds content to a Portal.
+        """
+        Adds content to a Portal.
 
 
         .. note::
@@ -1336,58 +1351,58 @@ class KbertnetesPy(object):
             be provided.
 
 
-        ============     ====================================================
-        **Argument**     **Description**
-        ------------     ----------------------------------------------------
-        item_properties  required dictionary, see below for the keys and values
-        ------------     ----------------------------------------------------
-        data             optional string, either a path or URL to the data
-        ------------     ----------------------------------------------------
-        thumbnail        optional string, either a path or URL to an image
-        ------------     ----------------------------------------------------
-        metadata         optional string, either a path or URL to metadata.
-        ------------     ----------------------------------------------------
-        owner            optional string, defaults to logged in user.
-        ------------     ----------------------------------------------------
-        folder           optional string, content folder where placing item
-        ============     ====================================================
+        ================    ====================================================
+        **Argument**        **Description**
+        ----------------    ----------------------------------------------------
+        item_properties     Required dictionary, see below for the keys and values
+        ----------------    ----------------------------------------------------
+        data                Optional string, either a path or URL to the data
+        ----------------    ----------------------------------------------------
+        thumbnail           Optional string, either a path or URL to an image
+        ----------------    ----------------------------------------------------
+        metadata            Optional string, either a path or URL to metadata.
+        ----------------    ----------------------------------------------------
+        owner               Optional string, defaults to logged in user.
+        ----------------    ----------------------------------------------------
+        folder              Optional string, content folder where placing item
+        ================    ====================================================
 
 
-        ================  ============================================================================
-         **Key**           **Value**
-        ----------------  ----------------------------------------------------------------------------
-        type              optional string, indicates type of item.  See URL 1 below for valid values.
-        ----------------  ----------------------------------------------------------------------------
-        typeKeywords      optional string list.  Lists all sub-types.  See URL 1 for valid values.
-        ----------------  ----------------------------------------------------------------------------
-        description       optional string.  Description of the item.
-        ----------------  ----------------------------------------------------------------------------
-        title             optional string.  Name of the item.
-        ----------------  ----------------------------------------------------------------------------
-        url               optional string.  URL to item that are based on URLs.
-        ----------------  ----------------------------------------------------------------------------
-        tags              optional string of comma-separated values.  Used for searches on items.
-        ----------------  ----------------------------------------------------------------------------
-        snippet           optional string.  Provides a very short summary of the what the item is.
-        ----------------  ----------------------------------------------------------------------------
-        extent            optional string with comma separated values for min x, min y, max x, max y.
-        ----------------  ----------------------------------------------------------------------------
-        spatialReference  optional string.  Coordinate system that the item is in.
-        ----------------  ----------------------------------------------------------------------------
-        accessInformation optional string.  Information on the source of the content.
-        ----------------  ----------------------------------------------------------------------------
-        licenseInfo       optional string, any license information or restrictions regarding the content.
-        ----------------  ----------------------------------------------------------------------------
-        culture           optional string.  Locale, country and language information.
-        ----------------  ----------------------------------------------------------------------------
-        access            optional string.  Valid values: private, shared, org, or public.
-        ----------------  ----------------------------------------------------------------------------
-        commentsEnabled   optional boolean.  Default is true.  Controls whether comments are allowed.
-        ----------------  ----------------------------------------------------------------------------
-        culture           optional string.  Language and country information.
-        ----------------  ----------------------------------------------------------------------------
-        overwrite         Optional boolean. Default is `false`. Controls whether item can be overwritten.
-        ================  ============================================================================
+        ==================      ============================================================================
+         **Key**                **Value**
+        ------------------      ----------------------------------------------------------------------------
+        type                    Optional string, indicates type of item.  See URL 1 below for valid values.
+        ------------------      ----------------------------------------------------------------------------
+        typeKeywords            Optional string list.  Lists all sub-types.  See URL 1 for valid values.
+        ------------------      ----------------------------------------------------------------------------
+        description             Optional string.  Description of the item.
+        ------------------      ----------------------------------------------------------------------------
+        title                   Optional string.  Name of the item.
+        ------------------      ----------------------------------------------------------------------------
+        url                     Optional string.  URL to item that are based on URLs.
+        ------------------      ----------------------------------------------------------------------------
+        tags                    Optional string of comma-separated values.  Used for searches on items.
+        ------------------      ----------------------------------------------------------------------------
+        snippet                 Optional string.  Provides a very short summary of the what the item is.
+        ------------------      ----------------------------------------------------------------------------
+        extent                  Optional string with comma separated values for min x, min y, max x, max y.
+        ------------------      ----------------------------------------------------------------------------
+        spatialReference        Optional string.  Coordinate system that the item is in.
+        ------------------      ----------------------------------------------------------------------------
+        accessInformation       Optional string.  Information on the source of the content.
+        ------------------      ----------------------------------------------------------------------------
+        licenseInfo             Optional string, any license information or restrictions regarding the content.
+        ------------------      ----------------------------------------------------------------------------
+        culture                 Optional string.  Locale, country and language information.
+        ------------------      ----------------------------------------------------------------------------
+        access                  Optional string.  Valid values: private, shared, org, or public.
+        ------------------      ----------------------------------------------------------------------------
+        commentsEnabled         Optional boolean.  Default is true.  Controls whether comments are allowed.
+        ------------------      ----------------------------------------------------------------------------
+        culture                 Optional string.  Language and country information.
+        ------------------      ----------------------------------------------------------------------------
+        overwrite               Optional boolean. Default is `false`. Controls whether item can be overwritten.
+        ==================      ============================================================================
 
 
         URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
@@ -1443,17 +1458,17 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def publish_item(
         self,
-        itemid,
-        data=None,
-        text=None,
-        fileType="serviceDefinition",
-        publishParameters=None,
-        outputType=None,
-        overwrite=False,
-        owner=None,
-        folder=None,
-        buildInitialCache=False,
-        item_id=None,
+        itemid: str,
+        data: Optional[str] = None,
+        text: Optional[str] = None,
+        fileType: str = "serviceDefinition",
+        publishParameters: Optional[dict[str, Any]] = None,
+        outputType: Optional[str] = None,
+        overwrite: bool = False,
+        owner: Optional[str] = None,
+        folder: Optional[str] = None,
+        buildInitialCache: bool = False,
+        item_id: Optional[str] = None,
     ):
         """
         Publishes a hosted service based on an existing source item.
@@ -1509,24 +1524,24 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def create_service(
         self,
-        name,
-        service_description="",
-        has_static_data=False,
-        max_record_count=1000,
-        supported_query_formats="JSON",
-        capabilities=None,
-        description="",
-        copyright_text="",
-        wkid=102100,
-        service_type="imageService",
-        create_params=None,
-        owner=None,
-        folder=None,
-        common_params=None,
-        is_view=False,
-        item_id=None,
-        tags=None,
-        snippet=None,
+        name: str,
+        service_description: str = "",
+        has_static_data: bool = False,
+        max_record_count: int = 1000,
+        supported_query_formats: str = "JSON",
+        capabilities: Optional[str] = None,
+        description: str = "",
+        copyright_text: str = "",
+        wkid: int = 102100,
+        service_type: int = "imageService",
+        create_params: Optional[str] = None,
+        owner: Optional[str] = None,
+        folder: Optional[str] = None,
+        common_params: Optional[str] = None,
+        is_view: bool = False,
+        item_id: Optional[str] = None,
+        tags: Optional[str] = None,
+        snippet: Optional[str] = None,
     ):
         """Creates service.
          #"Create,Delete,Query,Update,Editing",
@@ -1600,7 +1615,7 @@ class KbertnetesPy(object):
             return resp["itemId"]
 
     # ----------------------------------------------------------------------
-    def create_folder(self, owner, title):
+    def create_folder(self, owner: str, title: str):
         """Creates a folder for the given user with the given title.
 
         ================  ========================================================
@@ -1622,7 +1637,7 @@ class KbertnetesPy(object):
             return resp["folder"]
 
     # ----------------------------------------------------------------------
-    def delete_folder(self, owner, folder):
+    def delete_folder(self, owner: str, folder: str):
         """Deletes folder owned by owner with the given folder name.
 
         ================  ========================================================
@@ -1649,20 +1664,26 @@ class KbertnetesPy(object):
                 return resp.get("success")
 
     # ----------------------------------------------------------------------
-    def delete_item(self, item_id, owner, folder=None, force=False):
+    def delete_item(
+        self,
+        item_id: str,
+        owner: str,
+        folder: Optional[str] = None,
+        force: bool = False,
+    ):
         """Deletes an item.
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        item_id           required string, unique identifier for the item
+        item_id           Required string, unique identifier for the item
         ----------------  --------------------------------------------------------
-        owner             required string, owner of the item currently
+        owner             Required string, owner of the item currently
         ----------------  --------------------------------------------------------
-        folder            optional string, folder containing the item.  Defaults
+        folder            Optional string, folder containing the item.  Defaults
                           to the root folder.
         ----------------  --------------------------------------------------------
-        force             optional bool. If True, will force delete orphaned items
+        force             Optional bool. If True, will force delete orphaned items
         ================  ========================================================
 
         :return:
@@ -1684,7 +1705,7 @@ class KbertnetesPy(object):
             return resp.get("success")
 
     # ----------------------------------------------------------------------
-    def move_item(self, itemid, owner, current_folder, folder_id):
+    def move_item(self, itemid: str, owner: str, current_folder: str, folder_id: str):
         """Moves the item to given folder"""
 
         path = "content/users/" + owner
@@ -1698,7 +1719,7 @@ class KbertnetesPy(object):
         return resp
 
     # ----------------------------------------------------------------------
-    def get_folder_id(self, owner, folder_name):
+    def get_folder_id(self, owner: str, folder_name: str):
         """Finds the folder for a particular owner and returns its id.
 
         ================  ========================================================
@@ -1723,7 +1744,7 @@ class KbertnetesPy(object):
         return None  # no such folder found for this owner
 
     # ----------------------------------------------------------------------
-    def can_delete(self, item_id, owner, folder=None):
+    def can_delete(self, item_id: str, owner: str, folder: Optional[str] = None):
         """checks if you can delete the item.
 
         ================  ========================================================
@@ -1752,7 +1773,13 @@ class KbertnetesPy(object):
             return return_tuple
 
     # ----------------------------------------------------------------------
-    def protect_item(self, item_id, owner, folder=None, enable=True):
+    def protect_item(
+        self,
+        item_id: str,
+        owner: str,
+        folder: Optional[str] = None,
+        enable: bool = True,
+    ):
         """Enable or disable delete protection on the item
 
         ================  ========================================================
@@ -1788,14 +1815,14 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def update_item(
         self,
-        itemid,
-        item_properties=None,
-        data=None,
-        thumbnail=None,
-        metadata=None,
-        owner=None,
-        folder=None,
-        large_thumbnail=None,
+        itemid: str,
+        item_properties: Optional[dict[str, Any]] = None,
+        data: Optional[str] = None,
+        thumbnail: Optional[str] = None,
+        metadata: Optional[str] = None,
+        owner: Optional[str] = None,
+        folder: Optional[str] = None,
+        large_thumbnail: Optional[str] = None,
     ):
         """Updates an item in a Portal.
 
@@ -1817,55 +1844,55 @@ class KbertnetesPy(object):
         ==================     ====================================================
         **Argument**           **Description**
         ------------------     ----------------------------------------------------
-        item_properties        optional dictionary, see below for the keys and values
+        item_properties        Optional dictionary, see below for the keys and values
         ------------------     ----------------------------------------------------
-        data                   optional string, either a path or URL to the data
+        data                   Optional string, either a path or URL to the data
         ------------------     ----------------------------------------------------
-        thumbnail              optional string, either a path or URL to an image
+        thumbnail              Optional string, either a path or URL to an image
         ------------------     ----------------------------------------------------
-        metadata               optional string, either a path or URL to metadata.
+        metadata               Optional string, either a path or URL to metadata.
         ------------------     ----------------------------------------------------
-        owner                  optional string, defaults to logged in user.
+        owner                  Optional string, defaults to logged in user.
         ------------------     ----------------------------------------------------
-        folder                 optional string, content folder where placing item
+        folder                 Optional string, content folder where placing item
         ------------------     ----------------------------------------------------
-        large_thumbnail        optional string, either a path or URL to an image
+        large_thumbnail        Optional string, either a path or URL to an image
         ==================     ====================================================
 
 
-        ================  ============================================================================
-         **Key**           **Value**
-        ----------------  ----------------------------------------------------------------------------
-        type              optional string, indicates type of item.  See URL 1 below for valid values.
-        ----------------  ----------------------------------------------------------------------------
-        typeKeywords      optional string list.  Lists all sub-types.  See URL 1 for valid values.
-        ----------------  ----------------------------------------------------------------------------
-        description       optional string.  Description of the item.
-        ----------------  ----------------------------------------------------------------------------
-        title             optional string.  Name of the item.
-        ----------------  ----------------------------------------------------------------------------
-        url               optional string.  URL to item that are based on URLs.
-        ----------------  ----------------------------------------------------------------------------
-        tags              optional string of comma-separated values.  Used for searches on items.
-        ----------------  ----------------------------------------------------------------------------
-        snippet           optional string.  Provides a very short summary of the what the item is.
-        ----------------  ----------------------------------------------------------------------------
-        extent            optional string with comma separated values for min x, min y, max x, max y.
-        ----------------  ----------------------------------------------------------------------------
-        spatialReference  optional string.  Coordinate system that the item is in.
-        ----------------  ----------------------------------------------------------------------------
-        accessInformation optional string.  Information on the source of the content.
-        ----------------  ----------------------------------------------------------------------------
-        licenseInfo       optional string, any license information or restrictions regarding the content.
-        ----------------  ----------------------------------------------------------------------------
-        culture           optional string.  Locale, country and language information.
-        ----------------  ----------------------------------------------------------------------------
-        access            optional string.  Valid values: private, shared, org, or public.
-        ----------------  ----------------------------------------------------------------------------
-        commentsEnabled   optional boolean.  Default is true.  Controls whether comments are allowed.
-        ----------------  ----------------------------------------------------------------------------
-        culture           optional string.  Language and country information.
-        ================  ============================================================================
+        =================   ============================================================================
+         **Key**            **Value**
+        -----------------   ----------------------------------------------------------------------------
+        type                Optional string, indicates type of item.  See URL 1 below for valid values.
+        -----------------   ----------------------------------------------------------------------------
+        typeKeywords        Optional string list.  Lists all sub-types.  See URL 1 for valid values.
+        -----------------   ----------------------------------------------------------------------------
+        description         Optional string.  Description of the item.
+        -----------------   ----------------------------------------------------------------------------
+        title               Optional string.  Name of the item.
+        -----------------   ----------------------------------------------------------------------------
+        url                 Optional string.  URL to item that are based on URLs.
+        -----------------   ----------------------------------------------------------------------------
+        tags                Optional string of comma-separated values.  Used for searches on items.
+        -----------------   ----------------------------------------------------------------------------
+        snippet             Optional string.  Provides a very short summary of the what the item is.
+        -----------------   ----------------------------------------------------------------------------
+        extent              Optional string with comma separated values for min x, min y, max x, max y.
+        -----------------   ----------------------------------------------------------------------------
+        spatialReference    Optional string.  Coordinate system that the item is in.
+        -----------------   ----------------------------------------------------------------------------
+        accessInformation   Optional string.  Information on the source of the content.
+        -----------------   ----------------------------------------------------------------------------
+        licenseInfo         Optional string, any license information or restrictions regarding the content.
+        -----------------   ----------------------------------------------------------------------------
+        culture             Optional string.  Locale, country and language information.
+        -----------------   ----------------------------------------------------------------------------
+        access              Optional string.  Valid values: private, shared, org, or public.
+        -----------------   ----------------------------------------------------------------------------
+        commentsEnabled     Optional boolean.  Default is true.  Controls whether comments are allowed.
+        -----------------   ----------------------------------------------------------------------------
+        culture             Optional string.  Language and country information.
+        =================   ============================================================================
 
 
         URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
@@ -1937,7 +1964,7 @@ class KbertnetesPy(object):
             return resp.get("success")
 
     # ----------------------------------------------------------------------
-    def reassign_user(self, username, target_username):
+    def reassign_user(self, username: str, target_username: str):
         """Reassigns all of a user's items and groups to another user.
 
         Items are transferred to the target user into a folder named
@@ -1951,9 +1978,9 @@ class KbertnetesPy(object):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        username          required string, user who will have items/groups transferred
+        username          Required string, user who will have items/groups transferred
         ----------------  --------------------------------------------------------
-        target_username   required string, user who will own items/groups after this.
+        target_username   Required string, user who will own items/groups after this.
         ================  ========================================================
 
         :return:
@@ -1968,13 +1995,13 @@ class KbertnetesPy(object):
             return resp.get("success")
 
     # ----------------------------------------------------------------------
-    def user_folders(self, owner):
+    def user_folders(self, owner: str):
         resp = self._contents_page(owner, None, 1, 10)
         results = resp.get("folders")
         return results
 
     # ----------------------------------------------------------------------
-    def user_items(self, owner, folder, max_results=100):
+    def user_items(self, owner: str, folder: str, max_results: int = 100):
         count = 0
         resp = self._contents_page(owner, folder, 1, min(max_results, 100))
         results = resp.get("items")
@@ -2058,7 +2085,7 @@ class KbertnetesPy(object):
             )
 
     # ----------------------------------------------------------------------
-    def delete_user(self, username, reassign_to=None):
+    def delete_user(self, username: str, reassign_to: Optional[str] = None):
         """Deletes a user from the portal, optionally deleting or reassigning groups and items.
 
         .. note::
@@ -2071,9 +2098,9 @@ class KbertnetesPy(object):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        username          required string, the name of the user
+        username          Required string, the name of the user
         ----------------  --------------------------------------------------------
-        reassign_to       optional string, new owner of items and groups
+        reassign_to       Optional string, new owner of items and groups
         ================  ========================================================
 
         :return:
@@ -2094,37 +2121,40 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def share_item(
         self,
-        item_id,
-        owner,
-        folder=None,
-        everyone=False,
-        org=False,
-        groups="",
-        allow_members_to_edit=False,
+        item_id: str,
+        owner: str,
+        folder: Optional[str] = None,
+        everyone: bool = False,
+        org: bool = False,
+        groups: str = "",
+        allow_members_to_edit: bool = False,
     ):
         """Shares an item with the specified list of groups
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        item_id           required string, unique identifier for the item
-        ----------------  --------------------------------------------------------
-        owner             required string, owner of the item currently
-        ----------------  --------------------------------------------------------
-        folder            optional string, folder containing the item.  Defaults to the root folder.
-        ----------------  --------------------------------------------------------
-        everyone          optional boolean, share with everyone
-        ----------------  --------------------------------------------------------
-        org               optional boolean, share with the organization
-        ----------------  --------------------------------------------------------
-        groups            optional string,
-                          comma-separated list of group IDs with which the item will be shared.
-        ----------------  --------------------------------------------------------
-        allow_members_to_edit  optional boolean to allow item to be shared with groups that allow shared update
-        ================  ========================================================
+        =====================   ========================================================
+        **Argument**            **Description**
+        ---------------------   --------------------------------------------------------
+        item_id                 Required string, unique identifier for the item
+        ---------------------   --------------------------------------------------------
+        owner                   Required string, owner of the item currently
+        ---------------------   --------------------------------------------------------
+        folder                  Optional string, folder containing the item.  
+                                Defaults to the root folder.
+        ---------------------   --------------------------------------------------------
+        everyone                Optional boolean, share with everyone
+        ---------------------   --------------------------------------------------------
+        org                     Optional boolean, share with the organization
+        ---------------------   --------------------------------------------------------
+        groups                  Optional string,
+                                Comma-separated list of group IDs with which the item will 
+                                be shared.
+        ---------------------   --------------------------------------------------------
+        allow_members_to_edit   Optional boolean to allow item to be shared with groups 
+                                that allow shared update
+        =====================   ========================================================
 
         :return:
-            dict with key "notSharedWith" containing array of groups with which the item could not be shared.
+            Dictionary with key "notSharedWith" containing array of groups with which the item could not be shared.
 
 
 
@@ -2148,11 +2178,11 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def reset_user(
         self,
-        username,
-        password,
-        new_password=None,
-        new_security_question=None,
-        new_security_answer=None,
+        username: str,
+        password: str,
+        new_password: Optional[str] = None,
+        new_security_question: Optional[int] = None,
+        new_security_answer: Optional[str] = None,
     ):
         """Resets a user's password, security question, and/or security answer.
 
@@ -2164,19 +2194,19 @@ class KbertnetesPy(object):
             If a new security question is specified, a new security answer should
             be provided.
 
-        =====================  ========================================================
-        **Argument**           **Description**
+        =====================   ========================================================
+        **Argument**            **Description**
         ---------------------   --------------------------------------------------------
-        username               required string, account being reset
+        username                Required string, account being reset
         ---------------------   --------------------------------------------------------
-        password               required string, current password
+        password                Required string, current password
         ---------------------   --------------------------------------------------------
-        new_password           optional string, new password if resetting password
+        new_password            Optional string, new password if resetting password
         ---------------------   --------------------------------------------------------
-        new_security_question  optional int, new security question if desired
+        new_security_question   Optional int, new security question if desired
         ---------------------   --------------------------------------------------------
-        new_security_answer    optional string, new security question answer if desired
-        =====================  ========================================================
+        new_security_answer     Optional string, new security question answer if desired
+        =====================   ========================================================
 
         :return:
             a boolean, indicating success
@@ -2197,19 +2227,21 @@ class KbertnetesPy(object):
             return resp.get("success")
 
     # ----------------------------------------------------------------------
-    def unshare_item(self, item_id, owner, folder=None, groups=""):
+    def unshare_item(
+        self, item_id: str, owner: str, folder: Optional[str] = None, groups: str = ""
+    ):
         """Stops sharing the item with the specified list of groups
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        item_id           required string, unique identifier for the item
+        item_id           Required string, unique identifier for the item
         ----------------  --------------------------------------------------------
-        owner             required string, owner of the item currently
+        owner             Required string, owner of the item currently
         ----------------  --------------------------------------------------------
-        folder            optional string, folder containing the item.  Defaults to the root folder.
+        folder            Optional string, folder containing the item.  Defaults to the root folder.
         ----------------  --------------------------------------------------------
-        groups            optional string,
+        groups            Optional string,
                           comma-separated list of group IDs with which the item will be unshared.
         ================  ========================================================
 
@@ -2234,14 +2266,14 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def search_users(
         self,
-        q,
-        sort_field="username",
-        sort_order="asc",
-        max_users=1000,
-        outside_org=False,
-        exclude_system=True,
-        user_type=None,
-        role=None,
+        q: str,
+        sort_field: str = "username",
+        sort_order: str = "asc",
+        max_users: int = 1000,
+        outside_org: bool = False,
+        exclude_system: bool = True,
+        user_type: Optional[str] = None,
+        role: Optional[str] = None,
     ):
         """Searches portal users.
 
@@ -2357,7 +2389,7 @@ class KbertnetesPy(object):
         return results
 
     # ----------------------------------------------------------------------
-    def get_item(self, itemid):
+    def get_item(self, itemid: str):
         """Returns the item information for the specified item.
 
         Arguments
@@ -2424,7 +2456,9 @@ class KbertnetesPy(object):
         return self.con.post("content/items/" + itemid, self._postdata())
 
     # ----------------------------------------------------------------------
-    def get_item_data(self, itemid, try_json=True, folder=None):
+    def get_item_data(
+        self, itemid: str, try_json: bool = True, folder: Optional[str] = None
+    ):
         # print('content/items/' + itemid + '/data')
         return self.con.get(
             "content/items/" + itemid + "/data", try_json=try_json, out_folder=folder
@@ -2452,17 +2486,17 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def update_user(
         self,
-        username,
-        access=None,
-        preferred_view=None,
-        description=None,
-        tags=None,
-        thumbnail=None,
-        fullname=None,
-        email=None,
-        culture=None,
-        region=None,
-        user_type=None,
+        username: str,
+        access: Optional[str] = None,
+        preferred_view: Optional[str] = None,
+        description: Optional[str] = None,
+        tags: Optional[str] = None,
+        thumbnail: Optional[str] = None,
+        fullname: Optional[str] = None,
+        email: Optional[str] = None,
+        culture: Optional[str] = None,
+        region: Optional[str] = None,
+        user_type: Optional[str] = None,
     ):
         """Updates a user's properties.
 
@@ -2475,26 +2509,26 @@ class KbertnetesPy(object):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        username          required string, name of the user to be updated.
+        username          Required string, name of the user to be updated.
         ----------------  --------------------------------------------------------
-        access            optional string, values: private, org, public
+        access            Optional string, values: private, org, public
         ----------------  --------------------------------------------------------
-        preferred_view    optional string, values: Web, GIS, null
+        preferred_view    Optional string, values: Web, GIS, null
         ----------------  --------------------------------------------------------
-        description       optional string, a description of the user.
+        description       Optional string, a description of the user.
         ----------------  --------------------------------------------------------
-        tags              optional string, comma-separated tags for searching
+        tags              Optional string, comma-separated tags for searching
         ----------------  --------------------------------------------------------
-        thumbnail         optional string, path or url to a file.  can be PNG, GIF,
+        thumbnail         Optional string, path or url to a file.  can be PNG, GIF,
                                   JPEG, max size 1 MB
         ----------------  --------------------------------------------------------
-        fullname          optional string, name of the user, only for built-in users
+        fullname          Optional string, name of the user, only for built-in users
         ----------------  --------------------------------------------------------
-        email             optional string, email address, only for built-in users
+        email             Optional string, email address, only for built-in users
         ----------------  --------------------------------------------------------
-        culture           optional string, two-letter language code, fr for example
+        culture           Optional string, two-letter language code, fr for example
         ----------------  --------------------------------------------------------
-        region            optional string, two-letter country code, FR for example
+        region            Optional string, two-letter country code, FR for example
         ================  ========================================================
 
         :return:
@@ -2546,11 +2580,11 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def reassign_item(
         self,
-        item_id,
-        current_owner,
-        target_owner,
-        current_folder=None,
-        target_folder=None,
+        item_id: str,
+        current_owner: str,
+        target_owner: str,
+        current_folder: Optional[str] = None,
+        target_folder: Optional[str] = None,
     ):
         """Allows the administrator to reassign a single item from one user to another.
 
@@ -2599,7 +2633,7 @@ class KbertnetesPy(object):
         return self.con.post("portals/self/roles", postdata)
 
     # ----------------------------------------------------------------------
-    def create_role(self, name, description):
+    def create_role(self, name: str, description: str):
         """Creates a custom role with specified name and description
 
         :return:
@@ -2614,7 +2648,7 @@ class KbertnetesPy(object):
             return resp["id"]
 
     # ----------------------------------------------------------------------
-    def get_org_roles(self, max_roles=1000):
+    def get_org_roles(self, max_roles: int = 1000):
         """Returns all roles within the portal organization.
 
         Arguments
@@ -2641,7 +2675,7 @@ class KbertnetesPy(object):
         return results
 
     # ----------------------------------------------------------------------
-    def update_user_role(self, username, role):
+    def update_user_role(self, username: str, role: str):
         """Updates a user's role.
 
         .. note::
@@ -2671,13 +2705,13 @@ class KbertnetesPy(object):
     #### END ROLE OPERATIONS  #############################################
     #### ITEM OPERATIONS  #################################################
     # ----------------------------------------------------------------------
-    def get_item_dependencies(self, itemid):
+    def get_item_dependencies(self, itemid: str):
         return self.con.post(
             "content/items/" + itemid + "/dependencies", self._postdata()
         )
 
     # ----------------------------------------------------------------------
-    def get_item_dependents_to(self, itemid):
+    def get_item_dependents_to(self, itemid: str):
         return self.con.post(
             "content/items/" + itemid + "/dependencies/listDependentsTo",
             self._postdata(),
@@ -2686,14 +2720,14 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     def search(
         self,
-        q,
+        q: str,
         bbox=None,
-        sort_field="title",
-        sort_order="asc",
-        max_results=1000,
-        outside_org=False,
-        categories=None,
-        category_filters=None,
+        sort_field: str = "title",
+        sort_order: str = "asc",
+        max_results: int = 1000,
+        outside_org: bool = False,
+        categories: Optional[str] = None,
+        category_filters: Optional[str] = None,
     ):
 
         if not outside_org:
@@ -2736,7 +2770,7 @@ class KbertnetesPy(object):
 
     #### END ITEM OPERATIONS  #############################################
     # ----------------------------------------------------------------------
-    def signup(self, username, password, fullname, email):
+    def signup(self, username: str, password: str, fullname: str, email: str):
         """Signs up users to an instance of Portal for ArcGIS.
 
         .. note::
@@ -2783,7 +2817,7 @@ class KbertnetesPy(object):
             return resp.get("success")
 
     # ----------------------------------------------------------------------
-    def login(self, username, password, expiration=60):
+    def login(self, username: str, password: str, expiration: int = 60):
         """Logs into the portal using username/password.
 
         .. note::
@@ -2931,7 +2965,7 @@ class KbertnetesPy(object):
         return self.con.post("portals/self/invitations", postdata)
 
     # ----------------------------------------------------------------------
-    def generate_token(self, username, password, expiration=60):
+    def generate_token(self, username: str, password: str, expiration: int = 60):
         """Generates and returns a new token, but doesn't re-login.
 
         .. note::

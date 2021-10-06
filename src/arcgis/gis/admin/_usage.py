@@ -4,6 +4,7 @@ Provides functions to gather usage statistics for Portal/ArcGIS Online
 import os
 import time
 import datetime
+from typing import Optional
 from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
 from ..._impl.common._utils import local_time_to_online, timestamp_to_datetime
@@ -33,9 +34,9 @@ class AGOLUsageReports(BasePortalAdmin):
         self,
         focus: str = "org",
         report_type: str = "users",
-        title: str = None,
-        duration: str = None,
-        start_time: datetime.datetime = None,
+        title: Optional[str] = None,
+        duration: Optional[str] = None,
+        start_time: Optional[datetime.datetime] = None,
         notify: bool = False,
         future: bool = True,
     ):
@@ -110,7 +111,12 @@ class AGOLUsageReports(BasePortalAdmin):
         return resp
 
     # ----------------------------------------------------------------------
-    def credit(self, start_time=None, time_frame="week", export=False):
+    def credit(
+        self,
+        start_time: Optional[datetime.datetime] = None,
+        time_frame: str = "week",
+        export: bool = False,
+    ):
         """
         Creates a Report as a Panda's dataframe or CSV file for a given time range
         for ArcGIS Online Organizations.
@@ -200,7 +206,9 @@ class AGOLUsageReports(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
-    def users(self, start_time=None, time_frame="week"):
+    def users(
+        self, start_time: Optional[datetime.datetime] = None, time_frame: str = "week"
+    ):
         """
         Creates a usage report for all users for a given organization on
         ArcGIS Online.
@@ -262,7 +270,9 @@ class AGOLUsageReports(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
-    def applications(self, start_time=None, time_frame="week"):
+    def applications(
+        self, start_time: Optional[datetime.datetime] = None, time_frame: str = "week"
+    ):
         """
         Creates a usage report for all registered application logins for a
         given organization on ArcGIS Online.
