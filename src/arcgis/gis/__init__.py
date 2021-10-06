@@ -23,7 +23,6 @@ import logging
 from typing import Any, Optional, Union
 
 from six import b
-from arcgis.geocoding._functions import Geocoder
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 import concurrent.futures
