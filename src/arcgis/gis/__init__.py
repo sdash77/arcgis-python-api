@@ -1199,7 +1199,7 @@ class GIS(object):
         location: Optional[str] = None,
         zoomlevel: Optional[int] = None,
         mode: str = "2D",
-        geocoder: Optional[Geocoder] = None,
+        geocoder=None,
     ):
         """
         The ``map`` method creates a map widget centered at the declared location with the specified
@@ -12437,7 +12437,7 @@ class Item(dict):
         file_type: Optional[str] = None,
         build_initial_cache: bool = False,
         item_id: Optional[str] = None,
-        geocode_service: Optional[Geocoder] = None,
+        geocode_service=None,
     ):
         """
         The ``publishes`` method is used to publish a hosted service based on an existing source item (this item).
