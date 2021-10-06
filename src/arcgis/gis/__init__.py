@@ -9279,7 +9279,7 @@ class User(dict):
 
         :returns: Boolean
         """
-        if temporary_password:
+        if temporary_password and self._gis._portal.is_arcgisonline == False:
 
             url = f"{self._gis._portal.resturl}community/users/{self.username}/update"
             params = {"f": "json", "password": temporary_password}
@@ -9287,7 +9287,11 @@ class User(dict):
         url = (
             f"{self._gis._portal.resturl}community/users/{self.username}/expirePassword"
         )
-        params = {"f": "json", "expiration": 1}
+        if self._gis._portal.is_arcgisonline:
+
+            params = {"f": "json", "expiration": -1}
+        else:
+            params = {"f": "json", "expiration": 1}
         resp = self._gis._con.post(url, params)
         return resp.get("success", False)
 
