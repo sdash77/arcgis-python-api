@@ -9274,7 +9274,9 @@ class User(dict):
         =====================  ==========================================================
         **Argument**           **Description**
         ---------------------  ----------------------------------------------------------
-        temporary_password     Optional String. Allows the administrator to set a new temporary password for a given user.
+        temporary_password     Optional String. Allows the administrator to set a new
+                               temporary password for a given user. This is available on
+                               ArcGIS Enterprise Only.
         =====================  ==========================================================
 
         :returns: Boolean
