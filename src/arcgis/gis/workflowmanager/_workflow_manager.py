@@ -1,8 +1,12 @@
 import datetime
 import json
 import sys
+from typing import Optional
 import urllib.parse
+
+from arcgis.geometry import Geometry
 import arcgis.gis
+from arcgis.gis import Item
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
 
 
@@ -73,7 +77,7 @@ class WorkflowManagerAdmin:
                 )
         return None
 
-    def create_item(self, name) -> tuple:
+    def create_item(self, name: str) -> tuple:
         """
         Creates a `Workflow Manager` schema that stores all the configuration
         information and location data in the data store on Portal. This can
@@ -112,7 +116,7 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
-    def upgrade_item(self, item):
+    def upgrade_item(self, item: Item):
         """
         Upgrades an outdated Workflow Manager schema. Requires the Workflow Manager
         Advanced Administrator privilege or the Portal Admin Update Content privilege.
@@ -142,7 +146,7 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
-    def delete_item(self, item):
+    def delete_item(self, item: Item):
         """
         Delete a Workflow Manager schema. Does not delete the Workflow Manager Admin group.
         Requires the administrator or publisher role. If the user has the publisher role,
@@ -263,7 +267,7 @@ class JobManager:
                 )
         return None
 
-    def close(self, job_ids):
+    def close(self, job_ids: list):
         """
         Closes a single or multiple jobs with specific Job IDs
 
@@ -287,23 +291,23 @@ class JobManager:
 
     def create(
         self,
-        template,
-        count=1,
-        name=None,
-        start=None,
-        end=None,
-        priority=None,
-        description=None,
-        owner=None,
-        group=None,
-        assigned=None,
-        complete=None,
-        notes=None,
-        parent=None,
-        location=None,
-        extended_properties=None,
-        related_properties=None,
-        job_id=None,
+        template: str,
+        count: int = 1,
+        name: Optional[str] = None,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        priority: Optional[str] = None,
+        description: Optional[str] = None,
+        owner: Optional[str] = None,
+        group: Optional[str] = None,
+        assigned: Optional[str] = None,
+        complete: Optional[str] = None,
+        notes: Optional[str] = None,
+        parent: Optional[str] = None,
+        location: Optional[Geometry] = None,
+        extended_properties: Optional[dict] = None,
+        related_properties: Optional[dict] = None,
+        job_id: Optional[str] = None,
     ):
         """
         Adds a job to the Workflow Manager instance given a user-defined template
@@ -394,7 +398,7 @@ class JobManager:
             return return_obj["success"]
         return return_obj["jobIds"]
 
-    def delete_attachment(self, job_id, attachment_id):
+    def delete_attachment(self, job_id: str, attachment_id: str):
         """
         Deletes a job attachment given a job ID and attachment ID
 
@@ -425,7 +429,7 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def diagram(self, id):
+    def diagram(self, id: str):
         """
         Returns the job diagram for the user-defined job
 
@@ -448,7 +452,7 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def get(self, id, get_ext_props=True):
+    def get(self, id: str, get_ext_props: bool = True):
         """
         Returns an active job with the given ID
 
@@ -479,13 +483,13 @@ class JobManager:
 
     def search(
         self,
-        query=None,
-        search_string=None,
-        fields=None,
-        display_names=[],
-        sort_by=[],
-        num=10,
-        start_num=0,
+        query: Optional[str] = None,
+        search_string: Optional[str] = None,
+        fields: Optional[str] = None,
+        display_names: Optional[str] = [],
+        sort_by: Optional[str] = [],
+        num: int = 10,
+        start_num: int = 0,
     ):
         """
         Runs a search against the jobs stored inside the Workflow Manager instance
@@ -529,7 +533,7 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def update(self, job_id, update_object):
+    def update(self, job_id: str, update_object):
         """
         Updates a job object by ID
 
@@ -591,7 +595,7 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def upgrade(self, job_ids):
+    def upgrade(self, job_ids: list):
         """
         Upgrades a single or multiple jobs with specific JobIDs
 
@@ -683,7 +687,7 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def delete(self, job_ids):
+    def delete(self, job_ids: list):
         """
         Deletes a single or multiple jobs with specific JobIDs
 
@@ -806,7 +810,11 @@ class WorkflowManager:
         return self.job_manager
 
     def evaluate_arcade(
-        self, expression, context=None, context_type="BaseContext", mode="Standard"
+        self,
+        expression: str,
+        context: Optional[str] = None,
+        context_type: str = "BaseContext",
+        mode: str = "Standard",
     ):
         """
         Evaluates an arcade expression
@@ -975,7 +983,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def searches(self, search_type=None):
+    def searches(self, search_type: Optional[str] = None):
         """
         Returns a list of all saved searches.
 
@@ -1063,14 +1071,14 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def update_settings(self, props):
+    def update_settings(self, props: list):
         """
         Returns an active job with the given ID
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        props               Reuqired list. A list of Props objects to update
+        props               Required list. A list of Props objects to update
                             (Prop object example: {'propName': 'string', 'value': 'string'})
         ===============     ====================================================================
 
@@ -1098,7 +1106,7 @@ class WorkflowManager:
             return return_obj["success"]
         return return_obj
 
-    def wm_role(self, name):
+    def wm_role(self, name: str):
         """
         Returns an active role with the given name
 
@@ -1123,7 +1131,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def job_template(self, id):
+    def job_template(self, id: str):
         """
         Returns a job template with the given ID
 
@@ -1148,7 +1156,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def delete_job_template(self, id):
+    def delete_job_template(self, id: str):
         """
         Deletes a job template with the given ID
 
@@ -1176,7 +1184,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def user(self, username):
+    def user(self, username: str):
         """
         Returns a user profile with the given username
 
@@ -1195,7 +1203,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def group(self, group_id):
+    def group(self, group_id: str):
         """
         Returns group information with the given group ID
 
@@ -1223,7 +1231,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def update_group(self, group_id, update_object):
+    def update_group(self, group_id: str, update_object):
         """
         Update the information to the portal group. The adminAdvanced privilege is required.
         New roles can be added to the portal group. Existing roles can be deleted from the portal group.
@@ -1262,7 +1270,7 @@ class WorkflowManager:
 
         return return_obj
 
-    def diagram(self, id):
+    def diagram(self, id: str):
         """
         Returns the :class:`diagram <arcgis.gis.workflowmanager.JobDiagram>` with the given ID
 
@@ -1285,7 +1293,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def create_wm_role(self, name, description="", privileges=[]):
+    def create_wm_role(self, name: str, description: str = "", privileges: list = []):
         """
         Adds a role to the Workflow Manager instance given a user-defined name
 
@@ -1316,24 +1324,24 @@ class WorkflowManager:
 
     def create_job_template(
         self,
-        name,
-        priority,
-        id=None,
-        category="",
-        job_duration=0,
-        assigned_to="",
-        default_due_date=None,
-        default_start_date=None,
-        start_date_type="CreationDate",
-        diagram_id="",
-        diagram_name="",
-        assigned_type="Unassigned",
-        description="",
-        default_description="",
-        state="Draft",
-        last_updated_by="",
-        last_updated_date=None,
-        extended_property_table_definitions=[],
+        name: str,
+        priority: str,
+        id: str = None,
+        category: str = "",
+        job_duration: int = 0,
+        assigned_to: str = "",
+        default_due_date: Optional[str] = None,
+        default_start_date: Optional[str] = None,
+        start_date_type: str = "CreationDate",
+        diagram_id: str = "",
+        diagram_name: str = "",
+        assigned_type: str = "Unassigned",
+        description: str = "",
+        default_description: str = "",
+        state: str = "Draft",
+        last_updated_by: str = "",
+        last_updated_date: Optional[str] = None,
+        extended_property_table_definitions: list = [],
     ):
         """
         Adds a job template to the Workflow Manager instance given a user-defined name and default priority level
@@ -1349,7 +1357,7 @@ class WorkflowManager:
         ------------------------------------     --------------------------------------------------------------------
         category                                 Optional string. Job Template Category
         ------------------------------------     --------------------------------------------------------------------
-        job_duration                             Optional string. Default Job Template Duration
+        job_duration                             Optional int. Default Job Template Duration
         ------------------------------------     --------------------------------------------------------------------
         assigned_to                              Optional string. Job Owner
         ------------------------------------     --------------------------------------------------------------------
@@ -1456,14 +1464,14 @@ class WorkflowManager:
 
     def create_diagram(
         self,
-        name,
-        steps,
-        display_grid,
-        description="",
-        active=False,
-        annotations=[],
-        data_sources=[],
-        diagram_id=None,
+        name: str,
+        steps: list,
+        display_grid: bool,
+        description: str = "",
+        active: bool = False,
+        annotations: list = [],
+        data_sources: list = [],
+        diagram_id: Optional[str] = None,
     ):
         """
         Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
@@ -1515,7 +1523,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def update_diagram(self, body, delete_draft=True):
+    def update_diagram(self, body, delete_draft: bool = True):
         """
         Updates a diagram object by ID
 
@@ -1566,7 +1574,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def delete_diagram(self, id):
+    def delete_diagram(self, id: str):
         """
         Deletes a diagram object by ID
 
@@ -1691,13 +1699,13 @@ class SavedSearchesManager:
 
     def create(
         self,
-        name,
-        search_type,
-        folder=None,
-        definition=None,
-        color_ramp=None,
-        sort_index=None,
-        search_id=None,
+        name: str,
+        search_type: str,
+        folder: Optional[str] = None,
+        definition: Optional[str] = None,
+        color_ramp: Optional[str] = None,
+        sort_index: Optional[str] = None,
+        search_id: Optional[str] = None,
     ):
         """
         Create a saved search or chart by specifying the search parameters in the json body.
@@ -1760,7 +1768,7 @@ class SavedSearchesManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def delete(self, id):
+    def delete(self, id: str):
         """
         Deletes a saved search by ID
 
@@ -1966,7 +1974,7 @@ class Job(object):
         }
         return return_obj
 
-    def get_attachment(self, attachment_id):
+    def get_attachment(self, attachment_id: str):
         """
         Returns an embedded job attachment given an attachment ID
 
@@ -1993,7 +2001,7 @@ class Job(object):
             return return_obj["success"]
         return return_obj
 
-    def add_attachment(self, attachment):
+    def add_attachment(self, attachment: str):
         """
         Adds an attachment to the job
 
@@ -2023,7 +2031,7 @@ class Job(object):
             self._gis._con._handle_json_error(return_obj["error"], 0)
         return {"id": return_obj["url"].split("/")[-1], "alias": return_obj["alias"]}
 
-    def add_linked_attachment(self, attachments):
+    def add_linked_attachment(self, attachments: list):
         """
         Add linked attachments to a job to provide additional or support information related to the job.
         Linked attachments can be links to a file on a local or shared file system or a URL.
@@ -2058,7 +2066,7 @@ class Job(object):
             self._gis._con._handle_json_error(return_obj["error"], 0)
         return return_obj["attachments"]
 
-    def update_attachment(self, attachment_id, alias):
+    def update_attachment(self, attachment_id: str, alias: str):
         """
         Updates an attachment alias given a Job ID and attachment ID
 

@@ -7,7 +7,7 @@ import imghdr
 import logging
 import os
 import tempfile
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from ._con import Connection
 from ._con import _normalize_url, _is_http_url, _parse_hostname, _unpack
 from ..._impl.common._utils import _to_utf8
@@ -481,7 +481,7 @@ class Portal(object):
         common_params: Optional[str] = None,
         is_view: bool = False,
         item_id: Optional[str] = None,
-        tags: Optional[str] = None,
+        tags: Optional[Union[list[str], str]] = None,
         snippet: Optional[str] = None,
     ):
         """
@@ -608,7 +608,7 @@ class Portal(object):
     def create_group(
         self,
         title: str,
-        tags: str,
+        tags: Union[list[str], str],
         description: Optional[str] = None,
         snippet: Optional[str] = None,
         access: str = "public",
@@ -1800,7 +1800,7 @@ class Portal(object):
     def search(
         self,
         q: str,
-        bbox: Optional[dict] = None,
+        bbox: Optional[Union[list[str], str]] = None,
         sort_field: str = "title",
         sort_order: str = "asc",
         max_results: int = 1000,
@@ -2135,7 +2135,7 @@ class Portal(object):
         access: Optional[str] = None,
         preferred_view: Optional[str] = None,
         description: Optional[str] = None,
-        tags: Optional[str] = None,
+        tags: Optional[Union[list[str], str]] = None,
         thumbnail: Optional[str] = None,
         fullname: Optional[str] = None,
         email: Optional[str] = None,
@@ -2253,7 +2253,7 @@ class Portal(object):
         self,
         group_id: str,
         title: Optional[str] = None,
-        tags: Optional[str] = None,
+        tags: Optional[Union[list[str], str]] = None,
         description: Optional[str] = None,
         snippet: Optional[str] = None,
         access: Optional[str] = None,

@@ -1,3 +1,4 @@
+from typing import Optional
 import arcgis
 from arcgis import gis
 from arcgis._impl.common._isd import InsensitiveDict
@@ -125,7 +126,7 @@ class ServerManager(object):
         return self._server_list
 
     # ----------------------------------------------------------------------
-    def get(self, role=None, function=None):
+    def get(self, role: Optional[str] = None, function: Optional[str] = None):
         """
         Retrieves the ArcGIS Server(s) by role or function. While each argument is optional,
         at least one argument must be set with an allowed value other than None.
@@ -229,7 +230,7 @@ class ServerManager(object):
         return res
 
     # ----------------------------------------------------------------------
-    def update(self, server, role, function=None):
+    def update(self, server: str, role: str, function: Optional[str] = None):
         """
         This operation allows you to set an ArcGIS Server federated with
         Portal for ArcGIS as the hosting server or to enforce fine-grained

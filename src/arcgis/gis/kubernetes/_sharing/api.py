@@ -8,7 +8,7 @@ import json
 import imghdr
 import logging
 import tempfile
-from typing import Any, Optional
+from typing import Any, Optional, Union
 import requests
 from urllib.parse import urlparse, urlunparse
 from urllib.request import urlretrieve
@@ -342,7 +342,7 @@ class KbertnetesPy(object):
     def create_group(
         self,
         title: str,
-        tags: str,
+        tags: Union[list[str], str],
         description: Optional[str] = None,
         snippet: Optional[str] = None,
         access: str = "public",
@@ -1002,7 +1002,7 @@ class KbertnetesPy(object):
         self,
         group_id: str,
         title: Optional[str] = None,
-        tags: Optional[str] = None,
+        tags: Optional[Union[list[str], str]] = None,
         description: Optional[str] = None,
         snippet: Optional[str] = None,
         access: Optional[str] = None,
@@ -1534,13 +1534,13 @@ class KbertnetesPy(object):
         copyright_text: str = "",
         wkid: int = 102100,
         service_type: int = "imageService",
-        create_params: Optional[str] = None,
+        create_params: Optional[dict] = None,
         owner: Optional[str] = None,
         folder: Optional[str] = None,
         common_params: Optional[str] = None,
         is_view: bool = False,
         item_id: Optional[str] = None,
-        tags: Optional[str] = None,
+        tags: Optional[Union[list[str], str]] = None,
         snippet: Optional[str] = None,
     ):
         """Creates service.
@@ -2138,7 +2138,7 @@ class KbertnetesPy(object):
         ---------------------   --------------------------------------------------------
         owner                   Required string, owner of the item currently
         ---------------------   --------------------------------------------------------
-        folder                  Optional string, folder containing the item.  
+        folder                  Optional string, folder containing the item.
                                 Defaults to the root folder.
         ---------------------   --------------------------------------------------------
         everyone                Optional boolean, share with everyone
@@ -2146,10 +2146,10 @@ class KbertnetesPy(object):
         org                     Optional boolean, share with the organization
         ---------------------   --------------------------------------------------------
         groups                  Optional string,
-                                Comma-separated list of group IDs with which the item will 
+                                Comma-separated list of group IDs with which the item will
                                 be shared.
         ---------------------   --------------------------------------------------------
-        allow_members_to_edit   Optional boolean to allow item to be shared with groups 
+        allow_members_to_edit   Optional boolean to allow item to be shared with groups
                                 that allow shared update
         =====================   ========================================================
 
@@ -2490,7 +2490,7 @@ class KbertnetesPy(object):
         access: Optional[str] = None,
         preferred_view: Optional[str] = None,
         description: Optional[str] = None,
-        tags: Optional[str] = None,
+        tags: Optional[Union[list[str], str]] = None,
         thumbnail: Optional[str] = None,
         fullname: Optional[str] = None,
         email: Optional[str] = None,

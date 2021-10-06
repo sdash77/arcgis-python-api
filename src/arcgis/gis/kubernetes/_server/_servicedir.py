@@ -91,7 +91,8 @@ class KubeServiceDirectory(_BaseKube):
             for s in res["services"]:
                 if s["name"].split("/")[-1].lower() == name.lower():
                     return Service(
-                        url="%s/%s/%s" % (url, s["name"], s["type"]), server=self._con,
+                        url="%s/%s/%s" % (url, s["name"], s["type"]),
+                        server=self._con,
                     )
                 del s
         return None

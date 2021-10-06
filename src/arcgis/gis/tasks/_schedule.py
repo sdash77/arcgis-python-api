@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import datetime
+from typing import Optional
 from arcgis.gis import GIS, User, Item
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis._impl.common._utils import local_time_to_online
@@ -85,7 +86,7 @@ class Run(BaseTask):
         return res
 
     # ----------------------------------------------------------------------
-    def update(self, status: str = None, description: str = None):
+    def update(self, status: Optional[str] = None, description: Optional[str] = None):
         """
         Updates the Run's Status Message and Result Message.
 
@@ -221,16 +222,16 @@ class Task(BaseTask):
     # ----------------------------------------------------------------------
     def update(
         self,
-        item: Item = None,
-        cron: str = None,
-        task_type: str = None,
+        item: Optional[Item] = None,
+        cron: Optional[str] = None,
+        task_type: Optional[str] = None,
         occurences: int = 10,
-        start_date: datetime.datetime = None,
-        end_date: datetime.datetime = None,
-        title: str = None,
-        parameters: dict = None,
-        task_url: str = None,
-        is_active: bool = None,
+        start_date: Optional[datetime.datetime] = None,
+        end_date: Optional[datetime.datetime] = None,
+        title: Optional[str] = None,
+        parameters: Optional[dict] = None,
+        task_url: Optional[str] = None,
+        is_active: Optional[bool] = None,
     ) -> bool:
         """
         Updates the current Task
@@ -397,7 +398,12 @@ class TaskManager(object):
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def search(self, item: Item = None, active: bool = None, types: str = None):
+    def search(
+        self,
+        item: Optional[Item] = None,
+        active: Optional[bool] = None,
+        types: Optional[str] = None,
+    ):
         """
         This property allows users to search for tasks based on criteria.
 
@@ -450,10 +456,10 @@ class TaskManager(object):
         cron: str,
         task_type: str,
         occurences: int = 10,
-        start_date: datetime.datetime = None,
-        end_date: datetime.datetime = None,
-        title: str = None,
-        parameters: dict = None,
+        start_date: Optional[datetime.datetime] = None,
+        end_date: Optional[datetime.datetime] = None,
+        title: Optional[str] = None,
+        parameters: Optional[dict] = None,
     ) -> Task:
         """
         Creates a new scheduled task for a notebook `Item`.

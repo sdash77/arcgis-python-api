@@ -4,7 +4,7 @@ from arcgis.gis import Item
 from arcgis.gis.server._service import Service
 from arcgis._impl.backport import cached_property
 from functools import lru_cache
-from typing import Union
+from typing import Optional, Union
 
 ###########################################################################
 class MissionJob(object):
@@ -139,11 +139,11 @@ class Mission(object):
     def add_report(
         self,
         title: str,
-        description: str = None,
-        tags: str = None,
-        questions: dict = None,
-        display_field: str = None,
-        drawing_info: dict = None,
+        description: Optional[str] = None,
+        tags: Optional[Union[list, str]] = None,
+        questions: Optional[dict] = None,
+        display_field: Optional[str] = None,
+        drawing_info: Optional[dict] = None,
         locale: str = "en",
         share_as_template: bool = False,
     ) -> dict:
@@ -263,16 +263,16 @@ class MissionCatalog:
     def create_mission(
         self,
         title: str,
-        snippet: str = None,
-        description: str = None,
-        license_info: str = None,
-        tags: str = None,
-        extent: list = None,
-        template_item: "Item" = None,
+        snippet: Optional[str] = None,
+        description: Optional[str] = None,
+        license_info: Optional[str] = None,
+        tags: Optional[Union[list, str]] = None,
+        extent: Optional[str] = None,
+        template_item: Optional[Item] = None,
         locale: str = "en",
-        base_map: dict = None,
-        wm_description: str = None,
-        webmap_id: Union[str, Item] = None,
+        base_map: Optional[dict] = None,
+        wm_description: Optional[str] = None,
+        webmap_id: Optional[Union[str, Item]] = None,
     ) -> MissionJob:
         """
 

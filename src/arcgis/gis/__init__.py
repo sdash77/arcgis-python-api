@@ -6,7 +6,7 @@ This module, the most important in the ArcGIS API for Python, provides functiona
 Python and is an invaluable tool in the API.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 import base64
 import json
 import locale
@@ -20,7 +20,10 @@ from contextlib import contextmanager
 import functools
 from datetime import datetime
 import logging
-from typing import Tuple, Any, Dict, List
+from typing import Any, Optional, Union
+
+from six import b
+from arcgis.geocoding._functions import Geocoder
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 import concurrent.futures
@@ -32,6 +35,8 @@ from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import chunks as _chunks
 from cachetools import cached, TTLCache
+
+from arcgis.gis.nb.notebook import NotebookServer
 from ._impl import _portalpy
 from ._impl._jb import StatusJob
 
@@ -685,7 +690,7 @@ class GIS(object):
 
     # ----------------------------------------------------------------------
     @_lazy_property
-    def languages(self) -> List[Dict[str, Any]]:
+    def languages(self) -> list[dict[str, Any]]:
         """
         Lists the available languages.
 
@@ -697,7 +702,7 @@ class GIS(object):
 
     # ----------------------------------------------------------------------
     @_lazy_property
-    def regions(self) -> List[Dict[str, Any]]:
+    def regions(self) -> list[dict[str, Any]]:
         """
         Lists the available regions.
 
@@ -927,7 +932,7 @@ class GIS(object):
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
 
     @_lazy_property
-    def notebook_server(self) -> "List[NotebookServer]":
+    def notebook_server(self) -> list[NotebookServer]:
         """
         The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
         with the organization or enterprise.
@@ -1004,7 +1009,7 @@ class GIS(object):
         """
         return PropertyMap(self._get_properties(force=True))
 
-    def update_properties(self, properties_dict):
+    def update_properties(self, properties_dict: dict[str, Any]):
         """The ``update_properties`` method updates the GIS's properties from those in ``properties_dict``. This method
         can be useful for updating the utility services used by the GIS.
 
@@ -1189,7 +1194,13 @@ class GIS(object):
         """Returns the portal properties (using cache unless force=True)."""
         return self._portal.get_properties(force)
 
-    def map(self, location=None, zoomlevel=None, mode="2D", geocoder=None):
+    def map(
+        self,
+        location: Optional[str] = None,
+        zoomlevel: Optional[int] = None,
+        mode: str = "2D",
+        geocoder: Optional[Geocoder] = None,
+    ):
         """
         The ``map`` method creates a map widget centered at the declared location with the specified
         zoom level. If an address is provided, it is geocoded
@@ -1448,7 +1459,7 @@ class Datastore(dict):
         else:
             return False
 
-    def update(self, item):
+    def update(self, item: dict[str, Any]):
         """
         The ``update`` method edits this data item to update its connection information.
 
@@ -1620,7 +1631,7 @@ class GroupMigrationManager(object):
             raise Exception(res)
 
     # ----------------------------------------------------------------------
-    def create(self, items=None, future: bool = True):
+    def create(self, items: Optional[list[Item]] = None, future: bool = True):
         """
         The ``create`` method exports a :class:`~arcgis.gis.Group` content to an **EPK Package Item**.
         `EPK Items` are intended to migrate content from an enterprise deployment to a new
@@ -1679,12 +1690,12 @@ class GroupMigrationManager(object):
     # ----------------------------------------------------------------------
     def load(
         self,
-        epk_item,
-        item_ids: list = None,
+        epk_item: Item,
+        item_ids: Optional[list[str]] = None,
         overwrite: bool = True,
         future: bool = True,
-        folder_id: str = None,
-        folder_owner: str = None,
+        folder_id: Optional[str] = None,
+        folder_owner: Optional[str] = None,
     ):
         """
         The ``load`` method imports the EPK content into the current :class:`~arcgis.gis.Group`.
@@ -1750,7 +1761,7 @@ class GroupMigrationManager(object):
         return None
 
     # ----------------------------------------------------------------------
-    def inspect(self, epk_item) -> dict:
+    def inspect(self, epk_item: Item) -> dict:
         """
         The ``inspect`` method retrieves the contents of the EPK Package
         ================  ===============================================================================
@@ -1857,7 +1868,9 @@ class DatastoreManager(object):
         res = self._portal.con.post(path, params)
         return res
 
-    def add_folder(self, name, server_path, client_path=None):
+    def add_folder(
+        self, name: str, server_path: str, client_path: Optional[str] = None
+    ):
 
         """
         The ``add_folder`` method registers a folder with the :class:`~arcgis.gis.Datastore`.
@@ -1906,7 +1919,12 @@ class DatastoreManager(object):
             print(str(res))
             return None
 
-    def add_bigdata(self, name, server_path=None, connection_type="fileShare"):
+    def add_bigdata(
+        self,
+        name: str,
+        server_path: Optional[str] = None,
+        connection_type: str = "fileShare",
+    ):
         """
         The ``add_bigdata`` method registers a bigdata fileshare with the :class:`~arcgis.gis.Datastore`.
 
@@ -1976,13 +1994,13 @@ class DatastoreManager(object):
     # ----------------------------------------------------------------------
     def add_amazon_s3(
         self,
-        name,
-        bucket_name,
-        access_key,
-        access_secret,
-        region,
-        folder=None,
-        default_protocal="https",
+        name: str,
+        bucket_name: str,
+        access_key: str,
+        access_secret: str,
+        region: str,
+        folder: Optional[str] = None,
+        default_protocal: str = "https",
     ):
         """
 
@@ -2054,7 +2072,12 @@ class DatastoreManager(object):
 
     # ----------------------------------------------------------------------
     def add_ms_azure_storage(
-        self, cloud_storage_name, account_key, account_name, container_name, folder=None
+        self,
+        cloud_storage_name: str,
+        account_key: str,
+        account_name: str,
+        container_name: str,
+        folder: Optional[str] = None,
     ):
         """
         The ``add_ms_azure_storage`` creates a cloud store with Microsoft Azure.
@@ -2068,7 +2091,7 @@ class DatastoreManager(object):
         ------------------     --------------------------------------------------------------------
         access_secret          Required String. The access secret value for the Azure storage.
         ------------------     --------------------------------------------------------------------
-        container_name        Required String. The container holding the data.
+        container_name         Required String. The container holding the data.
         ------------------     --------------------------------------------------------------------
         folder                 Optional String. The Azure folder within the datastore item.
         ==================     ====================================================================
@@ -2124,7 +2147,13 @@ class DatastoreManager(object):
 
     # ----------------------------------------------------------------------
     def add_cloudstore(
-        self, name, conn_str, object_store, provider, managed=False, folder=None
+        self,
+        name: str,
+        conn_str: str,
+        object_store: str,
+        provider: str,
+        managed: bool = False,
+        folder: Optional[str] = None,
     ):
         """
         The ``add_cloudstore`` method adds a Cloud Store data :class:`~arcgis.gis.Item`.
@@ -2204,7 +2233,13 @@ class DatastoreManager(object):
 
         return output
 
-    def add_database(self, name, conn_str, client_conn_str=None, conn_type="shared"):
+    def add_database(
+        self,
+        name: str,
+        conn_str: str,
+        client_conn_str: Optional[str] = None,
+        conn_type: str = "shared",
+    ):
         """
         The ``add_database`` method registers a database with the :class:`~arcgis.gis.Datastore`.
 
@@ -2260,7 +2295,7 @@ class DatastoreManager(object):
             print(str(res))
             return None
 
-    def add(self, name, item):
+    def add(self, name: str, item: dict[str, Any]):
         """
         The ``add`` method registers a new data :class:`~arcgis.gis.Item` with the:class:`~arcgis.gis.Datastore`.
 
@@ -2298,7 +2333,7 @@ class DatastoreManager(object):
             print(str(res))
             return None
 
-    def get(self, path):
+    def get(self, path: str):
         """
         The ``get`` method retrieves the data :class:`~arcgis.gis.Item` object at the given path.
 
@@ -2321,7 +2356,13 @@ class DatastoreManager(object):
             print(datadict["messages"])
             return None
 
-    def search(self, parent_path=None, ancestor_path=None, types=None, id=None):
+    def search(
+        self,
+        parent_path: Optional[str] = None,
+        ancestor_path: Optional[str] = None,
+        types: Optional[str] = None,
+        id: Optional[str] = None,
+    ):
         """
            The ``search`` method is used to search through the various data
            items registered in the server's data store. Searching without
@@ -2605,7 +2646,7 @@ class UserManager(object):
         return results
 
     # ----------------------------------------------------------------------
-    def counts(self, type="bundles", as_df=True):
+    def counts(self, type: str = "bundles", as_df: bool = True):
         """
         The ``counts`` method returns a simple report on the number of licenses currently used
         for a given `type`.  A `type` can be a role, app, bundle or user license type.
@@ -2686,8 +2727,13 @@ class UserManager(object):
 
     # ----------------------------------------------------------------------
     def send_notification(
-        self, users, subject, message, type="builtin", client_id=None
-    ):
+        self,
+        users: Union[list[str], list[User]],
+        subject: str,
+        message: str,
+        type: str = "builtin",
+        client_id: Optional[str] = None,
+    ) -> bool:
         """
         The ``send_notification`` method creates a user notifcation for a list of users.
 
@@ -2751,20 +2797,20 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     def create(
         self,
-        username,
-        password,
-        firstname,
-        lastname,
-        email,
-        description=None,
-        role=None,
-        provider="arcgis",
-        idp_username=None,
-        level=2,
-        thumbnail=None,
-        user_type=None,
-        credits=-1,
-        groups=None,
+        username: str,
+        password: str,
+        firstname: str,
+        lastname: str,
+        email: str,
+        description: Optional[str] = None,
+        role: Optional[str] = None,
+        provider: str = "arcgis",
+        idp_username: Optional[str] = None,
+        level: int = 2,
+        thumbnail: Optional[str] = None,
+        user_type: Optional[str] = None,
+        credits: float = -1,
+        groups: Optional[list[str]] = None,
     ):
         """
         The ``create`` operation is used to pre-create built-in or enterprise accounts within the Enterprise portal,
@@ -2817,7 +2863,7 @@ class UserManager(object):
         idp_username      Optional string. The name of the user as stored by the enterprise user store.
                           This parameter is only required if the provider parameter is enterprise.
         ----------------  -------------------------------------------------------------------------------
-        level             Optional string. The account level. (ArcGIS Enterprise prior to version 10.7.
+        level             Optional integer. The account level. (ArcGIS Enterprise prior to version 10.7.
                           See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
                           for full details.)
         ----------------  -------------------------------------------------------------------------------
@@ -2923,17 +2969,17 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     def _createPre64(
         self,
-        username,
-        password,
-        firstname,
-        lastname,
-        email,
-        description=None,
-        role="org_user",
-        provider="arcgis",
-        idp_username=None,
-        level=2,
-        thumbnail=None,
+        username: str,
+        password: str,
+        firstname: str,
+        lastname: str,
+        email: str,
+        description: Optional[str] = None,
+        role: str = "org_user",
+        provider: str = "arcgis",
+        idp_username: Optional[str] = None,
+        level: int = 2,
+        thumbnail: Optional[str] = None,
     ):
         """
         This operation is used to pre-create built-in or enterprise accounts within the portal,
@@ -2981,7 +3027,7 @@ class UserManager(object):
         idp_username      Optional string. The name of the user as stored by the enterprise user store.
                           This parameter is only required if the provider parameter is enterprise.
         ----------------  -------------------------------------------------------------------------------
-        level             Optional string. The account level.
+        level             Optional integer. The account level.
                           See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
         ================  ===============================================================================
 
@@ -3350,14 +3396,14 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     def invite(
         self,
-        email,
-        role="org_user",
-        level=2,
-        provider=None,
-        must_approve=False,
-        expiration="1 Day",
-        validate_email=True,
-        message_text=None,
+        email: str,
+        role: str = "org_user",
+        level: int = 2,
+        provider: Optional[str] = None,
+        must_approve: bool = False,
+        expiration: str = "1 Day",
+        validate_email: bool = True,
+        message_text: Optional[str] = None,
     ):
         """
         The ``invite`` method invites a :class:`~arcgis.gis.User` object to an organization by email.
@@ -3370,8 +3416,9 @@ class UserManager(object):
         role              Optional String. The role for the user account. The default value is org_user.
                           Other possible values are org_publisher, org_admin, org_viewer.
         ----------------  -------------------------------------------------------------------------------
-        level             Optional String. The account level. The default is 2.
-                          See `User types, roles, and privileges <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
+        level             Optional integer. The account level. The default is 2.
+                          See `User types, roles, and privileges
+                          <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
                           for full details.
         ----------------  -------------------------------------------------------------------------------
         provider          Optional String. The provider for the account. The default value is arcgis.
@@ -3456,7 +3503,7 @@ class UserManager(object):
         return InvitationManager(url, gis=self._gis)
 
     # ----------------------------------------------------------------------
-    def signup(self, username, password, fullname, email):
+    def signup(self, username: str, password: str, fullname: str, email: str):
         """
         The ``signup`` method is used to create a new user account in an ArcGIS Enterprise deployment.
 
@@ -3498,7 +3545,7 @@ class UserManager(object):
             return None
 
     # ----------------------------------------------------------------------
-    def get(self, username):
+    def get(self, username: str):
         """
         The ``get`` method retrieves the :class:`~arcgis.gis.User` object for the specified username.
 
@@ -3538,7 +3585,7 @@ class UserManager(object):
         return None
 
     # ----------------------------------------------------------------------
-    def enable_users(self, users):
+    def enable_users(self, users: Union[list[str], list[User]]):
         """
         Thie ``enable_users`` method is a bulk operation that allows administrators to quickly enable large number of
         users in a single call.  It is useful to do this operation if you have multiple users that need
@@ -3588,7 +3635,7 @@ class UserManager(object):
         return False
 
     # ----------------------------------------------------------------------
-    def disable_users(self, users):
+    def disable_users(self, users: Union[list[str], list[User]]):
         """
         The ``disable_users`` method is a bulk disables user operation that allows administrators to quickly disable
         large number of users in a single call.  It is useful to do this operation if you have multiple
@@ -3640,13 +3687,13 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     def advanced_search(
         self,
-        query,
-        return_count=False,
-        max_users=10,
-        start=1,
-        sort_field="username",
-        sort_order="asc",
-        as_dict=False,
+        query: str,
+        return_count: bool = False,
+        max_users: int = 10,
+        start: int = 1,
+        sort_field: str = "username",
+        sort_order: str = "asc",
+        as_dict: bool = False,
     ):
         """
         The ``advanced_search`` method allows for the full control of the query operations
@@ -3794,14 +3841,14 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     def search(
         self,
-        query=None,
-        sort_field="username",
-        sort_order="asc",
-        max_users=100,
-        outside_org=False,
-        exclude_system=False,
-        user_type=None,
-        role=None,
+        query: Optional[str] = None,
+        sort_field: str = "username",
+        sort_order: str = "asc",
+        max_users: int = 100,
+        outside_org: bool = False,
+        exclude_system: bool = False,
+        user_type: Optional[str] = None,
+        role: Optional[str] = None,
     ):
         """
         The ``search`` method searches portal users, returning a list of users matching the specified query.
@@ -3939,7 +3986,7 @@ class UserManager(object):
         return RoleManager(self._gis)
 
     # ----------------------------------------------------------------------
-    def user_groups(self, users, max_results=-1):
+    def user_groups(self, users: Union[list[str], list[User]], max_results: int = -1):
         """
         Givens a List of Users, the ``user_groups`` method will report back all group ids
         that each :class:`~arcgis.gis.User` belongs to. ``user_groups`` is designed to be a reporting
@@ -4008,7 +4055,7 @@ class RoleManager(object):
         self._gis = gis
         self._portal = gis._portal
 
-    def create(self, name, description, privileges=None):
+    def create(self, name: str, description: str, privileges: Optional[str] = None):
         """
             The ``create`` method creates a custom :class:`~arcgis.gis.Role` with the specified parameters.
 
@@ -4049,7 +4096,7 @@ class RoleManager(object):
             return roles[0]
         return None
 
-    def exists(self, role_name):
+    def exists(self, role_name: str):
         """
         The ``exists`` method checks to see if a :class:`~arcgis.gis.Role` object exists given the declared role name.
 
@@ -4074,7 +4121,7 @@ class RoleManager(object):
                 return True
         return False
 
-    def all(self, max_roles=1000):
+    def all(self, max_roles: int = 1000):
         """
         The ``all`` method provides a list containing the default ``Viewer`` and ``Data Editor`` roles, plus any
         custom roles defined in the :class:`~arcgis.gis.GIS`. (The ``org_admin``, ``org_user``,
@@ -4121,7 +4168,7 @@ class RoleManager(object):
         roles = self._portal.get_org_roles(max_roles)
         return [Role(self._gis, role["id"], role) for role in roles]
 
-    def get_role(self, role_id):
+    def get_role(self, role_id: str):
         """
         The ``get_role`` method retrieves the :class:`~arcgis.gis.Role` object with the specified custom roleId.
 
@@ -4175,7 +4222,7 @@ class Role(object):
         return self._description
 
     @description.setter
-    def description(self, value):
+    def description(self, value: str):
         """Description of the custom role"""
         self._description = value
         self._update_role()
@@ -4341,24 +4388,24 @@ class GroupManager(object):
 
     def create(
         self,
-        title,
-        tags,
-        description=None,
-        snippet=None,
-        access="public",
-        thumbnail=None,
-        is_invitation_only=False,
-        sort_field="avgRating",
-        sort_order="desc",
-        is_view_only=False,
-        auto_join=False,
-        provider_group_name=None,
-        provider=None,
-        max_file_size=None,
-        users_update_items=False,
-        display_settings=None,
-        is_open_data=False,
-        leaving_disallowed=False,
+        title: str,
+        tags: Union[list[str], str],
+        description: Optional[str] = None,
+        snippet: Optional[str] = None,
+        access: str = "public",
+        thumbnail: Optional[str] = None,
+        is_invitation_only: bool = False,
+        sort_field: str = "avgRating",
+        sort_order: str = "desc",
+        is_view_only: bool = False,
+        auto_join: bool = False,
+        provider_group_name: Optional[str] = None,
+        provider: Optional[str] = None,
+        max_file_size: Optional[int] = None,
+        users_update_items: bool = False,
+        display_settings: Optional[str] = None,
+        is_open_data: bool = False,
+        leaving_disallowed: bool = False,
     ):
         """
         The ``create`` method creates a group with the values for any particular arguments that are specified.
@@ -4496,7 +4543,7 @@ class GroupManager(object):
         else:
             return None
 
-    def create_from_dict(self, dict):
+    def create_from_dict(self, dict: dict[str, Any]):
         """
         The ``create_from_dict`` method creates a group via a dictionary with the values for any particular arguments
         that are specified.
@@ -4528,7 +4575,7 @@ class GroupManager(object):
         else:
             return None
 
-    def get(self, groupid):
+    def get(self, groupid: str):
         """
         The ``get`` method retrieves the :class:`~arcgis.gis.Group` object for the specified groupid.
 
@@ -4562,12 +4609,12 @@ class GroupManager(object):
 
     def search(
         self,
-        query="",
-        sort_field="title",
-        sort_order="asc",
-        max_groups=1000,
-        outside_org=False,
-        categories=None,
+        query: str = "",
+        sort_field: str = "title",
+        sort_order: str = "asc",
+        max_groups: int = 1000,
+        outside_org: bool = False,
+        categories: Optional[Union[list[str], str]] = None,
     ):
         """
         The ``search`` method searches for portal groups.
@@ -4656,7 +4703,7 @@ class ContentManager(object):
         self._portal = gis._portal
 
     # ----------------------------------------------------------------------
-    def check_url(self, url: str) -> Dict[str, Any]:
+    def check_url(self, url: str) -> dict[str, Any]:
         """
         To verify a URL is accessible by the Organization, provide the `url` and
         the system will check if the location is valid and reachable.  This
@@ -4809,7 +4856,7 @@ class ContentManager(object):
         return False
 
     # ----------------------------------------------------------------------
-    def can_delete(self, item):
+    def can_delete(self, item: Item):
         """
         The ``can_delete`` method indicates whether an :class:`~arcgis.gis.Item` can be erased or
         not. When the returned response from ``can_delete`` is true, the
@@ -4872,13 +4919,13 @@ class ContentManager(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        item_properties,
-        data=None,
-        thumbnail=None,
-        metadata=None,
-        owner=None,
-        folder=None,
-        item_id=None,
+        item_properties: dict[str, Any],
+        data: Optional[str] = None,
+        thumbnail: Optional[str] = None,
+        metadata: Optional[str] = None,
+        owner: Optional[str] = None,
+        folder: Optional[str] = None,
+        item_id: Optional[str] = None,
         **kwargs,
     ):
 
@@ -5161,16 +5208,16 @@ class ContentManager(object):
     # ----------------------------------------------------------------------
     def analyze(
         self,
-        url=None,
-        item=None,
-        file_path=None,
-        text=None,
-        file_type=None,
-        source_locale="en",
-        geocoding_service=None,
-        location_type=None,
-        source_country="world",
-        country_hint=None,
+        url: Optional[str] = None,
+        item: Optional[Union[str, Item]] = None,
+        file_path: Optional[str] = None,
+        text: Optional[str] = None,
+        file_type: Optional[str] = None,
+        source_locale: str = "en",
+        geocoding_service: Optional[str] = None,
+        location_type: Optional[str] = None,
+        source_country: str = "world",
+        country_hint: Optional[str] = None,
     ):
         """
         The ``analyze`` method helps a client analyze a CSV or Excel file (.xlsx, .xls) prior to publishing or
@@ -5197,30 +5244,30 @@ class ContentManager(object):
         =======================    =============================================================
         **Argument**               **Description**
         -----------------------    -------------------------------------------------------------
-        url                        optional string. The URL of the csv file.
+        url                        Optional string. The URL of the csv file.
         -----------------------    -------------------------------------------------------------
-        item                       optional string/:class:`~arcgis.gis.Item` . The ID or Item of the item to be
+        item                       Optional string/:class:`~arcgis.gis.Item` . The ID or Item of the item to be
                                    analyzed.
         -----------------------    -------------------------------------------------------------
-        file_path                  optional string. The file to be analyzed.
+        file_path                  Optional string. The file to be analyzed.
         -----------------------    -------------------------------------------------------------
-        text                       optional string. The text in the file to be analyzed.
+        text                       Optional string. The text in the file to be analyzed.
         -----------------------    -------------------------------------------------------------
-        file_type                  optional string. The type of the input file: shapefile, csv, excel,
+        file_type                  Optional string. The type of the input file: shapefile, csv, excel,
                                    or geoPackage (Added ArcGIS API for Python 1.8.3+).
         -----------------------    -------------------------------------------------------------
-        source_locale              optional string. The locale used for the geocoding service source.
+        source_locale              Optional string. The locale used for the geocoding service source.
         -----------------------    -------------------------------------------------------------
-        geocoding_service          optional string/geocoder. The URL of the service.
+        geocoding_service          Optional string/geocoder. The URL of the service.
         -----------------------    -------------------------------------------------------------
-        location_type              optional string. Indicates the type of spatial information stored in the dataset.
+        location_type              Optional string. Indicates the type of spatial information stored in the dataset.
 
                                    Values for CSV: coordinates | address | lookup | none
                                    Values for Excel: coordinates | address | none
         -----------------------    -------------------------------------------------------------
-        source_country             optional string. The two character country code associated with the geocoding service, default is "world".
+        source_country             Optional string. The two character country code associated with the geocoding service, default is "world".
         -----------------------    -------------------------------------------------------------
-        country_hint               optional string. If first time analyzing, the hint is used. If source country is already specified than sourcecountry is used.
+        country_hint               Optional string. If first time analyzing, the hint is used. If source country is already specified than sourcecountry is used.
         =======================    =============================================================
 
         :return: dictionary
@@ -5292,24 +5339,24 @@ class ContentManager(object):
     # ----------------------------------------------------------------------
     def create_service(
         self,
-        name,
-        service_description="",
-        has_static_data=False,
-        max_record_count=1000,
-        supported_query_formats="JSON",
-        capabilities=None,
-        description="",
-        copyright_text="",
-        wkid=102100,
-        create_params=None,
-        service_type="featureService",
-        owner=None,
-        folder=None,
-        item_properties=None,
-        is_view=False,
-        tags=None,
-        snippet=None,
-        item_id=None,
+        name: str,
+        service_description: str = "",
+        has_static_data: bool = False,
+        max_record_count: int = 1000,
+        supported_query_formats: str = "JSON",
+        capabilities: Optional[str] = None,
+        description: str = "",
+        copyright_text: str = "",
+        wkid: int = 102100,
+        create_params: Optional[dict[str, Any]] = None,
+        service_type: str = "featureService",
+        owner: Optional[str] = None,
+        folder: Optional[str] = None,
+        item_properties: Optional[dict[str, Any]] = None,
+        is_view: bool = False,
+        tags: Optional[Union[list[str], str]] = None,
+        snippet: Optional[Union[list[str], str]] = None,
+        item_id: Optional[str] = None,
     ):
 
         """
@@ -5483,7 +5530,7 @@ class ContentManager(object):
         return CategorySchemaManager(base_url=base_url, gis=self._gis)
 
     # ----------------------------------------------------------------------
-    def get(self, itemid):
+    def get(self, itemid: str):
 
         """
         The ``get`` method returns the :class:`~arcgis.gis.Item` object for the specified itemid.
@@ -5516,18 +5563,18 @@ class ContentManager(object):
 
     def advanced_search(
         self,
-        query,
-        return_count=False,
-        max_items=100,
-        bbox=None,
-        categories=None,
-        category_filter=None,
-        start=1,
-        sort_field="title",
-        sort_order="asc",
-        count_fields=None,
-        count_size=None,
-        as_dict=False,
+        query: str,
+        return_count: bool = False,
+        max_items: int = 100,
+        bbox: Optional[Union[list[str], str]] = None,
+        categories: Optional[str] = None,
+        category_filter: Optional[str] = None,
+        start: int = 1,
+        sort_field: str = "title",
+        sort_order: str = "asc",
+        count_fields: Optional[str] = None,
+        count_size: Optional[int] = None,
+        as_dict: bool = False,
     ):
         """
         The ``advanced_search`` method allows the ability to fully customize the search experience.
@@ -5697,7 +5744,7 @@ class ContentManager(object):
         num: int = 10,
         start: int = 1,
         my_listings: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         This operation searches for marketplace listings. The searches are
         performed against a high performance index that indexes the most
@@ -5766,14 +5813,14 @@ class ContentManager(object):
 
     def search(
         self,
-        query,
-        item_type=None,
-        sort_field="avgRating",
-        sort_order="desc",
-        max_items=10,
-        outside_org=False,
-        categories=None,
-        category_filters=None,
+        query: str,
+        item_type: Optional[str] = None,
+        sort_field: str = "avgRating",
+        sort_order: str = "desc",
+        max_items: int = 10,
+        outside_org: bool = False,
+        categories: Optional[Union[list[str], str]] = None,
+        category_filters: Optional[Union[list[str], str]] = None,
     ):
 
         """
@@ -5893,7 +5940,7 @@ class ContentManager(object):
         )["results"]
         return itemlist
 
-    def create_folder(self, folder, owner=None):
+    def create_folder(self, folder: str, owner: Optional[str] = None):
         """
         The ``create_folder`` method creates a folder with the given folder name, for the given owner.
 
@@ -5934,7 +5981,9 @@ class ContentManager(object):
                 print("Folder already exists.")
         return None
 
-    def rename_folder(self, old_folder, new_folder, owner=None):
+    def rename_folder(
+        self, old_folder: str, new_folder: str, owner: Optional[str] = None
+    ):
 
         """
         The ``rename_folder`` method renames an existing folder from it's existing name to a new name.
@@ -5982,7 +6031,7 @@ class ContentManager(object):
                 return res["success"]
         return False
 
-    def delete_items(self, items):
+    def delete_items(self, items: Union[list[Item], list[str]]):
         """
         The ``delete_items`` method deletes a collection of :class:`~arcgis.gis.Item` objects from a users content.
 
@@ -6029,7 +6078,7 @@ class ContentManager(object):
             return all([r["success"] for r in res["results"]])
         return False
 
-    def delete_folder(self, folder, owner=None):
+    def delete_folder(self, folder: str, owner: Optional[str] = None):
         """
         The ``delete_folder`` method deletes a folder for the given owner with
         the given folder name.
@@ -6093,12 +6142,12 @@ class ContentManager(object):
     # ----------------------------------------------------------------------
     def generate(
         self,
-        item=None,
-        file_path=None,
-        url=None,
-        text=None,
-        publish_parameters=None,
-        future=False,
+        item: Optional[Item] = None,
+        file_path: Optional[str] = None,
+        url: Optional[str] = None,
+        text: Optional[str] = None,
+        publish_parameters: Optional[dict[str, Any]] = None,
+        future: bool = False,
     ):
         """
         The ``generate`` method helps a client generate features from a CSV file, shapefile,
@@ -6229,7 +6278,14 @@ class ContentManager(object):
             return res
 
     # ----------------------------------------------------------------------
-    def import_data(self, df, address_fields=None, folder=None, item_id=None, **kwargs):
+    def import_data(
+        self,
+        df,
+        address_fields: Optional[dict[str, Any]] = None,
+        folder: Optional[str] = None,
+        item_id: Optional[str] = None,
+        **kwargs,
+    ):
         """
         The ``import_data`` method imports a Pandas `DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
         (that has an address column), or an arcgis spatial
@@ -6569,7 +6625,7 @@ class ContentManager(object):
             # return
         return None
 
-    def is_service_name_available(self, service_name, service_type):
+    def is_service_name_available(self, service_name: str, service_type: str):
 
         """
             The ``is_service_name_available`` method determines if that service name is
@@ -6603,17 +6659,17 @@ class ContentManager(object):
 
     def clone_items(
         self,
-        items,
-        folder=None,
-        item_extent=None,
-        use_org_basemap=False,
-        copy_data=True,
-        copy_global_ids=False,
-        search_existing_items=True,
-        item_mapping=None,
-        group_mapping=None,
-        owner=None,
-        preserve_item_id=False,
+        items: list[Item],
+        folder: Optional[str] = None,
+        item_extent: Optional[dict[str, Any]] = None,
+        use_org_basemap: bool = False,
+        copy_data: bool = True,
+        copy_global_ids: bool = False,
+        search_existing_items: bool = True,
+        item_mapping: Optional[dict[str, str]] = None,
+        group_mapping: Optional[dict[str, str]] = None,
+        owner: Optional[str] = None,
+        preserve_item_id: bool = False,
     ):
 
         """
@@ -6723,7 +6779,9 @@ class ContentManager(object):
         )
         return deep_cloner.clone()
 
-    def bulk_update(self, itemids, properties):
+    def bulk_update(
+        self, itemids: Union[list[str], list[Item]], properties: dict[str, Any]
+    ):
         """
         The ``bulk_update`` method updates a collection of items' properties.
 
@@ -6776,7 +6834,11 @@ class ContentManager(object):
 
     # ----------------------------------------------------------------------
     def replace_service(
-        self, replace_item, new_item, replaced_service_name=None, replace_metadata=False
+        self,
+        replace_item: Union[str, Item],
+        new_item: Union[str, Item],
+        replaced_service_name: Optional[str] = None,
+        replace_metadata: bool = False,
     ):
         """
         The ``replace_service`` operation allows you to replace your production vector tile layers with staging ones.
@@ -6868,7 +6930,12 @@ class ContentManager(object):
 
     # ----------------------------------------------------------------------
     def share_items(
-        self, items, everyone=False, org=False, groups=None, allow_members_to_edit=False
+        self,
+        items: Union[list[str], list[Item]],
+        everyone: bool = False,
+        org: bool = False,
+        groups: Optional[Union[list[str], list[Group]]] = None,
+        allow_members_to_edit: bool = False,
     ):
         """
         The ``shares_items`` method shares a batch of items with everyone, members of the organization, or
@@ -6943,7 +7010,13 @@ class ContentManager(object):
         return res
 
     # ----------------------------------------------------------------------
-    def unshare_items(self, items, groups=None, everyone=None, org=None):
+    def unshare_items(
+        self,
+        items: Union[list[str], list[Item]],
+        groups: Optional[Union[list[str], list[Group]]] = None,
+        everyone: Optional[bool] = None,
+        org: Optional[bool] = None,
+    ):
         """
         The ``unshare_items`` methodUnshares a batch of items with the specified list of groups, everyone, or
         organization. This method is quite similar to the
@@ -6966,7 +7039,7 @@ class ContentManager(object):
                                   item will not be shared with all organization users.
         ---------------------     --------------------------------------------------------------------
         groups                    Required list of group names as strings, or a list of
-                                  :class:`~arcgis.gis.Item` objects, or a list of group IDs.
+                                  :class:`~arcgis.gis.Group` objects, or a list of group IDs.
         =====================     ====================================================================
 
         :return:
@@ -7166,7 +7239,9 @@ class CategorySchemaManager(object):
             return False
 
     # ----------------------------------------------------------------------
-    def assign_to_items(self, items):
+    def assign_to_items(
+        self, items: Union[list[str], list[Item], list[dict[str, Any]]]
+    ):
         """
         The ``assign_to_items`` function adds group content categories to the portal items
         specified in the `items` argument (see below). For assigning categories
@@ -7264,7 +7339,7 @@ class ResourceManager(object):
         else:
             self._user_id = user.username
 
-    def export(self, save_path=None, file_name=None):
+    def export(self, save_path: Optional[str] = None, file_name: Optional[str] = None):
         """
         The ``export`` method export's the data's resources as a zip file
 
@@ -7306,12 +7381,12 @@ class ResourceManager(object):
 
     def add(
         self,
-        file=None,
-        folder_name=None,
-        file_name=None,
-        text=None,
-        archive=False,
-        access=None,
+        file: Optional[str] = None,
+        folder_name: Optional[str] = None,
+        file_name: Optional[str] = None,
+        text: Optional[str] = None,
+        archive: bool = False,
+        access: Optional[str] = None,
     ):
         """
         The ``add`` operation adds new file resources to an existing item. For example, an image that is
@@ -7408,7 +7483,13 @@ class ResourceManager(object):
         resp = self._portal.con.post(query_url, params, files=files, compress=False)
         return resp
 
-    def update(self, file, folder_name=None, file_name=None, text=None):
+    def update(
+        self,
+        file: str,
+        folder_name: Optional[str] = None,
+        file_name: Optional[str] = None,
+        text: Optional[str] = None,
+    ):
         """The ``update`` operation allows you to update existing file resources of an item.
         File resources use storage space from your quota and are scanned for viruses. The item size
         is updated to include the size of updated resource files.
@@ -7532,7 +7613,13 @@ class ResourceManager(object):
 
         return resp_resources
 
-    def get(self, file, try_json=True, out_folder=None, out_file_name=None):
+    def get(
+        self,
+        file: str,
+        try_json: bool = True,
+        out_folder: Optional[str] = None,
+        out_file_name: Optional[str] = None,
+    ):
         """
         The ``get`` method retrieves a specific file resource of an existing item.
 
@@ -7582,7 +7669,7 @@ class ResourceManager(object):
             query_url, try_json=try_json, out_folder=out_folder, file_name=out_file_name
         )
 
-    def remove(self, file=None):
+    def remove(self, file: Optional[str] = None):
         """
         The ``remove`` method removes a single resource file or all resources. The item size is updated once
         resource files are deleted.
@@ -7727,16 +7814,16 @@ class Group(dict):
 
     def search(
         self,
-        query,
-        return_count=False,
-        max_items=100,
-        bbox=None,
-        categories=None,
-        category_filter=None,
-        start=1,
-        sort_field="title",
-        sort_order="ASC",
-        as_dict=False,
+        query: str,
+        return_count: bool = False,
+        max_items: int = 100,
+        bbox: Optional[Union[list[str], str]] = None,
+        categories: Optional[str] = None,
+        category_filter: Optional[str] = None,
+        start: int = 1,
+        sort_field: str = "title",
+        sort_order: str = "ASC",
+        as_dict: True = False,
     ):
         """
         The ``search`` operation allows users to find content within the specific group.
@@ -7911,7 +7998,7 @@ class Group(dict):
                 """
         )
 
-    def content(self, max_items=1000):
+    def content(self, max_items: int = 1000):
         """
         The ``content`` method retrieves the list of items shared with this group.
 
@@ -7973,7 +8060,7 @@ class Group(dict):
             self._migrate = GroupMigrationManager(group=self)
         return self._migrate
 
-    def download_thumbnail(self, save_folder=None):
+    def download_thumbnail(self, save_folder: Optional[str] = None):
         """
         The ``download_thumbnail`` method downloads the item thumbnail for this user and saves it in the folder that
         is passed when ``download_thumbnail`` is called.
@@ -8016,7 +8103,11 @@ class Group(dict):
         else:
             return None
 
-    def add_users(self, usernames=None, admins=None):
+    def add_users(
+        self,
+        usernames: Optional[Union[list[str], str]] = None,
+        admins: Optional[Union[list[str], str]] = None,
+    ):
 
         """
         The ``adds_users`` method adds users to this group.
@@ -8026,14 +8117,17 @@ class Group(dict):
             Portal object is either an administrator for the entire
             Portal or the owner of the group.
 
-        ============  ======================================
-        **Argument**  **Description**
-        ------------  --------------------------------------
-        usernames     Optional list of strings or single string.
-                      The list of usernames or single username to be added.
-        ------------  --------------------------------------
-        admins        Optional List of String, or Single String.  This is a list of users to be an administrator of the group.
-        ============  ======================================
+        ============    ======================================
+        **Argument**    **Description**
+        ------------    --------------------------------------
+        usernames       Optional list of strings or single string.
+                        The list of usernames or single username
+                        to be added.
+        ------------    --------------------------------------
+        admins          Optional List of String, or Single String.
+                        This is a list of users to be an administrator
+                        of the group.
+        ============    ======================================
 
         :return:
            A dictionary containing the users that were not added to the group.
@@ -8100,7 +8194,7 @@ class Group(dict):
         """
         return self._portal.delete_group_thumbnail(self.groupid)
 
-    def remove_users(self, usernames):
+    def remove_users(self, usernames: Union[list[str], str]):
         """
         The ``remove_users`` method is used to remove users from this group.
 
@@ -8125,7 +8219,9 @@ class Group(dict):
         return self._portal.remove_group_users(users, self.groupid)
 
     # ----------------------------------------------------------------------
-    def update_users_roles(self, managers: list = None, users: list = None) -> list:
+    def update_users_roles(
+        self, managers: Optional[list[User]] = None, users: Optional[list[User]] = None
+    ) -> list:
         """
         The ``update_users_roles`` upgrades a set of users to become either Group Members or Group Managers.
 
@@ -8176,7 +8272,9 @@ class Group(dict):
         url = "community/groups/" + self.groupid + "/updateUsers"
         return self._portal.con.post(url, params)
 
-    def invite_users(self, usernames, role="group_member", expiration=10080):
+    def invite_users(
+        self, usernames: list[str], role: str = "group_member", expiration: int = 10080
+    ):
         """
         The ``invite_users`` method invites existing users to this group.
 
@@ -8219,7 +8317,9 @@ class Group(dict):
         current_version=None,
         details="Use `Group.invite` instead.",
     )
-    def invite_by_email(self, email, message, role="member", expiration="1 Day"):
+    def invite_by_email(
+        self, email: str, message: str, role: str = "member", expiration: str = "1 Day"
+    ):
         """
         .. Warning::
             Deprecated: The ``invite_by_email`` function is no longer supported.
@@ -8263,7 +8363,7 @@ class Group(dict):
         }
         return self._portal.con.post(url, params)
 
-    def reassign_to(self, target_owner):
+    def reassign_to(self, target_owner: Union[str, User]):
         """
         The ``reassign_to`` method reassigns this group from its current owner to another owner.
 
@@ -8291,7 +8391,14 @@ class Group(dict):
         return False
 
     # ----------------------------------------------------------------------
-    def notify(self, users, subject, message, method="email", client_id=None):
+    def notify(
+        self,
+        users: Union[list[str], list[User]],
+        subject: str,
+        message: str,
+        method: str = "email",
+        client_id: Optional[str] = None,
+    ):
         """
         The ``notify`` method creates a group notification that sends a message to all users within
         the group.
@@ -8416,22 +8523,22 @@ class Group(dict):
 
     def update(
         self,
-        title=None,
-        tags=None,
-        description=None,
-        snippet=None,
-        access=None,
-        is_invitation_only=None,
-        sort_field=None,
-        sort_order=None,
-        is_view_only=None,
-        thumbnail=None,
-        max_file_size=None,
-        users_update_items=False,
-        clear_empty_fields=False,
-        display_settings=None,
-        is_open_data=False,
-        leaving_disallowed=False,
+        title: Optional[str] = None,
+        tags: Optional[Union[list[str], str]] = None,
+        description: Optional[str] = None,
+        snippet: Optional[str] = None,
+        access: Optional[str] = None,
+        is_invitation_only: Optional[bool] = None,
+        sort_field: Optional[str] = None,
+        sort_order: Optional[str] = None,
+        is_view_only: Optional[bool] = None,
+        thumbnail: Optional[str] = None,
+        max_file_size: Optional[int] = None,
+        users_update_items: bool = False,
+        clear_empty_fields: bool = False,
+        display_settings: Optional[str] = None,
+        is_open_data: bool = False,
+        leaving_disallowed: bool = False,
     ):
         """
         The ``update`` method updates the group's properties with the values supplied for particular arguments.
@@ -8636,7 +8743,7 @@ class Group(dict):
 
     # ----------------------------------------------------------------------
     @protected.setter
-    def protected(self, value):
+    def protected(self, value: bool):
         """
         See main ``protected`` property docstring
         """
@@ -9202,7 +9309,7 @@ class User(dict):
         """The ``groups`` property retrieves a List of :class:`~arcgis.gis.Group` objects the current user belongs to."""
         return [Group(self._gis, group["id"]) for group in self["groups"]]
 
-    def update_license_type(self, user_type):
+    def update_license_type(self, user_type: str):
         """
 
         The ``update_license_type`` method is primarily used to update the user's licensing type. This allows
@@ -9269,11 +9376,11 @@ class User(dict):
 
     def reset(
         self,
-        password=None,
-        new_password=None,
-        new_security_question=None,
-        new_security_answer=None,
-        reset_by_email=False,
+        password: Optional[str] = None,
+        new_password: Optional[str] = None,
+        new_security_question: Optional[str] = None,
+        new_security_answer: Optional[str] = None,
+        reset_by_email: bool = False,
     ):
 
         """
@@ -9340,20 +9447,20 @@ class User(dict):
 
     def update(
         self,
-        access=None,
-        preferred_view=None,
-        description=None,
-        tags=None,
-        thumbnail=None,
-        fullname=None,
-        email=None,
-        culture=None,
-        region=None,
-        first_name=None,
-        last_name=None,
-        security_question=None,
-        security_answer=None,
-        culture_format=None,
+        access: Optional[str] = None,
+        preferred_view: Optional[str] = None,
+        description: Optional[str] = None,
+        tags: Optional[Union[list[str], str]] = None,
+        thumbnail: Optional[str] = None,
+        fullname: Optional[str] = None,
+        email: Optional[str] = None,
+        culture: Optional[str] = None,
+        region: Optional[str] = None,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
+        security_question: Optional[int] = None,
+        security_answer: Optional[str] = None,
+        culture_format: Optional[str] = None,
     ):
 
         """
@@ -9579,7 +9686,7 @@ class User(dict):
 
     # ----------------------------------------------------------------------
     @esri_access.setter
-    def esri_access(self, value):
+    def esri_access(self, value: bool):
         """
         See main ``esri_access`` property docstring
         """
@@ -9622,7 +9729,7 @@ class User(dict):
         return users
 
     # ----------------------------------------------------------------------
-    def link_account(self, username, user_gis):
+    def link_account(self, username: Union[str, User], user_gis: GIS):
         """
         The ``link_account`` method allows a user to link several accounts to gether and share information between them.
         For example, if you use multiple accounts for ArcGIS Online and Esri websites,
@@ -9674,7 +9781,7 @@ class User(dict):
         return False
 
     # ----------------------------------------------------------------------
-    def unlink_account(self, username):
+    def unlink_account(self, username: Union[str, User]):
         """
         The ``unlink_account`` method allows for the removal of linked accounts when a user wishes to no longer have
         a linked account. See the :attr:`~arcgis.gis.User.link_account` method for more information on how accounts are
@@ -9711,7 +9818,7 @@ class User(dict):
         return False
 
     # ----------------------------------------------------------------------
-    def update_level(self, level):
+    def update_level(self, level: int):
         """
         The ``update_level`` allows administrators
         of an organization to update the level of a user. Administrators can
@@ -9752,7 +9859,7 @@ class User(dict):
         =====================  =========================================================
         **Argument**           **Description**
         ---------------------  ---------------------------------------------------------
-        level                  Required string. The values of 1 or 2. This
+        level                  Required int. The values of 1 or 2. This
                                is the user level for the given user.
 
 
@@ -9798,7 +9905,7 @@ class User(dict):
         return res
 
     # ----------------------------------------------------------------------
-    def update_role(self, role):
+    def update_role(self, role: str):
         """
         The ``update_role`` method updates this user's role to org_user, org_publisher, org_admin, viewer, view_only,
         viewplusedit, or a custom role.
@@ -9842,7 +9949,7 @@ class User(dict):
             self.role = role
         return passed
 
-    def delete(self, reassign_to=None):
+    def delete(self, reassign_to: Optional[str] = None):
         """
         The ``delete`` method deletes this user from the portal, optionally deleting or reassigning groups and items.
 
@@ -9885,7 +9992,7 @@ class User(dict):
             bundle.revoke(users=self.username)
         return self._portal.delete_user(self._user_id, reassign_to)
 
-    def reassign_to(self, target_username):
+    def reassign_to(self, target_username: str):
         """
         The ``reassign_to`` method reassigns all of this user's items and groups to another user.
 
@@ -9945,7 +10052,7 @@ class User(dict):
                     thumbnail_url_path, try_json=False, force_bytes=True
                 )
 
-    def download_thumbnail(self, save_folder=None):
+    def download_thumbnail(self, save_folder: Optional[str] = None):
         """
         The ``download_thumbnail`` method downloads the item thumbnail for this user and saves it in the folder that
         is passed when ``download_thumbnail`` is called.
@@ -10012,7 +10119,7 @@ class User(dict):
         """
         return self._portal.user_folders(self._user_id)
 
-    def items(self, folder=None, max_items=100):
+    def items(self, folder: Optional[str] = None, max_items: int = 100):
         """
         The ``item`` method provides a list of :class:`~arcgis.gis.Item` objects in the specified folder.
         For content in the root folder, use the default value of None for the folder argument.
@@ -10443,7 +10550,7 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @content_status.setter
-    def content_status(self, value):
+    def content_status(self, value: Optional[str]):
         """
         See main ``content_status`` property docstring
         """
@@ -10485,13 +10592,13 @@ class Item(dict):
 
     def copy_feature_layer_collection(
         self,
-        service_name,
-        layers=None,
-        tables=None,
-        folder=None,
-        description=None,
-        snippet=None,
-        owner=None,
+        service_name: str,
+        layers: Optional[Union[list[int], str]] = None,
+        tables: Optional[Union[list[int], str]] = None,
+        folder: Optional[str] = None,
+        description: Optional[str] = None,
+        snippet: Optional[str] = None,
+        owner: Optional[Union[str, User]] = None,
     ):
         """
         The ``copy_feature_layer_collection`` method allows users to copy existing Feature Layer Collections and select
@@ -10670,7 +10777,9 @@ class Item(dict):
                 pass
         return None
 
-    def download(self, save_path=None, file_name=None):
+    def download(
+        self, save_path: Optional[str] = None, file_name: Optional[str] = None
+    ):
         """
         The ``download`` method downloads the data to the specified folder or a temporary folder, if a folder is not provided.
 
@@ -10732,14 +10841,14 @@ class Item(dict):
 
     def export(
         self,
-        title,
-        export_format,
-        parameters=None,
-        wait=True,
-        enforce_fld_vis=None,
-        tags=None,
-        snippet=None,
-        overwrite=False,
+        title: str,
+        export_format: str,
+        parameters: Optional[str] = None,
+        wait: bool = True,
+        enforce_fld_vis: Optional[bool] = None,
+        tags: Optional[Union[list[str], str]] = None,
+        snippet: Optional[str] = None,
+        overwrite: bool = False,
     ):
         """
         The ``export`` method is used to export a service item to the specified export format.
@@ -10857,7 +10966,7 @@ class Item(dict):
         return res
 
     # ----------------------------------------------------------------------
-    def status(self, job_id=None, job_type=None):
+    def status(self, job_id: Optional[str] = None, job_type: Optional[str] = None):
         """
         The ``status`` method provides the status of an :class:`~arcgis.gis.Item` in the following situations:
             1. Publishing an :class:`~arcgis.gis.Item`
@@ -10922,7 +11031,7 @@ class Item(dict):
                     thumbnail_url_path, try_json=False, force_bytes=True
                 )
 
-    def download_thumbnail(self, save_folder=None):
+    def download_thumbnail(self, save_folder: Optional[str] = None):
         """
         The ``download_thumbnail`` method is similar to the ``download`` method but only downloads the item thumbnail.
 
@@ -11036,7 +11145,7 @@ class Item(dict):
             raise ValueError("Input must be XML path file or XML Text")
         return self.update(metadata=xml_file)
 
-    def download_metadata(self, save_folder=None):
+    def download_metadata(self, save_folder: Optional[str] = None):
         """
         The ``download_metadata`` method is similar to the ``download`` method but only downloads the item metadata for
         the specified item id. Items with metadata have 'Metadata' in their typeKeywords.
@@ -11218,7 +11327,7 @@ class Item(dict):
             self.owner,
         )
 
-    def reassign_to(self, target_owner, target_folder=None):
+    def reassign_to(self, target_owner: str, target_folder: Optional[str] = None):
         """
         The ``reassign_to`` method allows the administrator to reassign a single item from one user to another.
 
@@ -11367,7 +11476,11 @@ class Item(dict):
         return ret_dict
 
     def share(
-        self, everyone=False, org=False, groups=None, allow_members_to_edit=False
+        self,
+        everyone: bool = False,
+        org: bool = False,
+        groups: Optional[Union[list[Group], list[str]]] = None,
+        allow_members_to_edit: bool = False,
     ):
         """
         The ``share`` method shares an item with the specified list of groups.
@@ -11469,7 +11582,7 @@ class Item(dict):
         self._hydrate()
         return res
 
-    def unshare(self, groups):
+    def unshare(self, groups: Union[list[str], list[Group]]):
         """
         The ``unshare`` method stops sharing of the Item with the specified list of groups.
 
@@ -11520,7 +11633,7 @@ class Item(dict):
             owner = self._user_id
             return self._portal.unshare_item(self.itemid, owner, folder, group_ids)
 
-    def delete(self, force=False, dry_run=False):
+    def delete(self, force: bool = False, dry_run: bool = False):
         """
         The ``delete`` method deletes the item. If the item is unable to be deleted , a RuntimeException is raised.
         To know if you can safely delete the item, use the optional parameter 'dry_run' in order to test the operation
@@ -11606,7 +11719,7 @@ class Item(dict):
         else:
             return self._portal.delete_item(self.itemid, self._user_id, folder, force)
 
-    def create_thumbnail(self, update=True):
+    def create_thumbnail(self, update: bool = True):
         """
         The ``create_thumbnail`` method creates a Thumbnail for a feature service portal item using the service's
         symbology and the print service registered for the enterprise.
@@ -11714,7 +11827,13 @@ class Item(dict):
             self.update(item_properties={"thumbnailUrl": res.url})
         return res
 
-    def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
+    def update(
+        self,
+        item_properties: Optional[dict[str, Any]] = None,
+        data: Optional[str] = None,
+        thumbnail: Optional[str] = None,
+        metadata: Optional[str] = None,
+    ):
 
         """
          The ``update`` method updates an item in a Portal.
@@ -11837,7 +11956,7 @@ class Item(dict):
         return ret
 
     @cached(cache=TTLCache(maxsize=255, ttl=60))
-    def usage(self, date_range="7D", as_df=True):
+    def usage(self, date_range: str = "7D", as_df: bool = True):
         """
 
         .. note::
@@ -12076,7 +12195,7 @@ class Item(dict):
         except:
             return None
 
-    def get_data(self, try_json=True):
+    def get_data(self, try_json: bool = True):
         """
         The ``get_data`` method retrieves the data associated with an item.
 
@@ -12173,7 +12292,7 @@ class Item(dict):
 
     _RELATIONSHIP_DIRECTIONS = frozenset(["forward", "reverse"])
 
-    def related_items(self, rel_type, direction="forward"):
+    def related_items(self, rel_type: str, direction: str = "forward"):
         """
         The ``related_items`` method retrieves the items related to this item. Relationships can be added and deleted
         using item.add_relationship() and item.delete_relationship(), respectively.
@@ -12220,7 +12339,7 @@ class Item(dict):
             related_items.append(Item(self._gis, related_item["id"], related_item))
         return related_items
 
-    def add_relationship(self, rel_item, rel_type):
+    def add_relationship(self, rel_item: Item, rel_type: str):
 
         """The ``add_relationship`` method adds a relationship from the current item to ``rel_item``.
 
@@ -12271,7 +12390,7 @@ class Item(dict):
         if resp:
             return resp.get("success")
 
-    def delete_relationship(self, rel_item, rel_type):
+    def delete_relationship(self, rel_item: Item, rel_type: str):
         """
         The ``delete_relationship`` method  deletes a relationship between this item and the rel_item.
 
@@ -12311,14 +12430,14 @@ class Item(dict):
 
     def publish(
         self,
-        publish_parameters=None,
-        address_fields=None,
-        output_type=None,
-        overwrite=False,
-        file_type=None,
-        build_initial_cache=False,
-        item_id=None,
-        geocode_service=None,
+        publish_parameters: Optional[dict[str, Any]] = None,
+        address_fields: Optional[dict[str, str]] = None,
+        output_type: Optional[str] = None,
+        overwrite: bool = False,
+        file_type: Optional[str] = None,
+        build_initial_cache: bool = False,
+        item_id: Optional[str] = None,
+        geocode_service: Optional[Geocoder] = None,
     ):
         """
         The ``publishes`` method is used to publish a hosted service based on an existing source item (this item).
@@ -12736,7 +12855,7 @@ class Item(dict):
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
 
-    def move(self, folder, owner=None):
+    def move(self, folder: str, owner: Optional[str] = None):
         """
         The ``move`` method moves the current item to the name of the folder passed when ``move`` is called.
 
@@ -12793,7 +12912,12 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def create_tile_service(
-        self, title, min_scale, max_scale, cache_info=None, build_cache=False
+        self,
+        title: str,
+        min_scale: float,
+        max_scale: float,
+        cache_info: Optional[dict[str, Any]] = None,
+        build_cache: bool = False,
     ):
         """
         The ``create_tile_service`` method allows publishers and administrators to publish hosted feature
@@ -13009,7 +13133,7 @@ class Item(dict):
             raise ValueError("Input must of type FeatureService")
         return
 
-    def protect(self, enable=True):
+    def protect(self, enable: bool = True):
         """
         The ``protect`` method enables or disables delete protection on this item, essentially allowing the item to be
         deleted or protecting it from deletion.
@@ -13126,7 +13250,7 @@ class Item(dict):
         return cs
 
     # ----------------------------------------------------------------------
-    def add_comment(self, comment):
+    def add_comment(self, comment: str):
         """
         The ``add_comment`` method adds a comment to an item.
 
@@ -13186,7 +13310,7 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @rating.setter
-    def rating(self, value):
+    def rating(self, value: float):
         """
         See main ``rating`` property docstring
         """
@@ -13236,10 +13360,10 @@ class Item(dict):
     # ----------------------------------------------------------------------
     def _create_proxy(
         self,
-        url: str = None,
-        hit_interval: int = None,
+        url: Optional[str] = None,
+        hit_interval: Optional[int] = None,
         interval_length: int = 60,
-        proxy_params: dict = None,
+        proxy_params: Optional[dict[str, Any]] = None,
     ) -> dict:
         """
         A service proxy creates a new endpoint for a service that is
@@ -13321,11 +13445,11 @@ class Item(dict):
     def copy_item(
         self,
         *,
-        title=None,
-        tags=None,
-        folder=None,
-        include_resources=False,
-        include_private=False,
+        title: Optional[str] = None,
+        tags: Optional[Union[list[str], str]] = None,
+        folder: Optional[str] = None,
+        include_resources: bool = False,
+        include_private: bool = False,
     ):
         """
         The ``copy_item`` operation creates a new :class:`~arcgis.gis.Item` that is a copy of the original
@@ -13399,7 +13523,14 @@ class Item(dict):
         return
 
     # ----------------------------------------------------------------------
-    def copy(self, title=None, tags=None, snippet=None, description=None, layers=None):
+    def copy(
+        self,
+        title: Optional[str] = None,
+        tags: Optional[Union[list[str], str]] = None,
+        snippet: Optional[str] = None,
+        description: Optional[str] = None,
+        layers: Optional[list[int]] = None,
+    ):
         """
         The ``copy`` method allows for the creation of an item that is derived from the current Item.
 
@@ -13700,7 +13831,11 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def register(
-        self, app_type, redirect_uris=None, http_referers=None, privileges=None
+        self,
+        app_type: str,
+        redirect_uris: Optional[list[str]] = None,
+        http_referers: Optional[list[str]] = None,
+        privileges: Optional[list[str]] = None,
     ):
         """
 
@@ -13935,7 +14070,7 @@ class ItemDependency(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    def add(self, depend_type, depend_value):
+    def add(self, depend_type: str, depend_value: str):
         """
         Assigns a dependency to the current item
 
@@ -13961,7 +14096,7 @@ class ItemDependency(object):
         return True
 
     # ----------------------------------------------------------------------
-    def remove(self, depend_type, depend_value):
+    def remove(self, depend_type: str, depend_value: str):
         """
         Deletes a dependency to the current item
 
@@ -14032,7 +14167,7 @@ class ItemDependency(object):
         return items
 
 
-def rot13(s, b64=False, of=False):
+def rot13(s, b64: bool = False, of: bool = False):
     if s is None:
         return None
     result = ""
@@ -14102,7 +14237,7 @@ class _GISResource(object):
                 self._con = gis._con
 
     @classmethod
-    def fromitem(cls, item):
+    def fromitem(cls, item: Item):
         """
         The ``fromitem`` method is used to create a :class:`~arcgis.features.FeatureLayerCollection` from a
         :class:`~arcgis.gis.Item` class.
@@ -14281,7 +14416,7 @@ class Layer(_GISResource):
         """optional attribute query string to select features to process by geoanalytics or spatial analysis tools"""
 
     @classmethod
-    def fromitem(cls, item, index=0):
+    def fromitem(cls, item: str, index: int = 0):
         """
         The ``fromitem`` method returns the layer at the specified index from a layer :class:`~arcgis.gis.Item` object.
 

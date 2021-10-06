@@ -56,7 +56,7 @@ class InvitationManager(object):
             invites.extend(res["invitations"])
         return invites
 
-    def get(self, invite_id:str):
+    def get(self, invite_id: str):
         """
         The ``get`` method retrieves information about a single invitation.
 
@@ -97,7 +97,7 @@ class InvitationManager(object):
         return {"accepts": accepts, "declines": declines}
 
     # ----------------------------------------------------------------------
-    def delete(self, invite_id:str):
+    def delete(self, invite_id: str):
         """
         The ``delete`` method deletes an invitation by ID
 

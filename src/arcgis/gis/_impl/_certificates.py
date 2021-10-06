@@ -59,7 +59,7 @@ class CertificateManager(object):
         ----------------  -------------------------------------------------------------------------------
         domain            Required String. Server domain that the certificate is used for.
         ----------------  -------------------------------------------------------------------------------
-        certificate	      Required String. Base64-encoded certificate text, enclosed between 
+        certificate	      Required String. Base64-encoded certificate text, enclosed between
                           `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
         ================  ===============================================================================
 

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Union
 from arcgis._impl.common._isd import InsensitiveDict
 
 
@@ -223,7 +223,7 @@ class APIKeyManager(object):
     def create(
         self,
         title: str,
-        tags: str,
+        tags: Union[str, list[str]],
         description: Optional[str] = None,
         http_referers: Optional[list[str]] = None,
         redirect_uris: Optional[list[str]] = None,
