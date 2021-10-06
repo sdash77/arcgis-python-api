@@ -261,17 +261,17 @@ class Bundle(object):
         }
         res = self._con.get(url, params)
         final = dict(res)
-        while res['nextStart'] > 0:
-            params['start'] = res['nextStart']
+        while res["nextStart"] > 0:
+            params["start"] = res["nextStart"]
             res = self._con.get(url, params)
-            final['results'].extend(res['results'])
-            if res['nextStart'] == -1:
+            final["results"].extend(res["results"])
+            if res["nextStart"] == -1:
                 break
         from arcgis.gis import User
 
         users = [
-            User(gis=self._gis, username=user['username'], userdict=None)
-            for user in final['results']
+            User(gis=self._gis, username=user["username"], userdict=None)
+            for user in final["results"]
         ]
         return users
 
