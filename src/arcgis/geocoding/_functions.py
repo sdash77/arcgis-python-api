@@ -1,12 +1,15 @@
 """
 Types and functions for geocoding.
 """
+from __future__ import annotations
 import copy
-from ..gis import _GISResource
+from typing import Any, Optional, Union
+from arcgis.features.layer import FeatureLayer
+from ..gis import GIS, _GISResource, Item
 import arcgis.env
 import logging
 from ..features import FeatureSet
-from ..geometry import Geometry
+from ..geometry import Geometry, Point, SpatialReference
 from arcgis._impl.common._utils import _validate_url, chunks
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,7 +55,7 @@ class Geocoder(_GISResource):
             pass  # print("Geocoder does not support single line address input")
 
     @classmethod
-    def fromitem(cls, item):
+    def fromitem(cls, item: Item):
         """
         The ``fromitem`` method creates a ``Geocoder`` from an :class:`~arcgis.gis.Item` in the
         class:`~arcgis.gis.GIS` instance.
@@ -616,7 +619,7 @@ class Geocoder(_GISResource):
         return resp
 
 
-def get_geocoders(gis):
+def get_geocoders(gis: GIS):
     """
     The ``get_geocoders`` method is used to query the list of geocoders registered with the :class:`~arcgis.gis.GIS`.
 
@@ -654,13 +657,13 @@ def get_geocoders(gis):
 
 # ----------------------------------------------------------------------
 def analyze_geocode_input(
-    input_table_or_item,
-    geocode_service_url=None,
-    column_names=None,
-    input_file_parameters=None,
-    locale="en",
-    context=None,
-    gis=None,
+    input_table_or_item: Union[Item, str, dict[str, str]],
+    geocode_service_url: Optional[Union[str, Geocoder]] = None,
+    column_names: Optional[str] = None,
+    input_file_parameters: Optional[dict[str, str]] = None,
+    locale: str = "en",
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
 ):
     """
     The ``analyze_geocode_input`` function takes in a geocode input (either a table or file of
@@ -853,17 +856,17 @@ def analyze_geocode_input(
 
 # ----------------------------------------------------------------------
 def geocode_from_items(
-    input_data,
-    output_type="Feature Layer",
-    geocode_service_url=None,
-    geocode_parameters=None,
-    country=None,
-    output_fields=None,
-    header_rows_to_skip=1,
-    output_name=None,
-    category=None,
-    context=None,
-    gis=None,
+    input_data: Union[Item, str, FeatureLayer],
+    output_type: str = "Feature Layer",
+    geocode_service_url: Optional[Union[str, Geocoder]] = None,
+    geocode_parameters: Optional[dict[str, Any]] = None,
+    country: Optional[str] = None,
+    output_fields: Optional[str] = None,
+    header_rows_to_skip: int = 1,
+    output_name: Optional[str] = None,
+    category: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
 ):
     """
     The ``geocode_from_items`` method creates :class:`~arcgis.geocoding.Geocoder` objects from an
@@ -1069,7 +1072,6 @@ def geocode_from_items(
         "XLSX",
         "xlsx",
     ]:
-        import json
 
         if header_rows_to_skip is None:
             hre = "false"
@@ -1165,22 +1167,22 @@ def geocode_from_items(
 
 
 def geocode(
-    address,
-    search_extent=None,
-    location=None,
-    distance=None,
-    out_sr=None,
-    category=None,
-    out_fields="*",
-    max_locations=20,
-    magic_key=None,
-    for_storage=False,
-    geocoder=None,
-    as_featureset=False,
-    match_out_of_range=True,
-    location_type="street",
-    lang_code=None,
-    source_country=None,
+    address: Union[list[str], dict[str, str]],
+    search_extent: Optional[str] = None,
+    location: Optional[Union[list, tuple]] = None,
+    distance: Optional[int] = None,
+    out_sr: Optional[dict[str, Any]] = None,
+    category: Optional[str] = None,
+    out_fields: str = "*",
+    max_locations: int = 20,
+    magic_key: Optional[str] = None,
+    for_storage: bool = False,
+    geocoder: Optional[Geocoder] = None,
+    as_featureset: bool = False,
+    match_out_of_range: bool = True,
+    location_type: str = "street",
+    lang_code: Optional[str] = None,
+    source_country: Optional[str] = None,
 ):
     """
     The ``geocode`` function geocodes one location per request.
@@ -1352,15 +1354,15 @@ def geocode(
 
 
 def reverse_geocode(
-    location,
-    distance=None,
-    out_sr=None,
-    lang_code=None,
-    return_intersection=False,
-    for_storage=False,
-    geocoder=None,
-    feature_types=None,
-    roof_top="street",
+    location: Union[list, dict, Point],
+    distance: Optional[float] = None,
+    out_sr: Optional[Union[int, SpatialReference]] = None,
+    lang_code: Optional[str] = None,
+    return_intersection: bool = False,
+    for_storage: bool = False,
+    geocoder: Optional[Geocoder] = None,
+    feature_types: Optional[str] = None,
+    roof_top: str = "street",
 ):
     """
     The ``reverse_geocode`` operation determines the address at a particular
@@ -1469,17 +1471,17 @@ def reverse_geocode(
 
 
 def batch_geocode(
-    addresses,
-    source_country=None,
-    category=None,
-    out_sr=None,
-    geocoder=None,
-    as_featureset=False,
-    match_out_of_range=True,
-    location_type="street",
-    search_extent=None,
-    lang_code="EN",
-    preferred_label_values=None,
+    addresses: Union[list[str], dict[str, str]],
+    source_country: Optional[str] = None,
+    category: Optional[str] = None,
+    out_sr: Optional[dict] = None,
+    geocoder: Optional[Geocoder] = None,
+    as_featureset: bool = False,
+    match_out_of_range: bool = True,
+    location_type: str = "street",
+    search_extent: Optional[Union[list[dict[str, Any], dict[str, Any]]]] = None,
+    lang_code: str = "EN",
+    preferred_label_values: Optional[str] = None,
 ):
     """
     The ``batch_geocode`` function geocodes an entire list of addresses.
@@ -1612,14 +1614,14 @@ def batch_geocode(
 
 
 def suggest(
-    text,
-    location=None,
-    distance=None,
-    category=None,
-    geocoder=None,
-    search_extent=None,
-    max_suggestions=5,
-    country_code=None,
+    text: str,
+    location: Optional[dict[str, Any]] = None,
+    distance: Optional[float] = None,
+    category: Optional[str] = None,
+    geocoder: Optional[Geocoder] = None,
+    search_extent: Optional[Union[list[dict[str, Any], dict[str, Any]]]] = None,
+    max_suggestions: int = 5,
+    country_code: Optional[str] = None,
 ):
     """
     The ``suggest`` method retrieves a resource representing a list of
