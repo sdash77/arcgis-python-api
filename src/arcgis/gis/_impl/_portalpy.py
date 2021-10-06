@@ -1379,33 +1379,19 @@ class Portal(object):
 
     def get_item_dependencies(self, itemid):
         postdata = self._postdata()
-        data = self.con.post(
+        postdata["num"] = 255
+        return self.con.post(
             "content/items/" + itemid + "/dependencies",
             postdata,
         )
-        if data["total"] > data["num"] and data["nextStart"] > 0:
-            postdata["num"] = data["total"]
-            return self.con.post(
-                "content/items/" + itemid + "/dependencies",
-                postdata,
-            )
-        else:
-            return data
 
     def get_item_dependents_to(self, itemid):
         postdata = self._postdata()
-        data = self.con.post(
+        postdata["num"] = 255
+        return self.con.post(
             "content/items/" + itemid + "/dependencies/listDependentsTo",
             postdata,
         )
-        if data["total"] > data["num"] and data["nextStart"] > 0:
-            postdata["num"] = data["total"]
-            return self.con.post(
-                "content/items/" + itemid + "/dependencies/listDependentsTo",
-                postdata,
-            )
-        else:
-            return data
 
     def invite_group_users(
         self, user_names, group_id, role="group_member", expiration=10080
