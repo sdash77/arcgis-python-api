@@ -12243,8 +12243,10 @@ class Item(dict):
 
         """
         The ``dependent_upon`` method returns items, urls, etc that this item is dependent on.
-        This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available only
-        with an ArcGIS Enterprise."""
+
+        .. note::
+            This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available only
+            with an ArcGIS Enterprise."""
         return self._portal.get_item_dependencies(self.itemid)
 
     def dependent_to(self):
