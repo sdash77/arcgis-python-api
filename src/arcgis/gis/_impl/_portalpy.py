@@ -1379,19 +1379,57 @@ class Portal(object):
 
     def get_item_dependencies(self, itemid):
         postdata = self._postdata()
-        postdata["num"] = 255
-        return self.con.post(
+        postdata["num"] = 100
+        data = self.con.post(
             "content/items/" + itemid + "/dependencies",
             postdata,
         )
 
+        # check if more dependents to get
+        while data["nextStart"] > 0:
+            postdata["start"] = data["nextStart"]
+            new_data = self.con.post(
+                "content/items/" + itemid + "/dependencies",
+                postdata,
+            )
+
+            # update data to include new_data in list
+            for item in new_data["list"]:
+                data["list"].append(item)
+            # update data to inlcude correct nextStart and total num
+            data["nextStart"] = new_data["nextStart"]
+            data["num"] = data["num"] + new_data["num"]
+            if data["nextStart"] == -1:
+                break
+
+        return data
+
     def get_item_dependents_to(self, itemid):
         postdata = self._postdata()
-        postdata["num"] = 255
-        return self.con.post(
+        postdata["num"] = 100
+        data = self.con.post(
             "content/items/" + itemid + "/dependencies/listDependentsTo",
             postdata,
         )
+
+        # check if more dependents to get
+        while data["nextStart"] > 0:
+            postdata["start"] = data["nextStart"]
+            new_data = self.con.post(
+                "content/items/" + itemid + "/dependencies/listDependentsTo",
+                postdata,
+            )
+
+            # update data to include new_data in list
+            for item in new_data["list"]:
+                data["list"].append(item)
+            # update data to inlcude correct nextStart and total num
+            data["nextStart"] = new_data["nextStart"]
+            data["num"] = data["num"] + new_data["num"]
+            if data["nextStart"] == -1:
+                break
+
+        return data
 
     def invite_group_users(
         self, user_names, group_id, role="group_member", expiration=10080
