@@ -1,8 +1,10 @@
 import logging as _logging
+from typing import Optional
 import arcgis
 from datetime import datetime
 from functools import lru_cache
 from arcgis.features import FeatureSet
+from arcgis.gis import GIS
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
@@ -20,7 +22,7 @@ def _create_toolbox(url, gis, verbose=False):
     return _import_toolbox(url_or_item=url, gis=gis, verbose=verbose)
 
 
-def get_travel_modes(gis=None):
+def get_travel_modes(gis: Optional[GIS] = None):
     """
 
 
@@ -50,7 +52,11 @@ def get_travel_modes(gis=None):
 get_travel_modes.__annotations__ = {"return": tuple}
 
 
-def get_tool_info(service_name="asyncRoute", tool_name="FindRoutes", gis=None):
+def get_tool_info(
+    service_name: str = "asyncRoute",
+    tool_name: str = "FindRoutes",
+    gis: Optional[GIS] = None,
+):
     """
 
 

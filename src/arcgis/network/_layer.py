@@ -1,13 +1,17 @@
+from __future__ import annotations
 import json
 import logging
 import datetime
+from typing import Any, Optional, Union
+
+from arcpy.arcobjects.arcobjects import Point
+from arcpy.arcobjects.geometries import Polygon, Polyline
 from arcgis.gis import Layer, _GISResource
 
 # Supported Data Types
 from arcgis.features import Feature, FeatureSet
-from arcgis.features import FeatureLayer, FeatureLayerCollection, Table
+from arcgis.features import FeatureLayer, Table
 from arcgis.network import _utils
-from arcgis.mapping import MapImageLayer
 from arcgis._impl.common._utils import _validate_url
 
 try:
@@ -249,44 +253,44 @@ class RouteLayer(NetworkLayer):
 
     def solve(
         self,
-        stops,
-        barriers=None,
-        polyline_barriers=None,
-        polygon_barriers=None,
-        travel_mode=None,
-        attribute_parameter_values=None,
-        return_directions=True,
-        return_routes=True,
-        return_stops=False,
-        return_barriers=False,
-        return_polyline_barriers=True,
-        return_polygon_barriers=True,
-        out_sr=None,
-        ignore_invalid_locations=True,
-        output_lines=None,
-        find_best_sequence=False,
-        preserve_first_stop=True,
-        preserve_last_stop=True,
-        use_time_windows=False,
-        start_time=None,
-        start_time_is_utc=False,
-        accumulate_attribute_names=None,
-        impedance_attribute_name=None,
-        restriction_attribute_names=None,
-        restrict_u_turns=None,
-        use_hierarchy=True,
-        directions_language=None,
-        directions_output_type=None,
-        directions_style_name=None,
-        directions_length_units=None,
-        directions_time_attribute_name=None,
-        output_geometry_precision=None,
-        output_geometry_precision_units=None,
-        return_z=False,
-        overrides=None,
-        preserve_objectid=False,
-        future=False,
-        time_windows_are_utc=False,
+        stops: Union[list[Point], list[FeatureSet], FeatureSet],
+        barriers: Optional[Union[Point, FeatureSet, dict[str, Any]]] = None,
+        polyline_barriers: Optional[Union[Polyline, FeatureSet, dict[str, Any]]] = None,
+        polygon_barriers: Optional[Union[Polygon, FeatureSet, dict[str, Any]]] = None,
+        travel_mode: Optional[str] = None,
+        attribute_parameter_values: Optional[Union[str, list[str]]] = None,
+        return_directions: bool = True,
+        return_routes: bool = True,
+        return_stops: bool = False,
+        return_barriers: bool = False,
+        return_polyline_barriers: bool = True,
+        return_polygon_barriers: bool = True,
+        out_sr: Optional[int] = None,
+        ignore_invalid_locations: bool = True,
+        output_lines: Optional[str] = None,
+        find_best_sequence: bool = False,
+        preserve_first_stop: bool = True,
+        preserve_last_stop: bool = True,
+        use_time_windows: bool = False,
+        start_time: Optional[str] = None,
+        start_time_is_utc: bool = False,
+        accumulate_attribute_names: Optional[str] = None,
+        impedance_attribute_name: Optional[str] = None,
+        restriction_attribute_names: Optional[str] = None,
+        restrict_u_turns: Optional[bool] = None,
+        use_hierarchy: bool = True,
+        directions_language: Optional[str] = None,
+        directions_output_type: Optional[str] = None,
+        directions_style_name: Optional[str] = None,
+        directions_length_units: Optional[str] = None,
+        directions_time_attribute_name: Optional[str] = None,
+        output_geometry_precision: Optional[float] = None,
+        output_geometry_precision_units: Optional[str] = None,
+        return_z: bool = False,
+        overrides: Optional[dict[str, Any]] = None,
+        preserve_objectid: bool = False,
+        future: bool = False,
+        time_windows_are_utc: bool = False,
     ):
         """
         The solve operation is performed on a network layer resource.
@@ -608,198 +612,236 @@ class ServiceAreaLayer(NetworkLayer):
 
     def solve_service_area(
         self,
-        facilities,
-        barriers=None,
-        polyline_barriers=None,
-        polygon_barriers=None,
-        travel_mode=None,
-        attribute_parameter_values=None,
-        default_breaks=None,
-        exclude_sources_from_polygons=None,
-        merge_similar_polygon_ranges=None,
-        output_lines=None,
-        output_polygons=None,
-        overlap_lines=None,
-        overlap_polygons=None,
-        split_lines_at_breaks=None,
-        split_polygons_at_breaks=None,
-        trim_outer_polygon=None,
-        trim_polygon_distance=None,
-        trim_polygon_distance_units=None,
-        return_facilities=False,
-        return_barriers=False,
-        return_polyline_barriers=False,
-        return_polygon_barriers=False,
-        out_sr=None,
-        accumulate_attribute_names=None,
-        impedance_attribute_name=None,
-        restriction_attribute_names=None,
-        restrict_u_turns=None,
-        output_geometry_precision=None,
-        output_geometry_precision_units="esriUnknownUnits",
-        use_hierarchy=None,
-        time_of_day=None,
-        time_of_day_is_utc=None,
-        travel_direction=None,
-        return_z=False,
-        overrides=None,
-        preserve_objectid=False,
-        future=False,
-        ignore_invalid_locations=True,
+        facilities: Union[FeatureSet, Point, list, dict],
+        barriers: Optional[Union[Point, FeatureSet, dict[str, Any]]] = None,
+        polyline_barriers: Optional[Union[Polyline, FeatureSet, dict[str, Any]]] = None,
+        polygon_barriers: Optional[Union[Polygon, FeatureSet, dict[str, Any]]] = None,
+        travel_mode: Optional[str] = None,
+        attribute_parameter_values: Optional[Union[str, list]] = None,
+        default_breaks: Optional[list[float]] = None,
+        exclude_sources_from_polygons: Optional[list[str]] = None,
+        merge_similar_polygon_ranges: Optional[bool] = None,
+        output_lines: Optional[str] = None,
+        output_polygons: Optional[str] = None,
+        overlap_lines: Optional[str] = None,
+        overlap_polygons: Optional[str] = None,
+        split_lines_at_breaks: Optional[bool] = None,
+        split_polygons_at_breaks: Optional[bool] = None,
+        trim_outer_polygon: Optional[bool] = None,
+        trim_polygon_distance: Optional[Union[str, int]] = None,
+        trim_polygon_distance_units: Optional[str] = None,
+        return_facilities: bool = False,
+        return_barriers: bool = False,
+        return_polyline_barriers: bool = False,
+        return_polygon_barriers: bool = False,
+        out_sr: Optional[int] = None,
+        accumulate_attribute_names: Optional[list[str]] = None,
+        impedance_attribute_name: Optional[str] = None,
+        restriction_attribute_names: Optional[list[str]] = None,
+        restrict_u_turns: Optional[str] = None,
+        output_geometry_precision: Optional[int] = None,
+        output_geometry_precision_units: str = "esriUnknownUnits",
+        use_hierarchy: Optional[bool] = None,
+        time_of_day: Optional[datetime.datetime] = None,
+        time_of_day_is_utc: Optional[bool] = None,
+        travel_direction: Optional[str] = None,
+        return_z: bool = False,
+        overrides: Optional[dict[str, Any]] = None,
+        preserve_objectid: bool = False,
+        future: bool = False,
+        ignore_invalid_locations: bool = True,
     ):
         """The solve service area operation is performed on a network layer
         resource of type service area (layerType is esriNAServerServiceArea).
         You can provide arguments to the solve service area operation as
         query parameters.
-        Inputs:
-            facilities - The set of facilities loaded as network locations
-                         during analysis. Facilities can be specified using
-                         a simple comma / semi-colon based syntax or as a
-                         JSON structure. If facilities are not specified,
-                         preloaded facilities from the map document are used
-                         in the analysis. If an empty json object is passed
-                         ('{}') preloaded facilities are ignored.
-            barriers - The set of barriers loaded as network locations during
-                       analysis. Barriers can be specified using a simple
-                       comma/semicolon-based syntax or as a JSON structure.
-                       If barriers are not specified, preloaded barriers from
-                       the map document are used in the analysis. If an empty
-                       json object is passed ('{}'), preloaded barriers are
-                       ignored.
-            polylineBarriers - The set of polyline barriers loaded as network
-                               locations during analysis. If polyline barriers
-                               are not specified, preloaded polyline barriers
-                               from the map document are used in the analysis.
-                               If an empty json object is passed ('{}'),
-                               preloaded polyline barriers are ignored.
-            polygonBarriers - The set of polygon barriers loaded as network
-                              locations during analysis. If polygon barriers
-                              are not specified, preloaded polygon barriers
-                              from the map document are used in the analysis.
-                              If an empty json object is passed ('{}'),
-                              preloaded polygon barriers are ignored.
-            travelMode - Travel modes provide override values that help you
-                         quickly and consistently model a vehicle or mode of
-                         transportation. The chosen travel mode must be
-                         preconfigured on the network dataset that the
-                         service area service references.
-            attributeParameterValues - A set of attribute parameter values that
-                                       can be parameterized to determine which
-                                       network elements can be used by a vehicle.
-            defaultBreaks - A comma-separated list of doubles. The default is
-                            defined in the network analysis layer.
-            excludeSourcesFromPolygons - A comma-separated list of string names.
-                                         The default is defined in the network
-                                         analysis layer.
 
-            mergeSimilarPolygonRanges - If true, similar ranges will be merged
-                                        in the result polygons. The default is
-                                        defined in the network analysis layer.
-            outputLines - The type of lines(s) generated. The default is as
-                          defined in the network analysis layer.
-                          Values: esriNAOutputLineNone | esriNAOutputLineTrueShape |
-                          esriNAOutputLineTrueShapeWithMeasure
-            outputPolygons - The type of polygon(s) generated. The default is
-                             as defined in the network analysis layer.
-            overlapLines - Indicates if the lines should overlap from multiple
-                           facilities. The default is defined in the network
-                           analysis layer.
-            overlapPolygons - Indicates if the polygons for all facilities
-                              should overlap. The default is defined in the
-                              network analysis layer.
-            splitLinesAtBreaks - If true, lines will be split at breaks. The
-                                 default is defined in the network analysis
-                                 layer.
-            splitPolygonsAtBreaks - If true, polygons will be split at breaks.
-                                    The default is defined in the network
-                                    analysis layer.
-            trimOuterPolygon -  If true, the outermost polygon (at the maximum
-                                break value) will be trimmed. The default is
-                                defined in the network analysis layer.
-            trimPolygonDistance -  If polygons are being trimmed, provides the
-                                   distance to trim. The default is defined in
-                                   the network analysis layer.
-            trimPolygonDistanceUnits - If polygons are being trimmed, specifies
-                                       the units of the trimPolygonDistance. The
-                                       default is defined in the network analysis
-                                       layer.
-            returnFacilities - If true, facilities will be returned with the
-                               analysis results. Default is false.
-            returnBarriers - If true, barriers will be returned with the analysis
-                             results. Default is false.
-            returnPolylineBarriers - If true, polyline barriers will be returned
-                                     with the analysis results. Default is false.
-            returnPolygonBarriers - If true, polygon barriers will be returned
-                                    with the analysis results. Default is false.
-            outSR - The well-known ID of the spatial reference for the geometries
-                    returned with the analysis results. If outSR is not specified,
-                    the geometries are returned in the spatial reference of the map.
-            accumulateAttributeNames - The list of network attribute names to be
-                                       accumulated with the analysis. The default
-                                       is as defined in the network analysis layer.
-                                       The value should be specified as a comma
-                                       separated list of attribute names. You can
-                                       also specify a value of none to indicate that
-                                       no network attributes should be accumulated.
-            impedanceAttributeName - The network attribute name to be used as the
-                                     impedance attribute in analysis. The default
-                                     is as defined in the network analysis layer.
-            restrictionAttributeNames - The list of network attribute names to be
-                                        used as restrictions with the analysis. The
-                                        default is as defined in the network analysis
-                                        layer. The value should be specified as a
-                                        comma separated list of attribute names.
-                                        You can also specify a value of none to
-                                        indicate that no network attributes should
-                                        be used as restrictions.
-            restrictUTurns - Specifies how U-Turns should be restricted in the
-                             analysis. The default is as defined in the network
-                             analysis layer. Values: esriNFSBAllowBacktrack |
-                             esriNFSBAtDeadEndsOnly | esriNFSBNoBacktrack |
-                             esriNFSBAtDeadEndsAndIntersections
-            outputGeometryPrecision - The precision of the output geometry after
-                                      generalization. If 0, no generalization of
-                                      output geometry is performed. The default is
-                                      as defined in the network service configuration.
-            outputGeometryPrecisionUnits - The units of the output geometry precision.
-                                           The default value is esriUnknownUnits.
-                                           Values: esriUnknownUnits | esriCentimeters |
-                                           esriDecimalDegrees | esriDecimeters |
-                                           esriFeet | esriInches | esriKilometers |
-                                           esriMeters | esriMiles | esriMillimeters |
-                                           esriNauticalMiles | esriPoints | esriYards
-            useHierarchy - If true, the hierarchy attribute for the network should be
-                           used in analysis. The default is as defined in the network
-                           layer. This cannot be used in conjunction with outputLines.
-            timeOfDay - The date and time at the facility. If travelDirection is set
-                        to esriNATravelDirectionToFacility, the timeOfDay value
-                        specifies the arrival time at the facility. if travelDirection
-                        is set to esriNATravelDirectionFromFacility, the timeOfDay
-                        value is the departure time from the facility. The time zone
-                        for timeOfDay is specified by timeOfDayIsUTC.
-            timeOfDayIsUTC - The time zone or zones of the timeOfDay parameter. When
-                             set to false, which is the default value, the timeOfDay
-                             parameter refers to the time zone or zones in which the
-                             facilities are located. Therefore, the start or end times
-                             of the service areas are staggered by time zone.
-            travelDirection - Options for traveling to or from the facility. The
-                              default is defined in the network analysis layer.
-                              Values: esriNATravelDirectionFromFacility |
-                                      esriNATravelDirectionToFacility
-            returnZ - If true, Z values will be included in saPolygons and saPolylines
-                      geometry if the network dataset is Z-aware. The default is false.
-            overrides - Optional dictionary. Specify additional settings that can
-                        influence the behavior of the solver.  A list of supported
-                        override settings for each solver and their acceptable values
-                        can be obtained by contacting Esri Technical Support.
-            preserve_objectid - Optional Boolean.  If True, all objectid values are
-                                maintained.  The default is False.
-            future - Optional Boolean.  If True, the process is run asynchronously.
-                     The default is False. If True, a NAJob is returned instead of the
-                     results.
-            ignoreInvalidLocations - If true, the solver will ignore invalid
-                                     locations. Otherwise, it will raise an error.
-                                     Default is true.
+        ===================================     ====================================================================
+        **Argument**                            **Description**
+        -----------------------------------     --------------------------------------------------------------------
+        facilities                              The set of facilities loaded as network locations
+                                                during analysis. Facilities can be specified using
+                                                a simple comma / semi-colon based syntax or as a
+                                                JSON structure. If facilities are not specified,
+                                                preloaded facilities from the map document are used
+                                                in the analysis. If an empty json object is passed
+                                                ('{}') preloaded facilities are ignored.
+        -----------------------------------     --------------------------------------------------------------------
+        barriers                                The set of barriers loaded as network locations during
+                                                analysis. Barriers can be specified using a simple
+                                                comma/semicolon-based syntax or as a JSON structure.
+                                                If barriers are not specified, preloaded barriers from
+                                                the map document are used in the analysis. If an empty
+                                                json object is passed ('{}'), preloaded barriers are
+                                                ignored.
+        -----------------------------------     --------------------------------------------------------------------
+        polyline_barriers                       The set of polyline barriers loaded as network
+                                                locations during analysis. If polyline barriers
+                                                are not specified, preloaded polyline barriers
+                                                from the map document are used in the analysis.
+                                                If an empty json object is passed ('{}'),
+                                                preloaded polyline barriers are ignored.
+        -----------------------------------     --------------------------------------------------------------------
+        polygon_barriers                        The set of polygon barriers loaded as network
+                                                locations during analysis. If polygon barriers
+                                                are not specified, preloaded polygon barriers
+                                                from the map document are used in the analysis.
+                                                If an empty json object is passed ('{}'),
+                                                preloaded polygon barriers are ignored.
+        -----------------------------------     --------------------------------------------------------------------
+        travel_mode                             Travel modes provide override values that help you
+                                                quickly and consistently model a vehicle or mode of
+                                                transportation. The chosen travel mode must be
+                                                preconfigured on the network dataset that the
+                                                service area service references.
+        -----------------------------------     --------------------------------------------------------------------
+        attribute_parameter_values              A set of attribute parameter values that
+                                                can be parameterized to determine which
+                                                network elements can be used by a vehicle.
+        -----------------------------------     --------------------------------------------------------------------
+        default_breaks                          A comma-separated list of doubles. The default is
+                                                defined in the network analysis layer.
+        -----------------------------------     --------------------------------------------------------------------
+        exclude_sources_from_polygons           A comma-separated list of string names.
+                                                The default is defined in the network analysis layer.
+        -----------------------------------     --------------------------------------------------------------------
+        merge_similar_polygon_ranges            If true, similar ranges will be merged in the result polygons.
+                                                The default is defined in the network analysis layer.
+        -----------------------------------     --------------------------------------------------------------------
+        output_lines                            The type of lines(s) generated. The default is as
+                                                defined in the network analysis layer.
+                                                Values: esriNAOutputLineNone | esriNAOutputLineTrueShape |
+                                                esriNAOutputLineTrueShapeWithMeasure
+        -----------------------------------     --------------------------------------------------------------------
+        output_polygons                         The type of polygon(s) generated. The default is
+                                                as defined in the network analysis layer.
+        -----------------------------------     --------------------------------------------------------------------
+        overlap_lines                           Indicates if the lines should overlap from multiple
+                                                facilities. The default is defined in the network
+                                                analysis layer.
+        -----------------------------------     --------------------------------------------------------------------
+        overlap_polygons                        Indicates if the polygons for all facilities
+                                                should overlap. The default is defined in the
+                                                network analysis layer.
+        -----------------------------------     --------------------------------------------------------------------
+        splitLines_at_breaks                    If true, lines will be split at breaks. The
+                                                default is defined in the network analysis
+                                                layer.
+        -----------------------------------     --------------------------------------------------------------------
+        split_polygons_at_breaks                If true, polygons will be split at breaks.
+                                                The default is defined in the network
+                                                analysis layer.
+        -----------------------------------     --------------------------------------------------------------------
+        trim_outer_polygon                      If true, the outermost polygon (at the maximum
+                                                break value) will be trimmed. The default is
+                                                defined in the network analysis layer.
+        -----------------------------------     --------------------------------------------------------------------
+        trim_polygon_distance                   If polygons are being trimmed, provides the
+                                                distance to trim. The default is defined in
+                                                the network analysis layer.
+        -----------------------------------     --------------------------------------------------------------------
+        trim_polygon_distance_units             If polygons are being trimmed, specifies
+                                                the units of the trimPolygonDistance. The
+                                                default is defined in the network analysis
+                                                layer.
+        -----------------------------------     --------------------------------------------------------------------
+        return_facilities                       If true, facilities will be returned with the
+                                                analysis results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        return_barriers                         If true, barriers will be returned with the analysis
+                                                results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        return_polyline_barriers                If true, polyline barriers will be returned
+                                                with the analysis results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        return_polygon_barriers                 If true, polygon barriers will be returned
+                                                with the analysis results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        out_sr                                  The well-known ID of the spatial reference for the geometries
+                                                returned with the analysis results. If outSR is not specified,
+                                                the geometries are returned in the spatial reference of the map.
+        -----------------------------------     --------------------------------------------------------------------
+        accumulate_attribute_names              The list of network attribute names to be
+                                                accumulated with the analysis. The default
+                                                is as defined in the network analysis layer.
+                                                The value should be specified as a comma
+                                                separated list of attribute names. You can
+                                                also specify a value of none to indicate that
+                                                no network attributes should be accumulated.
+        -----------------------------------     --------------------------------------------------------------------
+        impedance_attribute_name                The network attribute name to be used as the
+                                                impedance attribute in analysis. The default
+                                                is as defined in the network analysis layer.
+        -----------------------------------     --------------------------------------------------------------------
+        restriction_attribute_names             The list of network attribute names to be
+                                                used as restrictions with the analysis. The
+                                                default is as defined in the network analysis
+                                                layer. The value should be specified as a
+                                                comma separated list of attribute names.
+                                                You can also specify a value of none to
+                                                indicate that no network attributes should
+                                                be used as restrictions.
+        -----------------------------------     --------------------------------------------------------------------
+        restrict_u_turns                        Specifies how U-Turns should be restricted in the
+                                                analysis. The default is as defined in the network
+                                                analysis layer. Values: esriNFSBAllowBacktrack |
+                                                esriNFSBAtDeadEndsOnly | esriNFSBNoBacktrack |
+                                                esriNFSBAtDeadEndsAndIntersections
+        -----------------------------------     --------------------------------------------------------------------
+        output_geometry_precision               The precision of the output geometry after
+                                                generalization. If 0, no generalization of
+                                                output geometry is performed. The default is
+                                                as defined in the network service configuration.
+        -----------------------------------     --------------------------------------------------------------------
+        output_geometry_precision_units         The units of the output geometry precision.
+                                                The default value is esriUnknownUnits.
+                                                Values: esriUnknownUnits | esriCentimeters |
+                                                esriDecimalDegrees | esriDecimeters |
+                                                esriFeet | esriInches | esriKilometers |
+                                                esriMeters | esriMiles | esriMillimeters |
+                                                esriNauticalMiles | esriPoints | esriYards
+        -----------------------------------     --------------------------------------------------------------------
+        use_hierarchy                           If true, the hierarchy attribute for the network should be
+                                                used in analysis. The default is as defined in the network
+                                                layer. This cannot be used in conjunction with outputLines.
+        -----------------------------------     --------------------------------------------------------------------
+        time_of_day                             The date and time at the facility. If travelDirection is set
+                                                to esriNATravelDirectionToFacility, the timeOfDay value
+                                                specifies the arrival time at the facility. if travelDirection
+                                                is set to esriNATravelDirectionFromFacility, the timeOfDay
+                                                value is the departure time from the facility. The time zone
+                                                for timeOfDay is specified by timeOfDayIsUTC.
+        -----------------------------------     --------------------------------------------------------------------
+        time_of_day_is_utc                      The time zone or zones of the timeOfDay parameter. When
+                                                set to false, which is the default value, the timeOfDay
+                                                parameter refers to the time zone or zones in which the
+                                                facilities are located. Therefore, the start or end times
+                                                of the service areas are staggered by time zone.
+        -----------------------------------     --------------------------------------------------------------------
+        travel_direction                        Options for traveling to or from the facility. The
+                                                default is defined in the network analysis layer.
+                                                Values: esriNATravelDirectionFromFacility |
+                                                        esriNATravelDirectionToFacility
+        -----------------------------------     --------------------------------------------------------------------
+        return_z                                If true, Z values will be included in saPolygons and saPolylines
+                                                geometry if the network dataset is Z-aware. The default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        overrides                               Optional dictionary. Specify additional settings that can
+                                                influence the behavior of the solver.  A list of supported
+                                                override settings for each solver and their acceptable values
+                                                can be obtained by contacting Esri Technical Support.
+        -----------------------------------     --------------------------------------------------------------------
+        preserve_objectid                       Optional Boolean.  If True, all objectid values are
+                                                maintained.  The default is False.
+        -----------------------------------     --------------------------------------------------------------------
+        future                                  Optional Boolean.  If True, the process is run asynchronously.
+                                                The default is False. If True, a NAJob is returned instead of the
+                                                results.
+        -----------------------------------     --------------------------------------------------------------------
+        ignore_invalid_locations                If true, the solver will ignore invalid
+                                                locations. Otherwise, it will raise an error.
+                                                Default is true.
+        ===================================     ====================================================================
 
 
         """
@@ -921,204 +963,248 @@ class ClosestFacilityLayer(NetworkLayer):
     def solve_closest_facility(
         self,
         incidents,
-        facilities,
-        barriers=None,
-        polyline_barriers=None,
-        polygon_barriers=None,
-        travel_mode=None,
-        attribute_parameter_values=None,
-        return_directions=False,
-        directions_language=None,
-        directions_style_name=None,
-        directions_length_units=None,
-        directions_time_attribute_name=None,
-        return_cf_routes=True,
-        return_facilities=False,
-        return_incidents=False,
-        return_barriers=False,
-        return_polyline_barriers=False,
-        return_polygon_barriers=False,
-        output_lines=None,
-        default_cutoff=None,
-        default_target_facility_count=None,
-        travel_direction=None,
-        out_sr=None,
-        accumulate_attribute_names=None,
-        impedance_attribute_name=None,
-        restriction_attribute_names=None,
-        restrict_u_turns=None,
-        use_hierarchy=True,
-        output_geometry_precision=None,
-        output_geometry_precision_units=None,
-        time_of_day=None,
-        time_of_day_is_utc=None,
-        time_of_day_usage=None,
-        return_z=False,
-        overrides=None,
-        preserve_objectid=False,
-        future=False,
-        ignore_invalid_locations=True,
-        directions_output_type=None,
+        facilities: Union[FeatureSet, Point, list, dict],
+        barriers: Optional[Union[Point, FeatureSet, dict[str, Any]]] = None,
+        polyline_barriers: Optional[Union[Polyline, FeatureSet, dict[str, Any]]] = None,
+        polygon_barriers: Optional[Union[Polygon, FeatureSet, dict[str, Any]]] = None,
+        travel_mode: Optional[str] = None,
+        attribute_parameter_values: Optional[Union[str, list]] = None,
+        return_directions: bool = False,
+        directions_language: Optional[str] = None,
+        directions_style_name: Optional[str] = None,
+        directions_length_units: Optional[str] = None,
+        directions_time_attribute_name: Optional[str] = None,
+        return_cf_routes: bool = True,
+        return_facilities: bool = False,
+        return_incidents: bool = False,
+        return_barriers: bool = False,
+        return_polyline_barriers: bool = False,
+        return_polygon_barriers: bool = False,
+        output_lines: Optional[str] = None,
+        default_cutoff: Optional[float] = None,
+        default_target_facility_count: Optional[int] = None,
+        travel_direction: Optional[str] = None,
+        out_sr: Optional[int] = None,
+        accumulate_attribute_names: Optional[str] = None,
+        impedance_attribute_name: Optional[str] = None,
+        restriction_attribute_names: Optional[str] = None,
+        restrict_u_turns: Optional[str] = None,
+        use_hierarchy: bool = True,
+        output_geometry_precision: Optional[str] = None,
+        output_geometry_precision_units: Optional[str] = None,
+        time_of_day: Optional[datetime.datetime] = None,
+        time_of_day_is_utc: Optional[str] = None,
+        time_of_day_usage: Optional[str] = None,
+        return_z: bool = False,
+        overrides: Optional[dict[str, Any]] = None,
+        preserve_objectid: bool = False,
+        future: bool = False,
+        ignore_invalid_locations: bool = True,
+        directions_output_type: Optional[str] = None,
     ):
         """The solve operation is performed on a network layer resource of
         type closest facility (layerType is esriNAServerClosestFacilityLayer).
         You can provide arguments to the solve route operation as query
         parameters.
-        Inputs:
-            facilities  - The set of facilities loaded as network locations
-                          during analysis. Facilities can be specified using
-                          a simple comma / semi-colon based syntax or as a
-                          JSON structure. If facilities are not specified,
-                          preloaded facilities from the map document are used
-                          in the analysis.
-            incidents - The set of incidents loaded as network locations
-                        during analysis. Incidents can be specified using
-                        a simple comma / semi-colon based syntax or as a
-                        JSON structure. If incidents are not specified,
-                        preloaded incidents from the map document are used
-                        in the analysis.
-            barriers - The set of barriers loaded as network locations during
-                       analysis. Barriers can be specified using a simple comma
-                       / semi-colon based syntax or as a JSON structure. If
-                       barriers are not specified, preloaded barriers from the
-                       map document are used in the analysis. If an empty json
-                       object is passed ('{}') preloaded barriers are ignored.
-            polylineBarriers - The set of polyline barriers loaded as network
-                               locations during analysis. If polyline barriers
-                               are not specified, preloaded polyline barriers
-                               from the map document are used in the analysis.
-                               If an empty json object is passed ('{}')
-                               preloaded polyline barriers are ignored.
-            polygonBarriers - The set of polygon barriers loaded as network
-                              locations during analysis. If polygon barriers
-                              are not specified, preloaded polygon barriers
-                              from the map document are used in the analysis.
-                              If an empty json object is passed ('{}') preloaded
-                              polygon barriers are ignored.
-            travelMode - Travel modes provide override values that help you
-                         quickly and consistently model a vehicle or mode of
-                         transportation. The chosen travel mode must be
-                         preconfigured on the network dataset that the routing
-                         service references.
-            attributeParameterValues - A set of attribute parameter values that
-                                       can be parameterized to determine which
-                                       network elements can be used by a vehicle.
-            returnDirections - If true, directions will be generated and returned
-                               with the analysis results. Default is false.
-            directionsLanguage - The language to be used when computing directions.
-                                 The default is the language of the server's operating
-                                 system. The list of supported languages can be found
-                                 in REST layer description.
-            directionsOutputType -  Defines content, verbosity of returned
-                                    directions. The default is esriDOTStandard.
-                                    Values: esriDOTComplete | esriDOTCompleteNoEvents
-                                    | esriDOTInstructionsOnly | esriDOTStandard |
-                                    esriDOTSummaryOnly
-            directionsStyleName - The style to be used when returning the directions.
-                                  The default is as defined in the network layer. The
-                                  list of supported styles can be found in REST
-                                  layer description.
-            directionsLengthUnits - The length units to use when computing directions.
-                                    The default is as defined in the network layer.
-                                    Values: esriNAUFeet | esriNAUKilometers |
-                                    esriNAUMeters | esriNAUMiles |
-                                    esriNAUNauticalMiles | esriNAUYards |
-                                    esriNAUUnknown
-            directionsTimeAttributeName - The name of network attribute to use for
-                                          the drive time when computing directions.
-                                          The default is as defined in the network
-                                          layer.
-            returnCFRoutes - If true, closest facilities routes will be returned
-                             with the analysis results. Default is true.
-            returnFacilities -  If true, facilities  will be returned with the
-                                analysis results. Default is false.
-            returnIncidents - If true, incidents will be returned with the
-                              analysis results. Default is false.
-            returnBarriers -  If true, barriers will be returned with the analysis
-                              results. Default is false.
-            returnPolylineBarriers -  If true, polyline barriers will be returned
-                                      with the analysis results. Default is false.
-            returnPolygonBarriers - If true, polygon barriers will be returned with
-                                    the analysis results. Default is false.
-            outputLines - The type of output lines to be generated in the result.
-                          The default is as defined in the network layer.
-                          Values: esriNAOutputLineTrueShape |
-                          esriNAOutputLineTrueShapeWithMeasure |
-                          esriNAOutputLineStraight | esriNAOutputLineNone
-            defaultCutoff - The default cutoff value to stop traversing.
-            defaultTargetFacilityCount - The default number of facilities to find.
-            travelDirection - Options for traveling to or from the facility.
-                              The default is defined in the network layer.
-                              Values: esriNATravelDirectionFromFacility |
-                              esriNATravelDirectionToFacility
-            outSR - The spatial reference of the geometries returned with the
-                    analysis results.
-            accumulateAttributeNames - The list of network attribute names to be
-                                       accumulated with the analysis. The default is
-                                       as defined in the network layer. The value
-                                       should be specified as a comma separated list
-                                       of attribute names. You can also specify a
-                                       value of none to indicate that no network
-                                       attributes should be accumulated.
-            impedanceAttributeName - The network attribute name to be used as the
-                                     impedance attribute in analysis. The default is
-                                     as defined in the network layer.
-            restrictionAttributeNames -The list of network attribute names to be
-                                       used as restrictions with the analysis. The
-                                       default is as defined in the network layer.
-                                       The value should be specified as a comma
-                                       separated list of attribute names. You can
-                                       also specify a value of none to indicate that
-                                       no network attributes should be used as
-                                       restrictions.
-            restrictUTurns -  Specifies how U-Turns should be restricted in the
-                              analysis. The default is as defined in the network
-                              layer. Values: esriNFSBAllowBacktrack |
-                              esriNFSBAtDeadEndsOnly | esriNFSBNoBacktrack |
-                              esriNFSBAtDeadEndsAndIntersections
-            useHierarchy -  If true, the hierarchy attribute for the network should
-                            be used in analysis. The default is as defined in the
-                            network layer.
-            outputGeometryPrecision -  The precision of the output geometry after
-                                       generalization. If 0, no generalization of
-                                       output geometry is performed. The default is
-                                       as defined in the network service
-                                       configuration.
-            outputGeometryPrecisionUnits - The units of the output geometry
-                                           precision. The default value is
-                                           esriUnknownUnits. Values: esriUnknownUnits
-                                           | esriCentimeters | esriDecimalDegrees |
-                                           esriDecimeters | esriFeet | esriInches |
-                                           esriKilometers | esriMeters | esriMiles |
-                                           esriMillimeters | esriNauticalMiles |
-                                           esriPoints | esriYards
-            timeOfDay - Arrival or departure date and time. Values: specified by
-                        number of milliseconds since midnight Jan 1st, 1970, UTC.
-            timeOfDayIsUTC - The time zone of the timeOfDay parameter. By setting
-                             timeOfDayIsUTC to true, the timeOfDay parameter refers
-                             to Coordinated Universal Time (UTC). Choose this option
-                             if you want to find what's nearest for a specific time,
-                             such as now, but aren't certain in which time zone the
-                             facilities or incidents will be located.
-            timeOfDayUsage - Defines the way timeOfDay value is used. The default
-                             is as defined in the network layer.
-                             Values: esriNATimeOfDayUseAsStartTime |
-                             esriNATimeOfDayUseAsEndTime
-            returnZ - If true, Z values will be included in the returned routes and
-                       compressed geometry if the network dataset is Z-aware.
-                       The default is false.
-            overrides - Optional dictionary. Specify additional settings that can influence
-                        the behavior of the solver.  A list of supported override settings
-                        for each solver and their acceptable values can be obtained by
-                        contacting Esri Technical Support.
-            preserve_objectid - Optional Boolean.  If True, all objectid values are
-                                maintained.  The default is False.
-            future - Optional Boolean.  If True, the process is run asynchronously.
-                     The default is False. If True, a NAJob is returned instead of the
-                     results.
-            ignoreInvalidLocations - If true, the solver will ignore invalid
-                                     locations. Otherwise, it will raise an error.
-                                     Default is true.
+
+        ===================================     ====================================================================
+        **Argument**                            **Description**
+        -----------------------------------     --------------------------------------------------------------------
+        facilities                              The set of facilities loaded as network locations
+                                                during analysis. Facilities can be specified using
+                                                a simple comma / semi-colon based syntax or as a
+                                                JSON structure. If facilities are not specified,
+                                                preloaded facilities from the map document are used
+                                                in the analysis. If an empty json object is passed
+                                                ('{}') preloaded facilities are ignored.
+        -----------------------------------     --------------------------------------------------------------------
+        incidents                               The set of incidents loaded as network locations
+                                                during analysis. Incidents can be specified using
+                                                a simple comma / semi-colon based syntax or as a
+                                                JSON structure. If incidents are not specified,
+                                                preloaded incidents from the map document are used
+                                                in the analysis.
+        -----------------------------------     --------------------------------------------------------------------
+        barriers                                The set of barriers loaded as network locations during
+                                                analysis. Barriers can be specified using a simple comma
+                                                / semi-colon based syntax or as a JSON structure. If
+                                                barriers are not specified, preloaded barriers from the
+                                                map document are used in the analysis. If an empty json
+                                                object is passed ('{}') preloaded barriers are ignored.
+        -----------------------------------     --------------------------------------------------------------------
+        polyline_barriers                       The set of polyline barriers loaded as network
+                                                locations during analysis. If polyline barriers
+                                                are not specified, preloaded polyline barriers
+                                                from the map document are used in the analysis.
+                                                If an empty json object is passed ('{}')
+                                                preloaded polyline barriers are ignored.
+        -----------------------------------     --------------------------------------------------------------------
+        polygonBarriers                         The set of polygon barriers loaded as network
+                                                locations during analysis. If polygon barriers
+                                                are not specified, preloaded polygon barriers
+                                                from the map document are used in the analysis.
+                                                If an empty json object is passed ('{}') preloaded
+                                                polygon barriers are ignored.
+        -----------------------------------     --------------------------------------------------------------------
+        travel_mode                             Travel modes provide override values that help you
+                                                quickly and consistently model a vehicle or mode of
+                                                transportation. The chosen travel mode must be
+                                                preconfigured on the network dataset that the routing
+                                                service references.
+        -----------------------------------     --------------------------------------------------------------------
+        attribute_parameter_values              A set of attribute parameter values that
+                                                can be parameterized to determine which
+                                                network elements can be used by a vehicle.
+        -----------------------------------     --------------------------------------------------------------------
+        return_directions                       If true, directions will be generated and returned
+                                                with the analysis results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        directions_language                     The language to be used when computing directions.
+                                                The default is the language of the server's operating
+                                                system. The list of supported languages can be found
+                                                in REST layer description.
+        -----------------------------------     --------------------------------------------------------------------
+        directions_output_type                  Defines content, verbosity of returned
+                                                directions. The default is esriDOTStandard.
+                                                Values: esriDOTComplete | esriDOTCompleteNoEvents
+                                                | esriDOTInstructionsOnly | esriDOTStandard |
+                                                esriDOTSummaryOnly
+        -----------------------------------     --------------------------------------------------------------------
+        directions_style_name                   The style to be used when returning the directions.
+                                                The default is as defined in the network layer. The
+                                                list of supported styles can be found in REST
+                                                layer description.
+        -----------------------------------     --------------------------------------------------------------------
+        directions_length_units                 The length units to use when computing directions.
+                                                The default is as defined in the network layer.
+                                                Values: esriNAUFeet | esriNAUKilometers |
+                                                esriNAUMeters | esriNAUMiles |
+                                                esriNAUNauticalMiles | esriNAUYards |
+                                                esriNAUUnknown
+        -----------------------------------     --------------------------------------------------------------------
+        directions_time_attribute_name          The name of network attribute to use for
+                                                the drive time when computing directions.
+                                                The default is as defined in the network
+                                                layer.
+        -----------------------------------     --------------------------------------------------------------------
+        return_cf_routes                        If true, closest facilities routes will be returned
+                                                with the analysis results. Default is true.
+        -----------------------------------     --------------------------------------------------------------------
+        return_facilities                       If true, facilities  will be returned with the
+                                                analysis results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        return_incidents                        If true, incidents will be returned with the
+                                                analysis results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        return_barriers                         If true, barriers will be returned with the analysis
+                                                results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        return_polyline_barriers                If true, polyline barriers will be returned
+                                                with the analysis results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        return_polygon_barriers                 If true, polygon barriers will be returned with
+                                                the analysis results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        output_lines                            The type of output lines to be generated in the result.
+                                                The default is as defined in the network layer.
+                                                Values: esriNAOutputLineTrueShape |
+                                                esriNAOutputLineTrueShapeWithMeasure |
+                                                esriNAOutputLineStraight | esriNAOutputLineNone
+        -----------------------------------     --------------------------------------------------------------------
+        default_cutoff                          The default cutoff value to stop traversing.
+        -----------------------------------     --------------------------------------------------------------------
+        default_target_facility_count           The default number of facilities to find.
+        -----------------------------------     --------------------------------------------------------------------
+        travel_direction                        Options for traveling to or from the facility.
+                                                The default is defined in the network layer.
+                                                Values: esriNATravelDirectionFromFacility |
+                                                esriNATravelDirectionToFacility
+        -----------------------------------     --------------------------------------------------------------------
+        out_sr                                  The spatial reference of the geometries returned with the
+                                                analysis results.
+        -----------------------------------     --------------------------------------------------------------------
+        accumulate_attribute_names              The list of network attribute names to be
+                                                accumulated with the analysis. The default is
+                                                as defined in the network layer. The value
+                                                should be specified as a comma separated list
+                                                of attribute names. You can also specify a
+                                                value of none to indicate that no network
+                                                attributes should be accumulated.
+        -----------------------------------     --------------------------------------------------------------------
+        impedance_attribute_name                The network attribute name to be used as the
+                                                impedance attribute in analysis. The default is
+                                                as defined in the network layer.
+        -----------------------------------     --------------------------------------------------------------------
+        restriction_attribute_names             The list of network attribute names to be
+                                                used as restrictions with the analysis. The
+                                                default is as defined in the network layer.
+                                                The value should be specified as a comma
+                                                separated list of attribute names. You can
+                                                also specify a value of none to indicate that
+                                                no network attributes should be used as
+                                                restrictions.
+        -----------------------------------     --------------------------------------------------------------------
+        restrict_u_turns                        Specifies how U-Turns should be restricted in the
+                                                analysis. The default is as defined in the network
+                                                layer. Values: esriNFSBAllowBacktrack |
+                                                esriNFSBAtDeadEndsOnly | esriNFSBNoBacktrack |
+                                                esriNFSBAtDeadEndsAndIntersections
+        -----------------------------------     --------------------------------------------------------------------
+        use_hierarchy                           If true, the hierarchy attribute for the network should
+                                                be used in analysis. The default is as defined in the
+                                                network layer.
+        -----------------------------------     --------------------------------------------------------------------
+        output_geometry_precision               The precision of the output geometry after
+                                                generalization. If 0, no generalization of
+                                                output geometry is performed. The default is
+                                                as defined in the network service
+                                                configuration.
+        -----------------------------------     --------------------------------------------------------------------
+        output_geometry_precision_units         The units of the output geometry
+                                                precision. The default value is
+                                                esriUnknownUnits. Values: esriUnknownUnits
+                                                | esriCentimeters | esriDecimalDegrees |
+                                                esriDecimeters | esriFeet | esriInches |
+                                                esriKilometers | esriMeters | esriMiles |
+                                                esriMillimeters | esriNauticalMiles |
+                                                esriPoints | esriYards
+        -----------------------------------     --------------------------------------------------------------------
+        time_of_day                             Arrival or departure date and time. Values: specified by
+                                                number of milliseconds since midnight Jan 1st, 1970, UTC.
+        -----------------------------------     --------------------------------------------------------------------
+        time_of_day_is_utc                      The time zone of the timeOfDay parameter. By setting
+                                                timeOfDayIsUTC to true, the timeOfDay parameter refers
+                                                to Coordinated Universal Time (UTC). Choose this option
+                                                if you want to find what's nearest for a specific time,
+                                                such as now, but aren't certain in which time zone the
+                                                facilities or incidents will be located.
+        -----------------------------------     --------------------------------------------------------------------
+        time_of_day_usage                       Defines the way timeOfDay value is used. The default
+                                                is as defined in the network layer.
+                                                Values: esriNATimeOfDayUseAsStartTime |
+                                                esriNATimeOfDayUseAsEndTime
+        -----------------------------------     --------------------------------------------------------------------
+        return_z                                If true, Z values will be included in the returned routes and
+                                                compressed geometry if the network dataset is Z-aware.
+                                                The default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        overrides                               Optional dictionary. Specify additional settings that can influence
+                                                the behavior of the solver.  A list of supported override settings
+                                                for each solver and their acceptable values can be obtained by
+                                                contacting Esri Technical Support.
+        -----------------------------------     --------------------------------------------------------------------
+        preserve_objectid                       Optional Boolean.  If True, all objectid values are
+                                                maintained. The default is False.
+        -----------------------------------     --------------------------------------------------------------------
+        future                                  Optional Boolean.  If True, the process is run asynchronously.
+                                                The default is False. If True, a NAJob is returned instead of the
+                                                results.
+        -----------------------------------     --------------------------------------------------------------------
+        ignore_invalid_locations                If true, the solver will ignore invalid
+                                                locations. Otherwise, it will raise an error.
+                                                Default is true.
+        ===================================     ====================================================================
+
 
         """
 
@@ -1241,31 +1327,31 @@ class ODCostMatrixLayer(NetworkLayer):
         self,
         origins,
         destinations,
-        default_cutoff=None,
-        default_target_destination_count=None,
-        travel_mode=None,
-        output_type="Sparse Matrix",
-        time_of_day=None,
-        time_of_day_is_utc=None,
+        default_cutoff: Optional[float] = None,
+        default_target_destination_count: Optional[int] = None,
+        travel_mode: Optional[str] = None,
+        output_type: str = "Sparse Matrix",
+        time_of_day: Optional[datetime.datetime] = None,
+        time_of_day_is_utc: Optional[str] = None,
         barriers=None,
         polyline_barriers=None,
         polygon_barriers=None,
-        impedance_attribute_name=None,
-        accumulate_attribute_names=None,
-        restriction_attribute_names=None,
-        attribute_parameter_values=None,
-        restrict_u_turns=None,
-        use_hierarchy=True,
-        return_origins=False,
-        return_destinations=False,
-        return_barriers=False,
-        return_polyline_barriers=False,
-        return_polygon_barriers=False,
-        out_sr=None,
-        ignore_invalid_locations=True,
-        return_z=False,
-        overrides=None,
-        future=False,
+        impedance_attribute_name: Optional[str] = None,
+        accumulate_attribute_names: Optional[str] = None,
+        restriction_attribute_names: Optional[str] = None,
+        attribute_parameter_values: Optional[str] = None,
+        restrict_u_turns: Optional[str] = None,
+        use_hierarchy: bool = True,
+        return_origins: bool = False,
+        return_destinations: bool = False,
+        return_barriers: bool = False,
+        return_polyline_barriers: bool = False,
+        return_polygon_barriers: bool = False,
+        out_sr: Optional[int] = None,
+        ignore_invalid_locations: bool = True,
+        return_z: bool = False,
+        overrides: Optional[dict[str, Any]] = None,
+        future: bool = False,
     ):
         """
 
