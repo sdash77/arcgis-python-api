@@ -26,6 +26,7 @@ from .managers import (
 from .feature import Feature, FeatureSet
 from arcgis.geometry import SpatialReference
 from arcgis.gis import Layer, _GISResource
+from typing import Dict, Any
 
 
 class FeatureLayer(Layer):
@@ -2478,6 +2479,23 @@ class FeatureLayer(Layer):
             )
             executor.shutdown(False)
             return future
+
+    @property
+    def estimates(self) -> Dict[str, Any]:
+        """
+        Returns up-to-date approximations of layer information, such as row count
+        and extent. Layers that support the `estimates` will include an
+        `infoInEstimates` information in the `properties`.
+
+        :returns: Dict[str, Any]
+
+        """
+
+        if "infoInEstimates" in self.properties:
+            url = self._url + "/getEstimates"
+            params = {"f": "json"}
+            return self._con.get(url, params)
+        return {}
 
     # ----------------------------------------------------------------------
     def _status_via_url(self, con, url, params):
