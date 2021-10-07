@@ -18,7 +18,6 @@ from arcgis.features import (
     Table,
     FeatureLayerCollection,
 )
-from arcgis.raster import ImageryLayer
 from arcgis.realtime import StreamLayer
 from arcgis.gis import Item
 import arcgis.env
@@ -347,7 +346,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             FeatureLayer,
             MapImageLayer,
             SceneLayer,
-            ImageryLayer,
+            arcgis.raster.ImageryLayer,
             VectorTileLayer,
             StreamLayer,
             FeatureSet,
@@ -469,7 +468,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                         layer_type = "Table"
                     else:
                         layer_type = "ArcGISFeatureLayer"
-                elif isinstance(layer, ImageryLayer):
+                elif isinstance(layer, arcgis.raster.ImageryLayer):
                     layer_type = "ArcGISImageServiceLayer"
                     # todo : get renderer info
 
@@ -762,7 +761,9 @@ class WebMap(HasTraits, collections.OrderedDict):
             }
 
             fields_list = []
-            if isinstance(layer, FeatureLayer) or isinstance(layer, ImageryLayer):
+            if isinstance(layer, FeatureLayer) or isinstance(
+                layer, arcgis.raster.ImageryLayer
+            ):
                 if hasattr(layer.properties, "fields"):
                     fields_list = layer.properties.fields
             elif isinstance(layer, FeatureSet):
@@ -796,7 +797,9 @@ class WebMap(HasTraits, collections.OrderedDict):
             popup = None
 
         if popup:
-            if isinstance(layer, FeatureLayer) or isinstance(layer, ImageryLayer):
+            if isinstance(layer, FeatureLayer) or isinstance(
+                layer, arcgis.raster.ImageryLayer
+            ):
                 new_layer["popupInfo"] = popup
             elif isinstance(layer, FeatureSet) or isinstance(layer, FeatureCollection):
                 new_layer["featureCollection"]["layers"][0]["popupInfo"] = popup
@@ -1394,7 +1397,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         # this function determines the basemap layer type for the Web Map Specification
         if item.type == "Image Service":
             layer_type = "ArcGISImageServiceLayer"
-            layer = ImageryLayer(item.url, gis=self._gis)
+            layer = arcgis.raster.ImageryLayer(item.url, gis=self._gis)
         else:
             layer_type = "ArcGISMapServiceLayer"
             layer = arcgis.mapping.MapImageLayer(item.url, gis=self._gis)

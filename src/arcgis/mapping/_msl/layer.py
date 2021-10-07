@@ -9,11 +9,11 @@ from re import search
 from typing import Any, Optional, Union
 
 from arcgis._impl.common import _utils
-from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
+from arcgis._impl.common._filters import StatisticFilter, GeometryFilter
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
 
-from arcgis.features.feature import Feature, FeatureSet
+from arcgis.features.feature import FeatureSet
 from arcgis.geometry import SpatialReference
 from arcgis.gis import Item, Layer
 from arcgis.mapping import MapImageLayer

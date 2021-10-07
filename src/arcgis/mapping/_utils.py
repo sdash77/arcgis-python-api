@@ -1,5 +1,5 @@
 import logging as _logging
-from typing import Any, Optional, Union
+from typing import Any, Optional
 import arcgis
 from arcgis.gis import GIS
 

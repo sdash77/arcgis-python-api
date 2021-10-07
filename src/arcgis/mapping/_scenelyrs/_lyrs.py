@@ -1,5 +1,5 @@
 import json
-from arcgis.gis import Layer, _GISResource, Item, GIS
+from arcgis.gis import Layer
 
 ###########################################################################
 class Object3DLayer(Layer):
