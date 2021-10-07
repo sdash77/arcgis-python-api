@@ -153,7 +153,7 @@ def aggregate_points(
                                 minority_majority=True,
                                 percent_points=True,
                                 output_name="aggregated_permits",
-                                context='{"extent":{"xmin":-8609738.077325115,"ymin":4743483.445485223,"xmax":-8594030.268012533,"ymax":4752206.821338257,"spatialReference":{"wkid":102100,"latestWkid":3857}}}')
+                                context={"extent":{"xmin":-8609738.077325115,"ymin":4743483.445485223,"xmax":-8594030.268012533,"ymax":4752206.821338257,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
 
     """
 

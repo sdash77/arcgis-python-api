@@ -1381,15 +1381,56 @@ class Portal(object):
         # https://dev04875.esri.com/arcgis/sharing/rest/portals/0123456789ABCDEF/usage?f=json&startTime=1436984519000&endTime=1439576519000&period=1d&vars=num&etype=geocodecnt&stype=geocode&groupby=username%2Cstype%2Cetype
 
     def get_item_dependencies(self, itemid):
-        return self.con.post(
-            "content/items/" + itemid + "/dependencies", self._postdata()
+        postdata = self._postdata()
+        postdata["num"] = 100
+        data = self.con.post(
+            "content/items/" + itemid + "/dependencies",
+            postdata,
         )
 
+        # check if more dependents to get
+        while data["nextStart"] > 0:
+            postdata["start"] = data["nextStart"]
+            new_data = self.con.post(
+                "content/items/" + itemid + "/dependencies",
+                postdata,
+            )
+            # update list of data with new data list
+            data["list"].extend(new_data["list"])
+
+            # update data to inlcude correct nextStart and total num
+            data["nextStart"] = new_data["nextStart"]
+            data["num"] = data["num"] + new_data["num"]
+            if data["nextStart"] == -1:
+                break
+
+        return data
+
     def get_item_dependents_to(self, itemid):
-        return self.con.post(
+        postdata = self._postdata()
+        postdata["num"] = 100
+        data = self.con.post(
             "content/items/" + itemid + "/dependencies/listDependentsTo",
-            self._postdata(),
+            postdata,
         )
+
+        # check if more dependents to get
+        while data["nextStart"] > 0:
+            postdata["start"] = data["nextStart"]
+            new_data = self.con.post(
+                "content/items/" + itemid + "/dependencies/listDependentsTo",
+                postdata,
+            )
+
+            # update data to include new_data in list
+            data["list"].extend(new_data["list"])
+            # update data to inlcude correct nextStart and total num
+            data["nextStart"] = new_data["nextStart"]
+            data["num"] = data["num"] + new_data["num"]
+            if data["nextStart"] == -1:
+                break
+
+        return data
 
     def invite_group_users(
         self, user_names, group_id, role="group_member", expiration=10080

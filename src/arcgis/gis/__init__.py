@@ -21,7 +21,7 @@ import functools
 
 from datetime import datetime
 import logging
-from typing import Tuple, Any, Dict, List
+from typing import Tuple, Any, Dict, List, Optional
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 import concurrent.futures
@@ -8615,6 +8615,34 @@ class Group(dict):
         return apps
 
     # ----------------------------------------------------------------------
+    def application(self, user: str):
+        """
+        The ``application`` method retrieves one group application for the given group.
+
+        ==================  ====================================
+        **Argument**        **Description**
+        ------------------  ------------------------------------
+        user                Required String. The username of
+                            the user applying to join the group.
+        ==================  ====================================
+
+        .. note::
+            The ``application`` method is available to administrators of the group or administrators of an organization
+            if the group is part of one.
+        """
+        try:
+            path = "%scommunity/groups/%s/applications/%s" % (
+                self._portal.resturl,
+                self.groupid,
+                user,
+            )
+            params = {"f": "json"}
+            res = self._portal.con.post(path, params)
+            return GroupApplication(url=path, gis=self._gis)
+        except:
+            print()
+
+    # ----------------------------------------------------------------------
     @property
     def protected(self):
         """
@@ -8733,23 +8761,23 @@ class GroupApplication(object):
 
     def decline(self):
         """
-        The ``accept`` method is used to manage a :class:`~arcgis.gis.User` application. When a
-        :class:`~arcgis.gis.User` to join a :class:`~arcgis.gis.Group`, a
-        ``GroupApplication`` object is created. Group administrators choose to delete this application
-        using the ``delete`` operation. This operation deletes the application and creates a notification for the user
+        The ``decline`` method is used to manage a :class:`~arcgis.gis.User` application. When a
+        :class:`~arcgis.gis.User` asks to join a :class:`~arcgis.gis.Group`, a
+        ``GroupApplication`` object is created. Group administrators choose to decline this application
+        using the ``decline`` operation. This operation deletes the application and creates a notification for the user
         indicating that the user's group application was declined. This method is very similar to the
         :attr:`~arcgis.gis.GroupApplication.accept` method, which accepts rather than declines the application to
         join a group.
 
         .. note::
-            The ``delete`` method is only available to group owners and administrators.
+            The ``decline`` method is only available to group owners and administrators.
 
         .. code-block:: python
 
             # Usage Example
 
             >>> group_app = group.applications[0]
-            >>> groupapplication.delete()
+            >>> groupapplication.decline()
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -9263,6 +9291,36 @@ class User(dict):
             raise Exception(
                 "The operation delete_thumbnail is not supported on this portal."
             )
+
+    def expire_password(self, temporary_password: Optional[str] = None) -> bool:
+        """
+        Expires the current user's Password.
+
+        =====================  ==========================================================
+        **Argument**           **Description**
+        ---------------------  ----------------------------------------------------------
+        temporary_password     Optional String. Allows the administrator to set a new
+                               temporary password for a given user. This is available on
+                               ArcGIS Enterprise Only.
+        =====================  ==========================================================
+
+        :returns: Boolean
+        """
+        if temporary_password and self._gis._portal.is_arcgisonline == False:
+
+            url = f"{self._gis._portal.resturl}community/users/{self.username}/update"
+            params = {"f": "json", "password": temporary_password}
+            resp = self._gis._con.post(url, params)
+        url = (
+            f"{self._gis._portal.resturl}community/users/{self.username}/expirePassword"
+        )
+        if self._gis._portal.is_arcgisonline:
+
+            params = {"f": "json", "expiration": -1}
+        else:
+            params = {"f": "json", "expiration": 1}
+        resp = self._gis._con.post(url, params)
+        return resp.get("success", False)
 
     def reset(
         self,
@@ -12122,8 +12180,10 @@ class Item(dict):
 
         """
         The ``dependent_upon`` method returns items, urls, etc that this item is dependent on.
-        This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available only
-        with an ArcGIS Enterprise."""
+
+        .. note::
+            This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available only
+            with an ArcGIS Enterprise."""
         return self._portal.get_item_dependencies(self.itemid)
 
     def dependent_to(self):
