@@ -46,7 +46,7 @@ def aggregate_points(
 
        output_name: outputName (str). Optional parameter.  Additional properties such as output feature service name.
 
-       context: context (str). Optional parameter.  Additional settings such as processing extent and output spatial reference.
+       context: context (str). Optional parameter.  Additional settings such as processing extent, output spatial reference, and overwrite.
 
     gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
@@ -205,7 +205,7 @@ def create_buffers(
 
        output_name: outputName (str). Optional parameter.  Additional properties such as output feature service name.
 
-       context: context (str). Optional parameter.  Additional settings such as processing extent and output spatial reference.
+       context: context (str). Optional parameter.  Additional settings such as processing extent and output spatial reference and overwrite.
 
     gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
@@ -1834,7 +1834,7 @@ def choose_best_facilities(
 
        output_name: outputName (str). Optional parameter.  If provided, the task will create a feature service of the results. You define the name of the service. If outputName is not supplied, the task will return a feature collection.
 
-       context: context (str). Optional parameter.  Context contains additional settings that affect task execution such as the extent of inputs.
+       context: context (str). Optional parameter.  Context contains additional settings that affect task execution such as the extent of inputs or overwrite feature layer.
 
     gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
