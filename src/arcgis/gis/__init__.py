@@ -20,7 +20,7 @@ from contextlib import contextmanager
 import functools
 from datetime import datetime
 import logging
-from typing import Tuple, Any, Dict, List
+from typing import Tuple, Any, Dict, List, Optional
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 import concurrent.futures
@@ -9267,7 +9267,7 @@ class User(dict):
                 "The operation delete_thumbnail is not supported on this portal."
             )
 
-    def expire_password(self, temporary_password: str = None) -> bool:
+    def expire_password(self, temporary_password: Optional[str] = None) -> bool:
         """
         Expires the current user's Password.
 
