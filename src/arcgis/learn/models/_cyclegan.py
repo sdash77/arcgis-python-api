@@ -60,7 +60,7 @@ class CycleGAN(ArcGISModel):
                             else it will use Binary Cross Entropy.
     =====================   ===========================================
 
-    :returns: `CycleGAN` Object
+    :return: `CycleGAN` Object
     """
 
     def __init__(
@@ -113,7 +113,7 @@ class CycleGAN(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         =====================   ===========================================
 
-        :returns: `CycleGAN` Object
+        :return: `CycleGAN` Object
         """
 
         if not HAS_FASTAI:
@@ -264,7 +264,8 @@ class CycleGAN(ArcGISModel):
         elif convert_to == "B" or convert_to == "b":
             pred_img = pred_tuple[1][1] / 2 + 0.5
 
-        pred_img = transforms.ToPILImage()(pred_img).convert("RGB")
+        pred_img = ArcGISMSImage(pred_img)
+        pred_img = pred_img.show()
         self.learn.model.arcgis_results = False
         return pred_img
 

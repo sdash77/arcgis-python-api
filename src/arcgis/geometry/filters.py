@@ -63,7 +63,7 @@ def intersects(geometry, sr=None):
         # query a feature layer for features that meet filter criteria
         >>> gas_lines_I15 = gas_line_lyr.query(geometry_filter=flyr_filter)
 
-    :returns:
+    :return:
         A List of :class:`~arcgis.geometry.Geometry` objects
     """
 
@@ -78,7 +78,7 @@ def contains(geometry, sr=None):
     .. note::
         Valid for all shape type combinations.
 
-    :returns:
+    :return:
         A :class:`~arcgis.geometry.Geometry` object
     """
     return _filter(geometry, sr, "esriSpatialRelContains")
@@ -94,7 +94,7 @@ def crosses(geometry, sr=None):
         Valid for Line/Line, Line/Area, :class:`~arcgis.geometry.MultiPoint` /Area, and
         :class:`~arcgis.geometry.MultiPoint` /Line shape type combinations.
 
-    :returns:
+    :return:
         A :class:`~arcgis.geometry.Geometry` object
     """
     return _filter(geometry, sr, "esriSpatialRelCrosses")
@@ -105,7 +105,7 @@ def envelope_intersects(geometry, sr=None):
     The ``envelope_intersects`` retrieves features if the :class:`~arcgis.geometry.Envelope` of the two shapes
     intersects.
 
-    :returns:
+    :return:
         A :class:`~arcgis.geometry.Geometry` object
     """
     return _filter(geometry, sr, "esriSpatialRelEnvelopeIntersects")
@@ -116,7 +116,7 @@ def index_intersects(geometry, sr=None):
     The ``index_intersects`` method retrieves a feature if the :class:`~arcgis.geometry.Envelope` of the query
     :class:`~arcgis.geometry.Geometry` intersects the index entry for the target geometry.
 
-    :returns:
+    :return:
         A :class:`~arcgis.geometry.Geometry` object
     """
     return _filter(geometry, sr, "esriSpatialRelIndexIntersects")
@@ -130,7 +130,7 @@ def overlaps(geometry, sr=None):
     .. note::
         This applies to Area/Area, Line/Line, and Multi-point/Multi-point shape type combinations.
 
-    :returns:
+    :return:
         A :class:`~arcgis.geometry.Geometry` object
     """
     return _filter(geometry, sr, "esriSpatialRelOverlaps")
@@ -145,7 +145,7 @@ def touches(geometry, sr=None):
         In the Point/Line case, the point may touch an endpoint only of the line. Applies to all
         combinations except Point/Point.
 
-    :returns:
+    :return:
         A :class:`~arcgis.geometry.Geometry` object
     """
     return _filter(geometry, sr, "esriSpatialRelTouches")
@@ -159,7 +159,7 @@ def within(geometry, sr=None):
      .. note::
         Valid for all shape type combinations.
 
-    :returns:
+    :return:
         A :class:`~arcgis.geometry.Geometry` object
     """
     return _filter(geometry, sr, "esriSpatialRelWithin")

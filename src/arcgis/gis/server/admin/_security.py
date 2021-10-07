@@ -858,7 +858,7 @@ class RoleManager(BaseServer):
                                value is ACCESS.  Choices are ADMINISTER, PUBLISH, ACCESS.
         ==================     ====================================================================
 
-        :returns:
+        :return:
             A JSON message indicating success (True).
 
 
@@ -1337,7 +1337,7 @@ class Role(dict):
         username   Required string. The account name to add to the role.
         =========  =================================================
 
-        :returns:
+        :return:
             A boolean indicating success (True) or failure (False).
 
         """

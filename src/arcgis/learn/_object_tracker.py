@@ -93,7 +93,7 @@ class ObjectTracker:
                             successful recovery.
     =====================   ===========================================
 
-    :returns: `ObjectTracker` Object
+    :return: `ObjectTracker` Object
     """
 
     def __init__(
@@ -189,7 +189,7 @@ class ObjectTracker:
                                 before initialization.
         =====================   ===========================================
 
-        :returns: list of active track objects
+        :return: list of active track objects
         """
         if detections is None:
             if self.detector is not None:
@@ -236,7 +236,7 @@ class ObjectTracker:
                                 frame to be used to track the objects.
         =====================   ===========================================
 
-        :returns: list of active track objects
+        :return: list of active track objects
         """
         if (
             self.frames_processed % self.detect_interval == 0
@@ -298,7 +298,7 @@ class ObjectTracker:
                                 the predictions.
         =====================   ===========================================
 
-        :returns: 1D lists with predictions, labels, scores
+        :return: 1D lists with predictions, labels, scores
         """
         if predictions is None or len(predictions) == 0:
             return [], [], []
@@ -337,7 +337,7 @@ class ObjectTracker:
                                 TrackProcessor.
         =====================   ===========================================
 
-        :returns: 1D list with values of track members used by
+        :return: 1D list with values of track members used by
                   TrackProcessor
         """
         tracks_list = []
@@ -374,7 +374,7 @@ class ObjectTracker:
                                 members.
         =====================   ===========================================
 
-        :returns: list of track objects
+        :return: list of track objects
         """
         if tracks_list is None or len(tracks_list) == 0:
             return []
@@ -409,7 +409,7 @@ class ObjectTracker:
                                 filtered.
         =====================   ===========================================
 
-        :returns: list of active track objects
+        :return: list of active track objects
         """
         # TODO: 16
         active_tracks = list(filter(lambda track: track.status == 16, tracks))

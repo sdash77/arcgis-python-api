@@ -62,7 +62,7 @@ class ZeroShotClassifier(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :returns: `ZeroShotClassifier` Object
+    :return: `ZeroShotClassifier` Object
     """
 
     #: supported transformer architectures
@@ -108,7 +108,7 @@ class ZeroShotClassifier(InferenceOnlyModel):
                                 Default value is set to `"This example is {}."`.
         =====================   ===========================================
 
-        :returns: a list of :obj:`dict`: Each result comes as a dictionary with the following keys:
+        :return: a list of :obj:`dict`: Each result comes as a dictionary with the following keys:
 
             - **sequence** (:obj:`str`) -- The sequence for which this is the output.
             - **labels** (:obj:`List[str]`) -- The labels sorted by order of likelihood.

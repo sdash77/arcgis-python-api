@@ -601,7 +601,7 @@ def plot_histograms(
     raster function on the Raster object for slicing the data along defined variables and dimensions.
     `plot_histograms()` can then be used on the output raster returned upon applying the filter.
     
-    :returns: None
+    :return: None
 
     """
 
