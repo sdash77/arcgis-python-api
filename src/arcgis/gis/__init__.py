@@ -35,7 +35,6 @@ from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import chunks as _chunks
 from cachetools import cached, TTLCache
 
-from arcgis.gis.nb.notebook import NotebookServer
 from ._impl import _portalpy
 from ._impl._jb import StatusJob
 
@@ -931,7 +930,7 @@ class GIS(object):
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
 
     @_lazy_property
-    def notebook_server(self) -> list[NotebookServer]:
+    def notebook_server(self) -> "list[NotebookServer]":
         """
         The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
         with the organization or enterprise.
