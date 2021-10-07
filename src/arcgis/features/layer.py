@@ -4370,6 +4370,7 @@ class FeatureLayerCollection(_GISResource):
         wait=False,
         out_path=None,
         transformations=None,
+        time_reference_unknown_client=None,
     ):
         """
         The createReplica operation is performed on a feature service
@@ -4386,99 +4387,141 @@ class FeatureLayerCollection(_GISResource):
         esriReplicaResponseTypeInfo, and the response will not contain data
         for the layers in the replica.
 
-        Inputs:
-           replicaName - name of the replica
-           layers - layers to export
-           layerQueries - In addition to the layers and geometry parameters, the layerQueries
-            parameter can be used to further define what is replicated. This
-            parameter allows you to set properties on a per layer or per table
-            basis. Only the properties for the layers and tables that you want
-            changed from the default are required.
-            Example:
-             layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
-             "where": "requires_inspection = Yes"}}
-           geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
-                             spatial relationship with another geometry. Only intersections are currently supported.
-           returnAttachments - If true, attachments are added to the replica and returned in the
-            response. Otherwise, attachments are not included.
-           returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each
-            attachment returned from createReplica. Otherwise,
-            attachments are embedded in the response.
-           replicaSR - the spatial reference of the replica geometry.
-           transportType -  The transportType represents the response format. If the
-            transportType is esriTransportTypeUrl, the JSON response is contained in a file,
-            and the URL link to the file is returned. Otherwise, the JSON object is returned
-            directly. The default is esriTransportTypeUrl.
-            If async is true, the results will always be returned as if transportType is
-            esriTransportTypeUrl. If dataFormat is sqlite, the transportFormat will always be
-            esriTransportTypeUrl regardless of how the parameter is set.
-            Values: esriTransportTypeUrl | esriTransportTypeEmbedded
-           returnAttachments - If true, attachments are added to the replica and returned in
-            the response. Otherwise, attachments are not included. The default is false. This
-            parameter is only applicable if the feature service has attachments.
-           returnAttachmentsDatabyURL -  If true, a reference to a URL will be provided for
-            each attachment returned from createReplica. Otherwise, attachments are embedded
-            in the response. The default is true. This parameter is only applicable if the
-            feature service has attachments and if returnAttachments is true.
-           attachmentsSyncDirection - Client can specify the attachmentsSyncDirection when
-            creating a replica. AttachmentsSyncDirection is currently a createReplica property
-            and cannot be overridden during sync.
-            Values: none, upload, bidirectional
-           asynchronous - If true, the request is processed as an asynchronous job, and a URL is
-            returned that a client can visit to check the status of the job. See the topic on
-            asynchronous usage for more information. The default is false.
-           syncModel - Client can specify the attachmentsSyncDirection when creating a replica.
-            AttachmentsSyncDirection is currently a createReplica property and cannot be
-            overridden during sync.
-           dataFormat - The format of the replica geodatabase returned in the response. The
-            default is json.
-            Values: filegdb, json, sqlite, shapefile
-           target_type - This option was added at 10.5.1. Can be set to either server or client.
-            If not set, the default is client.A targetType of client will generate a replica that
-            matches those generated in pre-10.5.1 releases. These are designed to support syncing
-            with lightweight mobile clients and have a single generation number (serverGen or
-            replicaServerGen).
-            A targetType of server generates a replica that supports syncing in one direction
-            between 2 feature services running on servers or between an ArcGIS Server feature
-            service and an ArcGIS Online feature service. When the targetType is server, the replica
-            information includes a second generation number. This second generation number is called
-            replicaServerSibGen for perReplica types and serverSibGen for perLayer types.
-            target_type server replicas generated with dataFormat SQLite can be published as new
-            services in another ArcGIS Online organization or in ArcGIS Enterprise. When published,
-            a replica is generated on these new services with a matching replicaID and a
-            replicaServerSibGen or serverSibGens. The replicaServerSibGen or serverSibGens values
-            can be used as the replicaServerGen or serverGen values when calling synchronize replica
-            on the source service to get the latest changes. These changes can then be imported into
-            the new service using the synchronizeReplica operation. When calling synchronizeReplica
-            on the new service to import the changes, be sure to pass the new replicaServerGen or
-            serverGen from the source service as the replicaServerSibGen or serverSibGen. This will
-            update the replica metadata appropriately such that it can be used in the next sync.
-            Values: server, client
-           sync_direction - Defaults to bidirectional when the targetType is client and download
-            when the targetType is server. If set, only bidirectional is supported when
-            targetType is client. If set, only upload or download are supported when targetType is
-            server.
-            A syncDirection of bidirectional matches the functionality from replicas generated in
-            pre-10.5.1 releases and allows upload and download of edits. It is only supported
-            when targetType is client.
-            When targetType is server, only a one way sync is supported thus only upload or
-            download are valid options.
-            A syncDirection of upload means that the synchronizeReplica operation allows only sync
-            with an upload direction. Use this option to allow the upload of edits from the source
-            service.
-            A syncDirection of download means that the synchronizeReplica operation allows only sync
-            with a download direction. Use this option to allow the download of edits to provide to
-            the source service.
-           replicaOptions - This parameter instructs the createReplica operation to create a
-            new replica based on an existing replica definition (refReplicaId). It can be used
-            to specify parameters for registration of existing data for sync. The operation
-            will create a replica but will not return data. The responseType returned in the
-            createReplica response will be esriReplicaResponseTypeInfo.
-           wait - if async, wait to pause the process until the async operation is completed.
-           out_path - folder path to save the file
-           transformations - optional List. Introduced at 10.8. This parameter applies a datum
-                             transformation on each layer when the spatial reference used in
-                             geometry is different than the layer's spatial reference.
+        =============================   ====================================================================
+        **Argument**                    **Description**
+        -----------------------------   --------------------------------------------------------------------
+        replicaName                     Optional string. The name of the replica
+        -----------------------------   --------------------------------------------------------------------
+        layers                          The layers to export
+        -----------------------------   --------------------------------------------------------------------
+        layer_queries                   In addition to the layers and geometry parameters, the layerQueries
+                                        parameter can be used to further define what is replicated. This
+                                        parameter allows you to set properties on a per layer or per table
+                                        basis. Only the properties for the layers and tables that you want
+                                        changed from the default are required.
+
+                                        #Example:
+                                        layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
+                                                        "where": "requires_inspection = Yes"}}
+        -----------------------------   --------------------------------------------------------------------
+        geometry_filter                 Spatial filter from arcgis.geometry.filters module to filter results by a
+                                        spatial relationship with another geometry.
+                                        Only intersections are currently supported
+        -----------------------------   --------------------------------------------------------------------
+        return_attachments              Optional boolean. If true, attachments are added to the replica and returned in the
+                                        response. Otherwise, attachments are not included.
+        -----------------------------   --------------------------------------------------------------------
+        return_attachment_databy_url    If true, a reference to a URL will be provided for each
+                                        attachment returned from createReplica. Otherwise,
+                                        attachments are embedded in the response.
+        -----------------------------   --------------------------------------------------------------------
+        replica_sr                      The spatial reference of the replica geometry
+        -----------------------------   --------------------------------------------------------------------
+        transport_type                  The transportType represents the response format. If the
+                                        transportType is esriTransportTypeUrl, the JSON response is contained in a file,
+                                        and the URL link to the file is returned. Otherwise, the JSON object is returned
+                                        directly. The default is esriTransportTypeUrl.
+                                        If async is true, the results will always be returned as if transportType is
+                                        esriTransportTypeUrl. If dataFormat is sqlite, the transportFormat will always be
+                                        esriTransportTypeUrl regardless of how the parameter is set.
+
+                                        Values: esriTransportTypeUrl | esriTransportTypeEmbedded
+        -----------------------------   --------------------------------------------------------------------
+        attachments_sync_direction      Client can specify the attachmentsSyncDirection when
+                                        creating a replica. AttachmentsSyncDirection is currently a createReplica property
+                                        and cannot be overridden during sync.
+
+                                        Values: none, upload, bidirectional
+        -----------------------------   --------------------------------------------------------------------
+        asynchronous                    If true, the request is processed as an asynchronous job, and a URL is
+                                        returned that a client can visit to check the status of the job. See the topic on
+                                        asynchronous usage for more information. The default is false.
+        -----------------------------   --------------------------------------------------------------------
+        sync_model                      Client can specify the attachmentsSyncDirection when creating a replica.
+                                        AttachmentsSyncDirection is currently a createReplica property and cannot be
+                                        overridden during sync.
+        -----------------------------   --------------------------------------------------------------------
+        data_format                     The format of the replica geodatabase returned in the response. The
+                                        default is json.
+
+                                        Values: filegdb, json, sqlite, shapefile
+        -----------------------------   --------------------------------------------------------------------
+        target_type                     This option was added at 10.5.1. Can be set to either server or client.
+                                        If not set, the default is client.A targetType of client will generate a replica that
+                                        matches those generated in pre-10.5.1 releases. These are designed to support syncing
+                                        with lightweight mobile clients and have a single generation number (serverGen or
+                                        replicaServerGen).
+                                        A targetType of server generates a replica that supports syncing in one direction
+                                        between 2 feature services running on servers or between an ArcGIS Server feature
+                                        service and an ArcGIS Online feature service. When the targetType is server, the replica
+                                        information includes a second generation number. This second generation number is called
+                                        replicaServerSibGen for perReplica types and serverSibGen for perLayer types.
+                                        target_type server replicas generated with dataFormat SQLite can be published as new
+                                        services in another ArcGIS Online organization or in ArcGIS Enterprise. When published,
+                                        a replica is generated on these new services with a matching replicaID and a
+                                        replicaServerSibGen or serverSibGens. The replicaServerSibGen or serverSibGens values
+                                        can be used as the replicaServerGen or serverGen values when calling synchronize replica
+                                        on the source service to get the latest changes. These changes can then be imported into
+                                        the new service using the synchronizeReplica operation. When calling synchronizeReplica
+                                        on the new service to import the changes, be sure to pass the new replicaServerGen or
+                                        serverGen from the source service as the replicaServerSibGen or serverSibGen. This will
+                                        update the replica metadata appropriately such that it can be used in the next sync.
+
+                                        Values: server, client
+        -----------------------------   --------------------------------------------------------------------
+        sync_direction                  Defaults to bidirectional when the targetType is client and download
+                                        when the targetType is server. If set, only bidirectional is supported when
+                                        targetType is client. If set, only upload or download are supported when targetType is
+                                        server.
+                                        A syncDirection of bidirectional matches the functionality from replicas generated in
+                                        pre-10.5.1 releases and allows upload and download of edits. It is only supported
+                                        when targetType is client.
+                                        When targetType is server, only a one way sync is supported thus only upload or
+                                        download are valid options.
+                                        A syncDirection of upload means that the synchronizeReplica operation allows only sync
+                                        with an upload direction. Use this option to allow the upload of edits from the source
+                                        service.
+                                        A syncDirection of download means that the synchronizeReplica operation allows only sync
+                                        with a download direction. Use this option to allow the download of edits to provide to
+                                        the source service.
+        -----------------------------   --------------------------------------------------------------------
+        replica_options                 This parameter instructs the createReplica operation to create a
+                                        new replica based on an existing replica definition (refReplicaId). It can be used
+                                        to specify parameters for registration of existing data for sync. The operation
+                                        will create a replica but will not return data. The responseType returned in the
+                                        createReplica response will be esriReplicaResponseTypeInfo.
+        -----------------------------   --------------------------------------------------------------------
+        wait                            If async, wait to pause the process until the async operation is completed.
+        -----------------------------   --------------------------------------------------------------------
+        out_path                        Folder path to save the file
+        -----------------------------   --------------------------------------------------------------------
+        transformations                 Optional List. Introduced at 10.8. This parameter applies a datum
+                                        transformation on each layer when the spatial reference used in
+                                        geometry is different than the layer's spatial reference.
+        -----------------------------   --------------------------------------------------------------------
+        time_reference_unknown_client   Setting timeReferenceUnknownClient as trueindicates that the client is                  capable of working with data values that are not in UTC. If its not set
+                                        to true, and the service layer's datesInUnknownTimeZone property is true,
+                                        then an error is returned. The default is false
+
+                                        Its possible to define a service's time zone of date fields as unknown.
+                                        Setting the time zone as unknown means that date values will be returned
+                                        as-is from the database, rather than as date values in UTC. Non-hosted feature
+                                        services can be set to use an unknown time zone using ArcGIS Server Manager.
+                                        Setting the time zones to unknown also sets the datesInUnknownTimeZone layer property
+                                        as true. Currently, hosted feature services do not support this setting.
+                                        This setting does not apply to editor tracking date fields which are
+                                        stored and returned in UTC even when the time zone is set to unknown.
+
+                                        Most clients released prior to ArcGIS Enterprise 10.9 will not be able
+                                        to work with feature services that have an unknown time setting.
+                                        The timeReferenceUnknownClient parameter prevents these clients from working
+                                        with the service in order to avoid problems..
+                                        Setting this parameter to true indicates that the client is capable of working with
+                                        unknown date values that are not in UTC.
+        =============================   ====================================================================
+
+        :return: The created replica
+
         """
         if (
             not self.properties.syncEnabled
@@ -4520,7 +4563,9 @@ class FeatureLayerCollection(_GISResource):
             params["replicaOptions"] = replica_options
         if transport_type is not None:
             params["transportType"] = transport_type
-
+        # parameter added at version 10.9
+        if self._gis.version >= [8, 4]:
+            params["timeReferenceUnknownClient"] = time_reference_unknown_client
         if asynchronous:
             if wait:
                 export_job = self._con.post(path=url, postdata=params)
@@ -4696,108 +4741,123 @@ class FeatureLayerCollection(_GISResource):
         You can provide arguments to the synchronizeReplica operation as defined in the parameters
         table below.
 
-        Parameters:
-         :replica_id: The ID of the replica you want to synchronize.
-         :transport_type:
-         :replica_server_gen: is a generation number that allows the server to keep track of what
-          changes have already been synchronized. A new replicaServerGen is sent with the response
-          to the synchronizeReplica operation. Clients should persist this value and use it with the
-          next synchronizeReplica call.
-          It applies to replicas with syncModel = perReplica.
-          For replicas with syncModel = perLayer, layer generation numbers are specified using
-          parameter: syncLayers; and replicaServerSibGen is not needed.
-         :replica_servers_sib_gen:  is a generation number that allows the server to keep track of
-          what changes have already been received. It is set when synchronizing where
-          syncModel = perReplica and targetType = server. The replicaServerSibGen is updated in the
-          replica metadata on the replica resource once the process completes successfully.
-          Replicas with targetType = server are designed to allow syncing between services. When
-          syncing, the replicaServerSibGen value is derived from the replicaServerGen of the other
-          services matching replica.
-          For replicas with syncModel = perLayer, layer generation numbers are specified using
-          parameter: syncLayers; and replicaServerGen is not needed.
-          This value is not set for replicas where the targetType=client.
-         :return_ids_for_adds: If true, the objectIDs and globalIDs of features added during the
-          synchronize will be returned to the client in the addResults sections of the response.
-          Otherwise, the IDs are not returned. The default is false.
-          Values: true | false
-         :edits: The edits the client wants to apply to the service. Alternatively, the
-          edits_upload_ID and editsUploadFormat can be used to specify the edits in a delta file.
-          The edits are described using an array where an element in the array includes:
-           - The layer or table ID
-           - The feature or row edits to apply listed as inserts, updates, and deletes
-           - The attachments to apply listed as inserts, updates, and deletes
-         For features, adds and updates are specified as feature objects that include geometry and
-         attributes.
-         Deletes can be specified using globalIDs for features and attachments.
-         For attachments, updates and adds are specified using the following set of properties for
-         each attachment. If embedding the attachment, set the data property; otherwise, set the url
-         property. All other properties are required:
-          - globalid - The globalID of the attachment that is to be added or updated.
-          - parentGlobalid - The globalID of the feature associated with the attachment.
-          - contentType - Describes the file type of the attachment (for example, image/jpeg).
-          - name - The file name (for example, hydrant.jpg).
-          - data - The base 64 encoded data if embedding the data. Only required if the attachment
-            is embedded.
-          - url - The location where the service will upload the attachment file (for example,
-            http://machinename/arcgisuploads/Hydrant.jpg). Only required if the attachment is not
-            embedded.
-         :return_attachment_databy_url:  If true, a reference to a URL will be provided for each
-          attachment returned from synchronizeReplica. Otherwise, attachments are embedded in the
-          response. The default is true. Applies only if attachments are included in the replica.
-          Values: true | false
-         :asynchronous: If true, the request is processed as an asynchronous job and a URL is
-          returned that a client can visit to check the status of the job. See the topic on
-          asynchronous usage for more information. The default is false.
-          Values: true | false
-         :sync_direction: Determines whether to upload, download, or upload and download on sync. By
-          default, a replica is synchronized bi-directionally. Only applicable when
-          syncModel = perReplica. If syncModel = perLayer, sync direction is specified using
-          syncLayers.
-          Values: download | upload | bidirectional | snapshot
+        ===============                 ====================================================================
+        **Argument**                    **Description**
+        ---------------                 --------------------------------------------------------------------
+        replica_id                      The ID of the replica you want to synchronize.
+        ---------------                 --------------------------------------------------------------------
+        transport_type
+        ---------------                 --------------------------------------------------------------------
+        replica_server_gen              Is a generation number that allows the server to keep track of what
+                                        changes have already been synchronized. A new replicaServerGen is sent with the response
+                                        to the synchronizeReplica operation. Clients should persist this value and use it with the
+                                        next synchronizeReplica call.
+                                        It applies to replicas with syncModel = perReplica.
+                                        For replicas with syncModel = perLayer, layer generation numbers are specified using
+                                        parameter: syncLayers; and replicaServerSibGen is not needed.
+        ---------------                 --------------------------------------------------------------------
+        return_ids_for_adds             If true, the objectIDs and globalIDs of features added during the
+                                        synchronize will be returned to the client in the addResults sections of the response.
+                                        Otherwise, the IDs are not returned. The default is false.
 
-           - download-The changes that have taken place on the server since last download are
-             returned. Client does not need to send any changes. If the changes are sent, service
-             will ignore them.
-           - upload-The changes submitted in the edits or editsUploadID/editsUploadFormatt
-             parameters are applied, and no changes are downloaded from the server.
-           - bidirectional-The changes submitted in the edits or editsUploadID/editsUploadFormat
-             parameters are applied, and changes on the server are downloaded. This is the default
-             value.
-           - snapshot-The current state of the features is downloaded from the server. If any edits
-             are specified, they will be ignored.
-         :sync_layers:  allows a client to specify layer-level generation numbers for a sync
-          operation. It can also be used to specify sync directions at layer-level. This parameter
-          is needed for replicas with syncModel = perLayer. It is ignored for replicas with
-          syncModel = perReplica.
-          serverGen is required for layers with syncDirection = bidirectional or download.
-          serverSibGen is needed only for replicas where the targetType = server. For replicas with
-          syncModel = perLayer, the serverSibGen serves the same purpose at the layer level as the
-          replicaServerSibGen does in the case of syncModel = perReplica. See the
-          replicaServerSibGen parameter for more information.
-          If a sync operation has both the syncDirection and syncLayersparameters, and the replica's
-          syncModel is perLayer, the layers that do not have syncDirection values will use the value
-          of the syncDirection parameter. If the syncDirection parameter is not specified, the
-          default value of bidirectional is used.
-          Values: download | upload | bidirectional | snapshot
-         :edits_upload_id: The ID for the uploaded item that contains the edits the client wants to
-          apply to the service. Used in conjunction with editsUploadFormat.
-         :edits_upload_format: The data format of the uploaded data reference in edit_upload_id.
-          data_format="json",
-         :rollback_on_failure:  Determines the behavior when there are errors while importing edits
-          on the server during synchronization. This only applies in cases where edits are being
-          uploaded to the server (syncDirection = upload or bidirectional). See the
-          RollbackOnFailure and Sync Models topic for more details.
-          When true, if an error occurs while importing edits on the server, all edits are rolled
-          back (not applied), and the operation returns an error in the response. Use this setting
-          when the edits are such that you will either want all or none applied.
-          When false, if an error occurs while importing an edit on the server, the import process
-          skips the edit and continues. All edits that were skipped are returned in the edits
-          results with information describing why the edits were skipped.
-         :close_replica:  If true, the replica will be unregistered when the synchronize completes.
-          This is the same as calling synchronize and then calling unregisterReplica. Otherwise, the
-          replica can continue to be synchronized. The default is false.
-          Values: true | false
+                                        Values: true | false
+        ---------------                 --------------------------------------------------------------------
+        edits                           The edits the client wants to apply to the service. Alternatively, the
+                                        edits_upload_ID and editsUploadFormat can be used to specify the edits in a delta file.
+                                        The edits are described using an array where an element in the array includes:
+                                        - The layer or table ID
+                                        - The feature or row edits to apply listed as inserts, updates, and deletes
+                                        - The attachments to apply listed as inserts, updates, and deletes
+                                        For features, adds and updates are specified as feature objects that include geometry and
+                                        attributes.
+                                        Deletes can be specified using globalIDs for features and attachments.
+                                        For attachments, updates and adds are specified using the following set of properties for
+                                        each attachment. If embedding the attachment, set the data property; otherwise, set the url
+                                        property. All other properties are required:
+                                        - globalid - The globalID of the attachment that is to be added or updated.
+                                        - parentGlobalid - The globalID of the feature associated with the attachment.
+                                        - contentType - Describes the file type of the attachment (for example, image/jpeg).
+                                        - name - The file name (for example, hydrant.jpg).
+                                        - data - The base 64 encoded data if embedding the data. Only required if the attachment
+                                            is embedded.
+                                        - url - The location where the service will upload the attachment file (for example,
+                                            http://machinename/arcgisuploads/Hydrant.jpg). Only required if the attachment is not
+                                            embedded.
+        ---------------                 --------------------------------------------------------------------
+        return_attachment_databy_url    If true, a reference to a URL will be provided for each
+                                        attachment returned from synchronizeReplica. Otherwise, attachments are embedded in the
+                                        response. The default is true. Applies only if attachments are included in the replica.
+        ---------------                 --------------------------------------------------------------------
+        asynchronous                    If true, the request is processed as an asynchronous job and a URL is
+                                        returned that a client can visit to check the status of the job. See the topic on
+                                        asynchronous usage for more information. The default is false.
+        ---------------                 --------------------------------------------------------------------
+        sync_direction                  Determines whether to upload, download, or upload and download on sync. By
+                                        default, a replica is synchronized bi-directionally. Only applicable when
+                                        syncModel = perReplica. If syncModel = perLayer, sync direction is specified using
+                                        syncLayers.
+
+                                        Values: download | upload | bidirectional | snapshot
+
+                                        - download-The changes that have taken place on the server since last download are
+                                            returned. Client does not need to send any changes. If the changes are sent, service
+                                            will ignore them.
+                                        - upload-The changes submitted in the edits or editsUploadID/editsUploadFormatt
+                                            parameters are applied, and no changes are downloaded from the server.
+                                        - bidirectional-The changes submitted in the edits or editsUploadID/editsUploadFormat
+                                            parameters are applied, and changes on the server are downloaded. This is the default
+                                            value.
+                                        - snapshot-The current state of the features is downloaded from the server. If any edits
+                                            are specified, they will be ignored.
+        ---------------                 --------------------------------------------------------------------
+        sync_layers                     Allows a client to specify layer-level generation numbers for a sync
+                                        operation. It can also be used to specify sync directions at layer-level. This parameter
+                                        is needed for replicas with syncModel = perLayer. It is ignored for replicas with
+                                        syncModel = perReplica.
+                                        serverGen is required for layers with syncDirection = bidirectional or download.
+                                        serverSibGen is needed only for replicas where the targetType = server. For replicas with
+                                        syncModel = perLayer, the serverSibGen serves the same purpose at the layer level as the
+                                        replicaServerSibGen does in the case of syncModel = perReplica. See the
+                                        replicaServerSibGen parameter for more information.
+                                        If a sync operation has both the syncDirection and syncLayersparameters, and the replica's
+                                        syncModel is perLayer, the layers that do not have syncDirection values will use the value
+                                        of the syncDirection parameter. If the syncDirection parameter is not specified, the
+                                        default value of bidirectional is used.
+
+                                        Values: download | upload | bidirectional | snapshot
+        ---------------                 --------------------------------------------------------------------
+        edits_upload_id                 The ID for the uploaded item that contains the edits the client wants to
+                                        apply to the service. Used in conjunction with editsUploadFormat.
+        ---------------                 --------------------------------------------------------------------
+        edits_upload_format             The data format of the uploaded data reference in edit_upload_id.
+                                        data_format="json"
+        ---------------                 --------------------------------------------------------------------
+        data_format                     The format of the replica geodatabase returned in the response. The
+                                        default is json.
+
+                                        Values: filegdb, json, sqlite, shapefile
+        ---------------                 --------------------------------------------------------------------
+        rollback_on_failure             Determines the behavior when there are errors while importing edits
+                                        on the server during synchronization. This only applies in cases where edits are being
+                                        uploaded to the server (syncDirection = upload or bidirectional). See the
+                                        RollbackOnFailure and Sync Models topic for more details.
+                                        When true, if an error occurs while importing edits on the server, all edits are rolled
+                                        back (not applied), and the operation returns an error in the response. Use this setting
+                                        when the edits are such that you will either want all or none applied.
+                                        When false, if an error occurs while importing an edit on the server, the import process
+                                        skips the edit and continues. All edits that were skipped are returned in the edits
+                                        results with information describing why the edits were skipped.
+        ---------------                 --------------------------------------------------------------------
+        close_replica                   If true, the replica will be unregistered when the synchronize completes.
+                                        This is the same as calling synchronize and then calling unregisterReplica. Otherwise, the
+                                        replica can continue to be synchronized. The default is false.
+        ---------------                 --------------------------------------------------------------------
+        out_path                        Folder path to save the file
+        ===============                 ====================================================================
+
+        :returns:
         """
+
         url = "{url}/synchronizeReplica".format(url=self._url)
         params = {
             "f": "json",
