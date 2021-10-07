@@ -6,11 +6,8 @@ from string import digits
 from functools import lru_cache
 
 from re import search
-import time
-import concurrent.futures
 from typing import Any, Optional, Union
 
-from requests_kerberos.kerberos_ import OPTIONAL
 from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
 from arcgis._impl.common._mixins import PropertyMap
@@ -18,7 +15,7 @@ from arcgis._impl.common._utils import _date_handler, chunks
 
 from arcgis.features.feature import Feature, FeatureSet
 from arcgis.geometry import SpatialReference
-from arcgis.gis import Item, Layer, _GISResource
+from arcgis.gis import Item, Layer
 from arcgis.mapping import MapImageLayer
 
 ###########################################################################
@@ -212,7 +209,7 @@ class MapFeatureLayer(Layer):
         item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
                                                  a :class:`~arcgis.mapping.MapImageService` object.
         ------------------------------------     --------------------------------------------------------------------
-        layer_id                                 Optional integer. The id of the layer in the Map Service's Layer. 
+        layer_id                                 Optional integer. The id of the layer in the Map Service's Layer.
                                                  The default is 0.
         ====================================     ====================================================================
 
@@ -1300,7 +1297,7 @@ class MapFeatureLayer(Layer):
         return self._con.post(path=qrr_url, postdata=params, token=self._token)
 
     # ----------------------------------------------------------------------
-    def get_html_popup(self, oid):
+    def get_html_popup(self, oid: str):
         """
         The ``get_html_Popup`` resource provides details about the HTML pop-up
         authored by the user using ArcGIS Pro or ArcGIS Desktop.
@@ -1628,7 +1625,7 @@ class MapTable(MapFeatureLayer):
     """
 
     @classmethod
-    def fromitem(cls, item, table_id=0):
+    def fromitem(cls, item: Item, table_id: int = 0):
         """
         The ``fromitem`` method creates a :class:`~arcgis.mapping.MapTable` from a GIS :class:`~arcgis.gis.Item`.
 
@@ -1639,8 +1636,8 @@ class MapTable(MapFeatureLayer):
         item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
                                                  a :class:`~arcgis.mapping.MapImageService` object.
         ------------------------------------     --------------------------------------------------------------------
-        layer_id                                 Optional. The id of the layer in the Map Service's Layer. The default
-                                                 is 0.
+        layer_id                                 Optional integer. The id of the layer in the Map Service's Layer.
+                                                 The default is 0.
         ====================================     ====================================================================
 
         :return:
@@ -1697,27 +1694,29 @@ class MapTable(MapFeatureLayer):
     # ----------------------------------------------------------------------
     def query(
         self,
-        where="1=1",
-        out_fields="*",
-        time_filter=None,
-        return_count_only=False,
-        return_ids_only=False,
-        return_distinct_values=False,
-        group_by_fields_for_statistics=None,
-        statistic_filter=None,
-        result_offset=None,
-        result_record_count=None,
-        object_ids=None,
-        gdb_version=None,
-        order_by_fields=None,
-        out_statistics=None,
-        return_all_records=True,
-        historic_moment=None,
-        sql_format=None,
-        return_exceeded_limit_features=None,
-        as_df=False,
-        range_values=None,
-        parameter_values=None,
+        where: str = "1=1",
+        out_fields: Union[str, list[str]] = "*",
+        time_filter: Optional[
+            Union[datetime, list[datetime], list[str], dict[datetime]]
+        ] = None,
+        return_count_only: bool = False,
+        return_ids_only: bool = False,
+        return_distinct_values: bool = False,
+        group_by_fields_for_statistics: Optional[str] = None,
+        statistic_filter: Optional[StatisticFilter] = None,
+        result_offset: Optional[int] = None,
+        result_record_count: Optional[int] = None,
+        object_ids: Optional[str] = None,
+        gdb_version: Optional[str] = None,
+        order_by_fields: Optional[str] = None,
+        out_statistics: Optional[str[dict[str, Any]]] = None,
+        return_all_records: bool = True,
+        historic_moment: Optional[Union[int, datetime]] = None,
+        sql_format: Optional[str] = None,
+        return_exceeded_limit_features: Optional[bool] = None,
+        as_df: bool = False,
+        range_values: Optional[list[dict[str, Any]]] = None,
+        parameter_values: Optional[list[dict[str, Any]]] = None,
         **kwargs,
     ):
         """
