@@ -4,6 +4,7 @@ import datetime as _datetime
 import platform
 import configparser
 from typing import Optional
+from arcgis.gis import GIS
 
 _log = logging.getLogger(__name__)
 
