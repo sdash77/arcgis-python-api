@@ -4,7 +4,7 @@ A module for managing forms in the ArcGIS platform
 
 import json
 from typing import Optional, Union
-import arcgis
+import arcgis.mapping
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import Item
 from arcgis.features import FeatureLayer
@@ -378,7 +378,7 @@ class FormInfo:
         element: Optional[
             Union[arcgis.mapping.FormFieldElement, arcgis.mapping.FormGroupElement]
         ] = None,
-        index: Optional[str] = None,
+        index: Optional[int] = None,
     ):
         """
         Adds a single :class:`~arcgis.mapping.forms.FormElement` to the form. You can add to the form either by instantiating your
