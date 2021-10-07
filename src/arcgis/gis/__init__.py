@@ -20,7 +20,7 @@ from contextlib import contextmanager
 import functools
 from datetime import datetime
 import logging
-from typing import Tuple, Any, Dict, List
+from typing import Tuple, Any, Dict, List, Optional
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 import concurrent.futures
@@ -9266,6 +9266,36 @@ class User(dict):
             raise Exception(
                 "The operation delete_thumbnail is not supported on this portal."
             )
+
+    def expire_password(self, temporary_password: Optional[str] = None) -> bool:
+        """
+        Expires the current user's Password.
+
+        =====================  ==========================================================
+        **Argument**           **Description**
+        ---------------------  ----------------------------------------------------------
+        temporary_password     Optional String. Allows the administrator to set a new
+                               temporary password for a given user. This is available on
+                               ArcGIS Enterprise Only.
+        =====================  ==========================================================
+
+        :returns: Boolean
+        """
+        if temporary_password and self._gis._portal.is_arcgisonline == False:
+
+            url = f"{self._gis._portal.resturl}community/users/{self.username}/update"
+            params = {"f": "json", "password": temporary_password}
+            resp = self._gis._con.post(url, params)
+        url = (
+            f"{self._gis._portal.resturl}community/users/{self.username}/expirePassword"
+        )
+        if self._gis._portal.is_arcgisonline:
+
+            params = {"f": "json", "expiration": -1}
+        else:
+            params = {"f": "json", "expiration": 1}
+        resp = self._gis._con.post(url, params)
+        return resp.get("success", False)
 
     def reset(
         self,
