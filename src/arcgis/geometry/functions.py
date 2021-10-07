@@ -6,7 +6,7 @@ from __future__ import annotations
 from enum import Enum
 import json
 from typing import Any, Optional, Union
-from arcgis.geometry import (
+from arcgis.geometry._types import (
     Geometry,
     Point,
     MultiPoint,
