@@ -91,6 +91,7 @@ def _search(
         page_size = 100
     else:
         page_size = min(max_items, 100)
+    max_items = page_size
     items = []
     params = {
         "f": "json",
@@ -160,8 +161,6 @@ def _search(
     results["results"] = _handle_response(
         as_dict=as_dict, gis=gis, res=results, stype=stype
     )
-    results["nextStart"] = max_items + 1
-    results["start"] = start
     return results
 
 
