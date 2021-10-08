@@ -1,8 +1,8 @@
 import os
 import sys
 
-# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork\src")
-import imp
+sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+# import imp
 import json
 import tempfile
 import unittest
