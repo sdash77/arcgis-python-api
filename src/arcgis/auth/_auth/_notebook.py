@@ -14,7 +14,11 @@ class EsriNotebookAuth(AuthBase, SupportMultiAuth):
 
     # ----------------------------------------------------------------------
     def __init__(
-        self, token: str, referer: str = None, auth: AuthBase = None, **kwargs,
+        self,
+        token: str,
+        referer: str = None,
+        auth: AuthBase = None,
+        **kwargs,
     ):
         self._token = token
         self.auth = auth
@@ -81,6 +85,6 @@ class EsriNotebookAuth(AuthBase, SupportMultiAuth):
             and not (parsed.scheme, parsed.netloc, parsed.path) in self._no_go_token
         ):
             r.headers["X-Esri-Authorization"] = f"Bearer {self.token}"
-            r.headers.pop('Referer', None)  # ['Referer'] = "http"  # , self.referer
+            r.headers.pop("Referer", None)  # ['Referer'] = "http"  # , self.referer
         r.register_hook("response", self.add_token)
         return r

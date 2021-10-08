@@ -1386,13 +1386,17 @@ class Portal(object):
     def get_item_dependencies(self, itemid):
         postdata = self._postdata()
         postdata["num"] = 100
-        data = self.con.post("content/items/" + itemid + "/dependencies", postdata,)
+        data = self.con.post(
+            "content/items/" + itemid + "/dependencies",
+            postdata,
+        )
 
         # check if more dependents to get
         while data["nextStart"] > 0:
             postdata["start"] = data["nextStart"]
             new_data = self.con.post(
-                "content/items/" + itemid + "/dependencies", postdata,
+                "content/items/" + itemid + "/dependencies",
+                postdata,
             )
             # update list of data with new data list
             data["list"].extend(new_data["list"])
@@ -1409,14 +1413,16 @@ class Portal(object):
         postdata = self._postdata()
         postdata["num"] = 100
         data = self.con.post(
-            "content/items/" + itemid + "/dependencies/listDependentsTo", postdata,
+            "content/items/" + itemid + "/dependencies/listDependentsTo",
+            postdata,
         )
 
         # check if more dependents to get
         while data["nextStart"] > 0:
             postdata["start"] = data["nextStart"]
             new_data = self.con.post(
-                "content/items/" + itemid + "/dependencies/listDependentsTo", postdata,
+                "content/items/" + itemid + "/dependencies/listDependentsTo",
+                postdata,
             )
 
             # update data to include new_data in list
