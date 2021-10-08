@@ -1,6 +1,6 @@
 import logging as _logging
 import json
-from typing import Optional, Union
+from typing import Optional
 import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet

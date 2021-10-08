@@ -4,8 +4,7 @@ import logging
 import datetime
 from typing import Any, Optional, Union
 
-from arcpy.arcobjects.arcobjects import Point
-from arcpy.arcobjects.geometries import Polygon, Polyline
+from arcgis.geometry import Point, Polygon, Polyline
 from arcgis.gis import Layer, _GISResource
 
 # Supported Data Types
