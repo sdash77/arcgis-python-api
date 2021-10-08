@@ -140,6 +140,7 @@ class Connection(object):
         """
         from arcgis.gis import GIS
 
+        self._is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
         self._proxy = kwargs.pop("proxy", None)
         self._timeout = kwargs.pop("timeout", 600)
         self._all_ssl = kwargs.pop("all_ssl", True)
@@ -203,11 +204,18 @@ class Connection(object):
             auth_check = [""]
         elif str(baseurl).lower() != "pro":
             auth_check = [""]
-        if self._key_file is None and self._cert_file is None:
+        if self._is_hosted_nb_home:
+            auth_check = [""]
+        elif self._key_file is None and self._cert_file is None:
             auth_check = self._auth_check(baseurl)
         else:
             auth_check = [""]
-        if "token" in kwargs and kwargs["token"]:
+        if self._is_hosted_nb_home:
+            self._auth = "HOME"  # NB AUTH
+            self._token = kwargs.pop("token", None)
+            self._expiration = 10080
+            self._referer = ""
+        elif "token" in kwargs and kwargs["token"]:
             self._auth = "USER_TOKEN"
             self._token = kwargs.pop("token", None)
         elif (
@@ -285,6 +293,8 @@ class Connection(object):
         #  Product Info
         if self._client_id:
             self._product = "PORTAL"
+        elif self._is_hosted_nb_home:
+            self._product = "NOTEBOOK_SERVER"
         else:
             self._product = self._check_product()
         self._baseurl = self._validate_url(self._baseurl)
@@ -332,9 +342,7 @@ class Connection(object):
             try:
 
                 www_auth = s.get(
-                    root + pt,
-                    params=params,
-                    verify=self._verify_cert,
+                    root + pt, params=params, verify=self._verify_cert,
                 ).headers.get("www-authenticate", "")
                 results.append(www_auth)
             except:
@@ -453,6 +461,15 @@ class Connection(object):
         if self._custom_auth:
             self._session.auth = self._custom_auth
             self._auth = "CUSTOM"
+        elif self._auth.lower() == "home":
+            from arcgis.auth._auth._notebook import EsriNotebookAuth
+
+            self._session.verify = False
+            self._session.auth = EsriNotebookAuth(
+                token=self._token,
+                referer=self._referer,
+                auth=GuessAuth(username=None, password=None),
+            )
         elif self._auth.lower() == "oauth":
             self._session.auth = EsriOAuth2Auth(
                 base_url=self._baseurl,

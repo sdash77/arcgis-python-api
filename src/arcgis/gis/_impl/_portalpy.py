@@ -103,6 +103,7 @@ class Portal(object):
         homepos = url.find("/home")
         trust_env = kwargs.get("trust_env", None)
         custom_adapter = kwargs.pop("custom_adapter", None)
+        is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
         if homepos != -1:
             url = url[:homepos]
 
@@ -180,6 +181,7 @@ class Portal(object):
                     timeout=kwargs.get("timeout", 600),
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
+                    is_hosted_nb_home=is_hosted_nb_home,
                 )
             else:
                 self.con = Connection(
@@ -203,6 +205,7 @@ class Portal(object):
                     timeout=kwargs.get("timeout", 600),
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
+                    is_hosted_nb_home=is_hosted_nb_home,
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -1383,17 +1386,13 @@ class Portal(object):
     def get_item_dependencies(self, itemid):
         postdata = self._postdata()
         postdata["num"] = 100
-        data = self.con.post(
-            "content/items/" + itemid + "/dependencies",
-            postdata,
-        )
+        data = self.con.post("content/items/" + itemid + "/dependencies", postdata,)
 
         # check if more dependents to get
         while data["nextStart"] > 0:
             postdata["start"] = data["nextStart"]
             new_data = self.con.post(
-                "content/items/" + itemid + "/dependencies",
-                postdata,
+                "content/items/" + itemid + "/dependencies", postdata,
             )
             # update list of data with new data list
             data["list"].extend(new_data["list"])
@@ -1410,16 +1409,14 @@ class Portal(object):
         postdata = self._postdata()
         postdata["num"] = 100
         data = self.con.post(
-            "content/items/" + itemid + "/dependencies/listDependentsTo",
-            postdata,
+            "content/items/" + itemid + "/dependencies/listDependentsTo", postdata,
         )
 
         # check if more dependents to get
         while data["nextStart"] > 0:
             postdata["start"] = data["nextStart"]
             new_data = self.con.post(
-                "content/items/" + itemid + "/dependencies/listDependentsTo",
-                postdata,
+                "content/items/" + itemid + "/dependencies/listDependentsTo", postdata,
             )
 
             # update data to include new_data in list

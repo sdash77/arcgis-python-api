@@ -446,6 +446,7 @@ class GIS(object):
                 proxy=kwargs.get("proxy", None),
                 custom_adapter=custom_adapter,
                 token=self._utoken,
+                is_hosted_nb_home = self._is_hosted_nb_home,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -468,6 +469,7 @@ class GIS(object):
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
                     token=self._utoken,
+                    is_hosted_nb_home = self._is_hosted_nb_home,
                 )
             if self._is_hosted_nb_home:
                 self._portal.con._referer = ""
@@ -533,6 +535,7 @@ class GIS(object):
                         proxy=kwargs.get("proxy", None),
                         custom_adapter=custom_adapter,
                         token=self._utoken,
+                        is_hosted_nb_home = self._is_hosted_nb_home,
                     )
                     self._portal = pp
         except:
