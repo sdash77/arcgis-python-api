@@ -4,7 +4,7 @@ A module for managing forms in the ArcGIS platform
 
 import json
 from typing import Optional, Union
-import arcgis.mapping
+from arcgis import mapping
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import Item
 from arcgis.features import FeatureLayer
@@ -74,7 +74,7 @@ class FormCollection:
             return self.forms[self._index - 1]
 
     def _refresh_forms(self, parent):
-        if isinstance(parent, arcgis.mapping.WebMap):
+        if isinstance(parent, mapping.WebMap):
             self.forms = self._get_forms_from_webmap(parent)
         elif isinstance(parent, Item):
             if parent.type != "Feature Layer Collection":
@@ -333,7 +333,7 @@ class FormInfo:
             else:
                 item_data["layers"][self._layer_data["id"]].pop("formInfo", None)
             self._parent.update(data=item_data)
-        if isinstance(self._parent, arcgis.mapping.WebMap):
+        if isinstance(self._parent, mapping.WebMap):
             if self.exists():
                 self._original_layer["formInfo"] = self.to_dict()
             else:
@@ -376,7 +376,7 @@ class FormInfo:
     def add(
         self,
         element: Optional[
-            Union[arcgis.mapping.FormFieldElement, arcgis.mapping.FormGroupElement]
+            Union[mapping.FormFieldElement, mapping.FormGroupElement]
         ] = None,
         index: Optional[int] = None,
     ):
@@ -412,12 +412,12 @@ class FormInfo:
         field_name: str,
         label: str,
         description: Optional[str] = None,
-        visibility_expression: Optional[arcgis.mapping.FormExpressionInfo] = None,
+        visibility_expression: Optional[mapping.FormExpressionInfo] = None,
         domain: Optional[dict] = None,
         editable: Optional[bool] = None,
         hint: Optional[str] = None,
         input_type: Optional[Union[str, dict]] = None,
-        required_expression: Optional[arcgis.mapping.FormExpressionInfo] = None,
+        required_expression: Optional[mapping.FormExpressionInfo] = None,
         index: Optional[int] = None,
         **kwargs
     ):
@@ -488,7 +488,7 @@ class FormInfo:
         self,
         label: str,
         description: Optional[str] = None,
-        visibility_expression: Optional[arcgis.mapping.FormExpressionInfo] = None,
+        visibility_expression: Optional[mapping.FormExpressionInfo] = None,
         initial_state: Optional[str] = None,
         index: Optional[int] = None,
         **kwargs
@@ -528,7 +528,7 @@ class FormInfo:
     def delete(
         self,
         element: Optional[
-            Union[arcgis.mapping.FormFieldElement, arcgis.mapping.FormGroupElement]
+            Union[mapping.FormFieldElement, mapping.FormGroupElement]
         ] = None,
         label: Optional[str] = None,
     ):
@@ -564,10 +564,10 @@ class FormInfo:
     def move(
         self,
         element: Optional[
-            Union[arcgis.mapping.FormFieldElement, arcgis.mapping.FormGroupElement]
+            Union[mapping.FormFieldElement, mapping.FormGroupElement]
         ] = None,
         label: Optional[str] = None,
-        destination: Optional[arcgis.mapping.FormGroupElement] = None,
+        destination: Optional[mapping.FormGroupElement] = None,
         index: Optional[int] = None,
     ):
         """
@@ -900,7 +900,7 @@ class FormElement:
         return self._visibility_expression
 
     @visibility_expression.setter
-    def visibility_expression(self, value: Optional[arcgis.mapping.FormExpressionInfo]):
+    def visibility_expression(self, value: Optional[mapping.FormExpressionInfo]):
         if isinstance(value, FormExpressionInfo) or value is None:
             self._visibility_expression = value
         else:
@@ -1111,7 +1111,7 @@ class FormFieldElement(FormElement):
         return self._required_expression
 
     @required_expression.setter
-    def required_expression(self, value: Optional[arcgis.mapping.FormExpressionInfo]):
+    def required_expression(self, value: Optional[mapping.FormExpressionInfo]):
         if isinstance(value, FormExpressionInfo) or value is None:
             self._required_expression = value
         else:
@@ -1279,12 +1279,12 @@ class FormGroupElement(FormElement):
         field_name: str,
         label: str,
         description: Optional[str] = None,
-        visibility_expression: Optional[arcgis.mapping.FormExpressionInfo] = None,
+        visibility_expression: Optional[mapping.FormExpressionInfo] = None,
         domain: Optional[dict] = None,
         editable: Optional[bool] = None,
         hint: Optional[str] = None,
         input_type: Optional[Union[dict, str]] = None,
-        required_expression: Optional[arcgis.mapping.FormExpressionInfo] = None,
+        required_expression: Optional[mapping.FormExpressionInfo] = None,
         index: Optional[int] = None,
         **kwargs
     ):
@@ -1381,7 +1381,7 @@ class FormGroupElement(FormElement):
         self,
         element: Optional[FormFieldElement] = None,
         label: Optional[str] = None,
-        destination: Optional[Union[FormInfo, arcgis.mapping.FormGroupElement]] = None,
+        destination: Optional[Union[FormInfo, mapping.FormGroupElement]] = None,
         index: Optional[int] = None,
     ):
         """
