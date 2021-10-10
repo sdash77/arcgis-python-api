@@ -8996,6 +8996,8 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def catalog_path(self):
+        if self._datastore_raster:
+            return self._uri
         return self._url
 
     @property
