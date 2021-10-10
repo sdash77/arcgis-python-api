@@ -122,7 +122,7 @@ class BDCNEdgeDetector(ModelExtension):
                             saved.
     =====================   ===========================================
 
-    :returns: ``Bi-Directional Cascade Network for Perceptual Edge Detection`` Object
+    :return: ``Bi-Directional Cascade Network for Perceptual Edge Detection`` Object
     """
 
     def __init__(self, data, backbone="vgg19", pretrained_path=None):
@@ -208,7 +208,7 @@ class BDCNEdgeDetector(ModelExtension):
 
         =====================   ===========================================
 
-        :returns: `Bi-Directional Cascade Network for Perceptual Edge Detection` Object
+        :return: `Bi-Directional Cascade Network for Perceptual Edge Detection` Object
         """
         emd_path = _get_emd_path(emd_path)
 
@@ -263,7 +263,7 @@ class BDCNEdgeDetector(ModelExtension):
                                 consider true detection.
         =====================   ===========================================
 
-        :returns: `dict`
+        :return: `dict`
         """
 
     def show_results(self, rows=5, thresh=0.5, thinning=True, **kwargs):

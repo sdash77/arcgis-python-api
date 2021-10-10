@@ -9,14 +9,33 @@ consumer behavior, and the natural environment.
 For example: What kind of people live here? What do people like to do in this area? What are their habits and
 lifestyles? What kind of businesses are in this area?
 
-The enrich() method to can be used retrieve demographics and other relevant characteristics associated with the area
-surrounding the requested places. You can also use the arcgis.geoenrichment module to obtain additional geographic
+The ``enrich`` method to can be used retrieve demographics and other relevant characteristics associated with the area
+surrounding the requested places. You can also use the ``arcgis.geoenrichment`` module to obtain additional geographic
 context (for example, the ZIP Code of a location) and geographic boundaries (for example, the geometry for a drive-time
 service area).
 
 Site analysis is a popular application of this type of data enrichment. For example, GeoEnrichment can be leveraged to
-study the population that would be affected by the development of a new community center within their neighborhood.
-With the enrich() method, the proposed site can be submitted, and the demographics and other relevant characteristics
+study the population affected by the development of a new community center within their neighborhood.
+With the ``enrich`` method, the proposed site can be submitted, and the demographics and other relevant characteristics
 associated with the area around the site will be returned.
 """
-from .enrichment import *
+
+__all__ = [
+    "BufferStudyArea",
+    "Country",
+    "get_countries",
+    "create_report",
+    "enrich",
+    "standard_geography_query",
+    "service_limits",
+]
+
+from .enrichment import (
+    BufferStudyArea,
+    Country,
+    get_countries,
+    create_report,
+    enrich,
+    standard_geography_query,
+    service_limits,
+)

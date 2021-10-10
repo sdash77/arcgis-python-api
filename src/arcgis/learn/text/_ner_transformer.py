@@ -333,8 +333,9 @@ class TransformerForEntityRecognition(ArcGISTransformer):
             return_tensors="pt",
         ).to(device)
 
-        input_ids, attention_mask = encodings.get("input_ids"), encodings.get(
-            "attention_mask"
+        input_ids, attention_mask = (
+            encodings.get("input_ids"),
+            encodings.get("attention_mask"),
         )
         token_type_ids = encodings.get("token_type_ids")
         # Models like DistilBERT, RoBERTa, XLM-RoBERTa, Longformer, Bart, ELECTRA
@@ -808,7 +809,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         ds_type                 Optional string, defaults to valid.
         =====================   ===========================================
 
-        :returns: Pandas DataFrame
+        :return: Pandas DataFrame
         """
         self._check_requisites()
         databunch = self._data.get_databunch()
@@ -947,7 +948,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
                                 will plot the figure and return nothing.
         =====================   ===========================================
 
-        :returns: matplotlib.figure.Figure
+        :return: matplotlib.figure.Figure
         """
         self._check_requisites()
         import matplotlib.pyplot as plt

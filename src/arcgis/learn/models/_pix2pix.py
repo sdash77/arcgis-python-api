@@ -2,23 +2,23 @@ from ._codetemplate import image_translation_prf
 import json
 import traceback
 from .._data import _raise_fastai_import_error
-from ._arcgis_model import ArcGISModel
+from ._arcgis_model import ArcGISModel, _EmptyData
 
 try:
     from ._pix2pix_utils import (
         pix2pixLoss,
+        Pix2PixPerceptualLoss,
         pix2pixTrainer,
+        Pix2PixPerceptualTrainer,
         optim,
         compute_metrics,
         compute_fid_metric,
     )
     from ._pix2pix_utils import pix2pix as pix2pix_model
-    from .._utils.pix2pix import ImageTuple, ImageTupleList2, ImageTupleListMS2
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
-    from torchvision import transforms
+    from .._data_utils.pix2pix_data import show_results, predict
     from pathlib import Path
-    from fastai.vision import *
-    from fastai.vision import DatasetType, Learner, partial, open_image
+    from fastai.vision import DatasetType, Learner, partial
     import torch
 
     HAS_FASTAI = True
@@ -42,25 +42,42 @@ class Pix2Pix(ArcGISModel):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    perceptual_loss         Optional boolean. True when Perceptual loss is used.
+                            Default set to False.
     =====================   ===========================================
 
-    :returns: `Pix2Pix` Object
+    :return: `Pix2Pix` Object
     """
 
-    def __init__(self, data, pretrained_path=None, *args, **kwargs):
+    def __init__(
+        self, data, pretrained_path=None, perceptual_loss=False, *args, **kwargs
+    ):
         super().__init__(data)
         self._check_dataset_support(data)
-        pix2pix_gan = pix2pix_model(self._data.n_channel, self._data.n_channel)
-        self.learn = Learner(
-            data,
-            pix2pix_gan,
-            loss_func=pix2pixLoss(pix2pix_gan),
-            opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
-            callback_fns=[pix2pixTrainer],
+        pix2pix_gan = pix2pix_model(
+            self._data.n_channel, self._data.n_channel, perceptual_loss
         )
+        if perceptual_loss:
+            self.learn = Learner(
+                data,
+                pix2pix_gan,
+                loss_func=Pix2PixPerceptualLoss(pix2pix_gan),
+                opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
+                callback_fns=[Pix2PixPerceptualTrainer],
+            )
+        else:
+            self.learn = Learner(
+                data,
+                pix2pix_gan,
+                loss_func=pix2pixLoss(pix2pix_gan),
+                opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
+                callback_fns=[pix2pixTrainer],
+            )
 
         self.learn.model = self.learn.model.to(self._device)
         self._slice_lr = False
+        self.perceptual_loss = perceptual_loss
         if pretrained_path is not None:
             self.load(pretrained_path)
         self._code = image_translation_prf
@@ -91,9 +108,8 @@ class Pix2Pix(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `Pix2Pix` Object
+        :return: `Pix2Pix` Object
         """
-
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
 
@@ -109,21 +125,12 @@ class Pix2Pix(ArcGISModel):
         model_params = emd["ModelParameters"]
         resize_to = emd.get("resize_to")
         chip_size = emd["ImageHeight"]
+
         if data is None:
             if emd.get("IsMultispectral", False):
-                data = (
-                    ImageTupleListMS2.from_folders(
-                        emd_path.parent,
-                        emd_path.parent,
-                        emd_path.parent,
-                        batch_stats_a=None,
-                        batch_stats_b=None,
-                    )
-                    .split_none()
-                    .label_empty()
-                    .databunch(bs=2, no_check=True)
+                data = _EmptyData(
+                    path=emd_path.parent, loss_func=None, c=2, chip_size=resize_to
                 )
-                data.n_channel = emd["n_channel"]
                 data = get_multispectral_data_params_from_emd(data, emd)
                 data._is_multispectral = emd.get("IsMultispectral", False)
                 normalization_stats_b = dict(emd.get("NormalizationStats_b"))
@@ -135,21 +142,20 @@ class Pix2Pix(ArcGISModel):
                     setattr(data, ("_" + _stat), normalization_stats_b[_stat])
 
             else:
-                data = (
-                    ImageTupleList2.from_folders(
-                        emd_path.parent, emd_path.parent, emd_path.parent
-                    )
-                    .split_none()
-                    .label_empty()
-                    .transform(size=(chip_size, chip_size))
-                    .databunch(bs=2, no_check=True)
+                data = _EmptyData(
+                    path=emd_path.parent, loss_func=None, c=2, chip_size=resize_to
                 )
+
             data.n_channel = emd["n_channel"]
-            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
-        data.resize_to = chip_size
+            data._is_empty = True
+            data.resize_to = chip_size
 
+        if emd.get("perceptual_loss", False):
+            model_params["perceptual_loss"] = emd.get("perceptual_loss")
+            return cls(data, **model_params, pretrained_path=str(model_file))
+        model_params["perceptual_loss"] = False
         return cls(data, **model_params, pretrained_path=str(model_file))
 
     @property
@@ -160,6 +166,7 @@ class Pix2Pix(ArcGISModel):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_pix2pix"
+        _emd_template["perceptual_loss"] = self.perceptual_loss
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
         else:
@@ -186,18 +193,13 @@ class Pix2Pix(ArcGISModel):
                     ][_stat].tolist()
         return _emd_template
 
-    def show_results(self, rows=5):
+    def show_results(self, rows=2, **kwargs):
         """
-        Displays the results of a trained model on a part of the validation set.
-
+        Displays the results of a trained model on the validation set.
         """
-        if rows > len(self._data.valid_ds):
-            rows = len(self._data.valid_ds)
-        self.learn.model.arcgis_results = True
-        self.learn.show_results(rows=rows)
-        self.learn.model.arcgis_results = False
+        show_results(self, rows, **kwargs)
 
-    def predict(self, img_path):
+    def predict(self, path):
         """
         Predicts and display the image.
 
@@ -208,30 +210,14 @@ class Pix2Pix(ArcGISModel):
         =====================   ===========================================
 
         """
-        self.learn.model.arcgis_results = True
-        img_path = Path(img_path)
-        raw_img = open_image(img_path)
-        n_band = self._data.n_channel
-        if n_band > raw_img.shape[0]:
-            cont = []
-            last_tile = np.expand_dims(raw_img.data[raw_img.shape[0] - 1, :, :], 0)
-            res = abs(n_band - raw_img.shape[0])
-            for i in range(res):
-                raw_img = Image(
-                    torch.tensor(np.concatenate((raw_img.data, last_tile), axis=0))
-                )
-        raw_img_tuple = ImageTuple(raw_img, raw_img)
-        pred_tuple = self.learn.predict(raw_img_tuple)
-        pred_img = pred_tuple[1][0] / 2 + 0.5
-
-        pred_img = transforms.ToPILImage()(pred_img).convert("RGB")
-        self.learn.model.arcgis_results = False
-        return pred_img
+        return predict(self, path)
 
     def compute_metrics(self, show_progress=True):
         """
         Computes Peak Signal-to-Noise Ratio (PSNR) and
         Structural Similarity Index Measure (SSIM) on validation set.
+        Additionally, computes Frechet Inception Distance (FID) for
+        RGB imagery only.
 
         """
         psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress)

@@ -5,6 +5,7 @@ import io
 import os
 import sys
 import uuid
+import copy
 from pathlib import Path, PurePath
 import shutil
 import datetime
@@ -152,7 +153,8 @@ def from_url(url: str) -> list:
     ---------------------------     --------------------------------------------------------------------
     url                             Required String. The web location of the compressed shapefile.
     ===========================     ====================================================================
-    :returns: List[pd.DataFrame]
+
+    :return: List[pd.DataFrame]
 
     """
 
@@ -298,7 +300,7 @@ def from_table(filename, **kwargs):
                         from the input with a new value.
     ===============     ====================================================
 
-    :returns: pd.DataFrame
+    :return: pd.DataFrame
 
     """
     filename = _ensure_path_string(filename)
@@ -351,7 +353,7 @@ def to_table(geo, location, overwrite=True):
                                     the table exists, and exception will be raised.
     ===========================     ====================================================================
 
-    :returns: String
+    :return: String
     """
     out_location = os.path.dirname(location)
     fc_name = os.path.basename(location)
@@ -454,7 +456,7 @@ def from_featureclass(filename, **kwargs):
                                     `arcpy` to work.
     ===========================     ====================================================================
 
-    :returns: pandas.core.frame.DataFrame
+    :return: pandas.core.frame.DataFrame
 
     """
     from arcgis.geometry import _types
@@ -703,7 +705,7 @@ def to_featureclass(
     ===============     ====================================================
 
 
-    :returns: string
+    :return: A string
 
     """
     out_location = os.path.dirname(location)
@@ -717,7 +719,8 @@ def to_featureclass(
         raise ValueError(
             ("Mixed geometry types detected, " "cannot export to feature class.")
         )
-
+    # deep copy of original columns to reassign them in finally of arcpy statement
+    original_columns = copy.deepcopy(df.columns.tolist())
     # sanitize
     if sanitize_columns:
         # logic
@@ -730,117 +733,125 @@ def to_featureclass(
             col = str(col)
 
     if HASARCPY:
-        # 1. Create the Save Feature Class
-        #
-        columns = df.columns.tolist()
-        join_dummy = "AEIOUYAJC81Z"
-        columns.pop(columns.index(df.spatial.name))
-        dtypes = [(join_dummy, np.int64)]
-        if overwrite and arcpy.Exists(location):
-            arcpy.Delete_management(location)
-        elif overwrite == False and arcpy.Exists(location):
-            raise ValueError(
-                ("overwrite set to False, Cannot " "overwrite the table. ")
-            )
+        try:
+            # 1. Create the Save Feature Class
+            #
+            columns = df.columns.tolist()
+            join_dummy = "AEIOUYAJC81Z"
+            columns.pop(columns.index(df.spatial.name))
+            dtypes = [(join_dummy, np.int64)]
+            if overwrite and arcpy.Exists(location):
+                arcpy.Delete_management(location)
+            elif overwrite == False and arcpy.Exists(location):
+                raise ValueError(
+                    ("overwrite set to False, Cannot " "overwrite the table. ")
+                )
 
-        notnull = geo._data[geo._name].notnull()
-        idx = geo._data[geo._name][notnull].first_valid_index()
-        sr = geo._data[geo._name][idx]["spatialReference"]
-        gt = geo._data[geo._name][idx].geometry_type.upper()
-        null_geom = {
-            "point": pd.io.json.dumps({"x": None, "y": None, "spatialReference": sr}),
-            "polyline": pd.io.json.dumps({"paths": [], "spatialReference": sr}),
-            "polygon": pd.io.json.dumps({"rings": [], "spatialReference": sr}),
-            "multipoint": pd.io.json.dumps({"points": [], "spatialReference": sr}),
-        }
-        sr = geo._data[geo._name][idx].spatial_reference.as_arcpy
-        null_geom = null_geom[gt.lower()]
+            notnull = geo._data[geo._name].notnull()
+            idx = geo._data[geo._name][notnull].first_valid_index()
+            sr = geo._data[geo._name][idx]["spatialReference"]
+            gt = geo._data[geo._name][idx].geometry_type.upper()
+            null_geom = {
+                "point": pd.io.json.dumps(
+                    {"x": None, "y": None, "spatialReference": sr}
+                ),
+                "polyline": pd.io.json.dumps({"paths": [], "spatialReference": sr}),
+                "polygon": pd.io.json.dumps({"rings": [], "spatialReference": sr}),
+                "multipoint": pd.io.json.dumps({"points": [], "spatialReference": sr}),
+            }
+            sr = geo._data[geo._name][idx].spatial_reference.as_arcpy
+            null_geom = null_geom[gt.lower()]
 
-        if has_m == True:
-            has_m = "ENABLED"
-        else:
-            has_m = None
-
-        if has_z == True:
-            has_z = "ENABLED"
-        else:
-            has_z = None
-
-        fc = arcpy.CreateFeatureclass_management(
-            out_location,
-            spatial_reference=sr,
-            geometry_type=gt,
-            out_name=fc_name,
-            has_m=has_m,
-            has_z=has_z,
-        )[0]
-
-        # 2. Add the Fields and Data Types
-        oidfld = da.Describe(fc)["OIDFieldName"]
-        for col in columns[:]:
-            if col.lower() in ["fid", "oid", "objectid"]:
-                dtypes.append((col, np.int32))
-            elif df[col].dtype.name.startswith("datetime64[ns"):
-                dtypes.append((col, "<M8[us]"))
-            elif df[col].dtype.name == "object":
-                try:
-                    u = type(df[col][df[col].first_valid_index()])
-                except:
-                    u = pd.unique(df[col].apply(type)).tolist()[0]
-                if issubclass(u, str):
-                    mlen = df[col].str.len().max()
-                    dtypes.append((col, "<U%s" % int(mlen)))
-                else:
-                    try:
-                        if df[col][idx] is None:
-                            dtypes.append((col, "<U254"))
-                        else:
-                            dtypes.append((col, type(df[col][idx])))
-                    except:
-                        dtypes.append((col, "<U254"))
-            elif df[col].dtype.name == "int64":
-                dtypes.append((col, np.int64))
-            elif df[col].dtype.name == "bool":
-                dtypes.append((col, np.int32))
+            if has_m == True:
+                has_m = "ENABLED"
             else:
-                dtypes.append((col, df[col].dtype.type))
+                has_m = None
 
-        array = np.array([], np.dtype(dtypes))
-        arcpy.da.ExtendTable(fc, oidfld, array, join_dummy, append_only=False)
+            if has_z == True:
+                has_z = "ENABLED"
+            else:
+                has_z = None
 
-        # 3. Insert the Data
-        fields = arcpy.ListFields(fc)
-        icols = [
-            fld.name
-            for fld in fields
-            if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
-        ] + ["SHAPE@JSON"]
-        dfcols = [
-            fld.name
-            for fld in fields
-            if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
-        ] + [df.spatial.name]
+            fc = arcpy.CreateFeatureclass_management(
+                out_location,
+                spatial_reference=sr,
+                geometry_type=gt,
+                out_name=fc_name,
+                has_m=has_m,
+                has_z=has_z,
+            )[0]
 
-        with da.InsertCursor(fc, icols) as irows:
-            dt_fld_idx = [
-                irows.fields.index(col)
-                for col in df.columns
-                if df[col].dtype.name.startswith("datetime64[ns")
-            ]
+            # 2. Add the Fields and Data Types
+            oidfld = da.Describe(fc)["OIDFieldName"]
+            for col in columns[:]:
+                if col.lower() in ["fid", "oid", "objectid"]:
+                    dtypes.append((col, np.int32))
+                elif df[col].dtype.name.startswith("datetime64[ns"):
+                    dtypes.append((col, "<M8[us]"))
+                elif df[col].dtype.name == "object":
+                    try:
+                        u = type(df[col][df[col].first_valid_index()])
+                    except:
+                        u = pd.unique(df[col].apply(type)).tolist()[0]
+                    if issubclass(u, str):
+                        mlen = df[col].str.len().max()
+                        dtypes.append((col, "<U%s" % int(mlen)))
+                    else:
+                        try:
+                            if df[col][idx] is None:
+                                dtypes.append((col, "<U254"))
+                            else:
+                                dtypes.append((col, type(df[col][idx])))
+                        except:
+                            dtypes.append((col, "<U254"))
+                elif df[col].dtype.name == "int64":
+                    dtypes.append((col, np.int64))
+                elif df[col].dtype.name == "bool":
+                    dtypes.append((col, np.int32))
+                else:
+                    dtypes.append((col, df[col].dtype.type))
 
-            def _insert_row(row):
-                row[-1] = pd.io.json.dumps(row[-1])
-                for idx in dt_fld_idx:
-                    if isinstance(row[idx], type(pd.NaT)):
-                        row[idx] = None
-                irows.insertRow(row)
+            array = np.array([], np.dtype(dtypes))
+            arcpy.da.ExtendTable(fc, oidfld, array, join_dummy, append_only=False)
 
-            q = df[geo._name].isna()
-            df.loc[q, "SHAPE"] = null_geom  # set null values to proper JSON
-            np.apply_along_axis(_insert_row, 1, df[dfcols].values)
-            df.loc[q, "SHAPE"] = None  # reset null values
-        df.set_index(old_idx)
-        return fc
+            # 3. Insert the Data
+            fields = arcpy.ListFields(fc)
+            icols = [
+                fld.name
+                for fld in fields
+                if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
+            ] + ["SHAPE@JSON"]
+            dfcols = [
+                fld.name
+                for fld in fields
+                if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
+            ] + [df.spatial.name]
+
+            with da.InsertCursor(fc, icols) as irows:
+                dt_fld_idx = [
+                    irows.fields.index(col)
+                    for col in df.columns
+                    if df[col].dtype.name.startswith("datetime64[ns")
+                ]
+
+                def _insert_row(row):
+                    row[-1] = pd.io.json.dumps(row[-1])
+                    for idx in dt_fld_idx:
+                        if isinstance(row[idx], type(pd.NaT)):
+                            row[idx] = None
+                    irows.insertRow(row)
+
+                q = df[geo._name].isna()
+                df.loc[q, "SHAPE"] = null_geom  # set null values to proper JSON
+                np.apply_along_axis(_insert_row, 1, df[dfcols].values)
+                df.loc[q, "SHAPE"] = None  # reset null values
+        except:
+            # something failed in try so reset columns to original columns
+            # return empty item
+            fc = None
+        finally:
+            df.columns = original_columns
+            return fc
     elif HASPYSHP:
         if fc_name.endswith(".shp") == False:
             fc_name = "%s.shp" % fc_name
@@ -867,7 +878,7 @@ def to_featureclass(
 # --------------------------------------------------------------------------
 def _pyshp_to_shapefile(df, out_path, out_name):
     """
-    Saves a SpatialDataFrame to a Shapefile using pyshp
+    Saves a Spatially Enabled DataFrame to a Shapefile using pyshp
 
     :Parameters:
      :df: spatial dataframe
@@ -983,7 +994,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
 # --------------------------------------------------------------------------
 def _pyshp2(df, out_path, out_name):
     """
-    Saves a SpatialDataFrame to a Shapefile using pyshp v2.0
+    Saves a Spatially Enabled DataFrame to a Shapefile using pyshp v2.0
 
     :Parameters:
      :df: spatial dataframe

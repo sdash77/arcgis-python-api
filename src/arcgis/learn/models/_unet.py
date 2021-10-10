@@ -122,7 +122,7 @@ class UnetClassifier(ArcGISModel):
                             Default: []
     =====================   ===========================================
 
-    :returns: `UnetClassifier` Object
+    :return: `UnetClassifier` Object
     """
 
     def __init__(
@@ -193,7 +193,7 @@ class UnetClassifier(ArcGISModel):
                 backbone_cut = _backbone_meta["cut"]
                 backbone_split = _backbone_meta["split"]
 
-            if not _isnotebook() and arcgis_os.name == "posix":
+            if not _isnotebook():
                 _set_ddp_multigpu(self)
                 if self._multigpu_training:
                     self.learn = unet_learner(
@@ -337,7 +337,7 @@ class UnetClassifier(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `UnetClassifier` Object
+        :return: `UnetClassifier` Object
         """
         return cls.from_emd(data, emd_path)
 
@@ -357,7 +357,7 @@ class UnetClassifier(ArcGISModel):
                                 file.
         =====================   ===========================================
 
-        :returns: `UnetClassifier` Object
+        :return: `UnetClassifier` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -479,7 +479,7 @@ class UnetClassifier(ArcGISModel):
                 logger.error("Metric not found in the loaded model")
 
     def _get_model_metrics(self, **kwargs):
-        checkpoint = kwargs.get("checkpoint", True)
+        checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
             return 0.0
 
@@ -511,7 +511,7 @@ class UnetClassifier(ArcGISModel):
                                 True.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
         num_classes = torch.arange(self._data.c)

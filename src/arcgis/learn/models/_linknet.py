@@ -62,7 +62,7 @@ class LinkNet(ArcGISModel):
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
-    :returns: `LinkNet` Object
+    :return: `LinkNet` Object
     """
 
     def __init__(
@@ -225,7 +225,7 @@ class LinkNet(ArcGISModel):
                                 object from `prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
-        :returns: `LinkNet` Object
+        :return: `LinkNet` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -277,8 +277,11 @@ class LinkNet(ArcGISModel):
         }
 
     def _get_model_metrics(self, **kwargs):
-        checkpoint = kwargs.get("checkpoint", True)
+        checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
+            return 0.0
+
+        if len(self.learn.recorder.metrics) == 0:
             return 0.0
 
         try:

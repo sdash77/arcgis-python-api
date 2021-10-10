@@ -14,18 +14,23 @@ _LOGGER = logging.getLogger(__name__)
 
 class Geocoder(_GISResource):
     """
-    Geocoders can find point locations of addresses, business names, and so on.
+    The ``Geocoder`` class represents Geocoder objects.
+    ``Geocoder`` objects can find point locations of addresses, business names, and so on.
     The output points can be visualized on a map, inserted as stops for a route,
     or loaded as input for spatial analysis. It is also used to generate
     batch results for a set of addresses, as well as for reverse geocoding,
     i.e. determining the address at a particular x/y location.
 
-    A GIS includes one or more geocoders, that can be queried using `get_geocoders(gis)`.
+    .. note::
+        A :class:`~arcgis.gis.GIS` includes one or more geocoders, which can be queried using `get_geocoders(gis)`.
 
-    Geocoders shared as Items in the GIS can be obtained using `Geocoder.fromitem(item)`.
+    .. note::
+        ``Geocoders`` shared as :class:`~arcgis.gis.Item` objects in the GIS can be obtained using
+        `Geocoder.fromitem(item)`.
 
-    Geocoders may also be created using the constructor by passing in their location, such as
-    a url to a Geocoding Service.
+    .. note::
+        ``Geocoder`` objects may also be created using the constructor by passing in their location, such as
+        a url to a ``Geocoding Service``.
     """
 
     def __init__(self, location, gis=None):
@@ -49,9 +54,23 @@ class Geocoder(_GISResource):
     @classmethod
     def fromitem(cls, item):
         """
-        Creates a Geocoder from an Item in the GIS
-        :param item: an Item of type 'Geocoding Service'
-        :return: Geocoder
+        The ``fromitem`` method creates a ``Geocoder`` from an :class:`~arcgis.gis.Item` in the
+        class:`~arcgis.gis.GIS` instance.
+
+        =================== ====================================================
+        **Argument**        **Description**
+        ------------------- ----------------------------------------------------
+        item                A required :class:`~arcgis.gis.Item` object. The
+                            ``Item`` to convert to a ``Geocoder`` object.
+
+                            .. note::
+                                The :class:`~arcgis.gis.Item` must be of type
+                                ``Geocoding Service``.
+        =================== ====================================================
+
+        :return:
+            A :class:`~arcgis.geocoding.Geocoder` object.
+
         """
         if not item.type == "Geocoding Service":
             raise TypeError(
@@ -191,7 +210,7 @@ class Geocoder(_GISResource):
                                  the 3-character country code.
         ====================     ====================================================
 
-        :returns:
+        :return:
            dictionary or FeatureSet
 
         """
@@ -599,13 +618,24 @@ class Geocoder(_GISResource):
 
 def get_geocoders(gis):
     """
-    A GIS includes one or more geocoders. The list of geocoders registered with the GIS
-    can be queried using get_geocoders.
+    The ``get_geocoders`` method is used to query the list of geocoders registered with the :class:`~arcgis.gis.GIS`.
+
+    .. note::
+        A ``GIS`` includes one or more :class:`~arcgis.geocoding.Geocoder` objects.
 
     :param gis: the GIS whose registered geocoders are to be queried
 
+    =================== ====================================================
+    **Argument**        **Description**
+    ------------------- ----------------------------------------------------
+    gis                 A required :class:`~arcgis.gis.Gis` object. The
+                        ``GIS`` whose registered ``geocoders`` are to be
+                        queried.
 
-    :return: list of geocoders registered with the GIS
+    =================== ====================================================
+
+    :return:
+        A list of :class:`~arcgis.geocoding.Geocoder` objects registered with the ``GIS``.
     """
     geocoders = []
     try:
@@ -633,20 +663,20 @@ def analyze_geocode_input(
     gis=None,
 ):
     """
-    The analyze_geocode_input function takes in a geocode input (either a table or file of
+    The ``analyze_geocode_input`` function takes in a geocode input (either a table or file of
     addresses) and returns an output dictionary that includes a suggested field mapping. It supports CSV,
     XLS, or table input. The table can be from a big data file share or from a feature service. The
     task generates a suggested field mapping based on the input fields and the geocoding service
-    candidate fields and returns it in a geocode_parameters dictionary. This geocode_parameters
-    dictionary output is the an input to the Batch Geocode tool. The output geocode_parameters
+    candidate fields and returns it in a ``geocode_parameters`` dictionary. This ``geocode_parameters``
+    dictionary output is the an input to the ``Batch Geocode`` tool. The output ``geocode_parameters``
     dictionary also includes field info (name, length, and type) as well as additional information
     that helps the geocode tool parse the input file or table.
 
     =====================     ================================================================
     **Argument**              **Description**
     ---------------------     ----------------------------------------------------------------
-    input_table_or_item       required Item, string or dictionary.  The input to analyze for
-                              geocoding.
+    input_table_or_item       required :class:`~arcgis.gis.Item`, string or dictionary.
+                              The input to analyze for geocoding.
 
                               For tables:
 
@@ -669,10 +699,10 @@ def analyze_geocode_input(
                               - Microsoft Excel spreadsheet (XLSX)
                               Example: {"itemid": "<itemid of file>" }
     ---------------------     ----------------------------------------------------------------
-    geocode_service_url       Optional string or Geocode class.  The geocode service that you
-                              want to geocode your addresses against.
+    geocode_service_url       Optional string or ``Geocoder`` object.  The geocode service
+                              that you want to geocode your addresses against.
     ---------------------     ----------------------------------------------------------------
-    column_names              Optional string.  Only used when input table or Item has no
+    column_names              Optional string.  Only used when input table or ``Item`` has no
                               header row.
                               Example: address,city,state,zip
     ---------------------     ----------------------------------------------------------------
@@ -684,11 +714,12 @@ def analyze_geocode_input(
 
                               Values:
 
-                              fileType - Enter CSV or XLS for the file format of file Item.
-                              headerRowExists - Enter true if your file has a header row,
+                              ``fileType`` - Enter CSV or XLS for the file format of file
+                              Item.
+                              ``headerRowExists`` - Enter true if your file has a header row,
                                                 false if it does not.
-                              columnDelimiter - Enter SPACE, TAB, COMMA, PIPE, or SEMICOLON.
-                              textQualifier - Enter either SINGLE_QUOTE or DOUBLE_QUOTE.
+                              ``columnDelimiter`` - Enter SPACE, TAB, COMMA, PIPE, or SEMICOLON.
+                              ``textQualifier`` - Enter either SINGLE_QUOTE or DOUBLE_QUOTE.
 
                               Example: {"fileType":"xlsx","headerRowExists":"true",
                                         "columnDelimiter":"","textQualifier":""}
@@ -699,34 +730,41 @@ def analyze_geocode_input(
     ---------------------     ----------------------------------------------------------------
     context                   Optional dictionary.
                               Context contains additional settings that affect task execution.
-                              Analyze_geocode_input() has the following two settings:
+                              ``analyze_geocode_input`` has the following two settings:
                               1. Extent (extent) - A bounding box that defines the analysis
                                  area. Only those points in inputLayer that intersect the
                                  bounding box are analyzed.
                               2. Output Spatial Reference (outSR) - The output features are
                                  projected into the output spatial reference.
     ---------------------     ----------------------------------------------------------------
-    gis                       Optional GIS. Connection to the site. If None is given, the
-                              active GIS is used.
+    gis                       Optional ``GIS``. Connection to the site. If None is given, the
+                              active ``GIS`` is used.
     =====================     ================================================================
 
-    :returns: dictionary
+    :return:
+        A dictionary
 
-    :Usage Example:
 
-    >>>res = analyze_geocode_input(geocode_service_url=Geocoder,
-                                   input_table_or_item={"itemid" : "abc123545asv"},
-                                   input_file_parameters={"fileType":"csv","headerRowExists":"true",
-                                                         "columnDelimiter":"","textQualifier":""})
-    >>> print(res)
-    {'header_row_exists': True, 'field_info': '[["Address", "TEXT", 255], ["City", "TEXT", 255],
-    ["State", "TEXT", 255], ["ZipCode", "TEXT", 255]]', 'file_type': 'csv', 'field_mapping': '[["Address", ""],
-    ["City", "City"], ["State", "State"], ["ZipCode", ""]]', 'column_names': '',
-    'column_delimiter': '', 'text_qualifier': '', 'singleline_field': 'Single Line Input'}
+    .. code block:: python
 
-    :Usage Example 2:
-    >>> table_lyr = Table(url="http://testsite.com/server/rest/services/Hosted/addresses/FeatureServer/0", gis=gis)
-    >>> res = analyze_geocode_input()
+        :Usage Example:
+
+        >>>res = analyze_geocode_input(geocode_service_url=my_geocoder_url,
+                                       input_table_or_item={"itemid" : "abc123545asv"},
+                                       input_file_parameters={"fileType":"csv","headerRowExists":"true",
+                                                             "columnDelimiter":"","textQualifier":""})
+        >>> print(res)
+        {'header_row_exists': True, 'field_info': '[["Address", "TEXT", 255], ["City", "TEXT", 255],
+        ["State", "TEXT", 255], ["ZipCode", "TEXT", 255]]', 'file_type': 'csv', 'field_mapping': '[["Address", ""],
+        ["City", "City"], ["State", "State"], ["ZipCode", ""]]', 'column_names': '',
+        'column_delimiter': '', 'text_qualifier': '', 'singleline_field': 'Single Line Input'}
+
+    .. code block:: python
+        :Usage Example 2:
+
+        >>> table_lyr = Table(url="http://testsite.com/server/rest/services/Hosted/addresses/FeatureServer/0", gis=gis)
+        >>> res = analyze_geocode_input()
+
     """
     import json
     from arcgis.gis import Item
@@ -828,44 +866,52 @@ def geocode_from_items(
     gis=None,
 ):
     """
-    The Batch Geocode geocodes a table or file of addresses and returns the geocoded results. It
-    supports CSV, XLS or table input. The task geocodes the entire file regardless of size.
+    The ``geocode_from_items`` method creates :class:`~arcgis.geocoding.Geocoder` objects from an
+    :class:`~arcgis.gis.Item` or ``Layer`` objects.
+
+    .. note::
+        ``geocode_from_items`` geocodes the entire file regardless of size.
 
     =====================     ================================================================
     **Argument**              **Description**
     ---------------------     ----------------------------------------------------------------
     input_data                required Item, string, Layer. Data to geocode.
     ---------------------     ----------------------------------------------------------------
-    output_type               optional string.  Export item types.  Allowed values are CSV,
-                              XLS, or Feature Layer (default)
+    output_type               optional string.  Export item types.  Allowed values are "CSV",
+                              "XLS", or "FeatureLayer".
+
+                              .. note::
+                                The default for ``output_type`` is "FeatureLayer".
     ---------------------     ----------------------------------------------------------------
-    geocode_service_url       optional string of Geocoder. Optional geocoder to use to
+    geocode_service_url       optional string of Geocoder. Optional
+                              :class:`~arcgis.geocoding.Geocoder` to use to
                               spatially enable the dataset.
     ---------------------     ----------------------------------------------------------------
     geocode_parameters        optional dictionary.  This includes parameters that help parse
                               the input data, as well the field lengths and a field mapping.
-                              This value is the output from the analyze_geocode_input()
+                              This value is the output from the ``analyze_geocode_input``
                               available on your server designated to geocode. It is important
                               to inspect the field mapping closely and adjust them accordingly
                               before submitting your job, otherwise your geocoding results may
                               not be accurate. It is recommended to use the output from
-                              analyze_geocode_input() and modify the field mapping instead of
+                              ``analyze_geocode_input`` and modify the field mapping instead of
                               constructing this dictionary by hand.
 
                               **Values**
 
-                              **field_info** - A list of triples with the field names of your input
+                              ``field_info`` - A list of triples with the field names of your input
                               data, the field type (usually TEXT), and the allowed length
                               (usually 255).
+
                               Example: [['ObjectID', 'TEXT', 255], ['Address', 'TEXT', 255],
                                        ['Region', 'TEXT', 255], ['Postal', 'TEXT', 255]]
 
-                              **header_row_exists** - Enter true or false.
+                              ``header_row_exists`` - Enter true or false.
 
-                              **column_names** - Submit the column names of your data if your data
+                              ``column_names`` - Submit the column names of your data if your data
                               does not have a header row.
 
-                              **field_mapping** - Field mapping between each input field and
+                              ``field_mapping`` - Field mapping between each input field and
                               candidate fields on the geocoding service.
                               Example: [['ObjectID', 'OBJECTID'], ['Address', 'Address'],
                                           ['Region', 'Region'], ['Postal', 'Postal']]
@@ -877,6 +923,7 @@ def geocode_from_items(
                               service that you want returned in the results, separated by
                               commas. To output all available outputFields, leave this
                               parameter blank.
+
                               Example: score,match_addr,x,y
     ---------------------     ----------------------------------------------------------------
     header_rows_to_skip       optional integer. Describes on which row your data begins in
@@ -899,18 +946,35 @@ def geocode_from_items(
                                  bounding box are analyzed.
                               2. Output Spatial Reference (outSR) - The output features are
                                  projected into the output spatial reference.
+
                               Syntax:
                               {
                               "extent" : {extent}
                               "outSR" : {spatial reference}
                               }
     ---------------------     ----------------------------------------------------------------
-    gis                       optional GIS, the GIS on which this tool runs. If not specified,
-                              the active GIS is used.
+    gis                       optional ``GIS``, the :class:`~arcgis.gis.GIS` on which this
+                              tool runs.
+
+                              .. note::
+                                If not specified, the active ``GIS`` is used.
     =====================     ================================================================
 
+    .. code-block:: python
 
-    :returns: arcgis.gis.Item
+        # Usage Example
+        >>> fl_item = geocode_from_items(csv_item, output_type='Feature Layer',
+                             geocode_parameters={"field_info": ['Addresses', 'TEXT', 255],
+                                                 "column_names": ["Addresses"],
+                                                 "field_mapping": ['Addresses', 'Address']
+                                                 },
+                             output_name="address_file_matching",
+                             gis=gis)
+        >>> type(fl_item)
+        <:class:`~arcgis.gis.Item`>
+
+    :return:
+        A :class:`~arcgis.gis.Item` object.
     """
 
     import json
@@ -1119,7 +1183,7 @@ def geocode(
     source_country=None,
 ):
     """
-    The geocode function geocodes one location per request.
+    The ``geocode`` function geocodes one location per request.
 
     ====================     ====================================================
     **Argument**             **Description**
@@ -1137,6 +1201,7 @@ def geocode(
                              geocoder includes fields with the following names:
                              Street, City, State and Zone, then the address
                              argument is of the form:
+
                              {
                                Street: "1234 W Main St",
                                City: "Small Town",
@@ -1173,7 +1238,7 @@ def geocode(
                              passed in a request with or without the text
                              parameter.
     --------------------     ----------------------------------------------------
-    out_fields               Optional string, name of all the fields to inlcude.
+    out_fields               Optional string, name of all the fields to include.
                              The default is "*" which means all fields.
     --------------------     ----------------------------------------------------
     max_location             Optional integer, The number of locations to be
@@ -1183,20 +1248,29 @@ def geocode(
                              results quicker when you pass a valid text and
                              `magic_key` value.
     --------------------     ----------------------------------------------------
-    for_storage              Optional Boolean. Specifies whether the results of the operation will
+    for_storage              Optional Boolean. Specifies whether the results of
+                             the operation will
                              be persisted. The default value is false, which
                              indicates the results of the operation can't be
                              stored, but they can be temporarily displayed on a
-                             map for instance. If you store the results, in a
-                             database for example, you need to set this parameter
-                             to true.
+                             map for instance.
+
+                             .. note::
+                                If you store the results, in a
+                                database for example, you need to set this parameter
+                                to ``True``.
     --------------------     ----------------------------------------------------
-    geocoder                 Optional, the geocoder to be used. If not specified,
-                             the active GIS's first geocoder is used.
+    geocoder                 Optional, the :class:`~arcgis.geocoding.Geocoder` to
+                             be used.
+
+                             .. note::
+                                If not specified, the active
+                                :class:`~arcgis.gis.GIS` object's
+                                first geocoder is used.
     --------------------     ----------------------------------------------------
-    as_featureset            Optional boolean, if True, the result set is
-                             returned as a FeatureSet object, else it is a
-                             dictionary.
+    as_featureset            Optional boolean, If ``True``, the result set is
+                             returned as a :class:`~arcgis.features.FeatureSet`
+                             object, else it is a dictionary.
     --------------------     ----------------------------------------------------
     match_out_of_range       Optional Boolean. Provides better spatial accuracy
                              for inexact street addresses by specifying whether
@@ -1233,8 +1307,26 @@ def geocode(
                              the 3-character country code.
     ====================     ====================================================
 
-    :returns:
-       dictionary/FeatureSet
+    .. code-block:: python
+
+        # Usage Example
+        >>> geocoded = geocode(addresses = {
+                                                    Street: "1234 W Main St",
+                                                    City: "Small Town",
+                                                    State: "WA",
+                                                    Zone: "99027"
+                                                    },
+                                            distance = 1000,
+                                            max_locations = 50,
+                                            as_featureset = True,
+                                            match_out_of_range = True,
+                                            location_type = "Street"
+                                            )
+        >>> type(geocoded)
+        <:class:`~arcgis.features.FeatureSet>
+
+    :return:
+       A dictionary or :class:`~arcgis.features.FeatureSet` object.
 
     """
     # as_featureset = False
@@ -1271,7 +1363,7 @@ def reverse_geocode(
     roof_top="street",
 ):
     """
-    The reverse_geocode operation determines the address at a particular
+    The ``reverse_geocode`` operation determines the address at a particular
     x/y location. You pass the coordinates of a point location to the
     geocoding service, and the service returns the address that is
     closest to the location.
@@ -1279,13 +1371,18 @@ def reverse_geocode(
     =================== ====================================================
     **Argument**        **Description**
     ------------------- ----------------------------------------------------
-    location            required list/Point Geometry
+    location            Required location input as list, dict (with or without SpatialReference),
+                        or :class:`~arcgis.geometry.Point` object.
     ------------------- ----------------------------------------------------
-    distance            optional float, radial distance in meteres to
-                        search for an address.  The default is 100 meters.
+    distance            optional float, radial distance in meters to
+                        search for an address.
+
+                        .. note::
+                            The default for ``distance`` is 100 meters.
     ------------------- ----------------------------------------------------
-    out_sr              optional integer, spatial reference of the x/y
-                        coordinate returned.
+    out_sr              optional integer or
+                        :class:`~arcgis.geometry.SpatialReference` of the
+                        x/y coordinate returned.
     ------------------- ----------------------------------------------------
     lang_code           optional string. Sets the language in which geocode
                         results are returned. This is useful for ensuring
@@ -1305,8 +1402,12 @@ def reverse_geocode(
     for_storage         optional boolean, specifies whether the results of
                         the operation will be persisted
     ------------------- ----------------------------------------------------
-    geocoder            optional geocoder, the geocoder to be used. If not
-                        specified, the active GIS's first geocoder is used.
+    geocoder            optional :class:`~arcgis.geocoding.Geocoder`,
+                        the geocoder to be used.
+
+                        .. note::
+                            If not specified, the active ``GIS`` instances
+                            first ``Geocoder`` is used.
     ------------------- ----------------------------------------------------
     feature_types       Optional String. Limits the possible match types
                         performed by the `reverse_geocode` method. If a
@@ -1316,28 +1417,40 @@ def reverse_geocode(
                         included, the default search distances specified in
                         the feature type hierarchy table are applied.
 
-                        Values: StreetInt, DistanceMarker, StreetAddress,
+                        Values: `StreetInt, DistanceMarker, StreetAddress,
                                 StreetName, POI, PointAddress, Postal, and
-                                Locality
+                                Locality`
     ------------------- ----------------------------------------------------
     location_type       Optional string. Specifies whether the rooftop point
                         or street entrance is used as the output geometry of
-                        point address matches. By default, street is used,
+                        point address matches. By default,
+                        ``street`` is used,
                         which is useful in routing scenarios, as the rooftop
                         location of some addresses may be offset from a
                         street by a large distance. However, for map display
-                        purposes, you may want to use rooftop instead,
+                        purposes, you may want to use ``rooftop`` instead,
                         especially when large buildings or landmarks are
-                        geocoded. The location_type parameter only affects
-                        the location object in the JSON response and does
-                        not change the x,y or DisplayX/DisplayY attribute
-                        values.
+                        geocoded. The ``location_type`` parameter only
+                        affects the location object in the JSON response
+                        and does not change the x,y or
+                        ``DisplayX/DisplayY`` attribute values.
 
-                        Values: street, rooftop
+                        Values: ``street``, ``rooftop``
     =================== ====================================================
 
-    :returns:
-       dictionary
+    .. code-block:: python
+
+        # Usage Example
+        >>> reversed = Geocoder.reverse_geocode(location = point1,
+                                                distance = 50,
+                                                for_storage = True,
+                                                feature_types = "StreetName",
+                                                location_type = "street")
+        >>> type(reversed)
+        <Dictionary>
+
+    :return:
+       A dictionary
     """
 
     if geocoder is None:
@@ -1369,8 +1482,10 @@ def batch_geocode(
     preferred_label_values=None,
 ):
     """
-    The batch_geocode() function geocodes an entire list of addresses.
-    Geocoding many addresses at once is also known as bulk geocoding.
+    The ``batch_geocode`` function geocodes an entire list of addresses.
+
+    .. note::
+        Geocoding many addresses at once is also known as bulk geocoding.
 
     =========================     ================================================================
     **Argument**                  **Description**
@@ -1382,9 +1497,12 @@ def batch_geocode(
                                   For passing in the location name as multiple lines of text
                                   multifield batch geocoding - use the address fields described
                                   in the Geocoder documentation.
-                                  The maximum number of addresses that can be geocoded in a
-                                  single request is limited to the SuggestedBatchSize property of
-                                  the locator.
+
+                                  .. note::
+                                    The maximum number of addresses that can be geocoded in a
+                                    single request is limited to the SuggestedBatchSize property of
+                                    the locator.
+
                                   Syntax:
                                   addresses = ["380 New York St, Redlands, CA",
                                     "1 World Way, Los Angeles, CA",
@@ -1407,13 +1525,16 @@ def batch_geocode(
                                        "Postal": "90045"
                                    }]
     -------------------------     ----------------------------------------------------------------
-    source_country                optional string, The source_country parameter is
+    source_country                optional string, The ``source_country`` parameter is
                                   only supported by geocoders published using StreetMap
                                   Premium locators.
-                                  Added at 10.3 and only supported by geocoders published
-                                  with ArcGIS 10.3 for Server and later versions.
+
+                                  .. note::
+                                    Added at 10.3 and only supported by geocoders published
+                                    with ArcGIS 10.3 for Server and later versions.
+
     -------------------------     ----------------------------------------------------------------
-    category                      The category parameter is only supported by geocode
+    category                      The ``category`` parameter is only supported by geocode
                                   services published using StreetMap Premium locators.
     -------------------------     ----------------------------------------------------------------
     out_sr                        optional dictionary, The spatial reference of the
@@ -1425,8 +1546,12 @@ def batch_geocode(
                                   returned as a FeatureSet object, else it is a
                                   dictionary.
     -------------------------     ----------------------------------------------------------------
-    geocoder                      Optional, the geocoder to be used. If not specified,
-                                  the active GIS's first geocoder is used.
+    geocoder                      optional :class:`~arcgis.geocoding.Geocoder`,
+                                  the geocoder to be used.
+
+                                  .. note::
+                                    If not specified, the active ``GIS`` instances
+                                    first ``Geocoder`` is used.
     -------------------------     ----------------------------------------------------------------
     match_out_of_range            Optional, A Boolean which specifies if StreetAddress matches should
                                   be returned even when the input house number is outside of the house
@@ -1452,8 +1577,23 @@ def batch_geocode(
                                   e.g. ='matchedCity,primaryStreet'
     =========================     ================================================================
 
-    :returns:
-       dictionary or FeatureSet
+    .. code-block:: python
+
+        # Usage Example
+        >>> batched = batch_geocode(addresses = ["380 New York St, Redlands, CA",
+                                                            "1 World Way, Los Angeles, CA",
+                                                            "1200 Getty Center Drive, Los Angeles, CA",
+                                                            "5905 Wilshire Boulevard, Los Angeles, CA",
+                                                            "100 Universal City Plaza, Universal City, CA 91608",
+                                                            "4800 Oak Grove Dr, Pasadena, CA 91109"]
+                                            as_featureset = True,
+                                            match_out_of_range = True,
+                                            )
+        >>> type(batched)
+        <:class:`~arcgis.features.FeatureSet>
+
+    :return:
+      A dictionary or :class:`~arcgis.features.FeatureSet`
     """
     if geocoder is None:
         geocoder = arcgis.env.active_gis._tools.geocoders[0]
@@ -1482,21 +1622,29 @@ def suggest(
     country_code=None,
 ):
     """
-    The result of this operation is a resource representing a list of
+    The ``suggest`` method retrieves a resource representing a list of
     suggested matches for the input text. This resource provides the
     matching text as well as a unique ID value, which links a
     suggestion to a specific place or address.
     A geocoder must meet the following requirements to support
     the suggest operation:
-      The address locator from which the geocoder was published
-      must support suggestions. Only address locators created using
-      ArcGIS 10.3 for Desktop and later can support suggestions. See
-      the Create Address Locator geoprocessing tool help topic for more
-      information.
-      The geocoder must have the Suggest capability enabled.
-      Only geocoders published using ArcGIS 10.3 for Server or
-      later support the Suggest capability.
-    The suggest operation allows character-by-character auto-complete
+
+    1. The address locator from which the geocoder was published
+      must support suggestions.
+
+    .. note::
+        Only address locators created using
+        ArcGIS 10.3 for Desktop and later can support suggestions. See
+        the Create Address Locator geoprocessing tool help topic for more
+        information.
+
+    2. The geocoder must have the Suggest capability enabled.
+
+    .. note::
+            Only ``geocoders`` published using ArcGIS 10.3 for Server or
+        later support the Suggest capability.
+
+    The ``suggest`` operation allows character-by-character auto-complete
     suggestions to be generated for user input in a client application.
     This capability facilitates the interactive search user experience
     by reducing the number of characters that need to be typed before
@@ -1511,8 +1659,8 @@ def suggest(
                         suggest operation to generate a list of possible
                         matches. This is a required parameter.
     ---------------     -----------------------------------------------------------------
-    location            Defines an origin point location that is used with
-                        the distance parameter to sort suggested candidates
+    location            Optional x/y dictionary. Defines an origin point location that is used
+                        with the distance parameter to sort suggested candidates
                         based on their proximity to the location. The
                         distance parameter specifies the radial distance from
                         the location in meters. The priority of candidates
@@ -1523,18 +1671,24 @@ def suggest(
                         current GPS location. It is also useful for web
                         mapping applications where a user wants to find
                         places within or near the map extent.
-                        The location parameter can be specified without
-                        specifying a distance. If distance is not specified,
-                        it defaults to 2000 meters. This parameter is **optional**.
+
+                        .. note::
+                            The ``location`` parameter can be specified without
+                            specifying a ``distance``. If distance is not specified,
+                            it defaults to 2000 meters.
+
     ---------------     -----------------------------------------------------------------
-    distance            Specifies the radius around the point defined in the
+    distance            Optional float. Specifies the radius around the point defined in the
                         location parameter to create an area, which is used to boost
                         the rank of suggested candidates so that candidates closest to
                         the location are returned first. The distance value is in
                         meters.
-                        If the distance parameter is specified, the location parameter
-                        must be specified as well.
-                        It is important to note that the location and distance
+
+                        .. note::
+                            If the ``distance`` parameter is specified, the ``location``
+                            parameter must be specified as well.
+
+                        It is important to note that the ``location`` and ``distance``
                         parameters allow searches to extend beyond the specified search
                         radius. They are not used to filter results, but rather to rank
                         resulting candidates based on their distance from a location.
@@ -1542,8 +1696,9 @@ def suggest(
     category            The category parameter is only supported by geocode
                         services published using StreetMap Premium locators.
     ---------------     -----------------------------------------------------------------
-    geocoder            Optional, the geocoder to be used. If not specified,
-                        the active GIS's first geocoder is used.
+    geocoder            Optional :class:`~arcgis.geocoding.Geocoder` - the geocoder to
+                        be used. If not specified, the active
+                        :class:`~arcgis.gis.GIS` object's first geocoder is used.
     ---------------     -----------------------------------------------------------------
     search_extent       Optional String/Dict. A set of bounding box coordinates that
                         limit the search area to a specific region. You can specify the
@@ -1553,23 +1708,46 @@ def suggest(
                         map coordinates is assumed to be the same as that of the
                         geocoding service. The input can either be a comma-separated list
                         of coordinates defining the bounding box or a JSON envelope
-                        object. The `search_extent` coordinates should always use a
-                        period as the decimal separator, even in countries where
-                        traditionally a comma is used.
+                        object.
+
+                        .. note::
+                            The ``search_extent`` coordinates should always use a
+                            period as the decimal separator, even in countries where
+                            traditionally a comma is used.
     ---------------     -----------------------------------------------------------------
     max_suggestions     Optional Int.  The maximum number of suggestions returned by the
                         suggest operation, up to the maximum number allowed by the
-                        service. If maxSuggestions is not included in the suggest
-                        request, the default value is 5. The maximum suggestions value
-                        can be modified in the source address locator.
+                        service.
+
+                        .. note::
+                            If ``maxSuggestions`` is not included in the suggest
+                            request, the default value is 5. The maximum suggestions value
+                            can be modified in the source address locator.
     ---------------     -----------------------------------------------------------------
     country_code        Optional Str. Limits the returned suggestions to values in a
                         particular country. Valid two- and three-character country code
-                        values for each country are available in geocode coverage. When
-                        the `country_code` parameter is specified in a suggest request,
-                        the corresponding `geocode` call must also include the
-                        `country_code` parameter with the same value.
+                        values for each country are available in geocode coverage.
+
+                        .. note::
+                            When the ``country_code`` parameter is specified in a
+                            suggest request, the corresponding ``geocode`` call must
+                            also include the ``country_code`` parameter with the
+                            same value.
     ===============     =================================================================
+
+    .. code-block:: python
+
+        # Usage Example
+        >>> suggested = suggest(text = "geocoding_text"
+                                        location = point1,
+                                        distance = 5000,
+                                        max_suggestions = 10
+                                        )
+        >>> type(suggested)
+        <Dictionary>
+
+    :return:
+        A dictionary
     """
     if geocoder is None:
         geocoder = arcgis.env.active_gis._tools.geocoders[0]

@@ -1,5 +1,6 @@
 import os
 import tempfile
+import random
 import traceback
 import json
 import warnings
@@ -14,6 +15,11 @@ try:
     import shap
 except:
     HAS_SHAP = False
+
+try:
+    import pandas as pd
+except:
+    pass
 
 import arcgis
 from arcgis.features import FeatureLayer
@@ -97,7 +103,7 @@ class FullyConnectedNetwork(ArcGISModel):
                             If not specified, then calculated using fastai.
     =====================   ===========================================
 
-    :returns: `FullyConnectedNetwork` Object
+    :return: `FullyConnectedNetwork` Object
     """
 
     def __init__(self, data, layers=None, emb_szs=None, **kwargs):
@@ -149,7 +155,7 @@ class FullyConnectedNetwork(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `FullyConnectedNetwork` Object
+        :return: `FullyConnectedNetwork` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -229,13 +235,13 @@ class FullyConnectedNetwork(ArcGISModel):
             os.mkdir(path)
 
         self.learn.export(os.path.join(path, os.path.basename(path) + "_exported.pth"))
-        from IPython.utils import io
+        # from IPython.utils import io
 
-        with io.capture_output() as captured:
-            super().save(
-                path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs
-            )
-
+        # with io.capture_output() as captured:
+        super().save(
+            path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs
+        )
+        # print(captured.stdout)
         return Path(path)
 
     @property
@@ -251,19 +257,22 @@ class FullyConnectedNetwork(ArcGISModel):
     def feature_importances_(self):
         """
         :Returns the global feature importance summary
-        plot from SHAP.
+        plot from SHAP.Feature is temporarily disabled.
         """
-        processed_dataframe = None
-        explain_index = None
-        random_index = None
-        explain_prediction(
-            self,
-            processed_dataframe,
-            index=explain_index,
-            random_index=random_index,
-            predictor=None,
-            global_pred=True,
+        warnings.warn(
+            "Feature importance for Fully Connected Network is currently disabled due to package incompatibility and is under review"
         )
+        # processed_dataframe = None
+        # explain_index = None
+        # random_index = None
+        # explain_prediction(
+        #    self,
+        #    processed_dataframe,
+        #    index=explain_index,
+        #    random_index=random_index,
+        #    predictor=None,
+        #    global_pred=True,
+        # )
         return
 
     def _get_emd_params(self, save_inference_file):
@@ -383,7 +392,7 @@ class FullyConnectedNetwork(ArcGISModel):
         explain                             Optional Bool.
                                             Setting this parameter to true generates prediction explaination plot.
                                             Plot is generated using model interpretability library called SHAP.
-                                            (https://github.com/slundberg/shap)
+                                            (https://github.com/slundberg/shap). Feature is temporarily disabled.
         ---------------------------------   -------------------------------------------------------------------------
         explain_index                       Optional Int.
                                             The index of the dataframe passed to the predict function for which model
@@ -398,12 +407,17 @@ class FullyConnectedNetwork(ArcGISModel):
 
         rasters = explanatory_rasters if explanatory_rasters else []
         if explain:
-            if not HAS_SHAP:
-                warnings.warn(
-                    "Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working."
-                )
-                explain = False
-                explain_index = None
+            # if not HAS_SHAP:
+            #    warnings.warn(
+            #        "Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working."
+            #    )
+            #    explain = False
+            #    explain_index = None
+            warnings.warn(
+                "Model explainability feature for Fully Connected Network is currently disabled due to package incompatibility and is under review"
+            )
+            explain = False
+            explain_index = None
         if prediction_type in ["features", "dataframe"]:
 
             if input_features is None:
@@ -765,20 +779,17 @@ class FullyConnectedNetwork(ArcGISModel):
                                 Number of rows to print.
         =====================   ===========================================
 
-        :returns: dataframe
+        :return: dataframe
         """
         self._check_requisites()
+        min_size = len(self._data._validation_indexes)
+        if min_size > rows:
+            min_size = rows
 
-        validation_dataframe = self._data._dataframe.loc[
-            self._data._validation_indexes
-        ].reset_index(drop=True)
-
-        if rows > len(validation_dataframe):
-            rows = len(validation_dataframe)
-
-        rows_df = validation_dataframe.loc[:rows].copy()
-
+        sample_indexes = random.sample(self._data._validation_indexes, min_size)
+        rows_df = self._data._dataframe.iloc[sample_indexes]
         predictions = self._df_predict(rows_df)
+        pd.options.mode.chained_assignment = None
         rows_df["prediction_results"] = predictions
 
         return rows_df
@@ -792,7 +803,7 @@ class FullyConnectedNetwork(ArcGISModel):
         if not HAS_NUMPY:
             raise Exception("This function requires numpy.")
 
-        validation_dataframe = self._data._dataframe.loc[
+        validation_dataframe = self._data._dataframe.iloc[
             self._data._validation_indexes
         ].reset_index(drop=True)
 

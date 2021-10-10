@@ -3,6 +3,7 @@ from arcgis import gis
 from arcgis._impl.common._isd import InsensitiveDict
 from .admin.administration import Server
 import logging
+from functools import lru_cache
 
 _log = logging.getLogger(__name__)
 ###########################################################################
@@ -51,12 +52,18 @@ class ServerManager(object):
         return InsensitiveDict(res)
 
     # ----------------------------------------------------------------------
+    @lru_cache(maxsize=100)
     def list(self):
         """
-        Retrieves all servers in a GIS.
+        The ``list`` method retrieves all servers in a :class:`~arcgis.gis.GIS`, retrieving a list of admin services.
 
-        :returns:
-           A list of all servers found in the GIS.
+        .. note::
+           This method is not to be confused with the :attr:`~arcgis.server.ServicesDirectory.list` method, in the
+           :class:`~arcgis.server.ServicesDirectory` class, which returns a variety of services, such as a ``Feature Service``,
+           ``Map Service``, ``Vector Tile``, ``Geoprocessing Service``, etc.
+
+        :return:
+           A list of all servers (in the form of admin service objects) found in the :class:`~arcgis.gis.GIS`.
         """
 
         from . import ServicesDirectory

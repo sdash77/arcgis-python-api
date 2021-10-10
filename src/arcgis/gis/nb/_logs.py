@@ -1,6 +1,7 @@
-import os
+import os, csv
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
+import datetime as _dt
 
 ########################################################################
 class LogManager(object):
@@ -76,7 +77,13 @@ class LogManager(object):
         """
         Get/set the current log settings.
 
-        :returns: PropertyMap
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Required dict. A dictionary with the key/values pairs to modify settings.
+        ==================     ====================================================================
+
+        :return: PropertyMap
         """
         params = {"f": "json"}
         url = self._url + "/settings"
@@ -90,15 +97,7 @@ class LogManager(object):
     @settings.setter
     def settings(self, value):
         """
-        Get/set the current log settings.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  dict. A dictionary with the key/values pairs to modify settings.
-        ==================     ====================================================================
-
-        :returns: PropertyMap
+        See main ``settings`` property docstring.
         """
         params = {"f": "json"}
         current = dict(self.settings)
@@ -109,7 +108,7 @@ class LogManager(object):
             else:
                 params[k] = current[k]
         url = self._url + "/settings/edit"
-        res = self._gis._con.post(url, params)
+        self._gis._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def query(
@@ -197,9 +196,9 @@ class LogManager(object):
             "pageSize": 10000,
         }
         url = "{url}/query".format(url=self._url)
-        if start_time is not None and isinstance(start_time, datetime):
+        if start_time is not None and isinstance(start_time, _dt.datetime):
             params["startTime"] = start_time.strftime("%Y-%m-%dT%H:%M:%S")
-        if end_time is not None and isinstance(end_time, datetime):
+        if end_time is not None and isinstance(end_time, _dt.datetime):
             params["endTime"] = end_time.strftime("%Y-%m-%dT%H:%M:%S")
         if level.upper() in allowed_levels:
             params["level"] = level
@@ -213,7 +212,7 @@ class LogManager(object):
         if export is True and out_path is not None:
 
             messages = self._con.get(url, params)
-            with open(name=out_path, mode="wb") as f:
+            with open(out_path, mode="wb") as f:
                 hasKeys = False
                 if export_type == "TAB":
                     csvwriter = csv.writer(f, delimiter="\t")

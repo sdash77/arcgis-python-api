@@ -1,9 +1,12 @@
 class InvitationManager(object):
     """
 
-    The `InvitationManager` provides functionality to see the existing invitations
-    set out via email to your organization.  The manager has the ability to delete
-    any invitation sent out by an organization.
+    The ``InvitationManager`` provides functionality to see the existing invitations
+    set out via email to your organization.
+
+    .. note::
+        The manager has the ability to delete
+        any invitation sent out by an organization.
 
     """
 
@@ -33,9 +36,10 @@ class InvitationManager(object):
     # ----------------------------------------------------------------------
     def list(self):
         """
-        Returns all the organizations invitations
+        The ``list`` method retrieves all the organization's invitations.
 
-        :returns: List
+        :return:
+            A List of the organization's invitations
 
         """
         invites = []
@@ -54,9 +58,10 @@ class InvitationManager(object):
 
     def get(self, invite_id):
         """
-        Returns information about a single invitation
+        The ``get`` method retrieves information about a single invitation.
 
-        :returns: Dict
+        :return:
+            A dictionary
 
         """
         url = self._url + "/{id}".format(id=invite_id)
@@ -78,8 +83,11 @@ class InvitationManager(object):
     # ----------------------------------------------------------------------
     def manage_invitations(self, accepts: list = None, declines: list = None) -> dict:
         """
-        Allows users to Accept/Decline invitations by providing a list of invitation IDs.
+        The ``manage_invitations`` method allows users to Accept/Decline invitations by providing a list of
+        invitation IDs.
 
+        :return:
+            A List of invitation IDs
         """
         results = []
         if accepts and isinstance(accepts, (list, tuple)):
@@ -91,9 +99,10 @@ class InvitationManager(object):
     # ----------------------------------------------------------------------
     def delete(self, invite_id):
         """
-        deletes an invitation by ID
+        The ``delete`` method deletes an invitation by ID
 
-        :returns: Boolean
+        :return:
+            A boolean indicating success (True), or failure (False)
         """
         url = self._url + "/{id}/delete".format(id=invite_id)
         params = {"f": "json"}

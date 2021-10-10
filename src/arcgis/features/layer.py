@@ -15,6 +15,7 @@ from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
+from arcgis.features._async import EditFeatureJob
 
 from .managers import (
     AttachmentManager,
@@ -25,6 +26,7 @@ from .managers import (
 from .feature import Feature, FeatureSet
 from arcgis.geometry import SpatialReference
 from arcgis.gis import Layer, _GISResource
+from typing import Dict, Any
 
 
 class FeatureLayer(Layer):
@@ -84,7 +86,7 @@ class FeatureLayer(Layer):
                              or list of start/stop date.
         ================     =================================================
 
-        :returns:
+        :return:
             A string of datetime values as milliseconds from epoch
 
         """
@@ -93,23 +95,7 @@ class FeatureLayer(Layer):
     @time_filter.setter
     def time_filter(self, value):
         """
-        The ``time_filter`` method is used to set a time filter instead of querying time-enabled map
-        service layers or time-enabled :class:`~arcgis.features.FeatureLayer`, a time filter
-        can be specified. Time can be filtered as a single instant or by
-        separating the two ends of a time extent with a comma.
-
-        .. note::
-            The ``time_filter`` method is supported starting at Enterprise 10.7.1+.
-
-        ================     =================================================
-        **Input**            **Description**
-        ----------------     -------------------------------------------------
-        value                Required Datetime/List Datetime. This is a single
-                             or list of start/stop date.
-        ================     =================================================
-
-        :returns:
-            A string of datetime values as milliseconds from epoch
+        See main ``time_filter`` property docstring
         """
         import datetime as _dt
 
@@ -137,9 +123,20 @@ class FeatureLayer(Layer):
     @property
     def renderer(self):
         """
-        Get/Set the Renderer of the Feature Layer.  This overrides the default symbology when displaying it on a webmap.
+        Get/Set the Renderer of the Feature Layer.
 
-        :returns: InsensitiveDict
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required dict.
+        ==================      ====================================================================
+
+        ..note::
+            When set, this overrides the default symbology when displaying it on a webmap.
+
+        :return:
+            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
+            A varients of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -151,14 +148,7 @@ class FeatureLayer(Layer):
     @renderer.setter
     def renderer(self, value):
         """
-        The ``renderer`` property gets and sets the Renderer of the :class:`~arcgis.features.FeatureLayer`.
-
-        .. note::
-            This overrides the default symbology when displaying it on a webmap.
-
-        :returns:
-            InsensitiveDict
-
+        See main ``renderer`` property docstring
         """
         from arcgis._impl.common._isd import InsensitiveDict
 
@@ -174,7 +164,7 @@ class FeatureLayer(Layer):
     @classmethod
     def fromitem(cls, item, layer_id=0):
         """
-        The ``fromitem`` method creates a :class:`~arcgis.features.FeatureLayer` from a :class:`~arcgis.gis.Item`
+        The ``fromitem`` method creates a :class:`~arcgis.features.FeatureLayer` from an :class:`~arcgis.gis.Item`
         object.
 
         ===============================     ====================================================================
@@ -186,6 +176,10 @@ class FeatureLayer(Layer):
         layer_id                            Required Integer. the id of the layer in feature layer collection (feature service).
                                             The default for ``layer_id`` is 0.
         ===============================     ====================================================================
+
+        :return:
+            A :class:`~arcgis.features.FeatureSet` object
+
 
         .. code-block:: python
 
@@ -202,8 +196,6 @@ class FeatureLayer(Layer):
             >>> type(new_layer)
             <class 'arcgis.features.layer.FeatureLayer'>
 
-        :returns:
-            A :class:`~arcgis.features.FeatureSet` object
         """
         return FeatureLayerCollection.fromitem(item).layers[layer_id]
 
@@ -212,6 +204,15 @@ class FeatureLayer(Layer):
         """
         The ``manager`` property is a helper object to manage the :class:`~arcgis.features.FeatureLayer`, such as
         updating its definition.
+
+        :return:
+            A :class:`~arcgis.feature.FeatureLayerManager`
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> manager = FeatureLayer.manager
         """
         url = self._url
         res = search("/rest/", url).span()
@@ -226,20 +227,13 @@ class FeatureLayer(Layer):
     @property
     def metadata(self):
         """
-        The ``metadata`` property allows for the setting and downloading of the
-        Feature Layer's metadata.
+        Get the Feature Layer's metadata.
 
         .. note::
             If metadata is disabled on the GIS or the
             layer does not support metadata, ``None`` will be returned.
 
-        =================     ====================================================================
-        **Argument**          **Description**
-        -----------------     --------------------------------------------------------------------
-        value                 Required String. (SET) Path to the metadata file.
-        =================     ====================================================================
-
-        :returns: String (GET)
+        :return: String of the metadata, if any
 
         """
         if "hasMetadata" in self.properties:
@@ -260,7 +254,7 @@ class FeatureLayer(Layer):
         save_folder           Optional String. A save location to download the metadata XML file.
         =================     ====================================================================
 
-        :returns: String
+        :return: String
         """
         import tempfile
 
@@ -284,7 +278,7 @@ class FeatureLayer(Layer):
         file_path             Required String.  The path to the .xml file that contains the metadata.
         =================     ====================================================================
 
-        :returns:
+        :return:
             A boolean indicating success (True), or failure (False)
 
         """
@@ -331,33 +325,43 @@ class FeatureLayer(Layer):
     @property
     def container(self):
         """
-        The ``container`` property gets and sets the :class:`~arcgis.features.FeatureLayerCollection` to which this
+        Get/Set the :class:`~arcgis.features.FeatureLayerCollection` to which this
         layer belongs.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required :class:`~arcgis.features.FeatureLayerCollection`.
+        ==================      ====================================================================
+
+        :return:
+            The Feature Layer Collection where the layer is stored
         """
         return self._storage
 
     @container.setter
     def container(self, value):
         """
-        The ``container`` property gets and sets the :class:`~arcgis.features.FeatureLayerCollection` to which this
-        layer belongs.
+        See main ``container`` property docstring
         """
         self._storage = value
 
     def export_attachments(self, output_folder, label_field=None):
         """
-        The ``exports_attachments`` exports attachments from the :class:`~arcgis.features.FeatureLayer` in Imagenet
+        Exports attachments from the :class:`~arcgis.features.FeatureLayer` in Imagenet
         format using the ``output_label_field``.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        output_folder                            Required. Output folder where the attachments will be stored.
+        output_folder                            Required string. Output folder where the attachments will be stored.
+                                                 If None, a default folder is created
         ------------------------------------     --------------------------------------------------------------------
-        label_field                              Optional. Field which contains the label/category of each feature.
-                                                 If None, a default folder is created.
+        label_field                              Optional string. Field which contains the label/category of each feature.
         ====================================     ====================================================================
 
+        :return:
+            Nothing is returned from this method
         """
         import pandas
         import urllib
@@ -432,8 +436,7 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def generate_renderer(self, definition, where=None):
         """
-        The ``generate_renderer`` operation groups data using the supplied definition
-        (classification definition) and an optional where clause. The
+        Groups data using the supplied definition (classification definition) and an optional where clause. The
         result is a renderer object.
 
         .. note::
@@ -445,17 +448,39 @@ class FeatureLayer(Layer):
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        definition            required dict. The definition using the renderer that is generated.
+        definition            Required dict. The definition using the renderer that is generated.
                               Use either class breaks or unique value classification definitions.
                               See `Classification Objects <https://developers.arcgis.com/documentation/common-data-types/classification-objects.htm>`_ for additional details.
         -----------------     --------------------------------------------------------------------
-        where                 optional string. A where clause for which the data needs to be
+        where                 Optional string. A where clause for which the data needs to be
                               classified. Any legal SQL where clause operating on the fields in
                               the dynamic layer/table is allowed.
         =================     ====================================================================
 
-        :returns:
-            A dictionary
+        :return:
+            A JSON Dictionary
+
+        ..code-block:: python
+
+            # Example Usage
+            FeatureLayer.generate_renderer(
+                definition = {"type":"uniqueValueDef",
+                              "uniqueValueFields":["Has_Pool"],
+                              "fieldDelimiter": ",",
+                              "baseSymbol":{
+                                  "type": "esriSFS",
+                                  "style": "esriSLSSolid",
+                                  "width":2
+                                  },
+                                "colorRamp":{
+                                    "type":"algorithmic",
+                                    "fromColor":[115,76,0,255],
+                                    "toColor":[255,25,86,255],
+                                    "algorithm": "esriHSVAlgorithm"
+                                    }
+                            },
+                where = "POP2000 > 350000"
+                )
 
         """
         if self._dynamic_layer:
@@ -479,9 +504,14 @@ class FeatureLayer(Layer):
         oid                   Required string/integer. OBJECTID value to add attachment to.
         -----------------     --------------------------------------------------------------------
         file_path             Required string. Location of the file to attach.
+        -----------------     --------------------------------------------------------------------
+        keywords              Optional string. Sets a text value that is stored as the keywords
+                              value for the attachment. If the attachments have keywords enabled and
+                              the layer also includes the attachmentFields property, you can use
+                              it to understand properties like keywords field length.
         =================     ====================================================================
 
-        :returns: dictionary
+        :return: A JSON Dictionary indicating 'success' or 'error'
 
         """
         if (os.path.getsize(file_path) >> 20) <= 9:
@@ -526,7 +556,7 @@ class FeatureLayer(Layer):
         attachment_id         Required integer. Id of the attachment to erase.
         =================     ====================================================================
 
-        :returns: dictionary
+        :return: dictionary
         """
         params = {"f": "json", "attachmentIds": "%s" % attachment_id}
         if self._dynamic_layer:
@@ -551,7 +581,7 @@ class FeatureLayer(Layer):
         file_path             Required string. Path to new attachment
         =================     ====================================================================
 
-        :returns: dictionary
+        :return: dictionary
 
         """
         params = {"f": "json", "attachmentId": "%s" % attachment_id}
@@ -579,7 +609,7 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def get_unique_values(self, attribute, query_string="1=1"):
         """
-        The ``get_unique_values`` method retrieves a list of unique values for a given attribute in the
+        Retrieves a list of unique values for a given attribute in the
         :class:`~arcgis.features.FeatureLayer`.
 
 
@@ -592,6 +622,9 @@ class FeatureLayer(Layer):
                                             before unique values are returned.
                                             ex. "name_2 like '%K%'"
         ===============================     ====================================================================
+
+        :return:
+            A list of unique values
 
         .. code-block:: python
 
@@ -607,8 +640,6 @@ class FeatureLayer(Layer):
             >>> layer
             ['PITKIN', 'PLATTE', 'TWIN FALLS']
 
-        :returns:
-            A List
         """
 
         result = self.query(
@@ -682,7 +713,7 @@ class FeatureLayer(Layer):
                                              clause syntax on the fields in the layer is supported for most data
                                              sources.
         --------------------------------     --------------------------------------------------------------------
-        objectids	                     Optional List. The object IDs of the layer or table to be queried.
+        objectids	                         Optional List. The object IDs of the layer or table to be queried.
         --------------------------------     --------------------------------------------------------------------
         start_time                           Optional Datetime. The starting time to query for.
         --------------------------------     --------------------------------------------------------------------
@@ -748,8 +779,9 @@ class FeatureLayer(Layer):
         ================================     ====================================================================
 
 
-        :returns: Default - pd.DataFrame, when as_df=False returns a FeatureSet. If return_count_only is True, the
-                  return type is Integer. If the return_ids_only is True, a list of value is returned.
+        :return: Default is a pd.DataFrame, but when ```as_df=False``` returns a :class:`~arcgis.feature.FeatureSet`.
+                  If ```return_count_only=True```, the return type is Integer.
+                  If ```return_ids_only=True```, a list of value is returned.
 
 
         """
@@ -892,7 +924,7 @@ class FeatureLayer(Layer):
             if "resultUrl" in status_job:
                 download_json = self._con.get(status_job["resultUrl"], {"f": "json"})
             else:
-                raise Exception(f"Job Failed: {result_json}")
+                raise Exception(f"Job Failed: {status_job}")
             if isinstance(download_json, str) and os.path.isfile(download_json):
                 with open(download_json, "r") as reader:
                     feature_dict = json.loads(reader.read())
@@ -900,7 +932,7 @@ class FeatureLayer(Layer):
                 os.remove(download_json)
             else:
                 if isinstance(download_json, str):
-                    feature_dict = json.loads(json_file)
+                    feature_dict = json.loads(download_json)
                 else:
                     feature_dict = download_json
                 parts.append(feature_dict)
@@ -1218,7 +1250,7 @@ class FeatureLayer(Layer):
         ===============================     ====================================================================
 
 
-        :returns:
+        :return:
             A Pandas DataFrame (pd.DataFrame)
 
         """
@@ -1529,6 +1561,10 @@ class FeatureLayer(Layer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
 
+        :return:
+            A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another return type
+            is specified, such as ``return_count_only``, ``return_extent_only``, or ``return_ids_only``.
+
         .. code-block:: python
 
             # Usage Example with only a "where" sql statement
@@ -1569,9 +1605,6 @@ class FeatureLayer(Layer):
             >>> search_count
             <149>
 
-        :returns:
-            A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another return type
-            is specified, such as ``count``
         """
         as_raw = as_df
         if self._dynamic_layer is None:
@@ -1696,7 +1729,8 @@ class FeatureLayer(Layer):
 
         params["returnCountOnly"] = True
         if where == "1=1":
-            params["where"] = f"{self.properties.objectIdField} > 0"
+            if "objectIdField" in self.properties:
+                params["where"] = f"{self.properties.objectIdField} > 0"
             record_count = self._query(url, params, raw=as_raw)
             params["where"] = "1=1"
         else:
@@ -1906,8 +1940,8 @@ class FeatureLayer(Layer):
                                                   Values: `where | expression | statement`
         ===============================     ====================================================================
 
-        :returns:
-            A dictionary
+        :return:
+            A JSON Dictionary indicating 'success' or 'error'
         """
         params = {"f": "json"}
         if not isinstance(sql, str):
@@ -2019,7 +2053,19 @@ class FeatureLayer(Layer):
         ======================     ====================================================================
 
 
-        :return: dict
+        :return: Dictionary of the query results
+
+        ..code-block:: python
+            # The query results will return the related records for each objectIds
+            # where TOWNSHIP is the outField and orderByField:
+
+            FeatureLayer.query_related_records(object_ids="7028,7029",
+                                               relationship_id="1",
+                                               out_fields="TOWNSHIP",
+                                               definition_expression="1=1",
+                                               order_by_fields="TOWNSHIP",
+                                               return_count_only=False,
+                                               return_geometry=False)
 
 
         """
@@ -2071,7 +2117,7 @@ class FeatureLayer(Layer):
         oid                 Optional string. Object id of the feature to get the HTML popup.
         ===============     ====================================================================
 
-        :returns:
+        :return:
             A string
 
         """
@@ -2107,7 +2153,7 @@ class FeatureLayer(Layer):
         """
         The ``append`` method is used to update an existing hosted :class:`~arcgis.features.FeatureLayer` object.
         See the `Append (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm>`_
-        page in the ArcGIS REST API documentation for more informatin.
+        page in the ArcGIS REST API documentation for more information.
 
         .. note::
             The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
@@ -2198,6 +2244,11 @@ class FeatureLayer(Layer):
                                    :class:`~concurrent.futures.Future` object.
         ========================   ====================================================================
 
+        :return:
+            A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
+            response messages will be return in addition to the boolean as a `tuple`.
+            If ``future`` = True, then the result is a `Future` object. Call ``result()`` to get the response.
+
         .. code-block:: python
 
             # Usage Example
@@ -2211,10 +2262,7 @@ class FeatureLayer(Layer):
             <True>
 
 
-        :returns:
-            A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
-            response messages will be return in addition to the boolean as a `tuple`.
-            If ``future`` = True, then the result is a `Future` object. Call ``result()`` to get the response.
+
 
         """
         import copy
@@ -2308,7 +2356,7 @@ class FeatureLayer(Layer):
         future=False,
     ):
         """
-        The ``delete_features`` deletes features in a :class:`~arcgis.features.FeatureLayer` or
+        Deletes features in a :class:`~arcgis.features.FeatureLayer` or
         :class:`~arcgis.features.Table`
 
         ======================     ====================================================================
@@ -2342,6 +2390,9 @@ class FeatureLayer(Layer):
                                    is the default.
         ======================     ====================================================================
 
+        :return:
+            A dictionary if future=False (default), else a :class:`~concurrent.futures.Future` object.
+
         .. code-block:: python
 
             # Usage Example with only a "where" sql statement
@@ -2371,10 +2422,6 @@ class FeatureLayer(Layer):
             {'objectId': 13, 'uniqueId': 13, 'globalId': None, 'success': True},
             {'objectId': 14, 'uniqueId': 14, 'globalId': None, 'success': True},
             {'objectId': 15, 'uniqueId': 15, 'globalId': None, 'success': True}]}
-
-
-        :returns:
-            A dictionary if future=False (default), else a :class:`~concurrent.futures.Future` object.
 
 
         """
@@ -2433,6 +2480,23 @@ class FeatureLayer(Layer):
             executor.shutdown(False)
             return future
 
+    @property
+    def estimates(self) -> Dict[str, Any]:
+        """
+        Returns up-to-date approximations of layer information, such as row count
+        and extent. Layers that support the `estimates` will include an
+        `infoInEstimates` information in the `properties`.
+
+        :returns: Dict[str, Any]
+
+        """
+
+        if "infoInEstimates" in self.properties:
+            url = self._url + "/getEstimates"
+            params = {"f": "json"}
+            return self._con.get(url, params)
+        return {}
+
     # ----------------------------------------------------------------------
     def _status_via_url(self, con, url, params):
         """
@@ -2487,9 +2551,10 @@ class FeatureLayer(Layer):
         session_id=None,
         use_previous_moment=False,
         datum_transformation=None,
+        future=False,
     ):
         """
-        The ``edit_features`` operation adds, updates, and deletes features to the
+        Adds, updates, and deletes features to the
         associated :class:`~arcgis.features.FeatureLayer` or :class:`~arcgis.features.Table` in a single call.
 
 
@@ -2576,10 +2641,9 @@ class FeatureLayer(Layer):
                                 reference. When specifying transformations, you need to think about which datum
                                 transformation best projects the layer (not the feature service) to the `outSR` and
                                 `sourceSpatialReference` property in the layer properties. For a list of valid datum
-                                transformation ID values ad well-known text strings, see `Coordinate systems and
-                                transformations <https://developers.arcgis.com/net/latest/wpf/guide/coordinate-systems-and-transformations.htm>`_.
-                                For more information on datum transformations, please see the transformation
-                                parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_.
+                                transformation ID values ad well-known text strings, see `Using spatial references <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`_.
+                                For more information on datum transformations please see the transformation
+                                parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_ documentation.
 
                                 **Examples**
 
@@ -2593,11 +2657,13 @@ class FeatureLayer(Layer):
                                     Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
                                     ===========     ===================================
 
-
+        ---------------------   --------------------------------------------------------------------------------------
+        future                  Optional Boolean.  If `True` and the `FeatureLayer` has `supportsAsyncApplyEdits` set
+                                to `True`, then edits can be applied asynchronously.
         =====================   ======================================================================================
 
-        :returns:
-            A dictionary
+        :return:
+            A dictionary by default, or :class:`~arcgis.features._async.EditFeatureJob` if `future=True`.
 
 
         """
@@ -2608,7 +2674,17 @@ class FeatureLayer(Layer):
             HAS_PANDAS = True
         except:
             HAS_PANDAS = False
-
+        if (
+            future
+            and "advancedEditingCapabilities" in self.properties
+            and "supportsAsyncApplyEdits"
+            in self.properties["advancedEditingCapabilities"]
+        ):
+            future = self.properties["advancedEditingCapabilities"][
+                "supportsAsyncApplyEdits"
+            ]
+        else:
+            future = False
         if adds is None:
             adds = []
         if updates is None:
@@ -2755,13 +2831,22 @@ class FeatureLayer(Layer):
             print("Parameters not valid for edit_features")
             return None
         try:
+            if future:
+                params["async"] = True
+                executor = concurrent.futures.ThreadPoolExecutor(1)
+                res = self._con.post_multipart(path=edit_url, postdata=params)
+                future = executor.submit(
+                    self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
+                )
+                executor.shutdown(False)
+
+                return EditFeatureJob(future, self._con)
+                # return future
             return self._con.post_multipart(path=edit_url, postdata=params)
         except Exception as e:
             if str(e).lower().find("Invalid Token".lower()) > -1:
                 params.pop("token", None)
-                return self._con.post_multipart(
-                    path=edit_url, postdata=params, add_token=False
-                )
+                return self._con.post_multipart(path=edit_url, postdata=params)
             else:
                 raise
 
@@ -2839,6 +2924,13 @@ class FeatureLayer(Layer):
 
         =====================   ====================================================
 
+        :return:
+            A dictionary with the following format:
+             {
+             'updatedFeatureCount': 1,
+             'success': True
+             }
+
         .. code-block:: python
 
             # Usage Example 1:
@@ -2853,12 +2945,7 @@ class FeatureLayer(Layer):
             print(fl.calculate(where="OBJECTID < 2001",
                                calc_expression={"field": "A",  "sqlExpression" : "B*3"}))
 
-        :returns:
-            A dictionary with the following format:
-             {
-             'updatedFeatureCount': 1,
-             'success': True
-             }
+
         """
         url = self._url + "/calculate"
         params = {
@@ -2908,15 +2995,10 @@ class FeatureLayer(Layer):
     def _query(self, url, params, raw=False, **kwargs):
         """returns results of query"""
         try:
-            if "add_token" in kwargs:
-                result = self._con.post(
-                    path=url, postdata=params, add_token=kwargs.get("add_token", True)
-                )
-            else:
-                result = self._con.post(
-                    path=url,
-                    postdata=params,
-                )
+            result = self._con.post(
+                path=url,
+                postdata=params,
+            )
         except Exception as queryException:
             error_list = [
                 "Error performing query operation",
@@ -2924,7 +3006,7 @@ class FeatureLayer(Layer):
             ]
             if queryException.args[0].lower().find("invalid token") > -1:
                 params.pop("token", None)
-                return self._query(url, params, raw=False, add_token=False)
+                return self._query(url, params, raw=False)
             elif any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
                 max_record = (
@@ -3051,13 +3133,7 @@ class FeatureLayer(Layer):
 
         # ------------------------------------------------------------------
         try:
-            if "add_token" in kwargs:
-
-                featureset_dict = self._con.post(
-                    url, params, add_token=kwargs.get("add_token", True)
-                )
-            else:
-                featureset_dict = self._con.post(url, params)
+            featureset_dict = self._con.post(url, params)
         except Exception as queryException:
             error_list = [
                 "Error performing query operation",
@@ -3065,7 +3141,7 @@ class FeatureLayer(Layer):
             ]
             if queryException.args[0].lower().find("invalid token") > -1:
                 params.pop("token", None)
-                return self._query_df(url, params, raw=False, add_token=False)
+                return self._query_df(url, params, raw=False)
             if any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
                 max_record = (
@@ -3165,19 +3241,21 @@ class Table(FeatureLayer):
     def fromitem(cls, item, table_id=0):
         """
         The ``fromitem`` method creates a :class:`~arcgis.features.Table` from a :class:`~arcgis.gis.Item` object.
-        The layer_id is the id of the layer in feature layer collection (feature service).
+        The table_id is the id of the table in :class:`~arcgis.features.FeatureLayerCollection` (feature service).
 
         ===============================     ====================================================================
         **Argument**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         item                                Required :class:`~arcgis.gis.Item` object. The type of item should be a
-                                            ``Feature Service`` that represents a :class:`~arcgis.features.FeatureLayerCollection`
+                                            ``Feature Service`` that represents a
+                                            :class:`~arcgis.features.FeatureLayerCollection`
         -------------------------------     --------------------------------------------------------------------
-        layer_id                            Required Integer. the id of the layer in feature layer collection (feature service).
-                                            The default for ``layer_id`` is 0.
+        table_id                            Required Integer. The id of the layer in feature layer collection
+                                            (feature service).
+                                            The default for ``table`` is 0.
         ===============================     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.features.Table` object
         """
         return item.tables[table_id]
@@ -3329,6 +3407,11 @@ class Table(FeatureLayer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
 
+        :return:
+            A :class:`~arcgis.features.FeatureSet` object or, if ```as_df=True```, a Panda's DataFrame
+            containing the features matching the query unless another return type
+            is specified, such as ``return_count_only``
+
         .. code-block:: python
 
             # Usage Example with only a "where" sql statement
@@ -3369,9 +3452,6 @@ class Table(FeatureLayer):
             >>> search_count
             <149>
 
-        :returns:
-            A :class:`~arcgis.features.FeatureSet` object or Panda's DataFrame containing the features
-            matching the query unless another return type is specified, such as ``count``
         """
         as_raw = as_df
         if self._dynamic_layer is None:
@@ -3634,11 +3714,11 @@ class FeatureLayerCollection(_GISResource):
 
     In a web GIS, a feature layer collection is exposed as a feature service with multiple feature layers.
 
-    Instances of`` FeatureDatasets`` can be obtained from feature service Items in the GIS using
+    Instances of ``FeatureLayerCollection`` can be obtained from feature service Items in the GIS using
     :attr:`~arcgis.features.FeatureLayerCollection.fromitem`, from feature service endpoints using the constructor,
     or by accessing the ``dataset`` attribute of :class:`~arcgis.features.FeatureLayer` objects.
 
-    ``FeatureDatasets`` can be configured and managed using their `manager` helper object.
+    ``FeatureLayerCollection``s can be configured and managed using their `manager` helper object.
 
     If the dataset supports the sync operation, the `replicas` helper object allows management and synchronization of
     replicas for disconnected editing of the feature layer collection.
@@ -3683,24 +3763,17 @@ class FeatureLayerCollection(_GISResource):
             lyr = Table(self.url + "/" + str(lyr.id), self._gis, self)
             tables.append(lyr)
 
-        # fsurl = self.url + '/layers'
-        # params = { "f" : "json" }
-        # allayers = self._con.post(fsurl, params)
-
-        # for layer in allayers['layers']:
-        #    layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis))
-
-        # for table in allayers['tables']:
-        #    tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis))
-
         self.layers = layers
         self.tables = tables
 
     @property
     def manager(self):
         """
-        The ``manager`` property is a helper object to manage the :class:`~arcgis.features.FeatureLayerCollection`,
+        A helper object to manage the :class:`~arcgis.features.FeatureLayerCollection`,
         for example updating its definition.
+
+        :return:
+            A :class:`~arcgis.features.FeatureLayerCollectionManager` object
         """
         if self._admin is None:
             url = self._url
@@ -3716,7 +3789,7 @@ class FeatureLayerCollection(_GISResource):
     @property
     def relationships(self):
         """
-        The ``relationships`` property provides relationship information for
+        Gets relationship information for
         the layers and tables in the :class:`~arcgis.features.FeatureLayerCollection` object.
 
         The relationships resource includes information about relationship
@@ -3728,7 +3801,7 @@ class FeatureLayerCollection(_GISResource):
         will have the "supportsRelationshipsResource": true property on
         their properties.
 
-        :returns: List of Dictionaries
+        :return: List of Dictionaries
 
         """
         if (
@@ -3746,7 +3819,7 @@ class FeatureLayerCollection(_GISResource):
     @property
     def versions(self):
         """
-        The ``version`` property creates a ``VersionManager`` to create, update and use versions on a
+        Creates a ``VersionManager`` to create, update and use versions on a
         :class:`~arcgis.features.FeatureLayerCollection`.
 
         .. note::
@@ -3768,7 +3841,7 @@ class FeatureLayerCollection(_GISResource):
     # ----------------------------------------------------------------------
     def query_domains(self, layers):
         """
-        The ``query_domains`` returns full domain information for the domains
+        Returns full domain information for the domains
         referenced by the layers in the :class:`~arcgis.features.FeatureLayerCollection`. This
         operation is performed on a feature layer collection. The operation
         takes an array of layer IDs and returns the set of domains referenced
@@ -3784,7 +3857,7 @@ class FeatureLayerCollection(_GISResource):
                                              based on the domains referenced by these layers. Example: [1,2,3,4]
         ================================     ====================================================================
 
-        :returns:
+        :return:
             List of dictionaries
 
         """
@@ -3820,13 +3893,11 @@ class FeatureLayerCollection(_GISResource):
         return_geometry_updates=None,
     ):
         """
-        The ``extract_changes`` is an efficient change tracking
-        mechanism for applications. Applications can use ``extract_changes`` to
-        query changes that have been made to the layers and tables in the
-        service.
+        A change tracking mechanism for applications. Applications can use ``extract_changes`` to
+        query changes that have been made to the layers and tables in the service.
 
         .. note::
-            For enterprise geodatabase based feature services published
+            For Enterprise geodatabase based feature services published
             from ArcGIS Pro 2.2 or higher, the ``ChangeTracking`` capability
             requires all layers and tables to be either archive enabled or
             branch versioned and have globalid columns.
@@ -3971,6 +4042,10 @@ class FeatureLayerCollection(_GISResource):
                                              `hasGeometryUpdates` to be set as true.
         ================================     ====================================================================
 
+        :return:
+            A dictionary containing the layerServerGens and an array of edits
+
+
         .. code-block:: python
 
            #Usage Example for extracting all changes to a feaature layer in a particular version since the time the Feature Layer was created.
@@ -4005,9 +4080,6 @@ class FeatureLayerCollection(_GISResource):
            {'layerServerGens': [{'id': 0, 'serverGen': 1600713614620}],
             'edits': [{'id': 0,
               'objectIds': {'adds': [], 'updates': [194], 'deletes': []}}]}
-
-        :returns:
-            A dictionary containing the layerServerGens and an array of edits
         """
         url = "%s/extractChanges" % self._url
         params = {
@@ -4060,7 +4132,7 @@ class FeatureLayerCollection(_GISResource):
         out_sr=None,
     ):
         """
-         The ``query`` method queries the current :class:`~arcgis.features.FeatureLayerCollection` based on ``sql``
+         Queries the current :class:`~arcgis.features.FeatureLayerCollection` based on ``sql``
          statement.
 
         ===============================     ====================================================================
@@ -4103,6 +4175,9 @@ class FeatureLayerCollection(_GISResource):
                                             geometry.
         ===============================     ====================================================================
 
+        :return:
+            A :class:`~arcgis.features.FeatureSet` of the queried Feature Layer Collection unless
+            ``return_count_only`` or ``return_ids_only`` is True.
 
         """
         qurl = self._url + "/query"
@@ -4136,17 +4211,6 @@ class FeatureLayerCollection(_GISResource):
             raise ValueError(results)
         if not return_count_only and not return_ids_only:
             return results
-            # if returnFeatureClass == True:
-            # json_text = json.dumps(results)
-            # return results
-            # df = json_normalize(results['features'])
-            # df.columns = df.columns.str.replace('attributes.', '')
-            # return df
-            # else:
-            #    return results
-            # df = json_normalize(results['features'])
-            # df.columns = df.columns.str.replace('attributes.', '')
-            # return df
         else:
             return FeatureSet.from_dict(results)
 
@@ -4225,7 +4289,8 @@ class FeatureLayerCollection(_GISResource):
         ======================     ====================================================================
 
 
-        :return: dict
+        :return: Dictionary of query results
+
         """
         params = {
             "f": "json",
@@ -4295,7 +4360,7 @@ class FeatureLayerCollection(_GISResource):
                             the replica was created.
         ===============     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json"}
@@ -4323,6 +4388,7 @@ class FeatureLayerCollection(_GISResource):
         wait=False,
         out_path=None,
         transformations=None,
+        time_reference_unknown_client=None,
     ):
         """
         The createReplica operation is performed on a feature service
@@ -4339,99 +4405,141 @@ class FeatureLayerCollection(_GISResource):
         esriReplicaResponseTypeInfo, and the response will not contain data
         for the layers in the replica.
 
-        Inputs:
-           replicaName - name of the replica
-           layers - layers to export
-           layerQueries - In addition to the layers and geometry parameters, the layerQueries
-            parameter can be used to further define what is replicated. This
-            parameter allows you to set properties on a per layer or per table
-            basis. Only the properties for the layers and tables that you want
-            changed from the default are required.
-            Example:
-             layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
-             "where": "requires_inspection = Yes"}}
-           geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
-                             spatial relationship with another geometry. Only intersections are currently supported.
-           returnAttachments - If true, attachments are added to the replica and returned in the
-            response. Otherwise, attachments are not included.
-           returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each
-            attachment returned from createReplica. Otherwise,
-            attachments are embedded in the response.
-           replicaSR - the spatial reference of the replica geometry.
-           transportType -  The transportType represents the response format. If the
-            transportType is esriTransportTypeUrl, the JSON response is contained in a file,
-            and the URL link to the file is returned. Otherwise, the JSON object is returned
-            directly. The default is esriTransportTypeUrl.
-            If async is true, the results will always be returned as if transportType is
-            esriTransportTypeUrl. If dataFormat is sqlite, the transportFormat will always be
-            esriTransportTypeUrl regardless of how the parameter is set.
-            Values: esriTransportTypeUrl | esriTransportTypeEmbedded
-           returnAttachments - If true, attachments are added to the replica and returned in
-            the response. Otherwise, attachments are not included. The default is false. This
-            parameter is only applicable if the feature service has attachments.
-           returnAttachmentsDatabyURL -  If true, a reference to a URL will be provided for
-            each attachment returned from createReplica. Otherwise, attachments are embedded
-            in the response. The default is true. This parameter is only applicable if the
-            feature service has attachments and if returnAttachments is true.
-           attachmentsSyncDirection - Client can specify the attachmentsSyncDirection when
-            creating a replica. AttachmentsSyncDirection is currently a createReplica property
-            and cannot be overridden during sync.
-            Values: none, upload, bidirectional
-           asynchronous - If true, the request is processed as an asynchronous job, and a URL is
-            returned that a client can visit to check the status of the job. See the topic on
-            asynchronous usage for more information. The default is false.
-           syncModel - Client can specify the attachmentsSyncDirection when creating a replica.
-            AttachmentsSyncDirection is currently a createReplica property and cannot be
-            overridden during sync.
-           dataFormat - The format of the replica geodatabase returned in the response. The
-            default is json.
-            Values: filegdb, json, sqlite, shapefile
-           target_type - This option was added at 10.5.1. Can be set to either server or client.
-            If not set, the default is client.A targetType of client will generate a replica that
-            matches those generated in pre-10.5.1 releases. These are designed to support syncing
-            with lightweight mobile clients and have a single generation number (serverGen or
-            replicaServerGen).
-            A targetType of server generates a replica that supports syncing in one direction
-            between 2 feature services running on servers or between an ArcGIS Server feature
-            service and an ArcGIS Online feature service. When the targetType is server, the replica
-            information includes a second generation number. This second generation number is called
-            replicaServerSibGen for perReplica types and serverSibGen for perLayer types.
-            target_type server replicas generated with dataFormat SQLite can be published as new
-            services in another ArcGIS Online organization or in ArcGIS Enterprise. When published,
-            a replica is generated on these new services with a matching replicaID and a
-            replicaServerSibGen or serverSibGens. The replicaServerSibGen or serverSibGens values
-            can be used as the replicaServerGen or serverGen values when calling synchronize replica
-            on the source service to get the latest changes. These changes can then be imported into
-            the new service using the synchronizeReplica operation. When calling synchronizeReplica
-            on the new service to import the changes, be sure to pass the new replicaServerGen or
-            serverGen from the source service as the replicaServerSibGen or serverSibGen. This will
-            update the replica metadata appropriately such that it can be used in the next sync.
-            Values: server, client
-           sync_direction - Defaults to bidirectional when the targetType is client and download
-            when the targetType is server. If set, only bidirectional is supported when
-            targetType is client. If set, only upload or download are supported when targetType is
-            server.
-            A syncDirection of bidirectional matches the functionality from replicas generated in
-            pre-10.5.1 releases and allows upload and download of edits. It is only supported
-            when targetType is client.
-            When targetType is server, only a one way sync is supported thus only upload or
-            download are valid options.
-            A syncDirection of upload means that the synchronizeReplica operation allows only sync
-            with an upload direction. Use this option to allow the upload of edits from the source
-            service.
-            A syncDirection of download means that the synchronizeReplica operation allows only sync
-            with a download direction. Use this option to allow the download of edits to provide to
-            the source service.
-           replicaOptions - This parameter instructs the createReplica operation to create a
-            new replica based on an existing replica definition (refReplicaId). It can be used
-            to specify parameters for registration of existing data for sync. The operation
-            will create a replica but will not return data. The responseType returned in the
-            createReplica response will be esriReplicaResponseTypeInfo.
-           wait - if async, wait to pause the process until the async operation is completed.
-           out_path - folder path to save the file
-           transformations - optional List. Introduced at 10.8. This parameter applies a datum
-                             transformation on each layer when the spatial reference used in
-                             geometry is different than the layer's spatial reference.
+        =============================   ====================================================================
+        **Argument**                    **Description**
+        -----------------------------   --------------------------------------------------------------------
+        replicaName                     Optional string. The name of the replica
+        -----------------------------   --------------------------------------------------------------------
+        layers                          The layers to export
+        -----------------------------   --------------------------------------------------------------------
+        layer_queries                   In addition to the layers and geometry parameters, the layerQueries
+                                        parameter can be used to further define what is replicated. This
+                                        parameter allows you to set properties on a per layer or per table
+                                        basis. Only the properties for the layers and tables that you want
+                                        changed from the default are required.
+
+                                        #Example:
+                                        layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
+                                                        "where": "requires_inspection = Yes"}}
+        -----------------------------   --------------------------------------------------------------------
+        geometry_filter                 Spatial filter from arcgis.geometry.filters module to filter results by a
+                                        spatial relationship with another geometry.
+                                        Only intersections are currently supported
+        -----------------------------   --------------------------------------------------------------------
+        return_attachments              Optional boolean. If true, attachments are added to the replica and returned in the
+                                        response. Otherwise, attachments are not included.
+        -----------------------------   --------------------------------------------------------------------
+        return_attachment_databy_url    If true, a reference to a URL will be provided for each
+                                        attachment returned from createReplica. Otherwise,
+                                        attachments are embedded in the response.
+        -----------------------------   --------------------------------------------------------------------
+        replica_sr                      The spatial reference of the replica geometry
+        -----------------------------   --------------------------------------------------------------------
+        transport_type                  The transportType represents the response format. If the
+                                        transportType is esriTransportTypeUrl, the JSON response is contained in a file,
+                                        and the URL link to the file is returned. Otherwise, the JSON object is returned
+                                        directly. The default is esriTransportTypeUrl.
+                                        If async is true, the results will always be returned as if transportType is
+                                        esriTransportTypeUrl. If dataFormat is sqlite, the transportFormat will always be
+                                        esriTransportTypeUrl regardless of how the parameter is set.
+
+                                        Values: esriTransportTypeUrl | esriTransportTypeEmbedded
+        -----------------------------   --------------------------------------------------------------------
+        attachments_sync_direction      Client can specify the attachmentsSyncDirection when
+                                        creating a replica. AttachmentsSyncDirection is currently a createReplica property
+                                        and cannot be overridden during sync.
+
+                                        Values: none, upload, bidirectional
+        -----------------------------   --------------------------------------------------------------------
+        asynchronous                    If true, the request is processed as an asynchronous job, and a URL is
+                                        returned that a client can visit to check the status of the job. See the topic on
+                                        asynchronous usage for more information. The default is false.
+        -----------------------------   --------------------------------------------------------------------
+        sync_model                      Client can specify the attachmentsSyncDirection when creating a replica.
+                                        AttachmentsSyncDirection is currently a createReplica property and cannot be
+                                        overridden during sync.
+        -----------------------------   --------------------------------------------------------------------
+        data_format                     The format of the replica geodatabase returned in the response. The
+                                        default is json.
+
+                                        Values: filegdb, json, sqlite, shapefile
+        -----------------------------   --------------------------------------------------------------------
+        target_type                     This option was added at 10.5.1. Can be set to either server or client.
+                                        If not set, the default is client.A targetType of client will generate a replica that
+                                        matches those generated in pre-10.5.1 releases. These are designed to support syncing
+                                        with lightweight mobile clients and have a single generation number (serverGen or
+                                        replicaServerGen).
+                                        A targetType of server generates a replica that supports syncing in one direction
+                                        between 2 feature services running on servers or between an ArcGIS Server feature
+                                        service and an ArcGIS Online feature service. When the targetType is server, the replica
+                                        information includes a second generation number. This second generation number is called
+                                        replicaServerSibGen for perReplica types and serverSibGen for perLayer types.
+                                        target_type server replicas generated with dataFormat SQLite can be published as new
+                                        services in another ArcGIS Online organization or in ArcGIS Enterprise. When published,
+                                        a replica is generated on these new services with a matching replicaID and a
+                                        replicaServerSibGen or serverSibGens. The replicaServerSibGen or serverSibGens values
+                                        can be used as the replicaServerGen or serverGen values when calling synchronize replica
+                                        on the source service to get the latest changes. These changes can then be imported into
+                                        the new service using the synchronizeReplica operation. When calling synchronizeReplica
+                                        on the new service to import the changes, be sure to pass the new replicaServerGen or
+                                        serverGen from the source service as the replicaServerSibGen or serverSibGen. This will
+                                        update the replica metadata appropriately such that it can be used in the next sync.
+
+                                        Values: server, client
+        -----------------------------   --------------------------------------------------------------------
+        sync_direction                  Defaults to bidirectional when the targetType is client and download
+                                        when the targetType is server. If set, only bidirectional is supported when
+                                        targetType is client. If set, only upload or download are supported when targetType is
+                                        server.
+                                        A syncDirection of bidirectional matches the functionality from replicas generated in
+                                        pre-10.5.1 releases and allows upload and download of edits. It is only supported
+                                        when targetType is client.
+                                        When targetType is server, only a one way sync is supported thus only upload or
+                                        download are valid options.
+                                        A syncDirection of upload means that the synchronizeReplica operation allows only sync
+                                        with an upload direction. Use this option to allow the upload of edits from the source
+                                        service.
+                                        A syncDirection of download means that the synchronizeReplica operation allows only sync
+                                        with a download direction. Use this option to allow the download of edits to provide to
+                                        the source service.
+        -----------------------------   --------------------------------------------------------------------
+        replica_options                 This parameter instructs the createReplica operation to create a
+                                        new replica based on an existing replica definition (refReplicaId). It can be used
+                                        to specify parameters for registration of existing data for sync. The operation
+                                        will create a replica but will not return data. The responseType returned in the
+                                        createReplica response will be esriReplicaResponseTypeInfo.
+        -----------------------------   --------------------------------------------------------------------
+        wait                            If async, wait to pause the process until the async operation is completed.
+        -----------------------------   --------------------------------------------------------------------
+        out_path                        Folder path to save the file
+        -----------------------------   --------------------------------------------------------------------
+        transformations                 Optional List. Introduced at 10.8. This parameter applies a datum
+                                        transformation on each layer when the spatial reference used in
+                                        geometry is different than the layer's spatial reference.
+        -----------------------------   --------------------------------------------------------------------
+        time_reference_unknown_client   Setting timeReferenceUnknownClient as trueindicates that the client is                  capable of working with data values that are not in UTC. If its not set
+                                        to true, and the service layer's datesInUnknownTimeZone property is true,
+                                        then an error is returned. The default is false
+
+                                        Its possible to define a service's time zone of date fields as unknown.
+                                        Setting the time zone as unknown means that date values will be returned
+                                        as-is from the database, rather than as date values in UTC. Non-hosted feature
+                                        services can be set to use an unknown time zone using ArcGIS Server Manager.
+                                        Setting the time zones to unknown also sets the datesInUnknownTimeZone layer property
+                                        as true. Currently, hosted feature services do not support this setting.
+                                        This setting does not apply to editor tracking date fields which are
+                                        stored and returned in UTC even when the time zone is set to unknown.
+
+                                        Most clients released prior to ArcGIS Enterprise 10.9 will not be able
+                                        to work with feature services that have an unknown time setting.
+                                        The timeReferenceUnknownClient parameter prevents these clients from working
+                                        with the service in order to avoid problems..
+                                        Setting this parameter to true indicates that the client is capable of working with
+                                        unknown date values that are not in UTC.
+        =============================   ====================================================================
+
+        :return: The created replica
+
         """
         if (
             not self.properties.syncEnabled
@@ -4473,7 +4581,9 @@ class FeatureLayerCollection(_GISResource):
             params["replicaOptions"] = replica_options
         if transport_type is not None:
             params["transportType"] = transport_type
-
+        # parameter added at version 10.9
+        if self._gis.version >= [8, 4]:
+            params["timeReferenceUnknownClient"] = time_reference_unknown_client
         if asynchronous:
             if wait:
                 export_job = self._con.post(path=url, postdata=params)
@@ -4529,7 +4639,7 @@ class FeatureLayerCollection(_GISResource):
 
 
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = "{url}/cleanupChangeTracking".format(url=self._url)
@@ -4649,108 +4759,123 @@ class FeatureLayerCollection(_GISResource):
         You can provide arguments to the synchronizeReplica operation as defined in the parameters
         table below.
 
-        Parameters:
-         :replica_id: The ID of the replica you want to synchronize.
-         :transport_type:
-         :replica_server_gen: is a generation number that allows the server to keep track of what
-          changes have already been synchronized. A new replicaServerGen is sent with the response
-          to the synchronizeReplica operation. Clients should persist this value and use it with the
-          next synchronizeReplica call.
-          It applies to replicas with syncModel = perReplica.
-          For replicas with syncModel = perLayer, layer generation numbers are specified using
-          parameter: syncLayers; and replicaServerSibGen is not needed.
-         :replica_servers_sib_gen:  is a generation number that allows the server to keep track of
-          what changes have already been received. It is set when synchronizing where
-          syncModel = perReplica and targetType = server. The replicaServerSibGen is updated in the
-          replica metadata on the replica resource once the process completes successfully.
-          Replicas with targetType = server are designed to allow syncing between services. When
-          syncing, the replicaServerSibGen value is derived from the replicaServerGen of the other
-          services matching replica.
-          For replicas with syncModel = perLayer, layer generation numbers are specified using
-          parameter: syncLayers; and replicaServerGen is not needed.
-          This value is not set for replicas where the targetType=client.
-         :return_ids_for_adds: If true, the objectIDs and globalIDs of features added during the
-          synchronize will be returned to the client in the addResults sections of the response.
-          Otherwise, the IDs are not returned. The default is false.
-          Values: true | false
-         :edits: The edits the client wants to apply to the service. Alternatively, the
-          edits_upload_ID and editsUploadFormat can be used to specify the edits in a delta file.
-          The edits are described using an array where an element in the array includes:
-           - The layer or table ID
-           - The feature or row edits to apply listed as inserts, updates, and deletes
-           - The attachments to apply listed as inserts, updates, and deletes
-         For features, adds and updates are specified as feature objects that include geometry and
-         attributes.
-         Deletes can be specified using globalIDs for features and attachments.
-         For attachments, updates and adds are specified using the following set of properties for
-         each attachment. If embedding the attachment, set the data property; otherwise, set the url
-         property. All other properties are required:
-          - globalid - The globalID of the attachment that is to be added or updated.
-          - parentGlobalid - The globalID of the feature associated with the attachment.
-          - contentType - Describes the file type of the attachment (for example, image/jpeg).
-          - name - The file name (for example, hydrant.jpg).
-          - data - The base 64 encoded data if embedding the data. Only required if the attachment
-            is embedded.
-          - url - The location where the service will upload the attachment file (for example,
-            http://machinename/arcgisuploads/Hydrant.jpg). Only required if the attachment is not
-            embedded.
-         :return_attachment_databy_url:  If true, a reference to a URL will be provided for each
-          attachment returned from synchronizeReplica. Otherwise, attachments are embedded in the
-          response. The default is true. Applies only if attachments are included in the replica.
-          Values: true | false
-         :asynchronous: If true, the request is processed as an asynchronous job and a URL is
-          returned that a client can visit to check the status of the job. See the topic on
-          asynchronous usage for more information. The default is false.
-          Values: true | false
-         :sync_direction: Determines whether to upload, download, or upload and download on sync. By
-          default, a replica is synchronized bi-directionally. Only applicable when
-          syncModel = perReplica. If syncModel = perLayer, sync direction is specified using
-          syncLayers.
-          Values: download | upload | bidirectional | snapshot
+        ===============                 ====================================================================
+        **Argument**                    **Description**
+        ---------------                 --------------------------------------------------------------------
+        replica_id                      The ID of the replica you want to synchronize.
+        ---------------                 --------------------------------------------------------------------
+        transport_type
+        ---------------                 --------------------------------------------------------------------
+        replica_server_gen              Is a generation number that allows the server to keep track of what
+                                        changes have already been synchronized. A new replicaServerGen is sent with the response
+                                        to the synchronizeReplica operation. Clients should persist this value and use it with the
+                                        next synchronizeReplica call.
+                                        It applies to replicas with syncModel = perReplica.
+                                        For replicas with syncModel = perLayer, layer generation numbers are specified using
+                                        parameter: syncLayers; and replicaServerSibGen is not needed.
+        ---------------                 --------------------------------------------------------------------
+        return_ids_for_adds             If true, the objectIDs and globalIDs of features added during the
+                                        synchronize will be returned to the client in the addResults sections of the response.
+                                        Otherwise, the IDs are not returned. The default is false.
 
-           - download-The changes that have taken place on the server since last download are
-             returned. Client does not need to send any changes. If the changes are sent, service
-             will ignore them.
-           - upload-The changes submitted in the edits or editsUploadID/editsUploadFormatt
-             parameters are applied, and no changes are downloaded from the server.
-           - bidirectional-The changes submitted in the edits or editsUploadID/editsUploadFormat
-             parameters are applied, and changes on the server are downloaded. This is the default
-             value.
-           - snapshot-The current state of the features is downloaded from the server. If any edits
-             are specified, they will be ignored.
-         :sync_layers:  allows a client to specify layer-level generation numbers for a sync
-          operation. It can also be used to specify sync directions at layer-level. This parameter
-          is needed for replicas with syncModel = perLayer. It is ignored for replicas with
-          syncModel = perReplica.
-          serverGen is required for layers with syncDirection = bidirectional or download.
-          serverSibGen is needed only for replicas where the targetType = server. For replicas with
-          syncModel = perLayer, the serverSibGen serves the same purpose at the layer level as the
-          replicaServerSibGen does in the case of syncModel = perReplica. See the
-          replicaServerSibGen parameter for more information.
-          If a sync operation has both the syncDirection and syncLayersparameters, and the replica's
-          syncModel is perLayer, the layers that do not have syncDirection values will use the value
-          of the syncDirection parameter. If the syncDirection parameter is not specified, the
-          default value of bidirectional is used.
-          Values: download | upload | bidirectional | snapshot
-         :edits_upload_id: The ID for the uploaded item that contains the edits the client wants to
-          apply to the service. Used in conjunction with editsUploadFormat.
-         :edits_upload_format: The data format of the uploaded data reference in edit_upload_id.
-          data_format="json",
-         :rollback_on_failure:  Determines the behavior when there are errors while importing edits
-          on the server during synchronization. This only applies in cases where edits are being
-          uploaded to the server (syncDirection = upload or bidirectional). See the
-          RollbackOnFailure and Sync Models topic for more details.
-          When true, if an error occurs while importing edits on the server, all edits are rolled
-          back (not applied), and the operation returns an error in the response. Use this setting
-          when the edits are such that you will either want all or none applied.
-          When false, if an error occurs while importing an edit on the server, the import process
-          skips the edit and continues. All edits that were skipped are returned in the edits
-          results with information describing why the edits were skipped.
-         :close_replica:  If true, the replica will be unregistered when the synchronize completes.
-          This is the same as calling synchronize and then calling unregisterReplica. Otherwise, the
-          replica can continue to be synchronized. The default is false.
-          Values: true | false
+                                        Values: true | false
+        ---------------                 --------------------------------------------------------------------
+        edits                           The edits the client wants to apply to the service. Alternatively, the
+                                        edits_upload_ID and editsUploadFormat can be used to specify the edits in a delta file.
+                                        The edits are described using an array where an element in the array includes:
+                                        - The layer or table ID
+                                        - The feature or row edits to apply listed as inserts, updates, and deletes
+                                        - The attachments to apply listed as inserts, updates, and deletes
+                                        For features, adds and updates are specified as feature objects that include geometry and
+                                        attributes.
+                                        Deletes can be specified using globalIDs for features and attachments.
+                                        For attachments, updates and adds are specified using the following set of properties for
+                                        each attachment. If embedding the attachment, set the data property; otherwise, set the url
+                                        property. All other properties are required:
+                                        - globalid - The globalID of the attachment that is to be added or updated.
+                                        - parentGlobalid - The globalID of the feature associated with the attachment.
+                                        - contentType - Describes the file type of the attachment (for example, image/jpeg).
+                                        - name - The file name (for example, hydrant.jpg).
+                                        - data - The base 64 encoded data if embedding the data. Only required if the attachment
+                                            is embedded.
+                                        - url - The location where the service will upload the attachment file (for example,
+                                            http://machinename/arcgisuploads/Hydrant.jpg). Only required if the attachment is not
+                                            embedded.
+        ---------------                 --------------------------------------------------------------------
+        return_attachment_databy_url    If true, a reference to a URL will be provided for each
+                                        attachment returned from synchronizeReplica. Otherwise, attachments are embedded in the
+                                        response. The default is true. Applies only if attachments are included in the replica.
+        ---------------                 --------------------------------------------------------------------
+        asynchronous                    If true, the request is processed as an asynchronous job and a URL is
+                                        returned that a client can visit to check the status of the job. See the topic on
+                                        asynchronous usage for more information. The default is false.
+        ---------------                 --------------------------------------------------------------------
+        sync_direction                  Determines whether to upload, download, or upload and download on sync. By
+                                        default, a replica is synchronized bi-directionally. Only applicable when
+                                        syncModel = perReplica. If syncModel = perLayer, sync direction is specified using
+                                        syncLayers.
+
+                                        Values: download | upload | bidirectional | snapshot
+
+                                        - download-The changes that have taken place on the server since last download are
+                                            returned. Client does not need to send any changes. If the changes are sent, service
+                                            will ignore them.
+                                        - upload-The changes submitted in the edits or editsUploadID/editsUploadFormatt
+                                            parameters are applied, and no changes are downloaded from the server.
+                                        - bidirectional-The changes submitted in the edits or editsUploadID/editsUploadFormat
+                                            parameters are applied, and changes on the server are downloaded. This is the default
+                                            value.
+                                        - snapshot-The current state of the features is downloaded from the server. If any edits
+                                            are specified, they will be ignored.
+        ---------------                 --------------------------------------------------------------------
+        sync_layers                     Allows a client to specify layer-level generation numbers for a sync
+                                        operation. It can also be used to specify sync directions at layer-level. This parameter
+                                        is needed for replicas with syncModel = perLayer. It is ignored for replicas with
+                                        syncModel = perReplica.
+                                        serverGen is required for layers with syncDirection = bidirectional or download.
+                                        serverSibGen is needed only for replicas where the targetType = server. For replicas with
+                                        syncModel = perLayer, the serverSibGen serves the same purpose at the layer level as the
+                                        replicaServerSibGen does in the case of syncModel = perReplica. See the
+                                        replicaServerSibGen parameter for more information.
+                                        If a sync operation has both the syncDirection and syncLayersparameters, and the replica's
+                                        syncModel is perLayer, the layers that do not have syncDirection values will use the value
+                                        of the syncDirection parameter. If the syncDirection parameter is not specified, the
+                                        default value of bidirectional is used.
+
+                                        Values: download | upload | bidirectional | snapshot
+        ---------------                 --------------------------------------------------------------------
+        edits_upload_id                 The ID for the uploaded item that contains the edits the client wants to
+                                        apply to the service. Used in conjunction with editsUploadFormat.
+        ---------------                 --------------------------------------------------------------------
+        edits_upload_format             The data format of the uploaded data reference in edit_upload_id.
+                                        data_format="json"
+        ---------------                 --------------------------------------------------------------------
+        data_format                     The format of the replica geodatabase returned in the response. The
+                                        default is json.
+
+                                        Values: filegdb, json, sqlite, shapefile
+        ---------------                 --------------------------------------------------------------------
+        rollback_on_failure             Determines the behavior when there are errors while importing edits
+                                        on the server during synchronization. This only applies in cases where edits are being
+                                        uploaded to the server (syncDirection = upload or bidirectional). See the
+                                        RollbackOnFailure and Sync Models topic for more details.
+                                        When true, if an error occurs while importing edits on the server, all edits are rolled
+                                        back (not applied), and the operation returns an error in the response. Use this setting
+                                        when the edits are such that you will either want all or none applied.
+                                        When false, if an error occurs while importing an edit on the server, the import process
+                                        skips the edit and continues. All edits that were skipped are returned in the edits
+                                        results with information describing why the edits were skipped.
+        ---------------                 --------------------------------------------------------------------
+        close_replica                   If true, the replica will be unregistered when the synchronize completes.
+                                        This is the same as calling synchronize and then calling unregisterReplica. Otherwise, the
+                                        replica can continue to be synchronized. The default is false.
+        ---------------                 --------------------------------------------------------------------
+        out_path                        Folder path to save the file
+        ===============                 ====================================================================
+
+        :returns:
         """
+
         url = "{url}/synchronizeReplica".format(url=self._url)
         params = {
             "f": "json",
@@ -4831,7 +4956,7 @@ class FeatureLayerCollection(_GISResource):
         description         Optional string. Descriptive text for the uploaded item.
         ===============     ====================================================================
 
-        :returns: A tuple of (Boolean, dict)
+        :return: A tuple of (Boolean, dict)
 
         """
         if (os.path.getsize(path) >> 20) <= 9:

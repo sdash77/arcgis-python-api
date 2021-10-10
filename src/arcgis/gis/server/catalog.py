@@ -104,7 +104,7 @@ class ServicesDirectory(BaseServer):
         key_file=None,
         cert_file=None,
         verify_cert=False,
-        **kwargs
+        **kwargs,
     ):
         """Constructor"""
         super(ServicesDirectory, self)
@@ -143,6 +143,8 @@ class ServicesDirectory(BaseServer):
                 self._con = self._portal_connection._portal.con
             elif hasattr(self._portal_connection, "post"):
                 self._con = self._portal_connection
+        elif self._portal_connection and hasattr(self._portal_connection, "post"):
+            self._con = self._portal_connection
         elif con:
             self._con = con
         else:
@@ -154,7 +156,7 @@ class ServicesDirectory(BaseServer):
                 cert_file=cert_file,
                 portal_connection=self._portal_connection,
                 verify_cert=verify_cert,
-                **kwargs
+                **kwargs,
             )
         self._gis = kwargs.pop("gis", None)
         if self._is_agol == False and self._con._auth.lower() != "anon":
@@ -203,10 +205,7 @@ class ServicesDirectory(BaseServer):
                 data.append(
                     [s["name"].split("/")[-1], """<a href="%s">Service</a>""" % url]
                 )
-        # for service in self.list(folder=folder):
-        # name = os.path.basename(os.path.dirname(service._url))
-        # data.append([name, a_template % (service._url, self._con.token)])
-        # del service
+
         df = pd.DataFrame(data=data, columns=columns)
         if as_html:
             table = (
@@ -239,7 +238,13 @@ class ServicesDirectory(BaseServer):
     # ----------------------------------------------------------------------
     def list(self, folder=None):
         """
-        returns a list of services at the given folder
+        The ``list`` method returns a list of services at the given folder, and can retrieve a variety of services.
+        Examples include a ``Feature Service``, ``Map Service``, ``Vector Tile``, ``Geoprocessing Service``, etc.
+
+        .. note::
+            This method is not to be confused with the :attr:`~arcgis.server.ServerManager.list` method, in the
+            :class:`~arcgis.server.ServerManager` class, which returns an admin service.
+
         """
         services = []
         if folder is None:

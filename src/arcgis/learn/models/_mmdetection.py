@@ -243,7 +243,7 @@ class MMDetection(ModelExtension):
                                     saved.
     =============================   =============================================
 
-    :returns: ``MMDetection`` Object
+    :return: ``MMDetection`` Object
     """
 
     def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
@@ -337,7 +337,7 @@ class MMDetection(ModelExtension):
 
         =====================   ===========================================
 
-        :returns: `MMDetection` Object
+        :return: `MMDetection` Object
         """
         emd_path = _get_emd_path(emd_path)
 
@@ -448,7 +448,7 @@ class MMDetection(ModelExtension):
                                 of the image (of the same size as the model was trained on).
         =====================   ===========================================
 
-        :returns: Returns a tuple with predictions, labels and optionally confidence scores
+        :return: Returns a tuple with predictions, labels and optionally confidence scores
                   if return_scores=True. The predicted bounding boxes are returned as a list
                   of lists containing the  xmin, ymin, width and height of each predicted object
                   in each image. The labels are returned as a list of class values and the
@@ -573,7 +573,7 @@ class MMDetection(ModelExtension):
                                 average precision.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):

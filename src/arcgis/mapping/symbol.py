@@ -1,11 +1,11 @@
 """
 
-Generates Symbol Types
+The ``Symbology`` class generates Symbol Types for the :class:`~arcgis.gis.GIS` object.
 
 """
 import json
 import arcgis
-from arcgis.features import FeatureCollection, FeatureSet, SpatialDataFrame
+from arcgis.features import FeatureCollection, FeatureSet
 from arcgis.gis import GIS
 from arcgis.geometry import _types
 
@@ -359,10 +359,12 @@ def _cmap2rgb(colors, step, alpha=1):
 ###########################################################################
 def display_colormaps(colors=None):
     """
-    Displays a visual colormaps in order to assist users in selecting a color scheme for
-    the data they wish to display on a map, or in a web map.
+    The ``display_colormaps`` method displays a visual colormaps in order to assist users in selecting a color scheme
+    for the data they wish to display on a map, or in a web map.
 
-    This is a variation of http://matplotlib.org/examples/color/colormaps_reference.html
+    .. note::
+        ``display_colormaps is a variation of the
+        `colormaps reference <http://matplotlib.org/examples/color/colormaps_reference.html>`_ page for `matplotlib`.
 
     """
     import numpy as np
@@ -408,7 +410,10 @@ def display_colormaps(colors=None):
 ###########################################################################
 def show_styles(geometry_type):
     """
-    Returns the available styles for a given geometry type as a Pandas dataframe
+    The ``show_styles`` method retrieves the available styles for a given geometry type as a Pandas dataframe.
+
+    :return:
+        A Pandas Dataframe
     """
     import pandas as pd
 
@@ -430,19 +435,21 @@ def create_symbol(
     geometry_type, symbol_type=None, symbol_style=None, colors=None, **kwargs
 ):
     """
-    Generates a Symbol from a given set of Paramters
+    The ``create_symbol`` method generates a Symbol from a given set of parameters.
 
-    This method creates either a Picture, Text, Cartographic, or Simple Symbol
-    based on a given set of parameters.  Each symbol type has a specific set of
-    parameters that are excepted.  There is a simplified input definition similar
-    to matplotlib.
+    ``creat_symbol`` creates either a ``Picture``, ``Text``, ``Cartographic``, or ``Simple Symbol``
+    based on a given set of parameters.
+
+    .. note::
+        Each symbol type has a specific set of
+        parameters that are excepted.  There is a simplified input definition similar to `matplotlib`.
 
 
     =======================  =========================================================
     **Required Argument**    **Description**
     -----------------------  ---------------------------------------------------------
-    geometry_type            required string.  This can be point, line, polygon, or
-                             multipoint.  It helps to ensure that the symbol created
+    geometry_type            required string.  This can be ``point``, ``line``, ``polygon``, or
+                             ``multipoint``. It helps to ensure that the symbol created
                              will be supported by that geometry type.
     =======================  =========================================================
 
@@ -699,7 +706,7 @@ def create_symbol(
     miter_limit           Optional string. Size threshold for showing mitered line joins.
     ====================  =========================================================
 
-    :returns: Dictionary
+    :return: Dictionary
 
     """
     import numpy as np

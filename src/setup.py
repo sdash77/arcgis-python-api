@@ -47,19 +47,24 @@ if conda_install_mode:
     dependencies = []
 else:
     dependencies = [
+        "urllib3 >=1.25.10,<1.26.0",
+        "cachetools",
         "six",
+        "lxml",
+        "cryptography",
         "ipywidgets >=7",
         "widgetsnbextension >=3",
         "pandas >=1",
         "numpy >=1.16.2",
         "matplotlib",
-        "keyring >=19",
+        "keyring >=19,<=21.8.*",
         "lerc",
         "ujson >=3",
         "jupyterlab",
         "python-certifi-win32",
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
+        "geomet",
         "requests",
         "requests-oauthlib",
         "requests_toolbelt",
@@ -67,7 +72,7 @@ else:
         'requests-negotiate-sspi;platform_system=="Windows"',
         'requests-kerberos;platform_system=="Windows"',
         'winkerberos;platform_system=="Windows"',
-        #'arcgis_auth'
+        "requests-gssapi",
     ]
 
 
@@ -199,7 +204,7 @@ kwargs = {
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    "version": "1.9.1",
+    "version": "2.0.0",
     "description": "ArcGIS API for Python",
     "long_description": long_description,
     "long_description_content_type": "text/markdown",

@@ -1177,6 +1177,7 @@ class _DeepCloner:
         Keyword arguments:
         item - The arcgis.GIS.Item to get the definition for.
         """
+        from arcgis._impl.common._itemdef import _TileItemDefinition
         from arcgis.gis.clone import (
             clone_registry,
             BaseCloneDefinition,
@@ -1239,6 +1240,20 @@ class _DeepCloner:
                     source_url=source_url,
                     preserve_item_id=self._preserve_item_id,
                 )
+        elif item["type"] == "Map Service" and _TileItemDefinition.is_tileservice(item):
+            return _TileItemDefinition(
+                target=self.target,
+                clone_mapping=self._clone_mapping,
+                info=dict(item),
+                data=item.get_data(),
+                sharing=None,
+                portal_item=item,
+                folder=self.folder,
+                item_extent=self._item_extent,
+                search_existing=self._search_existing_items,
+                owner=self.owner,
+                preserve_item_id=self._preserve_item_id,
+            )
         elif item["type"] == "Web Mapping Application":
             app_json = None
             source_app_title = None
@@ -1609,8 +1624,8 @@ class CloneNode:
     def add_child(self, node):
         """
         Adds a child node to this node
+
         :param node: <Node> The child node to add
-        :return:
         """
         if node is not None:
             self._children.add(node)
@@ -1620,8 +1635,8 @@ class CloneNode:
     def add_parent(self, node):
         """
         Adds a parent node to this node
+
         :param node: <Node> The parent node to add
-        :return:
         """
         self._parents.add(node)
         if self not in node.children:
@@ -1630,7 +1645,6 @@ class CloneNode:
     def clone(self):
         """
         The method that sub-classes can override to do whatever they need to do
-        :return:
         """
         self._resolved = True
 
@@ -4057,6 +4071,7 @@ class _OperationViewDefintion(_TextItemDefinition):
         """
         Injects the new item ids into the operation view json
         :param clone_mapping: The item id mapping dictionary
+
         :return: the updated json/dict
         """
         app_json = self.data
@@ -4090,6 +4105,7 @@ class _OperationViewDefintion(_TextItemDefinition):
         """
         Parses an operation view json/dict at version 1.2 to find all of the webmap ids
         :param data: The json/dict to parse
+
         :return: A list of webmap ids
         """
         webmap_ids = set()
@@ -4105,6 +4121,7 @@ class _OperationViewDefintion(_TextItemDefinition):
         """
         Parses an operation view json/dict at version 1.2 to find all of the webmap ids
         :param data: The json/dict to parse
+
         :return: A list of layer ids
         """
         layer_ids = set()
@@ -4288,6 +4305,7 @@ class _DashboardDefinition(_TextItemDefinition):
         """
         Parses a dashboard based on version to return the list of webmap ids
         :param data: The json/dict to parse
+
         :return: A list of webmap ids
         """
         if "version" in data:

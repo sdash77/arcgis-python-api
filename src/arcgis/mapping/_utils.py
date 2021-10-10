@@ -27,21 +27,24 @@ def export_map(
     web_map_as_json=None, format="""PDF""", layout_template="""MAP_ONLY""", gis=None
 ):
     """
-    This function takes the state of the web map (for example, included services, layer visibility
+    The ``export_map`` function takes the state of the ``WebMap`` object (for example, included services, layer visibility
     settings, client-side graphics, and so forth) and returns either (a) a page layout or
     (b) a map without page surrounds of the specified area of interest in raster or vector format.
     The input for this function is a piece of text in JavaScript object notation (JSON) format describing the layers,
     graphics, and other settings in the web map. The JSON must be structured according to the WebMap specification
-    in the ArcGIS Help. This tool is shipped with ArcGIS Server to support web services for printing, including the
-    preconfigured service named PrintingTools.
+    in the ArcGIS Help.
 
-    Parameters:
+    .. note::
+        The ``export_map`` tool is shipped with ArcGIS Server to support web services for printing, including the
+        preconfigured service named ``PrintingTools``.
+
+
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    web_map_as_json        Web Map JSON along with export options. See
-                           https://developers.arcgis.com/rest/services-reference/exportwebmap-specification.htm
-                           to understand how to structure this JSON
+    web_map_as_json        Web Map JSON along with export options. See the
+                           `Export Web Map Specifications <https://developers.arcgis.com/rest/services-reference/exportwebmap-specification.htm>`_
+                           for more information on structuring this JSON.
     ------------------     --------------------------------------------------------------------
     format                 Format (str). Optional parameter.  The format in which the map image
                            for printing will be delivered. The following strings are accepted.
@@ -64,7 +67,7 @@ def export_map(
     ==================     ====================================================================
 
     Returns:
-        Dictionary with URL to download the output file.
+        A dictionary with URL to download the output file.
     """
 
     from arcgis.geoprocessing import DataFile
@@ -107,18 +110,31 @@ export_map.__annotations__ = {
 def get_layout_templates(gis=None):
     """
 
+    The ``get_layout_templates`` method returns the content of the :class:`~arcgis.gis.GIS` object's layout templates.
 
-    This function returns the content of the GIS's layout templates formatted as dict.
+    .. note::
+        The layout templates are formatted as a dictionary.
 
-    Parameters:
+    .. note::
+        See the
+        `Get Layout Templates Info Task <https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilities/PrintingTools_GPServer/Utilities_PrintingTools/GetLayoutTemplatesInfo.htm>`_
+        for additional help on the ``get_layout_templates`` method.
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS` object. The ``GIS`` on which ``get_layout_templates`` runs.
+
+                           .. note::
+                            If ``gis`` is not specified, the active GIS is used.
+
+    ==================     ====================================================================
 
     Returns:
-       output_json - layout templates as Python dict
+       ``output_json`` - The layout templates as Python dictionary
 
-    See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilities/PrintingTools_GPServer/Utilities_PrintingTools/GetLayoutTemplatesInfo.htm for additional help.
+
     """
     from arcgis.geoprocessing import DataFile
     from arcgis.geoprocessing._support import _execute_gp_tool

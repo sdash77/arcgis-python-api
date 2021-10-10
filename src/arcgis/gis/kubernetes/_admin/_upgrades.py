@@ -30,7 +30,7 @@ class UpgradeManager(_BaseKube):
         """
         Returns the transaction history for all upgrade and rollback jobs.
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
         """
         url = f"{self._url}/history"
         params = {
@@ -43,7 +43,7 @@ class UpgradeManager(_BaseKube):
         """
         Returns a cumulative list of patches and releases that are installed in the deployment
 
-        :returns: List[Dict[str, Any]]
+        :return: List[Dict[str, Any]]
         """
         url = f"{self._url}/installed"
         params = {
@@ -58,7 +58,7 @@ class UpgradeManager(_BaseKube):
         on the patch that is installed. The ID for the specific rollback
         version is passed as input for the `rollback` operation.
 
-        :returns: List[Dict[str, Any]]
+        :return: List[Dict[str, Any]]
         """
         url = f"{self._url}/checkRollback"
         params = {
@@ -105,7 +105,7 @@ class UpgradeManager(_BaseKube):
         release and patch versions that have been made available to an
         ArcGIS Enterprise organization.
 
-        :returns: Dict[str, List]
+        :return: Dict[str, List]
         """
         url = f"{self._url}/available"
         params = {

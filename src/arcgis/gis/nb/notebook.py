@@ -20,6 +20,7 @@ class NotebookServer(object):
     Provides access to the ArcGIS Notebook Server administration API.
     """
 
+    _da = None
     _gis = None
     _url = None
     _properties = None
@@ -69,11 +70,22 @@ class NotebookServer(object):
 
     # ----------------------------------------------------------------------
     @property
+    def data_access(self) -> "NotebookDataAccess":
+        """Provides access to managing files stored on notebook server."""
+        if self._da is None:
+            from ._dataaccess import NotebookDataAccess
+
+            url = self._url + "/dataaccess"
+            self._da = NotebookDataAccess(url, self._gis)
+        return self._da
+
+    # ----------------------------------------------------------------------
+    @property
     def version(self):
         """
         Returns the notebook server version
 
-        :returns: List
+        :return: List
         """
         if self._version is None:
             self._version = [int(i) for i in self.properties.version.split(".")]
@@ -85,7 +97,7 @@ class NotebookServer(object):
         """
         Provides access to the notebook server's site management operations
 
-        :returns: :class:`~arcgis.gis.nb.SiteManager`
+        :return: :class:`~arcgis.gis.nb.SiteManager`
         """
         if self._sitemanager is None:
             from ._site import SiteManager
@@ -99,7 +111,7 @@ class NotebookServer(object):
         """
         Returns information about the server site itself
 
-        :returns: PropertyMap
+        :return: PropertyMap
 
         """
         url = self._url + "/info"
@@ -118,7 +130,7 @@ class NotebookServer(object):
 
         **This is only avaible if the site can be accessed around the web adapter**
 
-        :returns: boolean
+        :return: boolean
 
         """
         netloc = urlparse(self._url).netloc
@@ -135,7 +147,7 @@ class NotebookServer(object):
         """
         Provides access to the notebook server's logging system
 
-        :returns: :class:`~arcgis.gis.nb.LogManager`
+        :return: :class:`~arcgis.gis.nb.LogManager`
 
         """
         if self._logs is None:
@@ -164,7 +176,7 @@ class NotebookServer(object):
         Provides access to managing the registered machines with ArcGIS
         Notebook Server
 
-        :returns: :class:`~arcgis.gis.nb.MachineManager`
+        :return: :class:`~arcgis.gis.nb.MachineManager`
 
         """
         if self._machine is None:

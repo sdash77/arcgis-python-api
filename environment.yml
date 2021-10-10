@@ -13,7 +13,7 @@ dependencies:
 - python>=3.7, <3.9
 - setuptools
 - widgetsnbextension >=3
-- keyring
+- keyring>19, <21.8.0
 - keyrings.alt
 - nbconvert
 - beautifulsoup4
@@ -42,7 +42,10 @@ dependencies:
   - pytest-blockage
   - junit2html
   - coverage
+  - geomet
   - pytest-cov
   - requests_toolbelt>=0.9.1
   - requests_ntlm
   - python-certifi-win32
+  - cachetools
+  - black

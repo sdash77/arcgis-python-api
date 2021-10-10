@@ -189,7 +189,7 @@ class MaskRCNN(ArcGISModel):
                                     Default: 0.25
     =============================   =============================================
 
-    :returns: ``MaskRCNN`` Object
+    :return: ``MaskRCNN`` Object
     """
 
     def __init__(
@@ -313,7 +313,7 @@ class MaskRCNN(ArcGISModel):
                 in_features_mask, hidden_layer, data.c
             )
 
-        if not _isnotebook() and arcgis_os.name == "posix":
+        if not _isnotebook():
             _set_ddp_multigpu(self)
             if self._multigpu_training:
                 self.learn = Learner(
@@ -403,7 +403,7 @@ class MaskRCNN(ArcGISModel):
 
         =====================   ===========================================
 
-        :returns: `MaskRCNN` Object
+        :return: `MaskRCNN` Object
         """
 
         emd_path = _get_emd_path(emd_path)
@@ -752,7 +752,7 @@ class MaskRCNN(ArcGISModel):
                                 average precision otherwise returns mean
                                 average precision.
         =====================   ===========================================
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
         if mean:

@@ -1089,7 +1089,7 @@ def edit_vehicle_routing_problem(
                                              `False` - The solve operation will fail when any invalid orders are encountered. An invalid order is an order that the VRP solver can't reach. An order may be unreachable for a variety of reasons, including if it's located on a prohibited network element, it isn't located on the network at all, or it's located on a disconnected portion of the network.
     ====================================     ====================================================================
 
-    :returns: Named Tuple
+    :return: Named Tuple
 
     """
     if travel_mode is None:
@@ -1102,7 +1102,7 @@ def edit_vehicle_routing_problem(
     if isinstance(travel_mode, str):
         travel_mode = _utils.find_travel_mode(gis=gis, travel_mode=travel_mode)
     elif isinstance(travel_mode, dict):
-        params["travel_mode"] = json.dumps(travel_mode)
+        params["travel_mode"] = travel_mode
     else:
         travel_mode = _utils.find_travel_mode(
             gis=gis, travel_mode=_utils.default_travel_mode(gis=gis)

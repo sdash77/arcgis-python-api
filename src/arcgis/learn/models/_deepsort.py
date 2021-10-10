@@ -12,7 +12,6 @@ try:
     import torch
     import cv2
     import numpy as np
-    from PIL import Image
     import matplotlib.pyplot as plt
     from numpy import mod
     from torch import resize_as_
@@ -64,7 +63,7 @@ class DeepSort(ArcGISModel):
                             DeepSort only supports image size of (3, 128, 64)
     =====================   ===========================================
 
-    :returns: `DeepSort` Object
+    :return: `DeepSort` Object
     """
 
     # TODO: kwargs description
@@ -158,7 +157,7 @@ class DeepSort(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        return ["reid_v1, reid_v2"]
+        return ["reid_v1", "reid_v2"]
 
     @property
     def supported_backbones(self):
@@ -176,6 +175,11 @@ class DeepSort(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
         """
         self._check_requisites()
+        from fastai.basic_data import DatasetType
+
+        if self.learn.dl(DatasetType.Valid).batch_size > len(self.learn.data.valid_ds):
+            rows = min(rows, len(self.learn.data.valid_ds))
+
         self.learn.show_results(rows=rows)
         if _IS_ARCGISPRONOTEBOOK:
             plt.show()
@@ -203,9 +207,37 @@ class DeepSort(ArcGISModel):
 
         return _emd_template
 
+    def plot_confusion_matrix(self, **kwargs):
+        self._check_requisites()
+        from fastai.vision.learner import _cl_int_from_learner
+        from fastai.vision.learner import ClassificationInterpretation
+
+        import copy
+
+        learn_temp = copy.copy(self.learn)
+
+        # Reassigning the function from vision.learner because fastai sets it from tabular.learner
+        ClassificationInterpretation.from_learner = _cl_int_from_learner
+        interp = ClassificationInterpretation.from_learner(learn_temp)
+
+        nrows = self._data.c
+        # figsize range: 4 <= (no. of classes + 15)/4 <=20
+        fs = min(max(4, (nrows + 15) / 4), 20)
+        interp.plot_confusion_matrix(figsize=(fs, fs))
+
+    def _save_confusion_matrix(self, path):
+        from IPython.utils import io
+
+        with io.capture_output() as captured:
+            self.plot_confusion_matrix()
+            plt.savefig(os.path.join(path, "confusion_matrix.png"))
+            plt.close()
+
     @property
     def _model_metrics(self):
-        return {}
+        return {
+            # "accuracy": self.batch_accuracy(show_progress=True)
+        }
 
     # TODO: option to pass infer-config
     @classmethod
@@ -224,7 +256,7 @@ class DeepSort(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `DeepSort` Object
+        :return: `DeepSort` Object
         """
 
         if not HAS_FASTAI:
@@ -306,7 +338,7 @@ class DeepSort(ArcGISModel):
                                 corresponding to the detections.
         =====================   ===========================================
 
-        :returns: Track list
+        :return: Track list
         """
         if detections is None:
             detections = []
@@ -393,7 +425,7 @@ class DeepSort(ArcGISModel):
                                 corresponding to the detections.
         =====================   ===========================================
 
-        :returns: Track list
+        :return: Track list
         """
         self.track_list = []
         self._update_interval = kwargs.get("update_interval", self._update_interval)
@@ -437,7 +469,7 @@ class DeepSort(ArcGISModel):
                                 from the track list.
         =====================   ===========================================
 
-        :returns: Updated track list
+        :return: Updated track list
         """
         try:
             for track_id in track_ids:

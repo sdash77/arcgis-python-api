@@ -47,7 +47,7 @@ class ChangeDetector(ArcGISModel):
                             saved.
     =====================   ===========================================
 
-    :returns: ``ChangeDetector`` object
+    :return: ``ChangeDetector`` object
     """
 
     def __init__(
@@ -102,7 +102,7 @@ class ChangeDetector(ArcGISModel):
 
     @staticmethod
     def _supported_datasets():
-        return ["ChangeDetection"]
+        return ["ChangeDetection", "Classified_Tiles"]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -122,7 +122,7 @@ class ChangeDetector(ArcGISModel):
                                 None for inferencing.
         =====================   ===========================================
 
-        :returns: ``ChangeDetector`` Object
+        :return: ``ChangeDetector`` Object
         """
         emd_path = _get_emd_path(emd_path)
         emd_path = Path(emd_path)
@@ -151,10 +151,29 @@ class ChangeDetector(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {"model": self._get_model_metrics()}
+        metrics = self._get_model_metrics()
+        return {
+            "precision": float(metrics[0]),
+            "recall": float(metrics[1]),
+            "f1": float(metrics[2]),
+        }
 
     def _get_model_metrics(self, **kwargs):
-        return float(0.0)
+        checkpoint = getattr(self, "_is_checkpointed", False)
+        if not hasattr(self.learn, "recorder"):
+            return [0.0, 0.0, 0.0]
+
+        if len(self.learn.recorder.metrics) == 0:
+            return [0.0, 0.0, 0.0]
+
+        model_accuracy = self.learn.recorder.metrics[-1]
+        if checkpoint:
+            val_losses = self.learn.recorder.val_losses
+            model_accuracy = self.learn.recorder.metrics[
+                self.learn._best_epoch  # index using best epoch.
+            ]
+
+        return model_accuracy
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {"DataAttributes": {}, "ModelParameters": {}}
@@ -274,7 +293,7 @@ class ChangeDetector(ArcGISModel):
                                 prediction file on the disk. Default False.
         =====================   ===========================================
 
-        :returns: PyTorch Tensor of the change mask.
+        :return: PyTorch Tensor of the change mask.
         """
         from .._utils.change_detection_data import predict
 
