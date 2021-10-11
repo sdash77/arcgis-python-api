@@ -731,8 +731,9 @@ def to_featureclass(
         if not isinstance(col, str):
             df.rename(columns={col: str(col)}, inplace=True)
             col = str(col)
-
-    if HASARCPY:
+    # CHANGE BACK AFTER
+    x = 1
+    if x == 0:
         try:
             # 1. Create the Save Feature Class
             #
@@ -1013,6 +1014,7 @@ def _pyshp2(df, out_path, out_name):
             "Polyline": shapefile.POLYLINE,
             "null": shapefile.NULL,
         }
+
         if os.path.isdir(out_path) == False:
             os.makedirs(out_path)
         out_fc = os.path.join(out_path, out_name)
@@ -1028,6 +1030,8 @@ def _pyshp2(df, out_path, out_name):
         shpfile = shapefile.Writer(
             target=out_fc, shapeType=GEOMTYPELOOKUP[geom_type], autoBalance=True
         )
+
+        # Start writing to shapefile
         dfields = []
         cfields = []
         for c in df.columns:
@@ -1035,6 +1039,9 @@ def _pyshp2(df, out_path, out_name):
             if idx > -1:
                 if isinstance(df[c].loc[idx], Geometry):
                     geom_field = (c, "GEOMETRY")
+                    geom_column = c
+                    # Since geometry is present, handle None type geometry occurrence
+                    query_index = _handle_none_type_geometry(df, geom_type, geom_column)
                 else:
                     cfields.append(c)
                     if isinstance(df[c].loc[idx], (str)):
@@ -1055,8 +1062,9 @@ def _pyshp2(df, out_path, out_name):
                         shpfile.field(name=c, fieldType="L", size=1)
             del c
             del idx
+
         for idx, row in df.iterrows():
-            geom = row[df.spatial._name]
+            geom = row[df.spatial.name]
             if geom.type == "Polygon":
                 shpfile.poly(geom["rings"])
             elif geom.type == "Polyline":
@@ -1103,9 +1111,35 @@ def _pyshp2(df, out_path, out_name):
             # Unable to write PRJ file.
             pass
 
+        # Change back null columns to None
+        for q in query_index:
+            df.loc[q][geom_column] = None
+
         del shpfile
         return out_fc
     return None
+
+
+def _handle_none_type_geometry(df, geom_type, geom_column):
+    # Handle none type geometry occurrence
+
+    # bool to see if empty
+    query = df[geom_column].isnull()
+    df_view = df[query]
+    empty = df_view.empty
+
+    if empty is False:
+        for idx, row in df_view.iterrows():
+            if df.loc[idx][geom_column] is None:
+                if geom_type == "Point":
+                    df.loc[idx][geom_column] = Geometry(
+                        {"x": None, "y": None, "spatialReference": df.spatial.sr,}
+                    )
+                elif geom_type == "Poyline":
+                    df.loc[idx][geom_column] = Geometry({"paths": []}).WKT
+                elif geom_type == "Polygon":
+                    df.loc[idx][geom_column] = Geometry({"rings": []}).WKT
+    return query  # USE TO CHANGE BACK TO NONE
 
 
 def _sanitize_column_names(

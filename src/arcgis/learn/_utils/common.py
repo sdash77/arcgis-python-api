@@ -8,6 +8,8 @@ import tempfile
 from pathlib import Path
 
 HAS_FASTAI = False
+import fastai
+
 try:
     from .env import (
         raise_fastai_import_error,
