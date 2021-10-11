@@ -592,7 +592,7 @@ class RouteLayer(NetworkLayer):
         if future:
             f = self._run_async(
                 self._con.post,
-                **{"path": url, "postdata": params, "token": self._gis._con.token},
+                **{"path": url, "postdata": params},
             )
             return NAJob(future=f, task="RouteLayer Solve")
         return self._con.post(path=url, postdata=params)  # ,
@@ -904,7 +904,7 @@ class ServiceAreaLayer(NetworkLayer):
         if future:
             f = self._run_async(
                 self._con.post,
-                **{"path": url, "postdata": params, "token": self._gis._con.token},
+                **{"path": url, "postdata": params},
             )
             return NAJob(future=f, task="Solve Service Area")
         return self._con.post(path=url, postdata=params)

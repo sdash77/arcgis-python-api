@@ -23,15 +23,16 @@ import sphinx_rtd_theme
 # -----------------------------------------------------------------------
 
 # Bump year if it is out of date
-copyright = "2016-2021, Esri"
+copyright = "2016-2022, Esri"
 
 # Bump both versions. The short X.Y version.
-version = "1.9.1"
+version = "2.0.0"
 # The full version, including alpha/beta/rc tags.
-release = "1.9.1"
+release = "2.0.0"
 
 # Add currently public version to this list - this is needed for the picker UI
 versions = [
+    "1.9.1",
     "1.9.0",
     "1.8.5",
     "1.8.4",

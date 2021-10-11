@@ -26,6 +26,7 @@ from .managers import (
 from .feature import Feature, FeatureSet
 from arcgis.geometry import SpatialReference
 from arcgis.gis import Layer, _GISResource
+from typing import Dict, Any
 
 
 class FeatureLayer(Layer):
@@ -2479,6 +2480,23 @@ class FeatureLayer(Layer):
             executor.shutdown(False)
             return future
 
+    @property
+    def estimates(self) -> Dict[str, Any]:
+        """
+        Returns up-to-date approximations of layer information, such as row count
+        and extent. Layers that support the `estimates` will include an
+        `infoInEstimates` information in the `properties`.
+
+        :returns: Dict[str, Any]
+
+        """
+
+        if "infoInEstimates" in self.properties:
+            url = self._url + "/getEstimates"
+            params = {"f": "json"}
+            return self._con.get(url, params)
+        return {}
+
     # ----------------------------------------------------------------------
     def _status_via_url(self, con, url, params):
         """
@@ -2828,9 +2846,7 @@ class FeatureLayer(Layer):
         except Exception as e:
             if str(e).lower().find("Invalid Token".lower()) > -1:
                 params.pop("token", None)
-                return self._con.post_multipart(
-                    path=edit_url, postdata=params, add_token=False
-                )
+                return self._con.post_multipart(path=edit_url, postdata=params)
             else:
                 raise
 
@@ -2979,15 +2995,10 @@ class FeatureLayer(Layer):
     def _query(self, url, params, raw=False, **kwargs):
         """returns results of query"""
         try:
-            if "add_token" in kwargs:
-                result = self._con.post(
-                    path=url, postdata=params, add_token=kwargs.get("add_token", True)
-                )
-            else:
-                result = self._con.post(
-                    path=url,
-                    postdata=params,
-                )
+            result = self._con.post(
+                path=url,
+                postdata=params,
+            )
         except Exception as queryException:
             error_list = [
                 "Error performing query operation",
@@ -2995,7 +3006,7 @@ class FeatureLayer(Layer):
             ]
             if queryException.args[0].lower().find("invalid token") > -1:
                 params.pop("token", None)
-                return self._query(url, params, raw=False, add_token=False)
+                return self._query(url, params, raw=False)
             elif any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
                 max_record = (
@@ -3122,13 +3133,7 @@ class FeatureLayer(Layer):
 
         # ------------------------------------------------------------------
         try:
-            if "add_token" in kwargs:
-
-                featureset_dict = self._con.post(
-                    url, params, add_token=kwargs.get("add_token", True)
-                )
-            else:
-                featureset_dict = self._con.post(url, params)
+            featureset_dict = self._con.post(url, params)
         except Exception as queryException:
             error_list = [
                 "Error performing query operation",
@@ -3136,7 +3141,7 @@ class FeatureLayer(Layer):
             ]
             if queryException.args[0].lower().find("invalid token") > -1:
                 params.pop("token", None)
-                return self._query_df(url, params, raw=False, add_token=False)
+                return self._query_df(url, params, raw=False)
             if any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
                 max_record = (
