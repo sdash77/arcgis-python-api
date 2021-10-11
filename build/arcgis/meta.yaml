@@ -33,6 +33,9 @@ requirements:
   - pywin32-security [win]
   - lerc
   - winkerberos      [win]
+  - cryptography
+  - lxml
+  - certifi
   run:
   - python
   - six
@@ -56,6 +59,9 @@ requirements:
   - lerc
   - winkerberos      [win]
   - python-certifi-win32 [win]
+  - cryptography
+  - lxml
+  - certifi
 source:
   path: ../../src
 test:

@@ -661,10 +661,10 @@ def zonal_statistics(
     percentile_interpolation_type="AUTO_DETECT",
 ):
 
-    """"
+    """
     Calculates statistics on values of a raster within the zones of another dataset.
-    For more information,
-    http://pro.arcgis.com/en/pro-app/help/data/imagery/zonal-statistics-global-function.htm
+    For more information see,
+     https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/zonal-statistics-global-function.htm
 
     Parameters
     ----------
@@ -683,7 +683,7 @@ def zonal_statistics(
                             Raster, it is deemed that there is insufficient information to perform \
                             statistical calculations for all the pixels in that zone; therefore, the \
                             entire zone will receive the NoData value on the output raster.
-    :param statistics_type: Optional str. Statistic type to be calculated. Default is MEAN
+    :param statistics_type: Optional string. Statistic type to be calculated. Default is MEAN
 
                             - MEAN-Calculates the average of all pixels in the Value Raster that belong to \
                             the same zone as the output pixel.
@@ -729,8 +729,8 @@ def zonal_statistics(
                              
                              This parameter is honoured only available if the statistics_type parameter is 
                              set to PERCENTILE.
-    :param percentile_interpolation_type: Optional str. Determines the type of percentile interpolation type when the 
-                                          number of values from the input value raster to be calculated are even.
+    :param percentile_interpolation_type: Optional string. Specifies the method of interpolation to be used when the 
+                                          specified percentile value lies between two input cell values.
                                             - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
                                             - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
                                             - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output pixel type is floating point.
@@ -1270,7 +1270,7 @@ def flow_direction(
                                          output_flow_direction_service and output_drop_service.
     ================================     ====================================================================
 
-    :returns: output raster with function applied
+    :return: output raster with function applied
 
     .. code-block:: python
 
@@ -4419,7 +4419,7 @@ def boundary_clean(input_raster, sort_type="NO_SORT", number_of_runs="TWO_WAY"):
                                            once, according to the sorting type.
     ================================     ====================================================================
 
-    :returns: output raster with function applied
+    :return: output raster with function applied
 
     .. code-block:: python
 
@@ -4637,7 +4637,7 @@ def viewshed(
                                          input_observer_features.
     ================================     ====================================================================
 
-    :returns: output raster with function applied
+    :return: output raster with function applied
 
     """
     layer1, input_raster, raster_ra1 = _raster_input(input_raster)

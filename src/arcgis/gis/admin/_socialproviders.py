@@ -16,7 +16,7 @@ class SocialProviders(object):
     value               Required GIS.  This is an administrator connection to a GIS site.
     ===============     ====================================================================
 
-    :returns: SocialProviders class
+    :return: SocialProviders class
 
     """
 
@@ -101,41 +101,7 @@ class SocialProviders(object):
     @configuration.setter
     def configuration(self, value):
         """
-        Gets/Sets for the Social Providers on the GIS
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        value               Optional dict or None.  If the value is None, the social provider
-                            configuration is deleted.  If the value is a dictionary, a social
-                            provider is setup on the site or updated.
-        ===============     ====================================================================
-
-
-        *Key:Value Dictionary Options for value Argument*
-
-        =====================  =====================================================================
-        **Key**                **Value**
-        ---------------------  ---------------------------------------------------------------------
-        signUpMode             optional string. Invitation or Automatic.
-        ---------------------  ---------------------------------------------------------------------
-        providers              required string. This is a list of strings seperated by a comma. The
-                               allowed values are: facebook and google
-        ---------------------  ---------------------------------------------------------------------
-        role                   optional string. This is the default role setup when users login to
-                               a GIS.
-        ---------------------  ---------------------------------------------------------------------
-        level                  optional integer.  This is the default level set when a social
-                               provider user logins.
-        ---------------------  ---------------------------------------------------------------------
-        userCreditAssignment   optional integer. The default is -1, which means infinite credit
-                               usage. The
-        ---------------------  ---------------------------------------------------------------------
-        groups                 optional string. A comma seperated list of group ids to assign new
-                               users to when they login to using a social provider.
-        ---------------------  ---------------------------------------------------------------------
-        user_type              optional string. A default user license type.
-        =====================  =====================================================================
+        See main ``configuration`` property docstring
         """
         if value is None:
             url = "%s%s" % (self._url, "/remove")

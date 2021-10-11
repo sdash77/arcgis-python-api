@@ -17,7 +17,7 @@ from arcgis._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "1.9.1"
+__version__ = "2.0.0"
 
 _log = logging.getLogger(__name__)
 
@@ -55,6 +55,7 @@ class KbertnetesPy(object):
         client_secret = kwargs.get("client_secret", None)
         trust_env = kwargs.get("trust_env", None)
         self._timeout = kwargs.pop("timeout", 600)
+        custom_adapter = kwargs.pop("custom_adapter", None)
         url = url.strip()  # be permissive in accepting home app urls
         homepos = url.find("/home")
         if homepos != -1:
@@ -132,6 +133,7 @@ class KbertnetesPy(object):
                     token=token,
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
                 )
             else:
                 self.con = Connection(
@@ -154,6 +156,7 @@ class KbertnetesPy(object):
                     token=token,
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -324,7 +327,7 @@ class KbertnetesPy(object):
         group_id      required string, The group id to remove the thumbnail for.
         ============  ======================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = f"community/groups/{group_id}/deleteThumbnail"

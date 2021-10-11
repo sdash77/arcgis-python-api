@@ -24,7 +24,7 @@ def _estimate_credits(task, parameters, gis=None):
     gis                         Optional GIS.  The enterprise connection object.
     =======================     ====================================================================
 
-    :returns: float
+    :return: Float value indicating the maximum cost
 
     """
 

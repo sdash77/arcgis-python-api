@@ -32,244 +32,254 @@ def find_existing_locations(
     future=False,
 ):
     """
-    .. image:: _static/images/find_existing_locations/find_existing_locations.png
+        .. image:: _static/images/find_existing_locations/find_existing_locations.png
 
-    .. |intersect| image:: _static/images/derive_new_locations/intersect.png
-    .. |distance| image:: _static/images/derive_new_locations/distance.png
-    .. |within| image:: _static/images/derive_new_locations/within.png
-    .. |nearest| image:: _static/images/derive_new_locations/nearest.png
-    .. |contains| image:: _static/images/derive_new_locations/contains.png
+        .. |intersect| image:: _static/images/derive_new_locations/intersect.png
+        .. |distance| image:: _static/images/derive_new_locations/distance.png
+        .. |within| image:: _static/images/derive_new_locations/within.png
+        .. |nearest| image:: _static/images/derive_new_locations/nearest.png
+        .. |contains| image:: _static/images/derive_new_locations/contains.png
 
-    The ``find_existing_locations`` method selects features in the input layer that meet a query you specify.
-    A query is made up of one or more expressions. There are two types of expressions: attribute and spatial.
-    An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT').
-    An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
+        The ``find_existing_locations`` method selects features in the input layer that meet a query you specify.
+        A query is made up of one or more expressions. There are two types of expressions: attribute and spatial.
+        An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT').
+        An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
 
-    =====================================    ======================================================================================================
-    **Argument**                             **Description**
-    -------------------------------------    ------------------------------------------------------------------------------------------------------
-    input_layers                             Required list of feature layers. A list of layers that will be used in the expressions parameter.
-                                             Each layer in the list can be:
+        =====================================    ======================================================================================================
+        **Argument**                             **Description**
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        input_layers                             Required list of feature layers. A list of layers that will be used in the expressions parameter.
+                                                 Each layer in the list can be:
 
-                                             * a feature service layer with an optional filter to select specific features, or
-                                             * a feature collection
+                                                 * a feature service layer with an optional filter to select specific features, or
+                                                 * a feature collection
 
-                                             See :ref:`Feature Input<FeatureInput>`.
-    -------------------------------------    ------------------------------------------------------------------------------------------------------
-    expressions                              Required dict. There are two types of expressions, attribute and spatial.
+                                                 See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        expressions                              Required dict. There are two types of expressions, attribute and spatial.
 
-                                             Example attribute expression:
+                                                 Example attribute expression:
 
-                                             {
-                                                "operator": "and",
-                                                "layer": 0,
-                                                "where": "STATUS = 'VACANT'"
-                                             }
+                                                 {
+                                                    "operator": "and",
+                                                    "layer": 0,
+                                                    "where": "STATUS = 'VACANT'"
+                                                 }
 
-                                             **Note**
+                                                 **Note**
 
-                                             * operator can be either ``and`` or ``or``
-                                             * layer is the index of the layer in the ``input_layers`` parameter.
-                                             * The where clause must be surrounded by double quotes.
-                                             * When dealing with text fields, values must be single-quoted ('VACANT').
-                                             * Date fields support all queries except LIKE. Dates are strings in YYYY:MM:DD hh:mm:ss format.
-                                              Here's an example using the date field ObsDate:
+                                                 * operator can be either ``and`` or ``or``
+                                                 * layer is the index of the layer in the ``input_layers`` parameter.
+                                                 * The where clause must be surrounded by double quotes.
+                                                 * When dealing with text fields, values must be single-quoted ('VACANT').
+                                                 * Date fields support all queries except LIKE. Dates are strings in YYYY:MM:DD hh:mm:ss format.
+                                                  Here's an example using the date field ObsDate:
 
-                                              "where": "ObsDate >= '1998-04-30 13:30:00' "
+                                                  "where": "ObsDate >= '1998-04-30 13:30:00' "
 
-                                             +----------+------------------------------------------------------------------+
-                                             | =        | Equal                                                            |
-                                             +----------+------------------------------------------------------------------+
-                                             | >        | Greater than                                                     |
-                                             +----------+------------------------------------------------------------------+
-                                             | <        | Less than                                                        |
-                                             +----------+------------------------------------------------------------------+
-                                             | >=       | Greater than or equal to                                         |
-                                             +----------+------------------------------------------------------------------+
-                                             | <=       | Less than or equal to                                            |
-                                             +----------+------------------------------------------------------------------+
-                                             | <>       | Not equal                                                        |
-                                             +----------+------------------------------------------------------------------+
-                                             | LIKE '%  | A percent symbol (%) signifies a wildcard, meaning that          |
-                                             | <string>'| anything is acceptable in its place-one character, a             |
-                                             |          | hundred characters, or no character. This expression             |
-                                             |          | would select Mississippi and Missouri among USA                  |
-                                             |          | state names: STATE_NAME LIKE 'Miss%'                             |
-                                             +----------+------------------------------------------------------------------+
-                                             | BETWEEN  | Selects a record if it has a value greater than or equal         |
-                                             | <value1> | to <value1> and less than or equal to <value2>.                  |
-                                             | AND      | For example, this expression selects all records with            |
-                                             | <value2> | an HHSIZE value greater than or equal to 3 and less              |
-                                             |          | than or equal to 10:                                             |
-                                             |          |                                                                  |
-                                             |          | HHSIZE BETWEEN 3 AND 10                                          |
-                                             |          |                                                                  |
-                                             |          | The above is equivalent to:                                      |
-                                             |          |                                                                  |
-                                             |          | HHSIZE >= 3 AND HHSIZE <= 10                                     |
-                                             |          | This operator applies to numeric or date fields.                 |
-                                             |          | Here is an example of a date query on the field ObsDate:         |
-                                             |          |                                                                  |
-                                             |          | ObsDate BETWEEN '1998-04-30 00:00:00' AND '1998-04-30 23:59:59'  |
-                                             |          |                                                                  |
-                                             |          | Time is optional.                                                |
-                                             +----------+------------------------------------------------------------------+
-                                             | NOT      | Selects a record if it has a value outside the range between     |
-                                             | BETWEEN  | <value1> and less than or equal to <value2>.                     |
-                                             | <value1> | For example, this expression selects all records whose           |
-                                             | AND      | HHSIZE value is less than 5 and greater than 7.                  |
-                                             | <value2> |                                                                  |
-                                             |          | HHSIZE NOT BETWEEN 5 AND 7                                       |
-                                             |          |                                                                  |
-                                             |          | The above is equivalent to:                                      |
-                                             |          |                                                                  |
-                                             |          | HHSIZE < 5 OR HHSIZE > 7                                         |
-                                             |          | This operator applies to numeric or date fields.                 |
-                                             |          |                                                                  |
-                                             |          | **Note**                                                         |
-                                             |          |                                                                  |
-                                             |          | You can use the contains relationship with points and lines.     |
-                                             |          | For example, you have a layer of street centerlines (lines) and  |
-                                             |          | a layer of manhole covers (points), and you want to find streets |
-                                             |          | that contain a manhole cover. You could use contains to find     |
-                                             |          | streets that contain manhole covers, but in order for a line to  |
-                                             |          | contain a point, the point must be exactly on the line (that is, |
-                                             |          | in GIS terms, they are snapped to each other). If there is any   |
-                                             |          | doubt about this, use the withinDistance relationship with a     |
-                                             |          | suitable distance value.                                         |
-                                             +----------+------------------------------------------------------------------+
+                                                 +----------+------------------------------------------------------------------+
+                                                 | =        | Equal                                                            |
+                                                 +----------+------------------------------------------------------------------+
+                                                 | >        | Greater than                                                     |
+                                                 +----------+------------------------------------------------------------------+
+                                                 | <        | Less than                                                        |
+                                                 +----------+------------------------------------------------------------------+
+                                                 | >=       | Greater than or equal to                                         |
+                                                 +----------+------------------------------------------------------------------+
+                                                 | <=       | Less than or equal to                                            |
+                                                 +----------+------------------------------------------------------------------+
+                                                 | <>       | Not equal                                                        |
+                                                 +----------+------------------------------------------------------------------+
+                                                 | LIKE '%  | A percent symbol (%) signifies a wildcard, meaning that          |
+                                                 | <string>'| anything is acceptable in its place-one character, a             |
+                                                 |          | hundred characters, or no character. This expression             |
+                                                 |          | would select Mississippi and Missouri among USA                  |
+                                                 |          | state names: STATE_NAME LIKE 'Miss%'                             |
+                                                 +----------+------------------------------------------------------------------+
+                                                 | BETWEEN  | Selects a record if it has a value greater than or equal         |
+                                                 | <value1> | to <value1> and less than or equal to <value2>.                  |
+                                                 | AND      | For example, this expression selects all records with            |
+                                                 | <value2> | an HHSIZE value greater than or equal to 3 and less              |
+                                                 |          | than or equal to 10:                                             |
+                                                 |          |                                                                  |
+                                                 |          | HHSIZE BETWEEN 3 AND 10                                          |
+                                                 |          |                                                                  |
+                                                 |          | The above is equivalent to:                                      |
+                                                 |          |                                                                  |
+                                                 |          | HHSIZE >= 3 AND HHSIZE <= 10                                     |
+                                                 |          | This operator applies to numeric or date fields.                 |
+                                                 |          | Here is an example of a date query on the field ObsDate:         |
+                                                 |          |                                                                  |
+                                                 |          | ObsDate BETWEEN '1998-04-30 00:00:00' AND '1998-04-30 23:59:59'  |
+                                                 |          |                                                                  |
+                                                 |          | Time is optional.                                                |
+                                                 +----------+------------------------------------------------------------------+
+                                                 | NOT      | Selects a record if it has a value outside the range between     |
+                                                 | BETWEEN  | <value1> and less than or equal to <value2>.                     |
+                                                 | <value1> | For example, this expression selects all records whose           |
+                                                 | AND      | HHSIZE value is less than 5 and greater than 7.                  |
+                                                 | <value2> |                                                                  |
+                                                 |          | HHSIZE NOT BETWEEN 5 AND 7                                       |
+                                                 |          |                                                                  |
+                                                 |          | The above is equivalent to:                                      |
+                                                 |          |                                                                  |
+                                                 |          | HHSIZE < 5 OR HHSIZE > 7                                         |
+                                                 |          | This operator applies to numeric or date fields.                 |
+                                                 |          |                                                                  |
+                                                 |          | **Note**                                                         |
+                                                 |          |                                                                  |
+                                                 |          | You can use the contains relationship with points and lines.     |
+                                                 |          | For example, you have a layer of street centerlines (lines) and  |
+                                                 |          | a layer of manhole covers (points), and you want to find streets |
+                                                 |          | that contain a manhole cover. You could use contains to find     |
+                                                 |          | streets that contain manhole covers, but in order for a line to  |
+                                                 |          | contain a point, the point must be exactly on the line (that is, |
+                                                 |          | in GIS terms, they are snapped to each other). If there is any   |
+                                                 |          | doubt about this, use the withinDistance relationship with a     |
+                                                 |          | suitable distance value.                                         |
+                                                 +----------+------------------------------------------------------------------+
 
-                                             Example spatial expression:
-                                             {
-                                                "operator": "and",
-                                                "layer": 0,
-                                                "spatialRel": "withinDistance",
-                                                "selectingLayer": 1,
-                                                "distance": 10,
-                                                "units": "miles"
-                                             }
+                                                 Example spatial expression:
+                                                 {
+                                                    "operator": "and",
+                                                    "layer": 0,
+                                                    "spatialRel": "withinDistance",
+                                                    "selectingLayer": 1,
+                                                    "distance": 10,
+                                                    "units": "miles"
+                                                 }
 
-                                             * operator can be either ``and`` or ``or``
-                                             * layer is the index of the layer in ``the input_layers`` parameter. The result of the expression is features in this layer.
-                                             * spatialRel is the spatial relationship. There are nine spatial relationships.
-                                             * distance is the distance to use for the withinDistance and notWithinDistance spatial relationship.
-                                             * units is the units for distance.
+                                                 * operator can be either ``and`` or ``or``
+                                                 * layer is the index of the layer in ``the input_layers`` parameter. The result of the expression is features in this layer.
+                                                 * spatialRel is the spatial relationship. There are nine spatial relationships.
+                                                 * distance is the distance to use for the withinDistance and notWithinDistance spatial relationship.
+                                                 * units is the units for distance.
 
-                                             +-------------------+----------------------------------------------------------------------------------------+
-                                             | spatialRel        | Description                                                                            |
-                                             +-------------------+----------------------------------------------------------------------------------------+
-                                             | intersects        | |intersect|                                                                            |
-                                             |                   |                                                                                        |
-                                             |                   | A feature in layer passes the intersect test if it overlaps                            |
-                                             | notIntersects     | any part of a feature in selectingLayer, including touches                             |
-                                             |                   | (where features share a common point).                                                 |
-                                             |                   |                                                                                        |
-                                             |                   | * intersects-If a feature in layer intersects a feature in                             |
-                                             |                   |   selectingLayer, the portion of the feature in layer that                             |
-                                             |                   |   intersects the feature in selectingLayer is included in                              |
-                                             |                   |   the output.                                                                          |
-                                             |                   | * notintersects-If a feature in layer intersects a feature in                          |
-                                             |                   |   selectingLayer, the portion of the feature in layer that                             |
-                                             |                   |   intersects the feature in selectingLayer is excluded from                            |
-                                             |                   |   the output.                                                                          |
-                                             +-------------------+----------------------------------------------------------------------------------------+
-                                             | withinDistance    | |distance|                                                                             |
-                                             |                   |                                                                                        |
-                                             |                   | The within a distance relationship uses the straight-line                              |
-                                             | notWithinDistance | distance between features in layer to those in selectingLayer.                         |
-                                             |                   | withinDistance-The portion of the feature in layer that is                             |
-                                             |                   | within the specified distance of a feature in selectingLayer                           |
-                                             |                   | is included in the output.                                                             |
-                                             |                   | notwithinDistance-The portion of the feature in layer that is                          |
-                                             |                   | within the specified distance of a feature in selectingLayer is                        |
-                                             |                   | excluded from output. You can think of this relationship as                            |
-                                             |                   | "is farther away than".                                                                |
-                                             +-------------------+----------------------------------------------------------------------------------------+
-                                             | contains          | |intersect|                                                                            |
-                                             |                   |                                                                                        |
-                                             |                   | A feature in layer passes this test if it completely                                   |
-                                             | notContains       | surrounds a feature in selectingLayer. No portion of the                               |
-                                             |                   | containing feature; however, the contained feature is allowed                          |
-                                             |                   | to touch the containing feature (that is, share a common                               |
-                                             |                   | point along its boundary).                                                             |
-                                             |                   |                                                                                        |
-                                             |                   | contains-If a feature in layer contains a feature in                                   |
-                                             |                   | selectingLayer, the feature in layer is included in the output.                        |
-                                             |                   | notcontains-If a feature in layer contains a feature in                                |
-                                             |                   | selectingLayer, the feature in the first layer is excluded                             |
-                                             +-------------------+----------------------------------------------------------------------------------------+
-                                             | within            | |within|                                                                               |
-                                             |                   |                                                                                        |
-                                             |                   | A feature in layer passes this test if it is completely                                |
-                                             | notWithin         | surrounded by a feature in selectingLayer. The entire feature                          |
-                                             |                   | layer must be within the containing feature; however, the two                          |
-                                             |                   | features are allowed to touch (that is, share a common point                           |
-                                             |                   | along its boundary).                                                                   |
-                                             |                   |                                                                                        |
-                                             |                   | * within-If a feature in layer is completely within a feature in                       |
-                                             |                   |   selectingLayer, the feature in layer is included in the output.                      |
-                                             |                   | * notwithin-If a feature in layer is completely within a feature                       |
-                                             |                   |   in selectingLayer, the feature in layer is excluded from the                         |
-                                             |                   |   output.                                                                              |
-                                             |                   |                                                                                        |
-                                             |                   | **Note:**                                                                              |
-                                             |                   |                                                                                        |
-                                             |                   | can use the within relationship for points and lines, just as                          |
-                                             |                   | you can with the contains relationship. For example, your first                        |
-                                             |                   | layer contains points representing manhole covers and you want                         |
-                                             |                   | to find the manholes that are on street centerlines (as opposed                        |
-                                             |                   | to parking lots or other non-street features). You could use                           |
-                                             |                   | within to find manhole points within street centerlines, but                           |
-                                             |                   | in order for a point to contain a line, the point must be exactly                      |
-                                             |                   | on the line (that is, in GIS terms, they are snapped to each                           |
-                                             |                   | other). If there is any doubt about this, use the withinDistance                       |
-                                             |                   | relationship with a suitable distance value.                                           |
-                                             +-------------------+----------------------------------------------------------------------------------------+
-                                             | nearest           | |nearest|                                                                              |
-                                             |                   |                                                                                        |
-                                             |                   | feature in the first layer passes this test if it is nearest                           |
-                                             |                   | to a feature in the second layer.                                                      |
-                                             |                   |                                                                                        |
-                                             |                   | * nearest-If a feature in the first layer is nearest to a                              |
-                                             |                   |   feature in the second layer, the feature in the first layer                          |
-                                             |                   |   is included in the output.                                                           |
-                                             +-------------------+----------------------------------------------------------------------------------------+
+                                                 +-------------------+----------------------------------------------------------------------------------------+
+                                                 | spatialRel        | Description                                                                            |
+                                                 +-------------------+----------------------------------------------------------------------------------------+
+                                                 | intersects        | |intersect|                                                                            |
+                                                 |                   |                                                                                        |
+                                                 |                   | A feature in layer passes the intersect test if it overlaps                            |
+                                                 | notIntersects     | any part of a feature in selectingLayer, including touches                             |
+                                                 |                   | (where features share a common point).                                                 |
+                                                 |                   |                                                                                        |
+                                                 |                   | * intersects-If a feature in layer intersects a feature in                             |
+                                                 |                   |   selectingLayer, the portion of the feature in layer that                             |
+                                                 |                   |   intersects the feature in selectingLayer is included in                              |
+                                                 |                   |   the output.                                                                          |
+                                                 |                   | * notintersects-If a feature in layer intersects a feature in                          |
+                                                 |                   |   selectingLayer, the portion of the feature in layer that                             |
+                                                 |                   |   intersects the feature in selectingLayer is excluded from                            |
+                                                 |                   |   the output.                                                                          |
+                                                 +-------------------+----------------------------------------------------------------------------------------+
+                                                 | withinDistance    | |distance|                                                                             |
+                                                 |                   |                                                                                        |
+                                                 |                   | The within a distance relationship uses the straight-line                              |
+                                                 | notWithinDistance | distance between features in layer to those in selectingLayer.                         |
+                                                 |                   | withinDistance-The portion of the feature in layer that is                             |
+                                                 |                   | within the specified distance of a feature in selectingLayer                           |
+                                                 |                   | is included in the output.                                                             |
+                                                 |                   | notwithinDistance-The portion of the feature in layer that is                          |
+                                                 |                   | within the specified distance of a feature in selectingLayer is                        |
+                                                 |                   | excluded from output. You can think of this relationship as                            |
+                                                 |                   | "is farther away than".                                                                |
+                                                 +-------------------+----------------------------------------------------------------------------------------+
+                                                 | contains          | |intersect|                                                                            |
+                                                 |                   |                                                                                        |
+                                                 |                   | A feature in layer passes this test if it completely                                   |
+                                                 | notContains       | surrounds a feature in selectingLayer. No portion of the                               |
+                                                 |                   | containing feature; however, the contained feature is allowed                          |
+                                                 |                   | to touch the containing feature (that is, share a common                               |
+                                                 |                   | point along its boundary).                                                             |
+                                                 |                   |                                                                                        |
+                                                 |                   | contains-If a feature in layer contains a feature in                                   |
+                                                 |                   | selectingLayer, the feature in layer is included in the output.                        |
+                                                 |                   | notcontains-If a feature in layer contains a feature in                                |
+                                                 |                   | selectingLayer, the feature in the first layer is excluded                             |
+                                                 +-------------------+----------------------------------------------------------------------------------------+
+                                                 | within            | |within|                                                                               |
+                                                 |                   |                                                                                        |
+                                                 |                   | A feature in layer passes this test if it is completely                                |
+                                                 | notWithin         | surrounded by a feature in selectingLayer. The entire feature                          |
+                                                 |                   | layer must be within the containing feature; however, the two                          |
+                                                 |                   | features are allowed to touch (that is, share a common point                           |
+                                                 |                   | along its boundary).                                                                   |
+                                                 |                   |                                                                                        |
+                                                 |                   | * within-If a feature in layer is completely within a feature in                       |
+                                                 |                   |   selectingLayer, the feature in layer is included in the output.                      |
+                                                 |                   | * notwithin-If a feature in layer is completely within a feature                       |
+                                                 |                   |   in selectingLayer, the feature in layer is excluded from the                         |
+                                                 |                   |   output.                                                                              |
+                                                 |                   |                                                                                        |
+                                                 |                   | **Note:**                                                                              |
+                                                 |                   |                                                                                        |
+                                                 |                   | can use the within relationship for points and lines, just as                          |
+                                                 |                   | you can with the contains relationship. For example, your first                        |
+                                                 |                   | layer contains points representing manhole covers and you want                         |
+                                                 |                   | to find the manholes that are on street centerlines (as opposed                        |
+                                                 |                   | to parking lots or other non-street features). You could use                           |
+                                                 |                   | within to find manhole points within street centerlines, but                           |
+                                                 |                   | in order for a point to contain a line, the point must be exactly                      |
+                                                 |                   | on the line (that is, in GIS terms, they are snapped to each                           |
+                                                 |                   | other). If there is any doubt about this, use the withinDistance                       |
+                                                 |                   | relationship with a suitable distance value.                                           |
+                                                 +-------------------+----------------------------------------------------------------------------------------+
+                                                 | nearest           | |nearest|                                                                              |
+                                                 |                   |                                                                                        |
+                                                 |                   | feature in the first layer passes this test if it is nearest                           |
+                                                 |                   | to a feature in the second layer.                                                      |
+                                                 |                   |                                                                                        |
+                                                 |                   | * nearest-If a feature in the first layer is nearest to a                              |
+                                                 |                   |   feature in the second layer, the feature in the first layer                          |
+                                                 |                   |   is included in the output.                                                           |
+                                                 +-------------------+----------------------------------------------------------------------------------------+
 
-                                             * ``distance`` is the distance to use for the withinDistance and notWithinDistance spatial relationship.
-                                             * ``units`` is the units for distance.
+                                                 * ``distance`` is the distance to use for the withinDistance and notWithinDistance spatial relationship.
+                                                 * ``units`` is the units for distance.
 
-                                             Choice list: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+                                                 Choice list: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
 
-                                             An expression may be a list, which denotes a group. The first operator in the group indicates how the group expression
-                                             is added to the previous expression. Grouping expressions is only necessary when you need to create two or more distinct
-                                             sets of features from the same layer. One way to think of grouping is that without grouping, you would have to execute
-                                             ``find_existing_locations`` multiple times and merge the results.
-    -------------------------------------    ------------------------------------------------------------------------------------------------------
-    output_name                              Optional string. If provided, the method will create a feature layer of the results. You define the name of the layer.
-                                             If ``output_name`` is not supplied, the task will return a feature collection.
-    -------------------------------------    ------------------------------------------------------------------------------------------------------
-    context                                  Optional string. Additional settings such as processing extent and output spatial reference. For ``find_existing_locations``, there are two settings.
+                                                 An expression may be a list, which denotes a group. The first operator in the group indicates how the group expression
+                                                 is added to the previous expression. Grouping expressions is only necessary when you need to create two or more distinct
+                                                 sets of features from the same layer. One way to think of grouping is that without grouping, you would have to execute
+                                                 ``find_existing_locations`` multiple times and merge the results.
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                 feature layer will cause the new layer to be appended to the Feature Service.
+                                                 If overwrite is True in context, new layer will overwrite existing layer.
+                                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                 For find_existing_locations, there are three settings.
 
-                                             #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the input_layers that intersect the bounding box will be analyzed.
-                                             #. Output Spatial Reference (``outSR``)-the output features will be projected into the output spatial reference.
-    -------------------------------------    ------------------------------------------------------------------------------------------------------
-    gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    -------------------------------------    ------------------------------------------------------------------------------------------------------
-    estimate                                 Optional boolean. Is true, the number of credits needed to run the operation will be returned as a float.
-    -------------------------------------    ------------------------------------------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    =====================================    ======================================================================================================
+                                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-    :Returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+    <<<<<<< HEAD
+                                                 .. code-block:: python
+                                                    # Example Usage
 
-    .. code-block:: python
+    >>>>>>> master
+                                                                            "ymin": -9187921.892449,
+                                                                            "xmax": 3174104.927313,
+                                                                            "ymax": -9175500.875353,
+                                                                    "outSR": {"wkid": 3857},
+                                                                    "overwrite": True}
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        estimate                                 Optional boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+        :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
-        #USAGE EXAMPLE: To find busy (where SEGMENT_TY is 1 and where ARTERIAL_C is 1) streets from the existing seattle streets layer.
 
-        arterial_streets = find_existing_locations(input_layers=[bike_route_streets],
-                        expressions=[{"operator":"","layer":0,"where":"SEGMENT_TY = 1"},
-                                     {"operator":"and","layer":0,"where":"ARTERIAL_C = 1"}],
-                                       output_name='ArterialStreets')
+            #USAGE EXAMPLE: To find busy (where SEGMENT_TY is 1 and where ARTERIAL_C is 1) streets from the existing seattle streets layer.
+
+            arterial_streets = find_existing_locations(input_layers=[bike_route_streets],
+                            expressions=[{"operator":"","layer":0,"where":"SEGMENT_TY = 1"},
+                                         {"operator":"and","layer":0,"where":"ARTERIAL_C = 1"}],
+                                           output_name='ArterialStreets')
 
 
 
@@ -516,12 +526,28 @@ def derive_new_locations(
                                              +-------------------+----------------------------------------------------------------------------------------+
 
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    output_name                              Optional string. If provided, the task will create a feature layer of the results. You define the name of the layer.                                           If output_name is not supplied, the task will return a feature collection.
+    output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                             feature layer will cause the new layer to be appended to the Feature Service.
+                                             If overwrite is True in context, new layer will overwrite existing layer.
+                                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    context                                  Optional string. Additional settings such as processing extent and output spatial reference. For                                                               ``derive_new_locations``, there are two settings.
+    context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
+                                             For derive_new_locations, there are three settings.
 
-                                             #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the input_layers that intersect the bounding box will be analyzed.
-                                             #. Output Spatial Reference (outSR)
+                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+
+                                                .. code-block:: python
+
+                                                    # Example Usage
+                                                    context = {"extent": {"xmin": 3164569.408035,
+                                                                        "ymin": -9187921.892449,
+                                                                        "xmax": 3174104.927313,
+                                                                        "ymax": -9175500.875353,
+                                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                "outSR": {"wkid": 3857},
+                                                                "overwrite": True}
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
@@ -529,6 +555,8 @@ def derive_new_locations(
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =====================================    ======================================================================================================
+
+    :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -591,73 +619,86 @@ def find_similar_locations(
     Finally, you supply a list of fields to use for measuring similarity. ``find_similar_locations`` will rank all of the
     candidate locations by how closely they match your reference locations across all of the fields you have selected.
 
-    =======================  ===========================================================================================
-    **Argument**             **Description**
-    -----------------------  -------------------------------------------------------------------------------------------
-    input_layer              Required feature layer. The ``input_layer`` contains one or more
-                             reference locations against which features in the ``search_layer``
-                             will be evaluated for similarity. For example, the ``input_layer``
-                             might contain your top performing stores or the villages hardest
-                             hit by a disease.
-                             It is not uncommon that the ``input_layer`` and ``search_layer`` are the
-                             same feature service. For example, the feature service contains
-                             locations of all stores, one of which is your top performing store.
-                             If you want to rank the remaining stores from most to least similar
-                             to your top performing store, you can provide a filter for both the
-                             inputLayer and the ``search_layer``. The filter on the ``input_layer`` would
-                             select the top performing store while the filter on the ``search_layer``
-                             would select all stores except for the top performing store. You can
-                             also use the optional ``input_query`` parameter to specify reference locations.
+    =======================     ===========================================================================================
+    **Argument**                **Description**
+    -----------------------     -------------------------------------------------------------------------------------------
+    input_layer                 Required feature layer. The ``input_layer`` contains one or more
+                                reference locations against which features in the ``search_layer``
+                                will be evaluated for similarity. For example, the ``input_layer``
+                                might contain your top performing stores or the villages hardest
+                                hit by a disease.
+                                It is not uncommon that the ``input_layer`` and ``search_layer`` are the
+                                same feature service. For example, the feature service contains
+                                locations of all stores, one of which is your top performing store.
+                                If you want to rank the remaining stores from most to least similar
+                                to your top performing store, you can provide a filter for both the
+                                inputLayer and the ``search_layer``. The filter on the ``input_layer`` would
+                                select the top performing store while the filter on the ``search_layer``
+                                would select all stores except for the top performing store. You can
+                                also use the optional ``input_query`` parameter to specify reference locations.
 
-                             If there is more than one reference location, similarity will be based
-                             on averages for the fields you specify in the ``analysis_fields`` parameter.
-                             So, for example, if there are two reference locations and you are
-                             interested in matching population, the task will look for candidate
-                             locations in the ``search_layer`` with populations that are most like the
-                             average population for both reference locations. If the values for the
-                             reference locations are 100 and 102, for example, the method will look
-                             for candidate locations with populations near 101. Consequently, you
-                             will want to use fields for the reference locations fields that have
-                             similar values. If, for example, the population values for one reference
-                             location is 100 and the other is 100,000, the tool will look for candidate
-                             locations with population values near the average of those two values: 50,050.
-                             Notice that this averaged value is nothing like the population for either
-                             of the reference locations. See :ref:`Feature Input<FeatureInput>`.
-    -----------------------  -------------------------------------------------------------------------------------------
-    search_layer             Required feature layer. The layer containing candidate locations that
-                             will be evaluated against the reference locations. See :ref:`Feature Input<FeatureInput>`.
-    -----------------------  -------------------------------------------------------------------------------------------
-    analysis_fields          Required list of strings. A list of fields whose values are used to determine similarity.
-                             They must be numeric fields and the fields must exist on both the ``input_layer`` and
-                             the ``search_layer``. The method will find features in the ``search_layer`` that have field
-                             values closest to those of the features in your ``input_layer``.
-    -----------------------  -------------------------------------------------------------------------------------------
-    input_query              Optional string. In the situation where the ``input_layer`` and the ``search_layer`` are the same feature service,
-                             this parameter allows you to input a query on the ``input_layer`` to specify which features are the reference locations.
-                             The reference locations specified by this query will not be analyzed as candidates.
-                             The syntax of ``input_query`` is the same as a filter.
-    -----------------------  -------------------------------------------------------------------------------------------
-    number_of_results        Optional int. The number of ranked candidate locations output to the ``similar_result_layer``.
-                             If ``number_of_results`` is not specified, or set to zero, all candidate locations will be ranked and output.
-    -----------------------  -------------------------------------------------------------------------------------------
-    output_name              Optional string. If provided, the method will create a feature service of the results.
-                             You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
-    -----------------------  -------------------------------------------------------------------------------------------
-    context                  Optional string. Context contains additional settings that affect method execution.
-                             For ``find_similar_locations``, there are two settings.
+                                If there is more than one reference location, similarity will be based
+                                on averages for the fields you specify in the ``analysis_fields`` parameter.
+                                So, for example, if there are two reference locations and you are
+                                interested in matching population, the task will look for candidate
+                                locations in the ``search_layer`` with populations that are most like the
+                                average population for both reference locations. If the values for the
+                                reference locations are 100 and 102, for example, the method will look
+                                for candidate locations with populations near 101. Consequently, you
+                                will want to use fields for the reference locations fields that have
+                                similar values. If, for example, the population values for one reference
+                                location is 100 and the other is 100,000, the tool will look for candidate
+                                locations with population values near the average of those two values: 50,050.
+                                Notice that this averaged value is nothing like the population for either
+                                of the reference locations. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------     -------------------------------------------------------------------------------------------
+    search_layer                Required feature layer. The layer containing candidate locations that
+                                will be evaluated against the reference locations. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------     -------------------------------------------------------------------------------------------
+    analysis_fields             Required list of strings. A list of fields whose values are used to determine similarity.
+                                They must be numeric fields and the fields must exist on both the ``input_layer`` and
+                                the ``search_layer``. The method will find features in the ``search_layer`` that have field
+                                values closest to those of the features in your ``input_layer``.
+    -----------------------     -------------------------------------------------------------------------------------------
+    input_query                 Optional string. In the situation where the ``input_layer`` and the ``search_layer`` are the same feature service,
+                                this parameter allows you to input a query on the ``input_layer`` to specify which features are the reference locations.
+                                The reference locations specified by this query will not be analyzed as candidates.
+                                The syntax of ``input_query`` is the same as a filter.
+    -----------------------     -------------------------------------------------------------------------------------------
+    number_of_results           Optional int. The number of ranked candidate locations output to the ``similar_result_layer``.
+                                If ``number_of_results`` is not specified, or set to zero, all candidate locations will be ranked and output.
+    -----------------------     -------------------------------------------------------------------------------------------
+    output_name                 Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                feature layer will cause the new layer to be appended to the Feature Service.
+                                If overwrite is True in context, new layer will overwrite existing layer.
+                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    -----------------------     -------------------------------------------------------------------------------------------
+    context                     Optional dict. Additional settings such as processing extent and output spatial reference.
+                                For find_similar_locations, there are three settings.
 
-                             #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features
-                                in the ``input_layer`` that intersect the bounding box will be analyzed.
-                             #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
-    -----------------------  -------------------------------------------------------------------------------------------
-    estimate                 Optional boolean. If True, the number of credits to run the operation will be returned.
-    -----------------------  -------------------------------------------------------------------------------------------
-    future                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    =======================  ===========================================================================================
+                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Python dictionary with the following keys:
+                                    .. code-block:: python
 
-        "similar_result_layer" : layer (FeatureCollection)
+                                        # Example Usage
+                                        context = {"extent": {"xmin": 3164569.408035,
+                                                            "ymin": -9187921.892449,
+                                                            "xmax": 3174104.927313,
+                                                            "ymax": -9175500.875353,
+                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                    "outSR": {"wkid": 3857},
+                                                    "overwrite": True}
+    -----------------------     -------------------------------------------------------------------------------------------
+    estimate                    Optional boolean. If True, the number of credits to run the operation will be returned.
+    -----------------------     -------------------------------------------------------------------------------------------
+    future                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    =======================     ===========================================================================================
+
+    :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
+
+        "similar_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
         "process_info" : list of message
 
@@ -709,29 +750,45 @@ def find_centroids(
 
     For example, polygon features that contain demographic data can be converted to centroids that can be used in network analysis.
 
-    ================  ===============================================================
-    **Argument**      **Description**
-    ----------------  ---------------------------------------------------------------
-    input_layer       Required feature layer. The multipoint, line, or polygon features that will be used to generate centroid point features. See :ref:`Feature Input<FeatureInput>`.
-    ----------------  ---------------------------------------------------------------
-    point_location    Optional boolean. A Boolean value that determines the output location of the points.
+    ================    ===============================================================
+    **Argument**        **Description**
+    ----------------    ---------------------------------------------------------------
+    input_layer         Required feature layer. The multipoint, line, or polygon features that will be used to generate centroid point features. See :ref:`Feature Input<FeatureInput>`.
+    ----------------    ---------------------------------------------------------------
+    point_location      Optional boolean. A Boolean value that determines the output location of the points.
 
                         + True - Output points will be the nearest point to the actual centroid, but located inside or contained by the bounds of the input feature.
                         + False - Output point locations will be determined by the calculated geometric center of each input feature. This is the default.
-    ----------------  ---------------------------------------------------------------
-    output_name       Optional string. If provided, the method will create a feature service of the results. You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
-    ----------------  ---------------------------------------------------------------
-    context           Optional string. Context contains additional settings that affect method execution. For ``find_centroids``, there are two settings.
+    ----------------    ---------------------------------------------------------------
+    output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                        feature layer will cause the new layer to be appended to the Feature Service.
+                        If overwrite is True in context, new layer will overwrite existing layer.
+                        If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    ----------------    ---------------------------------------------------------------
+    context             Optional dict. Additional settings such as processing extent and output spatial reference.
+                        For find_centroids, there are three settings.
 
-                      #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``input_layer`` that intersect the bounding box will be buffered.
-                      #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
-    ----------------  ---------------------------------------------------------------
-    estimate          Optional boolean. If True, the number of credits to run the operation will be returned.
-    ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    ================  ===============================================================
+                        - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                        - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
+                            .. code-block:: python
+
+                                # Example Usage
+                                context = {"extent": {"xmin": 3164569.408035,
+                                                    "ymin": -9187921.892449,
+                                                    "xmax": 3174104.927313,
+                                                    "ymax": -9175500.875353,
+                                                    "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                            "outSR": {"wkid": 3857},
+                                            "overwrite": True}
+    ----------------    ---------------------------------------------------------------
+    estimate            Optional boolean. If True, the number of credits to run the operation will be returned.
+    ----------------    ---------------------------------------------------------------
+    future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    ================    ===============================================================
+
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -977,18 +1034,28 @@ def choose_best_facilities(
 
                                              The default value is 100.
     -------------------------------------    ---------------------------------------------------------
-    output_name                              Optional string. If provided, the method will create a
-                                             feature layer of the results. You define the name of the
-                                             layer. If ``output_name`` is not supplied, the method will
-                                             return a feature collection.
+    output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                             feature layer will cause the new layer to be appended to the Feature Service.
+                                             If overwrite is True in context, new layer will overwrite existing layer.
+                                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------    ---------------------------------------------------------
-    context                                  Optional string. Additional settings such as processing
-                                             extent and output spatial reference. For
-                                             ``choose_best_facilities``, there are two settings.
+    context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
+                                             For choose_best_facilities, there are three settings.
 
-                                             #. Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be enriched.
-                                             #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
+                                                 .. code-block:: python
+
+                                                     # Example Usage
+                                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                            "ymin": -9187921.892449,
+                                                                            "xmax": 3174104.927313,
+                                                                            "ymax": -9175500.875353,
+                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                    "outSR": {"wkid": 3857},
+                                                                    "overwrite": True}
     -------------------------------------    ---------------------------------------------------------
     gis                                      Optional, the GIS on which this tool runs. If not
                                              specified, the active GIS is used.
@@ -1019,13 +1086,13 @@ def choose_best_facilities(
     =====================================    =========================================================
 
 
-    :returns: When an output_name is specified, a FeatureLayerCollection Item with 3 layers is returned (see dictionary below for details), else a dict with the following keys:
+    :return: When an output_name is specified, a :class:`~arcgis.features.FeatureCollection` with 3 layers is returned (see dictionary below for details), else a dict with the following keys:
 
-       "allocated_demand_locations_layer" : layer (FeatureCollection)
+       "allocated_demand_locations_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-       "allocation_lines_layer"  : layer (FeatureCollection)
+       "allocation_lines_layer"  : layer (:class:`~arcgis.features.FeatureCollection`)
 
-       "assigned_facilities_layer"   : layer (FeatureCollection)
+       "assigned_facilities_layer"   : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 
@@ -1187,14 +1254,28 @@ def create_viewshed(
 
                                  The default value is True.
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string. Output feature service name. If not provided, a feature collection is returned.
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
+                                 If overwrite is True in context, new layer will overwrite existing layer.
+                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Context contains additional settings that affect task execution. For ``create_viewshed``, there are two settings.
+    context                      Optional dict. Additional settings such as processing extent and output spatial reference.
+                                 For create_viewshed, there are three settings.
 
-                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
-                                    that intersect the bounding box will be analyzed.
+                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                                     .. code-block:: python
+
+                                         # Example Usage
+                                         context = {"extent": {"xmin": 3164569.408035,
+                                                             "ymin": -9187921.892449,
+                                                             "xmax": 3174104.927313,
+                                                             "ymax": -9175500.875353,
+                                                             "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                     "outSR": {"wkid": 3857},
+                                                     "overwrite": True}
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -1203,7 +1284,7 @@ def create_viewshed(
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
-    :returns result_layer : feature layer Item if output_name is specified, else Feature Collection.
+    :returns result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -1307,14 +1388,28 @@ def create_watersheds(
 
                                  The default value is True.
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string. Output feature service name. If not provided, a feature collection is returned.
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
+                                 If overwrite is True in context, new layer will overwrite existing layer.
+                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Context contains additional settings that affect task execution. For ``create_watersheds``, there are two settings.
+    context                      Optional dict. Additional settings such as processing extent and output spatial reference.
+                                 For create_watersheds, there are three settings.
 
-                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
-                                    that intersect the bounding box will be analyzed.
+                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                                     .. code-block:: python
+
+                                         # Example Usage
+                                         context = {"extent": {"xmin": 3164569.408035,
+                                                             "ymin": -9187921.892449,
+                                                             "xmax": 3174104.927313,
+                                                             "ymax": -9175500.875353,
+                                                             "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                     "outSR": {"wkid": 3857},
+                                                     "overwrite": True}
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -1323,7 +1418,7 @@ def create_watersheds(
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
-    :returns result_layer : feature layer Item if output_name is specified, else Feature Collection.
+    :returns result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 
@@ -1384,66 +1479,80 @@ def trace_downstream(
     total length of the flow path, a specified maximum trace length, or clipped to area features such as your study area. In many
     cases, if the total length of the trace path is returned, it will be from the source all the way to the ocean.
 
-    =====================================    =========================================================
-    **Argument**                             **Description**
-    -------------------------------------    ---------------------------------------------------------
-    input_layer                              Required feature layer. The point features used for the starting location of a downstream trace.
-                                             See :ref:`Feature Input<FeatureInput>`.
-    -------------------------------------    ---------------------------------------------------------
-    split_distance                           Optional float. The trace line will be split into multiple lines where each line is of the specified length.
-                                             The resulting trace will have multiple line segments, each with fields FromDistance and ToDistance.
-    -------------------------------------    ---------------------------------------------------------
-    split_units                              Optional string. The units used to specify split distance.
+    =====================================   =========================================================
+    **Argument**                            **Description**
+    -------------------------------------   ---------------------------------------------------------
+    input_layer                             Required feature layer. The point features used for the starting location of a downstream trace.
+                                            See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------   ---------------------------------------------------------
+    split_distance                          Optional float. The trace line will be split into multiple lines where each line is of the specified length.
+                                            The resulting trace will have multiple line segments, each with fields FromDistance and ToDistance.
+    -------------------------------------   ---------------------------------------------------------
+    split_units                             Optional string. The units used to specify split distance.
 
-                                             Choice list: ['Meters', 'Kilometers', 'Feet' 'Yards', 'Miles'].
+                                            Choice list: ['Meters', 'Kilometers', 'Feet' 'Yards', 'Miles'].
 
-                                             The default is 'Kilometers'.
-    -------------------------------------    ---------------------------------------------------------
-    max_distance                             Optional float. Determines the total length of the line that will be returned. If you provide a
-                                             ``bounding_polygon_layer`` to clip the trace, the result will be clipped to the features in ``bounding_polygon_layer``,
-                                             regardless of the distance you enter here.
-    -------------------------------------    ---------------------------------------------------------
-    max_distance_units                       Optional string. The units used to specify maximum distance.
+                                            The default is 'Kilometers'.
+    -------------------------------------   ---------------------------------------------------------
+    max_distance                            Optional float. Determines the total length of the line that will be returned. If you provide a
+                                            ``bounding_polygon_layer`` to clip the trace, the result will be clipped to the features in ``bounding_polygon_layer``,
+                                            regardless of the distance you enter here.
+    -------------------------------------   ---------------------------------------------------------
+    max_distance_units                      Optional string. The units used to specify maximum distance.
 
-                                             Choice list: ['Meters', 'Kilometers', 'Feet' 'Yards', 'Miles'].
+                                            Choice list: ['Meters', 'Kilometers', 'Feet' 'Yards', 'Miles'].
 
-                                             The default is 'Kilometers'.
-    -------------------------------------    ---------------------------------------------------------
-    bounding_polygon_layer                   Optional feature layer. A polygon layer specifying the area(s) where you want the trace
-                                             downstreams to be calculated in. For example, if you only want to calculate the trace downstream
-                                             with in a county polygon, provide a layer containing the county polygon and the resulting trace
-                                             lines will be clipped to the county boundary. See :ref:`Feature Input<FeatureInput>`.
-    -------------------------------------    ---------------------------------------------------------
-    source_database                          Optional string. Keyword indicating the data source resolution that will be used in the analysis.
+                                            The default is 'Kilometers'.
+    -------------------------------------   ---------------------------------------------------------
+    bounding_polygon_layer                  Optional feature layer. A polygon layer specifying the area(s) where you want the trace
+                                            downstreams to be calculated in. For example, if you only want to calculate the trace downstream
+                                            with in a county polygon, provide a layer containing the county polygon and the resulting trace
+                                            lines will be clipped to the county boundary. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------   ---------------------------------------------------------
+    source_database                         Optional string. Keyword indicating the data source resolution that will be used in the analysis.
 
-                                             Choice list: ['Finest', '30m', '90m'].
+                                            Choice list: ['Finest', '30m', '90m'].
 
-                                                * Finest: Finest resolution available at each location from all possible data sources.
+                                            * Finest: Finest resolution available at each location from all possible data sources.
 
-                                                * 30m: The hydrologic source was built from 1 arc second - approximately 30 meter resolution, elevation data.
+                                            * 30m: The hydrologic source was built from 1 arc second - approximately 30 meter resolution, elevation data.
 
-                                                * 90m: The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data.
+                                            * 90m: The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data.
 
-                                             The default is 'Finest'.
-    -------------------------------------    ---------------------------------------------------------
-    generalize                               Optional boolean. Determines if the output trace downstream lines will be smoothed
-                                             into simpler lines or conform to the cell edges of the original DEM.
-    -------------------------------------    ---------------------------------------------------------
-    output_name                              Optional string. If provided, the task will create a feature service of the results.
-                                             You define the name of the service. If ``output_name`` is not supplied, the task will return a feature collection.
-    -------------------------------------    ---------------------------------------------------------
-    context                                  Optional string. Context contains additional settings that affect task execution. For ``trace_downstream``, there are two settings.
+                                            The default is 'Finest'.
+    -------------------------------------   ---------------------------------------------------------
+    generalize                              Optional boolean. Determines if the output trace downstream lines will be smoothed
+                                            into simpler lines or conform to the cell edges of the original DEM.
+    -------------------------------------   ---------------------------------------------------------
+    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                            feature layer will cause the new layer to be appended to the Feature Service.
+                                            If overwrite is True in context, new layer will overwrite existing layer.
+                                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    -------------------------------------   ---------------------------------------------------------
+    context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                            For trace_downstream, there are three settings.
 
-                                             #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those points
-                                                in the ``input_layer`` that intersect the bounding box will have a downstream trace generated.
-                                             #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
-    -------------------------------------    ---------------------------------------------------------
-    estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
-    -------------------------------------    ---------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    =====================================    =========================================================
+                                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-    :returns: feature layer collection if ``output_name`` is set, else feature collection.
+                                                .. code-block:: python
+
+                                                    # Example Usage
+                                                    context = {"extent": {"xmin": 3164569.408035,
+                                                                        "ymin": -9187921.892449,
+                                                                        "xmax": 3174104.927313,
+                                                                        "ymax": -9175500.875353,
+                                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                "outSR": {"wkid": 3857},
+                                                                "overwrite": True}
+    -------------------------------------   ---------------------------------------------------------
+    estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
+    -------------------------------------   ---------------------------------------------------------
+    future                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    =====================================   =========================================================
+
+    :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is set, else :class:`~arcgis.features.FeatureCollection`.
 
     .. code-block:: python
 

@@ -25,7 +25,7 @@ def register(
     cls                 Required Class. The class to perform the cloning operation.
     ================    ===============================================================
 
-    :returns: bool
+    :return: bool
     """
     global _CLONE_REGISTRY
     types = (
@@ -50,7 +50,7 @@ def unregister(item_type: str) -> bool:
     item_type           Required String. The name of the item type to delete from the clone registry
     ================    ===============================================================
 
-    :returns: bool
+    :return: bool
     """
     global _CLONE_REGISTRY
     lll = [k.lower() for k in _CLONE_REGISTRY.keys()]
@@ -67,7 +67,7 @@ def clone_registry() -> Dict[str, Any]:
     """
     Returns the Clone Registry
 
-    :returns: Dict[str, Any]
+    :return: Dict[str, Any]
     """
     global _CLONE_REGISTRY
     return _CLONE_REGISTRY

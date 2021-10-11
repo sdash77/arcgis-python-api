@@ -67,7 +67,7 @@ def _symmetric_difference(df1, df2):
     sets is the set of elements which are in either of the sets and not in
     their intersection.
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     dfdiff1 = _overlay_difference(df1, df2)
@@ -207,7 +207,7 @@ def overlay(sdf1, sdf2, op="union"):
                                  allowed value are: union, erase, identity, intersection
     =========================    =========================================================
 
-    :returns: Spatially enabled DataFrame (pd.DataFrame)
+    :return: Spatially enabled DataFrame (pd.DataFrame)
 
     """
     allowed_hows = [

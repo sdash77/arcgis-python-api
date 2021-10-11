@@ -142,6 +142,14 @@ class Security(BasePortalAdmin):
         This resource represents the token configuration within your
         portal. Use the set on token_config operation to change the
         configuration properties of the token service.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        value                           Required string. A shared key value
+        ===========================     ====================================================================
+
+        :return: Dictionary
         """
         url = "%s/tokens" % self._url
         params = {"f": "json"}
@@ -151,18 +159,7 @@ class Security(BasePortalAdmin):
     @tokens.setter
     def tokens(self, value):
         """
-        This resource represents the token configuration within your
-        portal. Use the set on token_config operation to change the
-        configuration properties of the token service.
-
-        ===========================     ====================================================================
-        **Argument**                    **Description**
-        ---------------------------     --------------------------------------------------------------------
-        value                           Required string. A shared key value
-        ===========================     ====================================================================
-
-        :returns: dict
-
+        See main ``tokens`` property docsring
         """
         import six
 
@@ -192,23 +189,6 @@ class Security(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def config(self):
-        """
-        The security configuration consists of the identity store
-        configuration.
-        If your portal will be authenticated through ArcGIS Web Adaptor,
-        you must set up your preferred authentication on your web server.
-        Use the Update Identity Store operation to configure your portal to
-        connect to your enterprise identity provider such as Windows Domain
-        or LDAP. By default, Portal for ArcGIS is configured to use the
-        built-in store and token-based authentication.
-        """
-        url = "%s/config" % self._url
-        params = {"f": "json"}
-        return self._con.get(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    @config.setter
-    def config(self, value):
         """
         This operation can be used to update the portal's security settings
         such as whether or not enterprise accounts are automatically
@@ -261,6 +241,16 @@ class Security(BasePortalAdmin):
            "defaultRoleForUser": 12aBC3D4EF5ghIJ
           }
         """
+        url = "%s/config" % self._url
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    @config.setter
+    def config(self, value):
+        """
+        See main ``config`` property docstring
+        """
         url = "%s/config/update" % self._url
         params = {"securityConfig": value, "f": "json"}
         return self._con.post(path=url, postdata=params)
@@ -286,7 +276,7 @@ class Security(BasePortalAdmin):
         group_config                    Optional dict. The group store configuration
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/config/updateIdentityStore" % self._url
@@ -322,7 +312,7 @@ class Security(BasePortalAdmin):
         group_config                    Optional dict. The group store configuration
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
 
         """
@@ -403,7 +393,7 @@ class OAuth(BasePortalAdmin):
         new_id                          Required string. The new client ID to assign to the application.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Boolean. True if successful else False
 
         """
         params = {"f": "json", "currentAppID": current_id, "newAppID": new_id}
@@ -433,9 +423,7 @@ class OAuth(BasePortalAdmin):
     @app_info.setter
     def app_info(self, value):
         """
-        This operation allows you to update the OAuth-specific properties
-        associated with an application. Use the Get App Info operation to
-        obtain the existing OAuth properties that can be edited.
+        See main ``app_info`` property docstring
         """
         url = "%s/updateAppInfo" % self._url
         params = {"f": "json", "appInfo": value}
@@ -503,7 +491,7 @@ class SSLCertificates(BasePortalAdmin):
                                         comma separated.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         self._certs = None
@@ -575,7 +563,7 @@ class SSLCertificates(BasePortalAdmin):
                                         parameter.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         import json
@@ -630,7 +618,7 @@ class SSLCertificates(BasePortalAdmin):
                                         and the portal will restart.  Added in 10.6.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         .. code-block:: python
 
@@ -694,7 +682,7 @@ class SSLCertificates(BasePortalAdmin):
         certificate                     Required string. The file location of the certificate file
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         params = {"f": "json", "password": password, "alias": alias}
@@ -704,7 +692,6 @@ class SSLCertificates(BasePortalAdmin):
             return self._con.post(path=url, postdata=params, files=files)
         except:
             return False
-        return True
 
     # ----------------------------------------------------------------------
     def list(self, force=False):
@@ -720,7 +707,7 @@ class SSLCertificates(BasePortalAdmin):
                                         list of certificates.
         ===========================     ====================================================================
 
-        :returns:
+        :return:
             List of SSLCertificate objects
 
         .. code-block:: python
@@ -766,7 +753,7 @@ class SSLCertificates(BasePortalAdmin):
         alias_name                      Required string. The common name of the certificate.
         ===========================     ====================================================================
 
-        :returns: SSLCertificate Object
+        :return: SSLCertificate Object
 
         .. code-block:: python
 
@@ -837,7 +824,7 @@ class SSLCertificate(BasePortalAdmin):
         self-signed certificate. A CSR is required by a CA to create a
         digitally signed version of your certificate.
 
-        :returns: string
+        :return: string
 
         """
         params = {"f": "json"}
@@ -860,7 +847,7 @@ class SSLCertificate(BasePortalAdmin):
         out_path                        Required string. Save location of the certificate
         ===========================     ====================================================================
 
-        :returns: string
+        :return: string
 
         """
         if out_path is None:
@@ -901,7 +888,7 @@ class SSLCertificate(BasePortalAdmin):
         file_path                       Required string. The location of the certificate
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/importSignedCertificate" % self._url
@@ -949,7 +936,7 @@ class EnterpriseGroups(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         params = {"f": "json", "filter": query, "maxCount": max_count}
@@ -975,7 +962,7 @@ class EnterpriseGroups(BasePortalAdmin):
                                         refreshed
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/refreshMembership" % self._url
@@ -999,7 +986,7 @@ class EnterpriseGroups(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary of group users
 
         """
         url = "%s/getUsersWithinEnterpriseGroup" % self._url
@@ -1027,7 +1014,7 @@ class EnterpriseGroups(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary of user groups
 
         """
         url = "%s/getEnterpriseGroupsForUser" % self._url
@@ -1123,7 +1110,7 @@ class EnterpriseUsers(BasePortalAdmin):
 
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         role_lu = {
@@ -1141,8 +1128,10 @@ class EnterpriseUsers(BasePortalAdmin):
             "viewer": "viewerUT",
             "fieldworker": "fieldWorkerUT",
         }
-        if user_license.lower() in user_license_lu:
+        if user_license and user_license.lower() in user_license_lu:
             user_license = user_license_lu[user_license.lower()]
+        else:
+            user_license = user_license_lu["creator"]
         if role.lower() in role_lu:
             role = role_lu[role.lower()]
 
@@ -1184,7 +1173,7 @@ class EnterpriseUsers(BasePortalAdmin):
                                         username. For LDAP users, the format is always username.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/getEnterpriseUser" % self._url
@@ -1209,7 +1198,7 @@ class EnterpriseUsers(BasePortalAdmin):
         idp_username                    Required string. The username used by the SAML identity provider
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/updateEnterpriseUser" % self._url
@@ -1233,7 +1222,7 @@ class EnterpriseUsers(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary of the search
 
         """
         url = "%s/searchEnterpriseUsers" % self._url
@@ -1258,7 +1247,7 @@ class EnterpriseUsers(BasePortalAdmin):
         users                           Required string. A comma seperated list of users.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         params = {"f": "json", "users": users}

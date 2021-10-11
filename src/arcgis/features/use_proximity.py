@@ -48,169 +48,212 @@ def connect_origins_to_destinations(
     You provide starting and ending points, and the tool returns a layer containing route lines, including measurements, between the
     paired origins and destinations.
 
-    ===================================    =========================================================
-    **Argument**                           **Description**
+    ===================================     =========================================================
+    **Argument**                            **Description**
+    -----------------------------------     ---------------------------------------------------------
+    origins_layer                           Required layer. The starting point or points of the routes to be generated. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------------------     ---------------------------------------------------------
+    destinations_layer                      Required layer. The routes end at points in the destinations layer. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------------------     ---------------------------------------------------------
+    measurement_type                        Required string. The origins and destinations can be connected by measuring straight-line distance,
+                                            or by measuring travel time or travel distance along a street network using various modes of transportation
+                                            known as travel modes.
+
+                                            Valid values are a string, StraightLine, which indicates Euclidean distance to be used as distance measure or
+                                            a Python dictionary representing settings for a travel mode.
+
+                                            When using a travel mode for the measurement_type, you need to specify a dictionary
+                                            containing the settings for a travel mode supported by your organization. The code in the example section below generates
+                                            a valid Python dictionary and then passes it as the value for the measurement_type parameter.
+
+                                            Supported travel modes: ['Driving Distance', 'Driving Time', 'Rural Driving Distance', 'Rural Driving Time',
+                                            'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+
     -----------------------------------    ---------------------------------------------------------
-    origins_layer                          Required layer. The starting point or points of the routes to be generated. See :ref:`Feature Input<FeatureInput>`.
-    -----------------------------------    ---------------------------------------------------------
-    destinations_layer                     Required layer. The routes end at points in the destinations layer. See :ref:`Feature Input<FeatureInput>`.
-    -----------------------------------    ---------------------------------------------------------
-    measurement_type                       Required string. The origins and destinations can be connected by measuring straight-line distance,
-                                           or by measuring travel time or travel distance along a street network using various modes of transportation
-                                           known as travel modes.
+    origins_layer_route_id_field            Optional string. Specify the field in the origins layer containing the IDs that pair origins with destinations.
 
-                                           Valid values are a string, StraightLine, which indicates Euclidean distance to be used as distance measure or
-                                           a Python dictionary representing settings for a travel mode.
+                                            * The ID values must uniquely identify points in the origins layer.
 
-                                           When using a travel mode for the measurement_type, you need to specify a dictionary
-                                           containing the settings for a travel mode supported by your organization. The code in the example section below generates
-                                           a valid Python dictionary and then passes it as the value for the measurement_type parameter.
+                                            * Each ID value must also correspond with exactly one route ID value in the destinations layer. Route IDs that match
+                                                across the layers create origin-destination pairs, which the tool connects together.
 
-                                           Supported travel modes: ['Driving Distance', 'Driving Time', 'Rural Driving Distance', 'Rural Driving Time',
-                                           'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+                                            *  Specifying origins_layer_route_id_field is optional when there is exactly one point feature in the origins or
+                                                destinations layer. The tool will connect all origins to the one destination or the one origin to all destinations,
+                                                depending on which layer contains one point.
+    -----------------------------------     ---------------------------------------------------------
+    destinations_layer_route_id_field       Optional string. Specify the field in the destinations layer containing the IDs that pair origins with destinations.
 
-    -----------------------------------    ---------------------------------------------------------
-    origins_layer_route_id_field           Optional string. Specify the field in the origins layer containing the IDs that pair origins with destinations.
+                                            * The ID values must uniquely identify points in the destinations layer.
 
-                                           * The ID values must uniquely identify points in the origins layer.
+                                            * Each ID value must also correspond with exactly one route ID value in the origins layer. Route IDs that match across the
+                                                layers create origin-destination pairs, which the tool connects together.
 
-                                           * Each ID value must also correspond with exactly one route ID value in the destinations layer. Route IDs that match
-                                             across the layers create origin-destination pairs, which the tool connects together.
+                                            * Specifying destinations_layer_route_id_field is optional when there is exactly one point feature in the origins or
+                                                destinations layer. The tool will connect all origins to the one destination or the one origin to all destinations,
+                                                depending on which layer contains one point.
+    -----------------------------------     ---------------------------------------------------------
+    time_of_day                             Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use traffic in the analysis,
+                                            set measurement_type to a travel mode object whose impedance_attribute_name property is set to travel_time and assign a value
+                                            to time_of_day. (A travel mode with other impedance_attribute_name values don't support traffic.) The time_of_day value represents
+                                            the time at which travel begins, or departs, from the origin points. The time is specified as datetime.datetime.
 
-                                           *  Specifying origins_layer_route_id_field is optional when there is exactly one point feature in the origins or
-                                              destinations layer. The tool will connect all origins to the one destination or the one origin to all destinations,
-                                              depending on which layer contains one point.
-    -----------------------------------    ---------------------------------------------------------
-    destinations_layer_route_id_field      Optional string. Specify the field in the destinations layer containing the IDs that pair origins with destinations.
+                                            The service supports two kinds of traffic: typical and live. Typical traffic references travel speeds that are made up of historical
+                                            averages for each five-minute interval spanning a week. Live traffic retrieves speeds from a traffic feed that processes phone probe
+                                            records, sensors, and other data sources to record actual travel speeds and predict speeds for the near future.
 
-                                           * The ID values must uniquely identify points in the destinations layer.
+                                            The `data coverage <http://www.arcgis.com/home/webmap/viewer.html?webmap=b7a893e8e1e04311bd925ea25cb8d7c7>`_ page shows the countries
+                                            Esri currently provides traffic data for.
 
-                                           * Each ID value must also correspond with exactly one route ID value in the origins layer. Route IDs that match across the
-                                             layers create origin-destination pairs, which the tool connects together.
+                                            Typical Traffic:
 
-                                           * Specifying destinations_layer_route_id_field is optional when there is exactly one point feature in the origins or
-                                             destinations layer. The tool will connect all origins to the one destination or the one origin to all destinations,
-                                             depending on which layer contains one point.
-    -----------------------------------    ---------------------------------------------------------
-    time_of_day                            Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use traffic in the analysis,
-                                           set measurement_type to a travel mode object whose impedance_attribute_name property is set to travel_time and assign a value
-                                           to time_of_day. (A travel mode with other impedance_attribute_name values don't support traffic.) The time_of_day value represents
-                                           the time at which travel begins, or departs, from the origin points. The time is specified as datetime.datetime.
+                                            To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day
+                                            of the week to one of the following dates from 1990:
 
-                                           The service supports two kinds of traffic: typical and live. Typical traffic references travel speeds that are made up of historical
-                                           averages for each five-minute interval spanning a week. Live traffic retrieves speeds from a traffic feed that processes phone probe
-                                           records, sensors, and other data sources to record actual travel speeds and predict speeds for the near future.
+                                            * Monday - 1/1/1990
+                                            * Tuesday - 1/2/1990
+                                            * Wednesday - 1/3/1990
+                                            * Thursday - 1/4/1990
+                                            * Friday - 1/5/1990
+                                            * Saturday - 1/6/1990
+                                            * Sunday - 1/7/1990
+                                            Set the time and date as datetime.datetime.
 
-                                           The `data coverage <http://www.arcgis.com/home/webmap/viewer.html?webmap=b7a893e8e1e04311bd925ea25cb8d7c7>`_ page shows the countries
-                                           Esri currently provides traffic data for.
+                                            For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to
+                                            datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
 
-                                           Typical Traffic:
+                                            Live Traffic:
 
-                                           To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day
-                                           of the week to one of the following dates from 1990:
+                                            To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                           * Monday - 1/1/1990
-                                           * Tuesday - 1/2/1990
-                                           * Wednesday - 1/3/1990
-                                           * Thursday - 1/4/1990
-                                           * Friday - 1/5/1990
-                                           * Saturday - 1/6/1990
-                                           * Sunday - 1/7/1990
-                                           Set the time and date as datetime.datetime.
+                                            Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                            specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
 
-                                           For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to
-                                           datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
+                                            # Examples:
+                                            from datetime import datetime
 
-                                           Live Traffic:
-
-                                           To use live traffic when and where it is available, choose a time and date and convert to datetime.
-
-                                           Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
-                                           specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
-
-                                           Examples:
-                                           from datetime import datetime
-
-                                           * "time_of_day": datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
-                                           * "time_of_day": datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
-                                           * "time_of_day": datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014,
+                                            * "time_of_day": datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
+                                            * "time_of_day": datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
+                                            * "time_of_day": datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014,
                                              live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
-                                           * "time_of_day": datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015,
+                                            * "time_of_day": datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015,
                                              live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
 
-    -----------------------------------    ---------------------------------------------------------
-    time_zone_for_time_of_day              Optional string. Specify the time zone or zones of the timeOfDay parameter.
-                                           Choice list: ['GeoLocal', 'UTC']
+    -----------------------------------     ---------------------------------------------------------
+    time_zone_for_time_of_day               Optional string. Specify the time zone or zones of the timeOfDay parameter.
+                                            Choice list: ['GeoLocal', 'UTC']
 
-                                           GeoLocal-refers to the time zone in which the originsLayer points are located.
+                                            GeoLocal-refers to the time zone in which the originsLayer points are located.
 
-                                           UTC-refers to Coordinated Universal Time.
-    -----------------------------------    ---------------------------------------------------------
-    include_route_layers                   Optional Boolean. When include_route_layers is set to True, each route from the result is also saved as a route layer item. A route layer includes all the
-                                           information for a particular route such as the stops assigned to the route as well as the travel directions. Creating route layers is useful if you want
-                                           to share individual routes with other members in your organization. The route layers use the output feature service name provided in the outputName
-                                           parameter as a prefix and the route name generated as part of the analysis is added to create a unique name for each route layer.
+                                            UTC-refers to Coordinated Universal Time.
+    -----------------------------------     ---------------------------------------------------------
+    include_route_layers                    Optional Boolean. When include_route_layers is set to True,
+                                            each route from the result is also saved as a route layer item.
+                                            A route layer includes all the information for a particular route
+                                            such as the stops assigned to the route as well as the travel directions.
+                                            Creating route layers is useful if you want to share individual
+                                            routes with other members in your organization.
+                                            The route layers use the output feature service name provided in the ```output_name```
+                                            parameter as a prefix and the route name generated as part of the analysis is added to create a unique name for each route layer.
 
-                                           Caution: Route layers cannot be created when the output is a feature collection. The task will raise an error if output_name is not specified
-                                           (which indicates feature collection output) and include_route_layers is True.
+                                            Caution: Route layers cannot be created when the output is a feature collection.
+                                            The task will raise an error if output_name is not specified
+                                            (which indicates feature collection output) and include_route_layers is True.
 
-                                           The maximum number of route layers that can be created is 1,000. If the result contains more than 1,000 routes and include_route_layers is True,
-                                           the task will only create the output feature service.
-    -----------------------------------    ---------------------------------------------------------
-    output_name                            Optional string. If provided, the task will create a feature layer of the results. You define the name of the layer. If output_name is not supplied,
-                                           the task will return a feature collection.
-    -----------------------------------    ---------------------------------------------------------
-    context                                Optional string. Additional settings such as processing extent and output spatial reference. For calculate_density, there are two settings.
+                                            The maximum number of route layers that can be created is 1,000.
+                                            If the result contains more than 1,000 routes and include_route_layers is True,
+                                            the task will only create the output feature service.
+    -----------------------------------     ---------------------------------------------------------
+    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                            feature layer will cause the new layer to be appended to the Feature Service.
+                                            If overwrite is True in context, new layer will overwrite existing layer.
+                                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    -------------------------------------   ---------------------------------------------------------
+    context                                 Optional dict. Additional settings such as processing extent
+                                            and output spatial reference.
+                                            For connect_origins_to_destinations, there are three settings.
 
-                                           #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the origins_layer and destinations_layer that intersect the
-                                              bounding box will be analyzed.
-                                           #. Output Spatial Reference (outSR)-If the output is a feature service, the spatial reference will be the same as originsLayer. Setting outSR for feature services has no effect.
-                                              If the output is a feature collection, the features will be in the spatial reference of the outSRvalue or the spatial reference of originsLayer when outSR is not specified.
-    -----------------------------------    ---------------------------------------------------------
-    gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    -----------------------------------    ---------------------------------------------------------
-    estimate                               Optional Boolean. Is True, the number of credits needed to run the operation will be returned as a float.
-    -----------------------------------    ---------------------------------------------------------
-    point_barrier_layer                    Optional layer. Specify one or more point features that act as temporary restrictions (in other words, barriers) when traveling on the underlying streets.
+                                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                           A point barrier can model a fallen tree, an accident, a downed electrical line, or anything that completely blocks traffic at a specific position along
-                                           the street. Travel is permitted on the street but not through the barrier. See :ref:`Feature Input<FeatureInput>`.
-    -----------------------------------    ---------------------------------------------------------
-    line_barrier_layer                     Optional layer. Specify one or more line features that prohibit travel anywhere the lines intersect the streets.
+                                                .. code-block:: python
 
-                                           A line barrier prohibits travel anywhere the barrier intersects the streets. For example, a parade or protest that blocks traffic across several street
-                                           segments can be modeled with a line barrier. See :ref:`Feature Input<FeatureInput>`.
-    -----------------------------------    ---------------------------------------------------------
-    polygon_barrier_layer                  Optional string. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
+                                                    # Example Usage
+                                                    context = {"extent": {"xmin": 3164569.408035,
+                                                                        "ymin": -9187921.892449,
+                                                                        "xmax": 3174104.927313,
+                                                                        "ymax": -9175500.875353,
+                                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                "outSR": {"wkid": 3857},
+                                                                "overwrite": True}
+    -----------------------------------     ---------------------------------------------------------
+    gis                                     Optional, the GIS on which this tool runs. If not specified,
+                                            the active GIS is used.
+    -----------------------------------     ---------------------------------------------------------
+    estimate                                Optional Boolean. Is True, the number of credits needed
+                                            to run the operation will be returned as a float.
+    -----------------------------------     ---------------------------------------------------------
+    point_barrier_layer                     Optional layer. Specify one or more point features that
+                                            act as temporary restrictions (in other words, barriers) when
+                                            traveling on the underlying streets.
 
-                                           One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
-    -----------------------------------    ---------------------------------------------------------
-    future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    -----------------------------------    ---------------------------------------------------------
-    route_shape                            Optional String. Specify the shape of the route that connects each origin to it's destination when using a travel mode.
+                                            A point barrier can model a fallen tree, an accident, a downed
+                                            electrical line, or anything that completely blocks traffic at
+                                            a specific position along the street. Travel is permitted on the
+                                            street but not through the barrier. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------------------     ---------------------------------------------------------
+    line_barrier_layer                      Optional layer. Specify one or more line features that prohibit
+                                            travel anywhere the lines intersect the streets.
 
-                                           Values: FollowStreets or StraightLine
+                                            A line barrier prohibits travel anywhere the barrier intersects the
+                                            streets. For example, a parade or protest that blocks traffic across
+                                            several street
+                                            segments can be modeled with a line barrier.
+                                            See :ref:`Feature Input<FeatureInput>`.
+    -----------------------------------     ---------------------------------------------------------
+    polygon_barrier_layer                   Optional string. Specify one or more polygon features
+                                            that completely restrict travel on the streets intersected
+                                            by the polygons.
 
-                                           Default: FollowStreets
+                                            One use of this type of barrier is to model floods covering
+                                            areas of the street network and making road travel there impossible.
+                                            See :ref:`Feature Input<FeatureInput>`.
+    -----------------------------------     ---------------------------------------------------------
+    future                                  Optional boolean. If True, the result will be a GPJob object
+                                            and results will be returned asynchronously.
+    -----------------------------------     ---------------------------------------------------------
+    route_shape                             Optional String. Specify the shape of the route that connects
+                                            each origin to it's destination when using a travel mode.
 
-                                              + FollowStreets - The shape is based on the underlying street network. This option is best when you want to generate the routes between origins and destinations. This is the default value when using a travel mode.
-                                              + StraightLine - The shape is a straight line connecting the origin-destination pair. This option is best when you want to generate spider diagrams or desire lines (for example, to show which stores customers are visiting). This is the default value when not using a travel mode.
+                                            Values: FollowStreets or StraightLine
 
-                                           The best route between an origin and it's matched destination is always calculated based on the travel mode, regardless of which route shape is chosen.
-    ===================================    =========================================================
+                                            Default: FollowStreets
+
+                                              + FollowStreets - The shape is based on the underlying street network.
+                                                This option is best when you want to generate the routes between
+                                                origins and destinations. This is the default value when using a
+                                                travel mode.
+                                              + StraightLine - The shape is a straight line connecting
+                                                the origin-destination pair. This option is best when you want to g
+                                                enerate spider diagrams or desire lines (for example, to show which
+                                                stores customers are visiting). This is the default value when not using
+                                                a travel mode.
+
+                                            The best route between an origin and it's matched destination is always calculated based on the travel mode, regardless of which route shape is chosen.
+    ===================================     =========================================================
 
 
-    :returns: dict with the following keys:
+    :return: A dictionary with the following keys:
 
-        "routes_layer" : layer (FeatureCollection)
+        "routes_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        "unassigned_origins_layer" : layer (FeatureCollection)
+        "unassigned_origins_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        "unassigned_destinations_layer" : layer (FeatureCollection)
+        "unassigned_destinations_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 
-        USAGE EXAMPLE: To retrieve trvel modes and run connect_origins_to_destinations tool.
+        # USAGE EXAMPLE: To retrieve trvel modes and run connect_origins_to_destinations tool.
 
         This example creates route between esri regional offices to esri headquarter.
 
@@ -410,14 +453,29 @@ def create_buffers(
                                  +---------+-------------------------------------------------------------------------------+
 
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string. Output feature service name. If not provided, a feature collection is returned.
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
+                                 If overwrite is True in context, new layer will overwrite existing layer.
+                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Context contains additional settings that affect task execution. For ``create_buffers``, there are two settings.
+    context                      Optional dict. Additional settings such as processing extent
+                                 and output spatial reference.
+                                 For create_buffers, there are three settings.
 
-                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
-                                    that intersect the bounding box will be analyzed.
+                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                                     .. code-block:: python
+
+                                         # Example Usage
+                                         context = {"extent": {"xmin": 3164569.408035,
+                                                             "ymin": -9187921.892449,
+                                                             "xmax": 3174104.927313,
+                                                             "ymax": -9175500.875353,
+                                                             "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                     "outSR": {"wkid": 3857},
+                                                     "overwrite": True}
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -426,7 +484,7 @@ def create_buffers(
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
-    :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
 
     .. code-block:: python
@@ -609,14 +667,29 @@ def create_drive_time_areas(
 
                                  The default is 'GeoLocal'.
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string. Output feature service name. If not provided, a feature collection is returned.
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
+                                 If overwrite is True in context, new layer will overwrite existing layer.
+                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Context contains additional settings that affect task execution. For ``create_drive_time_areas``, there are two settings.
+    context                      Optional dict. Additional settings such as processing extent
+                                 and output spatial reference.
+                                 For create_drive_time_areas, there are three settings.
 
-                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
-                                    that intersect the bounding box will be analyzed.
+                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                                 .. code-block:: python
+
+                                    # Example Usage
+                                         context = {"extent": {"xmin": 3164569.408035,
+                                                             "ymin": -9187921.892449,
+                                                             "xmax": 3174104.927313,
+                                                             "ymax": -9175500.875353,
+                                                             "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                     "outSR": {"wkid": 3857},
+                                                     "overwrite": True}
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -655,10 +728,9 @@ def create_drive_time_areas(
                                  area polygons. Set this to true if you want a potentially more accurate
                                  result of which streets are actually covered within a specific travel
                                  distance than what the drive-time areas would contain.
-    -------------------------    ---------------------------------------------------------
     =========================    =========================================================
 
-    :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else Feature Collection.
 
 
     .. code-block:: python
@@ -864,14 +936,29 @@ def find_nearest(
 
                                  One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible.
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string. Output feature layer collection. If not provided, a feature collection is returned.
+    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                 feature layer will cause the new layer to be appended to the Feature Service.
+                                 If overwrite is True in context, new layer will overwrite existing layer.
+                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Context contains additional settings that affect task execution. For ``find_nearest``, there are two settings.
+    context                      Optional dict. Additional settings such as processing extent
+                                 and output spatial reference.
+                                 For find_nearest, there are three settings.
 
-                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
-                                    that intersect the bounding box will be analyzed.
+                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                                     .. code-block:: python
+
+                                         # Example Usage
+                                         context = {"extent": {"xmin": 3164569.408035,
+                                                             "ymin": -9187921.892449,
+                                                             "xmax": 3174104.927313,
+                                                             "ymax": -9175500.875353,
+                                                             "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                     "outSR": {"wkid": 3857},
+                                                     "overwrite": True}
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -880,13 +967,11 @@ def find_nearest(
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
-    :Returns:
+    :return: A dictionary with the following keys:
 
-    dict with the following keys:
+       "nearest_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-       "nearest_layer" : layer (FeatureCollection)
-
-       "connecting_lines_layer" : layer (FeatureCollection)
+       "connecting_lines_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 
@@ -1178,15 +1263,28 @@ def plan_routes(
                                     members in your organization. The route layers use the output feature service name provided in the ``output_name`` parameter as a
                                     prefix and the route name generated as part of the analysis is added to create a unique name for each route layer.
     ----------------------------    --------------------------------------------------------------------------------------------------
-    output_name                     Optional string. If provided, the method will create a feature service of the results. You define
-                                    the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
+    output_name                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ----------------------------    --------------------------------------------------------------------------------------------------
-    context                         Optional string. Context contains additional settings that affect task execution. For ``plan_routes``, there are two settings:
+    context                         Optional dict. Additional settings such as processing extent and output spatial reference.
+                                    For plan_routes, there are three settings.
 
-                                    #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those points in the inputLayer, start_layer, and endLayer that are within the bounding box can be visited by routes.
+                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                    #. Output Spatial Reference (``outSR``)-If the output is a feature service, the spatial reference will be the same as ``stops_layer``. Setting outSR for feature services has no effect.
-                                       If the output is a feature collection, the features will be in the spatial reference of the outSR value or the spatial reference of ``stops_layer`` when outSR is not specified.
+                                        .. code-block:: python
+
+                                            # Example Usage
+                                            context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857},
+                                                        "overwrite": True}
     ----------------------------    --------------------------------------------------------------------------------------------------
     gis                             Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------------------    --------------------------------------------------------------------------------------------------
@@ -1207,14 +1305,14 @@ def plan_routes(
     future                          Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ============================    ==================================================================================================
 
-    :returns: feature layer Item if ``output_name`` is specified, else dict with the following keys:
+    :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else dict with the following keys:
 
 
-        "routes_layer" : layer (FeatureCollection)
+        "routes_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        "assigned_stops_layer" : layer (FeatureCollection)
+        "assigned_stops_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        "unassigned_stops_layer" : layer (FeatureCollection)
+        "unassigned_stops_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 

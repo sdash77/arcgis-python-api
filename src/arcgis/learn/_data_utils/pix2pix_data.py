@@ -359,12 +359,16 @@ class Pix2PixHDDataset(Dataset):
 
         else:
             if self.label_nc == False:
-                image_A = open_image(self.image_list_A[idx])
+                image_A = ArcGISMSImage.open(
+                    self.image_list_A[idx], imagery_type=self.imagery_type, div=255
+                )
             else:
-                image_A = open_mask(self.image_list_A[idx])
+                image_A = ImageSegment(ArcGISMSImage.open(self.image_list_A[idx]).data)
                 image_A = rescale_mask(image_A, self.mask_map)
 
-            image_B = open_image(self.image_list_B[idx])
+            image_B = ArcGISMSImage.open(
+                self.image_list_B[idx], imagery_type=self.imagery_type, div=255
+            )
 
         _resolve_tfms(self.train_tfms)
         _resolve_tfms(self.val_tfms)
@@ -399,8 +403,11 @@ class Pix2PixHDDataset(Dataset):
         if axes is None:
             _, axes = plt.subplots(1, 2, figsize=(15, 7))
 
-        self.image_A.show(axes[0])
-        self.image_B.show(axes[1])
+        if self.label_nc == True:
+            self.image_A.show(axes[0])
+        else:
+            self.image_A.show(axes[0], rgb_bands=rgb_bands)
+        self.image_B.show(axes[1], rgb_bands=rgb_bands)
 
 
 def create_train_val_sets(
@@ -504,7 +511,6 @@ def prepare_pix2pix_data(
     _is_multispectral,
     **kwargs,
 ):
-
     norm_stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]  # kwargs.get('norm_stats', stats)
     flip_vert = kwargs.get("imagery_type", "satellite") != "oriented"
     split = kwargs.get("split", "random")
@@ -552,14 +558,17 @@ def prepare_pix2pix_data(
     return data
 
 
-def show_batch(self, rows=4):
+def show_batch(self, rows=4, **kwargs):
+    rgb_bands = kwargs.get("rgb_bands", None)
     fig, axes = plt.subplots(nrows=rows, ncols=2, squeeze=False, figsize=(20, rows * 5))
     top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
     plt.subplots_adjust(top=top)
-    fig.suptitle("Input / Generated", fontsize=16)
+    # fig.suptitle("Input / Ground Truth", fontsize=16)
+    axes[0, 0].title.set_text("Input")
+    axes[0, 1].title.set_text("Target")
     img_idxs = [random.randint(0, len(self.train_ds) - 1) for k in range(rows)]
     for idx, im_idx in enumerate(img_idxs):
-        self.train_ds.show(im_idx, axes[idx])
+        self.train_ds.show(im_idx, axes[idx], rgb_bands)
 
 
 def to_device(z, device):
@@ -633,11 +642,14 @@ def show_results(self, rows):
     x_B = denormalize(x_B.cpu(), *self._data.norm_stats)
     activations = denormalize(activations.cpu(), *self._data.norm_stats)
     rows = min(rows, x_A.shape[0])
+
     fig, axs = plt.subplots(
         nrows=rows, ncols=3, figsize=(4 * 5, rows * 5), squeeze=False
     )
     plt.subplots_adjust(top=top)
-    fig.suptitle("Input / Label")
+    axs[0, 0].title.set_text("Input")
+    axs[0, 1].title.set_text("Target")
+    axs[0, 2].title.set_text("Prediction")
     for r in range(rows):
         if self._data._is_multispectral:
             display_row(
@@ -658,9 +670,11 @@ def show_results(self, rows):
 def predict(self, img_path):
     img_path = Path(img_path)
     if self._data.label_nc == 0:
-        raw_img = open_image(img_path)
+        raw_img = ArcGISMSImage.open(
+            img_path, imagery_type=self._data.imagery_type, div=255
+        )
     else:
-        raw_img = open_mask(img_path)
+        raw_img = ImageSegment(ArcGISMSImage.open(img_path).data)
         raw_img = rescale_mask(raw_img, self._data.mask_map)
     raw_img = raw_img.resize(self._data.chip_size)
 
@@ -687,8 +701,8 @@ def predict(self, img_path):
         )
 
     pred_denorm = denormalize(prediction, *self._data.norm_stats)
-    pred_denorm = transforms.ToPILImage()(pred_denorm).convert("RGB")
-
+    pred_denorm = ArcGISMSImage(pred_denorm)
+    pred_denorm = pred_denorm.show()
     return pred_denorm
 
 
@@ -697,7 +711,7 @@ def rgb_or_ms(im_path):
     Function that returns the imagery type (RGB or ms) of an image.
     """
     try:
-        import gdal
+        from osgeo import gdal
 
         ds = gdal.Open(im_path)
         if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:

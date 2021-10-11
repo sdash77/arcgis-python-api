@@ -210,7 +210,7 @@ class Geocoder(_GISResource):
                                  the 3-character country code.
         ====================     ====================================================
 
-        :returns:
+        :return:
            dictionary or FeatureSet
 
         """
@@ -634,7 +634,7 @@ def get_geocoders(gis):
 
     =================== ====================================================
 
-    :returns:
+    :return:
         A list of :class:`~arcgis.geocoding.Geocoder` objects registered with the ``GIS``.
     """
     geocoders = []
@@ -741,7 +741,7 @@ def analyze_geocode_input(
                               active ``GIS`` is used.
     =====================     ================================================================
 
-    :returns:
+    :return:
         A dictionary
 
 
@@ -973,7 +973,7 @@ def geocode_from_items(
         >>> type(fl_item)
         <:class:`~arcgis.gis.Item`>
 
-    :returns:
+    :return:
         A :class:`~arcgis.gis.Item` object.
     """
 
@@ -1325,7 +1325,7 @@ def geocode(
         >>> type(geocoded)
         <:class:`~arcgis.features.FeatureSet>
 
-    :returns:
+    :return:
        A dictionary or :class:`~arcgis.features.FeatureSet` object.
 
     """
@@ -1449,7 +1449,7 @@ def reverse_geocode(
         >>> type(reversed)
         <Dictionary>
 
-    :returns:
+    :return:
        A dictionary
     """
 
@@ -1592,7 +1592,7 @@ def batch_geocode(
         >>> type(batched)
         <:class:`~arcgis.features.FeatureSet>
 
-    :returns:
+    :return:
       A dictionary or :class:`~arcgis.features.FeatureSet`
     """
     if geocoder is None:
@@ -1746,7 +1746,7 @@ def suggest(
         >>> type(suggested)
         <Dictionary>
 
-    :returns:
+    :return:
         A dictionary
     """
     if geocoder is None:

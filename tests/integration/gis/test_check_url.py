@@ -5,7 +5,7 @@ import unittest
 
 from arcgis.gis import GIS
 
-PROFILES = ['your_online_profile', 'your_enterprise_profile']
+PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
 
 URLS = {
@@ -31,7 +31,7 @@ class TestCheckUrl(unittest.TestCase):
             gis = GIS(profile=profile, verify_cert=False, trust_env=True)
             for url in URLS["BAD"]:
                 r = gis.content.check_url(url)
-                assert 'success' in r or 'httpStatusMessage' in r
+                assert "success" in r or "httpStatusMessage" in r
 
     def test_valid_url(self):
         """tests an valid url that should return true in the dictionary response"""
@@ -39,7 +39,7 @@ class TestCheckUrl(unittest.TestCase):
             gis = GIS(profile=profile, verify_cert=False, trust_env=True)
             for url in URLS["GOOD"]:
                 r = gis.content.check_url(url)
-                assert 'success' in r or 'httpStatusMessage' in r
+                assert "success" in r or "httpStatusMessage" in r
 
 
 if __name__ == "__main__":

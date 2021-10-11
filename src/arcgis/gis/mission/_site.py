@@ -79,7 +79,7 @@ class SiteManager(object):
         location               Require String. The folder to save the site to.
         ==================     ====================================================================
 
-        :returns: string
+        :return: string
 
         """
         url = "{base}/exportSite".format(base=self._url)
@@ -109,7 +109,7 @@ class SiteManager(object):
         location               Require String. Path to the backup site file.
         ==================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = "{base}/importSite".format(base=self._url)

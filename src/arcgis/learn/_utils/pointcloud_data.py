@@ -37,6 +37,7 @@ import shutil
 import copy
 from functools import partial
 import re
+import warnings
 
 logger = logging.getLogger()
 
@@ -235,6 +236,42 @@ def expand_classes_of_interest(classes_of_interest, inverse_remap_classes):
     for c in classes_of_interest:
         expanded.extend(inverse_remap_classes.get(c, [c]))
     return expanded
+
+
+def get_random_cluster_indexes(block_centers, block_size):
+    """
+    This clustering method will operate on block centers
+    as this will be less compute intesive as compared to the
+    points.
+    DBScan algo is used for this where we set the eps value
+    to be 3/2 times the block size. This makes sure not extra
+    cluster is for
+    returns: a bool index mask
+    """
+    block_centers = np.array(block_centers)
+    from sklearn.cluster import DBSCAN
+
+    # clustering is required because some h5 files have many las files
+    # because of which the aspect ratio of the show batch/ show result
+    # plot was getting messed up.
+    # The nearest neighbour to consider is 1.5 times the block size
+    # based on experiments.
+    # slice :2 because we want this clustering in spatial space only X and Y.
+    clustering = DBSCAN(eps=3 * block_size / 2, min_samples=2).fit(block_centers[:, :2])
+    clustered_labels = clustering.labels_
+    unique_labels = np.unique(clustering.labels_)
+    # clusters with fewer than 5 blocks cannot be selected.
+    fewer_than = 5
+    unique_label_masks = [clustered_labels == i for i in unique_labels]
+    unique_label_masks_filtered = [
+        i for i in unique_label_masks if i.sum() > fewer_than
+    ]
+    if len(unique_label_masks_filtered) != 0:
+        return unique_label_masks_filtered[
+            np.random.randint(0, len(unique_label_masks_filtered))
+        ]
+    else:
+        return unique_label_masks[np.random.randint(0, len(unique_label_masks))]
 
 
 class PointCloudDataset(Dataset):
@@ -482,16 +519,22 @@ class PointCloudDataset(Dataset):
         xyzs_scaled = []
         centers = []
         scale = self.block_size / 2
+        block_centers = []
         for idx in indexes[0]:
             tile = self.tiles[idx]
             center = self.centers[idx]
             xyz = read_file["xyz"][tile[1] : tile[1] + tile[2]]
+            xyz_scaled = xyz * scale + center
             xyzs.append(xyz)
             labels.append(read_file["classification"][tile[1] : tile[1] + tile[2]])
-            xyzs_scaled.append(xyz * scale + center)
-        xyzs = np.concatenate(xyzs, axis=0)
-        labels = np.concatenate(labels, axis=0)
-        xyzs_scaled = np.concatenate(xyzs_scaled, axis=0)
+            xyzs_scaled.append(xyz_scaled)
+            block_centers.append(xyz_scaled.mean(axis=0))
+
+        index_mask = get_random_cluster_indexes(block_centers, self.block_size)
+        xyzs = np.concatenate(np.array(xyzs)[index_mask], axis=0)
+        labels = np.concatenate(np.array(labels)[index_mask], axis=0)
+        xyzs_scaled = np.concatenate(np.array(xyzs_scaled)[index_mask], axis=0)
+
         return xyzs, labels, xyzs_scaled
 
     def __getitem__(self, i, return_scaled=False, add_centers=False):
@@ -852,7 +895,9 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
         keys = [k for k in keys if is_class_present(classes_of_interest, k, self.meta)]
 
     if len(keys) == 0:
-        logger.warn("No blocks remains after filtering based on `classes_of_interest`")
+        warnings.warn(
+            "No blocks remains after filtering based on `classes_of_interest`"
+        )
     keys = [k for k in keys if "train" in Path(k).parts]
     random.shuffle(keys)
 
@@ -1274,7 +1319,9 @@ def prepare_las_data(
         meta_file = {}
         meta_file["files"] = {}
         all_classes = set()
+        folder_classes = {}
         for itn in mb:
+            current_folder_classes = set()
             folder = folders[itn]
             path = output_path / Path(folder).stem
             total = 0
@@ -1306,6 +1353,9 @@ def prepare_las_data(
                     new_file.close()
                     unique_classes = np.unique(label_seg[i][: data_num[i]]).tolist()
                     all_classes = all_classes.union(unique_classes)
+                    current_folder_classes = current_folder_classes.union(
+                        unique_classes
+                    )
                     all_unique_classes.append(unique_classes)
                     total_points.append(int(data_num[i]))
                     file_idxs.append(i)
@@ -1315,6 +1365,7 @@ def prepare_las_data(
                     "unique_classes": all_unique_classes,
                     "total_points": total_points,
                 }
+                folder_classes[Path(folder).name] = list(current_folder_classes)
                 file.close()
                 os.remove(fn)
         meta_file["num_classes"] = len(all_classes)
@@ -1323,6 +1374,7 @@ def prepare_las_data(
         meta_file["num_extra_dim"] = len(extra_features)
         meta_file["extra_features"] = extra_features
         meta_file["block_size"] = block_size
+        meta_file["folder_classes"] = folder_classes
         with open(output_path / "meta.json", "w") as f:
             json.dump(meta_file, f)
 
@@ -1433,6 +1485,52 @@ def filter_files(fname, meta, classes_to_check, min_points):
     return is_present
 
 
+def raise_class_mismatch_warning(train_classes, valid_classes, remap_classes):
+
+    train_classes_mapped = list(set([remap_classes.get(c, c) for c in train_classes]))
+    valid_classes_mapped = list(set([remap_classes.get(c, c) for c in valid_classes]))
+
+    if sorted(train_classes) != sorted(valid_classes) and remap_classes == {}:
+        warnings.warn(
+            "Classes in your training and validation datasets are not same. "
+            "This will not affect training but will result in poor validation metrics. "
+            f"Got class codes {train_classes} in training dataset and {valid_classes} in validation dataset. "
+            "The model will be trained on union of the two class lists."
+            "If required, use the `remap_classes` parameter to map the extra class to one of the other classes."
+        )
+
+    elif sorted(train_classes_mapped) != sorted(valid_classes_mapped):
+        warnings.warn(
+            "Classes in your training and validation datasets are not same. "
+            "Remapped classes do not match. "
+            f"Got mapped class codes {train_classes_mapped} in training dataset and "
+            f"{valid_classes_mapped} in validation dataset. "
+        )
+
+
+def merge_classes(json_train, json_val, remap_classes):
+    class_train = [c["classCode"] for c in json_train["classification"]["table"]]
+    class_val = [c["classCode"] for c in json_val["classification"]["table"]]
+    if sorted(class_train) != sorted(class_val):
+        raise_class_mismatch_warning(class_train, class_val, remap_classes)
+    classification = json_train["classification"]
+
+    for c in json_val["classification"]["table"]:
+        if c["classCode"] not in class_train:
+            classification["table"].append(c)
+
+    classification["table"] = sorted(
+        classification["table"], key=lambda x: x["classCode"]
+    )
+    classification["max"] = max(
+        json_train["classification"]["max"], json_val["classification"]["max"]
+    )
+    classification["min"] = min(
+        json_train["classification"]["min"], json_val["classification"]["min"]
+    )
+    return classification
+
+
 # Prepare data called in _data.py
 def pointcloud_prepare_data(
     path,
@@ -1465,15 +1563,22 @@ def pointcloud_prepare_data(
     if dataset_type == "PointCloud":
         if already_split:
             # write code to merge json.
-            # TODO:: CHANGE THIS TO MERGE TRAIN and VAL statistics
             with open(path / "train" / "Statistics.json") as f:
-                json_file = json.load(f)
+                json_train = json.load(f)
+
+            with open(path / "val" / "Statistics.json") as f:
+                json_val = json.load(f)
+
+            classification = merge_classes(
+                json_train, json_val, kwargs.get("remap_classes", {})
+            )
+            json_train["classification"] = classification
 
             pointcloud_dataset_train = PointCloudDataset(
-                path, class_mapping, json_file, folder="train", **kwargs
+                path, class_mapping, json_train, folder="train", **kwargs
             )
             pointcloud_dataset_val = PointCloudDataset(
-                path, class_mapping, json_file, folder="val", **kwargs
+                path, class_mapping, json_train, folder="val", **kwargs
             )
             train_dl = DataLoader(
                 pointcloud_dataset_train, batch_size=batch_size, **databunch_kwargs
@@ -1547,6 +1652,13 @@ def pointcloud_prepare_data(
             raise Exception(
                 "`background_classcode can only be used when `classes_of_interest` is passed."
             )
+
+        if "folder_classes" in meta.keys():
+            folder_classes = meta["folder_classes"]
+            if sorted(folder_classes["train"]) != sorted(folder_classes["val"]):
+                raise_class_mismatch_warning(
+                    folder_classes["train"], folder_classes["val"], remap_classes
+                )
 
         if remap_classes != {}:
             to_be_remapped = list(remap_classes.keys())
@@ -1702,7 +1814,7 @@ def pointcloud_prepare_data(
         )
         if classes_of_interest != [] or min_points > 0:
             if old_exported_data_warning:
-                logger.warning(
+                warnings.warn(
                     "You are using exported data from an older version of the library. "
                     "Ignoring `classes_of_interest` and `min_points` parameters. "
                     "To use these features, please export your data again."
@@ -2309,7 +2421,7 @@ def raise_maxpoint_warning(
     if not save_html:
         if idx_file == 0:
             if "max_display_point" not in kwargs.keys():
-                logger.warning(
+                warnings.warn(
                     f"Randomly sampling {max_display_point} points for visualization. You can adjust this using the `max_display_point` parameter."
                 )
 
@@ -2744,7 +2856,7 @@ class Transform3d(object):
                             Default: 0.0.
     =====================   ===========================================
 
-    :returns: `Transform3d` object
+    :return: `Transform3d` object
     """
 
     def __init__(
@@ -2847,7 +2959,7 @@ def predict_h5(self, path, output_path, **kwargs):
         )
         data.pc_type = "PointCloud"
         if not hasattr(data, "idx2class"):
-            data.idx2class = {i: c for i, c in enumerate(sorted(data.classes))}
+            data.idx2class = {v: k for k, v in data.class2idx.items()}
     else:
         api_model = False
     if "xyz" in features_to_keep:
@@ -3025,6 +3137,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         labels = []
         pc = []
         pred_class = []
+        block_centers = []
+        blocks = []
         for block_idx in indices:
             (
                 (block, point_num),
@@ -3033,7 +3147,24 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
             ) = data.valid_ds.__getitem__(
                 block_idx, return_scaled=True, add_centers=True
             )
-            # print(block.shape, point_num, self.sample_point_num, scaled_block.shape)
+
+            blocks.append((block, point_num))
+            pc.append(scaled_block[:point_num].cpu().numpy())
+            block_centers.append(
+                scaled_block[:point_num, :3].cpu().numpy().mean(axis=0)
+            )
+            labels.append(classification[:point_num].cpu().numpy())
+
+        # clustered indexes is a boolean mask
+        clustered_index_bool_mask = get_random_cluster_indexes(
+            block_centers, self._data.block_size
+        )
+        labels = np.concatenate(np.array(labels)[clustered_index_bool_mask])
+        pc = np.concatenate(np.array(pc)[clustered_index_bool_mask], axis=0)
+        blocks = [blocks[i] for i, mask in enumerate(clustered_index_bool_mask) if mask]
+
+        # prediction step
+        for block, point_num in blocks:
             block = block[None]
             points_batch = block[[0] * 1]
             predictions = np.array(
@@ -3048,12 +3179,7 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
                 )
             )
             pred_class.append(predictions[:point_num, 0])
-            # pc.append(block[0, :point_num].cpu().numpy())
-            pc.append(scaled_block[:point_num])
-            labels.append(classification[:point_num].cpu().numpy())
 
-        labels = np.concatenate(labels)
-        pc = np.concatenate(pc)
         pred_class = np.concatenate(pred_class, axis=0)
         unmapped_labels = remap_labels(labels.copy().astype(int), data.idx2class)
         unmapped_predictions = remap_labels(pred_class, data.idx2class)

@@ -7,7 +7,6 @@ import arcgis
 from arcgis.mapping.renderer import generate_renderer
 from arcgis.mapping.symbol import create_symbol, display_colormaps, show_styles
 
-# from arcgis.features import SpatialDataFrame
 from arcgis.features import FeatureCollection
 from arcgis.features import FeatureSet
 from arcgis.features._data.geodataset import GeoSeries
@@ -51,7 +50,7 @@ def plot(
     col=None,
     colors="jet",
     alpha=1,
-    **kwargs
+    **kwargs,
 ):
     """
 
@@ -63,7 +62,7 @@ def plot(
     ======================  =========================================================
     **Explicit Argument**   **Description**
     ----------------------  ---------------------------------------------------------
-    df                      required SpatialDataFrame or GeoSeries. This is the data
+    df                      required Spatially Enabled DataFrame or GeoSeries. This is the data
                             to map.
     ----------------------  ---------------------------------------------------------
     map_widget              optional WebMap object. This is the map to display the
@@ -172,7 +171,7 @@ def plot(
             col=col,
             colors=colors,
             alpha=alpha,
-            **kwargs
+            **kwargs,
         )
     r = None
     if isinstance(col, str):
@@ -215,7 +214,7 @@ def plot(
             render_type=renderer_type,
             colors=colors,
             alpha=alpha,
-            **kwargs
+            **kwargs,
         )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif isinstance(col, str) and col not in df.columns:
@@ -243,7 +242,7 @@ def plot(
             render_type=renderer_type,
             colors=colors,
             alpha=alpha,
-            **kwargs
+            **kwargs,
         )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type in ["u", "u-a"]:
@@ -256,7 +255,7 @@ def plot(
             render_type=renderer_type,
             colors=colors,
             alpha=alpha,
-            **kwargs
+            **kwargs,
         )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type == "h":
@@ -269,7 +268,7 @@ def plot(
             render_type=renderer_type,
             colors=colors,
             alpha=alpha,
-            **kwargs
+            **kwargs,
         )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type == "str":
@@ -282,7 +281,7 @@ def plot(
             render_type=renderer_type,
             colors=colors,
             alpha=alpha,
-            **kwargs
+            **kwargs,
         )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type == "t":
@@ -295,7 +294,7 @@ def plot(
             render_type=renderer_type,
             colors=colors,
             alpha=alpha,
-            **kwargs
+            **kwargs,
         )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
 

@@ -12,7 +12,6 @@ try:
     import torch
     import cv2
     import numpy as np
-    from PIL import Image
     import matplotlib.pyplot as plt
     from numpy import mod
     from torch import resize_as_
@@ -64,7 +63,7 @@ class DeepSort(ArcGISModel):
                             DeepSort only supports image size of (3, 128, 64)
     =====================   ===========================================
 
-    :returns: `DeepSort` Object
+    :return: `DeepSort` Object
     """
 
     # TODO: kwargs description
@@ -158,7 +157,7 @@ class DeepSort(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        return ["reid_v1, reid_v2"]
+        return ["reid_v1", "reid_v2"]
 
     @property
     def supported_backbones(self):
@@ -176,6 +175,11 @@ class DeepSort(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
         """
         self._check_requisites()
+        from fastai.basic_data import DatasetType
+
+        if self.learn.dl(DatasetType.Valid).batch_size > len(self.learn.data.valid_ds):
+            rows = min(rows, len(self.learn.data.valid_ds))
+
         self.learn.show_results(rows=rows)
         if _IS_ARCGISPRONOTEBOOK:
             plt.show()
@@ -252,7 +256,7 @@ class DeepSort(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `DeepSort` Object
+        :return: `DeepSort` Object
         """
 
         if not HAS_FASTAI:
@@ -334,7 +338,7 @@ class DeepSort(ArcGISModel):
                                 corresponding to the detections.
         =====================   ===========================================
 
-        :returns: Track list
+        :return: Track list
         """
         if detections is None:
             detections = []
@@ -421,7 +425,7 @@ class DeepSort(ArcGISModel):
                                 corresponding to the detections.
         =====================   ===========================================
 
-        :returns: Track list
+        :return: Track list
         """
         self.track_list = []
         self._update_interval = kwargs.get("update_interval", self._update_interval)
@@ -465,7 +469,7 @@ class DeepSort(ArcGISModel):
                                 from the track list.
         =====================   ===========================================
 
-        :returns: Updated track list
+        :return: Updated track list
         """
         try:
             for track_id in track_ids:
