@@ -14,7 +14,6 @@ import pandas as pd
 import os, shutil
 from arcgis.gis import GIS, ProfileManager
 from arcgis import geoenrichment
-from arcgis.features import SpatialDataFrame
 
 ########################################################################
 ## SETUP VALUES                                                       ##
@@ -118,7 +117,7 @@ if len(PROFILES) > 0:
                     ids=["06"],
                     return_geometry=True,
                 )
-                self.assertIsInstance(r, (SpatialDataFrame, pd.DataFrame))
+                self.assertIsInstance(r, pd.DataFrame)
 
         ##----------------------------------------------------------------------
         # @unittest.SkipTest
@@ -179,7 +178,7 @@ if len(PROFILES) > 0:
                         },
                     ]
                 )
-                self.assertIsInstance(r, (SpatialDataFrame, pd.DataFrame))
+                self.assertIsInstance(r, pd.DataFrame)
 
         ##----------------------------------------------------------------------
         # @unittest.SkipTest

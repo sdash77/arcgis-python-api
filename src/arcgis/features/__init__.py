@@ -25,7 +25,6 @@ are one of the dataset types contained in a :class:`~arcgis.gis.Datastore`.
 
 from .feature import Feature, FeatureSet, FeatureCollection
 from .layer import FeatureLayer, Table, FeatureLayerCollection
-from ._data.geodataset import SpatialDataFrame
 from ._parcel import ParcelFabricManager
 from ._utility import UtilityNetworkManager
 from ._validation import ValidationManager

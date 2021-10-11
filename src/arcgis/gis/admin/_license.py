@@ -248,11 +248,32 @@ class Bundle(object):
     @property
     def users(self):
         """returns a list of users assigned the application bundle"""
-        if self._users is None:
-            self._users = self._gis.users.search(
-                "appbundle:%s" % self.properties.appBundleItemId
-            )
-        return self._users
+        url = f"{self._gis._portal.resturl}/portals/self/users/search"
+        params = {
+            "f": "json",
+            "sortField": "fullname",
+            "sortOrder": "asc",
+            "q": f"appbundle: {self.properties.appBundleItemId}",
+            "start": 1,
+            "num": 60,
+            "total": 0,
+            "nextStart": -1,
+        }
+        res = self._con.get(url, params)
+        final = dict(res)
+        while res["nextStart"] > 0:
+            params["start"] = res["nextStart"]
+            res = self._con.get(url, params)
+            final["results"].extend(res["results"])
+            if res["nextStart"] == -1:
+                break
+        from arcgis.gis import User
+
+        users = [
+            User(gis=self._gis, username=user["username"], userdict=None)
+            for user in final["results"]
+        ]
+        return users
 
     # ----------------------------------------------------------------------
     def __len__(self):
@@ -261,12 +282,12 @@ class Bundle(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         """ """
-        return "<AppBundle: %s >" % self.properties["name"]
+        return "<AppBundle: %s>" % self.properties["name"]
 
     # ----------------------------------------------------------------------
     def __repr__(self):
         """ """
-        return "<AppBundle: %s >" % self.properties["name"]
+        return "<AppBundle: %s>" % self.properties["name"]
 
     # ----------------------------------------------------------------------
     def assign(self, users):
