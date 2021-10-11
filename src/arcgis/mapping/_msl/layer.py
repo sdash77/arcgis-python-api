@@ -119,7 +119,7 @@ class MapFeatureLayer(Layer):
                              or list of start/stop date.
         ================     =================================================
 
-        :returns: String of datetime values as milliseconds from epoch
+        :return: String of datetime values as milliseconds from epoch
         """
         return self._time_filter
 
@@ -127,19 +127,7 @@ class MapFeatureLayer(Layer):
     @time_filter.setter
     def time_filter(self, value):
         """
-        Starting at Enterprise 10.7.1+, instead of querying time-enabled map
-        service layers or time-enabled feature service layers, a time filter
-        can be specified. Time can be filtered as a single instant or by
-        separating the two ends of a time extent with a comma.
-
-        ================     =================================================
-        **Input**            **Description**
-        ----------------     -------------------------------------------------
-        value                Required Datetime/List Datetime. This is a single
-                             or list of start/stop date.
-        ================     =================================================
-
-        :returns: String of datetime values as milliseconds from epoch
+        See main ``time_filter`` property docstring
         """
         import datetime as _dt
 
@@ -168,13 +156,15 @@ class MapFeatureLayer(Layer):
     @property
     def renderer(self):
         """
-        The ``renderer`` property retrieves the Renderer of the Map Feature Layer.
+        Get/Set the Renderer of the Map Feature Layer.
 
         .. note::
             The ``renderer`` property overrides the default symbology when displaying it on a
             :class:`~arcgis.mapping.WebMap`.
 
-        :returns: InsensitiveDict
+        :return:
+            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
+            A varients of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -189,7 +179,9 @@ class MapFeatureLayer(Layer):
         """
         Get/Set the Renderer of the Map Feature Layer.  This overrides the default symbology when displaying it on a webmap.
 
-        :returns: InsensitiveDict
+        :return:
+            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
+            A varients of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -219,7 +211,7 @@ class MapFeatureLayer(Layer):
                                                  is 0.
         ====================================     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.mapping.MapFeatureLayer` object
 
         .. code-block:: python
@@ -270,7 +262,7 @@ class MapFeatureLayer(Layer):
                                                  If None, a default folder is created.
         ====================================     ====================================================================
 
-        :returns:
+        :return:
             A path to the exported attachments
         """
         import pandas
@@ -370,7 +362,7 @@ class MapFeatureLayer(Layer):
                               the dynamic layer/table is allowed.
         =================     ====================================================================
 
-        :returns: dictionary
+        :return: dictionary
 
         """
         if self._dynamic_layer:
@@ -397,7 +389,7 @@ class MapFeatureLayer(Layer):
         file_path             Required string. Location of the file to attach.
         =================     ====================================================================
 
-        :returns: dictionary
+        :return: dictionary
 
         """
         if (os.path.getsize(file_path) >> 20) <= 9:
@@ -440,7 +432,7 @@ class MapFeatureLayer(Layer):
         attachment_id         Required integer. Id of the attachment to erase.
         =================     ====================================================================
 
-        :returns: dictionary
+        :return: dictionary
         """
         params = {"f": "json", "attachmentIds": "%s" % attachment_id}
         if self._dynamic_layer:
@@ -465,7 +457,7 @@ class MapFeatureLayer(Layer):
         file_path             Required string. Path to new attachment
         =================     ====================================================================
 
-        :returns: dictionary
+        :return: dictionary
 
         """
         params = {"f": "json", "attachmentId": "%s" % attachment_id}
@@ -504,7 +496,7 @@ class MapFeatureLayer(Layer):
                                             before unique values are returned.
         ===============================     ====================================================================
 
-        :returns:
+        :return:
             A List
 
         .. code-block:: python
@@ -824,7 +816,7 @@ class MapFeatureLayer(Layer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
 
-        :returns: A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another
+        :return: A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another
         return type is specified, such as ``count``.
 
         .. code-block:: python
@@ -1642,7 +1634,7 @@ class MapTable(MapFeatureLayer):
                                                  is 0.
         ====================================     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.mapping.MapTable` object
 
         .. code-block:: python
@@ -1874,7 +1866,7 @@ class MapTable(MapFeatureLayer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
 
-        :returns:
+        :return:
             A :class:`~arcgis.features.FeatureSet` or Panda's DataFrame containing the :class:`~arcgis.features.Feature`
             objects matching the query, unless another return type is specified, such as ``count``
 

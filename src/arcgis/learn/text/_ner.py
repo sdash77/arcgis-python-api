@@ -107,7 +107,7 @@ class EntityRecognizer:
                             (DLPK) or Esri Model Definition(EMD) file.
     =====================   ===========================================
 
-    :returns: ``EntityRecognizer`` Object
+    :return: ``EntityRecognizer`` Object
     """
 
     supported_backbones = ["spacy"] + _TransformerEntityRecognizer.supported_backbones
@@ -195,7 +195,7 @@ class EntityRecognizer:
                                 https://huggingface.co/transformers/pretrained_models.html
         =====================   ===========================================
 
-        :returns: a tuple containing the available models for the given entity recognition backbone
+        :return: a tuple containing the available models for the given entity recognition backbone
         """
 
         if architecture == "spacy":
@@ -387,7 +387,7 @@ class EntityRecognizer:
                                 are - `debug`, `info`, `warning`, `error` and `critical`.
         =====================   ===========================================
 
-        :returns: `EntityRecognizer` Object
+        :return: `EntityRecognizer` Object
         """
 
         if "spacy" in backbone:
@@ -446,7 +446,7 @@ class EntityRecognizer:
 
         =====================   ===========================================
 
-        :returns: `EntityRecognizer` Object
+        :return: `EntityRecognizer` Object
         """
 
         data_obj = None
@@ -516,7 +516,7 @@ class EntityRecognizer:
                                 Applicable only when a list of text is passed
         =====================   ===========================================
 
-        :returns: Pandas DataFrame
+        :return: Pandas DataFrame
         """
 
         return self._model.extract_entities(
@@ -533,7 +533,7 @@ class EntityRecognizer:
         ds_type                 Optional string, defaults to valid.
         =====================   ===========================================
 
-        :returns: Pandas DataFrame
+        :return: Pandas DataFrame
         """
 
         return self._model.show_results(ds_type=ds_type)
@@ -576,7 +576,7 @@ class EntityRecognizer:
                                 will plot the figure and return nothing.
         =====================   ===========================================
 
-        :returns: matplotlib.figure.Figure
+        :return: matplotlib.figure.Figure
         """
 
         return self._model.plot_losses(show=show)

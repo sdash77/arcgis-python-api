@@ -56,7 +56,7 @@ class SuperResolution(ArcGISModel):
                             saved.
     =====================   ===========================================
 
-    :returns: `SuperResolution` Object
+    :return: `SuperResolution` Object
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
@@ -116,7 +116,7 @@ class SuperResolution(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `SuperResolution` Object
+        :return: `SuperResolution` Object
         """
         return cls.from_emd(data, emd_path)
 
@@ -136,7 +136,7 @@ class SuperResolution(ArcGISModel):
                                 file.
         =====================   ===========================================
 
-        :returns: `SuperResolution` Object
+        :return: `SuperResolution` Object
         """
 
         if not HAS_FASTAI:

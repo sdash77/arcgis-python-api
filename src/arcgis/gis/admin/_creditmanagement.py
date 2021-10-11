@@ -89,7 +89,7 @@ class CreditManager(object):
                                         is provided, it sets user to unlimited credits.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: Boolean. True if successful else False
 
         """
         if hasattr(username, "username"):
@@ -119,7 +119,7 @@ class CreditManager(object):
         username                        Required string.The name of the user to set to unlimited credits.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: Boolean. True if successful else False
 
         """
         if hasattr(username, "username"):
@@ -132,7 +132,7 @@ class CreditManager(object):
         return res
 
     # ----------------------------------------------------------------------
-    def credit_usage(self, start_time=None, end_time=None):
+    def credit_usage(self, start_time=None, end_time=None, time_frame="week"):
         """
         returns the total credit consumption for a given time period.
 
@@ -145,29 +145,84 @@ class CreditManager(object):
         end_time              datetime.datetime object. This is the stop time
                               to look for credit consumption. It needs to be
                               at least 1 day previous than then start_time.
+        -------------------   -----------------------------------------------
+        time_frame            Optional string. is the timeframe report to create.
+                              Allowed values: today, week (default), 14days, 30days,
+                              60days, 90days, 6months, year
+
+                              If end_time is specified, this parameter is ignored.
         ===================   ===============================================
 
         returns: dictionary
         """
         import datetime
+        from ..._impl.common._utils import local_time_to_online
 
-        if isinstance(start_time, datetime.datetime):
-            start_time = int(start_time.timestamp() * 1000)
-        else:
-            start_time = int(datetime.datetime.now().timestamp() * 1000)
-        if isinstance(end_time, datetime.datetime):
-            end_time = int(end_time.timestamp() * 1000)
-        else:
-            end_time = int(
-                (datetime.datetime.now() - datetime.timedelta(days=5)).timestamp()
-                * 1000
-            )
+        if start_time and end_time:
+            if (
+                isinstance(start_time, datetime.datetime) == False
+                or isinstance(end_time, datetime.datetime) == False
+            ):
+                raise ValueError("start_time and end_time must be datetime objects")
+
+            # calculate time in days between start and end time to assign correct period
+            time_elapsed = start_time - end_time
+            time_elapsed = time_elapsed.days
+            # Convert to timestamps
+            if isinstance(start_time, datetime.datetime):
+                start_time = str(int(local_time_to_online(dt=start_time)))
+            if isinstance(end_time, datetime.datetime):
+                end_time = str(int(local_time_to_online(dt=end_time)))
+            if time_elapsed <= 1:
+                # one day
+                period = "1h"
+            elif time_elapsed in range(2, 183):
+                # less than 6 months
+                period = "1d"
+            elif time_elapsed in range(183, 265):
+                # between 6 months to 1 year
+                period = "1w"
+            elif time_elapsed >= 365:
+                # 1 year or more
+                period = "1m"
+        elif end_time is None:
+            if start_time is None:
+                start_time = datetime.datetime.now()
+            if time_frame.lower() == "today":
+                end_time = start_time - datetime.timedelta(days=1)
+                period = "1h"
+            elif time_frame.lower() in ["7days", "week"]:
+                end_time = start_time - datetime.timedelta(days=7)
+                period = "1d"
+            elif time_frame.lower() == "14days":
+                end_time = start_time - datetime.timedelta(days=14)
+                period = "1d"
+            elif time_frame.lower() in ["month", "30days"]:
+                end_time = start_time - datetime.timedelta(days=30)
+                period = "1d"
+            elif time_frame.lower() == "60days":
+                end_time = start_time - datetime.timedelta(days=60)
+                period = "1d"
+            elif time_frame.lower() == "90days":
+                end_time = start_time - datetime.timedelta(days=90)
+                period = "1d"
+            elif time_frame.lower() == "6months":
+                end_time = start_time - datetime.timedelta(days=180)
+                period = "1w"
+            elif time_frame.lower() == "year":
+                end_time = start_time - datetime.timedelta(days=365)
+                period = "1m"
+            else:
+                raise ValueError("Indicate a valid end_time or time_frame")
+            # Convert to timestamps
+            end_time = str(int(local_time_to_online(dt=end_time)))
+            start_time = str(int(local_time_to_online(dt=start_time)))
         path = "portals/self/usage"
         params = {
             "f": "json",
             "startTime": end_time,
             "endTime": start_time,
-            "period": "1d",
+            "period": period,
             "groupby": "stype,etype",
             "vars": "credits,num",
         }

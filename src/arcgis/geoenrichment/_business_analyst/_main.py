@@ -62,7 +62,7 @@ class AOI(object):
                 self._base_url = self._validate_url(self._base_url)
 
     def _validate_url(self, url):
-        res = self._gis._private_service_url(url)
+        res = self.source._private_service_url(url)
         url = (
             res["privateServiceUrl"]
             if "privateServiceUrl" in res
@@ -1357,6 +1357,13 @@ class BusinessAnalyst(object):
 
         # extract out the geoenrichment url
         ge_url = self.source.properties.helperServices.geoenrichment["url"]
+        if self.source._is_hosted_nb_home:
+            res = self.source._private_service_url(ge_url)
+            ge_url = (
+                res["privateServiceUrl"]
+                if "privateServiceUrl" in res
+                else res["serviceUrl"]
+            )
 
         # get a list of countries available on the Web GIS for enrichment
         url = f"{ge_url}/Geoenrichment/Countries"

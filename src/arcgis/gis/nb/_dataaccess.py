@@ -32,7 +32,7 @@ class NotebookFile:
         """
         Copies down the data from the server to the local machine
 
-        :returns: str as file path
+        :return: str as file path
         """
         return self._da._download(filename=self.properties["Name"])
 
@@ -70,7 +70,7 @@ class NotebookDataAccess:
         fp                   Required String. The path of the file to upload
         ===================  ==========================================================================
 
-        :returns: bool
+        :return: bool
         """
 
         url = f"{self._url}/notebookworkspace/{os.path.basename(fp)}"
@@ -93,7 +93,7 @@ class NotebookDataAccess:
         """
         Lists files that are located in the workspace directory (/arcgis/home) of the user making the request.
 
-        :returns: List[Dict[str, Any]]
+        :return: List[Dict[str, Any]]
         """
         url = f"{self._url}/notebookworkspace"
         params = {"f": "json", "restype": "container", "comp": "list"}

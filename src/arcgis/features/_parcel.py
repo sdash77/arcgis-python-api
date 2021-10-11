@@ -126,7 +126,7 @@ class ParcelFabricManager(object):
                                  they do not want to use the current moment
         ====================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean. True if successful otherwise False
 
         """
         url = "{base}/assignFeaturesToRecord".format(base=self._url)
@@ -185,7 +185,7 @@ class ParcelFabricManager(object):
         ====================     ====================================================================
 
 
-        :return: Boolean
+        :return: Boolean. True if successful else False
 
         """
         url = "{base}/build".format(base=self._url)
@@ -269,7 +269,7 @@ class ParcelFabricManager(object):
                                     being clipped.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
 
         """
@@ -360,7 +360,7 @@ class ParcelFabricManager(object):
         ====================     ====================================================================
 
 
-        :return: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         if moment is None:
@@ -447,7 +447,7 @@ class ParcelFabricManager(object):
         parcel_subtype              Optional Integer. Represents the target parcel subtype.
         =======================     ====================================================================
 
-        :returns: boolean
+        :return: Dictionary indicating 'success' or 'error'
 
 
         """
@@ -500,7 +500,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Boolean. True if successful else False
 
 
         """
@@ -542,7 +542,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean. True if success else False
 
 
         """
@@ -593,7 +593,7 @@ class ParcelFabricManager(object):
                                     current.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         if moment is None:
@@ -643,7 +643,7 @@ class ParcelFabricManager(object):
                                     in which to create seeds.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         from arcgis.geometry import Envelope
@@ -707,7 +707,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         if parcel_subtype is None:
@@ -783,7 +783,7 @@ class ParcelFabricManager(object):
                                         The default is False.
         ============================    ====================================================================
 
-        :return: Dictionary
+        :return: Boolean. True if successful else False
 
         """
         url = "{base}/analyzeByLeastSquaresAdjustment".format(base=self._url)
@@ -848,7 +848,7 @@ class ParcelFabricManager(object):
                                  The default is False.
         ====================     ====================================================================
 
-        :return: Dictionary
+        :return: Boolean. True if successful else False
 
         """
 
@@ -885,7 +885,7 @@ class ParcelFabricManager(object):
         divide_record,
         divide_option,
         divide_number_of_parts,
-        divide_part_area_or_width,
+        divide_part_area,
         divide_line_bearing,
         divide_left_side,
         divide_distribute_remainder,
@@ -901,13 +901,13 @@ class ParcelFabricManager(object):
         =========================== ====================================================================
         **Argument**                **Description**
         --------------------------- --------------------------------------------------------------------
-        divide_parcel_guid          Required String. Parameter for the unique identifier `guid` of the 
+        divide_parcel_guid          Required String. Parameter for the unique identifier `guid` of the
                                     parcel being divided.
         --------------------------- --------------------------------------------------------------------
-        divide_parcel_type          Required Integer. Parameter representing the parcel type layer ID in 
+        divide_parcel_type          Required Integer. Parameter representing the parcel type layer ID in
                                     which the new, divided parcels will be created.
         --------------------------- --------------------------------------------------------------------
-        divide_record               Required String: Parameter for the unique identifier `guid` of the 
+        divide_record               Required String: Parameter for the unique identifier `guid` of the
                                     record being used for the divide.
                                     If missing, no parcel history is created.
         --------------------------- --------------------------------------------------------------------
@@ -916,44 +916,41 @@ class ParcelFabricManager(object):
                                         - EqualArea
                                         - EqualWidth
         --------------------------- --------------------------------------------------------------------
-        divide_number_of_parts      Required Integer. The number parts into which the parcel will 
+        divide_number_of_parts      Required Integer. The number parts into which the parcel will
                                     be divided.
         --------------------------- --------------------------------------------------------------------
-        divide_part_area            Required Float. Area of each part (parcel fabric GDB units squared).
-                                    **Deprecated**
-        --------------------------- --------------------------------------------------------------------
-        divide_part_area_or_width   Required Float. Area of each part (parcel fabric GDB units squared).
-                                    
+        divide_part_area            Required Float. Area (or width) of each part (parcel fabric GDB units squared).
+
                                     .. note::
                                         This value is ignored when dividing by proportional area. A
                                         default value of 0 will be applied.
         --------------------------- --------------------------------------------------------------------
-        divide_line_bearing         Required Float. The direction (in decimal degrees) of the line 
+        divide_line_bearing         Required Float. The direction (in decimal degrees) of the line
                                     used to divide the parcel.
         --------------------------- --------------------------------------------------------------------
-        divide_left_side            Required Boolean. Parameter indicating if area being divided is 
-                                    starting from the leftmost edge of the parcel. Any remainder area 
-                                    will be to the right of the divided parts. If false, the area being 
-                                    divided starts from the rightmost edge of the parcel and any remainder 
+        divide_left_side            Required Boolean. Parameter indicating if area being divided is
+                                    starting from the leftmost edge of the parcel. Any remainder area
+                                    will be to the right of the divided parts. If false, the area being
+                                    divided starts from the rightmost edge of the parcel and any remainder
                                     area will be to the left of the divided parts.
 
-                                    This parameter is required for the `EqualArea` and `EqualWidth` 
-                                    divide options. 
-                                    
+                                    This parameter is required for the `EqualArea` and `EqualWidth`
+                                    divide options.
+
                                     .. note::
                                         This value is ignored when dividing by proportional area. A
                                         default value of `False` will be applied.
         --------------------------- --------------------------------------------------------------------
-        divide_distribute_remainder Required Boolean. Indicates whether to distribute or merge the 
-                                    remainder area after the divide is performed. This parameter is used 
-                                    for the `EqualArea` and `EqualWidth` divide options. 
-                                    
+        divide_distribute_remainder Required Boolean. Indicates whether to distribute or merge the
+                                    remainder area after the divide is performed. This parameter is used
+                                    for the `EqualArea` and `EqualWidth` divide options.
+
                                     .. note::
                                         This value is ignored when dividing by proportional area. A
                                         default value of `False` will be applied.
         --------------------------- --------------------------------------------------------------------
-        default_area_unit           Required Integer. The units in which area will be stored. The parameter 
-                                    is specified as a domain code from the PF_AreaUnits parcel fabric 
+        default_area_unit           Required Integer. The units in which area will be stored. The parameter
+                                    is specified as a domain code from the PF_AreaUnits parcel fabric
                                     domain.
 
                                     Example:
@@ -961,18 +958,18 @@ class ParcelFabricManager(object):
                                         Square meters: `defaultAreaUnit=109404`
 
         --------------------------- --------------------------------------------------------------------
-        divide_cogo_line_bearing    Optional Float. Parameter representing the COGO direction 
-                                    (in decimal degrees) that will be stored in the COGO Direction field 
+        divide_cogo_line_bearing    Optional Float. Parameter representing the COGO direction
+                                    (in decimal degrees) that will be stored in the COGO Direction field
                                     of the dividing lines.
         =========================== ====================================================================
 
-        :returns: Dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
 
         """
         if divide_option == "ProportionalArea":
-            if not divide_part_area_or_width:
-                divide_part_area_or_width = 0
+            if not divide_part_area:
+                divide_part_area = 0
             if not divide_left_side:
                 divide_left_side = False
             if not divide_distribute_remainder:
@@ -989,8 +986,7 @@ class ParcelFabricManager(object):
             "record": divide_record,
             "divideOption": divide_option,
             "divideNumberOfParts": divide_number_of_parts,
-            # "dividePartArea": divide_part_area,
-            "dividePartAreaOrWidth": divide_part_area_or_width,
+            "dividePartAreaOrWidth": divide_part_area,
             "divideLineBearing": divide_line_bearing,
             "divideLeftSide": divide_left_side,
             "divideDistributeRemainder": divide_distribute_remainder,
@@ -999,6 +995,56 @@ class ParcelFabricManager(object):
             "f": "json",
         }
         return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+
+    def reassign_features_to_record(
+        self, source_record, target_record, delete_source_record
+    ):
+        """
+        Assigns the specified parcel features to the specified record. If
+        parcel polygons are assigned, the record polygon will be updated to
+        match the cumulative geometry of all the parcels associated to it.
+        The Created By Record or Retired By Record attribute field of the
+        parcel features is updated with the global ID of the assigned
+        record.
+
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        source_record            Required List. The parcel features to assign to the specified record.
+                                    Can be parcels, parcel polygons, parcel points, and parcel lines.
+
+
+                                    :Syntax: ``parcelFeatures=[{"id":"<guid>","layerId":"<layerID>"},{...}]``
+
+        --------------------     --------------------------------------------------------------------
+        target_record            Required String. The record that will be assigned to the specified
+                                    parcel features.
+        --------------------     --------------------------------------------------------------------
+        delete_source_record     Required String. Represents the record field to update on the parcel
+                                    features. Either the Created By Record or Retired By Record field is
+                                    to be updated with the global ID of the assigned record.
+
+                                    Allowed Values: `CreatedByRecord` or `RetiredByRecord`
+        ====================     ====================================================================
+
+        :returns: Boolean
+
+        """
+        url = "{base}/reassignFeaturesToRecord".format(base=self._url)
+        params = {
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
+            "sourceRecord": source_record,
+            "targetRecord": target_record,
+            "deleteSourceRecord": delete_source_record,
+            "f": "json",
+        }
+        res = self._con.post(url, params)
+        if "success" in res:
+            return res["success"]
+        return res
 
     # ----------------------------------------------------------------------
 

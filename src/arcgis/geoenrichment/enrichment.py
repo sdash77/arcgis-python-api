@@ -5,7 +5,7 @@ from typing import Any, Union
 
 from arcgis import __version__
 from arcgis import env
-from arcgis.features import SpatialDataFrame, FeatureSet, GeoAccessor, GeoSeriesAccessor
+from arcgis.features import FeatureSet, GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry
 from arcgis.gis import GIS
 from arcgis._impl.common._deprecate import deprecated
@@ -19,6 +19,15 @@ from ._business_analyst._utils import (
     local_ba_data_avail,
 )
 from ._ge import _GeoEnrichment
+
+
+def _check_active_gis(gis=None):
+    """Helper function to get an active gis if no gis already declared in session."""
+    # prioritize active_gis
+    if gis is None and env.active_gis is not None:
+        gis = env.active_gis
+
+    return gis
 
 
 def _call_method_by_source(fn) -> callable:
@@ -49,24 +58,20 @@ def _call_method_by_source(fn) -> callable:
                     src = p
                     break
 
+        # TODO: Swap the precedence of these once all methods are implemented
+        # check if active gis is in session
+        src = _check_active_gis(src)
+
         # if nothing found, interrogate the local session and see if the environment has everything for local
         if src is None and local_business_analyst_avail() and local_ba_data_avail():
             src = "local"
 
-        # otherwise, see if there is an active GIS instance in the session
-        elif src is None:
-
-            # have to do a late import to give chance to be populated
-            from arcgis.env import active_gis
-
-            if active_gis:
-                src = active_gis
-
         # make sure a source was located or bingo out
-        assert src is not None, (
-            "The gis parameter must be pesent and populated with either a GIS instance or using "
-            'the "local" keyword.'
+        src_msg = (
+            "The gis parameter needs to be populated with a valid GIS instance since there is not an active GIS "
+            "object in the session."
         )
+        assert src is not None, src_msg
 
         # build function name to call
         fn_nm_to_call = (
@@ -78,7 +83,7 @@ def _call_method_by_source(fn) -> callable:
             src_nm = (
                 "Web GIS"
                 if isinstance(src, GIS)
-                else "local (ArcGIS Pro with Business Analayst)"
+                else "local (ArcGIS Pro with Business Analyst)"
             )
             raise NotImplementedError(
                 f"The {fn_name} function is not yet implemented with a {src_nm} source."
@@ -232,6 +237,7 @@ class NamedArea(object):
             sub_geography_layer=self._level_mappings[name],
             return_geometry=True,
             as_featureset=False,
+            gis=self._country._gis,
         )
 
         places = {}
@@ -254,19 +260,21 @@ class NamedArea(object):
 
 class Country(object):
     """
-    The Country object enables access to data and methods for a specific country. This
+    Enables access to data and methods for a specific country. This
     class can reference country data and methods available using data accessed through
-    both a Web GIS and a local installation of ArcGIS Pro with the Business Analyst
-    extension and local country data installed. Specifying this source is accomplished
-    using the ``gis`` parameter when instantiating. If using the keyword 'Pro'
-    (``GIS('Pro')``), ``Country`` will try to use ArcGIS Pro with Business Analyst
+    both a Web GIS and a local installation of `ArcGIS Pro with the Business Analyst
+    extension and local country data` installed. Specifying this source is accomplished
+    using the ``gis`` parameter when instantiating
+    (See :meth:`~arcgis.geoenrichment.Country.get`). If using the keyword ``Pro``,
+    ``Country`` will try to use ArcGIS Pro with Business Analyst
     and will error if the specified country is not available locally. Available
-    countries can be discovered using the ``get_countries`` method.
+    countries can be discovered using the :func:`~arcgis.geoenrichment.get_countries`
+    function.
 
     .. note::
         Currently, when using a `GIS('Pro')` instance, only the ``data_collections``
-        and ``enrich_variables`` properties to discover of available enrichment
-        variables are supported.
+        and ``enrich_variables`` properties are supported to discover available
+        enrichment variables.
 
     """
 
@@ -282,27 +290,28 @@ class Country(object):
         name              Required string. The country name, two letter code or
                           three letter ISO3 code identifying the country.
         ----------------  --------------------------------------------------------
-        gis               Optional ``arcgis.gis.GIS`` object instance. This
+        gis               Optional :class:`~arcgis.gis.GIS` instance. This
                           specifies what GIS country sources are available based
-                          on the GIS source, a Web GIS (ArcGIS Online or ArcGIS
-                          Enterprise) or ArcGIS Pro with the Business Analyst
-                          extension and at least one country data pack. If not
-                          explicitly specified, it will attempt to use ArcGIS Pro
-                          with Business Analyst and at least one local data pack
-                          installed. If all of the aforementioned critera are not
-                          met, it then tries to use an active GIS already created
-                          in the Python session. Finally, if neither of these
-                          (Pro or an active GIS) are available, a GIS object
-                          instance must be explicitly provided.
+                          on the GIS source, a Web GIS (either `ArcGIS Online` or
+                          `ArcGIS Enterprise`) or `ArcGIS Pro with the Business
+                          Analyst extension and at least one country data pack`.
+                          If not explicitly specified, it tries to use an active
+                          GIS already created in the Python session. If an active
+                          GIS is not available, it then tries to use local
+                          resources, ArcGIS Pro with Business Analyst and at least
+                          one country dataset installed locally. Finally, if
+                          neither of these (Pro or an active GIS) are available,
+                          a :class:`~arcgis.gis.GIS` object instance must be
+                          explicitly provided.
         ----------------  --------------------------------------------------------
-        year              Optional integer explicitly specifying the vintage
+        year              Optional integer. Explicitly specifying the vintage
                           (year) of data to use. This option is only available
                           when using a `'local'` GIS source, and will be
                           ignored if used with a Web GIS source.
         ================  ========================================================
 
         :return:
-            ``arcgis.geoenrichment.Country`` instance for the requested country.
+            :class:`~arcgis.geoenrichment.Country` instance for the requested country.
         """
         return cls(name, gis, year)
 
@@ -316,9 +325,12 @@ class Country(object):
     ) -> None:
 
         # handle the caveat of using a GIS('Pro') input
-        if gis is not None:
+        if isinstance(gis, GIS):
             if gis._con._auth == "PRO":
                 gis = "local"
+
+        # prioritize active_gis
+        gis = _check_active_gis(gis)
 
         # instantiate a BA object instance
         ba = _business_analyst.BusinessAnalyst(gis)
@@ -329,34 +341,32 @@ class Country(object):
         # stash for use later
         self._ba_cntry = ba.get_country(iso3, year=year)
 
-        # legacy parameter support
-        portal_url = kwargs["purl"] if "purl" in kwargs else None
-
         # if the source is a GIS set a few more properties
         if isinstance(self._gis, GIS):
 
             # get the helper services to work with
             hlp_svcs = self._gis.properties["helperServices"]
 
-            # if ArcGIS Online hosted notebook environment
-            if portal_url is not None:
-                self._base_url = portal_url
+            # legacy parameter support
+            if "purl" in kwargs:
+                self._base_url = kwargs["purl"]
 
-            # otherwise, get the url if available and roll back to AGOL in a pinch
+            # otherwise, get the url if available
             else:
-                if "geoenrichment" in hlp_svcs:
-                    self._base_url = hlp_svcs["geoenrichment"]["url"]
-                else:
-                    self._base_url = "http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver"
+                assert (
+                    "geoenrichment" in hlp_svcs.keys()
+                ), "Geoenrichment does not appear to be configured for your portal."
+                self._base_url = hlp_svcs["geoenrichment"]["url"]
 
-            # if a hosted notebook environment, get the private service url if set
-            if self._gis._is_hosted_nb_home:
+            # if a hosted notebook environment, get the private service url
+            if gis._is_hosted_nb_home:
                 res = self._gis._private_service_url(self._base_url)
-                self._base_url = (
+                prv_url = (
                     res["privateServiceUrl"]
                     if "privateServiceUrl" in res
                     else res["serviceUrl"]
                 )
+                self._base_url = prv_url
 
             # set the dataset_id to the default
             self._dataset_id = self._ba_cntry.properties.default_dataset
@@ -619,34 +629,39 @@ class Country(object):
 def get_countries(gis: GIS = None, as_df: bool = False):
     """
     Retrieve available countries based on the GIS source being used.
+
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    gis                    Optional ``arcgis.gis.GIS`` object instance. This specifies what GIS
-                           country sources are available based on the GIS source, a Web GIS
-                           (ArcGIS Online or ArcGIS Enterprise) or ArcGIS Pro with the Business
-                           Analyst extension and at least one country data pack. If not
-                           explicitly specified, it will attempt to use ArcGIS Pro with
-                           Business Analyst and at least one local data pack installed. If all
-                           of the aforementioned critera are not met, it then tries to use an
-                           active GIS already created in the Python session. Finally, if
-                           neither of these (Pro or an active GIS) are available, a GIS object
-                           instance must be explicitly provided.
+    gis                    Optional :class:`~arcgis.gis.GIS` instance. This specifies what GIS
+                           country sources are available based on the Web GIS source, whether
+                           it be `ArcGIS Online`, `ArcGIS Enterprise`, or `ArcGIS Pro with the
+                           Business Analyst extension and at least one country data pack`. If
+                           not specified, it tries to use an active GIS already created in the
+                           Python session. If an active GIS is not available, it then tries to
+                           use local resourcea, ArcGIS Pro with Business and at least one
+                           country dataset installed locally. Finally, if neither of these
+                           sources are available, a :class:`~arcgis.gis.GIS` object must be
+                           explicitly provided.
 
-    as_df                  Optional boolean specifying if a Pandas DataFrame output is desired.
-                           If ```False`` (the default) a list of
-                           ``arcgis.geoenrichment.Country`` objects will be returned. If
-                           ``True`` a Pandas DataFrame of available countries is returned.
+    as_df                  Optional boolean, specifying if a Pandas DataFrame output is
+                           desired. If ``False`` (the default), a list of
+                           :class:`~arcgis.geoenrichment.Country` objects will be
+                           returned. If ``True``, a Pandas DataFrame of available countries is
+                           returned.
     ==================     ====================================================================
 
     :return:
-        Available countries as a list of ``arcgis.geoenrichment.Country`` objects or a Pandas
-        DataFrame of available countries.
+        Available countries as a list of :class:`~arcgis.geoenrichment.Country` objects, or a
+        Pandas DataFrame of available countries.
     """
     # preprocess the gis object to determine if a local (ArcGIS Pro) gis source
-    if gis is not None:
+    if isinstance(gis, GIS):
         if gis._con._auth == "PRO":
             gis = "local"
+
+    # prioritize active_gis
+    gis = _check_active_gis(gis)
 
     # get the dataframe of available countries
     out_res = _business_analyst.BusinessAnalyst(gis).countries
@@ -923,7 +938,7 @@ def _data_collections(
                            dictionary, else the value will returns as a Python DataFrame.
     ==================     ====================================================================
 
-    :returns: dictionary, describing the requested return data.
+    :return: dictionary, describing the requested return data.
     """
     if gis is None:
         gis = env.active_gis
@@ -944,7 +959,7 @@ def service_limits(gis=None):
     """
     Returns a Pandas' DataFrame describing limitations for each input parameter.
 
-    :returns: Pandas DataFrame
+    :return: Pandas DataFrame
     """
     pass
 
@@ -1050,7 +1065,7 @@ def enrich(
     Performance Tip: If you wish to speed up the operation and don't care about the geometries, set
     return_geometry=False
 
-    :returns: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
+    :return: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
     """
     pass
 
@@ -1269,7 +1284,7 @@ def _find_report(country, gis=None):
                            have the ability to consume credits
     ==================     ====================================================================
 
-    :returns: Panda's DataFrame
+    :return: Panda's DataFrame
     """
     if gis is None:
         gis = env.active_gis
@@ -1569,7 +1584,7 @@ def standard_geography_query(
                                have the ability to consume credits
     ======================     ====================================================================
 
-    :returns: Spatial or Pandas Dataframe on success, FeatureSet, or dictionary on failure.
+    :return: Spatial or Pandas Dataframe on success, FeatureSet, or dictionary on failure.
 
     """
     pass

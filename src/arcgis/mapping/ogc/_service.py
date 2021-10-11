@@ -85,7 +85,7 @@ class OGCCollection:
         time_filter       Optional String. The dates to filter time by.
         ================  ===============================================================================
 
-        :returns: Union[Dict[str, Any], pd.DataFrame]
+        :return: Union[Dict[str, Any], pd.DataFrame]
         """
         url = f"{self._url}/items"
         params = {"f": "json"}
@@ -164,7 +164,7 @@ class OGCCollection:
         """
         Gets an individual feature on the service
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
         """
         assert isinstance(feature_id, int)
         url = f"{self._url}/items/{feature_id}"
@@ -220,7 +220,7 @@ class OGCFeatureService:
         """
         Provides the API conformance with the OGC standard.
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
         """
         url = f"{self._url}/conformance"
         params = {"f": "json"}
@@ -232,7 +232,7 @@ class OGCFeatureService:
         """
         Yields all the OGC Feature Service Layers within the service.
 
-        :returns: Iterator[OGCCollection]
+        :return: Iterator[OGCCollection]
         """
         url = f"{self._url}/collections"
         params = {"f": "json"}
