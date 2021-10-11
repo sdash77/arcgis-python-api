@@ -375,9 +375,7 @@ class FormInfo:
 
     def add(
         self,
-        element: Optional[
-            Union[mapping.FormFieldElement, mapping.FormGroupElement]
-        ] = None,
+        element=None,
         index: Optional[int] = None,
     ):
         """
@@ -412,12 +410,12 @@ class FormInfo:
         field_name: str,
         label: str,
         description: Optional[str] = None,
-        visibility_expression: Optional[mapping.FormExpressionInfo] = None,
+        visibility_expression=None,
         domain: Optional[dict] = None,
         editable: Optional[bool] = None,
         hint: Optional[str] = None,
         input_type: Optional[Union[str, dict]] = None,
-        required_expression: Optional[mapping.FormExpressionInfo] = None,
+        required_expression=None,
         index: Optional[int] = None,
         **kwargs
     ):
@@ -488,7 +486,7 @@ class FormInfo:
         self,
         label: str,
         description: Optional[str] = None,
-        visibility_expression: Optional[mapping.FormExpressionInfo] = None,
+        visibility_expression=None,
         initial_state: Optional[str] = None,
         index: Optional[int] = None,
         **kwargs
@@ -527,9 +525,7 @@ class FormInfo:
 
     def delete(
         self,
-        element: Optional[
-            Union[mapping.FormFieldElement, mapping.FormGroupElement]
-        ] = None,
+        element=None,
         label: Optional[str] = None,
     ):
         """
@@ -900,7 +896,7 @@ class FormElement:
         return self._visibility_expression
 
     @visibility_expression.setter
-    def visibility_expression(self, value: Optional[mapping.FormExpressionInfo]):
+    def visibility_expression(self, value):
         if isinstance(value, FormExpressionInfo) or value is None:
             self._visibility_expression = value
         else:
