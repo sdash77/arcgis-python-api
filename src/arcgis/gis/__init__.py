@@ -18,6 +18,7 @@ import zipfile
 import configparser
 from contextlib import contextmanager
 import functools
+
 from datetime import datetime
 import logging
 from typing import Tuple, Any, Dict, List, Optional
@@ -311,6 +312,7 @@ class GIS(object):
         self._referer = kwargs.pop("referer", None)
         self._timeout = kwargs.pop("timeout", 600)  # default timeout is 600 seconds
         custom_auth = kwargs.pop("custom_auth", None)
+        custom_adapter = kwargs.pop("adapter", None)
         self._expiration = kwargs.pop("expiration", None)
         from arcgis._impl.tools import _Tools
 
@@ -442,6 +444,9 @@ class GIS(object):
                 trust_env=kwargs.get("trust_env", None),
                 timeout=self._timeout,
                 proxy=kwargs.get("proxy", None),
+                custom_adapter=custom_adapter,
+                token=self._utoken,
+                is_hosted_nb_home=self._is_hosted_nb_home,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -462,16 +467,13 @@ class GIS(object):
                     trust_env=kwargs.get("trust_env", None),
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
+                    token=self._utoken,
+                    is_hosted_nb_home=self._is_hosted_nb_home,
                 )
             if self._is_hosted_nb_home:
-                # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
                 self._portal.con._session.headers.pop("Referer", None)
-            if not (self._utoken is None):
-                self._portal.con._token = self._utoken
-                self._portal.con.token = self._utoken
-                self._portal.con._auth = "HOME"
-
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
                 raise RuntimeError(
@@ -527,22 +529,20 @@ class GIS(object):
                         expiration=self._expiration,
                         referer=self._referer,
                         custom_auth=custom_auth,
-                        # token=self._utoken,
                         trust_env=kwargs.get("trust_env", None),
                         client_secret=client_secret,
                         timeout=self._timeout,
                         proxy=kwargs.get("proxy", None),
+                        custom_adapter=custom_adapter,
+                        token=self._utoken,
+                        is_hosted_nb_home=self._is_hosted_nb_home,
                     )
                     self._portal = pp
         except:
             pass
 
         force_refresh = False
-        if not (self._utoken is None) and self._portal.con._auth != "HOME":
-            self._portal.con._token = self._utoken
-            self._portal.con._auth = "BUILTIN"
-            force_refresh = True
-        elif self._portal.con._auth == "HOME":
+        if self._portal.con._auth in ["HOME", "USER_TOKEN"]:
             force_refresh = True
 
         # If a token was injected, then force refresh to get updated properties
@@ -817,6 +817,7 @@ class GIS(object):
                 assert required_json_keys.issubset(json_data)
                 self._url = json_data["privatePortalUrl"]
                 self._public_portal_url = json_data["publicPortalUrl"]
+                self._referer = json_data.get("referer", "")
                 if "token" in json_data:
                     self._utoken = json_data["token"]
                 self._expiration = json_data.get("expiration", None)
@@ -3914,7 +3915,6 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     @property
     def me(self):
-
         """
         The ``me`` property retrieves the information of the logged in :class:`~arcgis.gis.User` object.
         """
@@ -14199,18 +14199,22 @@ class _GISResource(object):
                 params["Raster"] = self._uri
 
         if type(self).__name__ == "VectorTileLayer":  # VectorTileLayer is GET only
-            dictdata = self._con.get(self.url, params, token=self._lazy_token)
+            dictdata = self._con.get(self.url, params)  # , token=self._lazy_token)
         else:
             try:
                 if is_raster:
                     dictdata = self._con.post(
-                        self.url, params, token=self._lazy_token, timeout=None
+                        self.url, params, timeout=None  # token=self._lazy_token,
                     )
                 else:
-                    dictdata = self._con.post(self.url, params, token=self._lazy_token)
+                    dictdata = self._con.post(
+                        self.url, params
+                    )  # , token=self._lazy_token)
             except Exception as e:
                 if hasattr(e, "msg") and e.msg == "Method Not Allowed":
-                    dictdata = self._con.get(self.url, params, token=self._lazy_token)
+                    dictdata = self._con.get(
+                        self.url, params
+                    )  # , token=self._lazy_token)
                 elif str(e).lower().find("token required") > -1:
                     dictdata = self._con.get(self.url, params)
                 else:
@@ -14240,6 +14244,7 @@ class _GISResource(object):
 
         with _DisableLogger():
             try:
+                """
                 # try as a federated server
                 if self._con.token is None:
                     self._lazy_token = self._con.generate_portal_server_token(
@@ -14254,7 +14259,7 @@ class _GISResource(object):
                         )
                     else:
                         self._lazy_token = self._con.token
-
+                """
                 self._refresh()
 
             except HTTPError as httperror:  # service maybe down

@@ -14,7 +14,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "1.9.1"
+__version__ = "2.0.0"
 
 _log = logging.getLogger(__name__)
 
@@ -102,6 +102,8 @@ class Portal(object):
         url = url.strip()  # be permissive in accepting home app urls
         homepos = url.find("/home")
         trust_env = kwargs.get("trust_env", None)
+        custom_adapter = kwargs.pop("custom_adapter", None)
+        is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
         if homepos != -1:
             url = url[:homepos]
 
@@ -178,6 +180,8 @@ class Portal(object):
                     trust_env=trust_env,
                     timeout=kwargs.get("timeout", 600),
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
+                    is_hosted_nb_home=is_hosted_nb_home,
                 )
             else:
                 self.con = Connection(
@@ -200,6 +204,8 @@ class Portal(object):
                     trust_env=trust_env,
                     timeout=kwargs.get("timeout", 600),
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
+                    is_hosted_nb_home=is_hosted_nb_home,
                 )
         # self.get_version(True)
         self.get_properties(True)
