@@ -1,7 +1,11 @@
+from typing import Optional, Union
+from arcgis.gis import GIS
 from arcgis.raster import _util
 
 
-def generate_direct_access_url(expiration=None, *, gis=None):
+def generate_direct_access_url(
+    expiration: Optional[int] = None, *, gis: Optional[GIS] = None
+):
     """
     Function to get the direct access url for user's rasterStore on ArcGIS Online.
 
@@ -23,7 +27,12 @@ def generate_direct_access_url(expiration=None, *, gis=None):
 
 
 def upload_imagery_to_agol_userstore(
-    files, direct_access_url=None, auto_renew=True, upload_properties=None, *, gis=None
+    files: Union[str, list],
+    direct_access_url: Optional[str] = None,
+    auto_renew: bool = True,
+    upload_properties: Optional[dict] = None,
+    *,
+    gis: Optional[GIS] = None
 ):
     """
     Uploads file/files to the user's rasterstore on ArcGIS Online and returns the list of urls.
