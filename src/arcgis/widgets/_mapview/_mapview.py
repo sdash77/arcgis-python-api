@@ -1400,7 +1400,7 @@ class MapView(widgets.DOMWidget):
             options = {}
         if isinstance(item, arcgis.features.FeatureLayer) and "renderer" not in options:
             renderer_dict = json.loads(item.renderer.json)
-            if "renderer" in  renderer_dict.keys():
+            if "renderer" in renderer_dict.keys():
                 options.update(renderer_dict)
             else:
                 options["renderer"] = renderer_dict
