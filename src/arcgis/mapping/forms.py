@@ -374,9 +374,7 @@ class FormInfo:
                 continue
 
     def add(
-        self,
-        element=None,
-        index: Optional[int] = None,
+        self, element=None, index: Optional[int] = None,
     ):
         """
         Adds a single :class:`~arcgis.mapping.forms.FormElement` to the form. You can add to the form either by instantiating your
@@ -524,9 +522,7 @@ class FormInfo:
         return self.add(group_el, index=index)
 
     def delete(
-        self,
-        element=None,
-        label: Optional[str] = None,
+        self, element=None, label: Optional[str] = None,
     ):
         """
         Deletes element from the form. You can use either the element param
@@ -559,11 +555,9 @@ class FormInfo:
 
     def move(
         self,
-        element: Optional[
-            Union[mapping.FormFieldElement, mapping.FormGroupElement]
-        ] = None,
+        element=None,
         label: Optional[str] = None,
-        destination: Optional[mapping.FormGroupElement] = None,
+        destination=None,
         index: Optional[int] = None,
     ):
         """
@@ -1107,7 +1101,7 @@ class FormFieldElement(FormElement):
         return self._required_expression
 
     @required_expression.setter
-    def required_expression(self, value: Optional[mapping.FormExpressionInfo]):
+    def required_expression(self, value):
         if isinstance(value, FormExpressionInfo) or value is None:
             self._required_expression = value
         else:
@@ -1275,12 +1269,12 @@ class FormGroupElement(FormElement):
         field_name: str,
         label: str,
         description: Optional[str] = None,
-        visibility_expression: Optional[mapping.FormExpressionInfo] = None,
+        visibility_expression=None,
         domain: Optional[dict] = None,
         editable: Optional[bool] = None,
         hint: Optional[str] = None,
         input_type: Optional[Union[dict, str]] = None,
-        required_expression: Optional[mapping.FormExpressionInfo] = None,
+        required_expression=None,
         index: Optional[int] = None,
         **kwargs
     ):
@@ -1377,7 +1371,7 @@ class FormGroupElement(FormElement):
         self,
         element: Optional[FormFieldElement] = None,
         label: Optional[str] = None,
-        destination: Optional[Union[FormInfo, mapping.FormGroupElement]] = None,
+        destination=None,
         index: Optional[int] = None,
     ):
         """
