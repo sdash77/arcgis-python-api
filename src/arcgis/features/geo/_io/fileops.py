@@ -17,13 +17,8 @@ from arcgis.geometry import Geometry
 
 
 try:
-    import datetime
 
-    start = datetime.datetime.now()
-    print('lazyloader arcpy pre', datetime.datetime.now() - start)
     arcpy = LazyLoader("arcpy", strict=True)
-
-    print('lazyloader arcpy post', datetime.datetime.now() - start)
     HASARCPY = True
 except:
     HASARCPY = False
