@@ -5,8 +5,10 @@ Requires: requests, requests_toolbelt,
 Possible optional might be required: requests_ntlm, requests_kerberos, requests-oauthlib
 
 """
+from arcgis.auth.tools import LazyLoader
+
 try:
-    import arcpy
+    arcpy = LazyLoader("arcpy", strict=True)
 
     HASARCPY = True
 except ImportError:
@@ -342,9 +344,7 @@ class Connection(object):
             try:
 
                 www_auth = s.get(
-                    root + pt,
-                    params=params,
-                    verify=self._verify_cert,
+                    root + pt, params=params, verify=self._verify_cert,
                 ).headers.get("www-authenticate", "")
                 results.append(www_auth)
             except:

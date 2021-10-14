@@ -5,10 +5,12 @@ chosen areas.
 enrich_layer retrieves information about the people, places, and businesses in a specific area, or within a selected
 travel time or distance from a location.
 """
+from arcgis.auth.tools import LazyLoader
 
-import arcgis as _arcgis
-import arcgis.network as network
-from .._impl.common._utils import inspect_function_inputs
+_util = LazyLoader("arcgis._impl.common._utils")
+_logging = LazyLoader("logging")
+_arcgis = LazyLoader("arcgis")
+network = LazyLoader("arcgis.network")
 
 # --------------------------------------------------------------------------
 def enrich_layer(
@@ -83,7 +85,7 @@ def enrich_layer(
                                                                                   - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                                                                   - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-    <<<<<<< HEAD
+    
                                                                                   .. code-block:: python
                                                                                     # Example Usage
 
@@ -93,7 +95,7 @@ def enrich_layer(
                                                                                                               "spatialReference":{"wkid":102100,"latestWkid":3857}},
                                                                                                       "outSR": {"wkid": 3857},
                                                                                                       "overwrite": True}
-    >>>>>>> master
+    
         ---------------------------------------------------------------------     --------------------------------------------------------------------
         gis                                                                       Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
         ---------------------------------------------------------------------     --------------------------------------------------------------------
@@ -138,7 +140,7 @@ def enrich_layer(
         "future": future,
     }
 
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.enrich_layer, **kwargs
     )
 
