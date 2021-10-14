@@ -3805,6 +3805,26 @@ class GeoAccessor(object):
                 )
                 self._data[self.name] = vals
                 return True
+            elif isinstance(spatial_reference, SpatialReference) and HASARCPY:
+                vals = self._data[self.name].values.project_as(
+                    **{
+                        "spatial_reference": spatial_reference.as_arcpy,
+                        "transformation_name": transformation_name,
+                    }
+                )
+                self._data[self.name] = vals
+                return True
+            elif isinstance(spatial_reference, dict) and HASARCPY:
+                spatial_reference = SpatialReference(spatial_reference).as_arcpy
+                vals = self._data[self.name].values.project_as(
+                    **{
+                        "spatial_reference": spatial_reference,
+                        "transformation_name": transformation_name,
+                    }
+                )
+                self._data[self.name] = vals
+                return True
+
             elif isinstance(spatial_reference, (int, str)) and HASPYPROJ:
                 vals = self._data[self.name].values.project_as(
                     **{
