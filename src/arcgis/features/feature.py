@@ -854,12 +854,6 @@ class FeatureSet(object):
 
         import pandas as pd
 
-        try:
-            import arcpy
-
-            HASARCPY = True
-        except ImportError:
-            HASARCPY = False
         features = []
         index = 0
         sr = None
