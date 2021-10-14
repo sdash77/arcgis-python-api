@@ -1,16 +1,14 @@
 """
 These functions help you use elevation analysis
 """
+from arcgis.auth.tools import LazyLoader
 
-import logging as _logging
-import arcgis
-from datetime import datetime
+_util = LazyLoader("arcgis._impl.common._utils")
+_logging = LazyLoader("logging")
+arcgis = LazyLoader("arcgis")
+_geoprocessing = LazyLoader("arcgis.geoprocessing")
 from arcgis.features import FeatureSet
-from arcgis.mapping import MapImageLayer
-from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
-from arcgis.geoprocessing._support import _execute_gp_tool
-from arcgis.geoprocessing import import_toolbox as _import_toolbox
-from .._impl.common._utils import inspect_function_inputs
+
 
 _log = _logging.getLogger(__name__)
 
@@ -91,8 +89,8 @@ def profile(
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.elevation.url
-    tbx = _import_toolbox(url, gis=gis)
-    param_db = inspect_function_inputs(tbx.profile, **param_db)
+    tbx = _geoprocessing.import_toolbox(url, gis=gis)
+    param_db = _util.inspect_function_inputs(tbx.profile, **param_db)
     param_db["future"] = True
     gpjob = tbx.profile(**param_db)
     if future:
@@ -206,7 +204,7 @@ def viewshed(
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.elevation.url
-    tbx = _import_toolbox(url, gis=gis)
+    tbx = _geoprocessing.import_toolbox(url, gis=gis)
     param_db = {
         "dem_resolution": dem_resolution,
         "generalize_viewshed_polygons": generalize_viewshed_polygons,
@@ -220,7 +218,7 @@ def viewshed(
         "future": future,
         "gis": gis,
     }
-    param_db = inspect_function_inputs(tbx.viewshed, **param_db)
+    param_db = _util.inspect_function_inputs(tbx.viewshed, **param_db)
     param_db["future"] = True
     gpjob = tbx.viewshed(**param_db)
     if future:
@@ -276,7 +274,7 @@ def summarize_elevation(
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.elevation.url
-    tbx = _import_toolbox(url, gis=gis)
+    tbx = _geoprocessing.import_toolbox(url, gis=gis)
     param_db = {
         "dem_resolution": dem_resolution,
         "feature_id_field": feature_id_field,
@@ -285,7 +283,7 @@ def summarize_elevation(
         "gis": gis,
         "future": future,
     }
-    param_db = inspect_function_inputs(tbx.summarize_elevation, **param_db)
+    param_db = _util.inspect_function_inputs(tbx.summarize_elevation, **param_db)
     param_db["future"] = True
     gpjob = tbx.summarize_elevation(**param_db)
     if future:

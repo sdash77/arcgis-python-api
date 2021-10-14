@@ -5,8 +5,10 @@ Requires: requests, requests_toolbelt,
 Possible optional might be required: requests_ntlm, requests_kerberos, requests-oauthlib
 
 """
+from arcgis.auth.tools import LazyLoader
+
 try:
-    import arcpy
+    arcpy = LazyLoader("arcpy", strict=True)
 
     HASARCPY = True
 except ImportError:
