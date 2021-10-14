@@ -237,7 +237,12 @@ class CSVLayer(BaseOpenData):
                 if isinstance(col_val, (str, np.str)):
                     fields.append({"name": col, "type": "string", "alias": col})
                 elif isinstance(
-                    col_val, (datetime.datetime, pd.Timestamp, np.datetime64,),
+                    col_val,
+                    (
+                        datetime.datetime,
+                        pd.Timestamp,
+                        np.datetime64,
+                    ),
                 ):
                     fields.append({"name": col, "type": "date", "alias": col})
                 elif isinstance(col_val, (np.int32, np.int16, np.int8)):

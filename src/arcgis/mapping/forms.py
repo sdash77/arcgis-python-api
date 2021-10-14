@@ -374,7 +374,9 @@ class FormInfo:
                 continue
 
     def add(
-        self, element=None, index: Optional[int] = None,
+        self,
+        element=None,
+        index: Optional[int] = None,
     ):
         """
         Adds a single :class:`~arcgis.mapping.forms.FormElement` to the form. You can add to the form either by instantiating your
@@ -522,7 +524,9 @@ class FormInfo:
         return self.add(group_el, index=index)
 
     def delete(
-        self, element=None, label: Optional[str] = None,
+        self,
+        element=None,
+        label: Optional[str] = None,
     ):
         """
         Deletes element from the form. You can use either the element param
