@@ -1,3 +1,4 @@
+import os
 import time
 import json
 import mimetypes
@@ -5,6 +6,7 @@ from typing import Optional, Union
 from arcgis import env
 from arcgis.gis import Item
 import uuid
+from PIL import Image
 
 
 class StoryMap(object):
@@ -44,8 +46,8 @@ class StoryMap(object):
         elif item and isinstance(item, Item) and "StoryMap" not in item.typeKeywords:
             raise ValueError("Item is not a Story Map")
         else:
-            self._itemid = str(uuid.uuid4())
-            self._properties = {
+            itemid = str(uuid.uuid4())
+            properties = {
                 "root": "n-gV3vrF",
                 "nodes": {
                     "n-EW4IPO": {
@@ -59,7 +61,7 @@ class StoryMap(object):
                         "data": {
                             "byline": self._gis.properties.user.fullName,
                             "summary": "",
-                            "title": "",
+                            "title": "New Story",
                             "titlePanelPosition": "start",
                             "type": "minimal",
                         },
@@ -78,6 +80,8 @@ class StoryMap(object):
                     }
                 },
             }
+            self._itemid = itemid
+            self._properties = properties
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -106,7 +110,7 @@ class StoryMap(object):
         alt_text: str = "",
         display: str = "float",
         position: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Add media content to a ```Story Map```.
@@ -154,7 +158,7 @@ class StoryMap(object):
                 popup=popup,
             )
         elif isinstance(item, str):
-            mt = mimetypes.guess_type(url=item)[0].lower()
+            mt = mimetypes.guess_type(item)[0].lower()
             if "video" in mt:
                 return self._add_video(
                     item=item,
@@ -194,7 +198,6 @@ class StoryMap(object):
         return False
 
     # ----------------------------------------------------------------------
-
     def _add_webmap(
         self, item, caption="", alt_text="", display="float", position=None,
     ):
@@ -224,11 +227,11 @@ class StoryMap(object):
 
         """
         # Create ids
-        node_id = "n-" + uuid.uuid4[0:6]
-        resource_node = "r-" + uuid.uuid4[0:6]
+        node_id = "n-" + uuid.uuid4().hex[0:6]
+        resource_node = "r-" + uuid.uuid4().hex[0:6]
 
         # Create webmap nodes
-        self["nodes"][node_id] = {
+        self.properties["nodes"][node_id] = {
             "type": "webmap",
             "data": {
                 "map": resource_node,
@@ -244,7 +247,7 @@ class StoryMap(object):
         }
 
         # Create resource node
-        self["resources"][resource_node] = {
+        self.properties["resources"][resource_node] = {
             "type": "webmap",
             "data": {
                 "extent": item.extent,
@@ -259,21 +262,20 @@ class StoryMap(object):
         }
 
         # Add to story children, position counts
-        root_id = self["root"]
+        root_id = self.properties["root"]
         if position:
-            self["nodes"][root_id]["children"][position] = node_id
+            self.properties["nodes"][root_id]["children"][position] = node_id
         else:
-            self["nodes"][root_id]["children"] = node_id
+            self.properties["nodes"][root_id]["children"] = node_id
 
     # ----------------------------------------------------------------------
-
     def _add_video(
         self,
         item,
         caption="",
         alt_text="",
         display="float",
-        ext_type=".mp4",
+        ext_type="mp4",
         position=None,
     ):
         """
@@ -302,34 +304,34 @@ class StoryMap(object):
 
         """
         # Create ids
-        node_id = "n-" + uuid.uuid4[0:6]
-        resource_node = "r-" + uuid.uuid4[0:6]
+        node_id = "n-" + uuid.uuid4().hex[0:6]
+        resource_node = "r-" + uuid.uuid4().hex[0:6]
+        resource_id = str(int(time.time())) + "." + ext_type
+
+        # Add resource
+        self._add_resouce(item, resource_id)
 
         # Create video nodes
-        self["nodes"][node_id] = {
+        self.properties["nodes"][node_id] = {
             "type": "video",
             "data": {"video": resource_node, "caption": caption, "alt": alt_text},
             "config": {"size": display,},
         }
 
         # Create resource node
-        self["resources"][resource_node] = {
+        self.properties["resources"][resource_node] = {
             "type": "video",
-            "data": {
-                "resourceId": str(int(time.time)) + ext_type,
-                "provider": "item-resource",
-            },
+            "data": {"resourceId": resource_id, "provider": "item-resource",},
         }
 
         # Add to story children, position counts
-        root_id = self["root"]
+        root_id = self.properties["root"]
         if position:
-            self["nodes"][root_id]["children"][position] = node_id
+            self.properties["nodes"][root_id]["children"][position] = node_id
         else:
-            self["nodes"][root_id]["children"] = node_id
+            self.properties["nodes"][root_id]["children"] = node_id
 
     # ----------------------------------------------------------------------
-
     def _add_image(
         self,
         item,
@@ -364,35 +366,43 @@ class StoryMap(object):
         :return: Boolean
 
         """
+
         # Create ids
-        node_id = "n-" + uuid.uuid4[0:6]
-        resource_node = "r-" + uuid.uuid4[0:6]
+        node_id = "n-" + uuid.uuid4().hex[0:6]
+        resource_node = "r-" + uuid.uuid4().hex[0:6]
+
+        ext_type = ext_type.split("/")
+        resource_id = str(int(time.time())) + "." + ext_type[1]
+
+        # Add resource
+        self._add_resource(item, resource_id)
 
         # Create image nodes
-        self["nodes"][node_id] = {
+        self.properties["nodes"][node_id] = {
             "type": "image",
             "data": {"image": resource_node, "caption": caption, "alt": alt_text},
             "config": {"size": display,},
         }
 
+        im = Image.open(item)
+        w, h = im.size
         # Create resource node
-        ext_type = ext_type.split("/")
-        self["resources"][resource_node] = {
+        self.properties["resources"][resource_node] = {
             "type": "image",
             "data": {
-                "resourceId": str(int(time.time)) + "." + ext_type,
+                "resourceId": resource_id,
                 "provider": "item-resource",
-                "height": item,
-                "width": item,
+                "height": h,
+                "width": w,
             },
         }
 
         # Add to story children, position counts
-        root_id = self["root"]
+        root_id = self.properties["root"]
         if position:
-            self["nodes"][root_id]["children"][position] = node_id
+            self.properties["nodes"][root_id]["children"][position] = node_id
         else:
-            self["nodes"][root_id]["children"] = node_id
+            self.properties["nodes"][root_id]["children"] = node_id
 
     # ----------------------------------------------------------------------
     def _add_audio(
@@ -401,7 +411,7 @@ class StoryMap(object):
         caption="",
         alt_text="",
         display="float",
-        ext_type="audio/.mp3",
+        ext_type="audio/mp3",
         position=None,
     ):
         """
@@ -430,42 +440,43 @@ class StoryMap(object):
 
         """
         # Create ids
-        node_id = "n-" + uuid.uuid4[0:6]
-        resource_node = "r-" + uuid.uuid4[0:6]
+        node_id = "n-" + uuid.uuid4().hex[0:6]
+        resource_node = "r-" + uuid.uuid4().hex[0:6]
+
+        ext_type = ext_type.split("/")
+        resource_id = str(int(time.time())) + "." + ext_type[1]
+
+        # Add resource
+        self._add_resouce(item, resource_id)
 
         # Create image nodes
-        self["nodes"][node_id] = {
+        self.properties["nodes"][node_id] = {
             "type": "audio",
             "data": {"video": resource_node, "caption": caption, "alt": alt_text},
             "config": {"size": display,},
         }
 
         # Create resource node
-        ext_type = ext_type.split("/")
-        self["resources"][resource_node] = {
+        self.properties["resources"][resource_node] = {
             "type": "audio",
-            "data": {
-                "resourceId": str(int(time.time)) + "." + ext_type,
-                "provider": "item-resource",
-            },
+            "data": {"resourceId": resource_id, "provider": "item-resource",},
         }
 
         # Add to story children, position counts
-        root_id = self["root"]
+        root_id = self.properties["root"]
         if position:
-            self["nodes"][root_id]["children"][position] = node_id
+            self.properties["nodes"][root_id]["children"][position] = node_id
         else:
-            self["nodes"][root_id]["children"] = node_id
+            self.properties["nodes"][root_id]["children"] = node_id
 
     # ----------------------------------------------------------------------
-
     def _add_webpage(
         self,
         item,
         caption="",
         alt_text="",
         display="float",
-        ext_type=".com",
+        ext_type="",
         position=None,
     ):
         """
@@ -494,25 +505,60 @@ class StoryMap(object):
 
         """
         # Create ids
-        node_id = "n-" + uuid.uuid4[0:6]
-        resource_node = "r-" + uuid.uuid4[0:6]
+        node_id = "n-" + uuid.uuid4().hex[0:6]
+        resource_node = "r-" + uuid.uuid4().hex[0:6]
 
         # Create embed nodes
-        self["nodes"][node_id] = {
+        self.properties["nodes"][node_id] = {
             "type": "embed",
             "data": {"embed": resource_node, "caption": caption, "alt": alt_text},
             "config": {"size": display,},
         }
 
         # Create resource node
-        self["resources"][resource_node] = {
+        self.properties["resources"][resource_node] = {
             "type": "embed",
-            "data": {"resourceId": str(int(time.time)) + ext_type},
+            "data": {"resourceId": str(int(time.time())) + ext_type},
         }
 
         # Add to story children, position counts
-        root_id = self["root"]
+        root_id = self.properties["root"]
         if position:
-            self["nodes"][root_id]["children"][position] = node_id
+            self.properties["nodes"][root_id]["children"][position] = node_id
         else:
-            self["nodes"][root_id]["children"] = node_id
+            self.properties["nodes"][root_id]["children"] = node_id
+
+    # ----------------------------------------------------------------------
+    def _add_resource(
+        self, file=None, resource_id=None,
+    ):
+        """
+        The add resources operation (POST only) allows to add new file resources 
+        to an existing item, for example, an image that is used as custom logo 
+        for Report Template. All the files are added to resources folder of the item. 
+        File resources use storage space from your quota and are scanned for viruses. 
+        The item size is updated to include the size of added resource files. 
+        There is a limit of 1000 files per item (except Style items). A maximum 
+        of 50 files can be added each request. Each file should be no more than 50 Mb. 
+        The maximum size of all of the file resources for an item is 10 GB.
+        """
+        url = (
+            "content/users/"
+            + self._gis._username
+            + "/items/"
+            + self._item.itemid
+            + "/addResources"
+        )
+        files = []
+        if file and os.path.isfile(os.path.abspath(file)):
+            files.append(("file", file, os.path.basename(file)))
+        elif file and os.path.isfile(os.path.abspath(file)) == False:
+            raise RuntimeError("File(" + file + ") not found.")
+
+        params = {}
+        params["f"] = "json"
+        params["fileName"] = resource_id
+        params["access"] = self._item.access
+        resp = self._gis._portal.con.post(url, params, files=files, compress=False)
+        return resp
+
