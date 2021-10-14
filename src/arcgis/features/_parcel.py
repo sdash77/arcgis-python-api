@@ -653,8 +653,7 @@ class ParcelFabricManager(object):
         elif extent is None:
             pass
         elif not extent is None:
-            raise ValueError(
-                "Parameter `extent` must be None, Envelope or dict.")
+            raise ValueError("Parameter `extent` must be None, Envelope or dict.")
         if moment is None:
             moment = int(time.time())
         gdb_version = self._version.properties.versionName
@@ -1003,9 +1002,9 @@ class ParcelFabricManager(object):
         self, source_record, target_record, delete_source_record
     ):
         """
-        Reassigns all parcel features in the specified source record to the specified target record. 
-        The source record will become empty and will be associated to no parcel features. The record 
-        polygon of the target record will be updated to match the cumulative geometry of all the 
+        Reassigns all parcel features in the specified source record to the specified target record.
+        The source record will become empty and will be associated to no parcel features. The record
+        polygon of the target record will be updated to match the cumulative geometry of all the
         parcels associated to it.
 
         The Created By Record or Retired By Record attribute field of the
@@ -1015,21 +1014,21 @@ class ParcelFabricManager(object):
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
-        source_record            Required String. GlobalID representing the record containing the 
+        source_record            Required String. GlobalID representing the record containing the
                                  parcel features to be reassigned.
 
 
                                     :Syntax: ``source_record=<guid>``
 
         --------------------     --------------------------------------------------------------------
-        target_record            Required String. GlobalID representing the target record to which 
+        target_record            Required String. GlobalID representing the target record to which
                                  the parcel features will be reassigned.
 
 
                                     :Syntax: ``source_record=<guid>``
 
         --------------------     --------------------------------------------------------------------
-        delete_source_record     Required Bool. Parameter indicating whether to delete the original 
+        delete_source_record     Required Bool. Parameter indicating whether to delete the original
                                  source record.
         ====================     ====================================================================
 
