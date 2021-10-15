@@ -2666,34 +2666,21 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
         return name
 
-    def _swizzle_workforce_layers(self, wm_item_data, new_item):
+    def _swizzle_workforce_layers(self, wm_item_data, new_item, original_item_id):
         # replace old workforce layers with new cloned layers, leave non wf layers
         if (
             "operationalLayers" in wm_item_data
             and len(wm_item_data["operationalLayers"]) > 0
         ):
             for i, layer in enumerate(wm_item_data["operationalLayers"]):
-                if layer["id"] == "Assignments_0":
+                if layer.get("itemId", "") == original_item_id:
                     wm_item_data["operationalLayers"][i]["itemId"] = new_item.id
-                    wm_item_data["operationalLayers"][i]["url"] = new_item.url + "/0"
-                elif layer["id"] == "Workers_0":
-                    wm_item_data["operationalLayers"][i]["itemId"] = new_item.id
-                    wm_item_data["operationalLayers"][i]["url"] = new_item.url + "/1"
-                else:
-                    pass
+                    wm_item_data["operationalLayers"][i]["url"] = f"{new_item.url}/{layer['url'].split('/')[-1]}"
         if "tables" in wm_item_data and len(wm_item_data["tables"]) > 0:
             for i, table in enumerate(wm_item_data["tables"]):
-                if table["id"] == "Dispatchers_0":
+                if table.get("itemId", "") == original_item_id:
                     wm_item_data["tables"][i]["itemId"] = new_item.id
-                    wm_item_data["tables"][i]["url"] = new_item.url + "/2"
-                elif table["id"] == "Assignment Types_0":
-                    wm_item_data["tables"][i]["itemId"] = new_item.id
-                    wm_item_data["tables"][i]["url"] = new_item.url + "/3"
-                elif table["id"] == "Assignment Integrations_0":
-                    wm_item_data["tables"][i]["itemId"] = new_item.id
-                    wm_item_data["tables"][i]["url"] = new_item.url + "/4"
-                else:
-                    pass
+                    wm_item_data["tables"][i]["url"] = f"{new_item.url}/{table['url'].split('/')[-1]}"
         return wm_item_data
 
     def clone(self):
@@ -3607,7 +3594,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     )
                     wm_item_data = dispatcher_webmap_item.get_data()
                     wm_item_data = self._swizzle_workforce_layers(
-                        wm_item_data, new_item
+                        wm_item_data, new_item, original_item['id']
                     )
                     dispatcher_webmap_item.update(
                         item_properties={
@@ -3631,7 +3618,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     worker_webmap_item = self.target.content.get(new_worker_webmap_id)
                     wm_item_data = worker_webmap_item.get_data()
                     wm_item_data = self._swizzle_workforce_layers(
-                        wm_item_data, new_item
+                        wm_item_data, new_item, original_item['id']
                     )
                     worker_webmap_item.update(
                         item_properties={
