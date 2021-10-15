@@ -8,7 +8,7 @@ copy = LazyLoader("copy")
 uuid = LazyLoader("uuid")
 shutil = LazyLoader("shutil")
 datetime = LazyLoader("datetime")
-np = LazyLoader("np")
+np = LazyLoader("numpy")
 tempfile = LazyLoader("tempfile")
 warnings = LazyLoader("warnings")
 import logging
@@ -2949,14 +2949,7 @@ class GeoAccessor(object):
                 if fs["displayFieldName"] == "":
                     fs["displayFieldName"] = col
             elif (
-                isinstance(
-                    col_val,
-                    (
-                        datetime.datetime,
-                        pd.Timestamp,
-                        np.datetime64,
-                    ),
-                )
+                isinstance(col_val, (datetime.datetime, pd.Timestamp, np.datetime64,),)
                 or col in date_cols
             ):  # pd.datetime
                 fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
@@ -3041,7 +3034,7 @@ class GeoAccessor(object):
             if g not in [None, np.NaN, np.nan, ""] and isinstance(g, dict)
         ]
         srs = [
-            SpatialReference(sr)
+            _geometry.SpatialReference(sr)
             for sr in pd.DataFrame(data).drop_duplicates().to_dict("records")
         ]
         if len(srs) == 1:
@@ -3339,7 +3332,7 @@ class GeoAccessor(object):
             else:
                 return None
 
-        # vectorize converter so it will run efficiently on GeoSeries - avoids loops
+        # vectorize converter so it will run efficiently on pd.Series - avoids loops
         v_func = np.vectorize(_converter, otypes="O")
 
         # initialize empty array
@@ -3812,7 +3805,7 @@ class GeoAccessor(object):
                 )
                 self._data[self.name] = vals
                 return True
-            elif isinstance(spatial_reference, SpatialReference) and HASARCPY:
+            elif isinstance(spatial_reference, _geometry.SpatialReference) and HASARCPY:
                 vals = self._data[self.name].values.project_as(
                     **{
                         "spatial_reference": spatial_reference.as_arcpy,
@@ -3822,7 +3815,9 @@ class GeoAccessor(object):
                 self._data[self.name] = vals
                 return True
             elif isinstance(spatial_reference, dict) and HASARCPY:
-                spatial_reference = SpatialReference(spatial_reference).as_arcpy
+                spatial_reference = _geometry.SpatialReference(
+                    spatial_reference
+                ).as_arcpy
                 vals = self._data[self.name].values.project_as(
                     **{
                         "spatial_reference": spatial_reference,
