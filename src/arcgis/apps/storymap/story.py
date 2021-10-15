@@ -697,10 +697,12 @@ class StoryMap(object):
     def _add_child(self, node_id, position=None):
         # Add to story children, position counts
         root_id = self.properties["root"]
-        if position:
-            self.properties["nodes"][root_id]["children"][position] = node_id
+        last = len(self.properties["nodes"][root_id]["children"]) - 1
+        if position and position < last:
+            self.properties["nodes"][root_id]["children"].insert(node_id)
         else:
-            self.properties["nodes"][root_id]["children"] = node_id
+            # last node is always credits
+            self.properties["nodes"][root_id]["children"].insert(last, node_id)
 
     # ----------------------------------------------------------------------
     def save(
