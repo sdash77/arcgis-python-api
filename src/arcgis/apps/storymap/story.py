@@ -56,7 +56,7 @@ class StoryMap(object):
         elif item and isinstance(item, Item) and "StoryMap" not in item.typeKeywords:
             raise ValueError("Item is not a Story Map")
         else:
-            f = open("templates\data.json",)
+            f = open(r"src\arcgis\apps\storymap\templates\draft.json", "r")
             self._properties = json.load(f)
             self._itemid = str(uuid.uuid4())
             f.close()
@@ -729,7 +729,19 @@ class StoryMap(object):
 
         """
         if self._item:
-            p = {"text": json.dumps(self._properties)}
+            typeKeywords = ",".join(
+                [
+                    "arcgis-storymaps",
+                    "Story Map",
+                    "Web Application",
+                    "smstatusunpublishedchanges",
+                    "smversiondraft:20.35.0",
+                    "smdraftresourceid:draft_" + str(int(time.time())) + ".json",
+                    "smversionpublished:20.35.0",
+                    "smpublisheddate:" + str(int(time.time())),
+                ]
+            )
+            p = {"typeKeywords": typeKeywords, "text": json.dumps(self._properties)}
             if title:
                 p["title"] = title
             if tags:
@@ -739,7 +751,7 @@ class StoryMap(object):
             return self._item.url
         else:
             if title is None:
-                title = "Story Map, %s" % uuid.uuid4().hex[:10]
+                title = "Story Map %s" % uuid.uuid4().hex[:10]
             if tags is None:
                 tags = "Story Map"
             typeKeywords = ",".join(
@@ -752,16 +764,16 @@ class StoryMap(object):
                     "smdraftresourceid:draft_" + str(int(time.time())) + ".json",
                 ]
             )
-            item = self._gis.content.add(
-                item_properties={
-                    "title": title,
-                    "tags": tags,
-                    "text": json.dumps(self._properties),
-                    "typeKeywords": typeKeywords,
-                    "itemType": "text",
-                    "type": "Story Map",
-                }
-            )
+            item_properties = {
+                "title": title,
+                "tags": tags,
+                "text": json.dumps(self._properties),
+                "typeKeywords": typeKeywords,
+                "itemType": "text",
+                "type": "StoryMap",
+                "id": self._itemid,
+            }
+            item = self._gis.content.add(item_properties)
             parse = urlparse(self._gis._con.baseurl)
             isinstance(self._gis, GIS)
             if self._gis._portal.is_arcgisonline:
@@ -778,7 +790,8 @@ class StoryMap(object):
                     wa,
                     self._itemid,
                 )
-            item.update(item_properties={"url": url})
+            item_properties["url"] = url
+            item.update(item_properties)
             self._item = self._gis.content.get(self._itemid)
             return self._item.url
 
@@ -808,7 +821,8 @@ class StoryMap(object):
             "text": json.dumps(self._properties),
             "typeKeywords": typeKeywords,
             "itemType": "text",
-            "type": "Story Map",
+            "type": "StoryMap",
+            "id": self._itemid,
             "access": access,
         }
         published = item.publish(publish_parameters=item_properties)
