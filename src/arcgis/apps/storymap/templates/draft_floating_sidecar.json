@@ -1,0 +1,51 @@
+{
+  "root": "n-4oA6Tf",
+  "nodes": {
+    "n-4oA6Tf": {
+      "type": "story",
+      "data": { "storyTheme": "r-siR0re" },
+      "children": ["n-tgB4Hg", "n-668fbm", "n-Jw6T8P", "n-gAJCiG"]
+    },
+    "n-tgB4Hg": {
+      "type": "storycover",
+      "data": {
+        "type": "minimal",
+        "title": "",
+        "summary": "",
+        "byline": "Aravind Sivasailam",
+        "titlePanelPosition": "start"
+      }
+    },
+    "n-668fbm": {
+      "type": "navigation",
+      "data": { "links": [] },
+      "config": { "isHidden": true }
+    },
+    "n-Jw6T8P": {
+      "type": "immersive",
+      "data": {
+        "type": "sidecar",
+        "subtype": "floating-panel",
+        "narrativePanelPosition": "start",
+        "narrativePanelSize": "small"
+      },
+      "children": ["n-Ew22l6"]
+    },
+    "n-Ew22l6": {
+      "type": "immersive-slide",
+      "data": { "transition": "fade" },
+      "children": ["n-Lpm2Pz"]
+    },
+    "n-Lpm2Pz": {
+      "type": "immersive-narrative-panel",
+      "data": { "panelStyle": "themed", "position": "start", "size": "small" }
+    },
+    "n-gAJCiG": { "type": "credits" }
+  },
+  "resources": {
+    "r-siR0re": {
+      "type": "story-theme",
+      "data": { "themeId": "summit", "themeBaseVariableOverrides": {} }
+    }
+  }
+}
