@@ -696,20 +696,21 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def _add_child(self, node_id, position=None):
         # Add to story children, position counts
+        # Last node is always credits and first node is always story cover
         root_id = self.properties["root"]
         last = len(self.properties["nodes"][root_id]["children"]) - 1
-        if position and position < last:
-            self.properties["nodes"][root_id]["children"].insert(node_id)
+
+        if position and position < last and position != 0:
+            self.properties["nodes"][root_id]["children"].insert(position, node_id)
+        elif position and position == 0:
+            self.properties["nodes"][root_id]["children"].insert(1, node_id)
         else:
             # last node is always credits
             self.properties["nodes"][root_id]["children"].insert(last, node_id)
 
     # ----------------------------------------------------------------------
     def save(
-        self,
-        title: Optional[str] = None,
-        tags: Optional[list] = None,
-        description: Optional[str] = None,
+        self, title: Optional[str] = None, tags: Optional[list] = None,
     ):
         """
         Saves an Journal StoryMap to the GIS
@@ -721,8 +722,6 @@ class StoryMap(object):
         title               Optional string. The title of the StoryMap.
         ---------------     --------------------------------------------------------------------
         tags                Optional string. The tags of the StoryMap.
-        ---------------     --------------------------------------------------------------------
-        description         Optional string. The description of the StoryMap
         ===============     ====================================================================
 
 
@@ -740,17 +739,17 @@ class StoryMap(object):
             return self._item.url
         else:
             if title is None:
-                title = "Map Journal, %s" % uuid.uuid4().hex[:10]
+                title = "Story Map, %s" % uuid.uuid4().hex[:10]
             if tags is None:
-                tags = "Story Map,Map Journal"
+                tags = "Story Map"
             typeKeywords = ",".join(
                 [
-                    "smstatusdraft",
                     "arcgis-storymaps",
-                    "smversiondraft:20.35.0",
-                    "smitem1",
                     "Story Map",
-                    "Web Map",
+                    "Web Application",
+                    "smstatusdraft",
+                    "smversiondraft:20.35.0",
+                    "smdraftresourceid:draft_" + str(int(time.time())) + ".json",
                 ]
             )
             item = self._gis.content.add(
@@ -782,3 +781,149 @@ class StoryMap(object):
             item.update(item_properties={"url": url})
             self._item = self._gis.content.get(self._itemid)
             return self._item.url
+
+    # ----------------------------------------------------------------------
+    def publish(self, access="private"):
+        """
+        Publish the story map
+        """
+        item = self._item
+        if item is None:
+            raise Exception("Story Map must be saved before publishing")
+        typeKeywords = ",".join(
+            [
+                "arcgis-storymaps",
+                "Story Map",
+                "Web Application",
+                "smstatuspublished",
+                "smversionpublished:20.35.0",
+                "smpublisheddate:" + str(int(time.time())),
+                "smversiondraft:20.35.0",
+                "smdraftresourceid:draft_" + str(int(time.time())) + ".json",
+            ]
+        )
+        item_properties = {
+            "title": item.title,
+            "tags": item.tags,
+            "text": json.dumps(self._properties),
+            "typeKeywords": typeKeywords,
+            "itemType": "text",
+            "type": "Story Map",
+            "access": access,
+        }
+        published = item.publish(publish_parameters=item_properties)
+        return published
+
+    # ----------------------------------------------------------------------
+    def story_cover(self, title=None, type="full", summary=None, by_line=None):
+        """
+        All stories come with a story cover node. This method allows you to edit the story cover.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        title               Optional string. The title of the StoryMap cover.
+        ---------------     --------------------------------------------------------------------
+        type                Optional string. The type of story cover to be used in the story. 
+                            By default, it is “full”
+
+                            Values: “full” | “sidebyside“ | “minimal"
+        ---------------     --------------------------------------------------------------------
+        summary             Optional string. The description of the story.
+        ---------------     --------------------------------------------------------------------
+        by_line             Optional string. Crediting the author(s).
+        ===============     ====================================================================        
+        """
+        story_cover_node = self.node_order[0]
+        orig_data = self.properties["nodes"][story_cover_node]["data"]
+
+        self.properties["nodes"][story_cover_node] = {
+            "type": "storycover",
+            "data": {
+                "type": type,
+                "title": orig_data["title"] if title is None else title,
+                "summary": orig_data["summary"] if summary is None else summary,
+                "byline": orig_data["byline"] if by_line is None else by_line,
+                "titlePanelPosition": "start",
+            },
+        }
+
+    # ----------------------------------------------------------------------
+    def navigation(self, nodes=[], position=1, hidden=False):
+        """
+        Story navigation is a way for authors to add headings as 
+        links to allow readers to navigate between different sections 
+        of a story. The story navigation node takes h2 blocks as its only allowed children. 
+        You can only have 10 h2 child nodes as visible and act as links within a story. 
+        The h2 node’s text can only allow up to 30 characters.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        nodes               Required list of dictionaries. The node ids to navigate to.
+                            Use ```navigation_list``` property to get the current list.
+
+                            ..note:
+                                If a current list exists, copy and add to this list. Pass in entire
+                                list again as current list will be overwritten.
+
+                            Example:
+                            nodes = [{
+                                "nodeId": "n-R9XpeZ",
+                                "nodeID": "n-8wzjrC",
+                                "nodeID": "n-lA9Qac"
+                            }]
+        ---------------     --------------------------------------------------------------------
+        position            Optional Integer. The position of the navigation on the story map.
+                            To have navigation be under story cover, default is set to 1.
+        ---------------     --------------------------------------------------------------------
+        hidden              Optional boolean. If True, the navigation is hidden. Default is False
+        ===============     ====================================================================        
+        """
+
+        # Create ids
+        node_id = "n-" + uuid.uuid4().hex[0:6]
+        # Check if navigation node already exists
+        for node, node_info in self.properties.items():
+            for key, val in node_info.items():
+                if key == "type" and val == "navigation":
+                    node_id = node
+
+        self.properties["nodes"][node_id] = {
+            "type": "navigation",
+            "data": {"links": nodes},
+            "config": {"isHidden": hidden},
+        }
+
+        self._add_child(node_id=node_id, position=position)
+
+    # ----------------------------------------------------------------------
+    @property
+    def navigation_list(self):
+        for node, node_info in self.properties.items():
+            for key, val in node_info.items():
+                if key == "type" and val == "navigation":
+                    node_id = node
+        try:
+            return self.properties["nodes"][node_id]["links"]
+        except:
+            return None
+
+    # ----------------------------------------------------------------------
+    def end_credits(self, content=None, attribution=None, hidden=False):
+        """
+        Credits node is the last node in a story map.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        content             Optional list of Strings. 
+                            See ```add_text``` parameter text to understand format.
+        ---------------     --------------------------------------------------------------------
+        hidden              Optional boolean. If True, the navigation is hidden. Default is False
+        ===============     ==================================================================== 
+        """
+
+        # Must take each string in content and create a new text node that is paragraph or h4
+        # Take node id and add that to children of credits.
+
