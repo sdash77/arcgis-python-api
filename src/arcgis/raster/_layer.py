@@ -11533,7 +11533,7 @@ class RasterCollection:
                               on the specification of the STAC API in use and the request_method
                               parameter value).
 
-                              For the “bbox” query parameter, :class:`~arcgis.geometry.Envelope`
+                              For the `bbox` query parameter, :class:`~arcgis.geometry.Envelope`
                               and :class:`~arcgis.geometry.Polygon`
                               objects are also accepted (in any spatial reference).
 
