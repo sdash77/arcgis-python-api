@@ -22,16 +22,8 @@ _utils = LazyLoader("arcgis._impl.common._utils")
 _geometry = LazyLoader("arcgis.geometry")
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
 _forms = LazyLoader("arcgis.mapping.forms")
-# from arcgis._impl.common._mixins import PropertyMap
-# from arcgis.geometry import Polygon
-# from arcgis.gis import Error, Layer, _GISResource, Item
-# from arcgis.mapping._basemap_definitions import basemap_dict
+
 from arcgis.mapping._scenelyrs import SceneLayer
-
-# from arcgis.mapping.forms import FormCollection
-# from arcgis._impl.common._utils import _lazy_property
-
-# from arcgis.mapping import export_map
 
 try:
     from traitlets import HasTraits, observe
@@ -1013,7 +1005,9 @@ class WebMap(HasTraits, collections.OrderedDict):
         item_properties["extent"] = self._process_extent(
             item_properties.get("extent", None)
         )
-        item_properties["text"] = json.dumps(self._webmapdict, default=_date_handler)
+        item_properties["text"] = json.dumps(
+            self._webmapdict, default=_utils._date_handler
+        )
         if "typeKeywords" not in item_properties:
             item_properties["typeKeywords"] = self._eval_map_viewer_keywords()
 
@@ -1132,7 +1126,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             if item_properties is None:
                 item_properties = {}
             item_properties["text"] = json.dumps(
-                self._webmapdict, default=_date_handler
+                self._webmapdict, default=_utils._date_handler
             )
             item_properties["extent"] = self._process_extent()
             if "typeKeywords" not in item_properties:
@@ -1241,7 +1235,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             form.title = "Manhole Inspection Form"
             form.update()
         """
-        return FormCollection(parent=self)
+        return _forms.FormCollection(parent=self)
 
     @property
     def tables(self):
@@ -1398,13 +1392,13 @@ class WebMap(HasTraits, collections.OrderedDict):
             # get basemap from map widget
             if value.basemap in self.basemaps:
                 self._basemap = {
-                    "baseMapLayers": basemap_dict[value.basemap],
+                    "baseMapLayers": _basemap_definitions.basemap_dict[value.basemap],
                     "title": value.basemap.replace("-", " ").title(),
                 }
                 self._webmapdict["baseMap"] = self._basemap
         elif value in self.basemaps:
             self._basemap = {
-                "baseMapLayers": basemap_dict[value],
+                "baseMapLayers": _basemap_definitions.basemap_dict[value],
                 "title": value.replace("-", " ").title(),
             }
             self._webmapdict["baseMap"] = self._basemap
@@ -5329,10 +5323,7 @@ class MapImageLayer(arcgis.gis.Layer):
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 params[k] = v
-        res = self._con.post(
-            path=url,
-            postdata=params,
-        )
+        res = self._con.post(path=url, postdata=params,)
         return res
 
     # ----------------------------------------------------------------------
@@ -5378,11 +5369,7 @@ class MapImageLayer(arcgis.gis.Layer):
             "layers": layers,
             "layerOptions": options,
         }
-        return self._con.get(
-            kmlURL,
-            params,
-            out_folder=save_location,
-        )
+        return self._con.get(kmlURL, params, out_folder=save_location,)
 
     # ----------------------------------------------------------------------
     def export_map(
