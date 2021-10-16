@@ -644,7 +644,7 @@ class _DeepCloner:
                             map_item_definition.add_child(group_item_definition)
 
                 # add integration as dependency
-                integrations_fl = FeatureLayer(url=item.url + "/4", gis=self.target)
+                integrations_fl = FeatureLayer(url=item.url + "/4", gis=item._gis)
                 integrations_df = integrations_fl.query("1=1", as_df=True)
                 for url_template in integrations_df.urltemplate.values:
                     parsed = urlparse(url_template)
@@ -3704,7 +3704,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     new_proj = arcgis.apps.workforce.Project(new_item)
                     if not self.copy_data:
                         at_fl = FeatureLayer(
-                            url=original_item["url"] + "/3", gis=self.target
+                            url=original_item["url"] + "/3", gis=self.portal_item._gis
                         )
                         at_features = at_fl.query("1=1")
                         new_proj.assignment_types_table.edit_features(
@@ -3713,7 +3713,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                     # use wf module to migrate integrations
                     integrations_fl = FeatureLayer(
-                        original_item["url"] + "/4", gis=self.target
+                        original_item["url"] + "/4", gis=self.portal_item._gis
                     )
                     integrations_features = integrations_fl.query("1=1")
                     if not self.copy_data:
