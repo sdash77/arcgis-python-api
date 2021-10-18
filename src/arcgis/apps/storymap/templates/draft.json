@@ -3,8 +3,14 @@
   "nodes": {
     "n-4xkUEe": {
       "type": "story",
-      "data": { "storyTheme": "r-vlc4Kp" },
-      "children": ["n-aTn8ak", "n-1AItUD", "n-cOeTah"]
+      "data": {
+        "storyTheme": "r-vlc4Kp"
+      },
+      "children": [
+        "n-aTn8ak",
+        "n-1AItUD",
+        "n-cOeTah"
+      ]
     },
     "n-aTn8ak": {
       "type": "storycover",
@@ -12,21 +18,30 @@
         "type": "full",
         "title": "",
         "summary": "",
-        "byline": "Aravind Sivasailam",
+        "byline": "User Name",
         "titlePanelPosition": "start"
       }
     },
     "n-1AItUD": {
       "type": "navigation",
-      "data": { "links": [] },
-      "config": { "isHidden": true }
+      "data": {
+        "links": []
+      },
+      "config": {
+        "isHidden": true
+      }
     },
-    "n-cOeTah": { "type": "credits" }
+    "n-cOeTah": {
+      "type": "credits"
+    }
   },
   "resources": {
     "r-vlc4Kp": {
       "type": "story-theme",
-      "data": { "themeId": "summit", "themeBaseVariableOverrides": {} }
+      "data": {
+        "themeId": "summit",
+        "themeBaseVariableOverrides": {}
+      }
     }
   }
 }

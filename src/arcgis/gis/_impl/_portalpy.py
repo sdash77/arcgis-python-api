@@ -294,21 +294,21 @@ class Portal(object):
             be provided.
 
 
-        ============     ====================================================
-        **Argument**     **Description**
-        ------------     ----------------------------------------------------
-        item_properties  required dictionary, see below for the keys and values
-        ------------     ----------------------------------------------------
-        data             optional string, either a path or URL to the data
-        ------------     ----------------------------------------------------
-        thumbnail        optional string, either a path or URL to an image
-        ------------     ----------------------------------------------------
-        metadata         optional string, either a path or URL to metadata.
-        ------------     ----------------------------------------------------
-        owner            optional string, defaults to logged in user.
-        ------------     ----------------------------------------------------
-        folder           optional string, content folder where placing item
-        ============     ====================================================
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        item_properties     Required dictionary, see below for the keys and values
+        ---------------     ----------------------------------------------------
+        data                Optional string, either a path or URL to the data
+        ---------------     ----------------------------------------------------
+        thumbnail           Optional string, either a path or URL to an image
+        ---------------     ----------------------------------------------------
+        metadata            Optional string, either a path or URL to metadata.
+        ---------------     ----------------------------------------------------
+        owner               Optional string, defaults to logged in user.
+        ---------------     ----------------------------------------------------
+        folder              Optional string, content folder where placing item
+        ===============     ====================================================
 
 
         ================  ============================================================================
@@ -1386,17 +1386,13 @@ class Portal(object):
     def get_item_dependencies(self, itemid):
         postdata = self._postdata()
         postdata["num"] = 100
-        data = self.con.post(
-            "content/items/" + itemid + "/dependencies",
-            postdata,
-        )
+        data = self.con.post("content/items/" + itemid + "/dependencies", postdata,)
 
         # check if more dependents to get
         while data["nextStart"] > 0:
             postdata["start"] = data["nextStart"]
             new_data = self.con.post(
-                "content/items/" + itemid + "/dependencies",
-                postdata,
+                "content/items/" + itemid + "/dependencies", postdata,
             )
             # update list of data with new data list
             data["list"].extend(new_data["list"])
@@ -1413,16 +1409,14 @@ class Portal(object):
         postdata = self._postdata()
         postdata["num"] = 100
         data = self.con.post(
-            "content/items/" + itemid + "/dependencies/listDependentsTo",
-            postdata,
+            "content/items/" + itemid + "/dependencies/listDependentsTo", postdata,
         )
 
         # check if more dependents to get
         while data["nextStart"] > 0:
             postdata["start"] = data["nextStart"]
             new_data = self.con.post(
-                "content/items/" + itemid + "/dependencies/listDependentsTo",
-                postdata,
+                "content/items/" + itemid + "/dependencies/listDependentsTo", postdata,
             )
 
             # update data to include new_data in list

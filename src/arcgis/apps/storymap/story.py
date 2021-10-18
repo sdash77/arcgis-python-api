@@ -4,18 +4,10 @@ import json
 import mimetypes
 from typing import Optional, Union
 from arcgis import env
-from arcgis.gis import GIS, Item
+from arcgis.gis import Item
 import uuid
 from PIL import Image
 from urllib.parse import urlparse
-
-
-# TODO:
-# Save story map function
-# Update story map function
-# Publish story map function
-# Edit media item (do they specify node?). Also do we delete and repost resource ? What about position.
-# Edit text, button, and separator (text for text and button , position, etc.)
 
 
 class StoryMap(object):
@@ -56,9 +48,26 @@ class StoryMap(object):
         elif item and isinstance(item, Item) and "StoryMap" not in item.typeKeywords:
             raise ValueError("Item is not a Story Map")
         else:
-            f = open(r"src\arcgis\apps\storymap\templates\draft.json", "r")
+            f = open(r"src\arcgis\apps\storymap\templates\draft.json", "rb")
             self._properties = json.load(f)
-            self._itemid = str(uuid.uuid4())
+
+            title = "StoryMap %s" % uuid.uuid4().hex[:10]
+            typeKeywords = ",".join(
+                ["arcgis-storymaps", "smstatusdraft", "smversiondraft:20.35.0",]
+            )
+            item_properties = {
+                "title": title,
+                "text": json.dumps(self._properties),
+                "typeKeywords": typeKeywords,
+                "type": "StoryMap",
+            }
+            item = self._gis.content.add(item_properties=item_properties)
+            self._item = item
+            self._itemid = item.itemid
+            self._add_resource(
+                file=r"src\arcgis\apps\storymap\templates\draft.json",
+                resource_id="draft.json",
+            )
             f.close()
 
     # ----------------------------------------------------------------------
@@ -709,126 +718,6 @@ class StoryMap(object):
             self.properties["nodes"][root_id]["children"].insert(last, node_id)
 
     # ----------------------------------------------------------------------
-    def save(
-        self, title: Optional[str] = None, tags: Optional[list] = None,
-    ):
-        """
-        Saves an Journal StoryMap to the GIS
-
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        title               Optional string. The title of the StoryMap.
-        ---------------     --------------------------------------------------------------------
-        tags                Optional string. The tags of the StoryMap.
-        ===============     ====================================================================
-
-
-        :return: Url of the saved item
-
-        """
-        if self._item:
-            typeKeywords = ",".join(
-                [
-                    "arcgis-storymaps",
-                    "Story Map",
-                    "Web Application",
-                    "smstatusunpublishedchanges",
-                    "smversiondraft:20.35.0",
-                    "smdraftresourceid:draft_" + str(int(time.time())) + ".json",
-                    "smversionpublished:20.35.0",
-                    "smpublisheddate:" + str(int(time.time())),
-                ]
-            )
-            p = {"typeKeywords": typeKeywords, "text": json.dumps(self._properties)}
-            if title:
-                p["title"] = title
-            if tags:
-                p["tags"] = tags
-            self._item.update(item_properties=p)
-            self._item = self._gis.content.get(self._itemid)
-            return self._item.url
-        else:
-            if title is None:
-                title = "Story Map %s" % uuid.uuid4().hex[:10]
-            if tags is None:
-                tags = "Story Map"
-            typeKeywords = ",".join(
-                [
-                    "arcgis-storymaps",
-                    "Story Map",
-                    "Web Application",
-                    "smstatusdraft",
-                    "smversiondraft:20.35.0",
-                    "smdraftresourceid:draft_" + str(int(time.time())) + ".json",
-                ]
-            )
-            item_properties = {
-                "title": title,
-                "tags": tags,
-                "text": json.dumps(self._properties),
-                "typeKeywords": typeKeywords,
-                "itemType": "text",
-                "type": "StoryMap",
-                "id": self._itemid,
-            }
-            item = self._gis.content.add(item_properties)
-            parse = urlparse(self._gis._con.baseurl)
-            isinstance(self._gis, GIS)
-            if self._gis._portal.is_arcgisonline:
-                url = "%s://%s/apps/StoryMap/index.html?appid=%s" % (
-                    parse.scheme,
-                    parse.netloc,
-                    self._itemid,
-                )
-            else:
-                wa = os.path.dirname(parse.path[1:])
-                url = "%s://%s/%s/sharing/rest/apps/StoryMap/index.html?appid=%s" % (
-                    parse.scheme,
-                    parse.netloc,
-                    wa,
-                    self._itemid,
-                )
-            item_properties["url"] = url
-            item.update(item_properties)
-            self._item = self._gis.content.get(self._itemid)
-            return self._item.url
-
-    # ----------------------------------------------------------------------
-    def publish(self, access="private"):
-        """
-        Publish the story map
-        """
-        item = self._item
-        if item is None:
-            raise Exception("Story Map must be saved before publishing")
-        typeKeywords = ",".join(
-            [
-                "arcgis-storymaps",
-                "Story Map",
-                "Web Application",
-                "smstatuspublished",
-                "smversionpublished:20.35.0",
-                "smpublisheddate:" + str(int(time.time())),
-                "smversiondraft:20.35.0",
-                "smdraftresourceid:draft_" + str(int(time.time())) + ".json",
-            ]
-        )
-        item_properties = {
-            "title": item.title,
-            "tags": item.tags,
-            "text": json.dumps(self._properties),
-            "typeKeywords": typeKeywords,
-            "itemType": "text",
-            "type": "StoryMap",
-            "id": self._itemid,
-            "access": access,
-        }
-        published = item.publish(publish_parameters=item_properties)
-        return published
-
-    # ----------------------------------------------------------------------
     def story_cover(self, title=None, type="full", summary=None, by_line=None):
         """
         All stories come with a story cover node. This method allows you to edit the story cover.
@@ -941,3 +830,77 @@ class StoryMap(object):
         # Must take each string in content and create a new text node that is paragraph or h4
         # Take node id and add that to children of credits.
 
+    # ----------------------------------------------------------------------
+    def save(
+        self, title: Optional[str] = None, tags: Optional[list] = None,
+    ):
+        """
+        Saves an Journal StoryMap to the GIS
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        title               Optional string. The title of the StoryMap.
+        ---------------     --------------------------------------------------------------------
+        tags                Optional string. The tags of the StoryMap.
+        ===============     ====================================================================
+
+
+        :return: Url of the saved item
+
+        """
+        if self._item:
+            typeKeywords = ",".join(
+                [
+                    "arcgis-storymaps",
+                    "Story Map",
+                    "Web Application",
+                    "smstatusunpublishedchanges",
+                    "smversiondraft:20.35.0",
+                    "smdraftresourceid:draft_" + str(int(time.time())) + ".json",
+                    "smversionpublished:20.35.0",
+                    "smpublisheddate:" + str(int(time.time())),
+                ]
+            )
+            p = {"typeKeywords": typeKeywords, "text": json.dumps(self._properties)}
+            if title:
+                p["title"] = title
+            if tags:
+                p["tags"] = tags
+            self._item.update(item_properties=p)
+            self._item = self._gis.content.get(self._itemid)
+            return self._item.url
+        return False
+
+    # ----------------------------------------------------------------------
+    def publish(self, access="private"):
+        """
+        Publish the story map
+        """
+        item = self._item
+        if item is None:
+            raise Exception("Story Map must be saved before publishing")
+        typeKeywords = ",".join(
+            [
+                "arcgis-storymaps",
+                "Story Map",
+                "Web Application",
+                "smstatuspublished",
+                "smversionpublished:20.35.0",
+                "smpublisheddate:" + str(int(time.time())),
+                "smversiondraft:20.35.0",
+                "smdraftresourceid:draft_" + str(int(time.time())) + ".json",
+            ]
+        )
+        item_properties = {
+            "title": item.title,
+            "tags": item.tags,
+            "text": json.dumps(self._properties),
+            "typeKeywords": typeKeywords,
+            "type": "StoryMap",
+            "access": access,
+        }
+        updated = item.update(item_properties=item_properties)
+        published = item.publish(publish_parameters=item_properties)
+        return published
