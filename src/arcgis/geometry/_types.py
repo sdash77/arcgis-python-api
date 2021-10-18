@@ -1,6 +1,7 @@
 """
 New Geometries Classes
 """
+from arcgis.auth.tools import LazyLoader
 import copy
 import json
 import ujson as _ujson
@@ -15,18 +16,28 @@ from functools import partial, lru_cache
 _number_type = (int, float)
 _empty_value = [None, "NaN"]
 
+_HASARCPY = True
+try:
+    arcpy = LazyLoader("arcpy", strict=True)
+except:
+    _HASARCPY = False
+try:
+    shapely = LazyLoader("shapely", strict=True)
+except:
+    _HASSHAPELY = False
+
 
 @lru_cache(maxsize=100)
 def _check_geometry_engine():
     _HASARCPY = True
     try:
-        import arcpy
+        arcpy = LazyLoader("arcpy", strict=True)
     except:
         _HASARCPY = False
 
     _HASSHAPELY = True
     try:
-        import shapely
+        shapely = LazyLoader("shapely", strict=True)
     except:
         _HASSHAPELY = False
 
@@ -197,11 +208,6 @@ class GeometryFactory(type):
 
     @staticmethod
     def _from_wkb(iterable):
-        _HASARCPY = True
-        try:
-            import arcpy
-        except:
-            _HASARCPY = False
         if _HASARCPY:
             return _ujson.loads(arcpy.FromWKB(iterable).JSON)
         else:
@@ -212,11 +218,6 @@ class GeometryFactory(type):
 
     @staticmethod
     def _from_wkt(iterable):
-        _HASARCPY = True
-        try:
-            import arcpy
-        except:
-            _HASARCPY = False
         if _HASARCPY:
             if "SRID=" in iterable:
                 wkid, iterable = iterable.split(";")
@@ -228,11 +229,7 @@ class GeometryFactory(type):
 
     @staticmethod
     def _from_gj(iterable):
-        _HASARCPY = True
-        try:
-            import arcpy
-        except:
-            _HASARCPY = False
+        global _HASARCPY
         if _HASARCPY:
             gj = _ujson.loads(arcpy.AsShape(iterable, False).JSON)
             gj["spatialReference"]["wkid"] = 4326
@@ -322,8 +319,6 @@ class Geometry(BaseGeometry):
         """
         _HASARCPY, _HASSHAPELY = _check_geometry_engine()
         if _HASARCPY:
-            import arcpy
-
             if isinstance(self.as_arcpy, arcpy.Point):
                 return arcpy.PointGeometry(self.as_arcpy).__geo_interface__
             else:
@@ -486,10 +481,6 @@ class Geometry(BaseGeometry):
         _HASARCPY, _HASSHAPELY = _check_geometry_engine()
         if self._ao is not None or not _HASARCPY:
             return self._ao
-
-        if _HASARCPY:
-            import arcpy
-
         if isinstance(self, (Point, MultiPoint, Polygon, Polyline)):
             self._ao = arcpy.AsShape(json.dumps(dict(self)), True)
         elif isinstance(self, SpatialReference):
@@ -840,8 +831,6 @@ class Geometry(BaseGeometry):
             A string representing a :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY:
-            import arcpy
         if HASARCPY and isinstance(self.as_arcpy, arcpy.Geometry):
             return getattr(self.as_arcpy, "JSON", None)
         elif "coordinates" in self:
@@ -883,11 +872,6 @@ class Geometry(BaseGeometry):
             )
 
         """
-        _HASSHAPELY = True
-        try:
-            import shapely
-        except:
-            _HASSHAPELY = False
         if _HASSHAPELY:
             gj = shapely_geometry.__geo_interface__
             geom_cls = _geojson_type_to_esri_type(gj["type"])
@@ -1097,7 +1081,6 @@ class Geometry(BaseGeometry):
             except:
                 return None
         if HASARCPY:
-            import arcpy
 
             if isinstance(self, Point):
                 return tuple(self)
@@ -1202,7 +1185,6 @@ class Geometry(BaseGeometry):
             except:
                 return None
         elif HASARCPY:
-            import arcpy
 
             return Geometry(
                 _ujson.loads(
@@ -1359,7 +1341,6 @@ class Geometry(BaseGeometry):
         if HASARCPY and isinstance(self, Envelope):
             return getattr(self.polygon.as_arcpy, "labelPoint", None)
         elif HASARCPY:
-            import arcpy
 
             return Geometry(
                 arcpy.PointGeometry(
@@ -1399,7 +1380,6 @@ class Geometry(BaseGeometry):
                 }
             )
         elif HASARCPY:
-            import arcpy
 
             return Geometry(
                 arcpy.PointGeometry(
@@ -1622,8 +1602,6 @@ class Geometry(BaseGeometry):
         :return: A :class:`~arcgis.geometry.Point` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY:
-            import arcpy
         if HASARCPY and isinstance(self, Envelope):
             return Geometry(
                 arcpy.PointGeometry(
@@ -1792,8 +1770,6 @@ class Geometry(BaseGeometry):
             The :class:`~arcgis.geometry.Geometry` object clipped to the extent
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY:
-            import arcpy
         if HASARCPY and isinstance(envelope, (list, tuple)) and len(envelope) == 4:
             envelope = arcpy.Extent(
                 XMin=envelope[0], YMin=envelope[1], XMax=envelope[2], YMax=envelope[3]
@@ -2558,9 +2534,6 @@ class Geometry(BaseGeometry):
         from six import string_types, integer_types
 
         HASARCPY, HASSHAPELY = _check_geometry_engine()
-
-        if HASARCPY:
-            import arcpy
 
         if HASARCPY:
             if isinstance(spatial_reference, SpatialReference):
@@ -3670,8 +3643,6 @@ class SpatialReference(BaseGeometry):
         if isinstance(iterable, str):
             iterable = {"wkt": iterable}
         HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY:
-            import arcpy
         if HASARCPY and isinstance(iterable, arcpy.SpatialReference):
             if iterable.factoryCode:
                 iterable = {"wkid": iterable.factoryCode}
@@ -3738,7 +3709,6 @@ class SpatialReference(BaseGeometry):
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
-            import arcpy
 
             if "wkid" in self:
                 return arcpy.SpatialReference(self["wkid"])

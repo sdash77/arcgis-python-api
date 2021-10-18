@@ -1,16 +1,18 @@
 """
 Holds Delegate and Accessor Logic
 """
-import os
-import copy
-import uuid
-import shutil
+from arcgis.auth.tools import LazyLoader
+
+os = LazyLoader("os")
+copy = LazyLoader("copy")
+uuid = LazyLoader("uuid")
+shutil = LazyLoader("shutil")
+datetime = LazyLoader("datetime")
+np = LazyLoader("numpy")
+tempfile = LazyLoader("tempfile")
+warnings = LazyLoader("warnings")
 import logging
-import datetime
-import tempfile
-import warnings
 import pandas as pd
-import numpy as np
 from collections.abc import Iterable
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
@@ -20,9 +22,11 @@ from ._io.fileops import (
     _sanitize_column_names,
     read_feather,
 )
-from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
-from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._isd import InsensitiveDict
+
+_geometry = LazyLoader("arcgis.geometry")
+_mixins = LazyLoader("arcgis._impl.common._mixins")
+_isd = LazyLoader("arcgis._impl.common._isd")
+
 
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
@@ -1211,10 +1215,10 @@ class GeoAccessor(object):
         if renderer is None:
             renderer = self._build_renderer()
         if isinstance(renderer, dict):
-            renderer = InsensitiveDict.from_dict(renderer)
-        elif isinstance(renderer, PropertyMap):
-            renderer = InsensitiveDict.from_dict(dict(renderer))
-        elif isinstance(renderer, InsensitiveDict):
+            renderer = _isd.InsensitiveDict.from_dict(renderer)
+        elif isinstance(renderer, _mixins.PropertyMap):
+            renderer = _isd.InsensitiveDict.from_dict(dict(renderer))
+        elif isinstance(renderer, _isd.InsensitiveDict):
             pass
         else:
             raise ValueError("renderer must be a dictionary type.")
@@ -1226,7 +1230,7 @@ class GeoAccessor(object):
         if self._meta.source and hasattr(self._meta.source, "properties"):
             return self._meta.renderer
         elif self.name is None:
-            self._meta.renderer = InsensitiveDict({})
+            self._meta.renderer = _isd.InsensitiveDict({})
             return self._meta.renderer
         gt = self.geometry_type[0]
         base_renderer = {
@@ -1272,7 +1276,7 @@ class GeoAccessor(object):
                     "width": 1,
                 },
             }
-        self._meta.renderer = InsensitiveDict(base_renderer)
+        self._meta.renderer = _isd.InsensitiveDict(base_renderer)
         return self._meta.renderer
 
     # ----------------------------------------------------------------------
@@ -1407,11 +1411,13 @@ class GeoAccessor(object):
                 try:
                     g = self._data.iloc[idx][col]
                     if isinstance(g, dict):
-                        self._sr = SpatialReference(Geometry(g["spatialReference"]))
+                        self._sr = _geometry.SpatialReference(
+                            _geometry.Geometry(g["spatialReference"])
+                        )
                     else:
-                        self._sr = SpatialReference(g["spatialReference"])
+                        self._sr = _geometry.SpatialReference(g["spatialReference"])
                 except:
-                    self._sr = SpatialReference({"wkid": 4326})
+                    self._sr = _geometry.SpatialReference({"wkid": 4326})
             self._name = col
             # q = self._data[col].isna()
             # self._data.loc[q, "SHAPE"] = None
@@ -2282,7 +2288,7 @@ class GeoAccessor(object):
                 or kwargs.pop("pallette", None)
                 or kwargs.pop("palette", "jet"),
                 alpha=kwargs.pop("alpha", 1),
-                **kwargs
+                **kwargs,
             )
 
         # small helper to address zoom level
@@ -2502,7 +2508,7 @@ class GeoAccessor(object):
                     raise ValueError(
                         "Column provided is all NULL, please provide a valid column"
                     )
-                g = Geometry(df[geometry_column].iloc[valid_index])
+                g = _geometry.Geometry(df[geometry_column].iloc[valid_index])
                 sr = g.spatial_reference
                 if isinstance(sr, Iterable) and "wkid" in sr:
                     sr = sr["wkid"] or 4326
@@ -2542,7 +2548,7 @@ class GeoAccessor(object):
                             x = loc["x"]
                             y = loc["y"]
                             geoms.append(
-                                arcgis.geometry.Geometry(
+                                _geometry.Geometry(
                                     {"x": x, "y": y, "spatialReference": sr}
                                 )
                             )
@@ -3035,7 +3041,7 @@ class GeoAccessor(object):
             if g not in [None, np.NaN, np.nan, ""] and isinstance(g, dict)
         ]
         srs = [
-            SpatialReference(sr)
+            _geometry.SpatialReference(sr)
             for sr in pd.DataFrame(data).drop_duplicates().to_dict("records")
         ]
         if len(srs) == 1:
@@ -3061,9 +3067,9 @@ class GeoAccessor(object):
             if sr and "wkt" in sr:
                 wkt = sr["wkt"]
 
-            if isinstance(ref, (dict, SpatialReference)) and sr is None:
+            if isinstance(ref, (dict, _geometry.SpatialReference)) and sr is None:
                 self._data[self.name] = self._data[self.name].geom.project_as(ref)
-            elif isinstance(ref, SpatialReference):
+            elif isinstance(ref, _geometry.SpatialReference):
                 if ref != sr:
                     self._data[self.name] = self._data[self.name].geom.project_as(ref)
             elif isinstance(ref, int):
@@ -3073,7 +3079,7 @@ class GeoAccessor(object):
                 if ref != wkt:
                     self._data[self.name] = self._data[self.name].geom.project_as(ref)
             elif isinstance(ref, dict):
-                nsr = SpatialReference(ref)
+                nsr = _geometry.SpatialReference(ref)
                 if sr != nsr:
                     self._data[self.name] = self._data[self.name].geom.project_as(ref)
         else:
@@ -3333,7 +3339,7 @@ class GeoAccessor(object):
             else:
                 return None
 
-        # vectorize converter so it will run efficiently on GeoSeries - avoids loops
+        # vectorize converter so it will run efficiently on pd.Series - avoids loops
         v_func = np.vectorize(_converter, otypes="O")
 
         # initialize empty array
@@ -3502,7 +3508,7 @@ class GeoAccessor(object):
         if ymin == ymax:
             ymin -= 0.001
             ymax += 0.001
-        return Geometry(
+        return _geometry.Geometry(
             {
                 "rings": [
                     [
@@ -3750,7 +3756,7 @@ class GeoAccessor(object):
         return pd.Series(
             GeoArray(
                 [
-                    Geometry(
+                    _geometry.Geometry(
                         {
                             "rings": [[new_vertices[l] for l in r]],
                             "spatialReference": sr,
@@ -3806,6 +3812,28 @@ class GeoAccessor(object):
                 )
                 self._data[self.name] = vals
                 return True
+            elif isinstance(spatial_reference, _geometry.SpatialReference) and HASARCPY:
+                vals = self._data[self.name].values.project_as(
+                    **{
+                        "spatial_reference": spatial_reference.as_arcpy,
+                        "transformation_name": transformation_name,
+                    }
+                )
+                self._data[self.name] = vals
+                return True
+            elif isinstance(spatial_reference, dict) and HASARCPY:
+                spatial_reference = _geometry.SpatialReference(
+                    spatial_reference
+                ).as_arcpy
+                vals = self._data[self.name].values.project_as(
+                    **{
+                        "spatial_reference": spatial_reference,
+                        "transformation_name": transformation_name,
+                    }
+                )
+                self._data[self.name] = vals
+                return True
+
             elif isinstance(spatial_reference, (int, str)) and HASPYPROJ:
                 vals = self._data[self.name].values.project_as(
                     **{

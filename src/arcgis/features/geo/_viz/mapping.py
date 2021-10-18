@@ -9,7 +9,6 @@ from arcgis.mapping.symbol import create_symbol, display_colormaps, show_styles
 
 from arcgis.features import FeatureCollection
 from arcgis.features import FeatureSet
-from arcgis.features._data.geodataset import GeoSeries
 from arcgis.widgets import MapView
 
 CLASSIFICATIONS = {

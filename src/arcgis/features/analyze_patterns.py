@@ -5,9 +5,10 @@ calculate_density takes known quantities of some phenomenon and spreads these qu
 find_hot_spots identifies statistically significant clustering in the spatial pattern of your data.
 interpolate_points predicts values at new locations based on measurements found in a collection of points.
 """
+from arcgis.auth.tools import LazyLoader
 
-import arcgis as _arcgis
-from .._impl.common._utils import inspect_function_inputs
+_arcgis = LazyLoader("arcgis")
+_util = LazyLoader("arcgis._impl.common._utils")
 
 # --------------------------------------------------------------------------
 def calculate_density(
@@ -146,7 +147,7 @@ def calculate_density(
         "future": future,
     }
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.calculate_density, **kwargs
     )
     return gis._tools.featureanalysis.calculate_density(**params)
@@ -252,7 +253,7 @@ def summarize_center_and_dispersion(
         "future": future,
     }
 
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion, **kwargs
     )
     return gis._tools.featureanalysis.summarize_center_and_dispersion(**params)
@@ -374,7 +375,7 @@ def find_point_clusters(
         "estimate": estimate,
         "future": future,
     }
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.find_point_clusters, **kwargs
     )
     return gis._tools.featureanalysis.find_point_clusters(**params)
@@ -519,7 +520,7 @@ def find_hot_spots(
         "distance_band_units": distance_band_units,
         "future": future,
     }
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.find_hot_spots, **kwargs
     )
     return gis._tools.featureanalysis.find_hot_spots(**params)
@@ -675,7 +676,7 @@ def find_outliers(
         "estimate": estimate,
         "future": future,
     }
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.find_outliers, **kwargs
     )
     return gis._tools.featureanalysis.find_outliers(**params)
@@ -883,7 +884,7 @@ def interpolate_points(
         "estimate": estimate,
         "future": future,
     }
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.interpolate_points, **kwargs
     )
     return gis._tools.featureanalysis.interpolate_points(**params)
