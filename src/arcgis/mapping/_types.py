@@ -1,37 +1,33 @@
 from __future__ import absolute_import, annotations
 
-import collections
-import json
 import logging
-import os
-import tempfile
-import time
+from re import search
+from uuid import uuid4
+from warnings import warn
 from contextlib import contextmanager
 from typing import Any, Optional, Union
-from uuid import uuid4
-import datetime
+from arcgis.auth.tools import LazyLoader
 
-from arcgis.features import (
-    FeatureCollection,
-    FeatureSet,
-    FeatureLayer,
-    Table,
-    FeatureLayerCollection,
-)
-from arcgis.realtime import StreamLayer
-from arcgis.gis import Item
-import arcgis.env
-from warnings import warn
-from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._utils import _date_handler
-from arcgis.geometry import SpatialReference, Polygon, Geometry
-from arcgis.gis import Error, Layer, _GISResource, Item
-from arcgis.mapping._basemap_definitions import basemap_dict
-from arcgis.mapping._scenelyrs import SceneLayer
-from arcgis.mapping.forms import FormCollection
-from arcgis._impl.common._utils import _lazy_property
-
-# from arcgis.mapping import export_map
+collections = LazyLoader("collections")
+json = LazyLoader("json")
+os = LazyLoader("os")
+tempfile = LazyLoader("tempfile")
+time = LazyLoader("time")
+datetime = LazyLoader("datetime")
+arcgis = LazyLoader("arcgis")
+_arcgis_features = LazyLoader("arcgis.features")
+_gis = LazyLoader("arcgis.gis")
+_env = LazyLoader("arcgis.env")
+_mixins = LazyLoader("arcgis._impl.common._mixins")
+_utils = LazyLoader("arcgis._impl.common._utils")
+_geometry = LazyLoader("arcgis.geometry")
+_basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
+_forms = LazyLoader("arcgis.mapping.forms")
+SceneLayer = LazyLoader("arcgis.mapping._scenelyrs.SceneLayer")
+SpatialReference = LazyLoader("arcgis.geometry.SpatialReference")
+Polygon = LazyLoader("arcgis.geometry.Polygon")
+Geometry = LazyLoader("arcgis.geometry.Geometry")
+StreamLayer = LazyLoader("arcgis.realtime.StreamLayer")
 
 try:
     from traitlets import HasTraits, observe
@@ -72,10 +68,10 @@ class _ApplicationProperties(object):
 
     def __init__(self, prop=None):
         template = {"viewing": {}, "offline": {}, "editing": {}}
-        if prop and isinstance(prop, (dict, PropertyMap)):
-            self._app_prop = PropertyMap(dict(prop))
+        if prop and isinstance(prop, (dict, _mixins.PropertyMap)):
+            self._app_prop = _mixins.PropertyMap(dict(prop))
         else:
-            self._app_prop = PropertyMap(template)
+            self._app_prop = _mixins.PropertyMap(template)
 
     @property
     def properties(self):
@@ -219,7 +215,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._gis = webmapitem._gis
             self._con = self._gis._con
             self._webmapdict = self.item.get_data()
-            pmap = PropertyMap(self._webmapdict)
+            pmap = _mixins.PropertyMap(self._webmapdict)
             self.definition = pmap
             self._layers = None
             self._tables = None
@@ -252,7 +248,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 "authoringApp": "ArcGISPythonAPI",
                 "authoringAppVersion": str(arcgis.__version__),
             }
-            pmap = PropertyMap(self._webmapdict)
+            pmap = _mixins.PropertyMap(self._webmapdict)
             self.definition = pmap
             self._gis = arcgis.env.active_gis
             if self._gis:  # you can also have a case where there is no GIS obj
@@ -309,9 +305,11 @@ class WebMap(HasTraits, collections.OrderedDict):
             return super().__repr__()
 
     def __str__(self):
-        return json.dumps(self, default=_date_handler)
+        return json.dumps(self, default=_utils._date_handler)
 
-    def add_table(self, table: Table, options: Optional[dict[str, Any]] = None):
+    def add_table(
+        self, table: _arcgis_features.Table, options: Optional[dict[str, Any]] = None
+    ):
         """
         Adds the given Table to the ``WebMap``.
 
@@ -336,23 +334,23 @@ class WebMap(HasTraits, collections.OrderedDict):
             table = Table('https://some-url.com/')
             wm.add_layer(table)
         """
-        if not isinstance(table, Table):
+        if not isinstance(table, _arcgis_features.Table):
             raise Exception("Type of object passed in must of type 'Table'")
         self.add_layer(table, options)
 
     def add_layer(
         self,
         layer: Union[
-            FeatureLayer,
+            _arcgis_features.FeatureLayer,
             MapImageLayer,
             SceneLayer,
             arcgis.raster.ImageryLayer,
             VectorTileLayer,
             StreamLayer,
-            FeatureSet,
-            Item,
-            FeatureCollection,
-            Table,
+            _arcgis_features.FeatureSet,
+            _gis.Item,
+            _arcgis_features.FeatureCollection,
+            _arcgis_features.Table,
         ],
         options: Optional[dict[str, Any]] = None,
     ):
@@ -399,9 +397,9 @@ class WebMap(HasTraits, collections.OrderedDict):
         if options is None:
             options = {}
         if (
-            isinstance(layer, FeatureLayer)
+            isinstance(layer, _arcgis_features.FeatureLayer)
             and "renderer" not in options
-            and not isinstance(layer, Table)
+            and not isinstance(layer, _arcgis_features.Table)
         ):
             options["renderer"] = json.loads(layer.renderer.json)
         elif hasattr(layer, "spatial"):
@@ -452,19 +450,21 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         # region infer layer type
         layer_type = None
-        if isinstance(layer, Layer) or isinstance(layer, FeatureSet):
+        if isinstance(layer, _gis.Layer) or isinstance(
+            layer, _arcgis_features.FeatureSet
+        ):
             if hasattr(layer, "properties"):
                 if hasattr(layer.properties, "name"):
                     title = layer.properties.name if title is None else title
 
                 # find layer type
                 if (
-                    isinstance(layer, FeatureLayer)
-                    or isinstance(layer, FeatureCollection)
-                    or isinstance(layer, FeatureSet)
+                    isinstance(layer, _arcgis_features.FeatureLayer)
+                    or isinstance(layer, _arcgis_features.FeatureCollection)
+                    or isinstance(layer, _arcgis_features.FeatureSet)
                 ):
                     # Can be either a FeatureLayer or a table: figure it out
-                    if isinstance(layer, Table):
+                    if isinstance(layer, _arcgis_features.Table):
                         layer_type = "Table"
                     else:
                         layer_type = "ArcGISFeatureLayer"
@@ -472,18 +472,18 @@ class WebMap(HasTraits, collections.OrderedDict):
                     layer_type = "ArcGISImageServiceLayer"
                     # todo : get renderer info
 
-                elif isinstance(layer, MapImageLayer):
+                elif isinstance(layer, _arcgis_features.MapImageLayer):
                     layer_type = "ArcGISMapServiceLayer"
-                elif isinstance(layer, VectorTileLayer):
+                elif isinstance(layer, _arcgis_features.VectorTileLayer):
                     layer_type = "VectorTileLayer"
                 elif isinstance(layer, StreamLayer):
                     layer_type = "ArcGISStreamLayer"
 
                 if hasattr(layer.properties, "serviceItemId"):
                     item_id = layer.properties.serviceItemId
-            elif isinstance(layer, FeatureSet):
+            elif isinstance(layer, _arcgis_features.FeatureSet):
                 layer_type = "ArcGISFeatureLayer"
-        elif isinstance(layer, Item):
+        elif isinstance(layer, _gis.Item):
             # set the item's extent
             if not self._extent:
                 self._extent = layer.extent
@@ -499,7 +499,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                     if layer.type == "Feature Collection":
                         options["serviceItemId"] = layer.itemid
                     for lyr in layer.layers:  # recurse - works for all.
-                        if isinstance(lyr, VectorTileLayer):
+                        if isinstance(lyr, _arcgis_features.VectorTileLayer):
                             lyr.properties.serviceItemId = (
                                 layer.id
                             )  # Vector Tile Service does not automatically have this
@@ -507,7 +507,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                         self.add_layer(lyr, dict(options))
                 if hasattr(layer, "tables"):
                     for tbl in layer.tables:  # recurse - works for all.
-                        if isinstance(tbl, VectorTileLayer):
+                        if isinstance(tbl, _arcgis_features.VectorTileLayer):
                             tbl.properties.serviceItemId = (
                                 layer.id
                             )  # Vector Tile Service does not automatically have this
@@ -515,7 +515,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 return (
                     True  # end add_layer execution after iterating through each layer.
                 )
-        elif isinstance(layer, FeatureLayerCollection):
+        elif isinstance(layer, _arcgis_features.FeatureLayerCollection):
             if not self._extent:
                 if hasattr(layer.properties, "fullExtent"):
                     self._extent = layer.properties.fullExtent
@@ -575,7 +575,9 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         if hasattr(layer, "url"):
             new_layer["url"] = layer.url
-        elif isinstance(layer, FeatureCollection):  # feature collection item on web GIS
+        elif isinstance(
+            layer, _arcgis_features.FeatureCollection
+        ):  # feature collection item on web GIS
             if "serviceItemId" in options:
                 # if ItemId is found, then type is fc and insert item id. Else, leave the type as ArcGISFeatureLayer
                 new_layer["type"] = "Feature Collection"
@@ -622,7 +624,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 new_layer["renderingRule"] = image_service_parameters["renderingRule"]
 
         # inmem FeatureCollection
-        if isinstance(layer, FeatureCollection):
+        if isinstance(layer, _arcgis_features.FeatureCollection):
             if hasattr(layer, "layer"):
                 if hasattr(layer.layer, "layers"):
                     fc_layer_definition = dict(layer.layer.layers[0].layerDefinition)
@@ -647,7 +649,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             }
 
         # inmem FeatureSets - typically those which users pass to the `MapView.draw()` method
-        if isinstance(layer, FeatureSet):
+        if isinstance(layer, _arcgis_features.FeatureSet):
             if not layer_spatial_ref:
                 if hasattr(layer, "spatial_reference"):
                     layer_spatial_ref = layer.spatial_reference
@@ -736,7 +738,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         # endregion
 
         # Add Vector Tile Layer Properties
-        if isinstance(layer, VectorTileLayer):
+        if isinstance(layer, _arcgis_features.VectorTileLayer):
             new_layer["type"] = "VectorTileLayer"
             new_layer["styleUrl"] = f"{layer.url}/resources/styles/"
 
@@ -761,21 +763,21 @@ class WebMap(HasTraits, collections.OrderedDict):
             }
 
             fields_list = []
-            if isinstance(layer, FeatureLayer) or isinstance(
+            if isinstance(layer, _arcgis_features.FeatureLayer) or isinstance(
                 layer, arcgis.raster.ImageryLayer
             ):
                 if hasattr(layer.properties, "fields"):
                     fields_list = layer.properties.fields
-            elif isinstance(layer, FeatureSet):
+            elif isinstance(layer, _arcgis_features.FeatureSet):
                 if hasattr(layer, "fields"):
                     fields_list = layer.fields
-            elif isinstance(layer, FeatureCollection):
+            elif isinstance(layer, _arcgis_features.FeatureCollection):
                 if hasattr(layer.properties, "layerDefinition"):
                     if hasattr(layer.properties.layerDefinition, "fields"):
                         fields_list = layer.properties.layerDefinition.fields
 
             for f in fields_list:
-                if isinstance(f, dict) or isinstance(f, PropertyMap):
+                if isinstance(f, dict) or isinstance(f, _mixins.PropertyMap):
                     field_dict = {
                         "fieldName": f["name"],
                         "label": f["alias"] if "alias" in f else f["name"],
@@ -797,34 +799,36 @@ class WebMap(HasTraits, collections.OrderedDict):
             popup = None
 
         if popup:
-            if isinstance(layer, FeatureLayer) or isinstance(
+            if isinstance(layer, _arcgis_features.FeatureLayer) or isinstance(
                 layer, arcgis.raster.ImageryLayer
             ):
                 new_layer["popupInfo"] = popup
-            elif isinstance(layer, FeatureSet) or isinstance(layer, FeatureCollection):
+            elif isinstance(layer, _arcgis_features.FeatureSet) or isinstance(
+                layer, _arcgis_features.FeatureCollection
+            ):
                 new_layer["featureCollection"]["layers"][0]["popupInfo"] = popup
 
         # endregion
 
         # region sort layers into 'operationalLayers' or 'tables'
-        if isinstance(layer, Table):
+        if isinstance(layer, _arcgis_features.Table):
             if "tables" not in self._webmapdict.keys():
                 # There are no tables yet, create one here
                 self._webmapdict["tables"] = [new_layer]
-                self.definition = PropertyMap(self._webmapdict)
+                self.definition = _mixins.PropertyMap(self._webmapdict)
             else:
                 # There are tables, just append to it
                 self._webmapdict["tables"].append(new_layer)
-                self.definition = PropertyMap(self._webmapdict)
+                self.definition = _mixins.PropertyMap(self._webmapdict)
         else:
             if "operationalLayers" not in self._webmapdict.keys():
                 # there no layers yet, create one here
                 self._webmapdict["operationalLayers"] = [new_layer]
-                self.definition = PropertyMap(self._webmapdict)
+                self.definition = _mixins.PropertyMap(self._webmapdict)
             else:
                 # there are operational layers, just append to it
                 self._webmapdict["operationalLayers"].append(new_layer)
-                self.definition = PropertyMap(self._webmapdict)
+                self.definition = _mixins.PropertyMap(self._webmapdict)
         # endregion
 
         # update layers property
@@ -832,27 +836,27 @@ class WebMap(HasTraits, collections.OrderedDict):
             if "operationalLayers" in self._webmapdict:
                 self._layers = []
                 for l in self._webmapdict["operationalLayers"]:
-                    self._layers.append(PropertyMap(l))
+                    self._layers.append(_mixins.PropertyMap(l))
                 # reverse the layer list - webmap viewer reverses the list always
                 self._layers.reverse()
         else:
             # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
             # need this check to avoid duplicating adding a new table to both layers and tables
             if "layerType" in new_layer:
-                self._layers.append(PropertyMap(new_layer))
+                self._layers.append(_mixins.PropertyMap(new_layer))
 
         # update tables property
         if not self._tables:
             self._tables = []
             if "tables" in self._webmapdict:
                 for t in self._webmapdict["tables"]:
-                    self._tables.append(PropertyMap(t))
+                    self._tables.append(_mixins.PropertyMap(t))
             # reverse the layer list - webmap viewer reverses the list always
             self._tables.reverse()
         else:
             if layer_type == "Table":
                 # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
-                self._tables.append(PropertyMap(new_layer))
+                self._tables.append(_mixins.PropertyMap(new_layer))
 
         return True
 
@@ -864,7 +868,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
         if extent is None:
             extent = self._extent
-        if isinstance(extent, PropertyMap):
+        if isinstance(extent, _mixins.PropertyMap):
             extent = dict(extent)
         if isinstance(extent, list):
             # passed from Item's extent flatten the extent. Item's extent is always in 4326, no need to project
@@ -1026,7 +1030,9 @@ class WebMap(HasTraits, collections.OrderedDict):
         item_properties["extent"] = self._process_extent(
             item_properties.get("extent", None)
         )
-        item_properties["text"] = json.dumps(self._webmapdict, default=_date_handler)
+        item_properties["text"] = json.dumps(
+            self._webmapdict, default=_utils._date_handler
+        )
         if "typeKeywords" not in item_properties:
             item_properties["typeKeywords"] = self._eval_map_viewer_keywords()
 
@@ -1150,7 +1156,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             if item_properties is None:
                 item_properties = {}
             item_properties["text"] = json.dumps(
-                self._webmapdict, default=_date_handler
+                self._webmapdict, default=_utils._date_handler
             )
             item_properties["extent"] = self._process_extent()
             if "typeKeywords" not in item_properties:
@@ -1242,7 +1248,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         else:
             raise ValueError("No wkid found")
 
-    @_lazy_property
+    @_utils._lazy_property
     def forms(self):
         """
         The ``forms`` property retrieves the smart forms corresponding to each layer and table in the web map.
@@ -1259,7 +1265,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             form.title = "Manhole Inspection Form"
             form.update()
         """
-        return FormCollection(parent=self)
+        return _forms.FormCollection(parent=self)
 
     @property
     def tables(self):
@@ -1286,7 +1292,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._tables = []
             if "tables" in self._webmapdict.keys():
                 for l in self._webmapdict["tables"]:
-                    self._tables.append(PropertyMap(l))
+                    self._tables.append(_mixins.PropertyMap(l))
 
             # reverse the layer list - webmap viewer reverses the list always
             self._tables.reverse()
@@ -1323,7 +1329,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._layers = []
             if "operationalLayers" in self._webmapdict.keys():
                 for l in self._webmapdict["operationalLayers"]:
-                    self._layers.append(PropertyMap(l))
+                    self._layers.append(_mixins.PropertyMap(l))
 
             # reverse the layer list - webmap viewer reverses the list always
             self._layers.reverse()
@@ -1387,11 +1393,11 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         """
         if self._basemap:
-            return PropertyMap(self._basemap)
+            return _mixins.PropertyMap(self._basemap)
         else:
             if "baseMap" in self._webmapdict.keys():
                 self._basemap = self._webmapdict["baseMap"]
-            return PropertyMap(self._basemap)
+            return _mixins.PropertyMap(self._basemap)
 
     def _determine_layer_type(self, item):
         # this function determines the basemap layer type for the Web Map Specification
@@ -1416,30 +1422,30 @@ class WebMap(HasTraits, collections.OrderedDict):
             # get basemap from map widget
             if value.basemap in self.basemaps:
                 self._basemap = {
-                    "baseMapLayers": basemap_dict[value.basemap],
+                    "baseMapLayers": _basemap_definitions.basemap_dict[value.basemap],
                     "title": value.basemap.replace("-", " ").title(),
                 }
                 self._webmapdict["baseMap"] = self._basemap
         elif value in self.basemaps:
             self._basemap = {
-                "baseMapLayers": basemap_dict[value],
+                "baseMapLayers": _basemap_definitions.basemap_dict[value],
                 "title": value.replace("-", " ").title(),
             }
             self._webmapdict["baseMap"] = self._basemap
         elif value in self.gallery_basemaps:
             self._basemap = self._gallery_basemaps[value]
             self._webmapdict["baseMap"] = self._basemap
-        elif isinstance(value, Item) and value.type.title() == "Web Map":
+        elif isinstance(value, _gis.Item) and value.type.title() == "Web Map":
             self._basemap = value.get_data()["baseMap"]
             self._webmapdict["baseMap"] = self._basemap
         elif isinstance(value, WebMap):
             self._basemap = value.basemap
             self._webmapdict["baseMap"] = self._basemap
-        elif isinstance(value, PropertyMap) and "baseMapLayers" in value:
+        elif isinstance(value, _mixins.PropertyMap) and "baseMapLayers" in value:
             # for map1.basemap = map2.basemap
             self._basemap = value
             self._webmapdict["baseMap"] = self._basemap
-        elif isinstance(value, Item) and (
+        elif isinstance(value, _gis.Item) and (
             value.type.title() == "Image Service" or value.type.title() == "Map Service"
         ):
             layer_type = self._determine_layer_type(value)
@@ -1457,7 +1463,9 @@ class WebMap(HasTraits, collections.OrderedDict):
                 "title": value.title,
             }
             self._webmapdict["baseMap"] = self._basemap
-        elif isinstance(value, Item) and value.type.title() == "Vector Tile Service":
+        elif (
+            isinstance(value, _gis.Item) and value.type.title() == "Vector Tile Service"
+        ):
             try:
                 style_url = (
                     "%s/sharing/rest/content/items/%s/resources/styles/root.json"
@@ -1552,7 +1560,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         else:
             return []
 
-    def remove_table(self, table: Table):
+    def remove_table(self, table: _arcgis_features.Table):
         """
         The ``remove_table`` method removes the specified table from the ``WebMap``.
 
@@ -1569,9 +1577,9 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================     ====================================================================
         """
         self._webmapdict["tables"].remove(table)
-        self._tables.remove(PropertyMap(table))
+        self._tables.remove(_mixins.PropertyMap(table))
 
-    def remove_layer(self, layer: FeatureLayer):
+    def remove_layer(self, layer: _arcgis_features.FeatureLayer):
         """
         The ``remove_layer`` method removes the specified layer from the ``WebMap``.
 
@@ -1589,7 +1597,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
 
         self._webmapdict["operationalLayers"].remove(layer)
-        self._layers.remove(PropertyMap(layer))
+        self._layers.remove(_mixins.PropertyMap(layer))
 
     def get_layer(
         self,
@@ -2382,14 +2390,11 @@ class OfflineMapAreaManager(object):
     _web_map = None
     # ----------------------------------------------------------------------
     def __init__(self, item, gis):
-        from arcgis.geoprocessing import import_toolbox
-
         self._gis = gis
         self._portal = gis._portal
         self._item = item
         self._web_map = WebMap(self._item)
         try:
-            from arcgis._impl.tools import _PackagingTools
 
             self._url = self._gis.properties.helperServices.packaging.url
             self._pm = self._gis._tools.packaging
@@ -3176,7 +3181,7 @@ class OfflineMapAreaManager(object):
 
             if isinstance(area, str):
                 area_type = "BOOKMARK"
-            elif isinstance(area, Polygon) or (
+            elif isinstance(area, _geometry.Polygon) or (
                 isinstance(area, dict) and "rings" in area
             ):
                 area_type = "POLYGON"
@@ -3205,7 +3210,7 @@ class OfflineMapAreaManager(object):
 
         # Call update on Item with Refresh Information
         # import datetime
-        item = Item(gis=self._gis, itemid=oma_result)
+        item = _gis.Item(gis=self._gis, itemid=oma_result)
         update_items = {
             "snippet": "Map with no advanced offline settings set (default is assumed to be features and attachments)",
             "title": item_properties["title"] if "title" in item_properties else None,
@@ -3254,12 +3259,12 @@ class OfflineMapAreaManager(object):
         map_layers_to_ignore = []
         if isinstance(layers_to_ignore, list):
             for layer in layers_to_ignore:
-                if isinstance(layer, PropertyMap):
+                if isinstance(layer, _mixins.PropertyMap):
                     if hasattr(layer, "url"):
                         map_layers_to_ignore.append(layer.url)
                 elif isinstance(layer, str):
                     map_layers_to_ignore.append(layer)
-        elif isinstance(layers_to_ignore, PropertyMap):
+        elif isinstance(layers_to_ignore, _mixins.PropertyMap):
             if hasattr(layers_to_ignore, "url"):
                 map_layers_to_ignore.append(layers_to_ignore.url)
         elif isinstance(layers_to_ignore, str):
@@ -3367,12 +3372,12 @@ class OfflineMapAreaManager(object):
         # setup_oma_result.result()
         _log.info(str(setup_oma_result.result()))
         # endregion
-        return Item(gis=self._gis, itemid=oma_result)
+        return _gis.Item(gis=self._gis, itemid=oma_result)
 
     # ----------------------------------------------------------------------
     def modify_refresh_schedule(
         self,
-        item: Item,
+        item: _gis.Item,
         refresh_schedule: Optional[str] = None,
         refresh_rates: Optional[dict[str, int]] = None,
     ):
@@ -3613,7 +3618,7 @@ class OfflineMapAreaManager(object):
                env.verbose = True
         """
         # find if 1 or a list of area items is provided
-        if isinstance(offline_map_area_items, Item):
+        if isinstance(offline_map_area_items, arcgis.gis.Item):
             offline_map_area_items = [offline_map_area_items]
         elif isinstance(offline_map_area_items, str):
             offline_map_area_items = [offline_map_area_items]
@@ -3631,12 +3636,12 @@ class OfflineMapAreaManager(object):
 
         else:
             for offline_map_area_item in offline_map_area_items:
-                if isinstance(offline_map_area_item, Item):
+                if isinstance(offline_map_area_item, arcgis.gis.Item):
                     _related_packages.extend(
                         offline_map_area_item.related_items("Area2Package", "forward")
                     )
                 elif isinstance(offline_map_area_item, str):
-                    offline_map_area_item = Item(
+                    offline_map_area_item = _gis.Item(
                         gis=self._gis, itemid=offline_map_area_item
                     )
                     _related_packages.extend(
@@ -3705,7 +3710,7 @@ class WebScene(collections.OrderedDict):
         )
 
     def __str__(self):
-        return json.dumps(self, default=_date_handler)
+        return json.dumps(self, default=_utils._date_handler)
 
     def update(self):
         # with _tempinput(self.__str__()) as tempfilename:
@@ -3713,7 +3718,7 @@ class WebScene(collections.OrderedDict):
 
 
 ###########################################################################
-class VectorTileLayer(Layer):
+class VectorTileLayer(arcgis.gis.Layer):
     def __init__(self, url, gis=None):
         super(VectorTileLayer, self).__init__(url, gis)
 
@@ -3878,7 +3883,7 @@ class VectorTileLayer(Layer):
             A path to downloaded file
         """
         if not self.properties.exportTilesAllowed:
-            raise Error(
+            raise arcgis.gis.Error(
                 "Export Tiles operation is not allowed for this service. Enable offline mode."
             )
         if not levels:
@@ -3936,7 +3941,7 @@ class VectorTileLayer(Layer):
         elif "output" in job_response:
             allResults = job_response["output"]
             if allResults["itemId"]:
-                return Item(gis=self._gis, itemid=allResults["itemId"])
+                return arcgis.gis.Item(gis=self._gis, itemid=allResults["itemId"])
             else:
                 if self._gis._portal.is_arcgisonline:
                     return [
@@ -3973,7 +3978,7 @@ class VectorTileLayer(Layer):
 ###########################################################################
 
 
-class VectorTileLayerManager(_GISResource):
+class VectorTileLayerManager(arcgis.gis._GISResource):
     """
     The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted vector tile layers.
     A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
@@ -4246,7 +4251,7 @@ class VectorTileLayerManager(_GISResource):
             params["serviceDefinition"]["exportTilesAllowed"] = (
                 export_tiles_allowed
                 if export_tiles_allowed
-                else self.proprerties.exportTilesAllowed
+                else self.properties.exportTilesAllowed
             )
             params["serviceDefinition"]["maxExportTilesCount"] = (
                 max_export_tile_count
@@ -4271,7 +4276,7 @@ class VectorTileLayerManager(_GISResource):
 
 
 ###########################################################################
-class MapImageLayerManager(_GISResource):
+class MapImageLayerManager(arcgis.gis._GISResource):
     """
     The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted map image layers.
     A :class:`~arcgis.mapping.MapImageLayer` offers access to map and layer content.
@@ -4332,7 +4337,7 @@ class MapImageLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def import_tiles(
         self,
-        item: Item,
+        item: _gis.Item,
         levels: Optional[Union[str, list[int]]] = None,
         extent: Optional[Union[str, dict[str, int]]] = None,
         merge: bool = False,
@@ -4406,7 +4411,7 @@ class MapImageLayerManager(_GISResource):
         }
         if isinstance(item, str):
             params["sourceItemId"] = item
-        elif isinstance(item, Item):
+        elif isinstance(item, arcgis.gis.Item):
             params["sourceItemId"] = item.itemid
         else:
             raise ValueError("The `item` must be a string or Item")
@@ -4627,7 +4632,7 @@ class MapImageLayerManager(_GISResource):
 
 
 ###########################################################################
-class MapImageLayer(Layer):
+class MapImageLayer(arcgis.gis.Layer):
     """
     The ``MapImageLayer`` allows you to display and analyze data from sublayers defined in a map service,
     exporting images instead of features. Map service images are dynamically generated on the server based on a request,
@@ -4659,7 +4664,7 @@ class MapImageLayer(Layer):
             pass
 
     @classmethod
-    def fromitem(cls, item: Item):
+    def fromitem(cls, item: _gis.Item):
         if not item.type == "Map Service":
             raise TypeError("item must be a type of Map Service, not " + item.type)
         return cls(item.url, item._gis)
@@ -4707,7 +4712,7 @@ class MapImageLayer(Layer):
         if "layers" in self.properties and self.properties.layers:
             for lyr in self.properties.layers:
                 if "subLayerIds" in lyr and lyr.subLayerIds is not None:  # Group Layer
-                    lyr = Layer(self.url + "/" + str(lyr.id), self._gis)
+                    lyr = arcgis.gis.Layer(self.url + "/" + str(lyr.id), self._gis)
                 else:
                     lyr = arcgis.mapping._msl.MapServiceLayer(
                         self.url + "/" + str(lyr.id), self._gis
@@ -4852,7 +4857,9 @@ class MapImageLayer(Layer):
             url = "%s/dynamicLayer" % self._url
             d = urlencode(layer)
             url += "?layer=%s" % d
-            return FeatureLayer(url=url, gis=self._gis, dynamic_layer=layer)
+            return _arcgis_features.FeatureLayer(
+                url=url, gis=self._gis, dynamic_layer=layer
+            )
         return None
 
     # ----------------------------------------------------------------------
@@ -5379,10 +5386,7 @@ class MapImageLayer(Layer):
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 params[k] = v
-        res = self._con.post(
-            path=url,
-            postdata=params,
-        )
+        res = self._con.post(path=url, postdata=params,)
         return res
 
     # ----------------------------------------------------------------------
@@ -5430,11 +5434,7 @@ class MapImageLayer(Layer):
             "layers": layers,
             "layerOptions": options,
         }
-        return self._con.get(
-            kmlURL,
-            params,
-            out_folder=save_location,
-        )
+        return self._con.get(kmlURL, params, out_folder=save_location,)
 
     # ----------------------------------------------------------------------
     def export_map(
@@ -5969,7 +5969,7 @@ class MapImageLayer(Layer):
             elif "output" in job_response:
                 allResults = job_response["output"]
                 if allResults["itemId"]:
-                    return Item(gis=self._gis, itemid=allResults["itemId"])
+                    return arcgis.gis.Item(gis=self._gis, itemid=allResults["itemId"])
                 else:
                     if self._gis._portal.is_arcgisonline:
                         return [
