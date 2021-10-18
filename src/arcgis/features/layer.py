@@ -4936,9 +4936,10 @@ class FeatureLayerCollection(_GISResource):
     def _replica_status(self, url):
         """gets the replica status when exported async set to True"""
         params = {"f": "json"}
-        if url.lower().endswith("/status"):
+        if url.lower().endswith("/status") == False:
             return self._con.get(path=url, params=params)
         else:
+            url += "/status"
             return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
