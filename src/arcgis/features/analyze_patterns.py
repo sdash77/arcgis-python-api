@@ -7,19 +7,18 @@ interpolate_points predicts values at new locations based on measurements found 
 """
 from __future__ import annotations
 from typing import Any, Optional, Union
-import arcgis as _arcgis
-from arcgis.features.feature import FeatureCollection
-from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
-from arcgis.gis import GIS, Item
-from .._impl.common._utils import inspect_function_inputs
+from arcgis.auth.tools import LazyLoader
+
+_arcgis = LazyLoader("arcgis")
+_util = LazyLoader("arcgis._impl.common._utils")
 
 # --------------------------------------------------------------------------
 def calculate_density(
     input_layer: Union[
-        Item,
-        FeatureCollection,
-        FeatureLayer,
-        FeatureLayerCollection,
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
         str,
         dict[str, Any],
     ],
@@ -30,10 +29,10 @@ def calculate_density(
     radius_units: Optional[str] = None,
     bounding_polygon_layer: Optional[
         Union[
-            Item,
-            FeatureCollection,
-            FeatureLayer,
-            FeatureLayerCollection,
+            _arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
             str,
             dict[str, Any],
         ]
@@ -41,9 +40,9 @@ def calculate_density(
     area_units: Optional[str] = None,
     classification_type: str = "EqualInterval",
     num_classes: int = 10,
-    output_name: Optional[Union[FeatureLayer, str]] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
     context: Optional[dict[str, Any]] = None,
-    gis: Optional[GIS] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
     estimate: bool = False,
     future: bool = False,
 ):
@@ -166,7 +165,7 @@ def calculate_density(
         "future": future,
     }
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.calculate_density, **kwargs
     )
     return gis._tools.featureanalysis.calculate_density(**params)
@@ -175,10 +174,10 @@ def calculate_density(
 # --------------------------------------------------------------------------
 def summarize_center_and_dispersion(
     analysis_layer: Union[
-        Item,
-        FeatureCollection,
-        FeatureLayer,
-        FeatureLayerCollection,
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
         str,
         dict[str, Any],
     ],
@@ -186,9 +185,9 @@ def summarize_center_and_dispersion(
     ellipse_size: Optional[str] = None,
     weight_field: Optional[str] = None,
     group_field: Optional[str] = None,
-    output_name: Optional[Union[FeatureLayer, str]] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
     context: Optional[dict[str, Any]] = None,
-    gis: Optional[GIS] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
     estimate: bool = False,
     future: bool = False,
 ):
@@ -279,7 +278,7 @@ def summarize_center_and_dispersion(
         "future": future,
     }
 
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion, **kwargs
     )
     return gis._tools.featureanalysis.summarize_center_and_dispersion(**params)
@@ -288,19 +287,19 @@ def summarize_center_and_dispersion(
 # --------------------------------------------------------------------------
 def find_point_clusters(
     analysis_layer: Union[
-        Item,
-        FeatureCollection,
-        FeatureLayer,
-        FeatureLayerCollection,
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
         str,
         dict[str, Any],
     ],
     min_features_cluster: int,
     search_distance: Optional[float] = None,
     search_distance_unit: Optional[str] = None,
-    output_name: Optional[Union[FeatureLayer, str]] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
     context: Optional[dict[str, Any]] = None,
-    gis: Optional[GIS] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
     estimate: bool = False,
     future: bool = False,
 ):
@@ -408,7 +407,7 @@ def find_point_clusters(
         "estimate": estimate,
         "future": future,
     }
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.find_point_clusters, **kwargs
     )
     return gis._tools.featureanalysis.find_point_clusters(**params)
@@ -417,10 +416,10 @@ def find_point_clusters(
 # --------------------------------------------------------------------------
 def find_hot_spots(
     analysis_layer: Union[
-        Item,
-        FeatureCollection,
-        FeatureLayer,
-        FeatureLayerCollection,
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
         str,
         dict[str, Any],
     ],
@@ -428,27 +427,27 @@ def find_hot_spots(
     divided_by_field: Optional[str] = None,
     bounding_polygon_layer: Optional[
         Union[
-            Item,
-            FeatureCollection,
-            FeatureLayer,
-            FeatureLayerCollection,
+            _arcgis.gis._arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
             str,
             dict[str, Any],
         ]
     ] = None,
     aggregation_polygon_layer: Optional[
         Union[
-            Item,
-            FeatureCollection,
-            FeatureLayer,
-            FeatureLayerCollection,
+            _arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
             str,
             dict[str, Any],
         ]
     ] = None,
-    output_name: Optional[Union[FeatureLayer, str]] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
     context: Optional[dict[str, Any]] = None,
-    gis: Optional[GIS] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
     estimate: bool = False,
     shape_type: Optional[str] = None,
     cell_size: Optional[float] = None,
@@ -578,7 +577,7 @@ def find_hot_spots(
         "distance_band_units": distance_band_units,
         "future": future,
     }
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.find_hot_spots, **kwargs
     )
     return gis._tools.featureanalysis.find_hot_spots(**params)
@@ -587,10 +586,10 @@ def find_hot_spots(
 # --------------------------------------------------------------------------
 def find_outliers(
     analysis_layer: Union[
-        Item,
-        FeatureCollection,
-        FeatureLayer,
-        FeatureLayerCollection,
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
         str,
         dict[str, Any],
     ],
@@ -598,20 +597,20 @@ def find_outliers(
     divided_by_field: Optional[str] = None,
     bounding_polygon_layer: Optional[
         Union[
-            Item,
-            FeatureCollection,
-            FeatureLayer,
-            FeatureLayerCollection,
+            _arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
             str,
             dict[str, Any],
         ]
     ] = None,
     aggregation_polygon_layer: Optional[
         Union[
-            Item,
-            FeatureCollection,
-            FeatureLayer,
-            FeatureLayerCollection,
+            _arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
             str,
             dict[str, Any],
         ]
@@ -622,9 +621,9 @@ def find_outliers(
     cell_units: Optional[str] = None,
     distance_band: Optional[float] = None,
     band_units: Optional[str] = None,
-    output_name: Optional[Union[FeatureLayer, str]] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
     context: Optional[dict[str, Any]] = None,
-    gis: Optional[GIS] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
     estimate: bool = False,
     future: bool = False,
 ):
@@ -759,7 +758,7 @@ def find_outliers(
         "estimate": estimate,
         "future": future,
     }
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.find_outliers, **kwargs
     )
     return gis._tools.featureanalysis.find_outliers(**params)
@@ -768,10 +767,10 @@ def find_outliers(
 # --------------------------------------------------------------------------
 def interpolate_points(
     input_layer: Union[
-        Item,
-        FeatureCollection,
-        FeatureLayer,
-        FeatureLayerCollection,
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
         str,
         dict[str, Any],
     ],
@@ -782,24 +781,24 @@ def interpolate_points(
     num_classes: int = 10,
     class_breaks: Optional[list[float]] = [],
     bounding_polygon_layer: Union[
-        Item,
-        FeatureCollection,
-        FeatureLayer,
-        FeatureLayerCollection,
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
         str,
         dict[str, Any],
     ] = None,
     predict_at_point_layer: Union[
-        Item,
-        FeatureCollection,
-        FeatureLayer,
-        FeatureLayerCollection,
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
         str,
         dict[str, Any],
     ] = None,
-    output_name: Optional[Union[FeatureLayer, str]] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
     context: Optional[dict[str, Any]] = None,
-    gis: Optional[GIS] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
     estimate: bool = False,
     future: bool = False,
 ):
@@ -988,7 +987,7 @@ def interpolate_points(
         "estimate": estimate,
         "future": future,
     }
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.interpolate_points, **kwargs
     )
     return gis._tools.featureanalysis.interpolate_points(**params)

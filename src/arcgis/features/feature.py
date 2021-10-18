@@ -3,14 +3,17 @@ In the GIS, entities located in space with a set of properties can be represente
 to represent features and collection of features.
 """
 from __future__ import annotations
-import copy
-import json
+from arcgis.auth.tools import LazyLoader
 from typing import Any, Optional, Union
-import ujson as _ujson
-import os
-import re
-import tempfile
-import uuid
+
+copy = LazyLoader("copy")
+json = LazyLoader("json")
+_ujson = LazyLoader("ujson")
+os = LazyLoader("os")
+re = LazyLoader("re")
+tempfile = LazyLoader("tempfile")
+uuid = LazyLoader("uuid")
+
 from datetime import datetime
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._spatial import json_to_featureclass
@@ -27,7 +30,7 @@ from arcgis.geometry import (
 from arcgis.gis import Layer
 
 try:
-    import arcpy
+    arcpy = LazyLoader("arcpy", strict=True)
 
     HASARCPY = True
 except:
@@ -857,12 +860,6 @@ class FeatureSet(object):
 
         import pandas as pd
 
-        try:
-            import arcpy
-
-            HASARCPY = True
-        except ImportError:
-            HASARCPY = False
         features = []
         index = 0
         sr = None
@@ -1514,9 +1511,7 @@ class FeatureCollection(Layer):
                     "layers"
                 ][0]["layerDefinition"]["fields"]
 
-            return FeatureSet.from_dict(
-                self.properties["layers"][0]["featureSet"],
-            )
+            return FeatureSet.from_dict(self.properties["layers"][0]["featureSet"],)
         else:
             if "fields" in self.properties["layerDefinition"]:
                 self.properties["featureSet"]["fields"] = self.properties[

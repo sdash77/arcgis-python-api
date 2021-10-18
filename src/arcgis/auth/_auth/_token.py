@@ -235,7 +235,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         self._signin_url = f"{url}/sharing/oauth2/signin"
         self._reset_password_url = f"{url}/sharing/oauth2/resetPassword"
         self._update_profile_url = f"{url}/sharing/oauth2/updateUserProfile"
-        self._clientid = kwargs.get("clientid", "arcgisonline")
+        self._clientid = kwargs.get("clientid", "arcgispro")
         self._no_go_token = set()
         self._username = username
         self._password = password
@@ -290,7 +290,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     def _init_token_auth_handshake(self):
         """perform initial handshake"""
         self._oauth = OAuth2Session(
-            "arcgispro", redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+            self._clientid, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
         )
         authorization_url, state = self._oauth.authorization_url(
             self._auth_url, **self._params
