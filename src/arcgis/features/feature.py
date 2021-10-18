@@ -1511,7 +1511,9 @@ class FeatureCollection(Layer):
                     "layers"
                 ][0]["layerDefinition"]["fields"]
 
-            return FeatureSet.from_dict(self.properties["layers"][0]["featureSet"],)
+            return FeatureSet.from_dict(
+                self.properties["layers"][0]["featureSet"],
+            )
         else:
             if "fields" in self.properties["layerDefinition"]:
                 self.properties["featureSet"]["fields"] = self.properties[
