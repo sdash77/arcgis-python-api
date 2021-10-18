@@ -5,10 +5,12 @@ chosen areas.
 enrich_layer retrieves information about the people, places, and businesses in a specific area, or within a selected
 travel time or distance from a location.
 """
+from arcgis.auth.tools import LazyLoader
 
-import arcgis as _arcgis
-import arcgis.network as network
-from .._impl.common._utils import inspect_function_inputs
+_util = LazyLoader("arcgis._impl.common._utils")
+_logging = LazyLoader("logging")
+_arcgis = LazyLoader("arcgis")
+network = LazyLoader("arcgis.network")
 
 # --------------------------------------------------------------------------
 def enrich_layer(
@@ -83,20 +85,20 @@ def enrich_layer(
                                                                               - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                                                               - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
-                                                                                  .. code-block:: python
 
-                                                                                      # Example Usage
-                                                                                      context = {"extent": {"xmin": 3164569.408035,
+                                                                              .. code-block:: python
+                                                                                # Example Usage
+
                                                                                                           "ymin": -9187921.892449,
                                                                                                           "xmax": 3174104.927313,
                                                                                                           "ymax": -9175500.875353,
                                                                                                           "spatialReference":{"wkid":102100,"latestWkid":3857}},
                                                                                                   "outSR": {"wkid": 3857},
                                                                                                   "overwrite": True}
+
     ---------------------------------------------------------------------     --------------------------------------------------------------------
     gis                                                                       Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
-    estimate                                                                  Optional Boolean. If True, the number of credits to run the operation will be returned.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
     return_boundaries                                                         Optional boolean. Applies only for point and line input features. If True, a result layer of areas is returned.
                                                                               The returned areas are defined by the specified buffer_type. For example, if using a buffer_type of StraightLine with
@@ -138,7 +140,7 @@ def enrich_layer(
         "future": future,
     }
 
-    params = inspect_function_inputs(
+    params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.enrich_layer, **kwargs
     )
 

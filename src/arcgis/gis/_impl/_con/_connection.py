@@ -5,8 +5,10 @@ Requires: requests, requests_toolbelt,
 Possible optional might be required: requests_ntlm, requests_kerberos, requests-oauthlib
 
 """
+from arcgis.auth.tools import LazyLoader
+
 try:
-    import arcpy
+    arcpy = LazyLoader("arcpy", strict=True)
 
     HASARCPY = True
 except ImportError:
@@ -34,10 +36,15 @@ import json
 import uuid
 import datetime
 import mimetypes
+import logging
+import warnings
 import tempfile
-from urllib.request import urlparse, unquote, urljoin
+from functools import lru_cache
+from urllib.request import urlparse
 import requests
-from requests import Session
+from urllib3 import exceptions as _exceptions
+
+# from requests import Session
 from requests_toolbelt.downloadutils import stream
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from json import JSONDecodeError
@@ -45,10 +52,36 @@ from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
+from arcgis.auth import EsriSession
+from arcgis.auth import (
+    EsriBuiltInAuth,
+    EsriGenTokenAuth,
+    ArcGISProAuth,
+    EsriOAuth2Auth,
+    EsriUserTokenAuth,
+)
+from arcgis.auth._auth._notebook import EsriNotebookAuth
 
-__version__ = "1.9.1"
+try:
+    from arcgis.auth import EsriWindowsAuth
+
+    HAS_SSPI = True
+except ImportError:
+    HAS_SSPI = False
+
+try:
+    from arcgis.auth import EsriKerberosAuth
+
+    HAS_KERBEROS = True
+except ImportError:
+    HAS_KERBEROS = False
+
+from arcgis.auth import EsriBasicAuth
+
+__version__ = "2.0.0"
 
 _DEFAULT_TOKEN = uuid.uuid4()
+_log = logging.getLogger(__name__)
 
 
 class Connection(object):
@@ -77,6 +110,8 @@ class Connection(object):
     _auth = None
     _product = None
     _custom_auth = None
+    _custom_adapter = None
+    legacy = None
     # ----------------------------------------------------------------------
     def __init__(self, baseurl=None, username=None, password=None, **kwargs):
         """initializer
@@ -101,16 +136,19 @@ class Connection(object):
         AUTH keys = HOME, BUILTIN, PRO, ANON, PKI, HANDLER, UNKNOWN (Internal)
         custom_auth = Requests authencation handler
         trust_env = T/F if to ignore netrc files
-
+        legacy boolean. If True the token will be appended to the URL for GET and in the FORM POST.
         timeout:int=600
 
         """
         from arcgis.gis import GIS
 
-        self._proxy = kwargs.get("proxy", None)
-        self._timeout = kwargs.get("timeout", 600)
+        self._is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
+        self._proxy = kwargs.pop("proxy", None)
+        self._timeout = kwargs.pop("timeout", 600)
         self._all_ssl = kwargs.pop("all_ssl", True)
         self.trust_env = kwargs.pop("trust_env", None)
+        self._custom_adapter = kwargs.pop("custom_adapter", None)
+        self.legacy = kwargs.pop("legacy", False)
         if baseurl:
             while baseurl.endswith("/"):
                 baseurl = baseurl[:-1]
@@ -138,6 +176,7 @@ class Connection(object):
         ):
             self._referer = None
         elif baseurl.lower() == "pro":
+            self._auth = "PRO"
             try:
                 self._referer = arcpy.GetSigninToken().pop("referer", "http")
             except:
@@ -147,10 +186,7 @@ class Connection(object):
 
         self._verify_cert = kwargs.pop("verify_cert", False)  # True)
         if self._verify_cert == False:
-            import warnings
-            from requests.packages.urllib3 import exceptions
-
-            warnings.simplefilter("ignore", exceptions.InsecureRequestWarning)
+            warnings.simplefilter("ignore", _exceptions.InsecureRequestWarning)
 
         self._cert_file = kwargs.pop("cert_file", None)
         self._key_file = kwargs.pop("key_file", None)
@@ -162,16 +198,69 @@ class Connection(object):
         self._proxy_username = kwargs.pop("proxy_username", None)
         self._proxy_password = kwargs.pop("proxy_password", None)
         self._header = {"User-Agent": "Geosaurus/%s" % __version__}
-        self._token = kwargs.pop("token", None)
         self._client_id = kwargs.pop("client_id", None)
         self._client_secret = kwargs.pop("client_secret", None)
         self._token_url = kwargs.pop("token_url", None)
-
-        if username is None and password is None and self._portal_connection is None:
+        if str(baseurl).lower() == "pro":
+            self._auth = "PRO"
+            auth_check = [""]
+        elif str(baseurl).lower() != "pro":
+            auth_check = [""]
+        if self._is_hosted_nb_home:
+            auth_check = [""]
+        elif self._key_file is None and self._cert_file is None:
+            auth_check = self._auth_check(baseurl)
+        else:
+            auth_check = [""]
+        if self._is_hosted_nb_home:
+            self._auth = "HOME"  # NB AUTH
+            self._token = kwargs.pop("token", None)
+            self._expiration = 10080
+            self._referer = ""
+        elif "token" in kwargs and kwargs["token"]:
+            self._auth = "USER_TOKEN"
+            self._token = kwargs.pop("token", None)
+        elif (
+            self._key_file is None
+            and self._key_file is None
+            and username is None
+            and password is None
+            and self._portal_connection is None
+            and self._client_id is None
+            and str(baseurl).lower() != "pro"
+        ):
             self._auth = "ANON"
-        elif (not username is None and not password is None) or self._portal_connection:
+        elif self._client_id:
+            self._auth = "OAUTH"
+        elif (not username is None and not password is None) and len(
+            username.split("\\")
+        ) > 1:
+            self._auth = "IWA"
+        elif (
+            not username is None
+            and not password is None
+            and any([ac.lower().find("basic") > -1 for ac in auth_check])
+        ):
+            self._auth = "BASIC_REALM"
+        elif (
+            not username is None
+            and not password is None
+            and any([ac.lower().find("ntlm") > -1 for ac in auth_check])
+        ):
+            self._auth = "NTLM"
+        elif (not username is None and not password is None) or (
+            self._portal_connection and self._portal_connection._auth == "BUILTIN"
+        ):
             self._auth = "BUILTIN"
-        if (
+        elif (not username is None and not password is None) or (
+            self._portal_connection and self._portal_connection._auth == "BASIC_REALM"
+        ):
+            self._auth = "BASIC_REALM"
+        elif (not username is None and not password is None) or (
+            self._portal_connection and self._portal_connection._auth == "NTLM"
+        ):
+            self._auth = "NTLM"
+        elif (
             (username and password)
             and self._client_id is None
             and str(baseurl).lower() != "pro"
@@ -193,47 +282,76 @@ class Connection(object):
         elif self._cert_file or (self._cert_file and self._key_file):
             self._auth = "PKI"
 
-        self._create_session()
+        if self._portal_connection and self._portal_connection._auth in [
+            "BASIC_REALM",
+            "IWA",
+            "NTLM",
+            "PKI",
+        ]:
+            self._session = self._portal_connection._session
+        else:
+            self._create_session()
 
         #  Product Info
-        if self._token:
-            if self._expiration is None:
-                self._expiration = 60
-            self._create_time = datetime.datetime.now() + datetime.timedelta(
-                minutes=self._expiration
-            )
-            self._auth = "BUILTIN"
-        elif self._client_id:
-            self._product = self._check_product()
-            if self._product in ["PORTAL", "AGOL"]:
-                resp = self.post("/portals/self", {"f": "json"}, add_token=False)
-                issaml = resp.get("samlEnabled", False)
-                isoauth = resp.get("supportsOAuth", False)
-            else:
-                resp = None
-                issaml = False
-                isoauth = False
-            self._auth = "OAUTH"
-            parsed = urlparse(self._baseurl)
-            wa = parsed.path
-            if wa.startswith("/"):
-                wa = wa[1:].split("/")[0]
-            else:
-                wa = wa.split("/")[0]
-            if len(wa) > 0:
-                self._token_url = "https://%s/%s/sharing/rest/oauth2/token" % (
-                    parsed.netloc,
-                    wa,
-                )
-            else:
-                self._token_url = "https://%s/sharing/rest/oauth2/token" % (
-                    parsed.netloc
-                )
-
+        if self._client_id:
+            self._product = "PORTAL"
+        elif self._is_hosted_nb_home:
+            self._product = "NOTEBOOK_SERVER"
         else:
             self._product = self._check_product()
         self._baseurl = self._validate_url(self._baseurl)
         self.baseurl = self._baseurl
+
+    # ----------------------------------------------------------------------
+    @lru_cache(maxsize=10)
+    def _parsed(self, url: str):
+        return urlparse(url)
+
+    # ----------------------------------------------------------------------
+    def _auth_check(self, url):
+        import requests
+
+        if str(url).lower() == "pro":
+            return [""]
+        if self._cert_file and self._key_file:
+            cert = (self._cert_file, self._key_file)
+
+        elif self._cert_file and self._password:
+            from arcgis.gis._impl._con._cert import pfx_to_pem
+
+            self._key_file, self._cert_file = pfx_to_pem(
+                pfx_path=self._cert_file, pfx_password=self._password
+            )
+            cert = (self._cert_file, self._key_file)
+        elif self._cert_file:
+            cert = self._cert_file
+        else:
+            cert = None
+        s = requests.Session()
+        s.cert = cert
+        s.verify = self._verify_cert
+        s.trust_env = True
+        if self._custom_adapter:
+            for k, v in self._custom_adapter.items():
+                s.mount(k, v)
+        if self._custom_auth:
+            s.auth = self._custom_auth
+        parsed = self._parsed(url)
+        root = fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+        params = {"f": "json"}
+        results = []
+        for pt in ["/info", "/rest/info", "/sharing/rest/info"]:
+            try:
+
+                www_auth = s.get(
+                    root + pt,
+                    params=params,
+                    verify=self._verify_cert,
+                ).headers.get("www-authenticate", "")
+                results.append(www_auth)
+            except:
+                results.append("")
+        return list(set(results))
 
     # ----------------------------------------------------------------------
     def _validate_url(self, url):
@@ -284,25 +402,47 @@ class Connection(object):
         else:
             proxies = None
 
-        self._session = Session()
+        if self._cert_file and self._key_file:
+            cert = (self._cert_file, self._key_file)
+
+        elif self._cert_file and self._password:
+            from arcgis.gis._impl._con._cert import pfx_to_pem
+
+            self._key_file, self._cert_file = pfx_to_pem(
+                pfx_path=self._cert_file, pfx_password=self._password
+            )
+            cert = (self._cert_file, self._key_file)
+        elif self._cert_file:
+            cert = self._cert_file
+        else:
+            cert = None
+
+        self._session = EsriSession(cert=cert, verify_cert=self._verify_cert)
         self._session.verify = self._verify_cert
         self._session.stream = True
         self._session.trust_env = self.trust_env
         self._session.headers.update(self._header)
         self._session.proxies = proxies
+
         from urllib3.util import Retry
 
-        a = requests.adapters.HTTPAdapter(
-            max_retries=Retry(
-                total=2,
-                backoff_factor=1,
-                method_whitelist=frozenset(
-                    ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
-                ),
+        if self._custom_adapter is None:
+
+            a = requests.adapters.HTTPAdapter(
+                max_retries=Retry(
+                    total=2,
+                    backoff_factor=1,
+                    method_whitelist=frozenset(
+                        ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
+                    ),
+                )
             )
-        )
-        self._session.mount("http://", a)
-        self._session.mount("https://", a)
+            self._session.mount("http://", a)
+            self._session.mount("https://", a)
+        else:
+            for k, v in self._custom_adapter.items():
+                self._session.mount(k, v)
+
         if self._referer is None and (
             self._portal_connection
             and str(self._portal_connection._auth).lower() == "home"
@@ -325,43 +465,97 @@ class Connection(object):
         if self._custom_auth:
             self._session.auth = self._custom_auth
             self._auth = "CUSTOM"
-        elif self._username and self._password:
+        elif self._auth.lower() == "home":
+            from arcgis.auth._auth._notebook import EsriNotebookAuth
+
+            self._session.verify = False
+            self._session.auth = EsriNotebookAuth(
+                token=self._token,
+                referer=self._referer,
+                auth=GuessAuth(username=None, password=None),
+            )
+        elif self._auth.lower() == "oauth":
+            self._session.auth = EsriOAuth2Auth(
+                base_url=self._baseurl,
+                client_id=self._client_id,
+                client_secret=self._client_secret,
+                username=self._username,
+                password=self._password,
+                referer=self._referer,
+                expiration=self._expiration,
+                verify_cert=self._verify_cert,
+            )
+        elif self._auth.lower() == "builtin":
+            if self._check_product() == "SERVER":
+                pauth = None
+                if self._portal_connection:
+                    pauth = self._portal_connection._con._auth
+                self._session.auth = EsriGenTokenAuth(
+                    token_url=self._token_url,
+                    referer=self._referer,
+                    username=self._username,
+                    password=self._password,
+                    portal_auth=pauth,
+                    time_out=self._timeout,
+                    verify_cert=self._verify_cert,
+                    legacy=self.legacy,
+                )
+            else:
+
+                self._session.auth = EsriBuiltInAuth(
+                    url=self._baseurl,
+                    username=self._username,
+                    password=self._password,
+                    expiration=self._timeout,
+                    legacy=False,
+                    verify_cert=self._verify_cert,
+                    referer=self._referer,
+                )
+        elif self._auth.lower() == "user_token":
+            self._session.auth = EsriUserTokenAuth(
+                token=self._token, referer=self._referer, verify_cert=self._verify_cert
+            )
+        elif self._auth.lower() == "basic_realm":
+            self._session.auth = EsriBasicAuth(
+                username=self._username,
+                password=self._password,
+                referer=self._referer,
+                verify_cert=self._verify_cert,
+            )
+        elif self._username and self._password and self._auth.lower() != "iwa":
             self._session.auth = GuessAuth(
                 username=self._username, password=self._password
             )
-        elif self._auth.lower() == "pro":
-            self._session.auth = GuessAuth(None, None)
-        else:
-            try:
-                from requests_negotiate_sspi import HttpNegotiateAuth
-
-                HAS_KERBEROS = True
-            except:
-                HAS_KERBEROS = False
-            if HAS_KERBEROS:
-                self._session.auth = HttpNegotiateAuth()
-            else:
-                try:
-                    from requests_kerberos import HTTPKerberosAuth, DISABLED
-
-                    self._session.auth = HTTPKerberosAuth(DISABLED)
-                except ImportError:
-                    pass
-                except Exception as e:
-                    raise e
-        if self._cert_file and self._key_file:
-            self._session.cert = (self._cert_file, self._key_file)
-        elif self._cert_file and self._password:
-            from arcgis.gis._impl._con._cert import pfx_to_pem
-
-            self._key_file, self._cert_file = pfx_to_pem(
-                pfx_path=self._cert_file, pfx_password=self._password
+        elif self._auth.lower() in ["iwa", "ntlm"] and HAS_SSPI:
+            self._session.auth = EsriWindowsAuth(
+                username=self._username,
+                password=self._password,
+                verify_cert=self._verify_cert,
+                legacy=False,
             )
-            self._session.cert = (self._cert_file, self._key_file)
-        elif self._cert_file:
-            self._session.cert = self._cert_file
-        else:
-            self._session.cert = None
+        elif self._auth.lower() == "pro":
+
+            self._session.auth = (
+                GuessAuth(None, None, legacy=False) + ArcGISProAuth()
+            )  # GuessAuth(None, None, legacy=False)
+        elif not self._cert_file and not self._key_file:
+
+            # else:
+
+            if HAS_SSPI:
+                try:
+                    self._session.auth = EsriWindowsAuth(
+                        verify_cert=self._verify_cert, legacy=False
+                    )
+                except:
+                    ...
+            elif HAS_KERBEROS:
+                try:
+                    self._session.auth = EsriKerberosAuth(
+                        verify_cert=self._verify_cert, legacy=False
+                    )
+                except:
+                    ...
 
     # ----------------------------------------------------------------------
     def get(self, path, params=None, **kwargs):
@@ -395,17 +589,17 @@ class Connection(object):
         ---------------------------   -----------------------------------------------------
         json_encode                   optional Boolean.  When False, the JSON values will not be encoded.
         ---------------------------   -----------------------------------------------------
-        ignore_error_key              otional Boolean. The default is False. If true, JSON will be returned and no exception is raised when 'error' is present in the response
+        ignore_error_key              optional Boolean. The default is False. If true, JSON will be returned and no exception is raised when 'error' is present in the response
+        ---------------------------   -----------------------------------------------------
+        return_raw_response           optional Boolean. Returns the requests' Response object.
         ===========================   =====================================================
         """
         ignore_error_key = kwargs.pop("ignore_error_key", False)
+        return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
         url = path
-        token = kwargs.pop("token", _DEFAULT_TOKEN)
-        token_as_header = kwargs.pop("token_as_header", False)
-        token_header = kwargs.pop("token_header", "X-Esri-Authorization")
         if url.find("://") == -1:
             if url.startswith("/") == False and self._baseurl.endswith("/") == False:
                 url = "/" + url
@@ -414,31 +608,10 @@ class Connection(object):
             url = url.replace("http://", "https://")
         if params is None:
             params = {}
-        # if self._auth == "IWA":
-        #    self._session = None
         if self._session is None:
             self._create_session()
 
         try_json = kwargs.pop("try_json", True)
-        add_token = kwargs.pop("add_token", True)
-
-        if add_token:
-            if token != _DEFAULT_TOKEN:
-                if token is not None:
-                    params["token"] = token
-                else:
-                    params.pop("token", None)
-                    # pass
-            elif token_as_header == False and self.token is not None:  # as ?token=
-                params["token"] = self.token
-            elif (
-                token_as_header and self.token is not None
-            ):  # (token and token != _DEFAULT_TOKEN): # as X-Esri-Auth header with given token
-                self._session.headers.update({token_header: "Bearer %s" % token})
-            elif (
-                token_as_header and token_header and self.token
-            ):  # as X-Esri-Auth header with generated token
-                self._session.headers.update({token_header: "Bearer %s" % self.token})
         if try_json:
             params["f"] = "json"
         if params == {}:
@@ -496,7 +669,8 @@ class Connection(object):
             import traceback
 
             raise Exception("An unknown error occurred: %s" % traceback.format_exc())
-
+        if return_raw_response:
+            return resp
         return self._handle_response(
             resp,
             file_name,
@@ -705,20 +879,21 @@ class Connection(object):
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
         ---------------------------   -----------------------------------------------------
         timeout                       optional Integer. Timeout in seconds
+        ---------------------------   -----------------------------------------------------
+        return_raw_response           Optional Boolean. If True, returns the requests.Response object.
         ===========================   =====================================================
 
-        :return: data returned from the URL call.
+        :returns: data returned from the URL call.
         """
         timeout = kwargs.pop("timeout", self._timeout)
-        retry_count = 0
+        return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
         url = path
-        token = kwargs.pop("token", _DEFAULT_TOKEN)
+
         post_json = kwargs.pop("post_json", False)
-        token_as_header = kwargs.pop("token_as_header", False)
-        token_header = kwargs.pop("token_header", "X-Esri-Authorization")
+
         # if self._auth == "IWA":
         #    self._session = None
         if "postdata" in kwargs:  # handles legacy issues
@@ -728,28 +903,11 @@ class Connection(object):
         if self._session is None:
             self._create_session()
         try_json = kwargs.pop("try_json", True)
-        add_token = kwargs.pop("add_token", True)
+
         if url.find("://") == -1:
             url = self._baseurl + url
         if kwargs.pop("ssl", False) or self._all_ssl:
             url = url.replace("http://", "https://")
-        if add_token:
-            if token != _DEFAULT_TOKEN:
-                if token is not None:
-                    params["token"] = token
-                else:
-                    params.pop("token", None)
-                    # pass
-            elif token_as_header == False and self.token is not None:  # as ?token=
-                params["token"] = self.token
-            elif (
-                token_as_header and self.token is not None
-            ):  # (token and token != _DEFAULT_TOKEN): # as X-Esri-Auth header with given token
-                self._session.headers.update({token_header: "Bearer %s" % token})
-            elif (
-                token_as_header and token_header and self.token
-            ):  # as X-Esri-Auth header with generated token
-                self._session.headers.update({token_header: "Bearer %s" % self.token})
 
         if try_json:
             params["f"] = "json"
@@ -859,7 +1017,8 @@ class Connection(object):
             import traceback
 
             raise Exception("An unknown error occurred: %s" % traceback.format_exc())
-        retry_count = 0
+        if return_raw_response:
+            return resp
         return self._handle_response(
             resp=resp,
             out_path=out_path,
@@ -927,23 +1086,22 @@ class Connection(object):
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
         ---------------------------   -----------------------------------------------------
         timeout                       optional Integer. The number of seconds to timeout a service without a response.  The default is 600 seconds.
+        ---------------------------   -----------------------------------------------------
+        return_raw_response           Optional boolean. Returns the requests.Response object.
         ===========================   =====================================================
 
-        :return: data returned from the URL call.
+        :returns: data returned from the URL call.
 
         """
         timeout = kwargs.pop("timeout", self._timeout)
-        retry_count = 0
+        return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
         url = path
-        token = kwargs.pop("token", _DEFAULT_TOKEN)
+
         post_json = kwargs.pop("post_json", False)
-        token_as_header = kwargs.pop("token_as_header", False)
-        token_header = kwargs.pop("token_header", "X-Esri-Authorization")
-        # if self._auth == "IWA":
-        #    self._session = None
+
         if "postdata" in kwargs:  # handles legacy issues
             params = kwargs.pop("postdata")
         if params is None:
@@ -951,28 +1109,11 @@ class Connection(object):
         if self._session is None:
             self._create_session()
         try_json = kwargs.pop("try_json", True)
-        add_token = kwargs.pop("add_token", True)
+
         if url.find("://") == -1:
             url = self._baseurl + url
         if kwargs.pop("ssl", False) or self._all_ssl:
             url = url.replace("http://", "https://")
-        if add_token:
-            if token != _DEFAULT_TOKEN:
-                if token is not None:
-                    params["token"] = token
-                else:
-                    params.pop("token", None)
-                    # pass
-            elif token_as_header == False and self.token is not None:  # as ?token=
-                params["token"] = self.token
-            elif (
-                token_as_header and self.token is not None
-            ):  # (token and token != _DEFAULT_TOKEN): # as X-Esri-Auth header with given token
-                self._session.headers.update({token_header: "Bearer %s" % token})
-            elif (
-                token_as_header and token_header and self.token
-            ):  # as X-Esri-Auth header with generated token
-                self._session.headers.update({token_header: "Bearer %s" % self.token})
 
         if try_json:
             params["f"] = "json"
@@ -1033,11 +1174,20 @@ class Connection(object):
                 if timeout:
 
                     resp = self._session.post(
-                        url=url, data=params, cert=cert, files=files, timeout=timeout
+                        url=url,
+                        data=params,
+                        cert=cert,
+                        files=files,
+                        timeout=timeout,
+                        verify=self._verify_cert,
                     )
                 else:
                     resp = self._session.post(
-                        url=url, data=params, cert=cert, files=files
+                        url=url,
+                        data=params,
+                        cert=cert,
+                        files=files,
+                        verify=self._verify_cert,
                     )
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
@@ -1070,7 +1220,8 @@ class Connection(object):
             import traceback
 
             raise Exception("An unknown error occurred: %s" % traceback.format_exc())
-        retry_count = 0
+        if return_raw_response:
+            return resp
         return self._handle_response(
             resp=resp,
             out_path=out_path,
@@ -1123,15 +1274,15 @@ class Connection(object):
         **Optional Parameters**       **Description**
         ---------------------------   -----------------------------------------------------
         add_token                     optional boolean.  True means try to add the boolean,
-                                      else do not add a ?token=<foo> to the call.
+                                      else do not add a ?token=<foo> to the call. (deprecated)
         ---------------------------   -----------------------------------------------------
         token_as_header               Optional boolean.  If True, the token will go into
                                       the header as `Authorization` header.  This can be
-                                      overwritten using the `token_header` parameter
+                                      overwritten using the `token_header` parameter. (deprecated)
         ---------------------------   -----------------------------------------------------
         token_header                  Optional String. If provided and token_as_header is
                                       True, authentication token will be placed in this
-                                      instead on URL string.
+                                      instead on URL string. (deprecated)
         ---------------------------   -----------------------------------------------------
         try_json                      optional boolean.  If true, the call adds the ?f=json.
         ---------------------------   -----------------------------------------------------
@@ -1141,45 +1292,28 @@ class Connection(object):
         post_json                     optional bool. If True, the data is pushed in the request's json parameter.  This is an edge case for Workflow Manager. The default is `False`.
         ---------------------------   -----------------------------------------------------
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
+        ---------------------------   -----------------------------------------------------
+        return_raw_response           Optional boolean. When true, it returns the requests.Response object
         ===========================   =====================================================
 
-        :return: dict or string depending on the response
+        :returns: dict or string depending on the response
 
         """
-        token = kwargs.pop("token", _DEFAULT_TOKEN)
+
+        return_raw_response = kwargs.pop("return_raw_response", False)
         post_json = kwargs.pop("post_json", False)
         json_encode = kwargs.pop("json_encode", True)
         out_path = kwargs.pop("out_path", None)
         file_name = kwargs.pop("file_name", None)
-        token_as_header = kwargs.pop("token_as_header", True)
-        token_header = kwargs.pop("token_header", "X-Esri-Authorization")
         if params is None:
             params = {}
         if self._session is None:
             self._create_session()
         try_json = kwargs.pop("try_json", True)
-        add_token = kwargs.pop("add_token", True)
         if url.find("://") == -1:
             url = self._baseurl + url
         if kwargs.pop("ssl", False):
             url = url.replace("http://", "https://")
-        if add_token:
-            if token != _DEFAULT_TOKEN:
-                if token is not None:
-                    params["token"] = token
-                else:
-                    params.pop("token", None)
-                    # pass
-            elif token_as_header == False and self.token is not None:  # as ?token=
-                params["token"] = self.token
-            elif (
-                token_as_header and self.token is not None
-            ):  # (token and token != _DEFAULT_TOKEN): # as X-Esri-Auth header with given token
-                self._session.headers.update({token_header: "Bearer %s" % token})
-            elif (
-                token_as_header and token_header and self.token
-            ):  # as X-Esri-Auth header with generated token
-                self._session.headers.update({token_header: "Bearer %s" % self.token})
 
         if try_json:
             params["f"] = "json"
@@ -1226,6 +1360,8 @@ class Connection(object):
         else:
             resp = self._session.put(url=url, data=params, cert=cert, files=files)
         #
+        if return_raw_response:
+            return resp
         return self._handle_response(
             resp=resp,
             out_path=out_path,
@@ -1265,46 +1401,30 @@ class Connection(object):
         ---------------------------   -----------------------------------------------------
         ssl                           optional boolean. If true all calls are forced to be
                                       https.
+        return_raw_response           Optional Boolean.  Returns the raw requests.Response object
         ===========================   =====================================================
 
-        :return: dict or string depending on the response
+        :returns: dict or string depending on the response
         """
         out_path = kwargs.pop("out_path", None)
+        return_raw_response = kwargs.pop("return_raw_response", False)
         file_name = kwargs.pop("file_name", None)
-        token_as_header = kwargs.pop("token_as_header", True)
-        token_header = kwargs.pop("token_header", "X-Esri-Authorization")
         if params is None:
             params = {}
         if self._session is None:
             self._create_session()
         try_json = kwargs.pop("try_json", True)
-        add_token = kwargs.pop("add_token", True)
         if url.find("://") == -1:
             url = self._baseurl + url
         if kwargs.pop("ssl", False):
             url = url.replace("http://", "https://")
-        if add_token:
-            if token_as_header == False and not "token" in kwargs:  # as ?token=
-                params["token"] = self.token
-            elif (
-                token_as_header == False and "token" in kwargs
-            ):  # as ?token= and user provides the token
-                params["token"] = kwargs["token"]
-            elif (
-                token_as_header and "token" in kwargs
-            ):  # as X-Esri-Auth header with given token
-                self._session.headers.update(
-                    {token_header: "Bearer %s" % kwargs["token"]}
-                )
-            elif (
-                token_as_header and token_header and self.token
-            ):  # as X-Esri-Auth header with generated token
-                self._session.headers.update({token_header: "Bearer %s" % self.token})
 
         if try_json:
             params["f"] = "json"
 
         resp = self._session.delete(url=url, data=params)
+        if return_raw_response:
+            return resp
         return self._handle_response(
             resp=resp,
             out_path=out_path,
@@ -1410,7 +1530,17 @@ class Connection(object):
     # ----------------------------------------------------------------------
     @property
     def token(self):
-        """Get/Set a Token"""
+        """Gets a Token"""
+        if isinstance(self._session.auth, EsriBuiltInAuth):
+            return self._session.auth.token
+        elif isinstance(self._session.auth, EsriGenTokenAuth):
+            return self._session.auth.token()
+        elif isinstance(self._session.auth, ArcGISProAuth):
+            return self._session.auth.token
+        elif isinstance(self._session.auth, EsriOAuth2Auth):
+            return self._session.auth.token
+        elif isinstance(self._session.auth, EsriUserTokenAuth):
+            return self._session.auth.token
         if str(self._auth).lower() in ["builtin", "oauth"]:
             if self._expiration is None or self._expiration <= 5:
                 self._expiration = 6
@@ -1418,10 +1548,6 @@ class Connection(object):
                 datetime.datetime.now()
                 < self._create_time + datetime.timedelta(minutes=self._expiration)
             ):
-                return self._token
-            elif str(self._auth).lower() == "oauth":
-                self._create_time = datetime.datetime.now()
-                self._token = self._oauth_token()
                 return self._token
             elif (
                 self._create_time is None
@@ -1435,9 +1561,6 @@ class Connection(object):
                 and self._portal_connection
             ):
                 self._token = self._server_token()
-                return self._token
-            elif self._create_time is None and self._auth == "OAUTH":
-                self._token = self._oauth_token()
                 return self._token
             elif (
                 self._create_time is None
@@ -1597,174 +1720,6 @@ class Connection(object):
         return res["token"]
 
     # ----------------------------------------------------------------------
-    def _oauth_token(self):
-        """performs the oauth2 when secret and client exist"""
-        from oauthlib.oauth2 import BackendApplicationClient
-        from requests_oauthlib import OAuth2Session
-
-        auth_url = "%soauth2/authorize" % self.baseurl
-        tu = "%soauth2/token" % self.baseurl
-        # handles the refreshing of the token
-        if not (self._create_time is None) and (
-            datetime.datetime.now()
-            >= self._create_time + datetime.timedelta(minutes=self._expiration)
-        ):
-            self._token = None
-        elif (
-            not (self._create_time is None)
-            and not (self._token is None)
-            and (
-                datetime.datetime.now()
-                < self._create_time + datetime.timedelta(minutes=self._expiration)
-            )
-        ):
-            return self._token
-        # Handles token generation
-        if (
-            self._refresh_token is not None
-            and self._client_id is not None
-            and self._token is None
-        ):  # Case 1: Refreshing a token
-            parameters = {
-                "client_id": self._client_id,
-                "grant_type": "refresh_token",
-                "refresh_token": self._refresh_token,
-                "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
-            }
-            token_info = self.post(
-                "oauth2/token", parameters, ssl=True, add_token=False
-            )
-            self._token = token_info["access_token"]
-            return self._token
-        elif (
-            self._client_id and self._client_secret
-        ):  # case 2: has both client and secret keys
-            client = BackendApplicationClient(client_id=self._client_id)
-            oauth = OAuth2Session(client=client)
-            res = oauth.fetch_token(
-                # method="GET",
-                token_url=tu,
-                client_id=self._client_id,
-                client_secret=self._client_secret,
-                include_client_id=True,
-            )
-            if "expires_in" in res:
-                self._create_time = datetime.datetime.fromtimestamp(
-                    res["expires_at"]
-                ) - datetime.timedelta(seconds=7200)
-                self._expiration = res["expires_in"] / 60
-                if "token" in res:
-                    return res["token"]
-                if "access_token" in res:
-                    return res["access_token"]
-        elif (
-            self._client_id and self._username is None and self._password is None
-        ):  # case 3: client id only
-
-            auth_url = "%s/oauth2/authorize" % self.baseurl
-            tu = "%s/oauth2/token" % self.baseurl
-            oauth = OAuth2Session(
-                self._client_id, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
-            )
-            authorization_url, state = oauth.authorization_url(auth_url)
-            print(
-                "Please sign in to your GIS and paste the code that is obtained below."
-            )
-            print(
-                "If a web browser does not automatically open, please navigate to the URL below yourself instead."
-            )
-            print("Opening web browser to navigate to: " + authorization_url)
-            import webbrowser, getpass
-
-            webbrowser.open_new(authorization_url)
-            authorization_response = getpass.getpass(
-                "Enter code obtained on signing in using SAML: "
-            )
-
-            self._create_time = datetime.datetime.now()
-            token_info = oauth.fetch_token(
-                tu,
-                code=authorization_response,
-                verify=False,
-                include_client_id=True,
-                authorization_response="authorization_code",
-            )
-            self._expiration = token_info["expires_in"] / 60 - 2
-            self._refresh_token = token_info["refresh_token"]
-            self._token = token_info["access_token"]
-            return self._token
-        elif self._client_id and not (
-            self._username is None and self._password is None
-        ):  # case 4: client id and username/password (SAML workflow)
-            import re
-            import json
-            from bs4 import BeautifulSoup
-
-            parameters = {
-                "client_id": self._client_id,
-                "response_type": "code",
-                "expiration": -1,  # we want refresh_token to work for the life of the script
-                "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
-            }
-            content = self.get(
-                "oauth2/authorize",
-                parameters,
-                ssl=True,
-                try_json=False,
-                add_token=False,
-            )
-
-            pattern = re.compile("var oAuthInfo = ({.*?});", re.DOTALL)
-            if len(pattern.findall(content)) == 0:
-                pattern = re.compile("var oAuthInfo = ({.*?})", re.DOTALL)
-            soup = BeautifulSoup(content, "html.parser")
-            for script in soup.find_all("script"):
-                script_code = str(script.string).strip()
-                matches = pattern.search(script_code)
-                if not matches is None:
-                    js_object = matches.groups()[0]
-                    try:
-                        oauth_info = json.loads(js_object)
-                    except:
-                        oauth_info = json.loads(js_object + "}")
-                    break
-
-            parameters = {
-                "user_orgkey": "",
-                "username": self._username,
-                "password": self._password,
-                "oauth_state": oauth_info["oauth_state"],
-            }
-            content = self.post(
-                "oauth2/signin", parameters, ssl=True, try_json=False, add_token=False
-            )
-            soup = BeautifulSoup(content, "html.parser")
-
-            if soup.title is not None:
-                if "SUCCESS" in soup.title.string:
-                    code = soup.title.string[len("SUCCESS code=") :]
-
-            oauth = OAuth2Session(
-                self._client_id, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
-            )
-            if code is None:
-                raise Exception("Could not generate a token.")
-            self._create_time = datetime.datetime.now()
-            token_info = oauth.fetch_token(
-                tu,
-                code=code,
-                verify=False,
-                include_client_id=True,
-                authorization_response="authorization_code",
-            )
-            self._refresh_token = token_info["refresh_token"]
-            self._token = token_info["access_token"]
-            self._expiration = token_info["expires_in"] / 60 - 2
-
-            return self._token
-        return None
-
-    # ----------------------------------------------------------------------
     def generate_portal_server_token(self, serverUrl, expiration=1440):
         """generates a server token using Portal token"""
         if self._auth.lower() in ["pki", "iwa"]:
@@ -1801,95 +1756,6 @@ class Connection(object):
             raise Exception(
                 f"Could not generate the token for the service. \n Error Message: \n {resp}"
             )
-
-    # ----------------------------------------------------------------------
-    def _oauth_authenticate(self):
-        """performs oauth check when only client_id is provided"""
-        from urllib.parse import urlencode
-
-        client_id = self._client_id
-        expiration = self._expiration or 1440
-        parameters = {
-            "client_id": client_id,
-            "response_type": "code",
-            "expiration": -1,  # we want refresh_token to work for the life of the script
-            "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
-        }
-
-        code = None
-
-        if (
-            self._username is not None and self._password is not None
-        ):  # built-in user through OAUTH
-            content = self.get(
-                self._token_url, parameters, ssl=True, try_json=False, add_token=False
-            )
-            import re
-            import json
-            from bs4 import BeautifulSoup
-
-            pattern = re.compile("var oAuthInfo = ({.*?});", re.DOTALL)
-            soup = BeautifulSoup(content, "html.parser")
-            for script in soup.find_all("script"):
-                script_code = str(script.string).strip()
-                matches = pattern.search(script_code)
-                if not matches is None:
-                    js_object = matches.groups()[0]
-                    oauth_info = json.loads(js_object)
-                    break
-
-            parameters = {
-                "user_orgkey": "",
-                "username": self._username,
-                "password": self._password,
-                "oauth_state": oauth_info["oauth_state"],
-            }
-            content = self.post(
-                "oauth2/signin", parameters, ssl=True, try_json=False, add_token=False
-            )
-            soup = BeautifulSoup(content, "html.parser")
-
-            if soup.title is not None:
-                if "SUCCESS" in soup.title.string:
-                    code = soup.title.string[len("SUCCESS code=") :]
-
-        if code is None:  # try interactive signin
-            url = self._token_url  # self._baseurl + 'oauth2/authorize'
-            paramstring = urlencode(parameters)
-            codeurl = "{}?{}".format(url, paramstring)
-
-            import webbrowser
-            import getpass
-
-            print(
-                "Please sign in to your GIS and paste the code that is obtained below."
-            )
-            print(
-                "If a web browser does not automatically open, please navigate to the URL below yourself instead."
-            )
-            print("Opening web browser to navigate to: " + codeurl)
-            webbrowser.open_new(codeurl)
-            code = getpass.getpass("Enter code obtained on signing in using SAML: ")
-
-        if code is not None:
-            parameters = {
-                "client_id": client_id,
-                "grant_type": "authorization_code",
-                "code": code,
-                "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
-            }
-            token_info = self.post(
-                self._token_url, parameters, ssl=True, add_token=False
-            )
-            # print('******' + str(token_info))
-
-            self._refresh_token = token_info["refresh_token"]
-            self._token = token_info["access_token"]
-
-            return self._token
-        else:
-            print("Unable to sign in using OAUTH")
-            return None
 
     # ----------------------------------------------------------------------
     def _check_product(self):
@@ -1987,7 +1853,9 @@ class Connection(object):
             for pt in parts:
                 try:
                     # print(pt)
-                    res = self.get(root + pt, params=params, add_token=False)
+                    res = self.get(
+                        root + pt, params=params, add_token=False, allow_redirects=False
+                    )
                     if (
                         self._token_url is None
                         and res is not None
@@ -2008,6 +1876,7 @@ class Connection(object):
                         self._token_url = None
                         self._auth = "OTHER"
                 except HTTPError as e:
+                    _log.warning(str(e))
                     res = ""
                 except json.decoder.JSONDecodeError:
                     res = ""

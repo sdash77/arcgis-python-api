@@ -2,7 +2,6 @@ import json
 import pandas as pd
 import arcgis
 from arcgis.gis import GIS
-from arcgis.features import SpatialDataFrame
 from arcgis.features import FeatureSet
 from arcgis.geometry import Envelope
 
@@ -545,8 +544,6 @@ class _GeoEnrichment(object):
         """
         if _is_geoenabled(study_areas):
             study_areas = [{"FeatureSet": study_areas.spatial.__feature_set__}]
-        elif isinstance(study_areas, SpatialDataFrame):
-            study_areas = [{"FeatureSet": study_areas.__feature_set__}]
         elif isinstance(study_areas, FeatureSet):
             study_areas = [{"FeatureSet": study_areas.sdf.spatial.__feature_set__}]
         params = {

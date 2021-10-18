@@ -145,7 +145,7 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def federate_data_item(self):
+    def federate_data_item(self, path: str) -> bool:
         """
         This operation can be used to create a data store item in the portal
         for a data store that has been registered with one of the portal's
