@@ -5386,7 +5386,10 @@ class MapImageLayer(arcgis.gis.Layer):
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 params[k] = v
-        res = self._con.post(path=url, postdata=params,)
+        res = self._con.post(
+            path=url,
+            postdata=params,
+        )
         return res
 
     # ----------------------------------------------------------------------
@@ -5434,7 +5437,11 @@ class MapImageLayer(arcgis.gis.Layer):
             "layers": layers,
             "layerOptions": options,
         }
-        return self._con.get(kmlURL, params, out_folder=save_location,)
+        return self._con.get(
+            kmlURL,
+            params,
+            out_folder=save_location,
+        )
 
     # ----------------------------------------------------------------------
     def export_map(
