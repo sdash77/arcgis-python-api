@@ -99,17 +99,24 @@ class ServicesDirectory(BaseServer):
     # ----------------------------------------------------------------------
     def __init__(
         self,
-        url,
-        username=None,
-        password=None,
-        key_file=None,
-        cert_file=None,
-        verify_cert=False,
+        url: str = None,
+        username: str = None,
+        password: str = None,
+        key_file: str = None,
+        cert_file: str = None,
+        verify_cert: bool = False,
         **kwargs,
     ):
         """Constructor"""
         super(ServicesDirectory, self)
         profile = kwargs.pop("profile", None)
+        if profile:
+            # pm = self._pm
+            url, username, password, key_file, cert_file, client_id = self._profile_mgr(
+                profile, url, username, password, cert_file, key_file, client_id=None
+            )
+        if profile is None and url is None:
+            raise ValueError("A `url` must be given when a `profile` is not provided.")
         if url.lower().find("/rest") == -1 and url.endswith("/rest") == False:
             url = "%s/rest/services" % url
         if (
@@ -118,10 +125,7 @@ class ServicesDirectory(BaseServer):
         ):
             url = "%s/services" % url
         self._url = url
-        if profile:
-            url, username, password, key_file, cert_file, client_id = self._profile(
-                profile, url, username, password, cert_file, key_file, client_id=None
-            )
+
         self._username = username
         self._password = password
         self._key_file = key_file
@@ -160,6 +164,7 @@ class ServicesDirectory(BaseServer):
                 cert_file=cert_file,
                 portal_connection=self._portal_connection,
                 verify_cert=verify_cert,
+                product="SERVER",
                 **kwargs,
             )
         self._gis = kwargs.pop("gis", None)
@@ -215,7 +220,7 @@ class ServicesDirectory(BaseServer):
     @property
     def _pm(self) -> ServerProfileManager:
         """Returns the Server Profile Manager"""
-        if self._pmgr:
+        if self._pmgr is None:
             self._pmgr = ServerProfileManager()
         return self._pmgr
 

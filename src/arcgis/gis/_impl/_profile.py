@@ -277,7 +277,8 @@ class ServerProfileManager(object):
                 data = dict(config.items(profile))
                 try:
                     keyring.delete_password(
-                        service_name=self._profile_name, username=profile,
+                        service_name=self._profile_name,
+                        username=profile,
                     )
                 except:
                     pass
@@ -1022,14 +1023,26 @@ class ProfileManager(object):
 
 
 if __name__ == "__main__":
-    spm = ServerProfileManager()
-    spm.create(
-        profile='test_server',
+    from arcgis.gis.server import ServicesDirectory
+    from arcgis.gis import GIS
+
+    gis = GIS(profile="your_enterprise_profile")
+    sd = ServicesDirectory(
         url="https://pythonapi.playground.esri.com/server",
-        username='andrew',
-        password='fujifuji1',
-        key_file=None,
-        cert_file=None,
-        client_id=None,
+        username=gis._username,
+        password=gis._password,
+        verify_cert=False,
     )
-    print(spm.list())
+    print(sd.list())
+    print()
+    # spm = ServerProfileManager()
+    # spm.create(
+    # profile='test_server',
+    # url="https://pythonapi.playground.esri.com/server",
+    # username='andrew',
+    # password='fujifuji1',
+    # key_file=None,
+    # cert_file=None,
+    # client_id=None,
+    # )
+    # print(spm.list())
