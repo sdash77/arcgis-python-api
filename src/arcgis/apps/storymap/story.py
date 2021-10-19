@@ -1,29 +1,27 @@
 from enum import Enum
 import os
-import tempfile
 import time
 import json
 import mimetypes
-from typing import Optional, Union
+from typing import Optional
 from arcgis import env
-from arcgis.gis import Item
+from arcgis.gis import GIS, Item
 import uuid
-from PIL import Image
+import PIL.Image
 from urllib.parse import urlparse
+
+
+# TODO:
+# Add logo
+# Add credits
+# Edit Text depending on type of text ('subheading' = h4 )
+# Test Duplicate
+# Test everything on Python Playground
+# Test Navigation
 
 
 class StoryMap(object):
     """
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    story_item             Optional :class:`~arcgis.gis.Item` object whose Item.type is ``Story Map``.
-
-                           .. note::
-                            If not specified,
-                            an empty ``StoryMap`` object is created with some useful defaults.
-
-    ==================     ====================================================================
 
     """
 
@@ -32,8 +30,21 @@ class StoryMap(object):
     _itemid = None
     _item = None
 
-    def __init__(self, item=None, gis=None):
-        """initializer"""
+    def __init__(self, item: Optional[Item] = None, gis: Optional[GIS] = None):
+        """
+        Initializer for the Story Map Class.
+        
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        item                    Optional :class:`~arcgis.gis.Item` object whose type is ``StoryMap``.
+
+                                .. note::
+                                    If not specified, an empty ``StoryMap`` object is created with some 
+                                    useful defaults.
+
+        ==================     ====================================================================
+        """
         if gis is None:
             gis = env.active_gis
             self._gis = gis
@@ -95,13 +106,13 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @property
     def properties(self):
-        """Returns the storymap's JSON"""
+        """This property returns the storymap's JSON"""
         return self._properties
 
     # ----------------------------------------------------------------------
     @property
     def node_order(self):
-        """Returns the storymap's node order"""
+        """This propertry returns the storymap's node order"""
         root_id = self.properties["root"]
         children = self.properties["nodes"][root_id]["children"]
         return tuple(children)
@@ -110,7 +121,7 @@ class StoryMap(object):
     @property
     def navigation_items(self):
         """
-        This property lists the nodes that are linked in the navigation node.
+        This property returns a list of the nodes that are linked in the navigation node.
         """
         for node, node_info in self.properties.items():
             for key, val in node_info.items():
@@ -157,7 +168,13 @@ class StoryMap(object):
             return tuple(nodes)
 
     # ----------------------------------------------------------------------
-    def story_cover(self, title=None, type="full", summary=None, by_line=None):
+    def story_cover(
+        self,
+        title: Optional[str] = None,
+        type: str = "full",
+        summary: Optional[str] = None,
+        by_line: Optional[str] = None,
+    ):
         """
         All stories come with a story cover node. This method allows you to edit the story cover.
 
@@ -174,7 +191,9 @@ class StoryMap(object):
         summary             Optional string. The description of the story.
         ---------------     --------------------------------------------------------------------
         by_line             Optional string. Crediting the author(s).
-        ===============     ====================================================================        
+        ===============     ====================================================================
+
+        :return: Dictionary representation of the story cover node.
         """
         story_cover_node = self.node_order[0]
         orig_data = self.properties["nodes"][story_cover_node]["data"]
@@ -190,8 +209,12 @@ class StoryMap(object):
             },
         }
 
+        return self.properties["nodes"][story_cover_node]
+
     # ----------------------------------------------------------------------
-    def navigation(self, nodes=[], position=1, hidden=False):
+    def navigation(
+        self, nodes: Optional[list] = [{}], position: int = 1, hidden: bool = False
+    ):
         """
         Story navigation is a way for authors to add headings as 
         links to allow readers to navigate between different sections 
@@ -359,7 +382,7 @@ class StoryMap(object):
             )
 
     # ----------------------------------------------------------------------
-    def add(self, item, position: Optional[int] = None):
+    def add(self, item=None, position: Optional[int] = None):
         """
         Add and item to the story map
 
@@ -376,10 +399,13 @@ class StoryMap(object):
 
         if isinstance(item, Image):
             node, resource = item._add_image()
+            self._add_resource(item._path, item._resource_id)
         elif isinstance(item, Video):
             node, resource = item._add_video()
+            self._add_resource(item._path, item._resource_id)
         elif isinstance(item, Audio):
             node, resource = item._add_audio()
+            self._add_resource(item._path, item._resource_id)
         elif isinstance(item, WebPage):
             node, resource = item._add_webpage()
         elif isinstance(item, WebMap):
@@ -389,22 +415,25 @@ class StoryMap(object):
         elif isinstance(item, Text):
             node, resource = item._add_text()
         else:
-            item._node = uuid.uuid4().hex[0:6]
             node = {"type": "separator"}
+            resource = None
 
         # Add to the nodes
-        self.properties["nodes"][item._node] = node
+        node_id = item._node if item is not None else uuid.uuid4().hex[0:6]
+        self.properties["nodes"][node_id] = node
 
         # If resource was returned, add to resource nodes dictionary and story item
         if resource is not None:
             self.properties["resources"][item._resource_node] = resource
-            self._add_resource(item._path, item._resource_id)
+            # self._add_resource(item._path, item._resource_id)
 
         # Add to story children
-        self._add_child(node_id=item._node, position=position)
+        self._add_child(node_id=node_id, position=position)
 
     # ----------------------------------------------------------------------
-    def move_node(self, node_id, position=None, delete_current=False):
+    def move_node(
+        self, node_id: str, position: Optional[int] = None, delete_current: bool = False
+    ):
         """
         Move a node to another position. The node currently at that position will
         be moved down one space. The node at the current position can be deleted
@@ -439,7 +468,7 @@ class StoryMap(object):
         self._add_child(node_id, position)
 
     # ----------------------------------------------------------------------
-    def delete_node(self, node_id):
+    def delete_node(self, node_id: str):
         """
         Delete a node from the story.
 
@@ -537,7 +566,13 @@ class Image(object):
     Class representing an image from a url or file
     """
 
-    def __init__(self, path=None, caption=None, alt_text=None, display="float"):
+    def __init__(
+        self,
+        path: str = None,
+        caption: Optional[str] = None,
+        alt_text: Optional[str] = None,
+        display: str = "float",
+    ):
         self._path = path
         self._caption = caption
         self._alt_text = alt_text
@@ -563,7 +598,7 @@ class Image(object):
             "config": {"size": self._display},
         }
 
-        im = Image.open(self._path)
+        im = PIL.Image.open(self._path)
         w, h = im.size
         # Create resource node
         resource = {
@@ -585,7 +620,13 @@ class Video(object):
     Class representing a video from a url or file
     """
 
-    def __init__(self, path=None, caption=None, alt_text=None, display="float"):
+    def __init__(
+        self,
+        path: str = None,
+        caption: Optional[str] = None,
+        alt_text: Optional[str] = None,
+        display: str = "float",
+    ):
         self._path = path
         self._caption = caption
         self._alt_text = alt_text
@@ -599,9 +640,6 @@ class Video(object):
 
     # ----------------------------------------------------------------------
     def _add_video(self):
-
-        # Add resource
-        self._add_resource(self._path, self._resource_id)
 
         # Create image nodes
         node = {
@@ -629,7 +667,13 @@ class Audio(object):
     Class representing an audio from a url or file
     """
 
-    def __init__(self, path=None, caption=None, alt_text=None, display="float"):
+    def __init__(
+        self,
+        path: str = None,
+        caption: Optional[str] = None,
+        alt_text: Optional[str] = None,
+        display: str = "float",
+    ):
         self._path = path
         self._caption = caption
         self._alt_text = alt_text
@@ -643,9 +687,6 @@ class Audio(object):
 
     # ----------------------------------------------------------------------
     def _add_audio(self):
-
-        # Add resource
-        self._add_resource(self._path, self._resource_id)
 
         # Create image nodes
         node = {
@@ -668,14 +709,17 @@ class Audio(object):
 
 
 ###############################################################################################################
-
-
 class WebPage(object):
     """
     Class representing a hyperlink from a url
     """
 
-    def __init__(self, path=None, caption=None, alt_text=None, display=None):
+    def __init__(
+        self,
+        path: str = None,
+        caption: Optional[str] = None,
+        alt_text: Optional[str] = None,
+    ):
         self._path = path
         self._caption = caption
         self._alt_text = alt_text
@@ -709,44 +753,45 @@ class Text(object):
     """
     Class representing a text
 
-    ==================      ====================================================================
-    **Argument**            **Description**
-    ------------------      --------------------------------------------------------------------
-    text                    Required String. The text that will be shown in the story.
-
-                            String can contain the following tags for text formatting:
-                            <strong>,<em>,<a href="{link}" rel="noopener noreferer” target=”_blank”
-                            
-                            Example:
-                                "Paragraph with <strong>bold</strong>, 
-                                <em>italic</em> and 
-                                <a href=\"https://www.google.com\" rel=\"noopener noreferrer\" 
-                                target=\"_blank\">hyperlink</a> and a 
-                                <span class=\"sm-text-color-080\">custom color</span>"
-    ------------------      --------------------------------------------------------------------
-    type                    Optional String. There are 6 different types of text that can be
-                            added to a story.
-
-                            Values: 'paragraph' | 'heading' | 'subheading' | 'numbered-list' |
-                                    'bullet-list' | 'quote'
-
-                            ..note:
-                                To make text withing these types bold, italic, or hyperlink the 
-                                text parameter must include these.
-        
-    ------------------      --------------------------------------------------------------------
-    custom_color            Optional String. The hex color value without the #. 
-                            Only available when type is either 'paragraph', 'bullet-list', or
-                            'numbered-list'.
-
-                            Ex: custom_color = "080" 
-    ------------------      --------------------------------------------------------------------
-    position                Optional int. Determines where the text will be placed in the story.
-                            Default is at the end.
-    ==================      ====================================================================  
     """
 
-    def __init__(self, text=None, style="paragraph", color="000"):
+    def __init__(self, text: str = None, style: str = "paragraph", color: str = "000"):
+        """
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        text                    Required String. The text that will be shown in the story.
+
+                                String can contain the following tags for text formatting:
+                                <strong>,<em>,<a href="{link}" rel="noopener noreferer” target=”_blank”
+                                
+                                Example:
+                                    "Paragraph with <strong>bold</strong>, 
+                                    <em>italic</em> and 
+                                    <a href=\"https://www.google.com\" rel=\"noopener noreferrer\" 
+                                    target=\"_blank\">hyperlink</a> and a 
+                                    <span class=\"sm-text-color-080\">custom color</span>"
+        ------------------      --------------------------------------------------------------------
+        type                    Optional String. There are 6 different types of text that can be
+                                added to a story.
+
+                                Values: 'paragraph' | 'heading' | 'subheading' | 'numbered-list' |
+                                        'bullet-list' | 'quote'
+
+                                ..note:
+                                    To make text withing these types bold, italic, or hyperlink the 
+                                    text parameter must include these.
+            
+        ------------------      --------------------------------------------------------------------
+        custom_color            Optional String. The hex color value without the #. 
+                                Only available when type is either 'paragraph', 'bullet-list', or
+                                'numbered-list'.
+
+                                Ex: custom_color = "080" 
+        ==================      ====================================================================  
+
+        """
         self._node = uuid.uuid4().hex[0:6]
         self._text = text
         self._style = style
@@ -771,17 +816,21 @@ class Button(object):
     """
     Class representing a button
 
-    ==================      ====================================================================
-    **Argument**            **Description**
-    ------------------      --------------------------------------------------------------------
-    link                    Required String. When user clicks on button, they will be brought to
-                            the link.
-    ------------------      --------------------------------------------------------------------
-    text                    Required String. The text that shows on the button.
-    ==================      ====================================================================
     """
 
-    def __init__(self, link=None, text=None):
+    def __init__(self, link: str = None, text: str = None):
+        """
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        link                    Required String. When user clicks on button, they will be brought to
+                                the link.
+        ------------------      --------------------------------------------------------------------
+        text                    Required String. The text that shows on the button.
+        ==================      ====================================================================
+
+        """
         self._node = uuid.uuid4().hex[0:6]
         self._link = link
         self._text = text
@@ -802,89 +851,93 @@ class WebMap(object):
     """
     Class representing a webmap for the story
 
-    =================       ====================================================================
-    **Argument**            **Description**
-    -----------------       --------------------------------------------------------------------
-    item                    An Item of type Web Map to add to the story map.
-    -----------------       --------------------------------------------------------------------
-    caption                 Optional string. The caption of the section.
-    -----------------       --------------------------------------------------------------------
-    alt_text                Optional string. Specifies an alternate text for an image.
-    -----------------       --------------------------------------------------------------------
-    display                 Optional string. The image display properties.
-    -----------------       --------------------------------------------------------------------
-    position                Optional int. Will position the element in the story list.
-    -----------------       --------------------------------------------------------------------
-    show_legend             Optional Boolean. If True, map legend is shown. The default is False.
-    -----------------       --------------------------------------------------------------------
-    extent                  Optional Dictionary. 
-                            
-                            Example: 
-                            extent = {
-                                "xmin": -9177882,
-                                "ymin": 4246761,
-                                "xmax": -9176720,
-                                "ymax": 4247967,
-                                "spatialReference": { "wkid": 102100 }
-                                }
-    -----------------       --------------------------------------------------------------------
-    center                  Optional List of two integers. 
-
-                            Example:
-                            center = [-112, 38]
-    -----------------       --------------------------------------------------------------------
-    zoom                    Optional Integer. The zoom level of the map.
-    -----------------       --------------------------------------------------------------------
-    viewpoint               Optional Dictionary. Represents the current view as a Viewpoint or point 
-                            of observation on the view.
-
-                            Example:
-                            viewpoint = {
-                                "rotation": 0,
-                                "scale": 369785.47,
-                                "targetGeometry": {
-                                    "spatialReference": {"latestWkid": 3857, "wkid": 102100},
-                                    "x": 279.71,
-                                    "y": -998.98
-                                },
-                            }
-    -----------------       --------------------------------------------------------------------
-    layer_visibility        Optional List of Dictionaries. The visibility of the layers in a webmap.  
-                            
-                            Syntax:
-
-                                [
-                                {
-                                    "id" : "<layer_id>",
-                                    "visibility" : "<true/false>"
-                                }
-                                ]
-    =================       ====================================================================
     """
 
     def __init__(
         self,
-        item,
-        caption=None,
-        alt_text=None,
-        display="float",
-        show_legend=False,
-        extent=None,
-        center=None,
-        zoom=None,
-        viewpoint=None,
-        layer_visibility=None,
+        item: Item,
+        caption: Optional[str] = None,
+        alt_text: Optional[str] = None,
+        display: str = "float",
+        show_legend: bool = False,
+        extent: Optional[dict] = None,
+        center: Optional[list] = None,
+        zoom: Optional[int] = None,
+        viewpoint: Optional[dict] = None,
+        layer_visibility: Optional[list] = None,
     ):
+        """
+        
+        =================       ====================================================================
+        **Argument**            **Description**
+        -----------------       --------------------------------------------------------------------
+        item                    An Item of type Web Map to add to the story map.
+        -----------------       --------------------------------------------------------------------
+        caption                 Optional string. The caption of the section.
+        -----------------       --------------------------------------------------------------------
+        alt_text                Optional string. Specifies an alternate text for an image.
+        -----------------       --------------------------------------------------------------------
+        display                 Optional string. The image display properties.
+        -----------------       --------------------------------------------------------------------
+        position                Optional int. Will position the element in the story list.
+        -----------------       --------------------------------------------------------------------
+        show_legend             Optional Boolean. If True, map legend is shown. The default is False.
+        -----------------       --------------------------------------------------------------------
+        extent                  Optional Dictionary. 
+                                
+                                Example: 
+                                extent = {
+                                    "xmin": -9177882,
+                                    "ymin": 4246761,
+                                    "xmax": -9176720,
+                                    "ymax": 4247967,
+                                    "spatialReference": { "wkid": 102100 }
+                                    }
+        -----------------       --------------------------------------------------------------------
+        center                  Optional List of two integers. 
+
+                                Example:
+                                center = [-112, 38]
+        -----------------       --------------------------------------------------------------------
+        zoom                    Optional Integer. The zoom level of the map.
+        -----------------       --------------------------------------------------------------------
+        viewpoint               Optional Dictionary. Represents the current view as a Viewpoint or point 
+                                of observation on the view.
+
+                                Example:
+                                viewpoint = {
+                                    "rotation": 0,
+                                    "scale": 369785.47,
+                                    "targetGeometry": {
+                                        "spatialReference": {"latestWkid": 3857, "wkid": 102100},
+                                        "x": 279.71,
+                                        "y": -998.98
+                                    },
+                                }
+        -----------------       --------------------------------------------------------------------
+        layer_visibility        Optional List of Dictionaries. The visibility of the layers in a webmap.  
+                                
+                                Syntax:
+
+                                    [
+                                    {
+                                        "id" : "<layer_id>",
+                                        "visibility" : "<true/false>"
+                                    }
+                                    ]
+        =================       ====================================================================
+    
+        """
         self._node = "n-" + uuid.uuid4().hex[0:6]
         self._resource_node = "r-" + item.id
-        self._item = item
+        self._path = item
         self._caption = caption
         self._alt_text = alt_text
         self._display = display
         self._show_legend = show_legend
         self._center = center
         self._zoom = zoom
-        if extent is None and "extent" in item:
+        if extent is None and "extent" in item and item.extent:
             self._extent = {
                 "xmin": item.extent[0][0],
                 "xmax": item.extent[1][0],
@@ -900,7 +953,7 @@ class WebMap(object):
             self._viewpoint = None
         if layer_visibility is not None:
             self._layer_visibility = json.dumps(layer_visibility)
-        elif self._layer_visibility is None and "layers" in item:
+        elif "layers" in item:
             layer_visibility = []
             for layer in item.layers:
                 layer_item = {
@@ -913,9 +966,9 @@ class WebMap(object):
         else:
             self._layer_visibility = None
 
+        self._resource_id = str(int(time.time())) + "_WebMap"
+
     def _add_webmap(self):
-        # Add resource
-        self._add_resource(self._item, self._resource_node)
 
         # Create webmap nodes
         node = {
@@ -943,7 +996,7 @@ class WebMap(object):
                 "zoom": self._zoom,
                 "viewpoint": self._viewpoint,
                 "mapLayers": self._layer_visibility,
-                "itemId": self._item.id,
+                "itemId": self._path.id,
                 "itemType": "Web Map",
                 "type": "default",
                 "showLegend": self._show_legend,
