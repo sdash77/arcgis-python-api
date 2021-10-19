@@ -2347,7 +2347,7 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_featureclass(
-        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
+        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=False
     ):
         """
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
@@ -2431,7 +2431,9 @@ class GeoAccessor(object):
         return table
 
     # ----------------------------------------------------------------------
-    def to_featurelayer(self, title, gis=None, tags=None, folder=None):
+    def to_featurelayer(
+        self, title, gis=None, tags=None, folder=None, sanitize_columns=False
+    ):
         """
         The ``to_featurelayer`` method publishes a spatial dataframe to a new
         :class:`~arcgis.features.FeatureLayer` object.
@@ -2448,6 +2450,8 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         folder                          Optional string. Name of the folder where the featurelayer item
                                         and imported data would be stored.
+        ---------------------------     --------------------------------------------------------------------
+        sanitize_columns
         ===========================     ====================================================================
 
         :return:
@@ -2464,7 +2468,13 @@ class GeoAccessor(object):
         content = gis.content
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
-        result = content.import_data(self._data, folder=folder, title=title, tags=tags)
+        result = content.import_data(
+            self._data,
+            folder=folder,
+            title=title,
+            tags=tags,
+            sanitize_columns=sanitize_columns,
+        )
         self._data.columns = origin_columns
         self._data.index = origin_index
         return result
@@ -2963,14 +2973,7 @@ class GeoAccessor(object):
                 if fs["displayFieldName"] == "":
                     fs["displayFieldName"] = col
             elif (
-                isinstance(
-                    col_val,
-                    (
-                        datetime.datetime,
-                        pd.Timestamp,
-                        np.datetime64,
-                    ),
-                )
+                isinstance(col_val, (datetime.datetime, pd.Timestamp, np.datetime64,),)
                 or col in date_cols
             ):  # pd.datetime
                 fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
@@ -3123,7 +3126,12 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_feature_collection(
-        self, name=None, drawing_info=None, extent=None, global_id_field=None
+        self,
+        name=None,
+        drawing_info=None,
+        extent=None,
+        global_id_field=None,
+        sanitize_columns=False,
     ):
         """
         The ``to_feature_collection`` converts a spatially enabled a Pandas DataFrame to a
@@ -3146,6 +3154,10 @@ class GeoAccessor(object):
                                DataFrame.
         ---------------------  ---------------------------------------------------------------
         global_id_field        Optional string. The Global ID field of the dataset.
+        ---------------------  ---------------------------------------------------------------
+        sanitize_columns       Optional Boolean. If True, column names will be converted to string,
+                               invalid characters removed and other checks will be performed. The
+                               default is False.
         =====================  ===============================================================
 
         :return:
