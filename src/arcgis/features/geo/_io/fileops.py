@@ -53,7 +53,7 @@ def _infer_type(df, col):
     nn = list(df[nn].index)
     if len(nn) > 0:
         val = df[col][nn[0]]
-        if isinstance(val, six.string_types):
+        if isinstance(val, str):
             return "TEXT"
         elif isinstance(val, tuple([int] + [np.int32])):
             return "INTEGER"

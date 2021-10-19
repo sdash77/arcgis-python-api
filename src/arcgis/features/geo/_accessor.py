@@ -2385,7 +2385,9 @@ class GeoAccessor(object):
             "in_memory",
         ]:
             location = os.path.abspath(path=location)
-        return to_featureclass(
+        origin_columns = self._data.columns.tolist()
+        origin_index = copy.deepcopy(self._data.index)
+        result = to_featureclass(
             self,
             location=location,
             overwrite=overwrite,
@@ -2393,6 +2395,9 @@ class GeoAccessor(object):
             sanitize_columns=sanitize_columns,
             has_m=has_m,
         )
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return result
 
     # ----------------------------------------------------------------------
     def to_table(self, location, overwrite=True):
@@ -2415,12 +2420,15 @@ class GeoAccessor(object):
         from arcgis.features.geo._io.fileops import to_table
         from ._tools._utils import run_and_hide
 
-        return run_and_hide(
+        origin_columns = self._data.columns.tolist()
+        origin_index = copy.deepcopy(self._data.index)
+        location = os.path.abspath(location)
+        table = run_and_hide(
             to_table, **{"geo": self, "location": location, "overwrite": overwrite}
         )
-        # return to_table(geo=self,
-        #                location=location,
-        #                overwrite=overwrite)
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return table
 
     # ----------------------------------------------------------------------
     def to_featurelayer(self, title, gis=None, tags=None, folder=None):
@@ -2447,13 +2455,19 @@ class GeoAccessor(object):
 
         """
         from arcgis import env
+        import copy
 
         if gis is None:
             gis = env.active_gis
             if gis is None:
                 raise ValueError("GIS object must be provided")
         content = gis.content
-        return content.import_data(self._data, folder=folder, title=title, tags=tags)
+        origin_columns = self._data.columns.tolist()
+        origin_index = copy.deepcopy(self._data.index)
+        result = content.import_data(self._data, folder=folder, title=title, tags=tags)
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return result
 
     # ----------------------------------------------------------------------
     @staticmethod
