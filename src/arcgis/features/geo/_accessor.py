@@ -2973,7 +2973,14 @@ class GeoAccessor(object):
                 if fs["displayFieldName"] == "":
                     fs["displayFieldName"] = col
             elif (
-                isinstance(col_val, (datetime.datetime, pd.Timestamp, np.datetime64,),)
+                isinstance(
+                    col_val,
+                    (
+                        datetime.datetime,
+                        pd.Timestamp,
+                        np.datetime64,
+                    ),
+                )
                 or col in date_cols
             ):  # pd.datetime
                 fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
