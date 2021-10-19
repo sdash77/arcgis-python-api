@@ -1,4 +1,6 @@
+from enum import Enum
 import os
+import tempfile
 import time
 import json
 import mimetypes
@@ -48,12 +50,20 @@ class StoryMap(object):
         elif item and isinstance(item, Item) and "StoryMap" not in item.typeKeywords:
             raise ValueError("Item is not a Story Map")
         else:
-            f = open(r"src\arcgis\apps\storymap\templates\draft.json", "rb")
+            template = r"src\arcgis\apps\storymap\templates\draft.json"
+            f = open(template, "rb")
             self._properties = json.load(f)
 
             title = "StoryMap %s" % uuid.uuid4().hex[:10]
             typeKeywords = ",".join(
-                ["arcgis-storymaps", "smstatusdraft", "smversiondraft:20.35.0",]
+                [
+                    "arcgis-storymaps",
+                    "StoryMap",
+                    "Web Application",
+                    "smstatusdraft",
+                    "smversiondraft:20.35.0",
+                    "smsdraftresourceid:draft_" + str(int(time.time())) + ".json",
+                ]
             )
             item_properties = {
                 "title": title,
@@ -65,8 +75,7 @@ class StoryMap(object):
             self._item = item
             self._itemid = item.itemid
             self._add_resource(
-                file=r"src\arcgis\apps\storymap\templates\draft.json",
-                resource_id="draft.json",
+                file=template, resource_name="draft.json",
             )
             f.close()
 
@@ -86,636 +95,66 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @property
     def properties(self):
-        """returns the storymap's JSON"""
+        """Returns the storymap's JSON"""
         return self._properties
 
     # ----------------------------------------------------------------------
     @property
     def node_order(self):
-        """returns the storymap's node order"""
+        """Returns the storymap's node order"""
         root_id = self.properties["root"]
         children = self.properties["nodes"][root_id]["children"]
-        return children
+        return tuple(children)
 
     # ----------------------------------------------------------------------
-    def add_text(
-        self,
-        text: str,
-        type: str = "paragraph",
-        custom_color: str = "000",
-        position: Optional[int] = None,
-    ):
+    @property
+    def navigation_items(self):
         """
-        Add text to a ```Story Map```
-
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        text                    Required String. The text that will be shown in the story.
-
-                                String can contain the following tags for text formatting:
-                                <strong>,<em>,<a href="{link}" rel="noopener noreferer” target=”_blank”
-                                
-                                Example:
-                                    "Paragraph with <strong>bold</strong>, 
-                                    <em>italic</em> and 
-                                    <a href=\"https://www.google.com\" rel=\"noopener noreferrer\" 
-                                    target=\"_blank\">hyperlink</a> and a 
-                                    <span class=\"sm-text-color-080\">custom color</span>"
-        ------------------      --------------------------------------------------------------------
-        type                    Optional String. There are 6 different types of text that can be
-                                added to a story.
-
-                                Values: 'paragraph' | 'heading' | 'subheading' | 'numbered-list' |
-                                        'bullet-list' | 'quote'
-
-                                ..note:
-                                    To make text withing these types bold, italic, or hyperlink the 
-                                    text parameter must include these.
-         
-        ------------------      --------------------------------------------------------------------
-        custom_color            Optional String. The hex color value without the #. 
-                                Only available when type is either 'paragraph', 'bullet-list', or
-                                'numbered-list'.
-
-                                Ex: custom_color = "080" 
-        ------------------      --------------------------------------------------------------------
-        position                Optional int. Determines where the text will be placed in the story.
-                                Default is at the end.
-        ==================      ====================================================================        
+        This property lists the nodes that are linked in the navigation node.
         """
-        # Create ids
-        node_id = uuid.uuid4().hex[0:6]
-
-        self.properties["nodes"][node_id] = {
-            "type": "text",
-            "data": {"type": type, "text": text, "customTextColors": [custom_color]},
-        }
-
-        # Add to story children, position counts
-        self._add_child(node_id=node_id, position=position)
+        for node, node_info in self.properties.items():
+            for key, val in node_info.items():
+                if key == "type" and val == "navigation":
+                    node_id = node
+        try:
+            return self.properties["nodes"][node_id]["links"]
+        except:
+            return None
 
     # ----------------------------------------------------------------------
-    def add_button(self, link: str, text: str, position: Optional[int] = None):
+    def list_nodes(self, type: Optional[str] = None):
         """
-        Adds a button node to the Story Map. A button has a link associated to it.
-
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        link                    Required String. When user clicks on button, they will be brought to
-                                the link.
-        ------------------      --------------------------------------------------------------------
-        text                    Required String. The text that shows on the button.
-        ------------------      --------------------------------------------------------------------
-        position                Optional Integer. Determines where the button will be placed in the
-                                story. The default is at the end.
-        ==================      ====================================================================
-        """
-        # Create ids
-        node_id = uuid.uuid4().hex[0:6]
-
-        self.properties["nodes"][node_id] = {
-            "type": "button",
-            "data": {"text": text, "link": link},
-        }
-
-        # Add to story children, position counts
-        self._add_child(node_id=node_id, position=position)
-
-    # ----------------------------------------------------------------------
-    def add_separator(self, position: Optional[int] = None):
-        """
-        Adds a separator node to the Story Map. 
-
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        position                Optional Integer. Determines where the button will be placed in the
-                                story. The default is at the end.
-        ==================      ====================================================================
-        """
-        # Create ids
-        node_id = uuid.uuid4().hex[0:6]
-
-        self.properties["nodes"][node_id] = {
-            "type": "separator",
-        }
-
-        # Add to story children, position counts
-        self._add_child(node_id=node_id, position=position)
-
-    # ----------------------------------------------------------------------
-    def add_media(
-        self,
-        item: Union[str, Item],
-        caption: str = "",
-        alt_text: str = "",
-        display: str = "float",
-        position: Optional[int] = None,
-        **kwargs,
-    ):
-        """
-        Add media content to a ```Story Map```.
-
-        The types of content that can be added are: Map, Image, Video, Audio, or Embed.
-
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        item                    Optional :class:`~arcgis.gis.Item` that is of type ```WebMap```,
-                                url, or file path. Url and file path are passed as a String.
-
-                                .. note::
-                                Depending on the item you want to add, different parameters can 
-                                be passed in.
-                                Please refer to the documentation.
-        ------------------      --------------------------------------------------------------------
-        caption                 Optional String. A caption for the media item for descriptive purpose.
-        ------------------      --------------------------------------------------------------------
-        alt_text                Optional String. Add text for screen reader a11y of the media.
-        ------------------      --------------------------------------------------------------------
-        display                 Optional String. The display size of the item in the story.
-
-                                Values: “small” | “wide” | “full” | “float” (default)
-        ------------------      --------------------------------------------------------------------
-        position                Optional Integer. Determines the position of the item in the story.
-                                The default is last position.
-        ==================      ====================================================================
-
-
-        **kwargs are used for adding a Web Map Item
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        show_legend             Optional Boolean. If True, map legend is shown. The default is False.
-        ------------------      --------------------------------------------------------------------
-        extent                  Optional Dictionary. 
-                                
-                                Example: 
-                                extent = {
-                                    "xmin": -9177882,
-                                    "ymin": 4246761,
-                                    "xmax": -9176720,
-                                    "ymax": 4247967,
-                                    "spatialReference": { "wkid": 102100 }
-                                    }
-        ------------------      --------------------------------------------------------------------
-        center                  Optional List of two integers. 
-
-                                Example:
-                                center = [-112, 38]
-        ------------------      --------------------------------------------------------------------
-        zoom                    Optional Integer. The zoom level of the map.
-        ------------------      --------------------------------------------------------------------
-        viewpoint               Optional Dictionary. Represents the current view as a Viewpoint or point 
-                                of observation on the view.
-
-                                Example:
-                                viewpoint = {
-                                    "rotation": 0,
-                                    "scale": 369785.47,
-                                    "targetGeometry": {
-                                        "spatialReference": {"latestWkid": 3857, "wkid": 102100},
-                                        "x": 279.71,
-                                        "y": -998.98
-                                    },
-                                }
-        ------------------      --------------------------------------------------------------------
-        layer_visibility        Optional List of Dictionaries. The visibility of the layers in a webmap.  
-                                
-                                Syntax:
-
-                                 [
-                                    {
-                                       "id" : "<layer_id>",
-                                       "visibility" : "<true/false>"
-                                    }
-                                 ]
-        ==================      ====================================================================
-
-        """
-        if isinstance(item, Item):
-            show_legend = kwargs.pop("show_legend", False)
-            extent = kwargs.pop("extent", None)
-            if extent is None and "extent" in item:
-                extent = {
-                    "xmin": item.extent[0][0],
-                    "xmax": item.extent[1][0],
-                    "ymin": item.extent[0][1],
-                    "ymax": item.extent[1][1],
-                }
-            center = kwargs.pop("center", None)
-            zoom = kwargs.pop("zoom", None)
-            viewpoint = kwargs.pop("viewpoint", None)
-            if viewpoint:
-                viewpoint = json.dumps(viewpoint)
-            layer_visibility = kwargs.pop("layer_visibility", None)
-            if layer_visibility:
-                layer_visibility = json.dumps(layer_visibility)
-            return self._add_webmap(
-                item=item,
-                caption=item.title if not caption else caption,
-                alt_text=alt_text,
-                display=display,
-                position=position,
-                show_legend=show_legend,
-                extent=extent,
-                center=center,
-                zoom=zoom,
-                viewpoint=viewpoint,
-                layer_visibility=layer_visibility,
-            )
-        elif isinstance(item, str):
-            mt = mimetypes.guess_type(item)[0].lower()
-            if "video" in mt:
-                return self._add_video(
-                    item=item,
-                    caption=caption,
-                    alt_text=alt_text,
-                    display=display,
-                    ext_type=mt,
-                    position=position,
-                )
-            elif "image" in mt:
-                return self._add_image(
-                    item=item,
-                    caption=caption,
-                    alt_text=alt_text,
-                    display=display,
-                    ext_type=mt,
-                    position=position,
-                )
-            elif "audio" in mt:
-                return self._add_audio(
-                    item=item,
-                    caption=caption,
-                    alt_text=alt_text,
-                    display=display,
-                    ext_type=mt,
-                    position=position,
-                )
-            else:
-                # An Embed or Web Scene
-                return self._add_webpage(
-                    item=item, caption=caption, alt_text=alt_text, position=position,
-                )
-        return False
-
-    # ----------------------------------------------------------------------
-    def _add_webmap(
-        self,
-        item,
-        caption,
-        alt_text,
-        display,
-        position,
-        show_legend,
-        extent,
-        center,
-        zoom,
-        viewpoint,
-        layer_visibility,
-    ):
-        """
-        Adds a webmap to the storymap
+        Find the nodes for each type of item.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        item                Web Map item to add to the story map.
-        ---------------     --------------------------------------------------------------------
-        caption             Optional string. The caption of the section.
-        ---------------     --------------------------------------------------------------------
-        alt_text            Optional string. Specifies an alternate text for an image.
-        ---------------     --------------------------------------------------------------------
-        display             Optional string. The image display properties.
-        ---------------     --------------------------------------------------------------------
-        position            Optional int. Will position the element in the story list.
+        type                Optional string. The type of nodes that user wants returned.
+                            If none specified, list of all nodes returned.
+
+                            Values: "image" | "video" | "audio" | "webpage" | "webmap" | "text" |
+                                    "button" | "separator"       
         ===============     ====================================================================
 
+        :return: A tuple of nodes for each type. 
 
-        :return: Boolean
-
-        """
-        # Create ids
-        node_id = "n-" + uuid.uuid4().hex[0:6]
-        resource_node = "r-" + item.id
-
-        # Add resource
-        self._add_resource(item, resource_node)
-
-        # Create layer dictionary if None
-        if layer_visibility is None and "layers" in item:
-            layer_visibility = []
-            for layer in item.layers:
-                layer_item = {
-                    "id": layer.properties.id,
-                    "title": layer.properties.name,
-                    "visibility": True,
-                }
-                layer_visibility.append(layer_item)
-
-        # Create webmap nodes
-        self.properties["nodes"][node_id] = {
-            "type": "webmap",
-            "data": {
-                "map": resource_node,
-                "caption": caption,
-                "alt": alt_text,
-                "mapLayers": layer_visibility,
-                "extent": extent,
-                "center": center,
-                "zoom": zoom,
-                "viewpoint": viewpoint,
-                "showLegend": show_legend,
-            },
-            "config": {"size": display},
-        }
-
-        # Create resource node
-        self.properties["resources"][resource_node] = {
-            "type": "webmap",
-            "data": {
-                "extent": extent,
-                "center": center,
-                "zoom": zoom,
-                "viewpoint": viewpoint,
-                "mapLayers": layer_visibility,
-                "itemId": item.id,
-                "itemType": "Web Map",
-                "type": "default",
-                "showLegend": show_legend,
-            },
-        }
-
-        # Add to story children, position counts
-        self._add_child(node_id=node_id, position=position)
-
-    # ----------------------------------------------------------------------
-    def _add_video(
-        self, item, caption, alt_text, display, ext_type, position=None,
-    ):
-        """
-        Adds a video to the storymap
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        title               Required string. The title of the section.
-        ---------------     --------------------------------------------------------------------
-        url                 Required string. The web address of the webpage
-        ---------------     --------------------------------------------------------------------
-        caption             Optional string. The caption of the section.
-        ---------------     --------------------------------------------------------------------
-        alt_text            Optional string. Specifies an alternate text for an image.
-        ---------------     --------------------------------------------------------------------
-        display             Optional string. The image display properties.
-        ---------------     --------------------------------------------------------------------
-        ext_type            The image extention type
-        ---------------     --------------------------------------------------------------------
-        position            Optional int. Will position the element in the story list.
-        ===============     ====================================================================
-
-
-        :return: Boolean
-
-        """
-        # Create ids
-        node_id = "n-" + uuid.uuid4().hex[0:6]
-        resource_node = "r-" + uuid.uuid4().hex[0:6]
-        resource_id = str(int(time.time())) + ".mp4"
-
-        # Add resource
-        self._add_resource(item, resource_id)
-
-        # Create video nodes
-        self.properties["nodes"][node_id] = {
-            "type": "video",
-            "data": {"video": resource_node, "caption": caption, "alt": alt_text},
-            "config": {"size": display,},
-        }
-
-        # Create resource node
-        self.properties["resources"][resource_node] = {
-            "type": "video",
-            "data": {"resourceId": resource_id, "provider": "item-resource",},
-        }
-
-        # Add to story children, position counts
-        self._add_child(node_id=node_id, position=position)
-
-    # ----------------------------------------------------------------------
-    def _add_image(
-        self, item, caption, alt_text, display, ext_type, position,
-    ):
-        """
-        Adds an image to the storymap
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        title               Required string. The title of the section.
-        ---------------     --------------------------------------------------------------------
-        url                 Required string. The web address of the webpage
-        ---------------     --------------------------------------------------------------------
-        caption             Optional string. The caption of the section.
-        ---------------     --------------------------------------------------------------------
-        alt_text            Optional string. Specifies an alternate text for an image.
-        ---------------     --------------------------------------------------------------------
-        display             Optional string. The image display properties.
-        ---------------     --------------------------------------------------------------------
-        ext_type            The image extention type
-        ---------------     --------------------------------------------------------------------
-        position            Optional int. Will position the element in the story list.
-        ===============     ====================================================================
-
-
-        :return: Boolean
-
+        ..note:
+            The nodes are not in the order they appear in the story. 
+            To see all ordered nodes use: ```node_order``` property.
         """
 
-        # Create ids
-        node_id = "n-" + uuid.uuid4().hex[0:6]
-        resource_node = "r-" + uuid.uuid4().hex[0:6]
-
-        ext_type = ext_type.split("/")
-        resource_id = str(int(time.time())) + "." + ext_type[1]
-
-        # Add resource
-        self._add_resource(item, resource_id)
-
-        # Create image nodes
-        self.properties["nodes"][node_id] = {
-            "type": "image",
-            "data": {"image": resource_node, "caption": caption, "alt": alt_text},
-            "config": {"size": display,},
-        }
-
-        im = Image.open(item)
-        w, h = im.size
-        # Create resource node
-        self.properties["resources"][resource_node] = {
-            "type": "image",
-            "data": {
-                "resourceId": resource_id,
-                "provider": "item-resource",
-                "height": h,
-                "width": w,
-            },
-        }
-
-        # Add to story children, position counts
-        self._add_child(node_id=node_id, position=position)
-
-    # ----------------------------------------------------------------------
-    def _add_audio(
-        self, item, caption, alt_text, display, ext_type, position,
-    ):
-        """
-        Adds an audio to the storymap
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        title               Required string. The title of the section.
-        ---------------     --------------------------------------------------------------------
-        url                 Required string. The web address of the webpage
-        ---------------     --------------------------------------------------------------------
-        caption             Optional string. The caption of the section.
-        ---------------     --------------------------------------------------------------------
-        alt_text            Optional string. Specifies an alternate text for an image.
-        ---------------     --------------------------------------------------------------------
-        display             Optional string. The image display properties.
-        ---------------     --------------------------------------------------------------------
-        ext_type            The image extention type
-        ---------------     --------------------------------------------------------------------
-        position            Optional int. Will position the element in the story list.
-        ===============     ====================================================================
-
-
-        :return: Boolean
-
-        """
-        # Create ids
-        node_id = "n-" + uuid.uuid4().hex[0:6]
-        resource_node = "r-" + uuid.uuid4().hex[0:6]
-
-        ext_type = ext_type.split("/")
-        resource_id = str(int(time.time())) + "." + ext_type[1]
-
-        # Add resource
-        self._add_resource(item, resource_id)
-
-        # Create image nodes
-        self.properties["nodes"][node_id] = {
-            "type": "audio",
-            "data": {"video": resource_node, "caption": caption, "alt": alt_text},
-            "config": {"size": display,},
-        }
-
-        # Create resource node
-        self.properties["resources"][resource_node] = {
-            "type": "audio",
-            "data": {"resourceId": resource_id, "provider": "item-resource",},
-        }
-
-        # Add to story children, position counts
-        self._add_child(node_id=node_id, position=position)
-
-    # ----------------------------------------------------------------------
-    def _add_webpage(
-        self, item, caption, alt_text, position=None,
-    ):
-        """
-        Adds a webpage to the storymap
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        item                Required string. The web address of the webpage
-        ---------------     --------------------------------------------------------------------
-        caption             Optional string. The caption of the section.
-        ---------------     --------------------------------------------------------------------
-        alt_text            Optional string. Specifies an alternate text for an image.
-        ---------------     --------------------------------------------------------------------
-        position            Optional int. Will position the element in the story list.
-        ===============     ====================================================================
-
-
-        :return: Boolean
-
-        """
-        # Create ids
-        node_id = "n-" + uuid.uuid4().hex[0:6]
-
-        sections = urlparse(item)
-
-        # Create embed nodes
-        self.properties["nodes"][node_id] = {
-            "type": "embed",
-            "data": {
-                "url": item,
-                "embedType": "link",
-                "title": sections.netloc,
-                "description": caption,
-                "providerUrl": item,
-                "alt": alt_text,
-                "display": "card",
-            },
-        }
-
-        # Add to story children, position counts
-        self._add_child(node_id=node_id, position=position)
-
-    # ----------------------------------------------------------------------
-    def _add_resource(
-        self, file=None, resource_id=None,
-    ):
-        """
-        The add resources operation (POST only) allows to add new file resources 
-        to an existing item, for example, an image that is used as custom logo 
-        for Report Template. All the files are added to resources folder of the item. 
-        File resources use storage space from your quota and are scanned for viruses. 
-        The item size is updated to include the size of added resource files. 
-        There is a limit of 1000 files per item (except Style items). A maximum 
-        of 50 files can be added each request. Each file should be no more than 50 Mb. 
-        The maximum size of all of the file resources for an item is 10 GB.
-        """
-        url = (
-            "content/users/"
-            + self._gis._username
-            + "/items/"
-            + self._item.itemid
-            + "/addResources"
-        )
-        files = []
-        if file and os.path.isfile(os.path.abspath(file)):
-            files.append(("file", file, os.path.basename(file)))
-        elif file and os.path.isfile(os.path.abspath(file)) == False:
-            raise RuntimeError("File(" + file + ") not found.")
-
-        params = {}
-        params["f"] = "json"
-        params["fileName"] = resource_id
-        params["access"] = self._item.access
-        resp = self._gis._portal.con.post(url, params, files=files, compress=False)
-        return resp
-
-    # ----------------------------------------------------------------------
-    def _add_child(self, node_id, position=None):
-        # Add to story children, position counts
-        # Last node is always credits and first node is always story cover
-        root_id = self.properties["root"]
-        last = len(self.properties["nodes"][root_id]["children"]) - 1
-
-        if position and position < last and position != 0:
-            self.properties["nodes"][root_id]["children"].insert(position, node_id)
-        elif position and position == 0:
-            self.properties["nodes"][root_id]["children"].insert(1, node_id)
+        if type is None:
+            return self._properties["nodes"].keys()
         else:
-            # last node is always credits
-            self.properties["nodes"][root_id]["children"].insert(last, node_id)
+            type = type.lower().strip()
+            if type == "webpage":
+                type = "embed"
+            nodes = []
+            for node, node_info in self.properties.items():
+                for key, val in node_info.items():
+                    if key == "type" and val == type:
+                        nodes.append(node)
+            return tuple(nodes)
 
     # ----------------------------------------------------------------------
     def story_cover(self, title=None, type="full", summary=None, by_line=None):
@@ -801,18 +240,6 @@ class StoryMap(object):
         self._add_child(node_id=node_id, position=position)
 
     # ----------------------------------------------------------------------
-    @property
-    def navigation_list(self):
-        for node, node_info in self.properties.items():
-            for key, val in node_info.items():
-                if key == "type" and val == "navigation":
-                    node_id = node
-        try:
-            return self.properties["nodes"][node_id]["links"]
-        except:
-            return None
-
-    # ----------------------------------------------------------------------
     def end_credits(self, content=None, attribution=None, hidden=False):
         """
         Credits node is the last node in a story map.
@@ -832,7 +259,11 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     def save(
-        self, title: Optional[str] = None, tags: Optional[list] = None,
+        self,
+        title: Optional[str] = None,
+        tags: Optional[list] = None,
+        access: str = "private",
+        publish: bool = False,
     ):
         """
         Saves an Journal StoryMap to the GIS
@@ -844,13 +275,38 @@ class StoryMap(object):
         title               Optional string. The title of the StoryMap.
         ---------------     --------------------------------------------------------------------
         tags                Optional string. The tags of the StoryMap.
+        ---------------     --------------------------------------------------------------------
+        access              Optional string. The access of the StoryMap such as 'private' or 'public'
+        ---------------     --------------------------------------------------------------------
+        publish             Optional boolean. If True, the story is saved and also published.
+                            Default is false so story is saved with unpublished changes.
         ===============     ====================================================================
 
 
-        :return: Url of the saved item
+        :return: Boolean indicating success or failure.
 
         """
-        if self._item:
+        # Update Item Resources
+        draft = "draft_" + str(int(time.time())) + ".json"
+        self._add_resource(
+            resource_name=draft, text=json.dumps(self._properties),
+        )
+
+        # Find type keywords to use
+        if publish is True:
+            typeKeywords = ",".join(
+                [
+                    "arcgis-storymaps",
+                    "Story Map",
+                    "Web Application",
+                    "smstatuspublished",
+                    "smversionpublished:20.35.0",
+                    "smpublisheddate:" + str(int(time.time())),
+                    "smversiondraft:20.35.0",
+                    "smdraftresourceid:" + draft,
+                ]
+            )
+        else:
             typeKeywords = ",".join(
                 [
                     "arcgis-storymaps",
@@ -858,49 +314,648 @@ class StoryMap(object):
                     "Web Application",
                     "smstatusunpublishedchanges",
                     "smversiondraft:20.35.0",
-                    "smdraftresourceid:draft_" + str(int(time.time())) + ".json",
+                    "smdraftresourceid:" + draft,
                     "smversionpublished:20.35.0",
                     "smpublisheddate:" + str(int(time.time())),
                 ]
             )
-            p = {"typeKeywords": typeKeywords, "text": json.dumps(self._properties)}
-            if title:
-                p["title"] = title
-            if tags:
-                p["tags"] = tags
-            self._item.update(item_properties=p)
-            self._item = self._gis.content.get(self._itemid)
-            return self._item.url
-        return False
+
+        p = {"typeKeywords": typeKeywords, "text": json.dumps(self._properties)}
+        if title:
+            p["title"] = title
+        if tags:
+            p["tags"] = tags
+        p["access"] = access
+
+        res = self._item.update(item_properties=p)
+        self._item = self._gis.content.get(self._itemid)
+
+        if publish is True:
+            return self._item.publish(publish_parameters=p)
+        else:
+            return res
 
     # ----------------------------------------------------------------------
-    def publish(self, access="private"):
+    def duplicate(self, title: Optional[str] = None):
         """
-        Publish the story map
+        Duplicate the story.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        title               Optional string. The title of the duplicated story. 
+        ===============     ====================================================================
         """
-        item = self._item
-        if item is None:
-            raise Exception("Story Map must be saved before publishing")
-        typeKeywords = ",".join(
-            [
-                "arcgis-storymaps",
-                "Story Map",
-                "Web Application",
-                "smstatuspublished",
-                "smversionpublished:20.35.0",
-                "smpublisheddate:" + str(int(time.time())),
-                "smversiondraft:20.35.0",
-                "smdraftresourceid:draft_" + str(int(time.time())) + ".json",
-            ]
+        item = self._gis.content.get(self._itemid)
+
+        if item._portal.is_arcgisonline is False:
+            # TODO: TEST THIS
+            return self._gis.content.clone_items(items=[item])
+        else:
+            return item.copy_item(
+                title="(Copy) " + self._item.title if title is None else title,
+                include_resources=True,
+                include_private=True,
+            )
+
+    # ----------------------------------------------------------------------
+    def add(self, item, position: Optional[int] = None):
+        """
+        Add and item to the story map
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item                Optional item of type: Image, Video, Audio, WebPage, WebMap, Button,
+                            or Text. If none is provided, a separator is added.
+        ---------------     --------------------------------------------------------------------
+        position            Optional Integer. Indicates the position in which the item will be
+                            added. To see all node positions use the ```children``` property.
+        ===============     ====================================================================
+        """
+
+        if isinstance(item, Image):
+            node, resource = item._add_image()
+        elif isinstance(item, Video):
+            node, resource = item._add_video()
+        elif isinstance(item, Audio):
+            node, resource = item._add_audio()
+        elif isinstance(item, WebPage):
+            node, resource = item._add_webpage()
+        elif isinstance(item, WebMap):
+            node, resource = item._add_webmap()
+        elif isinstance(item, Button):
+            node, resource = item._add_button()
+        elif isinstance(item, Text):
+            node, resource = item._add_text()
+        else:
+            item._node = uuid.uuid4().hex[0:6]
+            node = {"type": "separator"}
+
+        # Add to the nodes
+        self.properties["nodes"][item._node] = node
+
+        # If resource was returned, add to resource nodes dictionary and story item
+        if resource is not None:
+            self.properties["resources"][item._resource_node] = resource
+            self._add_resource(item._path, item._resource_id)
+
+        # Add to story children
+        self._add_child(node_id=item._node, position=position)
+
+    # ----------------------------------------------------------------------
+    def move_node(self, node_id, position=None, delete_current=False):
+        """
+        Move a node to another position. The node currently at that position will
+        be moved down one space. The node at the current position can be deleted
+        instead of moved if delete_current is set to True. 
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        node_id             Required String. The node id for the item that will be moved. Find a 
+                            list of node order by using the ```node_order``` property.
+        ---------------     --------------------------------------------------------------------
+        position            Optional Integer. Indicates the position in which the item will be
+                            added. If no position is provided, the node will be placed at the end.
+        ---------------     --------------------------------------------------------------------
+        delete_current      Optional Boolean. If set to True, the node at the current position will
+                            be deleted instead of moved down one space. Default is False.
+        ===============     ====================================================================
+        """
+        root_id = self.properties["root"]
+        children = self.properties["nodes"][root_id]["children"]
+
+        # Remove node id from list since it will be added again at another position
+        children.remove(node_id)
+
+        if delete_current:
+            if position == 0 or position == len(children):
+                raise Exception(
+                    "First and last nodes are reserved for Story Cover and Credits"
+                )
+            children.pop(position)
+
+        self._add_child(node_id, position)
+
+    # ----------------------------------------------------------------------
+    def delete_node(self, node_id):
+        """
+        Delete a node from the story.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        node_id             Required String. The node id for the item that will be deleted.
+                            To see the node ids for different types of items use ```list_nodes```
+                            method.
+        ===============     ====================================================================
+        """
+        root_id = self.properties["root"]
+        children = self.properties["nodes"][root_id]["children"]
+
+        # Remove from children of story
+        children.remove(node_id)
+        # Remove from nodes dictionary
+        del self.properties["nodes"][node_id]
+        # Remove from resources dictionary
+        # Note: not all keys are in resources
+        self.properties["nodes"].pop(node_id, None)
+
+        return self.node_order
+
+    # ----------------------------------------------------------------------
+    def delete_story(self):
+        """
+        Deletes the story item.
+        """
+        item = self._gis.content.get(self._itemid)
+        item.delete()
+
+    # ----------------------------------------------------------------------
+    def _add_child(self, node_id, position=None):
+        """
+        A story node has children. Children is a list of item nodes that are in
+        the story. The order of the list determines the order that the nodes
+        appear in the story.
+
+        A user can change the position of the items however the first and last
+        nodes are reserved for story_cover and credits, respectively. 
+        """
+        # Add to story children, position counts
+        # Last node is always credits and first node is always story cover
+        root_id = self.properties["root"]
+        last = len(self.properties["nodes"][root_id]["children"]) - 1
+
+        if position and position < last and position != 0:
+            self.properties["nodes"][root_id]["children"].insert(position, node_id)
+        elif position and position == 0:
+            self.properties["nodes"][root_id]["children"].insert(1, node_id)
+        else:
+            # last node is always credits
+            self.properties["nodes"][root_id]["children"].insert(last, node_id)
+
+    # ----------------------------------------------------------------------
+    def _add_resource(self, file=None, resource_name=None, text=None):
+        """
+        The add resources operation (POST only) allows to add new file resources 
+        to an existing item, for example, an image that is used as custom logo 
+        for Report Template. All the files are added to resources folder of the item. 
+        File resources use storage space from your quota and are scanned for viruses. 
+        The item size is updated to include the size of added resource files. 
+        There is a limit of 1000 files per item (except Style items). A maximum 
+        of 50 files can be added each request. Each file should be no more than 50 Mb. 
+        The maximum size of all of the file resources for an item is 10 GB.
+        """
+        # first need to do an addResources call for the draft
+        url = (
+            "content/users/"
+            + self._gis._username
+            + "/items/"
+            + self._item.itemid
+            + "/addResources"
         )
-        item_properties = {
-            "title": item.title,
-            "tags": item.tags,
-            "text": json.dumps(self._properties),
-            "typeKeywords": typeKeywords,
-            "type": "StoryMap",
-            "access": access,
+        files = []
+        if file and os.path.isfile(os.path.abspath(file)):
+            files.append(("file", file, os.path.basename(file)))
+        elif file and os.path.isfile(os.path.abspath(file)) == False:
+            raise RuntimeError("File(" + file + ") not found.")
+
+        params = {"f": "json", "fileName": resource_name, "access": self._item.access}
+
+        if text is not None:
+            params["text"] = text
+
+        resp = self._gis._portal.con.post(url, params, files=files, compress=False)
+        self._item = self._gis.content.get(self._itemid)
+        return resp
+
+
+###############################################################################################################
+class Image(object):
+    """
+    Class representing an image from a url or file
+    """
+
+    def __init__(self, path=None, caption=None, alt_text=None, display="float"):
+        self._path = path
+        self._caption = caption
+        self._alt_text = alt_text
+        self._display = display
+        self._node = "n-" + uuid.uuid4().hex[0:6]
+        self._resource_node = "r-" + uuid.uuid4().hex[0:6]
+
+        mt = mimetypes.guess_type(path)[0].lower()
+        self._ext_type = mt.split("/")[1]
+        self._resource_id = str(int(time.time())) + "." + self._ext_type
+
+    # ----------------------------------------------------------------------
+    def _add_image(self):
+
+        # Create image nodes
+        node = {
+            "type": "image",
+            "data": {
+                "image": self._resource_node,
+                "caption": self._caption,
+                "alt": self._alt_text,
+            },
+            "config": {"size": self._display},
         }
-        updated = item.update(item_properties=item_properties)
-        published = item.publish(publish_parameters=item_properties)
-        return published
+
+        im = Image.open(self._path)
+        w, h = im.size
+        # Create resource node
+        resource = {
+            "type": "image",
+            "data": {
+                "resourceId": self._resource_id,
+                "provider": "item-resource",
+                "height": h,
+                "width": w,
+            },
+        }
+
+        return node, resource
+
+
+###############################################################################################################
+class Video(object):
+    """
+    Class representing a video from a url or file
+    """
+
+    def __init__(self, path=None, caption=None, alt_text=None, display="float"):
+        self._path = path
+        self._caption = caption
+        self._alt_text = alt_text
+        self._display = display
+        self._node = "n-" + uuid.uuid4().hex[0:6]
+        self._resource_node = "r-" + uuid.uuid4().hex[0:6]
+
+        mt = mimetypes.guess_type(path)[0].lower()
+        self._ext_type = mt.split("/")[1]
+        self._resource_id = str(int(time.time())) + "." + self._ext_type
+
+    # ----------------------------------------------------------------------
+    def _add_video(self):
+
+        # Add resource
+        self._add_resource(self._path, self._resource_id)
+
+        # Create image nodes
+        node = {
+            "type": "video",
+            "data": {
+                "video": self._resource_node,
+                "caption": self._caption,
+                "alt": self._alt_text,
+            },
+            "config": {"size": self._display,},
+        }
+
+        # Create resource node
+        resource = {
+            "type": "video",
+            "data": {"resourceId": self._resource_id, "provider": "item-resource",},
+        }
+
+        return node, resource
+
+
+###############################################################################################################
+class Audio(object):
+    """
+    Class representing an audio from a url or file
+    """
+
+    def __init__(self, path=None, caption=None, alt_text=None, display="float"):
+        self._path = path
+        self._caption = caption
+        self._alt_text = alt_text
+        self._display = display
+        self._node = "n-" + uuid.uuid4().hex[0:6]
+        self._resource_node = "r-" + uuid.uuid4().hex[0:6]
+
+        mt = mimetypes.guess_type(path)[0].lower()
+        self._ext_type = mt.split("/")[1]
+        self._resource_id = str(int(time.time())) + "." + self._ext_type
+
+    # ----------------------------------------------------------------------
+    def _add_audio(self):
+
+        # Add resource
+        self._add_resource(self._path, self._resource_id)
+
+        # Create image nodes
+        node = {
+            "type": "audio",
+            "data": {
+                "video": self._resource_node,
+                "caption": self._caption,
+                "alt": self._alt_text,
+            },
+            "config": {"size": self._display,},
+        }
+
+        # Create resource node
+        resource = {
+            "type": "audio",
+            "data": {"resourceId": self._resource_id, "provider": "item-resource"},
+        }
+
+        return node, resource
+
+
+###############################################################################################################
+
+
+class WebPage(object):
+    """
+    Class representing a hyperlink from a url
+    """
+
+    def __init__(self, path=None, caption=None, alt_text=None, display=None):
+        self._path = path
+        self._caption = caption
+        self._alt_text = alt_text
+        self._node = "n-" + uuid.uuid4().hex[0:6]
+
+    # ----------------------------------------------------------------------
+    def _add_webpage(self):
+
+        sections = urlparse(self._path)
+
+        # Create embed nodes
+        node = {
+            "type": "embed",
+            "data": {
+                "url": self._path,
+                "embedType": "link",
+                "title": sections.netloc,
+                "description": self._caption,
+                "providerUrl": self._path,
+                "alt": self._alt_text,
+                "display": "card",
+            },
+        }
+
+        resource = None
+        return node, resource
+
+
+###############################################################################################################
+class Text(object):
+    """
+    Class representing a text
+
+    ==================      ====================================================================
+    **Argument**            **Description**
+    ------------------      --------------------------------------------------------------------
+    text                    Required String. The text that will be shown in the story.
+
+                            String can contain the following tags for text formatting:
+                            <strong>,<em>,<a href="{link}" rel="noopener noreferer” target=”_blank”
+                            
+                            Example:
+                                "Paragraph with <strong>bold</strong>, 
+                                <em>italic</em> and 
+                                <a href=\"https://www.google.com\" rel=\"noopener noreferrer\" 
+                                target=\"_blank\">hyperlink</a> and a 
+                                <span class=\"sm-text-color-080\">custom color</span>"
+    ------------------      --------------------------------------------------------------------
+    type                    Optional String. There are 6 different types of text that can be
+                            added to a story.
+
+                            Values: 'paragraph' | 'heading' | 'subheading' | 'numbered-list' |
+                                    'bullet-list' | 'quote'
+
+                            ..note:
+                                To make text withing these types bold, italic, or hyperlink the 
+                                text parameter must include these.
+        
+    ------------------      --------------------------------------------------------------------
+    custom_color            Optional String. The hex color value without the #. 
+                            Only available when type is either 'paragraph', 'bullet-list', or
+                            'numbered-list'.
+
+                            Ex: custom_color = "080" 
+    ------------------      --------------------------------------------------------------------
+    position                Optional int. Determines where the text will be placed in the story.
+                            Default is at the end.
+    ==================      ====================================================================  
+    """
+
+    def __init__(self, text=None, style="paragraph", color="000"):
+        self._node = uuid.uuid4().hex[0:6]
+        self._text = text
+        self._style = style
+        self._color = color
+
+    def _add_text(self):
+        node = {
+            "type": "text",
+            "data": {
+                "type": self._style,
+                "text": self._text,
+                "customTextColors": self._color,
+            },
+        }
+
+        resource = None
+        return node, resource
+
+
+###############################################################################################################
+class Button(object):
+    """
+    Class representing a button
+
+    ==================      ====================================================================
+    **Argument**            **Description**
+    ------------------      --------------------------------------------------------------------
+    link                    Required String. When user clicks on button, they will be brought to
+                            the link.
+    ------------------      --------------------------------------------------------------------
+    text                    Required String. The text that shows on the button.
+    ==================      ====================================================================
+    """
+
+    def __init__(self, link=None, text=None):
+        self._node = uuid.uuid4().hex[0:6]
+        self._link = link
+        self._text = text
+
+    def _add_button(self):
+        node = {
+            "type": "button",
+            "data": {"text": self._text, "link": self._link},
+        }
+
+        resource = None
+
+        return node, resource
+
+
+###############################################################################################################
+class WebMap(object):
+    """
+    Class representing a webmap for the story
+
+    =================       ====================================================================
+    **Argument**            **Description**
+    -----------------       --------------------------------------------------------------------
+    item                    An Item of type Web Map to add to the story map.
+    -----------------       --------------------------------------------------------------------
+    caption                 Optional string. The caption of the section.
+    -----------------       --------------------------------------------------------------------
+    alt_text                Optional string. Specifies an alternate text for an image.
+    -----------------       --------------------------------------------------------------------
+    display                 Optional string. The image display properties.
+    -----------------       --------------------------------------------------------------------
+    position                Optional int. Will position the element in the story list.
+    -----------------       --------------------------------------------------------------------
+    show_legend             Optional Boolean. If True, map legend is shown. The default is False.
+    -----------------       --------------------------------------------------------------------
+    extent                  Optional Dictionary. 
+                            
+                            Example: 
+                            extent = {
+                                "xmin": -9177882,
+                                "ymin": 4246761,
+                                "xmax": -9176720,
+                                "ymax": 4247967,
+                                "spatialReference": { "wkid": 102100 }
+                                }
+    -----------------       --------------------------------------------------------------------
+    center                  Optional List of two integers. 
+
+                            Example:
+                            center = [-112, 38]
+    -----------------       --------------------------------------------------------------------
+    zoom                    Optional Integer. The zoom level of the map.
+    -----------------       --------------------------------------------------------------------
+    viewpoint               Optional Dictionary. Represents the current view as a Viewpoint or point 
+                            of observation on the view.
+
+                            Example:
+                            viewpoint = {
+                                "rotation": 0,
+                                "scale": 369785.47,
+                                "targetGeometry": {
+                                    "spatialReference": {"latestWkid": 3857, "wkid": 102100},
+                                    "x": 279.71,
+                                    "y": -998.98
+                                },
+                            }
+    -----------------       --------------------------------------------------------------------
+    layer_visibility        Optional List of Dictionaries. The visibility of the layers in a webmap.  
+                            
+                            Syntax:
+
+                                [
+                                {
+                                    "id" : "<layer_id>",
+                                    "visibility" : "<true/false>"
+                                }
+                                ]
+    =================       ====================================================================
+    """
+
+    def __init__(
+        self,
+        item,
+        caption=None,
+        alt_text=None,
+        display="float",
+        show_legend=False,
+        extent=None,
+        center=None,
+        zoom=None,
+        viewpoint=None,
+        layer_visibility=None,
+    ):
+        self._node = "n-" + uuid.uuid4().hex[0:6]
+        self._resource_node = "r-" + item.id
+        self._item = item
+        self._caption = caption
+        self._alt_text = alt_text
+        self._display = display
+        self._show_legend = show_legend
+        self._center = center
+        self._zoom = zoom
+        if extent is None and "extent" in item:
+            self._extent = {
+                "xmin": item.extent[0][0],
+                "xmax": item.extent[1][0],
+                "ymin": item.extent[0][1],
+                "ymax": item.extent[1][1],
+            }
+        else:
+            self._extent = extent
+
+        if viewpoint is not None:
+            self._viewpoint = json.dumps(viewpoint)
+        else:
+            self._viewpoint = None
+        if layer_visibility is not None:
+            self._layer_visibility = json.dumps(layer_visibility)
+        elif self._layer_visibility is None and "layers" in item:
+            layer_visibility = []
+            for layer in item.layers:
+                layer_item = {
+                    "id": layer.properties.id,
+                    "title": layer.properties.name,
+                    "visibility": True,
+                }
+                layer_visibility.append(layer_item)
+            self._layer_visibility = layer_visibility
+        else:
+            self._layer_visibility = None
+
+    def _add_webmap(self):
+        # Add resource
+        self._add_resource(self._item, self._resource_node)
+
+        # Create webmap nodes
+        node = {
+            "type": "webmap",
+            "data": {
+                "map": self._resource_node,
+                "caption": self._caption,
+                "alt": self._alt_text,
+                "mapLayers": self._layer_visibility,
+                "extent": self._extent,
+                "center": self._center,
+                "zoom": self._zoom,
+                "viewpoint": self._viewpoint,
+                "showLegend": self._show_legend,
+            },
+            "config": {"size": self._display},
+        }
+
+        # Create resource node
+        resource = {
+            "type": "webmap",
+            "data": {
+                "extent": self._extent,
+                "center": self._center,
+                "zoom": self._zoom,
+                "viewpoint": self._viewpoint,
+                "mapLayers": self._layer_visibility,
+                "itemId": self._item.id,
+                "itemType": "Web Map",
+                "type": "default",
+                "showLegend": self._show_legend,
+            },
+        }
+
+        return node, resource
+
+
+###############################################################################################################
+class Theme(Enum):
+    """
+    Story Map has various themes that can be used
+    """
+
