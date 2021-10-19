@@ -21,9 +21,7 @@ from urllib.parse import urlparse
 
 
 class StoryMap(object):
-    """
-
-    """
+    """ """
 
     _properties = None
     _gis = None
@@ -33,14 +31,14 @@ class StoryMap(object):
     def __init__(self, item: Optional[Item] = None, gis: Optional[GIS] = None):
         """
         Initializer for the Story Map Class.
-        
+
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         item                    Optional :class:`~arcgis.gis.Item` object whose type is ``StoryMap``.
 
                                 .. note::
-                                    If not specified, an empty ``StoryMap`` object is created with some 
+                                    If not specified, an empty ``StoryMap`` object is created with some
                                     useful defaults.
 
         ==================     ====================================================================
@@ -86,7 +84,8 @@ class StoryMap(object):
             self._item = item
             self._itemid = item.itemid
             self._add_resource(
-                file=template, resource_name="draft.json",
+                file=template,
+                resource_name="draft.json",
             )
             f.close()
 
@@ -123,7 +122,7 @@ class StoryMap(object):
         """
         This property returns a list of the nodes that are linked in the navigation node.
         """
-        for node, node_info in self.properties.items():
+        for node, node_info in self.properties["nodes"].items():
             for key, val in node_info.items():
                 if key == "type" and val == "navigation":
                     node_id = node
@@ -144,13 +143,13 @@ class StoryMap(object):
                             If none specified, list of all nodes returned.
 
                             Values: "image" | "video" | "audio" | "webpage" | "webmap" | "text" |
-                                    "button" | "separator"       
+                                    "button" | "separator"
         ===============     ====================================================================
 
-        :return: A tuple of nodes for each type. 
+        :return: A tuple of nodes for each type.
 
         ..note:
-            The nodes are not in the order they appear in the story. 
+            The nodes are not in the order they appear in the story.
             To see all ordered nodes use: ```node_order``` property.
         """
 
@@ -161,7 +160,7 @@ class StoryMap(object):
             if type == "webpage":
                 type = "embed"
             nodes = []
-            for node, node_info in self.properties.items():
+            for node, node_info in self.properties["nodes"].items():
                 for key, val in node_info.items():
                     if key == "type" and val == type:
                         nodes.append(node)
@@ -183,7 +182,7 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         title               Optional string. The title of the StoryMap cover.
         ---------------     --------------------------------------------------------------------
-        type                Optional string. The type of story cover to be used in the story. 
+        type                Optional string. The type of story cover to be used in the story.
                             By default, it is “full”
 
                             Values: “full” | “sidebyside“ | “minimal"
@@ -216,10 +215,10 @@ class StoryMap(object):
         self, nodes: Optional[list] = [{}], position: int = 1, hidden: bool = False
     ):
         """
-        Story navigation is a way for authors to add headings as 
-        links to allow readers to navigate between different sections 
-        of a story. The story navigation node takes h2 blocks as its only allowed children. 
-        You can only have 10 h2 child nodes as visible and act as links within a story. 
+        Story navigation is a way for authors to add headings as
+        links to allow readers to navigate between different sections
+        of a story. The story navigation node takes h2 blocks as its only allowed children.
+        You can only have 10 h2 child nodes as visible and act as links within a story.
         The h2 node’s text can only allow up to 30 characters.
 
         ===============     ====================================================================
@@ -243,7 +242,7 @@ class StoryMap(object):
                             To have navigation be under story cover, default is set to 1.
         ---------------     --------------------------------------------------------------------
         hidden              Optional boolean. If True, the navigation is hidden. Default is False
-        ===============     ====================================================================        
+        ===============     ====================================================================
         """
 
         # Create ids
@@ -270,11 +269,11 @@ class StoryMap(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        content             Optional list of Strings. 
+        content             Optional list of Strings.
                             See ```add_text``` parameter text to understand format.
         ---------------     --------------------------------------------------------------------
         hidden              Optional boolean. If True, the navigation is hidden. Default is False
-        ===============     ==================================================================== 
+        ===============     ====================================================================
         """
 
         # Must take each string in content and create a new text node that is paragraph or h4
@@ -312,7 +311,8 @@ class StoryMap(object):
         # Update Item Resources
         draft = "draft_" + str(int(time.time())) + ".json"
         self._add_resource(
-            resource_name=draft, text=json.dumps(self._properties),
+            resource_name=draft,
+            text=json.dumps(self._properties),
         )
 
         # Find type keywords to use
@@ -366,7 +366,7 @@ class StoryMap(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        title               Optional string. The title of the duplicated story. 
+        title               Optional string. The title of the duplicated story.
         ===============     ====================================================================
         """
         item = self._gis.content.get(self._itemid)
@@ -395,6 +395,8 @@ class StoryMap(object):
         position            Optional Integer. Indicates the position in which the item will be
                             added. To see all node positions use the ```children``` property.
         ===============     ====================================================================
+
+        :return: The node-id for the added item as a String.
         """
 
         if isinstance(item, Image):
@@ -429,6 +431,7 @@ class StoryMap(object):
 
         # Add to story children
         self._add_child(node_id=node_id, position=position)
+        return node_id
 
     # ----------------------------------------------------------------------
     def move_node(
@@ -437,12 +440,12 @@ class StoryMap(object):
         """
         Move a node to another position. The node currently at that position will
         be moved down one space. The node at the current position can be deleted
-        instead of moved if delete_current is set to True. 
+        instead of moved if delete_current is set to True.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        node_id             Required String. The node id for the item that will be moved. Find a 
+        node_id             Required String. The node id for the item that will be moved. Find a
                             list of node order by using the ```node_order``` property.
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the item will be
@@ -509,7 +512,7 @@ class StoryMap(object):
         appear in the story.
 
         A user can change the position of the items however the first and last
-        nodes are reserved for story_cover and credits, respectively. 
+        nodes are reserved for story_cover and credits, respectively.
         """
         # Add to story children, position counts
         # Last node is always credits and first node is always story cover
@@ -527,13 +530,13 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def _add_resource(self, file=None, resource_name=None, text=None):
         """
-        The add resources operation (POST only) allows to add new file resources 
-        to an existing item, for example, an image that is used as custom logo 
-        for Report Template. All the files are added to resources folder of the item. 
-        File resources use storage space from your quota and are scanned for viruses. 
-        The item size is updated to include the size of added resource files. 
-        There is a limit of 1000 files per item (except Style items). A maximum 
-        of 50 files can be added each request. Each file should be no more than 50 Mb. 
+        The add resources operation (POST only) allows to add new file resources
+        to an existing item, for example, an image that is used as custom logo
+        for Report Template. All the files are added to resources folder of the item.
+        File resources use storage space from your quota and are scanned for viruses.
+        The item size is updated to include the size of added resource files.
+        There is a limit of 1000 files per item (except Style items). A maximum
+        of 50 files can be added each request. Each file should be no more than 50 Mb.
         The maximum size of all of the file resources for an item is 10 GB.
         """
         # first need to do an addResources call for the draft
@@ -649,13 +652,18 @@ class Video(object):
                 "caption": self._caption,
                 "alt": self._alt_text,
             },
-            "config": {"size": self._display,},
+            "config": {
+                "size": self._display,
+            },
         }
 
         # Create resource node
         resource = {
             "type": "video",
-            "data": {"resourceId": self._resource_id, "provider": "item-resource",},
+            "data": {
+                "resourceId": self._resource_id,
+                "provider": "item-resource",
+            },
         }
 
         return node, resource
@@ -696,7 +704,9 @@ class Audio(object):
                 "caption": self._caption,
                 "alt": self._alt_text,
             },
-            "config": {"size": self._display,},
+            "config": {
+                "size": self._display,
+            },
         }
 
         # Create resource node
@@ -765,12 +775,12 @@ class Text(object):
 
                                 String can contain the following tags for text formatting:
                                 <strong>,<em>,<a href="{link}" rel="noopener noreferer” target=”_blank”
-                                
+
                                 Example:
-                                    "Paragraph with <strong>bold</strong>, 
-                                    <em>italic</em> and 
-                                    <a href=\"https://www.google.com\" rel=\"noopener noreferrer\" 
-                                    target=\"_blank\">hyperlink</a> and a 
+                                    "Paragraph with <strong>bold</strong>,
+                                    <em>italic</em> and
+                                    <a href=\"https://www.google.com\" rel=\"noopener noreferrer\"
+                                    target=\"_blank\">hyperlink</a> and a
                                     <span class=\"sm-text-color-080\">custom color</span>"
         ------------------      --------------------------------------------------------------------
         type                    Optional String. There are 6 different types of text that can be
@@ -780,16 +790,16 @@ class Text(object):
                                         'bullet-list' | 'quote'
 
                                 ..note:
-                                    To make text withing these types bold, italic, or hyperlink the 
+                                    To make text withing these types bold, italic, or hyperlink the
                                     text parameter must include these.
-            
+
         ------------------      --------------------------------------------------------------------
-        custom_color            Optional String. The hex color value without the #. 
+        custom_color            Optional String. The hex color value without the #.
                                 Only available when type is either 'paragraph', 'bullet-list', or
                                 'numbered-list'.
 
-                                Ex: custom_color = "080" 
-        ==================      ====================================================================  
+                                Ex: custom_color = "080"
+        ==================      ====================================================================
 
         """
         self._node = uuid.uuid4().hex[0:6]
@@ -867,7 +877,7 @@ class WebMap(object):
         layer_visibility: Optional[list] = None,
     ):
         """
-        
+
         =================       ====================================================================
         **Argument**            **Description**
         -----------------       --------------------------------------------------------------------
@@ -883,9 +893,9 @@ class WebMap(object):
         -----------------       --------------------------------------------------------------------
         show_legend             Optional Boolean. If True, map legend is shown. The default is False.
         -----------------       --------------------------------------------------------------------
-        extent                  Optional Dictionary. 
-                                
-                                Example: 
+        extent                  Optional Dictionary.
+
+                                Example:
                                 extent = {
                                     "xmin": -9177882,
                                     "ymin": 4246761,
@@ -894,14 +904,14 @@ class WebMap(object):
                                     "spatialReference": { "wkid": 102100 }
                                     }
         -----------------       --------------------------------------------------------------------
-        center                  Optional List of two integers. 
+        center                  Optional List of two integers.
 
                                 Example:
                                 center = [-112, 38]
         -----------------       --------------------------------------------------------------------
         zoom                    Optional Integer. The zoom level of the map.
         -----------------       --------------------------------------------------------------------
-        viewpoint               Optional Dictionary. Represents the current view as a Viewpoint or point 
+        viewpoint               Optional Dictionary. Represents the current view as a Viewpoint or point
                                 of observation on the view.
 
                                 Example:
@@ -915,8 +925,8 @@ class WebMap(object):
                                     },
                                 }
         -----------------       --------------------------------------------------------------------
-        layer_visibility        Optional List of Dictionaries. The visibility of the layers in a webmap.  
-                                
+        layer_visibility        Optional List of Dictionaries. The visibility of the layers in a webmap.
+
                                 Syntax:
 
                                     [
@@ -926,7 +936,7 @@ class WebMap(object):
                                     }
                                     ]
         =================       ====================================================================
-    
+
         """
         self._node = "n-" + uuid.uuid4().hex[0:6]
         self._resource_node = "r-" + item.id
@@ -1011,4 +1021,3 @@ class Theme(Enum):
     """
     Story Map has various themes that can be used
     """
-
