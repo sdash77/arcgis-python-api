@@ -373,7 +373,7 @@ class FeatureClassifier(ArcGISModel):
             getattr(self._data, "_emd", {}).get("CropTileMode", "Fixed_Size") == "Fixed_Size"
         )
         _emd_template["BlackenAroundFeature"] = int(
-            getattr(self._data, "_emd", {})._emd.get("BlackenAroundFeature", False)
+            getattr(self._data, "_emd", {}).get("BlackenAroundFeature", False)
         )
         _emd_template["ImageSpaceUsed"] = "MAP_SPACE"
         _emd_template["Classes"] = []
