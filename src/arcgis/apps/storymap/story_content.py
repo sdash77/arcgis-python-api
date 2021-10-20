@@ -34,7 +34,9 @@ class Image(object):
         self._resource_id = str(int(time.time())) + "." + self._ext_type
 
     # ----------------------------------------------------------------------
-    def _add_image(self):
+    def _add_image(self, story):
+        # Make an add resource call
+        story._add_resource(self._path, self._resource_id)
 
         # Create image nodes
         node = {
@@ -100,7 +102,9 @@ class Video(object):
         self._resource_id = str(int(time.time())) + "." + self._ext_type
 
     # ----------------------------------------------------------------------
-    def _add_video(self):
+    def _add_video(self, story):
+        # Make an add resource call
+        story._add_resource(self._path, self._resource_id)
 
         # Create image nodes
         node = {
@@ -153,7 +157,9 @@ class Audio(object):
         self._resource_id = str(int(time.time())) + "." + self._ext_type
 
     # ----------------------------------------------------------------------
-    def _add_audio(self):
+    def _add_audio(self, story):
+        # Make an add resource call
+        story._add_resource(self._path, self._resource_id)
 
         # Create image nodes
         node = {
@@ -245,9 +251,6 @@ class Text(object):
         ------------------      --------------------------------------------------------------------
         text                    Required String. The text that will be shown in the story.
 
-                                String can contain the following tags for text formatting:
-                                <strong>,<em>,<a href="{link}" rel="noopener noreferer” target=”_blank”
-
                                 Example:
                                     "Paragraph with <strong>bold</strong>,
                                     <em>italic</em> and
@@ -255,7 +258,7 @@ class Text(object):
                                     target=\"_blank\">hyperlink</a> and a
                                     <span class=\"sm-text-color-080\">custom color</span>"
         ------------------      --------------------------------------------------------------------
-        type                    Optional String. There are 6 different types of text that can be
+        style                   Optional String. There are 6 different styles of text that can be
                                 added to a story.
 
                                 Values: 'paragraph' | 'heading' | 'subheading' | 'numbered-list' |
@@ -273,14 +276,63 @@ class Text(object):
                                 Ex: custom_color = "080"
         ==================      ====================================================================
 
+
+        Properties of the different text types:
+
+        ===================     ====================================================================
+        **Type**                **Text**
+        -------------------     --------------------------------------------------------------------
+        paragraph               String can contain the following tags for text formatting:
+                                <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
+                                and a class attribute to indicate color formatting:
+                                class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
+
+                                Values: themeColor1 | themeColor2 | themeColor3 | customTextColors                     
+        -------------------     --------------------------------------------------------------------            
+        heading                 String can only contain <em> tag
+        -------------------     --------------------------------------------------------------------            
+        subheading              String can only contain <em> tag
+        -------------------     --------------------------------------------------------------------            
+        bullet-list             String can contain the following tags for text formatting:
+                                <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
+                                and a class attribute to indicate color formatting:
+                                class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
+
+                                Values: themeColor1 | themeColor2 | themeColor3 | customTextColors 
+        -------------------     --------------------------------------------------------------------            
+        numbered-list           String can contain the following tags for text formatting:
+                                <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
+                                and a class attribute to indicate color formatting:
+                                class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
+
+                                Values: themeColor1 | themeColor2 | themeColor3 | customTextColors
+        -------------------     --------------------------------------------------------------------            
+        quote                   String can only contain <strong> and <em> tags
+        ===================     ====================================================================
+
         """
         self._node = uuid.uuid4().hex[0:6]
         self._text = text
+
+        # Handle style types
+        style = style.lower().strip(" ")
+        if style == "heading":
+            style = "h2"
+        if style == "subheading":
+            style = "h3"
+        if "bullet" in style:
+            style = "bullet-list"
+        if "number" in style:
+            style = "numbered-list"
         self._style = style
-        self._color = color
+
+        # Color only applies certain styles
+        if style in ["paragraph", "bullet-list", "numbered-list"]:
+            self._color = color
 
     # ----------------------------------------------------------------------
     def _add_text(self):
+
         node = {
             "type": "text",
             "data": {"type": self._style, "text": self._text,},
@@ -450,7 +502,10 @@ class Map(object):
         self._resource_id = str(int(time.time())) + "_" + item.type
 
     # ----------------------------------------------------------------------
-    def _add_webmap(self):
+    def _add_webmap(self, story):
+        # Make an add resource call (FIX)
+        # story._add_resource(resource_name= self._resource_id, text=json.dumps(self._path))
+
         # Create webmap nodes
         node = {
             "type": "webmap",
@@ -494,7 +549,97 @@ class Map(object):
 
 
 ###############################################################################################################
-class Theme(Enum):
-    """
-    Story Map has various themes that can be used
-    """
+class Immersive(object):
+    def __init__(self, node):
+        """
+        """
+        self._type = node["type"]
+        self._data = node["data"]
+        self._children = node["children"]
+
+    def _add_child(self, item, caption, alt_text, position, story):
+        # If item was a url or file path, create item and add to nodes.
+        # Important not to add to children of the story node itself, only immersive
+        mt = mimetypes.guess_type(item)[0].lower()
+        mt_type = mt.split("/")[0]
+
+        # Check the immersive type to see what children types can be added
+        # immersive-narrative-panel accepts all types
+        if self._type == "immersive-slide":
+            if (
+                mt_type not in ["image", "video", None]
+                or not isinstance(item, Map)
+                or not isinstance(item, Image)
+                or not isinstance(item, Video)
+                or not isinstance(item, WebPage)
+                or not isinstance(item, Text)
+            ):
+                raise Exception("Item type is not compatible with immersive type.")
+        elif self._type == "swipe":
+            if (
+                mt_type != "image"
+                or not isinstance(item, Image)
+                or not isinstance(item, Map)
+            ):
+                raise Exception("Item type is not compatible with immersive type.")
+
+        if isinstance(item, str):
+            if "image" == mt_type:
+                new_item = Image(item, caption, alt_text)
+                node, resource = new_item._add_image(story)
+                self.properties["nodes"][new_item._node] = node
+                self.properties["resources"][new_item._resource_node] = resource
+            elif "video" == mt_type:
+                new_item = Video(item, caption, alt_text)
+                node, resource = new_item._add_video(story)
+                self.properties["nodes"][new_item._node] = node
+                self.properties["resources"][new_item._resource_node] = resource
+            elif "audio" == mt_type:
+                new_item = Audio(item, caption, alt_text)
+                node, resource = new_item._add_audio(story)
+                self.properties["nodes"][new_item._node] = node
+                self.properties["resources"][new_item._resource_node] = resource
+            else:
+                new_item = WebPage(item, caption, alt_text)
+                node, resource = new_item._add_webpage()
+                self.properties["nodes"][new_item._node] = node
+
+            # Add to children in position wanted
+            if position is None:
+                self._children.insert(new_item._node)
+            else:
+                self._children.insert(position, new_item._node)
+        else:
+            # If user has created the item but not added to the story yet.
+            if item._node not in story.properties["nodes"]:
+                if isinstance(item, Image):
+                    node, resource = item._add_image(story)
+                    self.properties["nodes"][item._node] = node
+                    self.properties["resources"][item._resource_node] = resource
+                if isinstance(item, Video):
+                    node, resource = item._add_video(story)
+                    self.properties["nodes"][item._node] = node
+                    self.properties["resources"][item._resource_node] = resource
+                if isinstance(item, Audio):
+                    node, resource = item._add_audio(story)
+                    self.properties["nodes"][item._node] = node
+                    self.properties["resources"][item._resource_node] = resource
+                if isinstance(item, WebPage):
+                    node, resource = item._add_webpage(story)
+                    self.properties["nodes"][item._node] = node
+                if isinstance(item, Map):
+                    node, resource = item._add_webmap(story)
+                    self.properties["nodes"][item._node] = node
+                    self.properties["resources"][item._resource_node] = resource
+                if isinstance(item, Text):
+                    node, resource = item._add_text(story)
+                    self.properties["nodes"][item._node] = node
+                if isinstance(item, Button):
+                    node, resource = item._add_button(story)
+                    self.properties["nodes"][item._node] = node
+
+            # Add to children in position wanted
+            if position is None:
+                self._children.insert(item._node)
+            else:
+                self._children.insert(position, item._node)

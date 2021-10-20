@@ -4,6 +4,7 @@ import json
 import mimetypes
 from typing import Optional, Union
 from arcgis import env
+from arcgis.apps.storymap.story_content import Immersive
 from arcgis.gis import GIS, Item
 import uuid
 from arcgis.apps.storymap import (
@@ -18,7 +19,15 @@ from arcgis.apps.storymap import (
 
 
 class StoryMap(object):
-    """ """
+    """ 
+    A Story Map is a web map that has been thoughtfully created, given context, and provided 
+    with supporting information so it becomes a stand-alone resource. It integrates maps, legends, 
+    text, photos, and video and provides functionality, such as swipe, pop-ups, and time sliders, 
+    that helps users explore this content.
+    
+    ArcGIS StoryMaps is the next-generation storytelling tool in ArcGIS, and story authors are 
+    encouraged to use this tool to create stories.
+    """
 
     _properties = None
     _gis = None
@@ -145,7 +154,7 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def list_nodes(self, type: Optional[str] = None):
         """
-        Find the nodes for each type of item.
+        Find the nodes for each type of item. 
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -154,21 +163,24 @@ class StoryMap(object):
                             If none specified, list of all nodes returned.
 
                             Values: "image" | "video" | "audio" | "webpage" | "webmap" | "text" |
-                                    "button" | "separator" | "expressmap" | "webscene" | "immersive" |
+                                    "button" | "separator" | "expressmap" | "webscene" | "immersive"
         ===============     ====================================================================
 
-        :return: A tuple of nodes for each type.
+        :return: List of node ids and their types in order of appearance in the story map.
 
-        ..note:
-            The nodes are not in the order they appear in the story.
-            To see all ordered nodes use: ```node_order``` property.
         """
+        spec_type = []
 
         if type is None:
             return self.node_order
+        elif type == "immersive":
+            for node, node_info in self.properties["nodes"].items():
+                for key, val in node_info.items():
+                    if key == "type" and "immersive" in val:
+                        spec_type.append({node: val})
+            return spec_type
         else:
             all_nodes = self.node_order
-            spec_type = []
             for node in all_nodes:
                 if type in node.values():
                     spec_type.append(node)
@@ -201,6 +213,7 @@ class StoryMap(object):
         ===============     ====================================================================
 
         :return: Dictionary representation of the story cover node.
+
         """
         dict_node = self.node_order[0]
         for key, value in dict_node.items():
@@ -258,7 +271,7 @@ class StoryMap(object):
         # Create ids
         node_id = "n-" + uuid.uuid4().hex[0:6]
         # Check if navigation node already exists
-        for node, node_info in self.properties.items():
+        for node, node_info in self.properties["nodes"].items():
             for key, val in node_info.items():
                 if key == "type" and val == "navigation":
                     node_id = node
@@ -270,6 +283,26 @@ class StoryMap(object):
         }
 
         self._add_child(node_id=node_id, position=position)
+
+    # ----------------------------------------------------------------------
+    def theme(self, theme="summit"):
+        """
+        Each story has a theme node in it's resources. This method can be used to change the theme
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        theme               Required String. The theme to set the story to.
+
+                            Values: "summit" | "obsidian" | "ridgeline" | "mesa" | "tidal" |
+                                    "slate"
+        ===============     ====================================================================
+        """
+
+        for node, node_info in self.properties["resources"].items():
+            for key, val in node_info.items():
+                if key == "type" and val == "story-theme":
+                    node_info["data"]["themeId"] = theme
 
     # ----------------------------------------------------------------------
     def end_credits(self, content=None, attribution=None, hidden=False):
@@ -407,21 +440,16 @@ class StoryMap(object):
 
         :return: The node-id for the added item as a String.
         """
-
+        if item._node in self.properties["nodes"]:
+            raise Exception("This node already exists. Please try updating instead.")
         if isinstance(item, Image):
-            node, resource = item._add_image()
-            self._add_resource(item._path, item._resource_id)
+            node, resource = item._add_image(self)
         elif isinstance(item, Video):
-            node, resource = item._add_video()
-            self._add_resource(item._path, item._resource_id)
+            node, resource = item._add_video(self)
         elif isinstance(item, Audio):
-            node, resource = item._add_audio()
-            self._add_resource(item._path, item._resource_id)
+            node, resource = item._add_audio(self)
         elif isinstance(item, Map):
-            node, resource = item._add_webmap()
-            # self._add_resource(
-            #     resource_name=item._resource_id, text=json.dumps(item._path)
-            # )
+            node, resource = item._add_webmap(self)
         elif isinstance(item, WebPage):
             node, resource = item._add_webpage()
         elif isinstance(item, Button):
@@ -436,7 +464,7 @@ class StoryMap(object):
         node_id = item._node if item is not None else uuid.uuid4().hex[0:6]
         self.properties["nodes"][node_id] = node
 
-        # If resource was returned, add to resource nodes dictionary and story item
+        # If resource was returned, add to resources
         if resource is not None:
             self.properties["resources"][item._resource_node] = resource
 
@@ -483,7 +511,6 @@ class StoryMap(object):
         button_link         Optional String. To update the link on a Button.
         ===============     ====================================================================
 
-        :return:
         """
         # Update path if new path given
         if isinstance(path, Item) or isinstance(path, Map):
@@ -511,6 +538,43 @@ class StoryMap(object):
             self._update_properties(
                 node_id, caption, alt_text, display, button_text, button_link
             )
+
+    # ----------------------------------------------------------------------
+    def add_item_to_immersive(
+        self,
+        node_id: str,
+        item,
+        caption: Optional[str] = None,
+        alt_text: Optional[str] = None,
+        position: Optional[int] = None,
+    ):
+        """
+        Update immersive nodes such as: Slideshow, Sidecar, and Swipe.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        node_id             Required String. The node id for the item that will be updated. Find a
+                            list of specific node types by using the ```list_nodes``` property.
+        ---------------     --------------------------------------------------------------------
+        item                Optional String, Image, Video, Audio, Webpage, Map, Button, or Text.
+
+                            ..note: 
+                                The recommendation is to create your item first and then pass it
+                                in to this method. If String is given, must be path or url to 
+                                an image, video, audio, or webpage. The specific item will be created
+                                and can be edited as an individual node.
+        ---------------     --------------------------------------------------------------------
+        caption             Optional String. Used when a String is passed for item parameter.
+        ---------------     --------------------------------------------------------------------
+        alt_text            Optional String. Used when a String is passed for item parameter.        
+        ---------------     --------------------------------------------------------------------
+        position            Optional Integer. The position in the immersive item.
+        ===============     ====================================================================
+        """
+        # Create an instance of Immersive
+        immersive = Immersive(self.properties["nodes"][node_id])
+        immersive._add_child(item, caption, alt_text, position, self)
 
     # ----------------------------------------------------------------------
     def move_node(
