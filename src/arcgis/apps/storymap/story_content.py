@@ -63,7 +63,16 @@ class Image(object):
         return node, resource
 
     def _update_image(self, node_id, story):
-        node_dict = story.properties["nodes"][node_id]
+
+        # Update the height and width for the image
+        im = PIL.Image.open(self._path)
+        w, h = im.size
+        story.properties["resources"][node_id]["data"]["height"] = h
+        story.properties["resources"][node_id]["data"]["width"] = w
+
+        # UPDATE RESOURCE
+        resource_id = story.properties["resources"][node_id]["data"]["resrouceId"]
+        all_resources = story._resources
 
 
 ###############################################################################################################
@@ -112,6 +121,12 @@ class Video(object):
 
         return node, resource
 
+    # ----------------------------------------------------------------------
+    def _update_video(self, node_id, story):
+        # UPDATE RESOURCE
+        resource_id = story.properties["resources"][node_id]["data"]["resrouceId"]
+        all_resources = story._resources
+
 
 ###############################################################################################################
 class Audio(object):
@@ -159,6 +174,12 @@ class Audio(object):
 
         return node, resource
 
+    # ----------------------------------------------------------------------
+    def _update_audio(self, node_id, story):
+        # UPDATE RESOURCE
+        resource_id = story.properties["resources"][node_id]["data"]["resrouceId"]
+        all_resources = story._resources
+
 
 ###############################################################################################################
 class WebPage(object):
@@ -198,6 +219,15 @@ class WebPage(object):
 
         resource = None
         return node, resource
+
+    # ----------------------------------------------------------------------
+    def _update_webpage(self, node_id, story):
+
+        sections = urlparse(self._path)
+
+        story.properties["nodes"][node_id]["data"]["url"] = self._path
+        story.properties["nodes"][node_id]["data"]["title"] = sections.netloc
+        story.properties["nodes"][node_id]["data"]["providerUrl"] = self._path
 
 
 ###############################################################################################################
@@ -249,6 +279,7 @@ class Text(object):
         self._style = style
         self._color = color
 
+    # ----------------------------------------------------------------------
     def _add_text(self):
         node = {
             "type": "text",
@@ -283,6 +314,7 @@ class Button(object):
         self._link = link
         self._text = text
 
+    # ----------------------------------------------------------------------
     def _add_button(self):
         node = {
             "type": "button",
@@ -417,8 +449,8 @@ class Map(object):
         self._type = item.type
         self._resource_id = str(int(time.time())) + "_" + item.type
 
+    # ----------------------------------------------------------------------
     def _add_webmap(self):
-
         # Create webmap nodes
         node = {
             "type": "webmap",
@@ -453,6 +485,12 @@ class Map(object):
         }
 
         return node, resource
+
+    # ----------------------------------------------------------------------
+    def _update_map(self, node_id, story):
+        # UPDATE RESOURCE
+        resource_id = story.properties["resources"][node_id]["data"]["resrouceId"]
+        all_resources = story._resources
 
 
 ###############################################################################################################

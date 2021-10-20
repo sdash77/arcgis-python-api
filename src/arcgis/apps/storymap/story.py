@@ -202,7 +202,9 @@ class StoryMap(object):
 
         :return: Dictionary representation of the story cover node.
         """
-        story_cover_node = self.node_order[0]
+        dict_node = self.node_order[0]
+        for key, value in dict_node.items():
+            story_cover_node = key
         orig_data = self.properties["nodes"][story_cover_node]["data"]
 
         self.properties["nodes"][story_cover_node] = {
@@ -417,9 +419,9 @@ class StoryMap(object):
             self._add_resource(item._path, item._resource_id)
         elif isinstance(item, Map):
             node, resource = item._add_webmap()
-            self._add_resource(
-                resource_name=item._resource_id, text=json.dumps(item._path)
-            )
+            # self._add_resource(
+            #     resource_name=item._resource_id, text=json.dumps(item._path)
+            # )
         elif isinstance(item, WebPage):
             node, resource = item._add_webpage()
         elif isinstance(item, Button):
@@ -446,7 +448,7 @@ class StoryMap(object):
     def update(
         self,
         node_id: str,
-        path: Optional[Union[str, Item]] = None,
+        path: Optional[str] = None,
         caption: Optional[str] = None,
         alt_text: Optional[str] = None,
         display: Optional[str] = None,
@@ -455,7 +457,7 @@ class StoryMap(object):
     ):
         """
         Update an existing node of type Image, Video, WebPage, or Audio.
-        Can also be used to update the text or link of a button.
+        Can also be used to update the text or link of a Button.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -463,8 +465,12 @@ class StoryMap(object):
         node_id             Required String. The node id for the item that will be updated. Find a
                             list of node order by using the ```node_order``` property.
         ---------------     --------------------------------------------------------------------
-        path                Optional String or Item of type WebMap or WebScene. The path or item
-                            that will replace the current item.
+        path                Optional String. The url or file path for the new item.
+
+                            ..note:
+                                To update a webmap or webscene's properties, create a new Map()
+                                and use the ``move_node`` method to set the postion to 
+                                where the current Map is and set delete_current=True. 
         ---------------     --------------------------------------------------------------------
         caption             Optional String. New caption to insert.
         ---------------     --------------------------------------------------------------------
@@ -479,25 +485,30 @@ class StoryMap(object):
 
         :return:
         """
-        if isinstance(path, Item):
+        # Update path if new path given
+        if isinstance(path, Item) or isinstance(path, Map):
             if path.type != "Web Map" or path.type != "Web Scene":
                 raise Exception("New item must be of type Web Map or Web Scene")
+            new_item = Map(path)
+            new_item._update_map(node_id, self)
         elif isinstance(path, str):
             mt = mimetypes.guess_type(path)[0].lower()
             if "image" in mt:
                 new_item = Image(path)
                 new_item._update_image(node_id, self)
             elif "video" in mt:
-                new_item = Video(path, caption, alt_text, display)
+                new_item = Video(path)
                 new_item._update_video(node_id, self)
             elif "audio" in mt:
-                new_item = Audio(path, caption, alt_text, display)
+                new_item = Audio(path)
                 new_item._update_audio(node_id, self)
             else:
-                new_item = WebPage(path, caption, alt_text, display)
+                new_item = WebPage(path)
                 new_item._update_webpage(node_id, self)
-        elif path is None:
-            return self._update_properties(
+
+        # Update properties if new properties given
+        if caption or alt_text or display or button_text or button_link:
+            self._update_properties(
                 node_id, caption, alt_text, display, button_text, button_link
             )
 
@@ -612,7 +623,7 @@ class StoryMap(object):
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
         file              Required string. The path to the file on disk to be used for
-                          overwriting an existing file resource.
+                          writing a file resource.
         ----------------  ---------------------------------------------------------------
         file_name         Optional string. The destination name for the file used to add
                           an existing resource, or to be used together with the text parameter
