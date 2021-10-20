@@ -209,7 +209,7 @@ def per_class_metrics(self, ignore_classes=[], **kwargs):
     tp_counts = torch.zeros(valid_class_len)
     fp_counts = torch.zeros(valid_class_len)
     fn_counts = torch.zeros(valid_class_len)
-    observed_val_data_classes=[]
+    observed_val_data_classes = []
     for batch in self._data.valid_dl if dl is None else dl:
         x, y = batch
         y = y.to("cpu")
@@ -238,14 +238,16 @@ def per_class_metrics(self, ignore_classes=[], **kwargs):
             tp_counts = tp_counts + tp.sum(0)
             fp_counts = fp_counts + fp.sum(0)
             fn_counts = fn_counts + fn.sum(0)
-    train_classes = set([int(c) for c in self._data.classes if c!="NoData"])
+    train_classes = set([int(c) for c in self._data.classes if c != "NoData"])
     observed_val_data_classes = set(observed_val_data_classes)
     if len(train_classes) != len(observed_val_data_classes):
         print(train_classes - observed_val_data_classes)
-        warnings.warn(f'Validation dataset classes {sorted(list(observed_val_data_classes))} does not match the training dataset \
+        warnings.warn(
+            f'Validation dataset classes {sorted(list(observed_val_data_classes))} does not match the training dataset \
 classes {sorted(list(train_classes))}, you could use "stratify=True" with prepare_data or try increasing \
 the minority class samples. Model metrics will only be calculated based on the classes \
-present in validation dataset.')
+present in validation dataset.'
+        )
     precision = calculate_precision(tp_counts, fp_counts)
     recall = calculate_recall(tp_counts, fn_counts)
     f1 = calculate_f1(precision, recall)

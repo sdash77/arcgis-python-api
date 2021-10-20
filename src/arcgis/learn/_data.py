@@ -12,7 +12,6 @@ import types
 import traceback
 import copy
 import warnings
-
 from ._utils.env import ARCGIS_ENABLE_TF_BACKEND
 
 import_exception = None
@@ -712,7 +711,7 @@ def prepare_textdata(
     remove_html_tags=False,
     remove_urls=False,
     working_dir=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Prepares a text data object from the files present at data folder
@@ -836,7 +835,7 @@ def prepare_textdata(
             process_labels=process_labels,
             remove_html_tags=remove_html_tags,
             remove_urls=remove_urls,
-            **kwargs
+            **kwargs,
         )
 
     elif task.lower() == "sequence_translation":
@@ -1814,11 +1813,14 @@ def prepare_data(
 
         def get_y_func(x, ext=right):
             return x.parents[1] / "labels" / (x.stem + ".{}".format(ext))
-        
+
         def get_label_pixels(x, ext=right):
             import numpy as np
-            img_arr = ArcGISMSImage.read_image((x.parents[1] / "labels" / (x.stem + ".{}".format(ext))))
-            unique_pixels = np.unique(img_arr).astype('str')
+
+            img_arr = ArcGISMSImage.read_image(
+                (x.parents[1] / "labels" / (x.stem + ".{}".format(ext)))
+            )
+            unique_pixels = np.unique(img_arr).astype("str")
             return unique_pixels
 
         def image_without_label(imagefile, not_label_count=[0], ext=right):
@@ -1847,7 +1849,7 @@ def prepare_data(
             }
 
         if data_folders is None and images_df is None:
-            if kwargs.get('stratify'):
+            if kwargs.get("stratify"):
                 data = (
                     ArcGISSegmentationItemList.from_folder(path / "images")
                     .filter_by_func(remove_image_without_label)
@@ -1862,14 +1864,14 @@ def prepare_data(
                 )
             else:
                 data = (
-                ArcGISSegmentationItemList.from_folder(path / "images")
-                .filter_by_func(remove_image_without_label)
-                .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(
-                    get_y_func,
-                    classes=(["NoData"] + list(class_mapping.values())),
-                    class_mapping=class_mapping,
-                    color_mapping=color_mapping,
+                    ArcGISSegmentationItemList.from_folder(path / "images")
+                    .filter_by_func(remove_image_without_label)
+                    .split_by_rand_pct(val_split_pct, seed=seed)
+                    .label_from_func(
+                        get_y_func,
+                        classes=(["NoData"] + list(class_mapping.values())),
+                        class_mapping=class_mapping,
+                        color_mapping=color_mapping,
                     )
                 )
         else:
@@ -2065,7 +2067,7 @@ def prepare_data(
             kwargs_transforms["resize_method"] = ResizeMethod.SQUISH
 
         if data_folders is None and images_df is None:
-            if dataset_type=='Labeled_Tiles' and kwargs.get('stratify')!=False:
+            if dataset_type == "Labeled_Tiles" and kwargs.get("stratify") != False:
                 data = (
                     ArcGISImageList.from_folder(path / "images")
                     .label_list_from_func(get_y_func, val_split_pct)
@@ -2074,17 +2076,17 @@ def prepare_data(
                 )
             else:
                 data = (
-                ArcGISImageList.from_folder(path / "images")
-                .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(get_y_func)
+                    ArcGISImageList.from_folder(path / "images")
+                    .split_by_rand_pct(val_split_pct, seed=seed)
+                    .label_from_func(get_y_func)
                 )
             # train_labels = np.unique(data.train.y.items).tolist()
             # val_labels = np.unique(data.valid.y.items).tolist()
-#             if train_labels != val_labels and dataset_type=='Labeled_Tiles': #for when training classes and validation classes do not match.
-#                 warnings.warn(f'Validation dataset classes {val_labels} does not match the training dataset \
-# classes {train_labels}, you could use "stratify=True" with prepare_data or try increasing \
-# the minority class samples. Model metrics will only be calculated based on the classes \
-# present in validation dataset.')
+        #             if train_labels != val_labels and dataset_type=='Labeled_Tiles': #for when training classes and validation classes do not match.
+        #                 warnings.warn(f'Validation dataset classes {val_labels} does not match the training dataset \
+        # classes {train_labels}, you could use "stratify=True" with prepare_data or try increasing \
+        # the minority class samples. Model metrics will only be calculated based on the classes \
+        # present in validation dataset.')
 
         else:
             if images_df is not None:
@@ -2100,7 +2102,7 @@ def prepare_data(
                     imageslist.append(
                         ArcGISImageList.from_folder(data_folder / "images").items
                     )
-                if kwargs.get('stratify')!=False:
+                if kwargs.get("stratify") != False:
                     src = (
                         ArcGISImageList(np.concatenate(imageslist))
                         .label_list_from_func(get_y_func)
@@ -2109,9 +2111,9 @@ def prepare_data(
                     )
                 else:
                     src = (
-                    ArcGISImageList(np.concatenate(imageslist))
-                    .split_by_rand_pct(val_split_pct, seed=seed)
-                    .label_from_func(get_y_func)
+                        ArcGISImageList(np.concatenate(imageslist))
+                        .split_by_rand_pct(val_split_pct, seed=seed)
+                        .label_from_func(get_y_func)
                     )
             data = src
         #
