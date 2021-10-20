@@ -1,23 +1,20 @@
-from enum import Enum
 import os
 import time
 import json
 import mimetypes
-from typing import Optional
+from typing import Optional, Union
 from arcgis import env
 from arcgis.gis import GIS, Item
 import uuid
-import PIL.Image
-from urllib.parse import urlparse
-
-
-# TODO:
-# Add logo
-# Add credits
-# Edit Text depending on type of text ('subheading' = h4 )
-# Test Duplicate
-# Test everything on Python Playground
-# Test Navigation
+from arcgis.apps.storymap import (
+    Text,
+    Image,
+    Video,
+    WebPage,
+    Audio,
+    Button,
+    Map,
+)
 
 
 class StoryMap(object):
@@ -27,6 +24,7 @@ class StoryMap(object):
     _gis = None
     _itemid = None
     _item = None
+    _resources = None
 
     def __init__(self, item: Optional[Item] = None, gis: Optional[GIS] = None):
         """
@@ -52,10 +50,12 @@ class StoryMap(object):
             self._item = gis.content.get(item)
             self._itemid = self._item.itemid
             self._properties = self._item.get_data()
+            self._resources = self._item.resources.list()
         elif item and isinstance(item, Item) and "StoryMap" in item.typeKeywords:
             self._item = item
             self._itemid = self._item.itemid
             self._properties = self._item.get_data()
+            self._resources = self._item.resources.list()
         elif item and isinstance(item, Item) and "StoryMap" not in item.typeKeywords:
             raise ValueError("Item is not a Story Map")
         else:
@@ -84,9 +84,9 @@ class StoryMap(object):
             self._item = item
             self._itemid = item.itemid
             self._add_resource(
-                file=template,
-                resource_name="draft.json",
+                file=template, resource_name="draft.json",
             )
+            self._resources = self._item.resources.list()
             f.close()
 
     # ----------------------------------------------------------------------
@@ -114,7 +114,18 @@ class StoryMap(object):
         """This propertry returns the storymap's node order"""
         root_id = self.properties["root"]
         children = self.properties["nodes"][root_id]["children"]
-        return tuple(children)
+        nodes = self.properties["nodes"]
+
+        node_order = []
+        for child in children:
+            if child in nodes:
+                node_type = self.properties["nodes"][child]["type"]
+                if node_type == "text":
+                    subtype = self.properties["nodes"][child]["data"]["type"]
+                    node_order.append({child: node_type + ", " + subtype})
+                else:
+                    node_order.append({child: node_type})
+        return tuple(node_order)
 
     # ----------------------------------------------------------------------
     @property
@@ -143,7 +154,7 @@ class StoryMap(object):
                             If none specified, list of all nodes returned.
 
                             Values: "image" | "video" | "audio" | "webpage" | "webmap" | "text" |
-                                    "button" | "separator"
+                                    "button" | "separator" | "expressmap" | "webscene" | "immersive" |
         ===============     ====================================================================
 
         :return: A tuple of nodes for each type.
@@ -154,17 +165,14 @@ class StoryMap(object):
         """
 
         if type is None:
-            return self._properties["nodes"].keys()
+            return self.node_order
         else:
-            type = type.lower().strip()
-            if type == "webpage":
-                type = "embed"
-            nodes = []
-            for node, node_info in self.properties["nodes"].items():
-                for key, val in node_info.items():
-                    if key == "type" and val == type:
-                        nodes.append(node)
-            return tuple(nodes)
+            all_nodes = self.node_order
+            spec_type = []
+            for node in all_nodes:
+                if type in node.values():
+                    spec_type.append(node)
+            return spec_type
 
     # ----------------------------------------------------------------------
     def story_cover(
@@ -311,8 +319,7 @@ class StoryMap(object):
         # Update Item Resources
         draft = "draft_" + str(int(time.time())) + ".json"
         self._add_resource(
-            resource_name=draft,
-            text=json.dumps(self._properties),
+            resource_name=draft, text=json.dumps(self._properties),
         )
 
         # Find type keywords to use
@@ -408,10 +415,13 @@ class StoryMap(object):
         elif isinstance(item, Audio):
             node, resource = item._add_audio()
             self._add_resource(item._path, item._resource_id)
+        elif isinstance(item, Map):
+            node, resource = item._add_webmap()
+            self._add_resource(
+                resource_name=item._resource_id, text=json.dumps(item._path)
+            )
         elif isinstance(item, WebPage):
             node, resource = item._add_webpage()
-        elif isinstance(item, WebMap):
-            node, resource = item._add_webmap()
         elif isinstance(item, Button):
             node, resource = item._add_button()
         elif isinstance(item, Text):
@@ -427,11 +437,69 @@ class StoryMap(object):
         # If resource was returned, add to resource nodes dictionary and story item
         if resource is not None:
             self.properties["resources"][item._resource_node] = resource
-            # self._add_resource(item._path, item._resource_id)
 
         # Add to story children
         self._add_child(node_id=node_id, position=position)
         return node_id
+
+    # ----------------------------------------------------------------------
+    def update(
+        self,
+        node_id: str,
+        path: Optional[Union[str, Item]] = None,
+        caption: Optional[str] = None,
+        alt_text: Optional[str] = None,
+        display: Optional[str] = None,
+        button_text: Optional[str] = None,
+        button_link: Optional[str] = None,
+    ):
+        """
+        Update an existing node of type Image, Video, WebPage, or Audio.
+        Can also be used to update the text or link of a button.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        node_id             Required String. The node id for the item that will be updated. Find a
+                            list of node order by using the ```node_order``` property.
+        ---------------     --------------------------------------------------------------------
+        path                Optional String or Item of type WebMap or WebScene. The path or item
+                            that will replace the current item.
+        ---------------     --------------------------------------------------------------------
+        caption             Optional String. New caption to insert.
+        ---------------     --------------------------------------------------------------------
+        alt_text            Optional String. New alt_text to insert.
+        ---------------     --------------------------------------------------------------------
+        display             Optional String. New display style to insert.
+        ---------------     --------------------------------------------------------------------
+        button_text         Optional String. To update the text on a Button.
+        ---------------     --------------------------------------------------------------------
+        button_link         Optional String. To update the link on a Button.
+        ===============     ====================================================================
+
+        :return:
+        """
+        if isinstance(path, Item):
+            if path.type != "Web Map" or path.type != "Web Scene":
+                raise Exception("New item must be of type Web Map or Web Scene")
+        elif isinstance(path, str):
+            mt = mimetypes.guess_type(path)[0].lower()
+            if "image" in mt:
+                new_item = Image(path)
+                new_item._update_image(node_id, self)
+            elif "video" in mt:
+                new_item = Video(path, caption, alt_text, display)
+                new_item._update_video(node_id, self)
+            elif "audio" in mt:
+                new_item = Audio(path, caption, alt_text, display)
+                new_item._update_audio(node_id, self)
+            else:
+                new_item = WebPage(path, caption, alt_text, display)
+                new_item._update_webpage(node_id, self)
+        elif path is None:
+            return self._update_properties(
+                node_id, caption, alt_text, display, button_text, button_link
+            )
 
     # ----------------------------------------------------------------------
     def move_node(
@@ -538,8 +606,22 @@ class StoryMap(object):
         There is a limit of 1000 files per item (except Style items). A maximum
         of 50 files can be added each request. Each file should be no more than 50 Mb.
         The maximum size of all of the file resources for an item is 10 GB.
+
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        file              Required string. The path to the file on disk to be used for
+                          overwriting an existing file resource.
+        ----------------  ---------------------------------------------------------------
+        file_name         Optional string. The destination name for the file used to add
+                          an existing resource, or to be used together with the text parameter
+                          as file name for it.
+        ----------------  ---------------------------------------------------------------
+        text              Optional string. Text input to be added as a file resource,
+                          used together with file_name.
+        ================  ===============================================================
         """
-        # first need to do an addResources call for the draft
         url = (
             "content/users/"
             + self._gis._username
@@ -560,464 +642,83 @@ class StoryMap(object):
 
         resp = self._gis._portal.con.post(url, params, files=files, compress=False)
         self._item = self._gis.content.get(self._itemid)
+        self._resources = self._item.resources.list()
         return resp
 
+    # ----------------------------------------------------------------------
+    def _update_resource(self, file=None, resource_name=None, text=None):
+        """
+        The ``update`` operation allows you to update existing file resources of an item.
+        File resources use storage space from your quota and are scanned for viruses. The item size
+        is updated to include the size of updated resource files.
 
-###############################################################################################################
-class Image(object):
-    """
-    Class representing an image from a url or file
-    """
+        Supported file formats are: JSON, XML, TXT, PNG, JPEG, GIF, BMP, PDF, and ZIP.
+        This operation is only available to the item owner and the organization administrator.
 
-    def __init__(
-        self,
-        path: str = None,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        display: str = "float",
-    ):
-        self._path = path
-        self._caption = caption
-        self._alt_text = alt_text
-        self._display = display
-        self._node = "n-" + uuid.uuid4().hex[0:6]
-        self._resource_node = "r-" + uuid.uuid4().hex[0:6]
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        file              Required string. The path to the file on disk to be used for
+                          overwriting an existing file resource.
+        ----------------  ---------------------------------------------------------------
+        file_name         Optional string. The destination name for the file used to update
+                          an existing resource, or to be used together with the text parameter
+                          as file name for it.
 
-        mt = mimetypes.guess_type(path)[0].lower()
-        self._ext_type = mt.split("/")[1]
-        self._resource_id = str(int(time.time())) + "." + self._ext_type
+                          For example, you can use fileName=banner.png to update an existing
+                          resource banner.png with a file called billboard.png without
+                          renaming the file locally.
+        ----------------  ---------------------------------------------------------------
+        text              Optional string. Text input to be added as a file resource,
+                          used together with file_name.
+        ================  ===============================================================
+        """
+
+        url = (
+            "content/users/"
+            + self.gis._username
+            + "/items/"
+            + self._item.itemid
+            + "/updateResources"
+        )
+
+        files = []  # create a list of named tuples to hold list of files
+        if not os.path.isfile(os.path.abspath(file)):
+            raise RuntimeError("File(" + file + ") not found.")
+        files.append(("file", file, os.path.basename(file)))
+
+        params = {}
+        params["f"] = "json"
+
+        if resource_name is not None:
+            params["fileName"] = resource_name
+        if text is not None:
+            params["text"] = text
+
+        resp = self._portal.con.post(url, params, files=files)
+        return resp
 
     # ----------------------------------------------------------------------
-    def _add_image(self):
-
-        # Create image nodes
-        node = {
-            "type": "image",
-            "data": {
-                "image": self._resource_node,
-                "caption": self._caption,
-                "alt": self._alt_text,
-            },
-            "config": {"size": self._display},
-        }
-
-        im = PIL.Image.open(self._path)
-        w, h = im.size
-        # Create resource node
-        resource = {
-            "type": "image",
-            "data": {
-                "resourceId": self._resource_id,
-                "provider": "item-resource",
-                "height": h,
-                "width": w,
-            },
-        }
-
-        return node, resource
-
-
-###############################################################################################################
-class Video(object):
-    """
-    Class representing a video from a url or file
-    """
-
-    def __init__(
-        self,
-        path: str = None,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        display: str = "float",
+    def _update_properties(
+        self, node_id, caption, alt_text, display, button_text, button_link
     ):
-        self._path = path
-        self._caption = caption
-        self._alt_text = alt_text
-        self._display = display
-        self._node = "n-" + uuid.uuid4().hex[0:6]
-        self._resource_node = "r-" + uuid.uuid4().hex[0:6]
+        node_type = self.properties["nodes"][node_id]["type"]
 
-        mt = mimetypes.guess_type(path)[0].lower()
-        self._ext_type = mt.split("/")[1]
-        self._resource_id = str(int(time.time())) + "." + self._ext_type
+        # Update main node
+        if caption is not None:
+            self.properties["nodes"][node_id]["data"]["caption"] = caption
+        if alt_text is not None:
+            self.properties["nodes"][node_id]["data"]["alt"] = alt_text
+        if display is not None and node_type in ["image", "video", "audio", "webmap"]:
+            self.properties["nodes"][node_id]["config"]["size"] = display
+        if node_type == "button":
+            if button_text is not None:
+                self.properties["nodes"][node_id]["data"]["text"] = button_text
+            if button_link is not None:
+                self.properties["nodes"][node_id]["data"]["link"] = button_link
 
-    # ----------------------------------------------------------------------
-    def _add_video(self):
-
-        # Create image nodes
-        node = {
-            "type": "video",
-            "data": {
-                "video": self._resource_node,
-                "caption": self._caption,
-                "alt": self._alt_text,
-            },
-            "config": {
-                "size": self._display,
-            },
-        }
-
-        # Create resource node
-        resource = {
-            "type": "video",
-            "data": {
-                "resourceId": self._resource_id,
-                "provider": "item-resource",
-            },
-        }
-
-        return node, resource
+        return self.properties["nodes"][node_id]
 
 
 ###############################################################################################################
-class Audio(object):
-    """
-    Class representing an audio from a url or file
-    """
 
-    def __init__(
-        self,
-        path: str = None,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        display: str = "float",
-    ):
-        self._path = path
-        self._caption = caption
-        self._alt_text = alt_text
-        self._display = display
-        self._node = "n-" + uuid.uuid4().hex[0:6]
-        self._resource_node = "r-" + uuid.uuid4().hex[0:6]
-
-        mt = mimetypes.guess_type(path)[0].lower()
-        self._ext_type = mt.split("/")[1]
-        self._resource_id = str(int(time.time())) + "." + self._ext_type
-
-    # ----------------------------------------------------------------------
-    def _add_audio(self):
-
-        # Create image nodes
-        node = {
-            "type": "audio",
-            "data": {
-                "video": self._resource_node,
-                "caption": self._caption,
-                "alt": self._alt_text,
-            },
-            "config": {
-                "size": self._display,
-            },
-        }
-
-        # Create resource node
-        resource = {
-            "type": "audio",
-            "data": {"resourceId": self._resource_id, "provider": "item-resource"},
-        }
-
-        return node, resource
-
-
-###############################################################################################################
-class WebPage(object):
-    """
-    Class representing a hyperlink from a url
-    """
-
-    def __init__(
-        self,
-        path: str = None,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-    ):
-        self._path = path
-        self._caption = caption
-        self._alt_text = alt_text
-        self._node = "n-" + uuid.uuid4().hex[0:6]
-
-    # ----------------------------------------------------------------------
-    def _add_webpage(self):
-
-        sections = urlparse(self._path)
-
-        # Create embed nodes
-        node = {
-            "type": "embed",
-            "data": {
-                "url": self._path,
-                "embedType": "link",
-                "title": sections.netloc,
-                "description": self._caption,
-                "providerUrl": self._path,
-                "alt": self._alt_text,
-                "display": "card",
-            },
-        }
-
-        resource = None
-        return node, resource
-
-
-###############################################################################################################
-class Text(object):
-    """
-    Class representing a text
-
-    """
-
-    def __init__(self, text: str = None, style: str = "paragraph", color: str = "000"):
-        """
-
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        text                    Required String. The text that will be shown in the story.
-
-                                String can contain the following tags for text formatting:
-                                <strong>,<em>,<a href="{link}" rel="noopener noreferer” target=”_blank”
-
-                                Example:
-                                    "Paragraph with <strong>bold</strong>,
-                                    <em>italic</em> and
-                                    <a href=\"https://www.google.com\" rel=\"noopener noreferrer\"
-                                    target=\"_blank\">hyperlink</a> and a
-                                    <span class=\"sm-text-color-080\">custom color</span>"
-        ------------------      --------------------------------------------------------------------
-        type                    Optional String. There are 6 different types of text that can be
-                                added to a story.
-
-                                Values: 'paragraph' | 'heading' | 'subheading' | 'numbered-list' |
-                                        'bullet-list' | 'quote'
-
-                                ..note:
-                                    To make text withing these types bold, italic, or hyperlink the
-                                    text parameter must include these.
-
-        ------------------      --------------------------------------------------------------------
-        custom_color            Optional String. The hex color value without the #.
-                                Only available when type is either 'paragraph', 'bullet-list', or
-                                'numbered-list'.
-
-                                Ex: custom_color = "080"
-        ==================      ====================================================================
-
-        """
-        self._node = uuid.uuid4().hex[0:6]
-        self._text = text
-        self._style = style
-        self._color = color
-
-    def _add_text(self):
-        node = {
-            "type": "text",
-            "data": {
-                "type": self._style,
-                "text": self._text,
-                "customTextColors": self._color,
-            },
-        }
-
-        resource = None
-        return node, resource
-
-
-###############################################################################################################
-class Button(object):
-    """
-    Class representing a button
-
-    """
-
-    def __init__(self, link: str = None, text: str = None):
-        """
-
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        link                    Required String. When user clicks on button, they will be brought to
-                                the link.
-        ------------------      --------------------------------------------------------------------
-        text                    Required String. The text that shows on the button.
-        ==================      ====================================================================
-
-        """
-        self._node = uuid.uuid4().hex[0:6]
-        self._link = link
-        self._text = text
-
-    def _add_button(self):
-        node = {
-            "type": "button",
-            "data": {"text": self._text, "link": self._link},
-        }
-
-        resource = None
-
-        return node, resource
-
-
-###############################################################################################################
-class WebMap(object):
-    """
-    Class representing a webmap for the story
-
-    """
-
-    def __init__(
-        self,
-        item: Item,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        display: str = "float",
-        show_legend: bool = False,
-        extent: Optional[dict] = None,
-        center: Optional[list] = None,
-        zoom: Optional[int] = None,
-        viewpoint: Optional[dict] = None,
-        layer_visibility: Optional[list] = None,
-    ):
-        """
-
-        =================       ====================================================================
-        **Argument**            **Description**
-        -----------------       --------------------------------------------------------------------
-        item                    An Item of type Web Map to add to the story map.
-        -----------------       --------------------------------------------------------------------
-        caption                 Optional string. The caption of the section.
-        -----------------       --------------------------------------------------------------------
-        alt_text                Optional string. Specifies an alternate text for an image.
-        -----------------       --------------------------------------------------------------------
-        display                 Optional string. The image display properties.
-        -----------------       --------------------------------------------------------------------
-        position                Optional int. Will position the element in the story list.
-        -----------------       --------------------------------------------------------------------
-        show_legend             Optional Boolean. If True, map legend is shown. The default is False.
-        -----------------       --------------------------------------------------------------------
-        extent                  Optional Dictionary.
-
-                                Example:
-                                extent = {
-                                    "xmin": -9177882,
-                                    "ymin": 4246761,
-                                    "xmax": -9176720,
-                                    "ymax": 4247967,
-                                    "spatialReference": { "wkid": 102100 }
-                                    }
-        -----------------       --------------------------------------------------------------------
-        center                  Optional List of two integers.
-
-                                Example:
-                                center = [-112, 38]
-        -----------------       --------------------------------------------------------------------
-        zoom                    Optional Integer. The zoom level of the map.
-        -----------------       --------------------------------------------------------------------
-        viewpoint               Optional Dictionary. Represents the current view as a Viewpoint or point
-                                of observation on the view.
-
-                                Example:
-                                viewpoint = {
-                                    "rotation": 0,
-                                    "scale": 369785.47,
-                                    "targetGeometry": {
-                                        "spatialReference": {"latestWkid": 3857, "wkid": 102100},
-                                        "x": 279.71,
-                                        "y": -998.98
-                                    },
-                                }
-        -----------------       --------------------------------------------------------------------
-        layer_visibility        Optional List of Dictionaries. The visibility of the layers in a webmap.
-
-                                Syntax:
-
-                                    [
-                                    {
-                                        "id" : "<layer_id>",
-                                        "visibility" : "<true/false>"
-                                    }
-                                    ]
-        =================       ====================================================================
-
-        """
-        self._node = "n-" + uuid.uuid4().hex[0:6]
-        self._resource_node = "r-" + item.id
-        self._path = item
-        self._caption = caption
-        self._alt_text = alt_text
-        self._display = display
-        self._show_legend = show_legend
-        self._center = center
-        self._zoom = zoom
-        if extent is None and "extent" in item and item.extent:
-            self._extent = {
-                "xmin": item.extent[0][0],
-                "xmax": item.extent[1][0],
-                "ymin": item.extent[0][1],
-                "ymax": item.extent[1][1],
-            }
-        else:
-            self._extent = extent
-
-        if viewpoint is not None:
-            self._viewpoint = json.dumps(viewpoint)
-        else:
-            self._viewpoint = None
-        if layer_visibility is not None:
-            self._layer_visibility = json.dumps(layer_visibility)
-        elif "layers" in item:
-            layer_visibility = []
-            for layer in item.layers:
-                layer_item = {
-                    "id": layer.properties.id,
-                    "title": layer.properties.name,
-                    "visibility": True,
-                }
-                layer_visibility.append(layer_item)
-            self._layer_visibility = layer_visibility
-        else:
-            self._layer_visibility = None
-
-        self._resource_id = str(int(time.time())) + "_WebMap"
-
-    def _add_webmap(self):
-
-        # Create webmap nodes
-        node = {
-            "type": "webmap",
-            "data": {
-                "map": self._resource_node,
-                "caption": self._caption,
-                "alt": self._alt_text,
-                "mapLayers": self._layer_visibility,
-                "extent": self._extent,
-                "center": self._center,
-                "zoom": self._zoom,
-                "viewpoint": self._viewpoint,
-                "showLegend": self._show_legend,
-            },
-            "config": {"size": self._display},
-        }
-
-        # Create resource node
-        resource = {
-            "type": "webmap",
-            "data": {
-                "extent": self._extent,
-                "center": self._center,
-                "zoom": self._zoom,
-                "viewpoint": self._viewpoint,
-                "mapLayers": self._layer_visibility,
-                "itemId": self._path.id,
-                "itemType": "Web Map",
-                "type": "default",
-                "showLegend": self._show_legend,
-            },
-        }
-
-        return node, resource
-
-
-###############################################################################################################
-class Theme(Enum):
-    """
-    Story Map has various themes that can be used
-    """
