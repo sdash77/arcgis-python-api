@@ -7861,9 +7861,17 @@ def predict_using_regression(
     """
     Predicts data values using the output from the Train Random Trees Regression Model tool.
 
-    :param rasters: the rasters on which the model is applied
-    :param input_regression_definition: JSON representing the trained model.
-    :return:
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              The input rasters on which the model is applied.
+    --------------------------------     --------------------------------------------------------------------
+    input_regression_definition          The JSON from the ECD file representing the trained model. This ECD file
+                                         is the output of the arcgis.raster.analytics.train_random_trees_regression_model tool. 
+    ================================     ====================================================================
+
+    :return: the output predicted raster
+
     """
     layer, raster, raster_ra = _raster_input(rasters)
 
