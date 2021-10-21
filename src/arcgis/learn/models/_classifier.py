@@ -370,7 +370,8 @@ class FeatureClassifier(ArcGISModel):
         _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["CropSizeFixed"] = int(
-            getattr(self._data, "_emd", {}).get("CropTileMode", "Fixed_Size") == "Fixed_Size"
+            getattr(self._data, "_emd", {}).get("CropTileMode", "Fixed_Size")
+            == "Fixed_Size"
         )
         _emd_template["BlackenAroundFeature"] = int(
             getattr(self._data, "_emd", {}).get("BlackenAroundFeature", False)
