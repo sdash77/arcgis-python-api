@@ -2737,6 +2737,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     ]
 
                 # Set the extent and spatial reference of the service
+                new_extent = None
                 if "spatialReference" in service_definition:
                     new_extent = _deep_get(service_definition, "initialExtent")
                     if new_extent is not None:
@@ -2902,7 +2903,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                         coded_value["code"] = float(code)
 
                     # Set the extent of the feature layer to the specified default extent
-                    if layer["type"] == "Feature Layer":
+                    if layer["type"] == "Feature Layer" and new_extent:
                         layer["extent"] = new_extent
 
                     # Remove hasViews property if exists
