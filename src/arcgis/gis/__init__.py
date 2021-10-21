@@ -14248,22 +14248,6 @@ class _GISResource(object):
 
         with _DisableLogger():
             try:
-                """
-                # try as a federated server
-                if self._con.token is None:
-                    self._lazy_token = self._con.generate_portal_server_token(
-                        serverUrl=self.url
-                    )
-                else:
-                    from ._impl._con import Connection
-
-                    if isinstance(self._con, Connection):
-                        self._lazy_token = self._con.generate_portal_server_token(
-                            serverUrl=self._url
-                        )
-                    else:
-                        self._lazy_token = self._con.token
-                """
                 self._refresh()
 
             except HTTPError as httperror:  # service maybe down
