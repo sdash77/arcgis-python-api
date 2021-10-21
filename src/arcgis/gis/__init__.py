@@ -3342,8 +3342,15 @@ class UserManager(object):
                 "idpUsername": idp_username,
                 "userLicenseTypeId": user_type,
             }
+            if "password" in params and params["password"] is None:
+                params.pop("password", None)
             self._portal.con.post(createuser_url, params)
+            if params["username"].find("\\") > -1:
+                d = params["username"].split("\\")
+                d.reverse()
+                username = "@".join(d)
             user = self.get(username)
+
             for grp in groups:
                 grp.add_users([username])
             if thumbnail is not None:
