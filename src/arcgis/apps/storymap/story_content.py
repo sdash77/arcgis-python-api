@@ -262,7 +262,7 @@ class Text(object):
                                 added to a story.
 
                                 Values: 'paragraph' | 'heading' | 'subheading' | 'numbered-list' |
-                                        'bullet-list' | 'quote'
+                                        'bullet-list' | 'quote' | 'large-paragraph'
 
                                 ..note:
                                     To make text withing these types bold, italic, or hyperlink the
@@ -283,6 +283,13 @@ class Text(object):
         **Type**                **Text**
         -------------------     --------------------------------------------------------------------
         paragraph               String can contain the following tags for text formatting:
+                                <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
+                                and a class attribute to indicate color formatting:
+                                class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
+
+                                Values: themeColor1 | themeColor2 | themeColor3 | customTextColors
+        -------------------     --------------------------------------------------------------------
+        large-paragraph         String can contain the following tags for text formatting:
                                 <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
                                 and a class attribute to indicate color formatting:
                                 class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
@@ -324,10 +331,12 @@ class Text(object):
             style = "bullet-list"
         if "number" in style:
             style = "numbered-list"
+        if "large" in style:
+            style = "large-paragraph"
         self._style = style
 
         # Color only applies certain styles
-        if style in ["paragraph", "bullet-list", "numbered-list"]:
+        if style in ["paragraph", "large-paragraph", "bullet-list", "numbered-list"]:
             self._color = color
 
     # ----------------------------------------------------------------------
@@ -337,6 +346,8 @@ class Text(object):
             "type": "text",
             "data": {"type": self._style, "text": self._text,},
         }
+        if self._color is not None:
+            node["data"]["customTextColors"] = [self._color]
 
         resource = None
         return node, resource
@@ -503,7 +514,7 @@ class Map(object):
 
     # ----------------------------------------------------------------------
     def _add_webmap(self, story):
-        # Make an add resource call (FIX)
+        # Make an add resource call (NOT IMPLEMENTED ON GUI YET)
         # story._add_resource(resource_name= self._resource_id, text=json.dumps(self._path))
 
         # Create webmap nodes
@@ -552,12 +563,18 @@ class Map(object):
 class Immersive(object):
     def __init__(self, node):
         """
+        Create an immersive object from a pre-existing immersive node.
+
+        A swipe node has a different construction than other immersive nodes.
         """
         self._type = node["type"]
         self._data = node["data"]
-        self._children = node["children"]
+        self._children = (
+            node["children"] if "children" in node else node["data"]["contents"]
+        )
 
-    def _add_child(self, item, caption, alt_text, position, story):
+    # ----------------------------------------------------------------------
+    def _edit_immersive(self, item, caption, alt_text, position, story, delete_current):
         # If item was a url or file path, create item and add to nodes.
         # Important not to add to children of the story node itself, only immersive
         mt = mimetypes.guess_type(item)[0].lower()
@@ -574,14 +591,11 @@ class Immersive(object):
                 or not isinstance(item, WebPage)
                 or not isinstance(item, Text)
             ):
-                raise Exception("Item type is not compatible with immersive type.")
-        elif self._type == "swipe":
-            if (
-                mt_type != "image"
-                or not isinstance(item, Image)
-                or not isinstance(item, Map)
-            ):
-                raise Exception("Item type is not compatible with immersive type.")
+                raise Exception(
+                    "Item type is not compatible with 'slide' immersive type."
+                )
+        elif self._type not in ["immersive-slide", "immersive-narrative-panel"]:
+            raise Exception("Node type is not immersive.")
 
         if isinstance(item, str):
             if "image" == mt_type:
@@ -608,6 +622,8 @@ class Immersive(object):
             if position is None:
                 self._children.insert(new_item._node)
             else:
+                if delete_current:
+                    self._children.pop(position)
                 self._children.insert(position, new_item._node)
         else:
             # If user has created the item but not added to the story yet.
@@ -616,25 +632,25 @@ class Immersive(object):
                     node, resource = item._add_image(story)
                     self.properties["nodes"][item._node] = node
                     self.properties["resources"][item._resource_node] = resource
-                if isinstance(item, Video):
+                elif isinstance(item, Video):
                     node, resource = item._add_video(story)
                     self.properties["nodes"][item._node] = node
                     self.properties["resources"][item._resource_node] = resource
-                if isinstance(item, Audio):
+                elif isinstance(item, Audio):
                     node, resource = item._add_audio(story)
                     self.properties["nodes"][item._node] = node
                     self.properties["resources"][item._resource_node] = resource
-                if isinstance(item, WebPage):
+                elif isinstance(item, WebPage):
                     node, resource = item._add_webpage(story)
                     self.properties["nodes"][item._node] = node
-                if isinstance(item, Map):
+                elif isinstance(item, Map):
                     node, resource = item._add_webmap(story)
                     self.properties["nodes"][item._node] = node
                     self.properties["resources"][item._resource_node] = resource
-                if isinstance(item, Text):
+                elif isinstance(item, Text):
                     node, resource = item._add_text(story)
                     self.properties["nodes"][item._node] = node
-                if isinstance(item, Button):
+                elif isinstance(item, Button):
                     node, resource = item._add_button(story)
                     self.properties["nodes"][item._node] = node
 
@@ -642,4 +658,55 @@ class Immersive(object):
             if position is None:
                 self._children.insert(item._node)
             else:
+                if delete_current:
+                    self._children.pop(position)
                 self._children.insert(position, item._node)
+
+    # ----------------------------------------------------------------------
+    def _edit_swipe(self, item, caption, alt_text, position, story):
+        # If item was a url or file path, create item and add to nodes.
+        # Important not to add to children of the story node itself, only immersive
+        if item is not None:
+            mt = mimetypes.guess_type(item)[0].lower()
+            mt_type = mt.split("/")[0]
+
+            if (
+                mt_type != "image"
+                or not isinstance(item, Image)
+                or not isinstance(item, Map)
+            ):
+                raise Exception("Swipe nodes can only accept Image or Map item type")
+
+            if isinstance(item, str):
+                item = Image(item, caption, alt_text)
+                node, resource = item._add_image(story)
+                self.properties["nodes"][item._node] = node
+                self.properties["resources"][item._resource_node] = resource
+            else:
+                # If user has created the item but not added to the story yet.
+                if item._node not in story.properties["nodes"]:
+                    if isinstance(item, Image):
+                        node, resource = item._add_image(story)
+                        self.properties["nodes"][item._node] = node
+                        self.properties["resources"][item._resource_node] = resource
+                elif isinstance(item, Map):
+                    node, resource = item._add_webmap(story)
+                    self.properties["nodes"][item._node] = node
+                    self.properties["resources"][item._resource_node] = resource
+                # Add to children in position wanted
+                if position == 0:
+                    self._children["0"] = item._node
+                else:
+                    self._children["1"] = item._node
+        else:
+            if caption is not None:
+                self._data["caption"] = caption
+            if alt_text is not None:
+                self._data["alt"] = alt_text
+
+    # ----------------------------------------------------------------------
+    def _edit_narrative_panel(self, story, caption, alt_text, size, panel_style):
+        sub_type = self._data
+
+    # ----------------------------------------------------------------------
+    def _edit_slideshow(self, story, caption, alt_text, transition):

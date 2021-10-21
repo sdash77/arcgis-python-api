@@ -5,7 +5,7 @@ import mimetypes
 from typing import Optional, Union
 from arcgis import env
 from arcgis.apps.storymap.story_content import Immersive
-from arcgis.gis import GIS, Item
+from arcgis.gis import GIS, Item, ResourceManager
 import uuid
 from arcgis.apps.storymap import (
     Text,
@@ -163,7 +163,8 @@ class StoryMap(object):
                             If none specified, list of all nodes returned.
 
                             Values: "image" | "video" | "audio" | "webpage" | "webmap" | "text" |
-                                    "button" | "separator" | "expressmap" | "webscene" | "immersive"
+                                    "button" | "separator" | "expressmap" | "webscene" | "immersive"|
+                                    "swipe"
         ===============     ====================================================================
 
         :return: List of node ids and their types in order of appearance in the story map.
@@ -285,7 +286,7 @@ class StoryMap(object):
         self._add_child(node_id=node_id, position=position)
 
     # ----------------------------------------------------------------------
-    def theme(self, theme="summit"):
+    def theme(self, theme: str = "summit"):
         """
         Each story has a theme node in it's resources. This method can be used to change the theme
 
@@ -331,8 +332,7 @@ class StoryMap(object):
         publish: bool = False,
     ):
         """
-        Saves an Journal StoryMap to the GIS
-
+        Saves an StoryMap to the GIS
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -351,7 +351,12 @@ class StoryMap(object):
         :return: Boolean indicating success or failure.
 
         """
-        # Update Item Resources
+        # Remove old draft item
+        for resource in self._resources:
+            if "draft_" in resource["resource"]:
+                self._remove_resource(file=resource["resource"])
+
+        # Add new draft
         draft = "draft_" + str(int(time.time())) + ".json"
         self._add_resource(
             resource_name=draft, text=json.dumps(self._properties),
@@ -401,7 +406,7 @@ class StoryMap(object):
             return res
 
     # ----------------------------------------------------------------------
-    def duplicate(self, title: Optional[str] = None):
+    def duplicate_story(self, title: Optional[str] = None):
         """
         Duplicate the story.
 
@@ -424,7 +429,7 @@ class StoryMap(object):
             )
 
     # ----------------------------------------------------------------------
-    def add(self, item=None, position: Optional[int] = None):
+    def add_node(self, item=None, position: Optional[int] = None):
         """
         Add and item to the story map
 
@@ -473,7 +478,7 @@ class StoryMap(object):
         return node_id
 
     # ----------------------------------------------------------------------
-    def update(
+    def update_item(
         self,
         node_id: str,
         path: Optional[str] = None,
@@ -540,16 +545,23 @@ class StoryMap(object):
             )
 
     # ----------------------------------------------------------------------
-    def add_item_to_immersive(
+    def add_immersive_item(
         self,
         node_id: str,
-        item,
+        item: Union[str, Text, Image, Video, Audio, WebPage, Map, Button],
         caption: Optional[str] = None,
         alt_text: Optional[str] = None,
         position: Optional[int] = None,
+        delete_current: bool = False,
     ):
         """
-        Update immersive nodes such as: Slideshow, Sidecar, and Swipe.
+        Used for nodes of type: 
+        - Slideshow ('immersive-slide'), 
+        - Sidecar ('immersive-narrative-panel'),
+        - Swipe ('swipe')
+
+        Adds an item to an immersive node. Position of the new item can be specified.
+        If the new item is replacing an existing item then set delete_exisiting=True
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -557,7 +569,7 @@ class StoryMap(object):
         node_id             Required String. The node id for the item that will be updated. Find a
                             list of specific node types by using the ```list_nodes``` property.
         ---------------     --------------------------------------------------------------------
-        item                Optional String, Image, Video, Audio, Webpage, Map, Button, or Text.
+        item                Required String, Image, Video, Audio, Webpage, Map, Button, or Text.
 
                             ..note: 
                                 The recommendation is to create your item first and then pass it
@@ -570,11 +582,82 @@ class StoryMap(object):
         alt_text            Optional String. Used when a String is passed for item parameter.        
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. The position in the immersive item.
+
+                            ..note: 
+                                An immersive of type 'swipe' can only have two items.
+                                Adding a new item will replace another. To have the item be on the 
+                                left panel:position = 0 and for the right panel: position = 1
+                                The default will be the right panel is changed.
+        ---------------     --------------------------------------------------------------------
+        delete_current      Optional Boolean. If a position is specified and delete_current=True,
+                            then the current item at that position is deleted in favor of the new
+                            item. Otherwise, new item is inserted at position and other item is
+                            pushed one spot. 
+
+                            For swipe, item must be deleted since only two items at most are allowed.
         ===============     ====================================================================
         """
         # Create an instance of Immersive
         immersive = Immersive(self.properties["nodes"][node_id])
-        immersive._add_child(item, caption, alt_text, position, self)
+        if immersive["type"] == "swipe":
+            immersive._edit_swipe(item, caption, alt_text, position, self)
+        else:
+            immersive._add_child(
+                item, caption, alt_text, position, self, delete_current
+            )
+
+    # ----------------------------------------------------------------------
+    def edit_immersive_content(
+        self,
+        node_id: str,
+        caption: Optional[str] = None,
+        alt_text: Optional[str] = None,
+        size: Optional[str] = None,
+        panel_style: Optional[str] = None,
+        transition: Optional[str] = None,
+    ):
+        """
+        Used for nodes of type: 
+        - Slideshow ('immersive-slide'), 
+        - Sidecar ('immersive-narrative-panel'),
+        - Swipe ('swipe')
+
+        Edit the properties of an immersive node such as the size, panel-style, and transition.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        node_id             Required String. The node id for the item that will be updated. Find a
+                            list of specific node types by using the ```list_nodes``` property.
+        ---------------     --------------------------------------------------------------------
+        caption             Optional String. Update the node's caption.
+        ---------------     --------------------------------------------------------------------
+        alt_text            Optional String. Update the node's alt text for screen readers.        
+        ---------------     --------------------------------------------------------------------
+        size                Optional String. Size of the narrative panel in each slide.
+                            Only applicable for immersive type: Sidecar ('immersive-narrative-panel').
+
+                            Values: "small" | "medium" | "large"
+        ---------------     --------------------------------------------------------------------
+        panel_style         Optional String. Only applicable to floating-panel subtype for an
+                            immersive node of type: Sidecar ("immersive-narrative-panel")
+
+                            Values: "themed" | "transparent-with-light-color" | "transparent-with-dark-color"
+        ---------------     --------------------------------------------------------------------
+        transition          Optional String. Two types of transitions supported
+                            only in the Slides ('immersive-slide').
+
+                            Values: "fade" | "slow-fade"
+        ===============     ====================================================================
+        """
+        # Create an instance of Immersive
+        immersive = Immersive(self.properties["nodes"][node_id])
+        if immersive["type"] == "swipe":
+            immersive._edit_swipe(caption=caption, alt_text=alt_text, story=self)
+        elif immersive["type"] == "immersive-narrative-panel":
+            immersive._edit_narrative_panel(self, caption, alt_text, size, panel_style)
+        elif immersive["type"] == "immersive-slide":
+            immersive._edit_slideshow(self, caption, alt_text, transition)
 
     # ----------------------------------------------------------------------
     def move_node(
@@ -611,7 +694,7 @@ class StoryMap(object):
                 )
             children.pop(position)
 
-        self._add_child(node_id, position)
+        self._edit_immersive(node_id, position)
 
     # ----------------------------------------------------------------------
     def delete_node(self, node_id: str):
@@ -652,10 +735,8 @@ class StoryMap(object):
         """
         A story node has children. Children is a list of item nodes that are in
         the story. The order of the list determines the order that the nodes
-        appear in the story.
-
-        A user can change the position of the items however the first and last
-        nodes are reserved for story_cover and credits, respectively.
+        appear in the story. First and last nodes are reserved for story_cover
+        and credits.
         """
         # Add to story children, position counts
         # Last node is always credits and first node is always story cover
@@ -673,49 +754,10 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def _add_resource(self, file=None, resource_name=None, text=None):
         """
-        The add resources operation (POST only) allows to add new file resources
-        to an existing item, for example, an image that is used as custom logo
-        for Report Template. All the files are added to resources folder of the item.
-        File resources use storage space from your quota and are scanned for viruses.
-        The item size is updated to include the size of added resource files.
-        There is a limit of 1000 files per item (except Style items). A maximum
-        of 50 files can be added each request. Each file should be no more than 50 Mb.
-        The maximum size of all of the file resources for an item is 10 GB.
-
-
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        file              Required string. The path to the file on disk to be used for
-                          writing a file resource.
-        ----------------  ---------------------------------------------------------------
-        file_name         Optional string. The destination name for the file used to add
-                          an existing resource, or to be used together with the text parameter
-                          as file name for it.
-        ----------------  ---------------------------------------------------------------
-        text              Optional string. Text input to be added as a file resource,
-                          used together with file_name.
-        ================  ===============================================================
+        See :class:`~arcgis.gis.ResourceManager`
         """
-        url = (
-            "content/users/"
-            + self._gis._username
-            + "/items/"
-            + self._item.itemid
-            + "/addResources"
-        )
-        files = []
-        if file and os.path.isfile(os.path.abspath(file)):
-            files.append(("file", file, os.path.basename(file)))
-        elif file and os.path.isfile(os.path.abspath(file)) == False:
-            raise RuntimeError("File(" + file + ") not found.")
-
-        params = {"f": "json", "fileName": resource_name, "access": self._item.access}
-
-        if text is not None:
-            params["text"] = text
-
-        resp = self._gis._portal.con.post(url, params, files=files, compress=False)
+        resource_manager = ResourceManager(self._item, self._gis)
+        resp = resource_manager.add(file=file, file_name=resource_name, text=text)
         self._item = self._gis.content.get(self._itemid)
         self._resources = self._item.resources.list()
         return resp
@@ -723,54 +765,23 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def _update_resource(self, file=None, resource_name=None, text=None):
         """
-        The ``update`` operation allows you to update existing file resources of an item.
-        File resources use storage space from your quota and are scanned for viruses. The item size
-        is updated to include the size of updated resource files.
-
-        Supported file formats are: JSON, XML, TXT, PNG, JPEG, GIF, BMP, PDF, and ZIP.
-        This operation is only available to the item owner and the organization administrator.
-
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        file              Required string. The path to the file on disk to be used for
-                          overwriting an existing file resource.
-        ----------------  ---------------------------------------------------------------
-        file_name         Optional string. The destination name for the file used to update
-                          an existing resource, or to be used together with the text parameter
-                          as file name for it.
-
-                          For example, you can use fileName=banner.png to update an existing
-                          resource banner.png with a file called billboard.png without
-                          renaming the file locally.
-        ----------------  ---------------------------------------------------------------
-        text              Optional string. Text input to be added as a file resource,
-                          used together with file_name.
-        ================  ===============================================================
+        See :class:`~arcgis.gis.ResourceManager`
         """
+        resource_manager = ResourceManager(self._item, self._gis)
+        resp = resource_manager.update(file=file, file_name=resource_name, text=text)
+        self._item = self._gis.content.get(self._itemid)
+        self._resources = self._item.resources.list()
+        return resp
 
-        url = (
-            "content/users/"
-            + self.gis._username
-            + "/items/"
-            + self._item.itemid
-            + "/updateResources"
-        )
-
-        files = []  # create a list of named tuples to hold list of files
-        if not os.path.isfile(os.path.abspath(file)):
-            raise RuntimeError("File(" + file + ") not found.")
-        files.append(("file", file, os.path.basename(file)))
-
-        params = {}
-        params["f"] = "json"
-
-        if resource_name is not None:
-            params["fileName"] = resource_name
-        if text is not None:
-            params["text"] = text
-
-        resp = self._portal.con.post(url, params, files=files)
+    # ----------------------------------------------------------------------
+    def _remove_resource(self, file=None):
+        """
+        See :class:`~arcgis.gis.ResourceManager`
+        """
+        resource_manager = ResourceManager(self._item, self._gis)
+        resp = resource_manager.remove(file=file)
+        self._item = self._gis.content.get(self._itemid)
+        self._resources = self._item.resources.list()
         return resp
 
     # ----------------------------------------------------------------------
