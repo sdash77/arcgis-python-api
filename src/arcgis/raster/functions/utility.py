@@ -58,10 +58,8 @@ def _raster_input(raster, raster2=None):
                                     (hasattr(raster2, "_lazy_token"))
                                     and raster2._lazy_token is None
                                 ) or not hasattr(raster2, "_lazy_token"):
-                                    raster2._lazy_token = (
-                                        raster2._gis._con.generate_portal_server_token(
-                                            serverUrl=url
-                                        )
+                                    raster2._lazy_token = raster2._gis._con._create_token(
+                                        url
                                     )
                                 if isinstance(raster2._lazy_token, str):
                                     url = url + "?token=" + raster2._lazy_token
@@ -99,10 +97,7 @@ def _raster_input(raster, raster2=None):
                                     (hasattr(raster2, "_lazy_token"))
                                     and raster2._lazy_token is None
                                 ) or not hasattr(raster2, "_lazy_token"):
-                                    raster2._lazy_token = (
-                                        raster2._gis._con.generate_portal_server_token(
-                                            serverUrl=url
-                                        )
+                                    raster2._lazy_token = raster2._gis._con._create_token(url)
                                     )
                                 if isinstance(raster2._lazy_token, str):
                                     url = url + "?token=" + raster2._lazy_token
@@ -264,11 +259,7 @@ def _get_raster_url(raster, layer):
                             (hasattr(raster, "_lazy_token"))
                             and raster._lazy_token is None
                         ) or not hasattr(raster, "_lazy_token"):
-                            raster._lazy_token = (
-                                raster._gis._con.generate_portal_server_token(
-                                    serverUrl=url
-                                )
-                            )
+                            raster._lazy_token = raster._gis._con._create_token(url)
                         if isinstance(raster._lazy_token, str):
                             url = url + "?token=" + raster._lazy_token
                         raster = _replace_raster_url(raster._fn, url)
@@ -297,11 +288,7 @@ def _get_raster_url(raster, layer):
                             (hasattr(raster, "_lazy_token"))
                             and raster._lazy_token is None
                         ) or not hasattr(raster, "_lazy_token"):
-                            raster._lazy_token = (
-                                raster._gis._con.generate_portal_server_token(
-                                    serverUrl=url
-                                )
-                            )
+                            raster._lazy_token = raster._gis._con._create_token(url)
                         if isinstance(raster._lazy_token, str):
                             url = url + "?token=" + raster._lazy_token
                         raster = url
@@ -332,9 +319,7 @@ def _get_raster_ra(raster):
             if (
                 (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
             ) or not hasattr(raster, "_lazy_token"):
-                raster._lazy_token = raster._gis._con.generate_portal_server_token(
-                    serverUrl=url
-                )
+                raster._lazy_token = raster._gis._con._create_token(url)
             if isinstance(raster._lazy_token, str):
                 url = url + "?token=" + raster._lazy_token
         except:
@@ -397,9 +382,7 @@ def _get_raster_ra_rft(raster):
             if (
                 (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
             ) or not hasattr(raster, "_lazy_token"):
-                raster._lazy_token = raster._gis._con.generate_portal_server_token(
-                    serverUrl=url
-                )
+                raster._lazy_token = raster._gis._con._create_token(url)
             if isinstance(raster._lazy_token, str):
                 url = url + "?token=" + raster._lazy_token
         except:

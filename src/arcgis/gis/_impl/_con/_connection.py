@@ -112,6 +112,7 @@ class Connection(object):
     _custom_auth = None
     _custom_adapter = None
     legacy = None
+    _server_log = None
     # ----------------------------------------------------------------------
     def __init__(self, baseurl=None, username=None, password=None, **kwargs):
         """initializer
@@ -344,9 +345,7 @@ class Connection(object):
             try:
 
                 www_auth = s.get(
-                    root + pt,
-                    params=params,
-                    verify=self._verify_cert,
+                    root + pt, params=params, verify=self._verify_cert,
                 ).headers.get("www-authenticate", "")
                 results.append(www_auth)
             except:
@@ -1726,3 +1725,82 @@ class Connection(object):
                 del res
         self._product = "PORTAL"
         return "PORTAL"
+
+    def _create_token(self, url: str) -> str:
+        """
+        When a service needs a token that is not in the token, this method obtains it.
+        Only the following authentications require a URL: EsriPKIAuth, EsriBasicAuth, EsriKerberosAuth, EsriWindowsAuth, or EsriGenTokenAuth
+        :returns: str (token is possible)
+        """
+        from arcgis.auth import (
+            EsriNotebookAuth,
+            EsriAPIKeyAuth,
+            EsriPKIAuth,
+            EsriBasicAuth,
+            EsriKerberosAuth,
+            EsriWindowsAuth,
+            BaseEsriAuth,
+        )
+        from arcgis.auth.tools import parse_url
+
+        if isinstance(
+            self._session.auth,
+            (
+                EsriUserTokenAuth,
+                EsriOAuth2Auth,
+                EsriNotebookAuth,
+                EsriAPIKeyAuth,
+                ArcGISProAuth,
+                EsriBuiltInAuth,
+            ),
+        ):
+            return self._session.auth.token
+        elif isinstance(self._session.auth, EsriGenTokenAuth):
+            return self._session.auth.token(url)
+        elif isinstance(
+            self._session.auth,
+            (EsriPKIAuth, EsriBasicAuth, EsriKerberosAuth, EsriWindowsAuth),
+        ):
+            if self._server_log is None:
+                self._server_log = {}
+            parsed = parse_url(url)
+            expiration = 16000
+            if parsed.port:
+                if parsed.port in parsed.netloc:
+                    server_url = f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+                else:
+                    server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
+            else:
+                server_url = (
+                    f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+                )
+            postdata = {
+                "request": "getToken",
+                "serverURL": server_url,
+                "referer": self._referer or "http",
+                "f": "json",
+            }
+
+            if expiration:
+                postdata["expiration"] = expiration
+            if parsed.netloc in self._server_log:
+                token_url = self._server_log[parsed.netloc]
+            else:
+                info = self._session.get(
+                    server_url + "/rest/info?f=json",
+                    auth=self._session.auth,
+                    verify=self._verify_cert,
+                ).json()
+                token_url = info["authInfo"]["tokenServicesUrl"]
+                self._server_log[parsed.netloc] = token_url
+
+            token = self._session.post(
+                token_url,
+                data=postdata,
+                auth=self._session.auth,
+                verify=self._verify_cert,
+            )
+            return token.json().get("token", None)
+        elif isinstance(self._session.auth, BaseEsriAuth):
+            return self._session.auth.token
+        return None
