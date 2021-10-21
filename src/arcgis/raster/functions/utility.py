@@ -58,8 +58,8 @@ def _raster_input(raster, raster2=None):
                                     (hasattr(raster2, "_lazy_token"))
                                     and raster2._lazy_token is None
                                 ) or not hasattr(raster2, "_lazy_token"):
-                                    raster2._lazy_token = raster2._gis._con._create_token(
-                                        url
+                                    raster2._lazy_token = (
+                                        raster2._gis._con._create_token(url)
                                     )
                                 if isinstance(raster2._lazy_token, str):
                                     url = url + "?token=" + raster2._lazy_token
@@ -97,8 +97,10 @@ def _raster_input(raster, raster2=None):
                                     (hasattr(raster2, "_lazy_token"))
                                     and raster2._lazy_token is None
                                 ) or not hasattr(raster2, "_lazy_token"):
-                                    raster2._lazy_token = raster2._gis._con._create_token(url)
+                                    raster2._lazy_token = (
+                                        raster2._gis._con._create_token(url)
                                     )
+
                                 if isinstance(raster2._lazy_token, str):
                                     url = url + "?token=" + raster2._lazy_token
                                 raster2 = url

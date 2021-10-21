@@ -469,7 +469,7 @@ class _RasterRenderingService(Layer):
         self.url = url
         if url:
             self.token = gis._con._create_token(url)
-            
+
         else:
             self.token = None
 
