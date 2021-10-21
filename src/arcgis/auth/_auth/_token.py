@@ -421,7 +421,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             code=code,
             verify=self._verify_cert,
             include_client_id=True,
-            **{'expiration': 20160},
+            **{"expiration": 20160},
         )
         if "expires_at" in self._auth_token:
             self._expiration_time = _dt.datetime.fromtimestamp(
