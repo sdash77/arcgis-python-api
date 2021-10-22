@@ -117,7 +117,12 @@ class Portal(object):
                 url = arcpy.GetActivePortalURL() or "https://www.arcgis.com/"
                 self.url = url
             except ImportError:
-                raise ImportError("Could not import arcpy")
+                raise ImportError(
+                    (
+                        "The pro login failed as arcpy library could not be found in your Python environment. "
+                        "Try logging in with a different set of credentials."
+                    )
+                )
             except:
                 raise ValueError("Could not use Pro authentication.")
         else:
@@ -1386,17 +1391,13 @@ class Portal(object):
     def get_item_dependencies(self, itemid):
         postdata = self._postdata()
         postdata["num"] = 100
-        data = self.con.post(
-            "content/items/" + itemid + "/dependencies",
-            postdata,
-        )
+        data = self.con.post("content/items/" + itemid + "/dependencies", postdata,)
 
         # check if more dependents to get
         while data["nextStart"] > 0:
             postdata["start"] = data["nextStart"]
             new_data = self.con.post(
-                "content/items/" + itemid + "/dependencies",
-                postdata,
+                "content/items/" + itemid + "/dependencies", postdata,
             )
             # update list of data with new data list
             data["list"].extend(new_data["list"])
@@ -1413,16 +1414,14 @@ class Portal(object):
         postdata = self._postdata()
         postdata["num"] = 100
         data = self.con.post(
-            "content/items/" + itemid + "/dependencies/listDependentsTo",
-            postdata,
+            "content/items/" + itemid + "/dependencies/listDependentsTo", postdata,
         )
 
         # check if more dependents to get
         while data["nextStart"] > 0:
             postdata["start"] = data["nextStart"]
             new_data = self.con.post(
-                "content/items/" + itemid + "/dependencies/listDependentsTo",
-                postdata,
+                "content/items/" + itemid + "/dependencies/listDependentsTo", postdata,
             )
 
             # update data to include new_data in list

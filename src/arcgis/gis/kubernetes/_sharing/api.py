@@ -69,7 +69,12 @@ class KbertnetesPy(object):
                 url = arcpy.GetActivePortalURL()
                 self.url = url
             except ImportError:
-                raise ImportError("Could not import arcpy")
+                raise ImportError(
+                    (
+                        "The pro login failed as arcpy library could not be found in your Python environment. "
+                        "Try logging in with a different set of credentials."
+                    )
+                )
             except:
                 raise ValueError("Could not use Pro authentication.")
         else:
