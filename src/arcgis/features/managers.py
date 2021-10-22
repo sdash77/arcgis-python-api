@@ -191,7 +191,7 @@ class AttachmentManager(object):
 
             query = self._layer.query(
                 where=where,
-                object_ids=",".join(object_ids),
+                object_ids=",".join(map(str, object_ids)),
                 global_ids=",".join(global_ids),
                 return_ids_only=True,
             )
