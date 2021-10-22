@@ -1,11 +1,12 @@
 import json
+import os
 import PIL.Image
-from enum import Enum
 import mimetypes
 from typing import Optional, Union
 import uuid
 import time
 from urllib.parse import urlparse
+from arcgis.apps.storymap.story import StoryMap
 
 from arcgis.gis import Item
 
@@ -16,37 +17,38 @@ class Image(object):
     """
 
     def __init__(
-        self,
-        path: str = None,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        display: str = "float",
+        self, path: str = None,
     ):
+        """  
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        path                    Required String. The file path to the image that will be added.
+
+        ==================      ====================================================================
+        """
         self._path = path
-        self._caption = caption
-        self._alt_text = alt_text
-        self._display = display
+
+        # assign ids
         self._node = "n-" + uuid.uuid4().hex[0:6]
         self._resource_node = "r-" + uuid.uuid4().hex[0:6]
-
         mt = mimetypes.guess_type(path)[0].lower()
         self._ext_type = mt.split("/")[1]
-        self._resource_id = str(int(time.time())) + "." + self._ext_type
 
     # ----------------------------------------------------------------------
-    def _add_image(self, story):
+    def _add_image(self, story, caption, alt_text, display):
         # Make an add resource call
-        story._add_resource(self._path, self._resource_id)
+        story._add_resource(self._path)
 
         # Create image nodes
         node = {
             "type": "image",
             "data": {
                 "image": self._resource_node,
-                "caption": self._caption,
-                "alt": self._alt_text,
+                "caption": caption,
+                "alt": alt_text,
             },
-            "config": {"size": self._display},
+            "config": {"size": display},
         }
 
         im = PIL.Image.open(self._path)
@@ -55,7 +57,7 @@ class Image(object):
         resource = {
             "type": "image",
             "data": {
-                "resourceId": self._resource_id,
+                "resourceId": os.path.basename(os.path.normpath(self._path)),
                 "provider": "item-resource",
                 "height": h,
                 "width": w,
@@ -74,7 +76,12 @@ class Image(object):
 
         # UPDATE RESOURCE
         resource_id = story.properties["resources"][node_id]["data"]["resrouceId"]
-        all_resources = story._resources
+        story.properties["resources"][node_id]["data"]["resrouceId"] = os.path.basename(
+            os.path.normpath(self._path)
+        )
+        # Update the resource
+        story._remove_resource(resource_id)
+        story._add_resource(self._path)
 
 
 ###############################################################################################################
@@ -84,43 +91,48 @@ class Video(object):
     """
 
     def __init__(
-        self,
-        path: str = None,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        display: str = "float",
+        self, path: str = None,
     ):
+        """
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        path                    Required String. The file path to the video that will be added.
+
+        ==================      ====================================================================
+        """
         self._path = path
-        self._caption = caption
-        self._alt_text = alt_text
-        self._display = display
+
+        # assign ids
         self._node = "n-" + uuid.uuid4().hex[0:6]
         self._resource_node = "r-" + uuid.uuid4().hex[0:6]
 
         mt = mimetypes.guess_type(path)[0].lower()
         self._ext_type = mt.split("/")[1]
-        self._resource_id = str(int(time.time())) + "." + self._ext_type
 
     # ----------------------------------------------------------------------
-    def _add_video(self, story):
+    def _add_video(self, story, caption, alt_text, display):
         # Make an add resource call
-        story._add_resource(self._path, self._resource_id)
+        story._add_resource(self._path)
 
         # Create image nodes
         node = {
             "type": "video",
             "data": {
                 "video": self._resource_node,
-                "caption": self._caption,
-                "alt": self._alt_text,
+                "caption": caption,
+                "alt": alt_text,
             },
-            "config": {"size": self._display,},
+            "config": {"size": display,},
         }
 
         # Create resource node
         resource = {
             "type": "video",
-            "data": {"resourceId": self._resource_id, "provider": "item-resource",},
+            "data": {
+                "resourceId": os.path.basename(os.path.normpath(self._path)),
+                "provider": "item-resource",
+            },
         }
 
         return node, resource
@@ -129,53 +141,65 @@ class Video(object):
     def _update_video(self, node_id, story):
         # UPDATE RESOURCE
         resource_id = story.properties["resources"][node_id]["data"]["resrouceId"]
-        all_resources = story._resources
+        story.properties["resources"][node_id]["data"]["resrouceId"] = os.path.basename(
+            os.path.normpath(self._path)
+        )
+        # Update the resource
+        story._remove_resource(resource_id)
+        story._add_resource(self._path)
 
 
 ###############################################################################################################
 class Audio(object):
     """
     Class representing an audio from a url or file
+
     """
 
     def __init__(
-        self,
-        path: str = None,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        display: str = "float",
+        self, path: str = None,
     ):
+        """
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        path                    Required String. The file path to the image that will be added.
+
+        ==================      ====================================================================
+        """
+
         self._path = path
-        self._caption = caption
-        self._alt_text = alt_text
-        self._display = display
+
+        # assign ids
         self._node = "n-" + uuid.uuid4().hex[0:6]
         self._resource_node = "r-" + uuid.uuid4().hex[0:6]
 
         mt = mimetypes.guess_type(path)[0].lower()
         self._ext_type = mt.split("/")[1]
-        self._resource_id = str(int(time.time())) + "." + self._ext_type
 
     # ----------------------------------------------------------------------
-    def _add_audio(self, story):
+    def _add_audio(self, story, caption, alt_text, display):
         # Make an add resource call
-        story._add_resource(self._path, self._resource_id)
+        story._add_resource(self._path)
 
         # Create image nodes
         node = {
             "type": "audio",
             "data": {
                 "video": self._resource_node,
-                "caption": self._caption,
-                "alt": self._alt_text,
+                "caption": caption,
+                "alt": alt_text,
             },
-            "config": {"size": self._display,},
+            "config": {"size": display,},
         }
 
         # Create resource node
         resource = {
             "type": "audio",
-            "data": {"resourceId": self._resource_id, "provider": "item-resource"},
+            "data": {
+                "resourceId": os.path.basename(os.path.normpath(self._path)),
+                "provider": "item-resource",
+            },
         }
 
         return node, resource
@@ -184,7 +208,12 @@ class Audio(object):
     def _update_audio(self, node_id, story):
         # UPDATE RESOURCE
         resource_id = story.properties["resources"][node_id]["data"]["resrouceId"]
-        all_resources = story._resources
+        story.properties["resources"][node_id]["data"]["resrouceId"] = os.path.basename(
+            os.path.normpath(self._path)
+        )
+        # Update the resource
+        story._remove_resource(resource_id)
+        story._add_resource(self._path)
 
 
 ###############################################################################################################
@@ -194,18 +223,21 @@ class WebPage(object):
     """
 
     def __init__(
-        self,
-        path: str = None,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
+        self, path: str = None,
     ):
+        """
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        path                    Required String. The file path to the audio that will be added.
+
+        ==================      ====================================================================
+        """
         self._path = path
-        self._caption = caption
-        self._alt_text = alt_text
         self._node = "n-" + uuid.uuid4().hex[0:6]
 
     # ----------------------------------------------------------------------
-    def _add_webpage(self):
+    def _add_webpage(self, caption, alt_text):
 
         sections = urlparse(self._path)
 
@@ -554,159 +586,193 @@ class Map(object):
 
     # ----------------------------------------------------------------------
     def _update_map(self, node_id, story):
-        # UPDATE RESOURCE
+        # TODO: UPDATE RESOURCE
         resource_id = story.properties["resources"][node_id]["data"]["resrouceId"]
-        all_resources = story._resources
 
 
 ###############################################################################################################
-class Immersive(object):
-    def __init__(self, node):
+class Swipe(object):
+    def __init__(self, node_id: str, story: StoryMap):
         """
-        Create an immersive object from a pre-existing immersive node.
+        Create an Swipe immersive object from a pre-existing immersive node.
 
-        A swipe node has a different construction than other immersive nodes.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        node_id             Required String. The node id for the swipe type. 
+        ---------------     --------------------------------------------------------------------
+        story               Required StoryMap that the swipe belongs to.
+        ===============     ====================================================================
         """
+        node = story.properties["nodes"][node_id]
         self._type = node["type"]
         self._data = node["data"]
-        self._children = (
-            node["children"] if "children" in node else node["data"]["contents"]
-        )
+        self._content = node["data"]["contents"]
 
     # ----------------------------------------------------------------------
-    def _edit_immersive(self, item, caption, alt_text, position, story, delete_current):
-        # If item was a url or file path, create item and add to nodes.
-        # Important not to add to children of the story node itself, only immersive
-        mt = mimetypes.guess_type(item)[0].lower()
-        mt_type = mt.split("/")[0]
+    def edit(
+        self,
+        story: StoryMap,
+        item: Optional[Union[Image, Map]] = None,
+        caption: Optional[str] = None,
+        alt_text: Optional[str] = None,
+        position: str = "right",
+    ):
+        """
+        Add and item to the story map
 
-        # Check the immersive type to see what children types can be added
-        # immersive-narrative-panel accepts all types
-        if self._type == "immersive-slide":
-            if (
-                mt_type not in ["image", "video", None]
-                or not isinstance(item, Map)
-                or not isinstance(item, Image)
-                or not isinstance(item, Video)
-                or not isinstance(item, WebPage)
-                or not isinstance(item, Text)
-            ):
-                raise Exception(
-                    "Item type is not compatible with 'slide' immersive type."
-                )
-        elif self._type not in ["immersive-slide", "immersive-narrative-panel"]:
-            raise Exception("Node type is not immersive.")
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        story               Required StoryMap that the swipe belongs to.
+        ---------------     --------------------------------------------------------------------
+        item                Optional item of type: Image or Map.
+        ---------------     --------------------------------------------------------------------
+        caption             Optional String. If item is specified, the caption will be used for
+                            the item. If item is None then caption is used for the swipe node.
+        ---------------     --------------------------------------------------------------------
+        alt_text            Optional String. If item is specified, the alt_text will be used for
+                            the item. If item is None then alt_text is used for the swipe node.
+        ---------------     --------------------------------------------------------------------
+        position            Optional String. There are two positions for a swipe node: 'right'
+                            or 'left'. If item parameter is not none then position is default 
+                            to 'right'. If no item is given, this parameter is ignored.
+        ===============     ====================================================================
 
-        if isinstance(item, str):
-            if "image" == mt_type:
-                new_item = Image(item, caption, alt_text)
-                node, resource = new_item._add_image(story)
-                self.properties["nodes"][new_item._node] = node
-                self.properties["resources"][new_item._resource_node] = resource
-            elif "video" == mt_type:
-                new_item = Video(item, caption, alt_text)
-                node, resource = new_item._add_video(story)
-                self.properties["nodes"][new_item._node] = node
-                self.properties["resources"][new_item._resource_node] = resource
-            elif "audio" == mt_type:
-                new_item = Audio(item, caption, alt_text)
-                node, resource = new_item._add_audio(story)
-                self.properties["nodes"][new_item._node] = node
-                self.properties["resources"][new_item._resource_node] = resource
-            else:
-                new_item = WebPage(item, caption, alt_text)
-                node, resource = new_item._add_webpage()
-                self.properties["nodes"][new_item._node] = node
-
-            # Add to children in position wanted
-            if position is None:
-                self._children.insert(new_item._node)
-            else:
-                if delete_current:
-                    self._children.pop(position)
-                self._children.insert(position, new_item._node)
-        else:
+        """
+        if item is not None:
+            if not isinstance(item, Image) or not isinstance(item, Map):
+                raise Exception("Swipe nodes can only accept Image or Map item type")
             # If user has created the item but not added to the story yet.
             if item._node not in story.properties["nodes"]:
                 if isinstance(item, Image):
-                    node, resource = item._add_image(story)
+                    node, resource = item._add_image(story, caption, alt_text)
                     self.properties["nodes"][item._node] = node
                     self.properties["resources"][item._resource_node] = resource
-                elif isinstance(item, Video):
-                    node, resource = item._add_video(story)
-                    self.properties["nodes"][item._node] = node
-                    self.properties["resources"][item._resource_node] = resource
-                elif isinstance(item, Audio):
-                    node, resource = item._add_audio(story)
-                    self.properties["nodes"][item._node] = node
-                    self.properties["resources"][item._resource_node] = resource
-                elif isinstance(item, WebPage):
-                    node, resource = item._add_webpage(story)
-                    self.properties["nodes"][item._node] = node
-                elif isinstance(item, Map):
-                    node, resource = item._add_webmap(story)
-                    self.properties["nodes"][item._node] = node
-                    self.properties["resources"][item._resource_node] = resource
-                elif isinstance(item, Text):
-                    node, resource = item._add_text(story)
-                    self.properties["nodes"][item._node] = node
-                elif isinstance(item, Button):
-                    node, resource = item._add_button(story)
-                    self.properties["nodes"][item._node] = node
-
-            # Add to children in position wanted
-            if position is None:
-                self._children.insert(item._node)
-            else:
-                if delete_current:
-                    self._children.pop(position)
-                self._children.insert(position, item._node)
-
-    # ----------------------------------------------------------------------
-    def _edit_swipe(self, item, caption, alt_text, position, story):
-        # If item was a url or file path, create item and add to nodes.
-        # Important not to add to children of the story node itself, only immersive
-        if item is not None:
-            mt = mimetypes.guess_type(item)[0].lower()
-            mt_type = mt.split("/")[0]
-
-            if (
-                mt_type != "image"
-                or not isinstance(item, Image)
-                or not isinstance(item, Map)
-            ):
-                raise Exception("Swipe nodes can only accept Image or Map item type")
-
-            if isinstance(item, str):
-                item = Image(item, caption, alt_text)
-                node, resource = item._add_image(story)
+            elif isinstance(item, Map):
+                node, resource = item._add_webmap(story)
                 self.properties["nodes"][item._node] = node
                 self.properties["resources"][item._resource_node] = resource
+            # Add to content in position wanted
+            if position == "left":
+                self._content["0"] = item._node
             else:
-                # If user has created the item but not added to the story yet.
-                if item._node not in story.properties["nodes"]:
-                    if isinstance(item, Image):
-                        node, resource = item._add_image(story)
-                        self.properties["nodes"][item._node] = node
-                        self.properties["resources"][item._resource_node] = resource
-                elif isinstance(item, Map):
-                    node, resource = item._add_webmap(story)
-                    self.properties["nodes"][item._node] = node
-                    self.properties["resources"][item._resource_node] = resource
-                # Add to children in position wanted
-                if position == 0:
-                    self._children["0"] = item._node
-                else:
-                    self._children["1"] = item._node
+                self._content["1"] = item._node
         else:
             if caption is not None:
                 self._data["caption"] = caption
             if alt_text is not None:
                 self._data["alt"] = alt_text
 
-    # ----------------------------------------------------------------------
-    def _edit_narrative_panel(self, story, caption, alt_text, size, panel_style):
-        sub_type = self._data
+
+###############################################################################################################
+class Sidecar(object):
+    def __init__(self, node_id: str, story: StoryMap):
+        """
+        Create an Sidecar immersive object from a pre-existing immersive node.
+
+        A sidecar is composed of slides. Slides are composed of two nodes: a narrative panel and a media node.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        node_id             Required String. The node id for the sidecar type. 
+        ---------------     --------------------------------------------------------------------
+        story               Required StoryMap that the sidecar belongs to.
+        ===============     ====================================================================
+        """
+        self._story = story
+        node = story.properties["nodes"][node_id]
+        self._type = node["data"]["type"]
+        if self._type != "sidecar":
+            raise Exception("This node is not of type sidecar.")
+        self._subtype = node["data"]["subtype"]
+        self._slides = node["children"]
 
     # ----------------------------------------------------------------------
-    def _edit_slideshow(self, story, caption, alt_text, transition):
+    def edit_slide(
+        self, item: Union[Image, Video, Map, Text, WebPage], slide_number: int
+    ):
+        """
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item                Required item to replace current media item. 
+                            Item type can be Image, Video, Map, WebPage or Text. 
+        ---------------     --------------------------------------------------------------------
+        slide_number        Required Integer. The slide that will be edited.
+        ===============     ====================================================================
+        """
+
+    # ----------------------------------------------------------------------
+    def remove_slide(self, slide_number: int):
+        """
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item                Required item to replace current media item. 
+                            Item type can be Image, Video, Map, or Text. 
+        ---------------     --------------------------------------------------------------------
+        slide_number        Required Integer. The slide that will be edited.
+        ===============     ====================================================================
+        """
+
+    # ----------------------------------------------------------------------
+    def list_slides(self):
+        """
+        """
+
+
+###############################################################################################################
+class Slideshow(object):
+    def __init__(self, node_id: str, story: StoryMap):
+        """
+        Create an Slideshow immersive object from a pre-existing immersive node.
+
+        A slideshow is composed of slides. Slides are composed of two nodes: a narrative panel and a media node.
+        
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        node_id             Required String. The node id for the slideshow type. 
+        ---------------     --------------------------------------------------------------------
+        story               Required StoryMap that the slideshow belongs to.
+        ===============     ====================================================================
+        """
+        self._story = story
+        node = story.properties["nodes"][node_id]
+        self._type = node["data"]["type"]
+        if self._type != "slideshow":
+            raise Exception("This node is not of type slideshow")
+        self._slides = node["children"]
+
+    # ----------------------------------------------------------------------
+    def edit_slide(self, item: Union[Image, Video, Map, Text], slide_number: int):
+        """
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item                Required item to replace current media item. 
+                            Item type can be Image, Video, Map, or Text. 
+        ---------------     --------------------------------------------------------------------
+        slide_number        Required Integer. The slide that will be edited.
+        ===============     ====================================================================
+        """
+
+    # ----------------------------------------------------------------------
+    def remove_slide(self, slide_number: int):
+        """
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item                Required item to replace current media item. 
+                            Item type can be Image, Video, Map, or Text. 
+        ---------------     --------------------------------------------------------------------
+        slide_number        Required Integer. The slide that will be edited.
+        ===============     ====================================================================
+        """
+
+    # ----------------------------------------------------------------------
+    def list_slides(self):
+        """
+        """

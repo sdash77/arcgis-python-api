@@ -4,7 +4,6 @@ import json
 import mimetypes
 from typing import Optional, Union
 from arcgis import env
-from arcgis.apps.storymap.story_content import Immersive
 from arcgis.gis import GIS, Item, ResourceManager
 import uuid
 from arcgis.apps.storymap import (
@@ -174,12 +173,6 @@ class StoryMap(object):
 
         if type is None:
             return self.node_order
-        elif type == "immersive":
-            for node, node_info in self.properties["nodes"].items():
-                for key, val in node_info.items():
-                    if key == "type" and "immersive" in val:
-                        spec_type.append({node: val})
-            return spec_type
         else:
             all_nodes = self.node_order
             for node in all_nodes:
@@ -235,9 +228,7 @@ class StoryMap(object):
         return self.properties["nodes"][story_cover_node]
 
     # ----------------------------------------------------------------------
-    def navigation(
-        self, nodes: Optional[list] = [{}], position: int = 1, hidden: bool = False
-    ):
+    def navigation(self, nodes: list, position: int = 1, hidden: bool = False):
         """
         Story navigation is a way for authors to add headings as
         links to allow readers to navigate between different sections
@@ -304,24 +295,6 @@ class StoryMap(object):
             for key, val in node_info.items():
                 if key == "type" and val == "story-theme":
                     node_info["data"]["themeId"] = theme
-
-    # ----------------------------------------------------------------------
-    def end_credits(self, content=None, attribution=None, hidden=False):
-        """
-        Credits node is the last node in a story map.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        content             Optional list of Strings.
-                            See ```add_text``` parameter text to understand format.
-        ---------------     --------------------------------------------------------------------
-        hidden              Optional boolean. If True, the navigation is hidden. Default is False
-        ===============     ====================================================================
-        """
-
-        # Must take each string in content and create a new text node that is paragraph or h4
-        # Take node id and add that to children of credits.
 
     # ----------------------------------------------------------------------
     def save(
@@ -429,7 +402,14 @@ class StoryMap(object):
             )
 
     # ----------------------------------------------------------------------
-    def add_node(self, item=None, position: Optional[int] = None):
+    def add(
+        self,
+        item=None,
+        caption: Optional[str] = None,
+        alt_text: Optional[str] = None,
+        display: str = "float",
+        position: Optional[int] = None,
+    ):
         """
         Add and item to the story map
 
@@ -448,15 +428,15 @@ class StoryMap(object):
         if item._node in self.properties["nodes"]:
             raise Exception("This node already exists. Please try updating instead.")
         if isinstance(item, Image):
-            node, resource = item._add_image(self)
+            node, resource = item._add_image(self, caption, alt_text, display)
         elif isinstance(item, Video):
-            node, resource = item._add_video(self)
+            node, resource = item._add_video(self, caption, alt_text, display)
         elif isinstance(item, Audio):
-            node, resource = item._add_audio(self)
+            node, resource = item._add_audio(self, caption, alt_text, display)
         elif isinstance(item, Map):
             node, resource = item._add_webmap(self)
         elif isinstance(item, WebPage):
-            node, resource = item._add_webpage()
+            node, resource = item._add_webpage(caption, alt_text)
         elif isinstance(item, Button):
             node, resource = item._add_button()
         elif isinstance(item, Text):
@@ -478,7 +458,7 @@ class StoryMap(object):
         return node_id
 
     # ----------------------------------------------------------------------
-    def update_item(
+    def update(
         self,
         node_id: str,
         path: Optional[str] = None,
@@ -543,121 +523,6 @@ class StoryMap(object):
             self._update_properties(
                 node_id, caption, alt_text, display, button_text, button_link
             )
-
-    # ----------------------------------------------------------------------
-    def add_immersive_item(
-        self,
-        node_id: str,
-        item: Union[str, Text, Image, Video, Audio, WebPage, Map, Button],
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        position: Optional[int] = None,
-        delete_current: bool = False,
-    ):
-        """
-        Used for nodes of type: 
-        - Slideshow ('immersive-slide'), 
-        - Sidecar ('immersive-narrative-panel'),
-        - Swipe ('swipe')
-
-        Adds an item to an immersive node. Position of the new item can be specified.
-        If the new item is replacing an existing item then set delete_exisiting=True
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        node_id             Required String. The node id for the item that will be updated. Find a
-                            list of specific node types by using the ```list_nodes``` property.
-        ---------------     --------------------------------------------------------------------
-        item                Required String, Image, Video, Audio, Webpage, Map, Button, or Text.
-
-                            ..note: 
-                                The recommendation is to create your item first and then pass it
-                                in to this method. If String is given, must be path or url to 
-                                an image, video, audio, or webpage. The specific item will be created
-                                and can be edited as an individual node.
-        ---------------     --------------------------------------------------------------------
-        caption             Optional String. Used when a String is passed for item parameter.
-        ---------------     --------------------------------------------------------------------
-        alt_text            Optional String. Used when a String is passed for item parameter.        
-        ---------------     --------------------------------------------------------------------
-        position            Optional Integer. The position in the immersive item.
-
-                            ..note: 
-                                An immersive of type 'swipe' can only have two items.
-                                Adding a new item will replace another. To have the item be on the 
-                                left panel:position = 0 and for the right panel: position = 1
-                                The default will be the right panel is changed.
-        ---------------     --------------------------------------------------------------------
-        delete_current      Optional Boolean. If a position is specified and delete_current=True,
-                            then the current item at that position is deleted in favor of the new
-                            item. Otherwise, new item is inserted at position and other item is
-                            pushed one spot. 
-
-                            For swipe, item must be deleted since only two items at most are allowed.
-        ===============     ====================================================================
-        """
-        # Create an instance of Immersive
-        immersive = Immersive(self.properties["nodes"][node_id])
-        if immersive["type"] == "swipe":
-            immersive._edit_swipe(item, caption, alt_text, position, self)
-        else:
-            immersive._add_child(
-                item, caption, alt_text, position, self, delete_current
-            )
-
-    # ----------------------------------------------------------------------
-    def edit_immersive_content(
-        self,
-        node_id: str,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        size: Optional[str] = None,
-        panel_style: Optional[str] = None,
-        transition: Optional[str] = None,
-    ):
-        """
-        Used for nodes of type: 
-        - Slideshow ('immersive-slide'), 
-        - Sidecar ('immersive-narrative-panel'),
-        - Swipe ('swipe')
-
-        Edit the properties of an immersive node such as the size, panel-style, and transition.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        node_id             Required String. The node id for the item that will be updated. Find a
-                            list of specific node types by using the ```list_nodes``` property.
-        ---------------     --------------------------------------------------------------------
-        caption             Optional String. Update the node's caption.
-        ---------------     --------------------------------------------------------------------
-        alt_text            Optional String. Update the node's alt text for screen readers.        
-        ---------------     --------------------------------------------------------------------
-        size                Optional String. Size of the narrative panel in each slide.
-                            Only applicable for immersive type: Sidecar ('immersive-narrative-panel').
-
-                            Values: "small" | "medium" | "large"
-        ---------------     --------------------------------------------------------------------
-        panel_style         Optional String. Only applicable to floating-panel subtype for an
-                            immersive node of type: Sidecar ("immersive-narrative-panel")
-
-                            Values: "themed" | "transparent-with-light-color" | "transparent-with-dark-color"
-        ---------------     --------------------------------------------------------------------
-        transition          Optional String. Two types of transitions supported
-                            only in the Slides ('immersive-slide').
-
-                            Values: "fade" | "slow-fade"
-        ===============     ====================================================================
-        """
-        # Create an instance of Immersive
-        immersive = Immersive(self.properties["nodes"][node_id])
-        if immersive["type"] == "swipe":
-            immersive._edit_swipe(caption=caption, alt_text=alt_text, story=self)
-        elif immersive["type"] == "immersive-narrative-panel":
-            immersive._edit_narrative_panel(self, caption, alt_text, size, panel_style)
-        elif immersive["type"] == "immersive-slide":
-            immersive._edit_slideshow(self, caption, alt_text, transition)
 
     # ----------------------------------------------------------------------
     def move_node(
@@ -758,18 +623,6 @@ class StoryMap(object):
         """
         resource_manager = ResourceManager(self._item, self._gis)
         resp = resource_manager.add(file=file, file_name=resource_name, text=text)
-        self._item = self._gis.content.get(self._itemid)
-        self._resources = self._item.resources.list()
-        return resp
-
-    # ----------------------------------------------------------------------
-    def _update_resource(self, file=None, resource_name=None, text=None):
-        """
-        See :class:`~arcgis.gis.ResourceManager`
-        """
-        resource_manager = ResourceManager(self._item, self._gis)
-        resp = resource_manager.update(file=file, file_name=resource_name, text=text)
-        self._item = self._gis.content.get(self._itemid)
         self._resources = self._item.resources.list()
         return resp
 
@@ -780,7 +633,6 @@ class StoryMap(object):
         """
         resource_manager = ResourceManager(self._item, self._gis)
         resp = resource_manager.remove(file=file)
-        self._item = self._gis.content.get(self._itemid)
         self._resources = self._item.resources.list()
         return resp
 
