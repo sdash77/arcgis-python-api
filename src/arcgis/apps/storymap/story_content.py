@@ -39,7 +39,7 @@ class Image(object):
         story._add_resource(self._path)
 
         # Create image nodes
-        node = {
+        story.properties["nodes"][self._node] = {
             "type": "image",
             "data": {
                 "image": self._resource_node,
@@ -52,7 +52,7 @@ class Image(object):
         im = PIL.Image.open(self._path)
         w, h = im.size
         # Create resource node
-        resource = {
+        story.properties["resources"][self._resource_node] = {
             "type": "image",
             "data": {
                 "resourceId": os.path.basename(os.path.normpath(self._path)),
@@ -61,8 +61,6 @@ class Image(object):
                 "width": w,
             },
         }
-
-        return node, resource
 
     def _update_image(self, node_id, story):
         resource_node_id = story.properties["nodes"][node_id]["data"]["image"]
@@ -116,7 +114,7 @@ class Video(object):
         story._add_resource(self._path)
 
         # Create image nodes
-        node = {
+        story.properties["nodes"][self._node] = {
             "type": "video",
             "data": {
                 "video": self._resource_node,
@@ -127,15 +125,13 @@ class Video(object):
         }
 
         # Create resource node
-        resource = {
+        story.properties["resources"][self._resource_node] = {
             "type": "video",
             "data": {
                 "resourceId": os.path.basename(os.path.normpath(self._path)),
                 "provider": "item-resource",
             },
         }
-
-        return node, resource
 
     # ----------------------------------------------------------------------
     def _update_video(self, node_id, story):
@@ -186,7 +182,7 @@ class Audio(object):
         story._add_resource(self._path)
 
         # Create image nodes
-        node = {
+        story.properties["nodes"][self._node] = {
             "type": "audio",
             "data": {
                 "video": self._resource_node,
@@ -197,15 +193,13 @@ class Audio(object):
         }
 
         # Create resource node
-        resource = {
+        story.properties["resources"][self._resource_node] = {
             "type": "audio",
             "data": {
                 "resourceId": os.path.basename(os.path.normpath(self._path)),
                 "provider": "item-resource",
             },
         }
-
-        return node, resource
 
     # ----------------------------------------------------------------------
     def _update_audio(self, node_id, story):
@@ -243,26 +237,23 @@ class WebPage(object):
         self._node = "n-" + uuid.uuid4().hex[0:6]
 
     # ----------------------------------------------------------------------
-    def _add_webpage(self, caption, alt_text):
+    def _add_webpage(self, story, caption, alt_text):
 
         sections = urlparse(self._path)
 
         # Create embed nodes
-        node = {
+        story.properties["nodes"][self._node] = {
             "type": "embed",
             "data": {
                 "url": self._path,
                 "embedType": "link",
                 "title": sections.netloc,
-                "description": self._caption,
+                "description": caption,
                 "providerUrl": self._path,
-                "alt": self._alt_text,
+                "alt": alt_text,
                 "display": "card",
             },
         }
-
-        resource = None
-        return node, resource
 
     # ----------------------------------------------------------------------
     def _update_webpage(self, node_id, story):
@@ -378,17 +369,16 @@ class Text(object):
             self._color = color
 
     # ----------------------------------------------------------------------
-    def _add_text(self):
+    def _add_text(self, story):
 
-        node = {
+        story.properties["nodes"][self._node] = {
             "type": "text",
             "data": {"type": self._style, "text": self._text,},
         }
         if self._color is not None:
-            node["data"]["customTextColors"] = [self._color]
-
-        resource = None
-        return node, resource
+            story.properties["nodes"][self._node]["data"]["customTextColors"] = [
+                self._color
+            ]
 
     # ----------------------------------------------------------------------
     def _update_text(self, story):
@@ -421,15 +411,11 @@ class Button(object):
         self._text = text
 
     # ----------------------------------------------------------------------
-    def _add_button(self):
-        node = {
+    def _add_button(self, story):
+        story.properties["nodes"][self._node] = {
             "type": "button",
             "data": {"text": self._text, "link": self._link},
         }
-
-        resource = None
-
-        return node, resource
 
 
 ###############################################################################################################
@@ -561,7 +547,7 @@ class Map(object):
         # story._add_resource(resource_name= self._resource_id, text=json.dumps(self._path))
 
         # Create webmap nodes
-        node = {
+        story.properties["nodes"][self._node] = {
             "type": "webmap",
             "data": {
                 "map": self._resource_node,
@@ -578,7 +564,7 @@ class Map(object):
         }
 
         # Create resource node
-        resource = {
+        story.properties["resources"][self._resource_node] = {
             "type": "webmap",
             "data": {
                 "extent": self._extent,
@@ -592,8 +578,6 @@ class Map(object):
                 "showLegend": self._show_legend,
             },
         }
-
-        return node, resource
 
     # ----------------------------------------------------------------------
     def _update_map(self, node_id, story):
@@ -707,7 +691,7 @@ class Sidecar(object):
     ):
         """
         Edit slide text or media item. Item can be of type Image, Video, Map, or WebPage.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -717,39 +701,27 @@ class Sidecar(object):
         slide_number        Required Integer. The slide that will be edited. First slide is 1.
         ===============     ====================================================================
         """
+        # Find children nodes
         slide = self._slides[slide_number - 1]
         narrative_panel = self._story.properties["nodes"][slide]["children"][0]
-        media_item = self._story.properties["nodes"][slide]["children"][1]
+        media_item = None
+        if len(self._story.properties["nodes"][slide]["children"]) == 2:
+            media_item = self._story.properties["nodes"][slide]["children"][1]
 
         # Check to see if item has been added to node properties
         if item._node not in self._story.properties["nodes"]:
-            if isinstance(item, Image):
-                node, resource = item._add_image(self._story)
-                self._story.properties["nodes"][item._node] = node
-                self._story.properties["resources"][item._resource_node] = resource
-            elif isinstance(item, Video):
-                node, resource = item._add_video(self._story)
-                self._story.properties["nodes"][item._node] = node
-                self._story.properties["resources"][item._resource_node] = resource
-            elif isinstance(item, WebPage):
-                node, resource = item._add_webpage(self._story)
-                self._story.properties["nodes"][item._node] = node
-            elif isinstance(item, Map):
-                node, resource = item._add_webmap(self._story)
-                self._story.properties["nodes"][item._node] = node
-                self._story.properties["resources"][item._resource_node] = resource
-            elif isinstance(item, Text):
-                node, resource = item._add_text()
-                self._story.properties["nodes"][item._node] = node
+            self._add_item_story(item)
 
+        # Insert new item
         if isinstance(item, Text):
             # If item is text then update the narrative panel by removing old text and adding new
             old_text_node = narrative_panel["children"][0]
-            self._story.delete_node(old_text_node)
+            self._story.delete(old_text_node)
             narrative_panel["children"].insert(item._node)
         else:
             # Remove current media item and add new item as media
-            self._story.delete_node(media_item)
+            if media_item:
+                self._story.delete(media_item)
             self._story.properties["nodes"][slide]["children"].insert(1, item._node)
 
     # ----------------------------------------------------------------------
@@ -766,14 +738,8 @@ class Sidecar(object):
         # Remove slide and all associated children.
         slide = self._slides[slide_number - 1]
         self._slide.remove(slide_number - 1)
-        self._story.delete_node(slide)
-        # Remove narrative panel and text associated
-        narrative_panel = self._story.properties["nodes"][slide]["children"][0]
-        self._story.delete_node(narrative_panel["children"][0])
-        self._story.delete_node(narrative_panel)
-        # Remove media item
-        media_item = self._story.properties["nodes"][slide]["children"][1]
-        self._story.delete_node(media_item)
+        self._story.delete(slide)
+        self._remove_associated(slide)
 
     # ----------------------------------------------------------------------
     def list_slides(self):
@@ -802,6 +768,37 @@ class Sidecar(object):
             )
             sidecar_tree.insert(slide)
         return sidecar_tree
+
+    # ----------------------------------------------------------------------
+    def _remove_associated(self, slide):
+        # Remove narrative panel and text associated
+        narrative_panel = self._story.properties["nodes"][slide]["children"][0]
+        self._story.delete(narrative_panel["children"][0])
+        self._story.delete(narrative_panel)
+        # Remove media item
+        media_item = self._story.properties["nodes"][slide]["children"][1]
+        self._story.delete(media_item)
+
+    # ----------------------------------------------------------------------
+    def _add_item_story(self, item):
+        if isinstance(item, Image):
+            node, resource = item._add_image(self._story)
+            self._story.properties["nodes"][item._node] = node
+            self._story.properties["resources"][item._resource_node] = resource
+        elif isinstance(item, Video):
+            node, resource = item._add_video(self._story)
+            self._story.properties["nodes"][item._node] = node
+            self._story.properties["resources"][item._resource_node] = resource
+        elif isinstance(item, WebPage):
+            node, resource = item._add_webpage(self._story)
+            self._story.properties["nodes"][item._node] = node
+        elif isinstance(item, Map):
+            node, resource = item._add_webmap(self._story)
+            self._story.properties["nodes"][item._node] = node
+            self._story.properties["resources"][item._resource_node] = resource
+        elif isinstance(item, Text):
+            node, resource = item._add_text()
+            self._story.properties["nodes"][item._node] = node
 
 
 ###############################################################################################################
@@ -841,36 +838,25 @@ class Slideshow(object):
         slide_number        Required Integer. The slide that will be edited. First slide is 1.
         ===============     ====================================================================
         """
+        # Find children
         slide = self._slides[slide_number - 1]
         narrative_panel = self._story.properties["nodes"][slide]["children"][0]
         media_item = self._story.properties["nodes"][slide]["children"][1]
 
         # Check to see if item has been added to node properties
         if item._node not in self._story.properties["nodes"]:
-            if isinstance(item, Image):
-                node, resource = item._add_image(self._story)
-                self._story.properties["nodes"][item._node] = node
-                self._story.properties["resources"][item._resource_node] = resource
-            elif isinstance(item, Video):
-                node, resource = item._add_video(self._story)
-                self._story.properties["nodes"][item._node] = node
-                self._story.properties["resources"][item._resource_node] = resource
-            elif isinstance(item, Map):
-                node, resource = item._add_webmap(self._story)
-                self._story.properties["nodes"][item._node] = node
-                self._story.properties["resources"][item._resource_node] = resource
-            elif isinstance(item, Text):
-                node, resource = item._add_text()
-                self._story.properties["nodes"][item._node] = node
+            self._add_item_story(item)
 
+        # Insert new item
         if isinstance(item, Text):
             # If item is text then update the narrative panel by removing old text and adding new
             old_text_node = narrative_panel["children"][0]
-            self._story.delete_node(old_text_node)
+            self._story.delete(old_text_node)
             narrative_panel["children"].insert(item._node)
         else:
             # Remove current media item and add new item as media
-            self._story.delete_node(media_item)
+            if media_item:
+                self._story.delete(media_item)
             self._story.properties["nodes"][slide]["children"].insert(1, item._node)
 
     # ----------------------------------------------------------------------
@@ -887,14 +873,8 @@ class Slideshow(object):
         # Remove slide and all associated children.
         slide = self._slides[slide_number - 1]
         self._slide.remove(slide_number - 1)
-        self._story.delete_node(slide)
-        # Remove narrative panel and text associated
-        narrative_panel = self._story.properties["nodes"][slide]["children"][0]
-        self._story.delete_node(narrative_panel["children"][0])
-        self._story.delete_node(narrative_panel)
-        # Remove media item
-        media_item = self._story.properties["nodes"][slide]["children"][1]
-        self._story.delete_node(media_item)
+        self._story.delete(slide)
+        self._remove_associated(slide)
 
     # ----------------------------------------------------------------------
     def list_slides(self):
@@ -923,3 +903,34 @@ class Slideshow(object):
             )
             slideshow_tree.insert(slide)
         return slideshow_tree
+
+    # ----------------------------------------------------------------------
+    def _remove_associated(self, slide):
+        # Remove narrative panel and text associated
+        narrative_panel = self._story.properties["nodes"][slide]["children"][0]
+        self._story.delete(narrative_panel["children"][0])
+        self._story.delete(narrative_panel)
+        # Remove media item
+        media_item = self._story.properties["nodes"][slide]["children"][1]
+        self._story.delete(media_item)
+
+    # ----------------------------------------------------------------------
+    def _add_item_story(self, item):
+        if isinstance(item, Image):
+            node, resource = item._add_image(self._story)
+            self._story.properties["nodes"][item._node] = node
+            self._story.properties["resources"][item._resource_node] = resource
+        elif isinstance(item, Video):
+            node, resource = item._add_video(self._story)
+            self._story.properties["nodes"][item._node] = node
+            self._story.properties["resources"][item._resource_node] = resource
+        elif isinstance(item, WebPage):
+            node, resource = item._add_webpage(self._story)
+            self._story.properties["nodes"][item._node] = node
+        elif isinstance(item, Map):
+            node, resource = item._add_webmap(self._story)
+            self._story.properties["nodes"][item._node] = node
+            self._story.properties["resources"][item._resource_node] = resource
+        elif isinstance(item, Text):
+            node, resource = item._add_text()
+            self._story.properties["nodes"][item._node] = node

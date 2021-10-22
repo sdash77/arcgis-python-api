@@ -133,7 +133,7 @@ class StoryMap(object):
         for child in children:
             if child in nodes:
                 node_type = self.properties["nodes"][child]["type"]
-                if node_type == "text":
+                if node_type == "text" or node_type == "immersive":
                     subtype = self.properties["nodes"][child]["data"]["type"]
                     node_order.append({child: node_type + ", " + subtype})
                 else:
@@ -384,29 +384,6 @@ class StoryMap(object):
             return res
 
     # ----------------------------------------------------------------------
-    def duplicate_story(self, title: Optional[str] = None):
-        """
-        Duplicate the story.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        title               Optional string. The title of the duplicated story.
-        ===============     ====================================================================
-        """
-        item = self._gis.content.get(self._itemid)
-
-        if item._portal.is_arcgisonline is False:
-            # TODO: TEST THIS
-            return self._gis.content.clone_items(items=[item])
-        else:
-            return item.copy_item(
-                title="(Copy) " + self._item.title if title is None else title,
-                include_resources=True,
-                include_private=True,
-            )
-
-    # ----------------------------------------------------------------------
     def add(
         self,
         item=None,
@@ -432,31 +409,25 @@ class StoryMap(object):
         """
         if item._node in self.properties["nodes"]:
             raise Exception("This node already exists. Please try updating instead.")
-        if isinstance(item, Image):
-            node, resource = item._add_image(self, caption, alt_text, display)
-        elif isinstance(item, Video):
-            node, resource = item._add_video(self, caption, alt_text, display)
-        elif isinstance(item, Audio):
-            node, resource = item._add_audio(self, caption, alt_text, display)
-        elif isinstance(item, Map):
-            node, resource = item._add_webmap(self)
-        elif isinstance(item, WebPage):
-            node, resource = item._add_webpage(caption, alt_text)
-        elif isinstance(item, Button):
-            node, resource = item._add_button()
-        elif isinstance(item, Text):
-            node, resource = item._add_text()
-        else:
-            node = {"type": "separator"}
-            resource = None
 
-        # Add to the nodes
         node_id = item._node if item is not None else uuid.uuid4().hex[0:6]
-        self.properties["nodes"][node_id] = node
 
-        # If resource was returned, add to resources
-        if resource is not None:
-            self.properties["resources"][item._resource_node] = resource
+        if isinstance(item, Image):
+            item._add_image(self, caption, alt_text, display)
+        elif isinstance(item, Video):
+            item._add_video(self, caption, alt_text, display)
+        elif isinstance(item, Audio):
+            item._add_audio(self, caption, alt_text, display)
+        elif isinstance(item, Map):
+            item._add_webmap(self)
+        elif isinstance(item, WebPage):
+            item._add_webpage(self, caption, alt_text)
+        elif isinstance(item, Button):
+            item._add_button(self)
+        elif isinstance(item, Text):
+            item._add_text(self)
+        else:
+            self.properties["nodes"][node_id] = {"type": "separator"}
 
         # Add to story children
         self._add_child(node_id=node_id, position=position)
@@ -504,23 +475,21 @@ class StoryMap(object):
         if isinstance(item, Item) or isinstance(item, Map):
             if item.type != "Web Map" or item.type != "Web Scene":
                 raise Exception("New item must be of type Web Map or Web Scene")
-            new_item = Map(item)
-            new_item._update_map(node_id, self)
+            if isinstance(item, Item):
+                item = Map(item)
+            item._update_map(node_id, self)
         elif isinstance(item, str):
             mt = mimetypes.guess_type(item)[0].lower()
             if "image" in mt:
-                new_item = Image(item)
-                new_item._update_image(node_id, self)
+                item = Image(item)
             elif "video" in mt:
-                new_item = Video(item)
-                new_item._update_video(node_id, self)
+                item = Video(item)
             elif "audio" in mt:
-                new_item = Audio(item)
-                new_item._update_audio(node_id, self)
+                item = Audio(item)
             else:
-                new_item = WebPage(item)
-                new_item._update_webpage(node_id, self)
-        elif isinstance(item, Image):
+                item = WebPage(item)
+        # Update item
+        if isinstance(item, Image):
             item._update_image(node_id, self)
         elif isinstance(item, Video):
             item._update_video(node_id, self)
@@ -536,7 +505,7 @@ class StoryMap(object):
             )
 
     # ----------------------------------------------------------------------
-    def move_node(
+    def move(
         self, node_id: str, position: Optional[int] = None, delete_current: bool = False
     ):
         """
@@ -575,7 +544,7 @@ class StoryMap(object):
         self._add_child(node_id, position)
 
     # ----------------------------------------------------------------------
-    def delete_node(self, node_id: str):
+    def delete(self, node_id: str):
         """
         Delete a node from the story.
 
@@ -611,6 +580,29 @@ class StoryMap(object):
         """
         item = self._gis.content.get(self._itemid)
         item.delete()
+
+    # ----------------------------------------------------------------------
+    def duplicate_story(self, title: Optional[str] = None):
+        """
+        Duplicate the story.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        title               Optional string. The title of the duplicated story.
+        ===============     ====================================================================
+        """
+        item = self._gis.content.get(self._itemid)
+
+        if item._portal.is_arcgisonline is False:
+            # TODO: TEST THIS
+            return self._gis.content.clone_items(items=[item])
+        else:
+            return item.copy_item(
+                title="(Copy) " + self._item.title if title is None else title,
+                include_resources=True,
+                include_private=True,
+            )
 
     # ----------------------------------------------------------------------
     def _add_child(self, node_id, position=None):
