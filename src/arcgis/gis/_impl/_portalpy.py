@@ -119,7 +119,7 @@ class Portal(object):
             except ImportError:
                 raise ImportError(
                     (
-                        "The pro login failed as arcpy library could not be found in your Python environment. "
+                        "The login failed because the arcpy library could not be found in your Python environment. "
                         "Try logging in with a different set of credentials."
                     )
                 )
