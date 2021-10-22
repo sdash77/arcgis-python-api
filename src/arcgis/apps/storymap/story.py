@@ -6,7 +6,7 @@ from typing import Optional, Union
 from arcgis import env
 from arcgis.gis import GIS, Item, ResourceManager
 import uuid
-from arcgis.apps.storymap import (
+from arcgis.apps.storymap.story_content import (
     Text,
     Image,
     Video,
@@ -119,7 +119,12 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @property
     def node_order(self):
-        """This propertry returns the storymap's node order"""
+        """
+        This propertry returns the storymap's main nodes in order of appearance in the story
+        
+        To see sub-nodes then use the corresponding immersive class to list the nodes for
+        immersive types.
+        """
         root_id = self.properties["root"]
         children = self.properties["nodes"][root_id]["children"]
         nodes = self.properties["nodes"]
@@ -178,7 +183,7 @@ class StoryMap(object):
             for node in all_nodes:
                 if type in node.values():
                     spec_type.append(node)
-            return spec_type
+            return tuple(spec_type)
 
     # ----------------------------------------------------------------------
     def story_cover(
@@ -461,7 +466,7 @@ class StoryMap(object):
     def update(
         self,
         node_id: str,
-        path: Optional[str] = None,
+        item: Optional[Union[str, Item, Map, Image, Video, WebPage, Audio]] = None,
         caption: Optional[str] = None,
         alt_text: Optional[str] = None,
         display: Optional[str] = None,
@@ -469,7 +474,7 @@ class StoryMap(object):
         button_link: Optional[str] = None,
     ):
         """
-        Update an existing node of type Image, Video, WebPage, or Audio.
+        Update an existing node of type Image, Video, WebPage, Map or Audio.
         Can also be used to update the text or link of a Button.
 
         ===============     ====================================================================
@@ -478,12 +483,10 @@ class StoryMap(object):
         node_id             Required String. The node id for the item that will be updated. Find a
                             list of node order by using the ```node_order``` property.
         ---------------     --------------------------------------------------------------------
-        path                Optional String. The url or file path for the new item.
+        item                Optional String or item. The url or file path for the new item.
+                            If Item then :class:`~arcgis.gis.Item` of type 'WebMap' or 'WebScene'
+                            or a story map item of type 'Image', 'Video', 'Audio', 'Webpage', or 'Map'.
 
-                            ..note:
-                                To update a webmap or webscene's properties, create a new Map()
-                                and use the ``move_node`` method to set the postion to 
-                                where the current Map is and set delete_current=True. 
         ---------------     --------------------------------------------------------------------
         caption             Optional String. New caption to insert.
         ---------------     --------------------------------------------------------------------
@@ -498,25 +501,33 @@ class StoryMap(object):
 
         """
         # Update path if new path given
-        if isinstance(path, Item) or isinstance(path, Map):
-            if path.type != "Web Map" or path.type != "Web Scene":
+        if isinstance(item, Item) or isinstance(item, Map):
+            if item.type != "Web Map" or item.type != "Web Scene":
                 raise Exception("New item must be of type Web Map or Web Scene")
-            new_item = Map(path)
+            new_item = Map(item)
             new_item._update_map(node_id, self)
-        elif isinstance(path, str):
-            mt = mimetypes.guess_type(path)[0].lower()
+        elif isinstance(item, str):
+            mt = mimetypes.guess_type(item)[0].lower()
             if "image" in mt:
-                new_item = Image(path)
+                new_item = Image(item)
                 new_item._update_image(node_id, self)
             elif "video" in mt:
-                new_item = Video(path)
+                new_item = Video(item)
                 new_item._update_video(node_id, self)
             elif "audio" in mt:
-                new_item = Audio(path)
+                new_item = Audio(item)
                 new_item._update_audio(node_id, self)
             else:
-                new_item = WebPage(path)
+                new_item = WebPage(item)
                 new_item._update_webpage(node_id, self)
+        elif isinstance(item, Image):
+            item._update_image(node_id, self)
+        elif isinstance(item, Video):
+            item._update_video(node_id, self)
+        elif isinstance(item, WebPage):
+            item._update_webpage(node_id, self)
+        elif isinstance(item, Audio):
+            item._update_audio(node_id, self)
 
         # Update properties if new properties given
         if caption or alt_text or display or button_text or button_link:
@@ -552,6 +563,7 @@ class StoryMap(object):
         # Remove node id from list since it will be added again at another position
         children.remove(node_id)
 
+        # If delete_current is True then remove the node currently at this position
         if delete_current:
             if position == 0 or position == len(children):
                 raise Exception(
@@ -559,7 +571,8 @@ class StoryMap(object):
                 )
             children.pop(position)
 
-        self._edit_immersive(node_id, position)
+        # Add node to new position
+        self._add_child(node_id, position)
 
     # ----------------------------------------------------------------------
     def delete_node(self, node_id: str):
@@ -578,14 +591,18 @@ class StoryMap(object):
         children = self.properties["nodes"][root_id]["children"]
 
         # Remove from children of story
-        children.remove(node_id)
+        if node_id in children:
+            children.remove(node_id)
+
         # Remove from nodes dictionary
         del self.properties["nodes"][node_id]
+
         # Remove from resources dictionary
         # Note: not all keys are in resources
-        self.properties["nodes"].pop(node_id, None)
+        resource = self.properties["resources"].pop(node_id, None)
 
-        return self.node_order
+        if resource is not None:
+            self._remove_resource(resource["data"]["resourceId"])
 
     # ----------------------------------------------------------------------
     def delete_story(self):

@@ -6,8 +6,6 @@ from typing import Optional, Union
 import uuid
 import time
 from urllib.parse import urlparse
-from arcgis.apps.storymap.story import StoryMap
-
 from arcgis.gis import Item
 
 
@@ -67,18 +65,20 @@ class Image(object):
         return node, resource
 
     def _update_image(self, node_id, story):
-
+        resource_node_id = story.properties["nodes"][node_id]["data"]["image"]
         # Update the height and width for the image
         im = PIL.Image.open(self._path)
         w, h = im.size
-        story.properties["resources"][node_id]["data"]["height"] = h
-        story.properties["resources"][node_id]["data"]["width"] = w
+        story.properties["resources"][resource_node_id]["data"]["height"] = h
+        story.properties["resources"][resource_node_id]["data"]["width"] = w
 
         # UPDATE RESOURCE
-        resource_id = story.properties["resources"][node_id]["data"]["resrouceId"]
-        story.properties["resources"][node_id]["data"]["resrouceId"] = os.path.basename(
-            os.path.normpath(self._path)
-        )
+        resource_id = story.properties["resources"][resource_node_id]["data"][
+            "resourceId"
+        ]
+        story.properties["resources"][resource_node_id]["data"][
+            "resourceId"
+        ] = os.path.basename(os.path.normpath(self._path))
         # Update the resource
         story._remove_resource(resource_id)
         story._add_resource(self._path)
@@ -139,11 +139,14 @@ class Video(object):
 
     # ----------------------------------------------------------------------
     def _update_video(self, node_id, story):
+        resource_node_id = story.properties["nodes"][node_id]["data"]["video"]
         # UPDATE RESOURCE
-        resource_id = story.properties["resources"][node_id]["data"]["resrouceId"]
-        story.properties["resources"][node_id]["data"]["resrouceId"] = os.path.basename(
-            os.path.normpath(self._path)
-        )
+        resource_id = story.properties["resources"][resource_node_id]["data"][
+            "resourceId"
+        ]
+        story.properties["resources"][resource_node_id]["data"][
+            "resourceId"
+        ] = os.path.basename(os.path.normpath(self._path))
         # Update the resource
         story._remove_resource(resource_id)
         story._add_resource(self._path)
@@ -206,11 +209,14 @@ class Audio(object):
 
     # ----------------------------------------------------------------------
     def _update_audio(self, node_id, story):
+        resource_node_id = story.properties["nodes"][node_id]["data"]["audio"]
         # UPDATE RESOURCE
-        resource_id = story.properties["resources"][node_id]["data"]["resrouceId"]
-        story.properties["resources"][node_id]["data"]["resrouceId"] = os.path.basename(
-            os.path.normpath(self._path)
-        )
+        resource_id = story.properties["resources"][resource_node_id]["data"][
+            "resourceId"
+        ]
+        story.properties["resources"][resource_node_id]["data"][
+            "resourceId"
+        ] = os.path.basename(os.path.normpath(self._path))
         # Update the resource
         story._remove_resource(resource_id)
         story._add_resource(self._path)
@@ -384,12 +390,17 @@ class Text(object):
         resource = None
         return node, resource
 
+    # ----------------------------------------------------------------------
+    def _update_text(self, story):
+        """
+        TODO: Implement update text for this method
+        """
+
 
 ###############################################################################################################
 class Button(object):
     """
     Class representing a button
-
     """
 
     def __init__(self, link: str = None, text: str = None):
@@ -586,13 +597,13 @@ class Map(object):
 
     # ----------------------------------------------------------------------
     def _update_map(self, node_id, story):
-        # TODO: UPDATE RESOURCE
-        resource_id = story.properties["resources"][node_id]["data"]["resrouceId"]
+        # TODO: UPDATE RESOURCES and Properties.
+        resource_id = story.properties["resources"][node_id]["data"]["resourceId"]
 
 
 ###############################################################################################################
 class Swipe(object):
-    def __init__(self, node_id: str, story: StoryMap):
+    def __init__(self, node_id: str, story):
         """
         Create an Swipe immersive object from a pre-existing immersive node.
 
@@ -612,7 +623,7 @@ class Swipe(object):
     # ----------------------------------------------------------------------
     def edit(
         self,
-        story: StoryMap,
+        story,
         item: Optional[Union[Image, Map]] = None,
         caption: Optional[str] = None,
         alt_text: Optional[str] = None,
@@ -667,7 +678,7 @@ class Swipe(object):
 
 ###############################################################################################################
 class Sidecar(object):
-    def __init__(self, node_id: str, story: StoryMap):
+    def __init__(self, node_id: str, story):
         """
         Create an Sidecar immersive object from a pre-existing immersive node.
 
@@ -683,6 +694,7 @@ class Sidecar(object):
         """
         self._story = story
         node = story.properties["nodes"][node_id]
+        self._node_id = node_id
         self._type = node["data"]["type"]
         if self._type != "sidecar":
             raise Exception("This node is not of type sidecar.")
@@ -694,38 +706,107 @@ class Sidecar(object):
         self, item: Union[Image, Video, Map, Text, WebPage], slide_number: int
     ):
         """
+        Edit slide text or media item. Item can be of type Image, Video, Map, or WebPage.
+        
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         item                Required item to replace current media item. 
                             Item type can be Image, Video, Map, WebPage or Text. 
         ---------------     --------------------------------------------------------------------
-        slide_number        Required Integer. The slide that will be edited.
+        slide_number        Required Integer. The slide that will be edited. First slide is 1.
         ===============     ====================================================================
         """
+        slide = self._slides[slide_number - 1]
+        narrative_panel = self._story.properties["nodes"][slide]["children"][0]
+        media_item = self._story.properties["nodes"][slide]["children"][1]
+
+        # Check to see if item has been added to node properties
+        if item._node not in self._story.properties["nodes"]:
+            if isinstance(item, Image):
+                node, resource = item._add_image(self._story)
+                self._story.properties["nodes"][item._node] = node
+                self._story.properties["resources"][item._resource_node] = resource
+            elif isinstance(item, Video):
+                node, resource = item._add_video(self._story)
+                self._story.properties["nodes"][item._node] = node
+                self._story.properties["resources"][item._resource_node] = resource
+            elif isinstance(item, WebPage):
+                node, resource = item._add_webpage(self._story)
+                self._story.properties["nodes"][item._node] = node
+            elif isinstance(item, Map):
+                node, resource = item._add_webmap(self._story)
+                self._story.properties["nodes"][item._node] = node
+                self._story.properties["resources"][item._resource_node] = resource
+            elif isinstance(item, Text):
+                node, resource = item._add_text()
+                self._story.properties["nodes"][item._node] = node
+
+        if isinstance(item, Text):
+            # If item is text then update the narrative panel by removing old text and adding new
+            old_text_node = narrative_panel["children"][0]
+            self._story.delete_node(old_text_node)
+            narrative_panel["children"].insert(item._node)
+        else:
+            # Remove current media item and add new item as media
+            self._story.delete_node(media_item)
+            self._story.properties["nodes"][slide]["children"].insert(1, item._node)
 
     # ----------------------------------------------------------------------
     def remove_slide(self, slide_number: int):
         """
+        Remove a slide from the sidecar.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        item                Required item to replace current media item. 
-                            Item type can be Image, Video, Map, or Text. 
-        ---------------     --------------------------------------------------------------------
-        slide_number        Required Integer. The slide that will be edited.
+        slide_number        Required Integer. The slide that will be removed. First slide is 1.
         ===============     ====================================================================
         """
+        # Remove slide and all associated children.
+        slide = self._slides[slide_number - 1]
+        self._slide.remove(slide_number - 1)
+        self._story.delete_node(slide)
+        # Remove narrative panel and text associated
+        narrative_panel = self._story.properties["nodes"][slide]["children"][0]
+        self._story.delete_node(narrative_panel["children"][0])
+        self._story.delete_node(narrative_panel)
+        # Remove media item
+        media_item = self._story.properties["nodes"][slide]["children"][1]
+        self._story.delete_node(media_item)
 
     # ----------------------------------------------------------------------
     def list_slides(self):
         """
+        List all slides and their children
+
+        :return: 
+            A list where the first item is the node id for the sidecar. Next
+            items are dictionary of slides and their children.
         """
+        sidecar_tree = [self._node_id]
+        for slide in self._slides:
+            slide = []
+            narrative_panel = self._story.properties["nodes"][slide]["children"][0]
+            text = self._story.properties["nodes"][narrative_panel]["children"]
+            media_item = self._story.properties["nodes"][slide]["children"][1]
+            slide.insert(
+                {
+                    "Slide: "
+                    + slide: [
+                        "Narrative Panel: " + narrative_panel,
+                        "Text: " + text,
+                        "Media Item: " + media_item,
+                    ]
+                }
+            )
+            sidecar_tree.insert(slide)
+        return sidecar_tree
 
 
 ###############################################################################################################
 class Slideshow(object):
-    def __init__(self, node_id: str, story: StoryMap):
+    def __init__(self, node_id: str, story):
         """
         Create an Slideshow immersive object from a pre-existing immersive node.
 
@@ -749,30 +830,96 @@ class Slideshow(object):
     # ----------------------------------------------------------------------
     def edit_slide(self, item: Union[Image, Video, Map, Text], slide_number: int):
         """
+        Edit slide text or media item. Media item can be an Image, Video, or Map.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         item                Required item to replace current media item. 
                             Item type can be Image, Video, Map, or Text. 
         ---------------     --------------------------------------------------------------------
-        slide_number        Required Integer. The slide that will be edited.
+        slide_number        Required Integer. The slide that will be edited. First slide is 1.
         ===============     ====================================================================
         """
+        slide = self._slides[slide_number - 1]
+        narrative_panel = self._story.properties["nodes"][slide]["children"][0]
+        media_item = self._story.properties["nodes"][slide]["children"][1]
+
+        # Check to see if item has been added to node properties
+        if item._node not in self._story.properties["nodes"]:
+            if isinstance(item, Image):
+                node, resource = item._add_image(self._story)
+                self._story.properties["nodes"][item._node] = node
+                self._story.properties["resources"][item._resource_node] = resource
+            elif isinstance(item, Video):
+                node, resource = item._add_video(self._story)
+                self._story.properties["nodes"][item._node] = node
+                self._story.properties["resources"][item._resource_node] = resource
+            elif isinstance(item, Map):
+                node, resource = item._add_webmap(self._story)
+                self._story.properties["nodes"][item._node] = node
+                self._story.properties["resources"][item._resource_node] = resource
+            elif isinstance(item, Text):
+                node, resource = item._add_text()
+                self._story.properties["nodes"][item._node] = node
+
+        if isinstance(item, Text):
+            # If item is text then update the narrative panel by removing old text and adding new
+            old_text_node = narrative_panel["children"][0]
+            self._story.delete_node(old_text_node)
+            narrative_panel["children"].insert(item._node)
+        else:
+            # Remove current media item and add new item as media
+            self._story.delete_node(media_item)
+            self._story.properties["nodes"][slide]["children"].insert(1, item._node)
 
     # ----------------------------------------------------------------------
     def remove_slide(self, slide_number: int):
         """
+        Remove a slide from a slideshow.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        item                Required item to replace current media item. 
-                            Item type can be Image, Video, Map, or Text. 
-        ---------------     --------------------------------------------------------------------
-        slide_number        Required Integer. The slide that will be edited.
+        slide_number        Required Integer. The slide that will be removed. First slide is 1.
         ===============     ====================================================================
         """
+        # Remove slide and all associated children.
+        slide = self._slides[slide_number - 1]
+        self._slide.remove(slide_number - 1)
+        self._story.delete_node(slide)
+        # Remove narrative panel and text associated
+        narrative_panel = self._story.properties["nodes"][slide]["children"][0]
+        self._story.delete_node(narrative_panel["children"][0])
+        self._story.delete_node(narrative_panel)
+        # Remove media item
+        media_item = self._story.properties["nodes"][slide]["children"][1]
+        self._story.delete_node(media_item)
 
     # ----------------------------------------------------------------------
     def list_slides(self):
         """
+        List all slides and their children
+
+        :return: 
+            A list where the first item is the node id for the slideshow. Next
+            items are dictionary of slides and their children.
         """
+        slideshow_tree = [self._node_id]
+        for slide in self._slides:
+            slide = []
+            narrative_panel = self._story.properties["nodes"][slide]["children"][0]
+            text = self._story.properties["nodes"][narrative_panel]["children"]
+            media_item = self._story.properties["nodes"][slide]["children"][1]
+            slide.insert(
+                {
+                    "Slide: "
+                    + slide: [
+                        "Narrative Panel: " + narrative_panel,
+                        "Text: " + text,
+                        "Media Item: " + media_item,
+                    ]
+                }
+            )
+            slideshow_tree.insert(slide)
+        return slideshow_tree
