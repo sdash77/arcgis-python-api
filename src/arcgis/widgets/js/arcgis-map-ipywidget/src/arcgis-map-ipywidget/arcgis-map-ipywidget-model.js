@@ -8,14 +8,14 @@ const version = require('../../package.json').version;
 // The Model that stores state on the javascript side
 var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
     defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
-        _model_name : 'ArcGISMapIPyWidgetModel',
-        _view_name : 'ArcGISMapIPyWidgetView',
-        _model_module : 'arcgis-map-ipywidget',
-        _view_module : 'arcgis-map-ipywidget',
-        _model_module_version : version,
-        _view_module_version : version,
+        _model_name: 'ArcGISMapIPyWidgetModel',
+        _view_name: 'ArcGISMapIPyWidgetView',
+        _model_module: 'arcgis-map-ipywidget',
+        _view_module: 'arcgis-map-ipywidget',
+        _model_module_version: version,
+        _view_module_version: version,
 
-        value : 'From Scene Model',
+        value: 'From Scene Model',
 
         //start map specific draw state
         _basemap: "topo",
@@ -89,7 +89,7 @@ var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
         _username: "",
         _custom_msg: "",
         hide_mode_switch: false,
-        _trigger_interactive_draw_mode_for: "",
+        _trigger_interactive_draw_mode_for: {},
         _trigger_new_jlab_window_with_args: {},
         jupyter_target: "",
         ready: false,
