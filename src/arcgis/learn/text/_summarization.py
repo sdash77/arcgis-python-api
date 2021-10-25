@@ -62,7 +62,7 @@ class TextSummarizer(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :returns: `TextSummarizer` Object
+    :return: `TextSummarizer` Object
     """
 
     #: supported transformer architectures
@@ -125,7 +125,7 @@ class TextSummarizer(InferenceOnlyModel):
                                 Default value is set to False.
         =====================   ===========================================
 
-        :returns: a list or a list of list containing the summary/summaries for the input prompt(s) / sentence(s)
+        :return: a list or a list of list containing the summary/summaries for the input prompt(s) / sentence(s)
         """
         results = []
         num_return_sequences = kwargs.get("num_return_sequences", 1)

@@ -3,9 +3,12 @@ from arcgis._impl.common._mixins import PropertyMap
 ###########################################################################
 class CertificateManager(object):
     """
-    The `CertificateManager` provides the administor the ability to
-    register and unregister certficates with the `GIS`.  This resource is
-    available via HTTPS only.
+    The ``CertificateManager`` class provides the administrator the ability to
+    register and unregister certificates with the :class:`~arcgis.gis.GIS`.
+
+    .. note::
+        This resource is
+        available via HTTPS only.
     """
 
     _gis = None
@@ -26,21 +29,27 @@ class CertificateManager(object):
     # ----------------------------------------------------------------------
     @property
     def properties(self):
-        """returns the properties of the resource"""
+        """
+        The ``properties`` method retrieves the properties of the certificate
+
+        :return:
+            A list of the certificate properties
+        """
         self._init()
         return self._properties
 
     # ----------------------------------------------------------------------
     def add(self, name, domain, certificate):
         """
-        The register HTTPS certificate operation allows administrator to
+        The ``add`` method allows allows administrators to
         register custom X.509 HTTPS certificates with their ArcGIS Online
         organizations. This will allow ArcGIS Online organization to trust
         the custom certificates used by a remote server when making HTTPS
         requests to it, i.e. store credentials required to access its
         resource and share with others.
 
-        A maximum of 5 certificates can be registered with an organization.
+        .. note::
+            A maximum of 5 certificates can be registered with an organization.
 
         ================  ===============================================================================
         **Parameter**     **Description**
@@ -52,7 +61,16 @@ class CertificateManager(object):
         certificate	  Required String. Base64-encoded certificate text, enclosed between `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
         ================  ===============================================================================
 
-        :returns: Boolean
+        :return:
+            A boolean indicating success (True), or failure (False)
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.admin.certificates.add(name="certificate_name",
+            >>>                            domain = "domain_name",
+            >>>                            certificate = "certificate_text")
 
         """
         url = self._url + "/register"
@@ -74,7 +92,7 @@ class CertificateManager(object):
     # ----------------------------------------------------------------------
     def get(self, cert_id):
         """
-        Gets the certificate information for a single certificate
+        The ``get`` method retrieves the certificate information for a single certificate
 
         ================  ===============================================================================
         **Parameter**     **Description**
@@ -82,6 +100,14 @@ class CertificateManager(object):
         cert_id           Required String.  The ID of the certificate to delete.
         ================  ===============================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.admin.certificates.get(cert_id= "certificate_id")
+
+        :return:
+            A Dictionary (if found), else None
 
         The dictionary contains the following information:
 
@@ -97,8 +123,6 @@ class CertificateManager(object):
         sslCertificate	  Base64-encoded certificate text, enclosed between `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
         ================  ===============================================================================
 
-        :returns: Dictionary (if found), else None
-
         """
         found_cert_id = None
         for cert in self.certificates:
@@ -113,7 +137,7 @@ class CertificateManager(object):
     # ----------------------------------------------------------------------
     def delete(self, cert_id):
         """
-        Unregisters the certificate from the organization
+        The ``delete`` method unregisters the certificate from the organization.
 
         ================  ===============================================================================
         **Parameter**     **Description**
@@ -121,7 +145,14 @@ class CertificateManager(object):
         cert_id           Required String.  The ID of the certificate to delete.
         ================  ===============================================================================
 
-        :returns: Boolean
+        :return:
+            A boolean indicating success (True), or failure (False)
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.admin.certificates.delete(cert_id="certificate_id")
 
         """
         url = self._url + "/{cert_id}/unregister".format(cert_id=cert_id)
@@ -134,7 +165,7 @@ class CertificateManager(object):
     # ----------------------------------------------------------------------
     def update(self, cert_id, name=None, domain=None, certificate=None):
         """
-        The update HTTPS certificate operation allows organization
+        The ``update`` operation allows organization's
         administrators to update a registered custom X.509 HTTPS
         certificate.
 
@@ -147,10 +178,21 @@ class CertificateManager(object):
         ----------------  -------------------------------------------------------------------------------
         domain            Optional String. Server domain that the certificate is used for.
         ----------------  -------------------------------------------------------------------------------
-        certificate	  Optional String. Base64-encoded certificate text, enclosed between `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
+        certificate	      Optional String. Base64-encoded certificate text, enclosed between `
+                          -----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
         ================  ===============================================================================
 
-        :returns: Boolean
+        :return:
+            A boolean indicating success (True), or failure (False)
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.admin.certificates.update(cert_id ="certificate_id",
+            >>>                               name = "certificate_name",
+            >>>                               domain ="certificate_domain",
+            >>>                               certificate = "certificate_text")
 
         """
         url = self._url + "/{cert_id}/update".format(cert_id=cert_id)
@@ -174,8 +216,9 @@ class CertificateManager(object):
     @property
     def certificates(self):
         """
-        Returns a list of certificates registered with the organization
+        The ``certificates`` property retrieves the list of certificates registered with the organization
 
-        :returns: List
+        :return:
+            A List containing the information of registered certificates
         """
         return self.properties.certificates

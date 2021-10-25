@@ -73,7 +73,7 @@ class ImageCaptioner(ArcGISModel):
                                 - 'pretrained_emb': If true, it will use fasttext embeddings.
     =====================   ===========================================
 
-    :returns: `ImageCaptioner` Object
+    :return: `ImageCaptioner` Object
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
@@ -124,7 +124,7 @@ class ImageCaptioner(ArcGISModel):
                                 None for inferencing.
         =====================   ===========================================
 
-        :returns: `ImageCaptioner` Object
+        :return: `ImageCaptioner` Object
         """
 
         from fastai.text.transform import Vocab
@@ -186,6 +186,9 @@ class ImageCaptioner(ArcGISModel):
         if not hasattr(self.learn, "recorder"):
             return 0.0
 
+        if len(self.learn.recorder.metrics) == 0:
+            return 0.0
+
         model_accuracy = self.learn.recorder.metrics[-1][0]
         if checkpoint:
             val_losses = self.learn.recorder.val_losses
@@ -232,6 +235,14 @@ class ImageCaptioner(ArcGISModel):
         _emd_template["ModelType"] = "ImageCaptioner"
         # Inference function of object classifier.
         _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
+
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISImageCaptioner.py"
+        else:
+            _emd_template[
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageCaptioner.py"
+
         # add encoder parameters
         _emd_template["ModelParameters"]["decoder_params"] = self.decoder_params
         # chip size
@@ -241,6 +252,10 @@ class ImageCaptioner(ArcGISModel):
         for k in self._data.norm_stats:
             norm_stats.append(k.tolist())
         _emd_template["DataAttributes"]["norm_stats"] = list(norm_stats)
+
+        _emd_template["CropSizeFixed"] = 1
+        _emd_template["BlackenAroundFeature"] = 0
+        _emd_template["SingleLabelFieldFound"] = "Caption"
 
         return _emd_template
 
@@ -339,7 +354,7 @@ class ImageCaptioner(ArcGISModel):
         from fastai.text.transform import Vocab
 
         super().load(name_or_path)
-        model_path = self.learn.path.parent / "models"
+        model_path = self.learn.path / "models"
         path_like = "/" in name_or_path or "\\" in name_or_path
         name = Path(name_or_path).name if path_like else name_or_path
         if path_like:

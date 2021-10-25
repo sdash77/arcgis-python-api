@@ -67,7 +67,7 @@ def _symmetric_difference(df1, df2):
     sets is the set of elements which are in either of the sets and not in
     their intersection.
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     dfdiff1 = _overlay_difference(df1, df2)
@@ -173,7 +173,7 @@ def _erase(df1, df2):
             [geom] + list(df2.geometry.iloc[neighbours]),
         )
         new_g.append(new)
-    differences = GeoSeries(new_g, index=df1.index)
+    differences = pd.Series(new_g, index=df1.index)
     geom_diff = differences[~differences.is_empty].copy()
     dfdiff = df1[~differences.is_empty].copy()
     dfdiff[dfdiff._geometry_column_name] = geom_diff
@@ -207,7 +207,7 @@ def overlay(sdf1, sdf2, op="union"):
                                  allowed value are: union, erase, identity, intersection
     =========================    =========================================================
 
-    :returns: Spatially enabled DataFrame (pd.DataFrame)
+    :return: Spatially enabled DataFrame (pd.DataFrame)
 
     """
     allowed_hows = [

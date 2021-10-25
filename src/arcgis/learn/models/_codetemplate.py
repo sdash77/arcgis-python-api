@@ -1460,6 +1460,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(__file__))
 import numpy as np
+import arcpy
 
 
 def get_available_device(max_memory=0.8):
@@ -1490,8 +1491,6 @@ features = {
     'displayFieldName': '',
     'fieldAliases': {
         'FID': 'FID',
-        'Class': 'Class',
-        'Confidence': 'Confidence'
     },
     'geometryType': 'esriGeometryPolygon',
     'fields': [
@@ -1499,11 +1498,6 @@ features = {
             'name': 'FID',
             'type': 'esriFieldTypeOID',
             'alias': 'FID'
-        },
-        {
-            'name': 'Class',
-            'type': 'esriFieldTypeString',
-            'alias': 'Class'
         }
     ],
     'features': []
@@ -1515,11 +1509,6 @@ fields = {
             'name': 'OID',
             'type': 'esriFieldTypeOID',
             'alias': 'OID'
-        },
-        {
-            'name': 'Class',
-            'type': 'esriFieldTypeString',
-            'alias': 'Class'
         },
         {
             'name': 'Shape',
@@ -1536,12 +1525,12 @@ class GeometryType:
     Polygon = 4
 
 
-class ArcGISObjectClassifier:
+class ArcGISImageCaptioner:
     def __init__(self):
-        self.name = 'Object classifier'
-        self.description = 'This python raster function applies deep learning model to classify objects from overlaid imagery'
+        self.name = 'Image Captioner'
+        self.description = 'This python raster function applies deep learning model to caption objects from overlaid imagery'
 
-    def initialize(self, **kwargs):
+    def initialize(self, **kwargs):     
 
         if 'model' not in kwargs:
             return
@@ -1676,11 +1665,6 @@ class ArcGISObjectClassifier:
                         'alias': 'OID'
                     },
                     {
-                        'name': 'Class',
-                        'type': 'esriFieldTypeString',
-                        'alias': 'Class'
-                    },
-                    {
                         'name': 'Shape',
                         'type': 'esriFieldTypeGeometry',
                         'alias': 'Shape'
@@ -1689,19 +1673,18 @@ class ArcGISObjectClassifier:
             }
         fields['fields'].append(
             {
-                'name': 'Label',
+                'name': 'Caption',
                 'type': 'esriFieldTypeString',
-                'alias': 'Label'
+                'alias': 'Caption'
             }
-        )
-
+        )            
+        
         return json.dumps(fields)
 
-    def getGeometryType(self):
+    def getGeometryType(self):       
         return GeometryType.Polygon
 
-    def vectorize(self, **pixelBlocks):
-
+    def vectorize(self, **pixelBlocks):        
         # set pixel values in invalid areas to 0
         rasters_mask = pixelBlocks['rasters_mask']
         rasters_pixels = pixelBlocks['rasters_pixels']
@@ -1716,16 +1699,18 @@ class ArcGISObjectClassifier:
         features['features'] = []
 
         features['fieldAliases'].update({
-            'Label':'Label'
+            'Caption':'Caption'
         })
 
-        features['fields'].append(
-            {
-                'name': 'Label',
+        Labelfield = {
+                'name': 'Caption',
                 'type': 'esriFieldTypeString',
-                'alias': 'Label'
+                'alias': 'Caption'
             }
-        )
+
+        if not Labelfield in features['fields']:
+            features['fields'].append(Labelfield)        
+
 
         for i in range(len(polygon_list)):
 
@@ -1741,8 +1726,7 @@ class ArcGISObjectClassifier:
             features['features'].append({
                 'attributes': {
                     'OID': i + 1,
-                    'Label': labels[i],
-                    'Classname': labels[i]
+                    'Caption': labels[i],
                 },
                 'geometry': {
                     'rings': rings

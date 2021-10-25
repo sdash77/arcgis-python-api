@@ -467,6 +467,10 @@ pansharpen
 __________
 .. autofunction:: arcgis.raster.functions.pansharpen
 
+percentile
+__________
+.. autofunction:: arcgis.raster.functions.percentile
+
 plus
 ____
 .. autofunction:: arcgis.raster.functions.plus
@@ -676,3 +680,6 @@ wind_chill
 __________
 .. autofunction:: arcgis.raster.functions.wind_chill
 
+wndwi
+__________
+.. autofunction:: arcgis.raster.functions.wndwi

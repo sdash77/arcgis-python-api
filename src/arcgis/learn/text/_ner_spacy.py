@@ -39,7 +39,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
                             The default value is 'en' for English.
     =====================   ===========================================
 
-    :returns: ``_SpacyEntityRecognizer`` Object
+    :return: ``_SpacyEntityRecognizer`` Object
     """
 
     def __init__(self, data=None, lang="en", *args, **kwargs):
@@ -559,7 +559,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
 
         =====================   ===========================================
 
-        :returns: `EntityRecognizer` Object
+        :return: `EntityRecognizer` Object
         """
         emd_path = Path(emd_path)
         ner = cls(data=data)
@@ -675,7 +675,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
                                 Not applicable for models with `spaCy` backbone.
         =====================   ===========================================
 
-        :returns: Pandas DataFrame
+        :return: Pandas DataFrame
         """
 
         if self._trained:
@@ -767,7 +767,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         ds_type                 Optional string, defaults to valid.
         =====================   ===========================================
 
-        :returns: Pandas DataFrame
+        :return: Pandas DataFrame
         """
 
         if not self._trained:
@@ -845,7 +845,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
                                 will plot the figure and return nothing.
         =====================   ===========================================
 
-        :returns: matplotlib.figure.Figure
+        :return: matplotlib.figure.Figure
         """
         self._check_requisites()
 

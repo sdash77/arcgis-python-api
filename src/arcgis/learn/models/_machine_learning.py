@@ -93,7 +93,7 @@ class MLModel(object):
                             https://scikit-learn.org/stable/supervised_learning.html#supervised-learning
     =====================   ===========================================
 
-    :returns: `MLModel` Object
+    :return: `MLModel` Object
     """
 
     def __init__(self, data, model_type, **kwargs):
@@ -434,7 +434,7 @@ class MLModel(object):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `MLModel` Object
+        :return: `MLModel` Object
         """
         if not HAS_ML_DEPS:
             raise Exception(missing_deps_trace)

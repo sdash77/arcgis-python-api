@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
 from fastai.vision import ImageImageList, Tuple, subplots, plt
+from .common import ArcGISMSImage, ArcGISImageListRGB
 
 
 def gaussian(window_size, sigma):
@@ -101,6 +102,8 @@ def psnr(img1, img2):
 
 
 class ImageImageListSR(ImageImageList):
+    label_cls = ArcGISImageListRGB
+
     from fastai.basics import Optional
 
     def show_xys(
@@ -121,3 +124,6 @@ class ImageImageListSR(ImageImageList):
         axs[0, 0].title.set_text("Low Resolution")
         axs[0, 1].title.set_text("High Resolution")
         plt.tight_layout()
+
+    def open(self, fn):
+        return ArcGISMSImage.open(fn, div=255)

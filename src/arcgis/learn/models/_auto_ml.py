@@ -105,7 +105,7 @@ class AutoML(object):
 
     =====================   ===========================================
 
-    :returns: `AutoML` Object
+    :return: `AutoML` Object
     """
 
     def __init__(
@@ -169,10 +169,10 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            if mode == "Explain":
-                explain_level = 2
-            else:
-                explain_level = 1
+            # if mode == "Explain":
+            #    explain_level = 2
+            # else:
+            explain_level = 2
             self._model = base_AutoML(
                 mode=mode,
                 algorithms=algorithms,
@@ -399,7 +399,7 @@ class AutoML(object):
                                 file.
         =====================   ===========================================
 
-        :returns: `AutoML` Object
+        :return: `AutoML` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

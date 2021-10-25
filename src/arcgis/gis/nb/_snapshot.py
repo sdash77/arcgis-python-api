@@ -52,7 +52,7 @@ class SnapShot(object):
         title                  Required String. The name of the new notebook.
         ==================     ====================================================================
 
-        :returns: Item
+        :return: Item
         """
         return self._sm._convert(
             item=self._item, snapshot=self.properties["resourceKey"], title=title
@@ -142,7 +142,7 @@ class SnapshotManager(object):
         ==================     ====================================================================
 
 
-        :returns: Item
+        :return: Item
 
         """
         if isinstance(item, Item) and item.type.lower() == "notebook":

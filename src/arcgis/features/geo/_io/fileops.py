@@ -1,13 +1,12 @@
 """
 IO operations for Feature Classes
 """
+from arcgis.auth.tools import LazyLoader
 import io
 import os
-import sys
 import uuid
 import copy
 from pathlib import Path, PurePath
-import shutil
 import datetime
 import ujson as _ujson
 import numpy as np
@@ -16,16 +15,16 @@ from contextlib import closing
 import zipfile
 from arcgis.geometry import Geometry
 
-try:
-    import arcpy
-    from arcpy import da
 
+try:
+
+    arcpy = LazyLoader("arcpy", strict=True)
     HASARCPY = True
 except:
     HASARCPY = False
 
 try:
-    import fiona
+    fiona = LazyLoader("fiona", strict=True)
 
     HASFIONA = True
 except:
@@ -153,7 +152,8 @@ def from_url(url: str) -> list:
     ---------------------------     --------------------------------------------------------------------
     url                             Required String. The web location of the compressed shapefile.
     ===========================     ====================================================================
-    :returns: List[pd.DataFrame]
+
+    :return: List[pd.DataFrame]
 
     """
 
@@ -299,18 +299,21 @@ def from_table(filename, **kwargs):
                         from the input with a new value.
     ===============     ====================================================
 
-    :returns: pd.DataFrame
+    :return: pd.DataFrame
 
     """
+
     filename = _ensure_path_string(filename)
 
     if HASARCPY and not filename.lower().endswith(".dbf"):
+        import arcpy
+
         where = kwargs.pop("where", None)
         fields = kwargs.pop("fields", "*")
         skip_nulls = kwargs.pop("skip_nulls", True)
         null_value = kwargs.pop("null_value", None)
         return pd.DataFrame(
-            da.TableToNumPyArray(
+            arcpy.da.TableToNumPyArray(
                 in_table=filename,
                 field_names=fields,
                 where_clause=where,
@@ -319,6 +322,8 @@ def from_table(filename, **kwargs):
             )
         )
     elif HASARCPY and filename.lower().endswith(".dbf"):
+        import arcpy
+
         scur = arcpy.da.SearchCursor(
             in_table=filename, field_names=fields, where_clause=where
         )
@@ -352,7 +357,7 @@ def to_table(geo, location, overwrite=True):
                                     the table exists, and exception will be raised.
     ===========================     ====================================================================
 
-    :returns: String
+    :return: String
     """
     out_location = os.path.dirname(location)
     fc_name = os.path.basename(location)
@@ -361,6 +366,8 @@ def to_table(geo, location, overwrite=True):
         geo._data.to_csv(location)
         return location
     elif HASARCPY:
+        import arcpy
+
         columns = df.columns.tolist()
         join_dummy = "AEIOUYAJC81Z"
         try:
@@ -377,7 +384,7 @@ def to_table(geo, location, overwrite=True):
         fc = arcpy.CreateTable_management(out_path=out_location, out_name=fc_name)[0]
         # 2. Add the Fields and Data Types
         #
-        oidfld = da.Describe(fc)["OIDFieldName"]
+        oidfld = arcpy.da.Describe(fc)["OIDFieldName"]
         for col in columns[:]:
             if col.lower() in ["fid", "oid", "objectid"]:
                 dtypes.append((col, np.int32))
@@ -418,7 +425,7 @@ def to_table(geo, location, overwrite=True):
             for fld in fields
             if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
         ]
-        with da.InsertCursor(fc, icols) as irows:
+        with arcpy.da.InsertCursor(fc, icols) as irows:
             for idx, row in df[dfcols].iterrows():
                 try:
                     irows.insertRow(row.tolist())
@@ -455,7 +462,7 @@ def from_featureclass(filename, **kwargs):
                                     `arcpy` to work.
     ===========================     ====================================================================
 
-    :returns: pandas.core.frame.DataFrame
+    :return: pandas.core.frame.DataFrame
 
     """
     from arcgis.geometry import _types
@@ -525,7 +532,7 @@ def from_featureclass(filename, **kwargs):
         count = 0
         dfs = []
         shape_field_idx = cursor_fields.index("SHAPE@JSON")
-        with da.SearchCursor(
+        with arcpy.da.SearchCursor(
             filename,
             field_names=cursor_fields,
             where_clause=where_clause,
@@ -704,7 +711,7 @@ def to_featureclass(
     ===============     ====================================================
 
 
-    :returns: string
+    :return: A string
 
     """
     out_location = os.path.dirname(location)
@@ -781,7 +788,7 @@ def to_featureclass(
             )[0]
 
             # 2. Add the Fields and Data Types
-            oidfld = da.Describe(fc)["OIDFieldName"]
+            oidfld = arcpy.da.Describe(fc)["OIDFieldName"]
             for col in columns[:]:
                 if col.lower() in ["fid", "oid", "objectid"]:
                     dtypes.append((col, np.int32))
@@ -826,7 +833,7 @@ def to_featureclass(
                 if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
             ] + [df.spatial.name]
 
-            with da.InsertCursor(fc, icols) as irows:
+            with arcpy.da.InsertCursor(fc, icols) as irows:
                 dt_fld_idx = [
                     irows.fields.index(col)
                     for col in df.columns
@@ -877,7 +884,7 @@ def to_featureclass(
 # --------------------------------------------------------------------------
 def _pyshp_to_shapefile(df, out_path, out_name):
     """
-    Saves a SpatialDataFrame to a Shapefile using pyshp
+    Saves a Spatially Enabled DataFrame to a Shapefile using pyshp
 
     :Parameters:
      :df: spatial dataframe
@@ -993,7 +1000,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
 # --------------------------------------------------------------------------
 def _pyshp2(df, out_path, out_name):
     """
-    Saves a SpatialDataFrame to a Shapefile using pyshp v2.0
+    Saves a Spatially Enabled DataFrame to a Shapefile using pyshp v2.0
 
     :Parameters:
      :df: spatial dataframe

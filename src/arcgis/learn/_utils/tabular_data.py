@@ -1583,7 +1583,9 @@ def show_local_interpretation(
                 np.random.choice(model._data._databunch.train_ds.x.items, 500)
             ):
                 row = np.array(model._data._databunch.train_ds.x[item].data[1])
-                df[cnt] = row
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    df[cnt] = row
             explainer = shap.DeepExplainer(
                 model.learn.model.layers, torch.tensor(df.transpose().values).cuda()
             )
@@ -1737,7 +1739,9 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
                 np.random.choice(model._data._databunch.train_ds.x.items, 500)
             ):
                 row = np.array(model._data._databunch.train_ds.x[item].data[1])
-                df[cnt] = row
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    df[cnt] = row
             explainer = shap.DeepExplainer(
                 model.learn.model.layers, torch.tensor(df.transpose().values).cuda()
             )

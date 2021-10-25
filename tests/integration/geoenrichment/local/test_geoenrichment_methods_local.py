@@ -5,7 +5,7 @@ from arcgis.gis import GIS
 
 from ..geoenrichment_methods_tests import *
 
-gis = GIS('pro')
+gis = GIS("pro")
 
 
 def test_get_countries_local():
@@ -23,7 +23,7 @@ def test_enrich_iterable_str_address_local():
         enrich_iterable_str_addresses_test()
 
 
-# def test_enrich_interable_str_points_of_interest_local():
+# def test_enrich_iterable_str_points_of_interest_local():
 #     enrich_iterable_str_points_of_interest_test()
 #
 #

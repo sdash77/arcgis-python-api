@@ -4,11 +4,12 @@ from arcgis.gis import GIS
 
 from ..geoenrichment_country_tests import *
 
-gis = GIS('pro')
+gis = GIS("pro")
+
 
 @pytest.fixture
 def usa():
-    return Country.get('USA', gis=gis)
+    return Country.get("USA", gis=gis)
 
 
 def test_usa_local() -> None:
