@@ -1,11 +1,10 @@
-import json
 import os
 import PIL.Image
 import mimetypes
 from typing import Optional, Union
 import uuid
-import time
 from urllib.parse import urlparse
+from arcgis import env
 from arcgis.gis import Item
 
 
@@ -34,7 +33,7 @@ class Image(object):
         self._ext_type = mt.split("/")[1]
 
     # ----------------------------------------------------------------------
-    def _add_image(self, story, caption, alt_text, display):
+    def _add_image(self, story, caption=None, alt_text=None, display=None):
         # Make an add resource call
         story._add_resource(self._path)
 
@@ -77,6 +76,9 @@ class Image(object):
         story.properties["resources"][resource_node_id]["data"][
             "resourceId"
         ] = os.path.basename(os.path.normpath(self._path))
+        # Update ids
+        self._node = node_id
+        self._resource_node = resource_node_id
         # Update the resource
         story._remove_resource(resource_id)
         story._add_resource(self._path)
@@ -109,7 +111,7 @@ class Video(object):
         self._ext_type = mt.split("/")[1]
 
     # ----------------------------------------------------------------------
-    def _add_video(self, story, caption, alt_text, display):
+    def _add_video(self, story, caption=None, alt_text=None, display=None):
         # Make an add resource call
         story._add_resource(self._path)
 
@@ -143,6 +145,9 @@ class Video(object):
         story.properties["resources"][resource_node_id]["data"][
             "resourceId"
         ] = os.path.basename(os.path.normpath(self._path))
+        # Update ids
+        self._node = node_id
+        self._resource_node = resource_node_id
         # Update the resource
         story._remove_resource(resource_id)
         story._add_resource(self._path)
@@ -177,7 +182,7 @@ class Audio(object):
         self._ext_type = mt.split("/")[1]
 
     # ----------------------------------------------------------------------
-    def _add_audio(self, story, caption, alt_text, display):
+    def _add_audio(self, story, caption=None, alt_text=None, display=None):
         # Make an add resource call
         story._add_resource(self._path)
 
@@ -203,7 +208,7 @@ class Audio(object):
 
     # ----------------------------------------------------------------------
     def _update_audio(self, node_id, story):
-        resource_node_id = story.properties["nodes"][node_id]["data"]["audio"]
+        resource_node_id = story.properties["nodes"][node_id]["data"]["video"]
         # UPDATE RESOURCE
         resource_id = story.properties["resources"][resource_node_id]["data"][
             "resourceId"
@@ -211,6 +216,9 @@ class Audio(object):
         story.properties["resources"][resource_node_id]["data"][
             "resourceId"
         ] = os.path.basename(os.path.normpath(self._path))
+        # Update ids
+        self._node = node_id
+        self._resource_node = resource_node_id
         # Update the resource
         story._remove_resource(resource_id)
         story._add_resource(self._path)
@@ -237,7 +245,7 @@ class WebPage(object):
         self._node = "n-" + uuid.uuid4().hex[0:6]
 
     # ----------------------------------------------------------------------
-    def _add_webpage(self, story, caption, alt_text):
+    def _add_webpage(self, story, caption=None, alt_text=None):
 
         sections = urlparse(self._path)
 
@@ -257,7 +265,8 @@ class WebPage(object):
 
     # ----------------------------------------------------------------------
     def _update_webpage(self, node_id, story):
-
+        # Update ids
+        self._node = node_id
         sections = urlparse(self._path)
 
         story.properties["nodes"][node_id]["data"]["url"] = self._path
@@ -426,141 +435,54 @@ class Map(object):
     """
 
     def __init__(
-        self,
-        item: Item,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        display: str = "float",
-        show_legend: bool = False,
-        extent: Optional[dict] = None,
-        center: Optional[list] = None,
-        zoom: Optional[int] = None,
-        viewpoint: Optional[dict] = None,
-        layer_visibility: Optional[list] = None,
+        self, item: Item,
     ):
         """
-
         =================       ====================================================================
         **Argument**            **Description**
         -----------------       --------------------------------------------------------------------
-        item                    An Item of type Web Map to add to the story map.
-        -----------------       --------------------------------------------------------------------
-        caption                 Optional string. The caption of the section.
-        -----------------       --------------------------------------------------------------------
-        alt_text                Optional string. Specifies an alternate text for an image.
-        -----------------       --------------------------------------------------------------------
-        display                 Optional string. The image display properties.
-        -----------------       --------------------------------------------------------------------
-        position                Optional int. Will position the element in the story list.
-        -----------------       --------------------------------------------------------------------
-        show_legend             Optional Boolean. If True, map legend is shown. The default is False.
-        -----------------       --------------------------------------------------------------------
-        extent                  Optional Dictionary.
-
-                                Example:
-                                extent = {
-                                    "xmin": -9177882,
-                                    "ymin": 4246761,
-                                    "xmax": -9176720,
-                                    "ymax": 4247967,
-                                    "spatialReference": { "wkid": 102100 }
-                                    }
-        -----------------       --------------------------------------------------------------------
-        center                  Optional List of two integers.
-
-                                Example:
-                                center = [-112, 38]
-        -----------------       --------------------------------------------------------------------
-        zoom                    Optional Integer. The zoom level of the map.
-        -----------------       --------------------------------------------------------------------
-        viewpoint               Optional Dictionary. Represents the current view as a Viewpoint or point
-                                of observation on the view.
-
-                                Example:
-                                viewpoint = {
-                                    "rotation": 0,
-                                    "scale": 369785.47,
-                                    "targetGeometry": {
-                                        "spatialReference": {"latestWkid": 3857, "wkid": 102100},
-                                        "x": 279.71,
-                                        "y": -998.98
-                                    },
-                                }
-        -----------------       --------------------------------------------------------------------
-        layer_visibility        Optional List of Dictionaries. The visibility of the layers in a webmap.
-
-                                Syntax:
-
-                                    [
-                                    {
-                                        "id" : "<layer_id>",
-                                        "visibility" : "<true/false>"
-                                    }
-                                    ]
+        item                    An Item of type WebMap or WebScene or a String representing the item 
+                                id to add to the story map.
         =================       ====================================================================
 
         """
+
+        # If string id get the item
+        if isinstance(item, str):
+            item = env.active_gis.content.get(item)
+
+        # Create map object to extract properties
+        if isinstance(item, Item):
+            map_item = env.active_gis.map(item)
+
         self._node = "n-" + uuid.uuid4().hex[0:6]
         self._resource_node = "r-" + item.id
+
+        # Assign properties
         self._path = item
-        self._caption = caption
-        self._alt_text = alt_text
-        self._display = display
-        self._show_legend = show_legend
-        self._center = center
-        self._zoom = zoom
-        if extent is None and "extent" in item and item.extent:
-            self._extent = {
-                "xmin": item.extent[0][0],
-                "xmax": item.extent[1][0],
-                "ymin": item.extent[0][1],
-                "ymax": item.extent[1][1],
-            }
-        else:
-            self._extent = extent
-
-        if viewpoint is not None:
-            self._viewpoint = json.dumps(viewpoint)
-        else:
-            self._viewpoint = None
-        if layer_visibility is not None:
-            self._layer_visibility = json.dumps(layer_visibility)
-        elif "layers" in item:
-            layer_visibility = []
-            for layer in item.layers:
-                layer_item = {
-                    "id": layer.properties.id,
-                    "title": layer.properties.name,
-                    "visibility": True,
-                }
-                layer_visibility.append(layer_item)
-            self._layer_visibility = layer_visibility
-        else:
-            self._layer_visibility = None
-
+        self._show_legend = map_item.legend
+        self._center = map_item.center
+        self._zoom = map_item.zoom
+        self._extent = map_item.extent
+        self._map_layers = map_item.layers
         self._type = item.type
-        self._resource_id = str(int(time.time())) + "_" + item.type
 
     # ----------------------------------------------------------------------
-    def _add_webmap(self, story):
-        # Make an add resource call (NOT IMPLEMENTED ON GUI YET)
-        # story._add_resource(resource_name= self._resource_id, text=json.dumps(self._path))
-
+    def _add_webmap(self, story, caption=None, alt_text=None, display=None):
         # Create webmap nodes
         story.properties["nodes"][self._node] = {
             "type": "webmap",
             "data": {
                 "map": self._resource_node,
-                "caption": self._caption,
-                "alt": self._alt_text,
-                "mapLayers": self._layer_visibility,
+                "caption": caption,
+                "alt": alt_text,
+                "mapLayers": self._map_layers,
                 "extent": self._extent,
                 "center": self._center,
                 "zoom": self._zoom,
-                "viewpoint": self._viewpoint,
                 "showLegend": self._show_legend,
             },
-            "config": {"size": self._display},
+            "config": {"size": display},
         }
 
         # Create resource node
@@ -570,8 +492,7 @@ class Map(object):
                 "extent": self._extent,
                 "center": self._center,
                 "zoom": self._zoom,
-                "viewpoint": self._viewpoint,
-                "mapLayers": self._layer_visibility,
+                "mapLayers": self._map_layers,
                 "itemId": self._path.id,
                 "itemType": self._type,
                 "type": "default",
@@ -581,8 +502,29 @@ class Map(object):
 
     # ----------------------------------------------------------------------
     def _update_map(self, node_id, story):
-        # TODO: UPDATE RESOURCES and Properties.
-        resource_id = story.properties["resources"][node_id]["data"]["resourceId"]
+        # Update all properties that change with new map
+        node_dict = story.properties["nodes"][node_id]["data"]
+        resouce_node = node_dict["map"]
+        resource_dict = story.properties["resources"][resouce_node]["data"]
+        # Update node_dict
+        node_dict["mapLayer"] = self._map_layers
+        node_dict["extent"] = self._extent
+        node_dict["center"] = self._center
+        node_dict["zoom"] = self._zoom
+        node_dict["showLegend"] = self._show_legend
+
+        # Update resource_dict
+        resource_dict["mapLayer"] = self._map_layers
+        resource_dict["extent"] = self._extent
+        resource_dict["center"] = self._center
+        resource_dict["zoom"] = self._zoom
+        resource_dict["showLegend"] = self._show_legend
+        resouce_node["itemId"] = self._path.id
+        resouce_node["itemType"] = self._type
+
+        # Update ids
+        self._node = node_id
+        self._resource_node = resouce_node
 
 
 ###############################################################################################################
@@ -641,13 +583,9 @@ class Swipe(object):
             # If user has created the item but not added to the story yet.
             if item._node not in story.properties["nodes"]:
                 if isinstance(item, Image):
-                    node, resource = item._add_image(story, caption, alt_text)
-                    self.properties["nodes"][item._node] = node
-                    self.properties["resources"][item._resource_node] = resource
+                    item._add_image(story, caption, alt_text)
             elif isinstance(item, Map):
-                node, resource = item._add_webmap(story)
-                self.properties["nodes"][item._node] = node
-                self.properties["resources"][item._resource_node] = resource
+                item._add_webmap(story)
             # Add to content in position wanted
             if position == "left":
                 self._content["0"] = item._node
@@ -716,12 +654,14 @@ class Sidecar(object):
         if isinstance(item, Text):
             # If item is text then update the narrative panel by removing old text and adding new
             old_text_node = narrative_panel["children"][0]
+            narrative_panel["children"].pop(0)
             self._story.delete(old_text_node)
-            narrative_panel["children"].insert(item._node)
+            narrative_panel["children"].insert(0, item._node)
         else:
             # Remove current media item and add new item as media
             if media_item:
                 self._story.delete(media_item)
+                self._story.properties["nodes"][slide]["children"].pop(1)
             self._story.properties["nodes"][slide]["children"].insert(1, item._node)
 
     # ----------------------------------------------------------------------
@@ -742,7 +682,8 @@ class Sidecar(object):
         self._remove_associated(slide)
 
     # ----------------------------------------------------------------------
-    def list_slides(self):
+    @property
+    def properties(self):
         """
         List all slides and their children
 
@@ -752,21 +693,19 @@ class Sidecar(object):
         """
         sidecar_tree = [self._node_id]
         for slide in self._slides:
-            slide = []
             narrative_panel = self._story.properties["nodes"][slide]["children"][0]
             text = self._story.properties["nodes"][narrative_panel]["children"]
             media_item = self._story.properties["nodes"][slide]["children"][1]
-            slide.insert(
+            sidecar_tree.append(
                 {
                     "Slide: "
                     + slide: [
                         "Narrative Panel: " + narrative_panel,
-                        "Text: " + text,
+                        "Text: " + text[0],
                         "Media Item: " + media_item,
                     ]
                 }
             )
-            sidecar_tree.insert(slide)
         return sidecar_tree
 
     # ----------------------------------------------------------------------
@@ -782,23 +721,15 @@ class Sidecar(object):
     # ----------------------------------------------------------------------
     def _add_item_story(self, item):
         if isinstance(item, Image):
-            node, resource = item._add_image(self._story)
-            self._story.properties["nodes"][item._node] = node
-            self._story.properties["resources"][item._resource_node] = resource
+            item._add_image(self._story)
         elif isinstance(item, Video):
-            node, resource = item._add_video(self._story)
-            self._story.properties["nodes"][item._node] = node
-            self._story.properties["resources"][item._resource_node] = resource
+            item._add_video(self._story)
         elif isinstance(item, WebPage):
-            node, resource = item._add_webpage(self._story)
-            self._story.properties["nodes"][item._node] = node
+            item._add_webpage(self._story)
         elif isinstance(item, Map):
-            node, resource = item._add_webmap(self._story)
-            self._story.properties["nodes"][item._node] = node
-            self._story.properties["resources"][item._resource_node] = resource
+            item._add_webmap(self._story)
         elif isinstance(item, Text):
-            node, resource = item._add_text()
-            self._story.properties["nodes"][item._node] = node
+            item._add_text()
 
 
 ###############################################################################################################
@@ -819,6 +750,7 @@ class Slideshow(object):
         """
         self._story = story
         node = story.properties["nodes"][node_id]
+        self._node_id = node_id
         self._type = node["data"]["type"]
         if self._type != "slideshow":
             raise Exception("This node is not of type slideshow")
@@ -851,12 +783,14 @@ class Slideshow(object):
         if isinstance(item, Text):
             # If item is text then update the narrative panel by removing old text and adding new
             old_text_node = narrative_panel["children"][0]
+            narrative_panel["children"].pop(0)
             self._story.delete(old_text_node)
-            narrative_panel["children"].insert(item._node)
+            narrative_panel["children"].insert(0, item._node)
         else:
             # Remove current media item and add new item as media
             if media_item:
                 self._story.delete(media_item)
+                self._story.properties["nodes"][slide]["children"].pop(1)
             self._story.properties["nodes"][slide]["children"].insert(1, item._node)
 
     # ----------------------------------------------------------------------
@@ -877,7 +811,8 @@ class Slideshow(object):
         self._remove_associated(slide)
 
     # ----------------------------------------------------------------------
-    def list_slides(self):
+    @property
+    def properties(self):
         """
         List all slides and their children
 
@@ -887,21 +822,19 @@ class Slideshow(object):
         """
         slideshow_tree = [self._node_id]
         for slide in self._slides:
-            slide = []
             narrative_panel = self._story.properties["nodes"][slide]["children"][0]
             text = self._story.properties["nodes"][narrative_panel]["children"]
             media_item = self._story.properties["nodes"][slide]["children"][1]
-            slide.insert(
+            slideshow_tree.append(
                 {
-                    "Slide: "
-                    + slide: [
+                    "Slide: %s"
+                    % slide: [
                         "Narrative Panel: " + narrative_panel,
-                        "Text: " + text,
+                        "Text: " + text[0],
                         "Media Item: " + media_item,
                     ]
                 }
             )
-            slideshow_tree.insert(slide)
         return slideshow_tree
 
     # ----------------------------------------------------------------------
@@ -917,20 +850,12 @@ class Slideshow(object):
     # ----------------------------------------------------------------------
     def _add_item_story(self, item):
         if isinstance(item, Image):
-            node, resource = item._add_image(self._story)
-            self._story.properties["nodes"][item._node] = node
-            self._story.properties["resources"][item._resource_node] = resource
+            item._add_image(self._story)
         elif isinstance(item, Video):
-            node, resource = item._add_video(self._story)
-            self._story.properties["nodes"][item._node] = node
-            self._story.properties["resources"][item._resource_node] = resource
+            item._add_video(self._story)
         elif isinstance(item, WebPage):
-            node, resource = item._add_webpage(self._story)
-            self._story.properties["nodes"][item._node] = node
+            item._add_webpage(self._story)
         elif isinstance(item, Map):
-            node, resource = item._add_webmap(self._story)
-            self._story.properties["nodes"][item._node] = node
-            self._story.properties["resources"][item._resource_node] = resource
+            item._add_webmap(self._story)
         elif isinstance(item, Text):
-            node, resource = item._add_text()
-            self._story.properties["nodes"][item._node] = node
+            item._add_text()

@@ -1,4 +1,3 @@
-import os
 import time
 import json
 import mimetypes
@@ -181,7 +180,8 @@ class StoryMap(object):
         else:
             all_nodes = self.node_order
             for node in all_nodes:
-                if type in node.values():
+                keywords = list(node.values())[0].split(",")
+                if type.lower() in keywords:
                     spec_type.append(node)
             return tuple(spec_type)
 
@@ -401,6 +401,15 @@ class StoryMap(object):
         item                Optional item of type: Image, Video, Audio, WebPage, WebMap, Button,
                             or Text. If none is provided, a separator is added.
         ---------------     --------------------------------------------------------------------
+        caption             Optional String. Custom text to caption the webmap.
+        ---------------     --------------------------------------------------------------------
+        alt_text            Optional String. Custom text to be used for screen readers.
+        ---------------     --------------------------------------------------------------------
+        display             Optional String. How the item will be displayed in the story map.
+                            Used for Image, Video, Audio, or Map object.
+
+                            Values: "small" | "wide" | "full" | "float"
+        ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the item will be
                             added. To see all node positions use the ```children``` property.
         ===============     ====================================================================
@@ -419,7 +428,7 @@ class StoryMap(object):
         elif isinstance(item, Audio):
             item._add_audio(self, caption, alt_text, display)
         elif isinstance(item, Map):
-            item._add_webmap(self)
+            item._add_webmap(self, caption, alt_text, display)
         elif isinstance(item, WebPage):
             item._add_webpage(self, caption, alt_text)
         elif isinstance(item, Button):
@@ -454,10 +463,11 @@ class StoryMap(object):
         node_id             Required String. The node id for the item that will be updated. Find a
                             list of node order by using the ```node_order``` property.
         ---------------     --------------------------------------------------------------------
-        item                Optional String or item. The url or file path for the new item.
-                            If Item then :class:`~arcgis.gis.Item` of type 'WebMap' or 'WebScene'
-                            or a story map item of type 'Image', 'Video', 'Audio', 'Webpage', or 'Map'.
-
+        item                Optional String or Story Map Content Item. 
+                            Values:
+                            - Story Map Item of type: 'Image', 'Video', 'Audio', 'Webpage', or 'Map'.
+                            - Item: :class:`~arcgis.gis.Item` of type 'WebMap' or 'WebScene'
+                            - String: The url or file path for the new item.
         ---------------     --------------------------------------------------------------------
         caption             Optional String. New caption to insert.
         ---------------     --------------------------------------------------------------------
