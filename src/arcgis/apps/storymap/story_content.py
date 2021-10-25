@@ -21,7 +21,6 @@ class Image(object):
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         path                    Required String. The file path to the image that will be added.
-
         ==================      ====================================================================
         """
         self._path = path
@@ -61,6 +60,7 @@ class Image(object):
             },
         }
 
+    # ----------------------------------------------------------------------
     def _update_image(self, node_id, story):
         resource_node_id = story.properties["nodes"][node_id]["data"]["image"]
         # Update the height and width for the image
@@ -98,7 +98,6 @@ class Video(object):
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         path                    Required String. The file path to the video that will be added.
-
         ==================      ====================================================================
         """
         self._path = path
@@ -168,7 +167,6 @@ class Audio(object):
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         path                    Required String. The file path to the image that will be added.
-
         ==================      ====================================================================
         """
 
@@ -238,7 +236,6 @@ class WebPage(object):
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         path                    Required String. The file path to the audio that will be added.
-
         ==================      ====================================================================
         """
         self._path = path
@@ -305,7 +302,6 @@ class Text(object):
                                 ..note:
                                     To make text withing these types bold, italic, or hyperlink the
                                     text parameter must include these.
-
         ------------------      --------------------------------------------------------------------
         custom_color            Optional String. The hex color value without the #.
                                 Only available when type is either 'paragraph', 'bullet-list', or
@@ -390,10 +386,12 @@ class Text(object):
             ]
 
     # ----------------------------------------------------------------------
-    def _update_text(self, story):
-        """
-        TODO: Implement update text for this method
-        """
+    def _update_text(self, node_id, story):
+        if self._text is not None:
+            story.properties["nodes"][node_id]["data"]["text"] = self._text
+        if self._style is not None:
+            story.properties["nodes"][node_id]["data"]["type"] = self._style
+        self._node = node_id
 
 
 ###############################################################################################################
@@ -404,7 +402,6 @@ class Button(object):
 
     def __init__(self, link: str = None, text: str = None):
         """
-
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
@@ -425,6 +422,14 @@ class Button(object):
             "type": "button",
             "data": {"text": self._text, "link": self._link},
         }
+
+    # ----------------------------------------------------------------------
+    def _update_button(self, node_id, story):
+        if self._text is not None:
+            story.properties["nodes"][node_id]["data"]["text"] = self._text
+        if self._link is not None:
+            story.properties["nodes"][node_id]["data"]["link"] = self._link
+        self._node = node_id
 
 
 ###############################################################################################################

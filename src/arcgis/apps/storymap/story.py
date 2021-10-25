@@ -55,46 +55,20 @@ class StoryMap(object):
             self._gis = gis
         if item and isinstance(item, str):
             self._item = gis.content.get(item)
-            self._itemid = self._item.itemid
-            self._properties = self._item.get_data()
-            self._resources = self._item.resources.list()
-        elif item and isinstance(item, Item) and "StoryMap" in item.typeKeywords:
+        if item and isinstance(item, Item) and "StoryMap" in item.typeKeywords:
             self._item = item
             self._itemid = self._item.itemid
             self._properties = self._item.get_data()
             self._resources = self._item.resources.list()
+            if (
+                "unpublished" in self.properties
+                and self.properties["unpublished"] is True
+            ):
+                raise ValueError("StoryMap cannot be draft")
         elif item and isinstance(item, Item) and "StoryMap" not in item.typeKeywords:
             raise ValueError("Item is not a Story Map")
         else:
-            template = r"src\arcgis\apps\storymap\templates\draft.json"
-            f = open(template, "rb")
-            self._properties = json.load(f)
-
-            title = "StoryMap %s" % uuid.uuid4().hex[:10]
-            typeKeywords = ",".join(
-                [
-                    "arcgis-storymaps",
-                    "StoryMap",
-                    "Web Application",
-                    "smstatusdraft",
-                    "smversiondraft:20.35.0",
-                    "smsdraftresourceid:draft_" + str(int(time.time())) + ".json",
-                ]
-            )
-            item_properties = {
-                "title": title,
-                "text": json.dumps(self._properties),
-                "typeKeywords": typeKeywords,
-                "type": "StoryMap",
-            }
-            item = self._gis.content.add(item_properties=item_properties)
-            self._item = item
-            self._itemid = item.itemid
-            self._add_resource(
-                file=template, resource_name="draft.json",
-            )
-            self._resources = self._item.resources.list()
-            f.close()
+            self._create_new_webmap()
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -108,6 +82,38 @@ class StoryMap(object):
     def _refresh(self):
         if self._item:
             self._properties = json.loads(self._item.get_data())
+
+    # ----------------------------------------------------------------------
+    def _create_new_webmap(self):
+        template = r"src\arcgis\apps\storymap\templates\draft.json"
+        f = open(template, "rb")
+        self._properties = json.load(f)
+
+        title = "StoryMap %s" % uuid.uuid4().hex[:10]
+        typeKeywords = ",".join(
+            [
+                "arcgis-storymaps",
+                "StoryMap",
+                "Web Application",
+                "smstatusdraft",
+                "smversiondraft:20.35.0",
+                "smsdraftresourceid:draft_" + str(int(time.time())) + ".json",
+            ]
+        )
+        item_properties = {
+            "title": title,
+            "text": json.dumps(self._properties),
+            "typeKeywords": typeKeywords,
+            "type": "StoryMap",
+        }
+        item = self._gis.content.add(item_properties=item_properties)
+        self._item = item
+        self._itemid = item.itemid
+        self._add_resource(
+            file=template, resource_name="draft.json",
+        )
+        self._resources = self._item.resources.list()
+        f.close()
 
     # ----------------------------------------------------------------------
     @property
@@ -172,6 +178,11 @@ class StoryMap(object):
 
         :return: List of node ids and their types in order of appearance in the story map.
 
+        ..code-block:: python
+
+            >>> story = StoryMap(<story item>)
+            >>> story.list_nodes("text")
+
         """
         spec_type = []
 
@@ -212,6 +223,12 @@ class StoryMap(object):
         ===============     ====================================================================
 
         :return: Dictionary representation of the story cover node.
+
+        ..code-block:: python
+
+            story = StoryMap(<story item>)
+            story.story_cover(title="My Story Title", type="minimal", summary="My little summary", by_line="python_dev")
+            story.save()
 
         """
         dict_node = self.node_order[0]
@@ -415,6 +432,24 @@ class StoryMap(object):
         ===============     ====================================================================
 
         :return: The node-id for the added item as a String.
+
+        .. code-block:: python
+
+            new_story = StoryMap()
+        
+            # Example with Image
+            >>> image1 = Image("<image-path>.jpg/jpeg/png/gif ")
+            >>> new_node = new_story.add(image1, "my caption", "my alt-text", "float", 2)
+
+            # Example with Map
+            >>> my_map = Map(<item-id of type webmap>)
+            >>> new_node = new_story.add(my_map, "A map caption", "A new map alt-text", "wide")
+
+            # Example to add a Separator
+            >>> new_node = new_story.add()
+
+            >>> print(new_story.node_order)
+
         """
         if item._node in self.properties["nodes"]:
             raise Exception("This node already exists. Please try updating instead.")
@@ -452,10 +487,19 @@ class StoryMap(object):
         display: Optional[str] = None,
         button_text: Optional[str] = None,
         button_link: Optional[str] = None,
+        text: Optional[str] = None,
+        text_style: Optional[str] = None,
     ):
         """
-        Update an existing node of type Image, Video, WebPage, Map or Audio.
-        Can also be used to update the text or link of a Button.
+        Update Story Items in various ways:
+        
+        - Update item path for Map, Image, Video, WebPage, or Audio node
+        - Update caption and alt_text for all node types
+        - Update button link and/or text for a Button node
+        - Update text or text style for a Text node
+
+        ..note:
+            To update immersive node use the Swipe, Sidecar, or Slideshow class.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -478,7 +522,31 @@ class StoryMap(object):
         button_text         Optional String. To update the text on a Button.
         ---------------     --------------------------------------------------------------------
         button_link         Optional String. To update the link on a Button.
+        ---------------     --------------------------------------------------------------------
+        text                Optional String. To update the text of a Text node.
+        ---------------     --------------------------------------------------------------------
+        text_style          Optional String. To update the text style of a Text node.
         ===============     ====================================================================
+
+        .. code-block:: python
+
+            new_story = StoryMap()
+        
+            # Example with Image
+            >>> image1 = Image("<image-path>.jpg/jpeg/png/gif")
+            >>> image2 = Image("<image-path>.jpg/jpeg/png/gif")
+            >>> new_node = new_story.add(image1, "my caption", "my alt-text", "float", 2)
+            >>> new_story.update(new_node, image2, "new caption")
+
+            # Example with Map
+            >>> my_map = Map(<item-id of type webmap>)
+            >>> new_node = new_story.add(my_map, "A map caption", "A new map alt-text", "wide")
+            >>> new_story.update(new_node, <Item of type webmap>)
+
+            # Example to add a Separator
+            >>> new_node = new_story.add()
+
+            >>> print(new_story.node_order)
 
         """
         # Update path if new path given
@@ -509,10 +577,14 @@ class StoryMap(object):
             item._update_audio(node_id, self)
 
         # Update properties if new properties given
-        if caption or alt_text or display or button_text or button_link:
-            self._update_properties(
-                node_id, caption, alt_text, display, button_text, button_link
-            )
+        if caption or alt_text or display:
+            self._update_properties(node_id, caption, alt_text, display)
+        if button_text or button_link:
+            new_button = Button(link=button_link, text=button_text)
+            new_button._update_button(node_id, self)
+        if text or text_style:
+            new_text = Text(text=text, style=text_style)
+            new_text._update_text(node_id, self)
 
     # ----------------------------------------------------------------------
     def move(
@@ -535,6 +607,18 @@ class StoryMap(object):
         delete_current      Optional Boolean. If set to True, the node at the current position will
                             be deleted instead of moved down one space. Default is False.
         ===============     ====================================================================
+
+        .. code-block:: python
+
+            new_story = StoryMap()
+        
+            # Example with Image
+            >>> image1 = Image("<image-path>.jpg/jpeg/png/gif")
+            >>> image2 = Image("<image-path>.jpg/jpeg/png/gif")
+            >>> new_node = new_story.add(image1, "my caption", "my alt-text", "float", 2)
+            >>> new_story.add(image2)
+            >>> new_story.move(new_node, 3, False)
+
         """
         root_id = self.properties["root"]
         children = self.properties["nodes"][root_id]["children"]
@@ -565,6 +649,16 @@ class StoryMap(object):
                             To see the node ids for different types of items use ```list_nodes```
                             method.
         ===============     ====================================================================
+        
+        ..code-block:: python
+
+            new_story = StoryMap()
+        
+            # Example with Image
+            >>> image1 = Image("<image-path>.jpg/jpeg/png/gif")
+            >>> new_node = new_story.add(image1, "my caption", "my alt-text", "float", 2)
+            >>> new_story.delete(new_node)
+
         """
         root_id = self.properties["root"]
         children = self.properties["nodes"][root_id]["children"]
@@ -601,6 +695,12 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         title               Optional string. The title of the duplicated story.
         ===============     ====================================================================
+
+        ..code-block:: python
+
+            story = StoryMap(<story item>)
+            story.duplicate("A Story Copy")
+            
         """
         item = self._gis.content.get(self._itemid)
 
@@ -622,8 +722,6 @@ class StoryMap(object):
         appear in the story. First and last nodes are reserved for story_cover
         and credits.
         """
-        # Add to story children, position counts
-        # Last node is always credits and first node is always story cover
         root_id = self.properties["root"]
         last = len(self.properties["nodes"][root_id]["children"]) - 1
 
@@ -632,7 +730,6 @@ class StoryMap(object):
         elif position and position == 0:
             self.properties["nodes"][root_id]["children"].insert(1, node_id)
         else:
-            # last node is always credits
             self.properties["nodes"][root_id]["children"].insert(last, node_id)
 
     # ----------------------------------------------------------------------
@@ -656,11 +753,8 @@ class StoryMap(object):
         return resp
 
     # ----------------------------------------------------------------------
-    def _update_properties(
-        self, node_id, caption, alt_text, display, button_text, button_link
-    ):
+    def _update_properties(self, node_id, caption, alt_text, display):
         node_type = self.properties["nodes"][node_id]["type"]
-
         # Update main node
         if caption is not None:
             self.properties["nodes"][node_id]["data"]["caption"] = caption
@@ -668,12 +762,6 @@ class StoryMap(object):
             self.properties["nodes"][node_id]["data"]["alt"] = alt_text
         if display is not None and node_type in ["image", "video", "audio", "webmap"]:
             self.properties["nodes"][node_id]["config"]["size"] = display
-        if node_type == "button":
-            if button_text is not None:
-                self.properties["nodes"][node_id]["data"]["text"] = button_text
-            if button_link is not None:
-                self.properties["nodes"][node_id]["data"]["link"] = button_link
-
         return self.properties["nodes"][node_id]
 
 
