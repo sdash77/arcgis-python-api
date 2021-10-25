@@ -15677,6 +15677,33 @@ class RasterCatalogItem(object):
 
     # ----------------------------------------------------------------------
     @property
+    def image_support_data(self):
+        """
+        The ``image_support_data`` property returns  image support data of
+        the NITF based raster catalog item. Specifically, the Image Support
+        Data resource returns the NITF file structure and contents in XML
+        format to provide more detailed information about a particular NITF file.
+        """
+        url = "%s/info/imageSupportData" % self._url
+        out_folder = tempfile.gettempdir()
+        out_file = "imageSupportData.xml"
+        return self._con.get(
+            path=url,
+            params={},
+            try_json=False,
+            file_name=out_file,
+            out_folder=out_folder,
+        )
+    # ----------------------------------------------------------------------
+    @property
+    def sensor(self):
+        """
+        """
+        url = "%s/info/sensor" % self._url
+        return self._con.get(path=url, params={"f": "json"})
+
+    # ----------------------------------------------------------------------
+    @property
     def ics_to_pixel(self):
         """
         The ``ics_to_pixel`` property returns coefficients to build up a mathematic model for geometric
