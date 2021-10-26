@@ -148,8 +148,7 @@ class BaseGeometry(dict):
     _class_attributes = {
         "_ao",
         "_type",
-        "_typ"
-        "_HASARCPY",
+        "_typ" "_HASARCPY",
         "_HASSHAPELY",
         "_ipython_canary_method_should_not_exist_",
     }
@@ -2901,6 +2900,7 @@ class MultiPoint(Geometry):
         An empty multipoint has a points field with no elements. Empty points
         are ignored.
     """
+
     _typ = "Multipoint"
     _type = "Multipoint"
 
