@@ -176,9 +176,6 @@ class Audio(object):
         self._node = "n-" + uuid.uuid4().hex[0:6]
         self._resource_node = "r-" + uuid.uuid4().hex[0:6]
 
-        mt = mimetypes.guess_type(path)[0].lower()
-        self._ext_type = mt.split("/")[1]
-
     # ----------------------------------------------------------------------
     def _add_audio(self, story, caption=None, alt_text=None, display=None):
         # Make an add resource call
@@ -192,7 +189,7 @@ class Audio(object):
                 "caption": caption,
                 "alt": alt_text,
             },
-            "config": {"size": display,},
+            "config": {"size": display},
         }
 
         # Create resource node
@@ -372,6 +369,8 @@ class Text(object):
         # Color only applies certain styles
         if style in ["paragraph", "large-paragraph", "bullet-list", "numbered-list"]:
             self._color = color
+        else:
+            self._color = None
 
     # ----------------------------------------------------------------------
     def _add_text(self, story):
@@ -547,6 +546,7 @@ class Swipe(object):
         ===============     ====================================================================
         """
         node = story.properties["nodes"][node_id]
+        self._node_id = node_id
         self._type = node["type"]
         self._data = node["data"]
         self._content = node["data"]["contents"]
@@ -559,6 +559,7 @@ class Swipe(object):
         caption: Optional[str] = None,
         alt_text: Optional[str] = None,
         position: str = "right",
+        display: Optional[str] = None,
     ):
         """
         Add and item to the story map
@@ -579,9 +580,14 @@ class Swipe(object):
         position            Optional String. There are two positions for a swipe node: 'right'
                             or 'left'. If item parameter is not none then position is default 
                             to 'right'. If no item is given, this parameter is ignored.
+        ---------------     --------------------------------------------------------------------
+        display             Optional String. Display for the swipe node.
+
+                            Values: "small" | "medium" | "large"
         ===============     ====================================================================
 
         """
+        node = story.properties["nodes"][self._node_id]
         if item is not None:
             if not isinstance(item, Image) or not isinstance(item, Map):
                 raise Exception("Swipe nodes can only accept Image or Map item type")
@@ -590,17 +596,19 @@ class Swipe(object):
                 if isinstance(item, Image):
                     item._add_image(story, caption, alt_text)
             elif isinstance(item, Map):
-                item._add_webmap(story)
+                item._add_webmap(story, caption, alt_text)
             # Add to content in position wanted
             if position == "left":
-                self._content["0"] = item._node
+                node["data"]["content"]["0"] = item._node
             else:
-                self._content["1"] = item._node
+                node["data"]["content"]["1"] = item._node
         else:
             if caption is not None:
-                self._data["caption"] = caption
+                node["data"]["caption"] = caption
             if alt_text is not None:
-                self._data["alt"] = alt_text
+                node["data"]["alt"] = alt_text
+            if display is not None:
+                node["config"]["size"] = display
 
 
 ###############################################################################################################
@@ -630,7 +638,7 @@ class Sidecar(object):
 
     # ----------------------------------------------------------------------
     def edit_slide(
-        self, item: Union[Image, Video, Map, Text, WebPage], slide_number: int
+        self, item: Union[Image, Video, Map, Text, WebPage], slide_number: int,
     ):
         """
         Edit slide text or media item. Item can be of type Image, Video, Map, or WebPage.
@@ -646,10 +654,11 @@ class Sidecar(object):
         """
         # Find children nodes
         slide = self._slides[slide_number - 1]
-        narrative_panel = self._story.properties["nodes"][slide]["children"][0]
+        slide_node = self._story.properties["nodes"][slide]
+        narrative_panel = slide_node["children"][0]
         media_item = None
-        if len(self._story.properties["nodes"][slide]["children"]) == 2:
-            media_item = self._story.properties["nodes"][slide]["children"][1]
+        if len(slide_node["children"]) == 2:
+            media_item = slide_node["children"][1]
 
         # Check to see if item has been added to node properties
         if item._node not in self._story.properties["nodes"]:
@@ -666,8 +675,8 @@ class Sidecar(object):
             # Remove current media item and add new item as media
             if media_item:
                 self._story.delete(media_item)
-                self._story.properties["nodes"][slide]["children"].pop(1)
-            self._story.properties["nodes"][slide]["children"].insert(1, item._node)
+                slide_node["children"].pop(1)
+            slide_node["children"].insert(1, item._node)
 
     # ----------------------------------------------------------------------
     def remove_slide(self, slide_number: int):
@@ -777,8 +786,9 @@ class Slideshow(object):
         """
         # Find children
         slide = self._slides[slide_number - 1]
-        narrative_panel = self._story.properties["nodes"][slide]["children"][0]
-        media_item = self._story.properties["nodes"][slide]["children"][1]
+        slide_node = self._story.properties["nodes"][slide]
+        narrative_panel = slide_node["children"][0]
+        media_item = slide_node["children"][1]
 
         # Check to see if item has been added to node properties
         if item._node not in self._story.properties["nodes"]:
@@ -795,8 +805,8 @@ class Slideshow(object):
             # Remove current media item and add new item as media
             if media_item:
                 self._story.delete(media_item)
-                self._story.properties["nodes"][slide]["children"].pop(1)
-            self._story.properties["nodes"][slide]["children"].insert(1, item._node)
+                slide_node["children"].pop(1)
+            slide_node["children"].insert(1, item._node)
 
     # ----------------------------------------------------------------------
     def remove_slide(self, slide_number: int):

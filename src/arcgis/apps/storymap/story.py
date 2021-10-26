@@ -54,7 +54,7 @@ class StoryMap(object):
         else:
             self._gis = gis
         if item and isinstance(item, str):
-            self._item = gis.content.get(item)
+            item = gis.content.get(item)
         if item and isinstance(item, Item) and "StoryMap" in item.typeKeywords:
             self._item = item
             self._itemid = self._item.itemid
@@ -195,6 +195,42 @@ class StoryMap(object):
                 if type.lower() in keywords:
                     spec_type.append(node)
             return tuple(spec_type)
+
+    # ----------------------------------------------------------------------
+    def credits(
+        self, content: Optional[str] = None, attribution: Optional[str] = None,
+    ):
+        """
+        Add credits to the story. 
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        content             Optional String. The content to be added. (Seen on the left side of
+                            the credits.)
+
+                            Make sure text has '<strong> </strong>' tags.
+        ---------------     --------------------------------------------------------------------
+        attribution         Optional String. The attribution to be added. (Seen on right side of
+                            the credits.)
+        ===============     ====================================================================
+        """
+        # Find credit node
+        dict_node = self.list_nodes("credits")[0]
+        for key, value in dict_node.items():
+            credits_node = key
+        credits = self.properties["nodes"][credits_node]
+
+        # Create new content node
+        content_node = "n-" + uuid.uuid4().hex[0:6]
+        self.properties["nodes"][content_node] = {
+            "type": "attribution",
+            "data": {"content": content, "attribution": attribution},
+        }
+
+        # Add to children of credits
+        credits["children"].append(content_node)
+        return credits["children"]
 
     # ----------------------------------------------------------------------
     def story_cover(
@@ -451,7 +487,7 @@ class StoryMap(object):
             >>> print(new_story.node_order)
 
         """
-        if item._node in self.properties["nodes"]:
+        if item and item._node in self.properties["nodes"]:
             raise Exception("This node already exists. Please try updating instead.")
 
         node_id = item._node if item is not None else uuid.uuid4().hex[0:6]
