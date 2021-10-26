@@ -142,11 +142,13 @@ def _geojson_type_to_esri_type(type_):
 class BaseGeometry(dict):
     _ao = None
     _type = None
+    _typ = None
     _HASARCPY = None
     _HASSHAPELY = None
     _class_attributes = {
         "_ao",
         "_type",
+        "_typ"
         "_HASARCPY",
         "_HASSHAPELY",
         "_ipython_canary_method_should_not_exist_",
@@ -2899,7 +2901,7 @@ class MultiPoint(Geometry):
         An empty multipoint has a points field with no elements. Empty points
         are ignored.
     """
-
+    _typ = "Multipoint"
     _type = "Multipoint"
 
     def __init__(self, iterable=None, **kwargs):
@@ -3023,6 +3025,7 @@ class Point(Geometry):
     ``point`` has **no** location in space.
     """
 
+    _typ = "Point"
     _type = "Point"
     # ----------------------------------------------------------------------
     def __init__(self, iterable=None):
@@ -3141,6 +3144,7 @@ class Polygon(Geometry):
     ring orientation is not as described above.
     """
 
+    _typ = "Polygon"
     _type = "Polygon"
 
     def __init__(self, iterable=None, **kwargs):
@@ -3285,6 +3289,7 @@ class Polyline(Geometry):
     stream for ``Polylines`` and  :class:`~arcgis.geometry.Polygon` objects is a syntax error.
     """
 
+    _typ = "Polyline"
     _type = "Polyline"
 
     def __init__(self, iterable=None, **kwargs):
@@ -3414,6 +3419,7 @@ class Envelope(Geometry):
         or a `NaN` string.
     """
 
+    _typ = "Envelope"
     _type = "Envelope"
 
     def __init__(self, iterable=None, **kwargs):
@@ -3632,6 +3638,7 @@ class SpatialReference(BaseGeometry):
         Starting at 10.3, Image Service supports image coordinate systems.
     """
 
+    _typ = "SpatialReference"
     _type = "SpatialReference"
 
     def __init__(self, iterable=None, **kwargs):
