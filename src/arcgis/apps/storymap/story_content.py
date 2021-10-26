@@ -14,9 +14,10 @@ class Image(object):
     """
 
     def __init__(
-        self, path: str = None,
+        self,
+        path: str = None,
     ):
-        """  
+        """
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
@@ -91,7 +92,8 @@ class Video(object):
     """
 
     def __init__(
-        self, path: str = None,
+        self,
+        path: str = None,
     ):
         """
         ==================      ====================================================================
@@ -122,7 +124,9 @@ class Video(object):
                 "caption": caption,
                 "alt": alt_text,
             },
-            "config": {"size": display,},
+            "config": {
+                "size": display,
+            },
         }
 
         # Create resource node
@@ -160,7 +164,8 @@ class Audio(object):
     """
 
     def __init__(
-        self, path: str = None,
+        self,
+        path: str = None,
     ):
         """
         ==================      ====================================================================
@@ -226,7 +231,8 @@ class WebPage(object):
     """
 
     def __init__(
-        self, path: str = None,
+        self,
+        path: str = None,
     ):
         """
         ==================      ====================================================================
@@ -325,26 +331,26 @@ class Text(object):
                                 and a class attribute to indicate color formatting:
                                 class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
 
-                                Values: themeColor1 | themeColor2 | themeColor3 | customTextColors                     
-        -------------------     --------------------------------------------------------------------            
+                                Values: themeColor1 | themeColor2 | themeColor3 | customTextColors
+        -------------------     --------------------------------------------------------------------
         heading                 String can only contain <em> tag
-        -------------------     --------------------------------------------------------------------            
+        -------------------     --------------------------------------------------------------------
         subheading              String can only contain <em> tag
-        -------------------     --------------------------------------------------------------------            
+        -------------------     --------------------------------------------------------------------
         bullet-list             String can contain the following tags for text formatting:
                                 <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
                                 and a class attribute to indicate color formatting:
                                 class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
 
-                                Values: themeColor1 | themeColor2 | themeColor3 | customTextColors 
-        -------------------     --------------------------------------------------------------------            
+                                Values: themeColor1 | themeColor2 | themeColor3 | customTextColors
+        -------------------     --------------------------------------------------------------------
         numbered-list           String can contain the following tags for text formatting:
                                 <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
                                 and a class attribute to indicate color formatting:
                                 class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
 
                                 Values: themeColor1 | themeColor2 | themeColor3 | customTextColors
-        -------------------     --------------------------------------------------------------------            
+        -------------------     --------------------------------------------------------------------
         quote                   String can only contain <strong> and <em> tags
         ===================     ====================================================================
 
@@ -377,7 +383,10 @@ class Text(object):
 
         story.properties["nodes"][self._node] = {
             "type": "text",
-            "data": {"type": self._style, "text": self._text,},
+            "data": {
+                "type": self._style,
+                "text": self._text,
+            },
         }
         if self._color is not None:
             story.properties["nodes"][self._node]["data"]["customTextColors"] = [
@@ -439,13 +448,14 @@ class Map(object):
     """
 
     def __init__(
-        self, item: Item,
+        self,
+        item: Item,
     ):
         """
         =================       ====================================================================
         **Argument**            **Description**
         -----------------       --------------------------------------------------------------------
-        item                    An Item of type WebMap or WebScene or a String representing the item 
+        item                    An Item of type WebMap or WebScene or a String representing the item
                                 id to add to the story map.
         =================       ====================================================================
 
@@ -540,7 +550,7 @@ class Swipe(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        node_id             Required String. The node id for the swipe type. 
+        node_id             Required String. The node id for the swipe type.
         ---------------     --------------------------------------------------------------------
         story               Required StoryMap that the swipe belongs to.
         ===============     ====================================================================
@@ -578,7 +588,7 @@ class Swipe(object):
                             the item. If item is None then alt_text is used for the swipe node.
         ---------------     --------------------------------------------------------------------
         position            Optional String. There are two positions for a swipe node: 'right'
-                            or 'left'. If item parameter is not none then position is default 
+                            or 'left'. If item parameter is not none then position is default
                             to 'right'. If no item is given, this parameter is ignored.
         ---------------     --------------------------------------------------------------------
         display             Optional String. Display for the swipe node.
@@ -622,7 +632,7 @@ class Sidecar(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        node_id             Required String. The node id for the sidecar type. 
+        node_id             Required String. The node id for the sidecar type.
         ---------------     --------------------------------------------------------------------
         story               Required StoryMap that the sidecar belongs to.
         ===============     ====================================================================
@@ -638,7 +648,9 @@ class Sidecar(object):
 
     # ----------------------------------------------------------------------
     def edit_slide(
-        self, item: Union[Image, Video, Map, Text, WebPage], slide_number: int,
+        self,
+        item: Union[Image, Video, Map, Text, WebPage],
+        slide_number: int,
     ):
         """
         Edit slide text or media item. Item can be of type Image, Video, Map, or WebPage.
@@ -646,8 +658,8 @@ class Sidecar(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        item                Required item to replace current media item. 
-                            Item type can be Image, Video, Map, WebPage or Text. 
+        item                Required item to replace current media item.
+                            Item type can be Image, Video, Map, WebPage or Text.
         ---------------     --------------------------------------------------------------------
         slide_number        Required Integer. The slide that will be edited. First slide is 1.
         ===============     ====================================================================
@@ -701,7 +713,7 @@ class Sidecar(object):
         """
         List all slides and their children
 
-        :return: 
+        :return:
             A list where the first item is the node id for the sidecar. Next
             items are dictionary of slides and their children.
         """
@@ -753,11 +765,11 @@ class Slideshow(object):
         Create an Slideshow immersive object from a pre-existing immersive node.
 
         A slideshow is composed of slides. Slides are composed of two nodes: a narrative panel and a media node.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        node_id             Required String. The node id for the slideshow type. 
+        node_id             Required String. The node id for the slideshow type.
         ---------------     --------------------------------------------------------------------
         story               Required StoryMap that the slideshow belongs to.
         ===============     ====================================================================
@@ -778,8 +790,8 @@ class Slideshow(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        item                Required item to replace current media item. 
-                            Item type can be Image, Video, Map, or Text. 
+        item                Required item to replace current media item.
+                            Item type can be Image, Video, Map, or Text.
         ---------------     --------------------------------------------------------------------
         slide_number        Required Integer. The slide that will be edited. First slide is 1.
         ===============     ====================================================================
@@ -831,7 +843,7 @@ class Slideshow(object):
         """
         List all slides and their children
 
-        :return: 
+        :return:
             A list where the first item is the node id for the slideshow. Next
             items are dictionary of slides and their children.
         """

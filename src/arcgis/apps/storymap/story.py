@@ -16,38 +16,21 @@ from arcgis.apps.storymap.story_content import (
 )
 
 
-class StoryMap(object):
-    """ 
-    A Story Map is a web map that has been thoughtfully created, given context, and provided 
-    with supporting information so it becomes a stand-alone resource. It integrates maps, legends, 
-    text, photos, and video and provides functionality, such as swipe, pop-ups, and time sliders, 
-    that helps users explore this content.
-    
-    ArcGIS StoryMaps is the next-generation storytelling tool in ArcGIS, and story authors are 
-    encouraged to use this tool to create stories.
+class _StoryMapFactory(type):
+    """
+    Factory that generates a Story Map
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /MapServer/<index>
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
     """
 
-    _properties = None
-    _gis = None
-    _itemid = None
-    _item = None
-    _resources = None
-
-    def __init__(self, item: Optional[Item] = None, gis: Optional[GIS] = None):
-        """
-        Initializer for the Story Map Class.
-
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        item                    Optional :class:`~arcgis.gis.Item` object whose type is ``StoryMap``.
-
-                                .. note::
-                                    If not specified, an empty ``StoryMap`` object is created with some
-                                    useful defaults.
-
-        ==================     ====================================================================
-        """
+    def __call__(self, item, gis):
         if gis is None:
             gis = env.active_gis
             self._gis = gis
@@ -70,25 +53,7 @@ class StoryMap(object):
         else:
             self._create_new_webmap()
 
-    # ----------------------------------------------------------------------
-    def _repr_html_(self):
-        """
-        HTML Representation for IPython Notebook
-        """
-        return 'GIS @ <a href="' + self.url + '">' + self.url + "</a>"
-
-    # ----------------------------------------------------------------------
-    def __str__(self):
-        return json.dumps(self._properties)
-
-    # ----------------------------------------------------------------------
-    def __repr__(self):
-        return self.__str__()
-
-    # ----------------------------------------------------------------------
-    def _refresh(self):
-        if self._item:
-            self._properties = json.loads(self._item.get_data())
+        return self
 
     # ----------------------------------------------------------------------
     def _create_new_webmap(self):
@@ -117,10 +82,71 @@ class StoryMap(object):
         self._item = item
         self._itemid = item.itemid
         self._add_resource(
-            file=template, resource_name="draft.json",
+            self,
+            file=template,
+            resource_name="draft.json",
         )
         self._resources = self._item.resources.list()
         f.close()
+
+
+###############################################################################################################
+
+
+class StoryMap(object, metaclass=_StoryMapFactory):
+    """
+    A Story Map is a web map that has been thoughtfully created, given context, and provided
+    with supporting information so it becomes a stand-alone resource. It integrates maps, legends,
+    text, photos, and video and provides functionality, such as swipe, pop-ups, and time sliders,
+    that helps users explore this content.
+
+    ArcGIS StoryMaps is the next-generation storytelling tool in ArcGIS, and story authors are
+    encouraged to use this tool to create stories.
+    """
+
+    _properties = None
+    _gis = None
+    _itemid = None
+    _item = None
+    _resources = None
+
+    def __init__(self, item: Optional[Item] = None, gis: Optional[GIS] = None):
+        """
+        Initializer for the Story Map Class.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        item                    Optional :class:`~arcgis.gis.Item` object whose type is ``StoryMap``.
+
+                                .. note::
+                                    If not specified, an empty ``StoryMap`` object is created with some
+                                    useful defaults.
+
+        ==================     ====================================================================
+        """
+        super(StoryMap, self).__init__(item=item, gis=gis)
+        self.properties = self._properties
+
+    # ----------------------------------------------------------------------
+    def _repr_html_(self):
+        """
+        HTML Representation for IPython Notebook
+        """
+        return 'GIS @ <a href="' + self.url + '">' + self.url + "</a>"
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return json.dumps(self._properties)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return self.__str__()
+
+    # ----------------------------------------------------------------------
+    def _refresh(self):
+        if self._item:
+            self._properties = json.loads(self._item.get_data())
 
     # ----------------------------------------------------------------------
     @property
@@ -133,7 +159,7 @@ class StoryMap(object):
     def node_order(self):
         """
         This propertry returns the storymap's main nodes in order of appearance in the story
-        
+
         To see sub-nodes then use the corresponding immersive class to list the nodes for
         immersive types.
         """
@@ -170,7 +196,7 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def list_nodes(self, type: Optional[str] = None):
         """
-        Find the nodes for each type of item. 
+        Find the nodes for each type of item.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -205,10 +231,12 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     def credits(
-        self, content: Optional[str] = None, attribution: Optional[str] = None,
+        self,
+        content: Optional[str] = None,
+        attribution: Optional[str] = None,
     ):
         """
-        Add credits to the story. 
+        Add credits to the story.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -397,7 +425,8 @@ class StoryMap(object):
         # Add new draft
         draft = "draft_" + str(int(time.time())) + ".json"
         self._add_resource(
-            resource_name=draft, text=json.dumps(self._properties),
+            resource_name=draft,
+            text=json.dumps(self._properties),
         )
 
         # Find type keywords to use
@@ -479,7 +508,7 @@ class StoryMap(object):
         .. code-block:: python
 
             new_story = StoryMap()
-        
+
             # Example with Image
             >>> image1 = Image("<image-path>.jpg/jpeg/png/gif ")
             >>> new_node = new_story.add(image1, "my caption", "my alt-text", "float", 2)
@@ -535,7 +564,7 @@ class StoryMap(object):
     ):
         """
         Update Story Items in various ways:
-        
+
         - Update item path for Map, Image, Video, WebPage, or Audio node
         - Update caption and alt_text for all node types
         - Update button link and/or text for a Button node
@@ -550,7 +579,7 @@ class StoryMap(object):
         node_id             Required String. The node id for the item that will be updated. Find a
                             list of node order by using the ```node_order``` property.
         ---------------     --------------------------------------------------------------------
-        item                Optional String or Story Map Content Item. 
+        item                Optional String or Story Map Content Item.
                             Values:
                             - Story Map Item of type: 'Image', 'Video', 'Audio', 'Webpage', or 'Map'.
                             - Item: :class:`~arcgis.gis.Item` of type 'WebMap' or 'WebScene'
@@ -574,7 +603,7 @@ class StoryMap(object):
         .. code-block:: python
 
             new_story = StoryMap()
-        
+
             # Example with Image
             >>> image1 = Image("<image-path>.jpg/jpeg/png/gif")
             >>> image2 = Image("<image-path>.jpg/jpeg/png/gif")
@@ -654,7 +683,7 @@ class StoryMap(object):
         .. code-block:: python
 
             new_story = StoryMap()
-        
+
             # Example with Image
             >>> image1 = Image("<image-path>.jpg/jpeg/png/gif")
             >>> image2 = Image("<image-path>.jpg/jpeg/png/gif")
@@ -692,11 +721,11 @@ class StoryMap(object):
                             To see the node ids for different types of items use ```list_nodes```
                             method.
         ===============     ====================================================================
-        
+
         ..code-block:: python
 
             new_story = StoryMap()
-        
+
             # Example with Image
             >>> image1 = Image("<image-path>.jpg/jpeg/png/gif")
             >>> new_node = new_story.add(image1, "my caption", "my alt-text", "float", 2)
@@ -743,7 +772,7 @@ class StoryMap(object):
 
             story = StoryMap(<story item>)
             story.duplicate("A Story Copy")
-            
+
         """
         item = self._gis.content.get(self._itemid)
 
@@ -806,22 +835,3 @@ class StoryMap(object):
         if display is not None and node_type in ["image", "video", "audio", "webmap"]:
             self.properties["nodes"][node_id]["config"]["size"] = display
         return self.properties["nodes"][node_id]
-
-
-###############################################################################################################
-class _StoryMapFactory(type):
-    """
-    Factory that generates a Story Map
-
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    url                    Required string, specify the url ending in /MapServer/<index>
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
-                           used.
-    ==================     ====================================================================
-    """
-
-    def __call__(cls, item, gis):
-        
