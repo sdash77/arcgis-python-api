@@ -2799,6 +2799,7 @@ class UserManager(object):
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
                           the user set their password by clicking on a link that is emailed to him/her.
+                          When the `provider` is **enterprise**, password is optional.
         ----------------  -------------------------------------------------------------------------------
         firstname         Required string. The first name for the user
         ----------------  -------------------------------------------------------------------------------
@@ -3342,8 +3343,15 @@ class UserManager(object):
                 "idpUsername": idp_username,
                 "userLicenseTypeId": user_type,
             }
+            if "password" in params and params["password"] is None:
+                params.pop("password", None)
             self._portal.con.post(createuser_url, params)
+            if params["username"].find("\\") > -1:
+                d = params["username"].split("\\")
+                d.reverse()
+                username = "@".join(d)
             user = self.get(username)
+
             for grp in groups:
                 grp.add_users([username])
             if thumbnail is not None:
