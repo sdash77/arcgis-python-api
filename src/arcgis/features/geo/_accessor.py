@@ -2451,8 +2451,8 @@ class GeoAccessor(object):
         folder                          Optional string. Name of the folder where the featurelayer item
                                         and imported data would be stored.
         ---------------------------     --------------------------------------------------------------------
-        sanitize_columns                Optional Boolean. If True, column names will be converted to string, 
-                                        invalid characters removed and other checks will be performed. The 
+        sanitize_columns                Optional Boolean. If True, column names will be converted to string,
+                                        invalid characters removed and other checks will be performed. The
                                         default is False.
         ===========================     ====================================================================
 
@@ -2975,7 +2975,14 @@ class GeoAccessor(object):
                 if fs["displayFieldName"] == "":
                     fs["displayFieldName"] = col
             elif (
-                isinstance(col_val, (datetime.datetime, pd.Timestamp, np.datetime64,),)
+                isinstance(
+                    col_val,
+                    (
+                        datetime.datetime,
+                        pd.Timestamp,
+                        np.datetime64,
+                    ),
+                )
                 or col in date_cols
             ):  # pd.datetime
                 fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
