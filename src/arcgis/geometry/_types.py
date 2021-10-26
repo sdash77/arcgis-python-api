@@ -148,7 +148,8 @@ class BaseGeometry(dict):
     _class_attributes = {
         "_ao",
         "_type",
-        "_typ" "_HASARCPY",
+        "_typ",
+        "_HASARCPY",
         "_HASSHAPELY",
         "_ipython_canary_method_should_not_exist_",
     }
