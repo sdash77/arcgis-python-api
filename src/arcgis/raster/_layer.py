@@ -6147,7 +6147,7 @@ class ImageryLayer(Layer):
                     if (
                         (hasattr(self, "_lazy_token")) and self._lazy_token is None
                     ) or not hasattr(self, "_lazy_token"):
-                        token = self._gis._con._create_token(self.url)
+                        token = self._gis._con._create_token(self._url)
                         self._lazy_token = token
                 except Exception as e:
                     token = self._token
