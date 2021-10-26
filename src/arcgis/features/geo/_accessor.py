@@ -2451,7 +2451,9 @@ class GeoAccessor(object):
         folder                          Optional string. Name of the folder where the featurelayer item
                                         and imported data would be stored.
         ---------------------------     --------------------------------------------------------------------
-        sanitize_columns
+        sanitize_columns                Optional Boolean. If True, column names will be converted to string, 
+                                        invalid characters removed and other checks will be performed. The 
+                                        default is False.
         ===========================     ====================================================================
 
         :return:
@@ -2973,14 +2975,7 @@ class GeoAccessor(object):
                 if fs["displayFieldName"] == "":
                     fs["displayFieldName"] = col
             elif (
-                isinstance(
-                    col_val,
-                    (
-                        datetime.datetime,
-                        pd.Timestamp,
-                        np.datetime64,
-                    ),
-                )
+                isinstance(col_val, (datetime.datetime, pd.Timestamp, np.datetime64,),)
                 or col in date_cols
             ):  # pd.datetime
                 fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
@@ -3171,9 +3166,17 @@ class GeoAccessor(object):
             A :class:`~arcgis.features.FeatureCollection` object
         """
         from arcgis.features import FeatureCollection
-        import string
+        import string, copy
         import random
 
+        old_columns, old_index = None, None
+        if sanitize_columns:
+
+            old_columns = self._data.columns.tolist()
+            old_index = copy.deepcopy(self._data.index)
+            pd.DataFrame.reset_index(self)
+            self._data.reset_index(drop=True)
+            self.sanitize_column_names(inplace=True)
         if name is None:
             name = random.choice(string.ascii_letters) + uuid.uuid4().hex[:5]
         template = {"showLegend": True, "layers": []}
@@ -3291,6 +3294,9 @@ class GeoAccessor(object):
         }
         if global_id_field is not None:
             layer["layerDefinition"]["globalIdField"] = global_id_field
+        if old_columns and old_index:
+            self._data.columns = old_columns
+            self._data.index = old_index
         return FeatureCollection(layer)
 
     # ---------------------------------------------------------------------

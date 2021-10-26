@@ -701,7 +701,7 @@ def to_featureclass(
     ---------------     ----------------------------------------------------
     sanitize_columns    Optional Boolean. If True, column names will be
                         converted to string, invalid characters removed and
-                        other checks will be performed. The default is True.
+                        other checks will be performed. The default is False.
     ---------------     ----------------------------------------------------
     ham_m               Optional Boolean to indicate if data has linear
                         referencing (m) values. Default is False.
