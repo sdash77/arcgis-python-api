@@ -71,6 +71,13 @@ class StoryMap(object):
             self._create_new_webmap()
 
     # ----------------------------------------------------------------------
+    def _repr_html_(self):
+        """
+        HTML Representation for IPython Notebook
+        """
+        return 'GIS @ <a href="' + self.url + '">' + self.url + "</a>"
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return json.dumps(self._properties)
 
