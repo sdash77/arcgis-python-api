@@ -2798,7 +2798,7 @@ class UserManager(object):
                           This is a required parameter only if
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
-                          the user set their password by clicking on a link that is emailed to him/her. 
+                          the user set their password by clicking on a link that is emailed to him/her.
                           When the `provider` is **enterprise**, password is optional.
         ----------------  -------------------------------------------------------------------------------
         firstname         Required string. The first name for the user
