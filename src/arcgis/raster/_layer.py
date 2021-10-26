@@ -468,7 +468,8 @@ class _RasterRenderingService(Layer):
                     )
         self.url = url
         if url:
-            self.token = gis._con.generate_portal_server_token(serverUrl=url)
+            self.token = gis._con._create_token(url)
+
         else:
             self.token = None
 
@@ -6146,9 +6147,7 @@ class ImageryLayer(Layer):
                     if (
                         (hasattr(self, "_lazy_token")) and self._lazy_token is None
                     ) or not hasattr(self, "_lazy_token"):
-                        token = self._gis._con.generate_portal_server_token(
-                            serverUrl=self._url
-                        )
+                        token = self._gis._con._create_token(self._url)
                         self._lazy_token = token
                 except Exception as e:
                     token = self._token

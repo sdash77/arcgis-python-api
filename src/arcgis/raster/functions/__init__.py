@@ -9180,9 +9180,7 @@ def _raster_item(raster, raster_id=None):
                 if (
                     (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
                 ) or not hasattr(raster, "_lazy_token"):
-                    raster._lazy_token = raster._gis._con.generate_portal_server_token(
-                        serverUrl=url
-                    )
+                    raster._lazy_token = raster._gis._con._create_token(url)
                 if isinstance(raster._lazy_token, str):
                     url = url + "?token=" + raster._lazy_token
             except:
