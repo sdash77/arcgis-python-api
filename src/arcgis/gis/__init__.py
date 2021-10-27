@@ -197,6 +197,10 @@ class GIS(object):
                             "http" : "http://10.343.10.22:111",
                             "https" : "https://127.343.13.22:6443",
                         }
+    ----------------    ---------------------------------------------------------------
+    expiration          Optional Integer.  The default is 60 minutes.  The expiration
+                        time for a given token.  This is used for user provided tokens
+                        and API Keys.
 
     ================    ===============================================================
 
@@ -2795,6 +2799,7 @@ class UserManager(object):
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
                           the user set their password by clicking on a link that is emailed to him/her.
+                          When the `provider` is **enterprise**, password is optional.
         ----------------  -------------------------------------------------------------------------------
         firstname         Required string. The first name for the user
         ----------------  -------------------------------------------------------------------------------
@@ -3338,8 +3343,15 @@ class UserManager(object):
                 "idpUsername": idp_username,
                 "userLicenseTypeId": user_type,
             }
+            if "password" in params and params["password"] is None:
+                params.pop("password", None)
             self._portal.con.post(createuser_url, params)
+            if params["username"].find("\\") > -1:
+                d = params["username"].split("\\")
+                d.reverse()
+                username = "@".join(d)
             user = self.get(username)
+
             for grp in groups:
                 grp.add_users([username])
             if thumbnail is not None:
@@ -14244,22 +14256,6 @@ class _GISResource(object):
 
         with _DisableLogger():
             try:
-                """
-                # try as a federated server
-                if self._con.token is None:
-                    self._lazy_token = self._con.generate_portal_server_token(
-                        serverUrl=self.url
-                    )
-                else:
-                    from ._impl._con import Connection
-
-                    if isinstance(self._con, Connection):
-                        self._lazy_token = self._con.generate_portal_server_token(
-                            serverUrl=self._url
-                        )
-                    else:
-                        self._lazy_token = self._con.token
-                """
                 self._refresh()
 
             except HTTPError as httperror:  # service maybe down

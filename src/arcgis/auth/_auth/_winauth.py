@@ -172,7 +172,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
     @property
     def token(self) -> str:
         """
-        Gets the token.  This is always `None` for `WindowsAuth`
+        Gets the token.  This is always `None` for `EsriWindowsAuth`
 
         :returns: String
         """
