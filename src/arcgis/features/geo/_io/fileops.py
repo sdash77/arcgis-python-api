@@ -135,6 +135,10 @@ def _from_xy(df, x_column, y_column, sr=None):
     ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)
     df["SHAPE"] = GeoArray(ags_geom)
     df.spatial.name
+    for i in range(len(df)):
+        shape = df.loc[i]["SHAPE"]
+        if "EMPTY" in shape.WKT:
+            df.iat[i, df.columns.get_loc("SHAPE")] = None
     return df
 
 
@@ -737,9 +741,8 @@ def to_featureclass(
         if not isinstance(col, str):
             df.rename(columns={col: str(col)}, inplace=True)
             col = str(col)
-    # CHANGE BACK AFTER
-    x = 1
-    if x == 0:
+
+    if HASARCPY:
         try:
             # 1. Create the Save Feature Class
             #
@@ -1123,8 +1126,9 @@ def _pyshp2(df, out_path, out_name):
             pass
 
         # Change back null columns to None
-        for q in query_index:
-            df.loc[q][geom_column] = None
+        for index, row in query_index.items():
+            if row is True:
+                df.iat[index, df.columns.get_loc(geom_column)] = None
 
         del shpfile
         return out_fc
@@ -1143,14 +1147,22 @@ def _handle_none_type_geometry(df, geom_type, geom_column):
         for idx, row in df_view.iterrows():
             if df.loc[idx][geom_column] is None:
                 if geom_type == "Point":
-                    df.loc[idx][geom_column] = Geometry(
-                        {"x": None, "y": None, "spatialReference": df.spatial.sr,}
+                    df.iat[idx, df.columns.get_loc(geom_column)] = Geometry(
+                        {
+                            "x": np.NAN,
+                            "y": np.NAN,
+                            "spatialReference": df.spatial.sr,
+                        }
                     )
                 elif geom_type == "Poyline":
-                    df.loc[idx][geom_column] = Geometry({"paths": []}).WKT
+                    df.iat[idx, df.columns.get_loc(geom_column)] = Geometry(
+                        {"paths": []}
+                    ).WKT
                 elif geom_type == "Polygon":
-                    df.loc[idx][geom_column] = Geometry({"rings": []}).WKT
-    return query  # USE TO CHANGE BACK TO NONE
+                    df.iat[idx, df.columns.get_loc(geom_column)] = Geometry(
+                        {"rings": []}
+                    ).WKT
+    return query
 
 
 def _sanitize_column_names(
