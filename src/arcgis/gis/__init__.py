@@ -2867,8 +2867,16 @@ class UserManager(object):
                                             user_type='Creator')
 
         """
-        if any([user.username.lower() == username.lower() for user in self.search(query=username)]):
-            raise Exception("User %s already exists. Please provide a different username." % username)        
+        if any(
+            [
+                user.username.lower() == username.lower()
+                for user in self.search(query=username)
+            ]
+        ):
+            raise Exception(
+                "User %s already exists. Please provide a different username."
+                % username
+            )
         kwargs = {
             "username": username,
             "password": password,
