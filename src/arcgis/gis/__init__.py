@@ -6383,6 +6383,7 @@ class ContentManager(object):
 
         try:
             import arcpy
+
             has_arcpy = True
         except ImportError:
             has_arcpy = False
