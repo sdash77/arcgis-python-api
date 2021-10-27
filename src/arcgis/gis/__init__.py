@@ -5686,7 +5686,17 @@ class ContentManager(object):
                 kwargs["max_items"] = num
                 kwargs["start"] = new_start
                 params.append(copy.deepcopy(kwargs))
-            items = {"results": [], "start": start, "num": 100, "total": -999}
+            total_count = -999
+            next_start_tracker = -1
+            items = {
+                "results": [],
+                "start": start,
+                "num": 100,
+                "total": total_count,
+                "query": query,
+                "nextStart": next_start_tracker,
+            }
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 future_to_url = {
                     executor.submit(self.advanced_search, **param): param
@@ -5695,10 +5705,17 @@ class ContentManager(object):
                 for future in concurrent.futures.as_completed(future_to_url):
                     result = future_to_url[future]
                     data = future.result()
+                    if data.get("nextStart", -1) > next_start_tracker:
+                        next_start_tracker = data.get("nextStart", -1)
                     if "results" in data:
                         items["results"].extend(data["results"])
+
             if len(items["results"]) > max_items:
                 items["results"] = items["results"][:max_items]
+                items["nextStart"] = max_items
+            else:
+                items["nextStart"] = next_start_tracker
+            items["total"] = len(items["results"])
             return items
 
     def _market_listings(
