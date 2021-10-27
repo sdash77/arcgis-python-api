@@ -15,22 +15,39 @@ from arcgis.apps.storymap.story_content import (
     Map,
 )
 
-
-class _StoryMapFactory(type):
+###############################################################################################################
+class StoryMap(object):
     """
-    Factory that generates a Story Map
+    A Story Map is a web map that has been thoughtfully created, given context, and provided
+    with supporting information so it becomes a stand-alone resource. It integrates maps, legends,
+    text, photos, and video and provides functionality, such as swipe, pop-ups, and time sliders,
+    that helps users explore this content.
 
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    url                    Required string, specify the url ending in /MapServer/<index>
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
-                           used.
-    ==================     ====================================================================
+    ArcGIS StoryMaps is the next-generation storytelling tool in ArcGIS, and story authors are
+    encouraged to use this tool to create stories.
     """
 
-    def __call__(self, item, gis):
+    _properties = None
+    _gis = None
+    _itemid = None
+    _item = None
+    _resources = None
+
+    def __init__(self, item: Optional[Item] = None, gis: Optional[GIS] = None):
+        """
+        Initializer for the Story Map Class.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        item                    Optional :class:`~arcgis.gis.Item` object whose type is ``StoryMap``.
+
+                                .. note::
+                                    If not specified, an empty ``StoryMap`` object is created with some
+                                    useful defaults.
+
+        ==================     ====================================================================
+        """
         if gis is None:
             gis = env.active_gis
             self._gis = gis
@@ -52,8 +69,6 @@ class _StoryMapFactory(type):
             raise ValueError("Item is not a Story Map")
         else:
             self._create_new_webmap()
-
-        return self
 
     # ----------------------------------------------------------------------
     def _create_new_webmap(self):
@@ -88,45 +103,6 @@ class _StoryMapFactory(type):
         )
         self._resources = self._item.resources.list()
         f.close()
-
-
-###############################################################################################################
-
-
-class StoryMap(object, metaclass=_StoryMapFactory):
-    """
-    A Story Map is a web map that has been thoughtfully created, given context, and provided
-    with supporting information so it becomes a stand-alone resource. It integrates maps, legends,
-    text, photos, and video and provides functionality, such as swipe, pop-ups, and time sliders,
-    that helps users explore this content.
-
-    ArcGIS StoryMaps is the next-generation storytelling tool in ArcGIS, and story authors are
-    encouraged to use this tool to create stories.
-    """
-
-    _properties = None
-    _gis = None
-    _itemid = None
-    _item = None
-    _resources = None
-
-    def __init__(self, item: Optional[Item] = None, gis: Optional[GIS] = None):
-        """
-        Initializer for the Story Map Class.
-
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        item                    Optional :class:`~arcgis.gis.Item` object whose type is ``StoryMap``.
-
-                                .. note::
-                                    If not specified, an empty ``StoryMap`` object is created with some
-                                    useful defaults.
-
-        ==================     ====================================================================
-        """
-        super(StoryMap, self).__init__(item=item, gis=gis)
-        self.properties = self._properties
 
     # ----------------------------------------------------------------------
     def _repr_html_(self):
