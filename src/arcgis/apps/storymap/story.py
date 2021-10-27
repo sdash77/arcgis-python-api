@@ -68,10 +68,10 @@ class StoryMap(object):
         elif item and isinstance(item, Item) and "StoryMap" not in item.typeKeywords:
             raise ValueError("Item is not a Story Map")
         else:
-            self._create_new_webmap()
+            self._create_new_storymap()
 
     # ----------------------------------------------------------------------
-    def _create_new_webmap(self):
+    def _create_new_storymap(self):
         template = r"src\arcgis\apps\storymap\templates\draft.json"
         f = open(template, "rb")
         self._properties = json.load(f)
@@ -97,7 +97,6 @@ class StoryMap(object):
         self._item = item
         self._itemid = item.itemid
         self._add_resource(
-            self,
             file=template,
             resource_name="draft.json",
         )
