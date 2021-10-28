@@ -9972,7 +9972,11 @@ class User(dict):
             bundle.revoke(users=self.username)
         if reassign_to:
             # reassigns the group owner to the reassigned_to user.
-            [grp.reassign_to(User(gis=self._gis, username=reassign_to)) for grp in self.groups if grp.owner == self.username]
+            [
+                grp.reassign_to(User(gis=self._gis, username=reassign_to))
+                for grp in self.groups
+                if grp.owner == self.username
+            ]
         else:
             # delete the groups owned by the user
             [grp.delete() for grp in self.groups if grp.owner == self.username]
