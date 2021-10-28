@@ -3861,15 +3861,20 @@ class FeatureLayerCollection(_GISResource):
             List of dictionaries
 
         """
-        if not isinstance(layers, (tuple, list)):
-            raise ValueError("The layer variable must be a list.")
-        url = "{base}/queryDomains".format(base=self._url)
-        params = {"f": "json"}
-        params["layers"] = layers
-        res = self._con.post(url, params)
-        if "domains" in res:
-            return res["domains"]
-        return res
+        if (
+            "supportsQueryDomains" in self.properties
+            and self.properties["supportsQueryDomains"]
+        ):
+            if not isinstance(layers, (tuple, list)):
+                raise ValueError("The layer variable must be a list.")
+            url = "{base}/queryDomains".format(base=self._url)
+            params = {"f": "json"}
+            params["layers"] = layers
+            res = self._con.post(url, params)
+            if "domains" in res:
+                return res["domains"]
+            return res
+        return []
 
     # ----------------------------------------------------------------------
     def extract_changes(

@@ -850,14 +850,19 @@ def to_featureclass(
                 q = df[geo._name].isna()
                 df.loc[q, "SHAPE"] = null_geom  # set null values to proper JSON
                 np.apply_along_axis(_insert_row, 1, df[dfcols].values)
+
                 df.loc[q, "SHAPE"] = None  # reset null values
+        except ValueError as ve:
+            df.columns = original_columns
+            fc = None
+            raise
         except:
             # something failed in try so reset columns to original columns
             # return empty item
             fc = None
         finally:
             df.columns = original_columns
-            return fc
+        return fc
     elif HASPYSHP:
         if fc_name.endswith(".shp") == False:
             fc_name = "%s.shp" % fc_name
