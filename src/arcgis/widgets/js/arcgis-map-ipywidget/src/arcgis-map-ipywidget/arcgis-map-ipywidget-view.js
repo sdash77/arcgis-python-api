@@ -1079,20 +1079,17 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                     var symbolType;
                     if (shape == "polyline") {
                         symbolType = "polylineSymbol"
-                    }
-                    else if (shape == "polygon") {
+                    } else if (shape == "polygon") {
                         symbolType = "polygonSymbol"
-                    }
-                    else if ((shape == "point") || (shape == "multipoint")) {
+                    } else if ((shape == "point") || (shape == "multipoint")) {
                         symbolType = "pointSymbol"
-                    }
-                    else {
+                    } else {
                         symbolType = "symbol"
                     }
                     var sketch = new SketchViewModel({
                         layer: graphicsLayer,
                         view: view,
-                        polygonSymbol: symbol,
+                        [symbolType]: symbol,
                     });
                 }
 
