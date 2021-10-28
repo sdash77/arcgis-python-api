@@ -1,19 +1,12 @@
 import time
 import json
-import mimetypes
 from typing import Optional, Union
-from arcgis import env
 from arcgis.gis import GIS, Item, ResourceManager
 import uuid
-from arcgis.apps.storymap.story_content import (
-    Text,
-    Image,
-    Video,
-    WebPage,
-    Audio,
-    Button,
-    Map,
-)
+from arcgis.apps.storymap import Image, Video, Audio, WebPage, Map, Text, Button
+from arcgis.auth.tools import LazyLoader
+
+arcgis = LazyLoader("arcgis")
 
 ###############################################################################################################
 class StoryMap(object):
@@ -49,10 +42,13 @@ class StoryMap(object):
         ==================     ====================================================================
         """
         if gis is None:
-            gis = env.active_gis
+            gis = arcgis.env.active_gis
             self._gis = gis
         else:
             self._gis = gis
+        # CHECK TO SEE IF AUTHENTICATED
+        # gis.users.me cannot be none
+        # islogged in off portal class
         if item and isinstance(item, str):
             item = gis.content.get(item)
         if item and isinstance(item, Item) and "StoryMap" in item.typeKeywords:
@@ -64,6 +60,8 @@ class StoryMap(object):
                 "unpublished" in self.properties
                 and self.properties["unpublished"] is True
             ):
+                # FIND RESOURCE FILE ASSOCIATED
+                # draft resource file to pull from
                 raise ValueError("StoryMap cannot be draft")
         elif item and isinstance(item, Item) and "StoryMap" not in item.typeKeywords:
             raise ValueError("Item is not a Story Map")
@@ -72,10 +70,8 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     def _create_new_storymap(self):
-        template = r"src\arcgis\apps\storymap\templates\draft.json"
-        f = open(template, "rb")
-        self._properties = json.load(f)
-
+        template = arcgis.apps.storymap._ref.__init__.storymap_2
+        file = json.dumps(template)  # MUST CREATE TEXT
         title = "StoryMap %s" % uuid.uuid4().hex[:10]
         typeKeywords = ",".join(
             [
@@ -101,14 +97,15 @@ class StoryMap(object):
             resource_name="draft.json",
         )
         self._resources = self._item.resources.list()
-        f.close()
 
     # ----------------------------------------------------------------------
     def _repr_html_(self):
         """
         HTML Representation for IPython Notebook
         """
-        return 'GIS @ <a href="' + self.url + '">' + self.url + "</a>"
+        return (
+            "<iframe src=" + self._item.url + "title=" + self._item.title + "></iframe>"
+        )
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -169,7 +166,7 @@ class StoryMap(object):
             return None
 
     # ----------------------------------------------------------------------
-    def list_nodes(self, type: Optional[str] = None):
+    def list(self, type: Optional[str] = None, node_id: Optional[str] = None):
         """
         Find the nodes for each type of item.
 
@@ -194,8 +191,14 @@ class StoryMap(object):
         """
         spec_type = []
 
-        if type is None:
+        if type is None and node_id is None:
             return self.node_order
+        elif node_id is not None:
+            all_nodes = self.node_order
+            for node in all_nodes:
+                ids = list(node.values())[0].split(",")
+                if node_id in ids:
+                    return node
         else:
             all_nodes = self.node_order
             for node in all_nodes:
@@ -443,26 +446,38 @@ class StoryMap(object):
         self._item = self._gis.content.get(self._itemid)
 
         if publish is True:
-            return self._item.publish(publish_parameters=p)
+            # underlying resource update and type keywords
+            # publish naming convention
+            return
         else:
             return res
 
     # ----------------------------------------------------------------------
     def add(
         self,
-        item=None,
+        content: Optional[
+            Union[
+                Image,
+                Video,
+                Audio,
+                WebPage,
+                Map,
+                Button,
+                Text,
+            ]
+        ] = None,
         caption: Optional[str] = None,
         alt_text: Optional[str] = None,
         display: str = "float",
         position: Optional[int] = None,
     ):
         """
-        Add and item to the story map
+        Add and content to the story map
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        item                Optional item of type: Image, Video, Audio, WebPage, WebMap, Button,
+        content             Optional content of type: Image, Video, Audio, WebPage, Map, Button,
                             or Text. If none is provided, a separator is added.
         ---------------     --------------------------------------------------------------------
         caption             Optional String. Custom text to caption the webmap.
@@ -474,11 +489,11 @@ class StoryMap(object):
 
                             Values: "small" | "wide" | "full" | "float"
         ---------------     --------------------------------------------------------------------
-        position            Optional Integer. Indicates the position in which the item will be
+        position            Optional Integer. Indicates the position in which the content will be
                             added. To see all node positions use the ```children``` property.
         ===============     ====================================================================
 
-        :return: The node-id for the added item as a String.
+        :return: The node-id for the added content as a String.
 
         .. code-block:: python
 
@@ -498,140 +513,31 @@ class StoryMap(object):
             >>> print(new_story.node_order)
 
         """
-        if item and item._node in self.properties["nodes"]:
+        if content and content._node in self.properties["nodes"]:
             raise Exception("This node already exists. Please try updating instead.")
 
-        node_id = item._node if item is not None else uuid.uuid4().hex[0:6]
+        node_id = content._node if content is not None else uuid.uuid4().hex[0:6]
 
-        if isinstance(item, Image):
-            item._add_image(self, caption, alt_text, display)
-        elif isinstance(item, Video):
-            item._add_video(self, caption, alt_text, display)
-        elif isinstance(item, Audio):
-            item._add_audio(self, caption, alt_text, display)
-        elif isinstance(item, Map):
-            item._add_webmap(self, caption, alt_text, display)
-        elif isinstance(item, WebPage):
-            item._add_webpage(self, caption, alt_text)
-        elif isinstance(item, Button):
-            item._add_button(self)
-        elif isinstance(item, Text):
-            item._add_text(self)
+        if isinstance(content, Image):
+            content._add_image(self, caption, alt_text, display)
+        elif isinstance(content, Video):
+            content._add_video(self, caption, alt_text, display)
+        elif isinstance(content, Audio):
+            content._add_audio(self, caption, alt_text, display)
+        elif isinstance(content, Map):
+            content._add_map(self, caption, alt_text, display)
+        elif isinstance(content, WebPage):
+            content._add_webpage(self, caption, alt_text)
+        elif isinstance(content, Button):
+            content._add_button(self)
+        elif isinstance(content, Text):
+            content._add_text(self)
         else:
             self.properties["nodes"][node_id] = {"type": "separator"}
 
         # Add to story children
         self._add_child(node_id=node_id, position=position)
         return node_id
-
-    # ----------------------------------------------------------------------
-    def update(
-        self,
-        node_id: str,
-        item: Optional[Union[str, Item, Map, Image, Video, WebPage, Audio]] = None,
-        caption: Optional[str] = None,
-        alt_text: Optional[str] = None,
-        display: Optional[str] = None,
-        button_text: Optional[str] = None,
-        button_link: Optional[str] = None,
-        text: Optional[str] = None,
-        text_style: Optional[str] = None,
-    ):
-        """
-        Update Story Items in various ways:
-
-        - Update item path for Map, Image, Video, WebPage, or Audio node
-        - Update caption and alt_text for all node types
-        - Update button link and/or text for a Button node
-        - Update text or text style for a Text node
-
-        ..note:
-            To update immersive node use the Swipe, Sidecar, or Slideshow class.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        node_id             Required String. The node id for the item that will be updated. Find a
-                            list of node order by using the ```node_order``` property.
-        ---------------     --------------------------------------------------------------------
-        item                Optional String or Story Map Content Item.
-                            Values:
-                            - Story Map Item of type: 'Image', 'Video', 'Audio', 'Webpage', or 'Map'.
-                            - Item: :class:`~arcgis.gis.Item` of type 'WebMap' or 'WebScene'
-                            - String: The url or file path for the new item.
-        ---------------     --------------------------------------------------------------------
-        caption             Optional String. New caption to insert.
-        ---------------     --------------------------------------------------------------------
-        alt_text            Optional String. New alt_text to insert.
-        ---------------     --------------------------------------------------------------------
-        display             Optional String. New display style to insert.
-        ---------------     --------------------------------------------------------------------
-        button_text         Optional String. To update the text on a Button.
-        ---------------     --------------------------------------------------------------------
-        button_link         Optional String. To update the link on a Button.
-        ---------------     --------------------------------------------------------------------
-        text                Optional String. To update the text of a Text node.
-        ---------------     --------------------------------------------------------------------
-        text_style          Optional String. To update the text style of a Text node.
-        ===============     ====================================================================
-
-        .. code-block:: python
-
-            new_story = StoryMap()
-
-            # Example with Image
-            >>> image1 = Image("<image-path>.jpg/jpeg/png/gif")
-            >>> image2 = Image("<image-path>.jpg/jpeg/png/gif")
-            >>> new_node = new_story.add(image1, "my caption", "my alt-text", "float", 2)
-            >>> new_story.update(new_node, image2, "new caption")
-
-            # Example with Map
-            >>> my_map = Map(<item-id of type webmap>)
-            >>> new_node = new_story.add(my_map, "A map caption", "A new map alt-text", "wide")
-            >>> new_story.update(new_node, <Item of type webmap>)
-
-            # Example to add a Separator
-            >>> new_node = new_story.add()
-
-            >>> print(new_story.node_order)
-
-        """
-        # Update path if new path given
-        if isinstance(item, Item) or isinstance(item, Map):
-            if item.type != "Web Map" or item.type != "Web Scene":
-                raise Exception("New item must be of type Web Map or Web Scene")
-            if isinstance(item, Item):
-                item = Map(item)
-            item._update_map(node_id, self)
-        elif isinstance(item, str):
-            mt = mimetypes.guess_type(item)[0].lower()
-            if "image" in mt:
-                item = Image(item)
-            elif "video" in mt:
-                item = Video(item)
-            elif "audio" in mt:
-                item = Audio(item)
-            else:
-                item = WebPage(item)
-        # Update item
-        if isinstance(item, Image):
-            item._update_image(node_id, self)
-        elif isinstance(item, Video):
-            item._update_video(node_id, self)
-        elif isinstance(item, WebPage):
-            item._update_webpage(node_id, self)
-        elif isinstance(item, Audio):
-            item._update_audio(node_id, self)
-
-        # Update properties if new properties given
-        if caption or alt_text or display:
-            self._update_properties(node_id, caption, alt_text, display)
-        if button_text or button_link:
-            new_button = Button(link=button_link, text=button_text)
-            new_button._update_button(node_id, self)
-        if text or text_style:
-            new_text = Text(text=text, style=text_style)
-            new_text._update_text(node_id, self)
 
     # ----------------------------------------------------------------------
     def move(
@@ -645,10 +551,10 @@ class StoryMap(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        node_id             Required String. The node id for the item that will be moved. Find a
+        node_id             Required String. The node id for the content that will be moved. Find a
                             list of node order by using the ```node_order``` property.
         ---------------     --------------------------------------------------------------------
-        position            Optional Integer. Indicates the position in which the item will be
+        position            Optional Integer. Indicates the position in which the content will be
                             added. If no position is provided, the node will be placed at the end.
         ---------------     --------------------------------------------------------------------
         delete_current      Optional Boolean. If set to True, the node at the current position will
@@ -685,14 +591,14 @@ class StoryMap(object):
         self._add_child(node_id, position)
 
     # ----------------------------------------------------------------------
-    def delete(self, node_id: str):
+    def _delete(self, node_id, resource_id=None):
         """
         Delete a node from the story.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        node_id             Required String. The node id for the item that will be deleted.
+        node_id             Required String. The node id for the content that will be deleted.
                             To see the node ids for different types of items use ```list_nodes```
                             method.
         ===============     ====================================================================
@@ -707,28 +613,34 @@ class StoryMap(object):
             >>> new_story.delete(new_node)
 
         """
-        root_id = self.properties["root"]
-        children = self.properties["nodes"][root_id]["children"]
+        for key, value in self.properties["nodes"].items():
+            if key == node_id:
+                root_id = self.properties["root"]
+                children = self.properties["nodes"][root_id]["children"]
 
-        # Remove from children of story
-        if node_id in children:
-            children.remove(node_id)
+                # Remove from children of story
+                if node_id in children:
+                    children.remove(node_id)
 
-        # Remove from nodes dictionary
-        del self.properties["nodes"][node_id]
+                # Remove from nodes dictionary
+                del self.properties["nodes"][node_id]
 
-        # Remove from resources dictionary
-        # Note: not all keys are in resources
-        resource = self.properties["resources"].pop(node_id, None)
+                # Remove from resources dictionary
+                # Note: not all keys are in resources
+                resource = self.properties["resources"].pop(resource_id, None)
 
-        if resource is not None:
-            self._remove_resource(resource["data"]["resourceId"])
+                if resource is not None:
+                    self._remove_resource(resource["data"]["resourceId"])
+                return True
+            else:
+                return False
 
     # ----------------------------------------------------------------------
     def delete_story(self):
         """
         Deletes the story item.
         """
+        # Check if item id exists
         item = self._gis.content.get(self._itemid)
         item.delete()
 
