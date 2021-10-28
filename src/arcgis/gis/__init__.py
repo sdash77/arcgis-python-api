@@ -9970,6 +9970,12 @@ class User(dict):
                 l.revoke(username=self.username, entitlements="*", suppress_email=True)
         for bundle in self._gis.admin.license.bundles:
             bundle.revoke(users=self.username)
+        if reassign_to:
+            # reassigns the group owner to the reassigned_to user.
+            [grp.reassign_to(User(gis=self._gis, username=reassign_to)) for grp in self.groups if grp.owner == self.username]
+        else:
+            # delete the groups owned by the user
+            [grp.delete() for grp in self.groups if grp.owner == self.username]
         return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username):
