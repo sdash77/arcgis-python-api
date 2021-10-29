@@ -2975,14 +2975,7 @@ class GeoAccessor(object):
                 if fs["displayFieldName"] == "":
                     fs["displayFieldName"] = col
             elif (
-                isinstance(
-                    col_val,
-                    (
-                        datetime.datetime,
-                        pd.Timestamp,
-                        np.datetime64,
-                    ),
-                )
+                isinstance(col_val, (datetime.datetime, pd.Timestamp, np.datetime64,),)
                 or col in date_cols
             ):  # pd.datetime
                 fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
@@ -3181,7 +3174,7 @@ class GeoAccessor(object):
 
             old_columns = self._data.columns.tolist()
             old_index = copy.deepcopy(self._data.index)
-            pd.DataFrame.reset_index(self)
+            pd.DataFrame.reset_index(self._data)
             self._data.reset_index(drop=True)
             self.sanitize_column_names(inplace=True)
         if name is None:
@@ -3301,7 +3294,7 @@ class GeoAccessor(object):
         }
         if global_id_field is not None:
             layer["layerDefinition"]["globalIdField"] = global_id_field
-        if old_columns and old_index:
+        if not old_columns is None and not old_index is None:
             self._data.columns = old_columns
             self._data.index = old_index
         return FeatureCollection(layer)

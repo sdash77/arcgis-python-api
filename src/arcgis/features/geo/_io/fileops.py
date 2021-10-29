@@ -856,10 +856,11 @@ def to_featureclass(
             df.columns = original_columns
             fc = None
             raise
-        except:
+        except Exception as e:
             # something failed in try so reset columns to original columns
             # return empty item
             fc = None
+            raise e
         finally:
             df.columns = original_columns
         return fc
