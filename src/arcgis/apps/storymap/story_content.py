@@ -1,22 +1,40 @@
-import os
-import PIL.Image
-import mimetypes
+from enum import Enum
 from typing import Optional, Union
 import uuid
-from urllib.parse import urlparse
-from arcgis.gis import Item
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
-_story = LazyLoader("arcgis.apps.storymap.story")
+urllib3 = LazyLoader("urllib3")
+requests = LazyLoader("requests")
+mimetypes = LazyLoader("mimetypes")
+os = LazyLoader("os")
+_Image = LazyLoader("PIL.Image")
+_io = LazyLoader("io")
+_parse = LazyLoader("urllib.parse")
 
 
+class TextStyles(Enum):
+    """
+    Represents the Supported Text Styles Type Enumerations.
+    Example: Text(text="foo", style=TextStyles.HEADING)
+    """
+
+    PARAGRAPH = "paragraph"
+    LARGEPARAGRAPH = "large-paragraph"
+    BULLETLIST = "bullet-list"
+    NUMBERLIST = "numbered-list"
+    HEADING = "h2"
+    SUBHEADING = "h3"
+    QUOTE = "quote"
+
+
+###############################################################################################################
 class Image(object):
     """
     Class representing an image from a url or file
     """
 
-    def __init__(self, path: str, story: _story.StoryMap):
+    def __init__(self, path: str, story):
         """
         ==================      ====================================================================
         **Argument**            **Description**
@@ -25,14 +43,28 @@ class Image(object):
         ------------------      --------------------------------------------------------------------
         story                   Required StoryMap. The story map the image is/will be a part of.
         ==================      ====================================================================
-        """
-        self._path = path
 
+        This creates an Image item containing:
+            - self._path: The image path or url
+            - self._url: A boolean indicating whether the image is from a url
+            - self._node: A unique id for use in the story's nodes dictionary
+            - self._resource_node: A unique id for use in the story's resources dictionary
+            - self._type: The type of node and it's extension
+            - self._story: The story the this content is associated with.
+        """
+
+        self._path = path
+        self._url = False
         # assign ids
         self._node = "n-" + uuid.uuid4().hex[0:6]
         self._resource_node = "r-" + uuid.uuid4().hex[0:6]
-        mt = mimetypes.guess_type(path)[0].lower()
-        self._ext_type = mt.split("/")[1]
+        type = mimetypes.guess_type(path)[0]
+        if type is None:
+            http = urllib3.PoolManager()
+            response = http.request("GET", path)
+            type = response.headers["Content-Type"]
+            self._url = True
+        self._type = type.split("/")
         self._story = story
 
     # ----------------------------------------------------------------------
@@ -65,7 +97,7 @@ class Image(object):
         ==================  ========================================
         **Argument**        **Description**
         ------------------  ----------------------------------------
-        image               String. The new image path for the Image.
+        image               String. The new image path or url for the Image.
         ==================  ========================================
 
         :return:
@@ -145,7 +177,8 @@ class Image(object):
     # ----------------------------------------------------------------------
     def _add_image(self, caption=None, alt_text=None, display=None):
         # Make an add resource call
-        self._story._add_resource(self._path)
+        if self._url is False:
+            self._story._add_resource(self._path)
 
         # Create image nodes
         self._story.properties["nodes"][self._node] = {
@@ -158,36 +191,63 @@ class Image(object):
             "config": {"size": display},
         }
 
-        im = PIL.Image.open(self._path)
-        w, h = im.size
         # Create resource node
-        self._story.properties["resources"][self._resource_node] = {
-            "type": "image",
-            "data": {
-                "resourceId": os.path.basename(os.path.normpath(self._path)),
-                "provider": "item-resource",
-                "height": h,
-                "width": w,
-            },
-        }
+        if self._url is False:
+            im = _Image.open(self._path)
+            w, h = im.size
+            self._story.properties["resources"][self._resource_node] = {
+                "type": "image",
+                "data": {
+                    "resourceId": os.path.basename(os.path.normpath(self._path)),
+                    "provider": "item-resource",
+                    "height": h,
+                    "width": w,
+                },
+            }
+        else:
+            data = requests.get(self._path).content
+            im = _Image.open(_io.BytesIO(data))
+            w, h = im.size
+            self._story.properties["resources"][self._resource_node] = {
+                "type": "image",
+                "data": {
+                    "src": self._path,
+                    "provider": "uri",
+                    "height": h,
+                    "width": w,
+                },
+            }
 
     # ----------------------------------------------------------------------
     def _update_image(self, new_image):
-        # Update the height and width for the image
-        im = PIL.Image.open(new_image)
-        w, h = im.size
-        self._resource_node["data"]["height"] = h
-        self._resource_node["data"]["width"] = w
+        # Check if new_image is url or path
+        if _parse.urlparse(new_image).scheme != "":
+            # Update the height and width for the image
+            data = requests.get(new_image).content
+            im = _Image.open(_io.BytesIO(data))
+            w, h = im.size
+            self._resource_node["data"]["height"] = h
+            self._resource_node["data"]["width"] = w
 
-        # Update resource dictionary
-        resource_id = self._resource_node["data"]["resourceId"]
-        self._resource_node["data"]["resourceId"] = os.path.basename(
-            os.path.normpath(new_image)
-        )
+            # Update resource dictionary
+            self._resource_node["data"]["src"] = new_image
+            self._resource_node["data"]["provider"] = "uri"
+        else:
+            # Update the height and width for the image
+            im = _Image.open(new_image)
+            w, h = im.size
+            self._resource_node["data"]["height"] = h
+            self._resource_node["data"]["width"] = w
 
-        # Update the resource
-        self._story._remove_resource(resource_id)
-        self._story._add_resource(new_image)
+            # Update resource dictionary
+            resource_id = self._resource_node["data"]["resourceId"]
+            self._resource_node["data"]["resourceId"] = os.path.basename(
+                os.path.normpath(new_image)
+            )
+            self._resource_node["data"]["provider"] = "item-resource"
+            # Update the resource
+            self._story._remove_resource(resource_id)
+            self._story._add_resource(new_image)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -203,7 +263,7 @@ class Video(object):
     Class representing a video from a url or file
     """
 
-    def __init__(self, path: str, story: _story.StoryMap):
+    def __init__(self, path: str, story):
         """
         ==================      ====================================================================
         **Argument**            **Description**
@@ -220,7 +280,7 @@ class Video(object):
         self._resource_node = "r-" + uuid.uuid4().hex[0:6]
 
         mt = mimetypes.guess_type(path)[0].lower()
-        self._ext_type = mt.split("/")[1]
+        self._type = mt.split("/")
         self._story = story
 
     # ----------------------------------------------------------------------
@@ -385,7 +445,7 @@ class Audio(object):
 
     """
 
-    def __init__(self, path: str, story: _story.StoryMap):
+    def __init__(self, path: str, story):
         """
         ==================      ====================================================================
         **Argument**            **Description**
@@ -521,7 +581,7 @@ class Audio(object):
         self._story.properties["nodes"][self._node] = {
             "type": "audio",
             "data": {
-                "video": self._resource_node,
+                "audio": self._resource_node,
                 "caption": caption,
                 "alt": alt_text,
             },
@@ -558,17 +618,18 @@ class Audio(object):
 
 
 ###############################################################################################################
-class WebPage(object):
+class Embed(object):
     """
-    Class representing a hyperlink from a url
+    Class representing an embedded video, audio, or webpage.
     """
 
-    def __init__(self, path: str, story: _story.StoryMap):
+    def __init__(self, path: str, story):
         """
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
-        path                    Required String. The file path to the audio that will be added.
+        path                    Required String. The url that will be added as a webpage, video, or
+                                audio embed into the story.
         ------------------      --------------------------------------------------------------------
         story                   Required StoryMap. The story map the image is/will be a part of.
         ==================      ====================================================================
@@ -581,13 +642,13 @@ class WebPage(object):
     @property
     def properties(self):
         """
-        Get properties for the WebPage.
+        Get properties for the Embed.
 
         :return:
-            A dictionary depicting the node dictionary for the webpage.
+            A dictionary depicting the node dictionary for the embed.
 
         ..note:
-            To change various properties of the WebPage use the other property setters.
+            To change various properties of the Embed use the other property setters.
         """
         if self._check_node:
             return {
@@ -596,28 +657,28 @@ class WebPage(object):
 
     # ----------------------------------------------------------------------
     @property
-    def webpage(self):
+    def link(self):
         """
-        Get/Set the webpage property.
+        Get/Set the link property.
 
         ==================  ========================================
         **Argument**        **Description**
         ------------------  ----------------------------------------
-        webpage             String. The new webpage url for the WebPage.
+        link                String. The new url for the Embed.
         ==================  ========================================
 
         :return:
-            The webpage that is being used.
+            The embed that is being used.
         """
         if self._check_node:
             return self._story.properties["nodes"][self._node]["data"]["url"]
 
     # ----------------------------------------------------------------------
-    @webpage.setter
-    def webpage(self, path):
+    @link.setter
+    def link(self, path):
         if self._check_node:
-            self._update_webpage(path)
-            return self.webpage
+            self._update_link(path)
+            return self.link
 
     # ----------------------------------------------------------------------
     @property
@@ -628,7 +689,7 @@ class WebPage(object):
         ==================  ========================================
         **Argument**        **Description**
         ------------------  ----------------------------------------
-        caption             String. The new caption for the WebPage.
+        caption             String. The new caption for the Embed.
         ==================  ========================================
 
         :return:
@@ -649,12 +710,12 @@ class WebPage(object):
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the webpage.
+        Get/Set the alternte text property for the embed.
 
         ==================  ========================================
         **Argument**        **Description**
         ------------------  ----------------------------------------
-        alt_text            String. The new alt_text for the WebPage.
+        alt_text            String. The new alt_text for the Embed.
         ==================  ========================================
 
         :return:
@@ -680,8 +741,8 @@ class WebPage(object):
         return self._story._delete(self._node)
 
     # ----------------------------------------------------------------------
-    def _add_webpage(self, caption=None, alt_text=None):
-        sections = urlparse(self._path)
+    def _add_link(self, caption=None, alt_text=None):
+        sections = _parse.urlparse(self._path)
         # Create embed nodes
         self._story.properties["nodes"][self._node] = {
             "type": "embed",
@@ -697,8 +758,8 @@ class WebPage(object):
         }
 
     # ----------------------------------------------------------------------
-    def _update_webpage(self, new_webpage):
-        sections = urlparse(new_webpage)
+    def _update_link(self, new_link):
+        sections = _parse.urlparse(new_link)
 
         self._node["data"]["url"] = self._path
         self._node["data"]["title"] = sections.netloc
@@ -719,7 +780,7 @@ class Map(object):
 
     """
 
-    def __init__(self, item: Item, story: _story.StoryMap):
+    def __init__(self, item: arcgis.gis.Item, story):
         """
         =================       ====================================================================
         **Argument**            **Description**
@@ -737,19 +798,37 @@ class Map(object):
             item = arcgis.env.active_gis.content.get(item)
 
         # Create map object to extract properties
-        if isinstance(item, Item):
-            map_item = arcgis.env.active_gis.map(item)
+        if isinstance(item, arcgis.gis.Item):
+            if item.type == "Web Map":
+                map_item = arcgis.mapping.WebMap(item)
+            elif item.type == "Web Scene":
+                map_item = arcgis.mapping.WebScene(item)
+            else:
+                raise ValueError("Item must be of Type Webmap or Web Scene")
 
         self._node = "n-" + uuid.uuid4().hex[0:6]
         self._resource_node = "r-" + item.id
 
         # Assign properties
         self._path = item
-        self._show_legend = map_item.legend
-        self._center = map_item.center
-        self._zoom = map_item.zoom
-        self._extent = map_item.extent
-        self._map_layers = map_item.layers
+        if len(map_item._mapview.center) > 0:
+            self._center = map_item._mapview.center
+        else:
+            self._center = None
+        if len(map_item._mapview.extent) > 0:
+            self._extent = map_item._mapview.extent
+        else:
+            self._extent = None
+        self._viewpoint = None
+        layers = []
+        # Create layer dictionary:
+        for layer in map_item.layers:
+            layer_props = {}
+            layer_props["id"] = layer["id"]
+            layer_props["title"] = layer["title"]
+            layer_props["visible"] = layer["visibility"]
+            layers.append(layer_props)
+        self._map_layers = layers
         self._type = item.type
         self._story = story
 
@@ -880,6 +959,7 @@ class Map(object):
 
         # To change webmap, resouce id needs to change but not the previous node id
         node = previous_node if previous_node is not None else self._node
+
         # Create webmap nodes
         self._story.properties["nodes"][node] = {
             "type": "webmap",
@@ -887,11 +967,6 @@ class Map(object):
                 "map": self._resource_node,
                 "caption": caption,
                 "alt": alt_text,
-                "mapLayers": self._map_layers,
-                "extent": self._extent,
-                "center": self._center,
-                "zoom": self._zoom,
-                "showLegend": self._show_legend,
             },
             "config": {"size": display},
         }
@@ -902,12 +977,12 @@ class Map(object):
             "data": {
                 "extent": self._extent,
                 "center": self._center,
-                "zoom": self._zoom,
+                "zoom": 2,
                 "mapLayers": self._map_layers,
+                "viewpoint": self._viewpoint,
                 "itemId": self._path.id,
                 "itemType": self._type,
                 "type": "default",
-                "showLegend": self._show_legend,
             },
         }
 
@@ -942,9 +1017,9 @@ class Text(object):
 
     def __init__(
         self,
+        story,
         text: str,
-        story: _story.StoryMap,
-        style: str = "paragraph",
+        style: TextStyles = TextStyles.PARAGRAPH,
         color: str = "000",
     ):
         """
@@ -963,11 +1038,11 @@ class Text(object):
         ------------------      --------------------------------------------------------------------
         story                   Required StoryMap. The story map the image is/will be a part of.
         ------------------      --------------------------------------------------------------------
-        style                   Optional String. There are 6 different styles of text that can be
+        style                   Optional TextStyles type. There are 7 different styles of text that can be
                                 added to a story.
 
-                                Values: 'paragraph' | 'heading' | 'subheading' | 'numbered-list' |
-                                        'bullet-list' | 'quote' | 'large-paragraph'
+                                Values: PARAGRPAH | LARGEPARAGRAPH | NUMBERLIST | BULLETLIST |
+                                        HEADING | SUBHEADING | QUOTE
 
                                 ..note:
                                     To make text withing these types bold, italic, or hyperlink the
@@ -1025,22 +1100,16 @@ class Text(object):
         self._node = uuid.uuid4().hex[0:6]
         self._text = text
         self._story = story
-        # Handle style types
-        style = style.lower().strip(" ")
-        if style == "heading":
-            style = "h2"
-        if style == "subheading":
-            style = "h3"
-        if "bullet" in style:
-            style = "bullet-list"
-        if "number" in style:
-            style = "numbered-list"
-        if "large" in style:
-            style = "large-paragraph"
-        self._style = style
+        if isinstance(style, TextStyles):
+            self._style = style.value
 
         # Color only applies certain styles
-        if style in ["paragraph", "large-paragraph", "bullet-list", "numbered-list"]:
+        if self._style in [
+            "paragraph",
+            "large-paragraph",
+            "bullet-list",
+            "numbered-list",
+        ]:
             self._color = color
         else:
             self._color = None
@@ -1061,7 +1130,7 @@ class Text(object):
                             {
                                 "type": "text",
                                 "data": {
-                                    "type": <type>,
+                                    "type": <value of TextStyles Class>,
                                     "text": <text>,
                                     "customTextColors": <Optional colors as an array>
                                 }
@@ -1121,7 +1190,7 @@ class Button(object):
     Class representing a button
     """
 
-    def __init__(self, story: _story.StoryMap, link: str = None, text: str = None):
+    def __init__(self, story, link: str = None, text: str = None):
         """
         ==================      ====================================================================
         **Argument**            **Description**
@@ -1198,7 +1267,7 @@ class Button(object):
 
 ###############################################################################################################
 class Swipe(object):
-    def __init__(self, node: str, story: _story.StoryMap):
+    def __init__(self, node: str, story):
         """
         Create an Swipe immersive object from a pre-existing immersive node.
 
@@ -1216,6 +1285,8 @@ class Swipe(object):
         if self._type != "swipe":
             raise Exception("This node is not of type swipe.")
         self._slides = self._data["data"]["contents"]
+        media_node = self._story.properties["nodes"][self._node]["data"]["content"]["0"]
+        self._media_type = story.properties["nodes"][media_node]["type"]
 
     # ----------------------------------------------------------------------
     @property
@@ -1283,24 +1354,30 @@ class Swipe(object):
         ===============     ====================================================================
 
         """
-        if content is not None:
-            if not isinstance(content, Image) or not isinstance(content, Map):
-                raise Exception("Swipe nodes can only accept Image or Map content type")
-            # If user has created the content but not added to the story yet.
-            if content._node not in self._story.properties["nodes"]:
-                if isinstance(content, Image):
-                    content._add_image(self._story)
-            elif isinstance(content, Map):
-                content._add_map(self._story)
-            # Add to content in position wanted
-            if position == "left":
-                self._story.properties["nodes"][self._node]["data"]["content"][
-                    "0"
-                ] = content._node
-            else:
-                self._story.properties["nodes"][self._node]["data"]["content"][
-                    "1"
-                ] = content._node
+        # Media type must be same for right and left slide.
+        if isinstance(content, Image) and self._media_type == "webmap":
+            raise ValueError(
+                "Media type is established as webmap. Can only accept another webmap."
+            )
+        if isinstance(content, Map) and self._media_type == "image":
+            raise ValueError(
+                "Media type is established as image. Can only accept another image."
+            )
+        # If user has created the content but not added to the story yet.
+        if content._node not in self._story.properties["nodes"]:
+            if isinstance(content, Image):
+                content._add_image(self._story)
+        elif isinstance(content, Map):
+            content._add_map(self._story)
+        # Add to content in position wanted
+        if position == "left":
+            self._story.properties["nodes"][self._node]["data"]["content"][
+                "0"
+            ] = content._node
+        else:
+            self._story.properties["nodes"][self._node]["data"]["content"][
+                "1"
+            ] = content._node
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -1386,17 +1463,17 @@ class Sidecar(object):
     # ----------------------------------------------------------------------
     def edit(
         self,
-        content: Union[Image, Video, Map, Text, WebPage],
+        content: Union[Image, Video, Map, Text, Embed],
         slide_number: int,
     ):
         """
-        Edit slide text or media content. Media Content can be of type Image, Video, Map, or WebPage.
+        Edit slide text or media content. Media Content can be of type Image, Video, Map, or Embed.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         content             Required content to replace current media content.
-                            Item type can be Image, Video, Map, WebPage or Text.
+                            Item type can be Image, Video, Map, Embed or Text.
         ---------------     --------------------------------------------------------------------
         slide_number        Required Integer. The slide that will be edited. First slide is 1.
         ===============     ====================================================================
@@ -1418,12 +1495,12 @@ class Sidecar(object):
             # If content is text then update the narrative panel by removing old text and adding new
             old_text_node = narrative_panel["children"][0]
             narrative_panel["children"].pop(0)
-            self._story.delete(old_text_node)
+            self._story._delete(old_text_node)
             narrative_panel["children"].insert(0, content._node)
         else:
             # Remove current media content and add new content as media
             if media_item:
-                self._story.delete(media_item)
+                self._story._delete(media_item)
                 slide_node["children"].pop(1)
             slide_node["children"].insert(1, content._node)
 
@@ -1441,7 +1518,7 @@ class Sidecar(object):
         # Remove slide and all associated children.
         slide = self._slides[slide_number - 1]
         self._slide.remove(slide_number - 1)
-        self._story.delete(slide)
+        self._story._delete(slide)
         self._remove_associated(slide)
 
     # ----------------------------------------------------------------------
@@ -1484,11 +1561,11 @@ class Sidecar(object):
     def _remove_associated(self, slide):
         # Remove narrative panel and text associated
         narrative_panel = self._story.properties["nodes"][slide]["children"][0]
-        self._story.delete(narrative_panel["children"][0])
-        self._story.delete(narrative_panel)
+        self._story._delete(narrative_panel["children"][0])
+        self._story._delete(narrative_panel)
         # Remove media item
         media_item = self._story.properties["nodes"][slide]["children"][1]
-        self._story.delete(media_item)
+        self._story._delete(media_item)
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
@@ -1496,8 +1573,8 @@ class Sidecar(object):
             content._add_image(self._story)
         elif isinstance(content, Video):
             content._add_video(self._story)
-        elif isinstance(content, WebPage):
-            content._add_webpage(self._story)
+        elif isinstance(content, Embed):
+            content._add_link(self._story)
         elif isinstance(content, Map):
             content._add_map(self._story)
         elif isinstance(content, Text):
@@ -1603,12 +1680,12 @@ class Slideshow(object):
             # If content is text then update the narrative panel by removing old text and adding new
             old_text_node = narrative_panel["children"][0]
             narrative_panel["children"].pop(0)
-            self._story.delete(old_text_node)
+            self._story._delete(old_text_node)
             narrative_panel["children"].insert(0, content._node)
         else:
             # Remove current media content and add new content as media
             if media_item:
-                self._story.delete(media_item)
+                self._story._delete(media_item)
                 slide_node["children"].pop(1)
             slide_node["children"].insert(1, content._node)
 
@@ -1626,7 +1703,7 @@ class Slideshow(object):
         # Remove slide and all associated children.
         slide = self._slides[slide_number - 1]
         self._slide.remove(slide_number - 1)
-        self._story.delete(slide)
+        self._story._delete(slide)
         self._remove_associated(slide)
 
     # ----------------------------------------------------------------------
@@ -1669,21 +1746,21 @@ class Slideshow(object):
     def _remove_associated(self, slide):
         # Remove narrative panel and text associated
         narrative_panel = self._story.properties["nodes"][slide]["children"][0]
-        self._story.delete(narrative_panel["children"][0])
-        self._story.delete(narrative_panel)
+        self._story._delete(narrative_panel["children"][0])
+        self._story._delete(narrative_panel)
         # Remove media item
         media_item = self._story.properties["nodes"][slide]["children"][1]
-        self._story.delete(media_item)
+        self._story._delete(media_item)
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
         if isinstance(content, Image):
-            content._add_image(self._story)
+            content._add_image()
         elif isinstance(content, Video):
-            content._add_video(self._story)
-        elif isinstance(content, WebPage):
-            content._add_webpage(self._story)
+            content._add_video()
+        elif isinstance(content, Embed):
+            content._add_link()
         elif isinstance(content, Map):
-            content._add_map(self._story)
+            content._add_map()
         elif isinstance(content, Text):
             content._add_text()

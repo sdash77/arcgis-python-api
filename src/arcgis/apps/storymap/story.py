@@ -1,12 +1,27 @@
-import time
-import json
 from typing import Optional, Union
-from arcgis.gis import GIS, Item, ResourceManager
 import uuid
-from arcgis.apps.storymap import Image, Video, Audio, WebPage, Map, Text, Button
+from enum import Enum
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
+Content = LazyLoader("arcgis.apps.storymap.story_content")
+json = LazyLoader("json")
+time = LazyLoader("time")
+
+
+class Themes(Enum):
+    """
+    Represents the Supported Theme Type Enumerations.
+    Example: story_map.theme(Theme.Slate)
+    """
+
+    SUMMIT = "summit"
+    OBSIDIAN = "obsidian"
+    RIDGELINE = "ridgeline"
+    MESA = "mesa"
+    TIDAL = "tidal"
+    SLATE = "slate"
+
 
 ###############################################################################################################
 class StoryMap(object):
@@ -26,7 +41,11 @@ class StoryMap(object):
     _item = None
     _resources = None
 
-    def __init__(self, item: Optional[Item] = None, gis: Optional[GIS] = None):
+    def __init__(
+        self,
+        item: Optional[arcgis.gis.Item] = None,
+        gis: Optional[arcgis.gis.GIS] = None,
+    ):
         """
         Initializer for the Story Map Class.
 
@@ -46,32 +65,42 @@ class StoryMap(object):
             self._gis = gis
         else:
             self._gis = gis
-        # CHECK TO SEE IF AUTHENTICATED
-        # gis.users.me cannot be none
-        # islogged in off portal class
+        if gis._portal.is_logged_in is False:
+            # CHECK TO SEE IF AUTHENTICATED
+            raise Exception("Must be logged into an Enterprise Account")
         if item and isinstance(item, str):
             item = gis.content.get(item)
-        if item and isinstance(item, Item) and "StoryMap" in item.typeKeywords:
+        if item and isinstance(item, arcgis.gis.Item) and item.type == "StoryMap":
             self._item = item
             self._itemid = self._item.itemid
             self._properties = self._item.get_data()
             self._resources = self._item.resources.list()
+            # If story is a draft, get properties from resource file.
             if (
-                "unpublished" in self.properties
+                self._properties == {}
+                or "unpublished" in self.properties
                 and self.properties["unpublished"] is True
             ):
-                # FIND RESOURCE FILE ASSOCIATED
-                # draft resource file to pull from
-                raise ValueError("StoryMap cannot be draft")
-        elif item and isinstance(item, Item) and "StoryMap" not in item.typeKeywords:
+                for resource in self._resources:
+                    for key, val in resource.items():
+                        if key == "resource" and val == "draft.json":
+                            # Open JSON file for properties
+                            data = self._item.resources.get(val, try_json=True)
+                            self._properties = data
+        elif (
+            item
+            and isinstance(item, arcgis.gis.Item)
+            and "StoryMap" not in item.typeKeywords
+        ):
             raise ValueError("Item is not a Story Map")
         else:
             self._create_new_storymap()
 
     # ----------------------------------------------------------------------
     def _create_new_storymap(self):
-        template = arcgis.apps.storymap._ref.__init__.storymap_2
-        file = json.dumps(template)  # MUST CREATE TEXT
+        template = arcgis.apps.storymap._ref.storymap_2
+        self._properties = template
+        text = json.dumps(template)
         title = "StoryMap %s" % uuid.uuid4().hex[:10]
         typeKeywords = ",".join(
             [
@@ -92,10 +121,7 @@ class StoryMap(object):
         item = self._gis.content.add(item_properties=item_properties)
         self._item = item
         self._itemid = item.itemid
-        self._add_resource(
-            file=template,
-            resource_name="draft.json",
-        )
+        self._add_resource(resource_name="draft.json", text=text)
         self._resources = self._item.resources.list()
 
     # ----------------------------------------------------------------------
@@ -176,7 +202,7 @@ class StoryMap(object):
         type                Optional string. The type of nodes that user wants returned.
                             If none specified, list of all nodes returned.
 
-                            Values: "image" | "video" | "audio" | "webpage" | "webmap" | "text" |
+                            Values: "image" | "video" | "audio" | "embed" | "webmap" | "text" |
                                     "button" | "separator" | "expressmap" | "webscene" | "immersive"|
                                     "swipe"
         ===============     ====================================================================
@@ -348,24 +374,26 @@ class StoryMap(object):
         self._add_child(node_id=node_id, position=position)
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: str = "summit"):
+    def theme(self, theme: Themes = Themes.SUMMIT):
         """
         Each story has a theme node in it's resources. This method can be used to change the theme
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        theme               Required String. The theme to set the story to.
+        theme               Required Themes Style. The theme to set the story to.
 
-                            Values: "summit" | "obsidian" | "ridgeline" | "mesa" | "tidal" |
-                                    "slate"
+                            Values: SUMMIT | TIDAL | MESA | RIDGELINE | SLATE | OBSIDIAN
         ===============     ====================================================================
         """
 
         for node, node_info in self.properties["resources"].items():
             for key, val in node_info.items():
                 if key == "type" and val == "story-theme":
-                    node_info["data"]["themeId"] = theme
+                    if isinstance(theme, Themes):
+                        self.properties["resources"][node]["data"][
+                            "themeId"
+                        ] = theme.value
 
     # ----------------------------------------------------------------------
     def save(
@@ -457,18 +485,18 @@ class StoryMap(object):
         self,
         content: Optional[
             Union[
-                Image,
-                Video,
-                Audio,
-                WebPage,
-                Map,
-                Button,
-                Text,
+                Content.Image,
+                Content.Video,
+                Content.Audio,
+                Content.Embed,
+                Content.Map,
+                Content.Button,
+                Content.Text,
             ]
         ] = None,
         caption: Optional[str] = None,
         alt_text: Optional[str] = None,
-        display: str = "float",
+        display: str = None,
         position: Optional[int] = None,
     ):
         """
@@ -477,7 +505,7 @@ class StoryMap(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        content             Optional content of type: Image, Video, Audio, WebPage, Map, Button,
+        content             Optional content of type: Image, Video, Audio, Embed, Map, Button,
                             or Text. If none is provided, a separator is added.
         ---------------     --------------------------------------------------------------------
         caption             Optional String. Custom text to caption the webmap.
@@ -518,20 +546,20 @@ class StoryMap(object):
 
         node_id = content._node if content is not None else uuid.uuid4().hex[0:6]
 
-        if isinstance(content, Image):
-            content._add_image(self, caption, alt_text, display)
-        elif isinstance(content, Video):
-            content._add_video(self, caption, alt_text, display)
-        elif isinstance(content, Audio):
-            content._add_audio(self, caption, alt_text, display)
-        elif isinstance(content, Map):
-            content._add_map(self, caption, alt_text, display)
-        elif isinstance(content, WebPage):
-            content._add_webpage(self, caption, alt_text)
-        elif isinstance(content, Button):
-            content._add_button(self)
-        elif isinstance(content, Text):
-            content._add_text(self)
+        if isinstance(content, Content.Image):
+            content._add_image(caption, alt_text, display)
+        elif isinstance(content, Content.Video):
+            content._add_video(caption, alt_text, display)
+        elif isinstance(content, Content.Audio):
+            content._add_audio(caption, alt_text, display)
+        elif isinstance(content, Content.Map):
+            content._add_map(caption, alt_text, display)
+        elif isinstance(content, Content.Embed):
+            content._add_link(caption, alt_text)
+        elif isinstance(content, Content.Button):
+            content._add_button()
+        elif isinstance(content, Content.Text):
+            content._add_text()
         else:
             self.properties["nodes"][node_id] = {"type": "separator"}
 
@@ -591,6 +619,44 @@ class StoryMap(object):
         self._add_child(node_id, position)
 
     # ----------------------------------------------------------------------
+    def delete_story(self):
+        """
+        Deletes the story item.
+        """
+        # Check if item id exists
+        item = self._gis.content.get(self._itemid)
+        item.delete()
+
+    # ----------------------------------------------------------------------
+    def duplicate_story(self, title: Optional[str] = None):
+        """
+        Duplicate the story.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        title               Optional string. The title of the duplicated story.
+        ===============     ====================================================================
+
+        ..code-block:: python
+
+            story = StoryMap(<story item>)
+            story.duplicate("A Story Copy")
+
+        """
+        item = self._gis.content.get(self._itemid)
+
+        if item._portal.is_arcgisonline is False:
+            # TODO: TEST THIS
+            return self._gis.content.clone_items(items=[item])
+        else:
+            return item.copy_item(
+                title="(Copy) " + self._item.title if title is None else title,
+                include_resources=True,
+                include_private=True,
+            )
+
+    # ----------------------------------------------------------------------
     def _delete(self, node_id, resource_id=None):
         """
         Delete a node from the story.
@@ -636,44 +702,6 @@ class StoryMap(object):
                 return False
 
     # ----------------------------------------------------------------------
-    def delete_story(self):
-        """
-        Deletes the story item.
-        """
-        # Check if item id exists
-        item = self._gis.content.get(self._itemid)
-        item.delete()
-
-    # ----------------------------------------------------------------------
-    def duplicate_story(self, title: Optional[str] = None):
-        """
-        Duplicate the story.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        title               Optional string. The title of the duplicated story.
-        ===============     ====================================================================
-
-        ..code-block:: python
-
-            story = StoryMap(<story item>)
-            story.duplicate("A Story Copy")
-
-        """
-        item = self._gis.content.get(self._itemid)
-
-        if item._portal.is_arcgisonline is False:
-            # TODO: TEST THIS
-            return self._gis.content.clone_items(items=[item])
-        else:
-            return item.copy_item(
-                title="(Copy) " + self._item.title if title is None else title,
-                include_resources=True,
-                include_private=True,
-            )
-
-    # ----------------------------------------------------------------------
     def _add_child(self, node_id, position=None):
         """
         A story node has children. Children is a list of item nodes that are in
@@ -696,8 +724,15 @@ class StoryMap(object):
         """
         See :class:`~arcgis.gis.ResourceManager`
         """
-        resource_manager = ResourceManager(self._item, self._gis)
-        resp = resource_manager.add(file=file, file_name=resource_name, text=text)
+        resource_manager = arcgis.gis.ResourceManager(self._item, self._gis)
+        is_present = False
+        if file:
+            for resource in self._resources:
+                if resource["resource"] in file:
+                    is_present = True
+                    resp = True
+        if is_present is False:
+            resp = resource_manager.add(file=file, file_name=resource_name, text=text)
         self._resources = self._item.resources.list()
         return resp
 
@@ -706,7 +741,7 @@ class StoryMap(object):
         """
         See :class:`~arcgis.gis.ResourceManager`
         """
-        resource_manager = ResourceManager(self._item, self._gis)
+        resource_manager = arcgis.gis.ResourceManager(self._item, self._gis)
         resp = resource_manager.remove(file=file)
         self._resources = self._item.resources.list()
         return resp

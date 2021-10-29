@@ -2,19 +2,20 @@
 StoryMap Implementation
 """
 from .storymap import JournalStoryMap
+from .story import StoryMap, Themes
 from .story_content import (
     Image,
     Video,
     Audio,
-    WebPage,
+    Embed,
     Text,
     Button,
     Map,
     Slideshow,
     Sidecar,
     Swipe,
+    TextStyles,
 )
-from .story import StoryMap
 
 __all__ = [
     "JournalStoryMap",
