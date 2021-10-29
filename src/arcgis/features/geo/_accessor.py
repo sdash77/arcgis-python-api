@@ -2400,7 +2400,7 @@ class GeoAccessor(object):
         return result
 
     # ----------------------------------------------------------------------
-    def to_table(self, location, overwrite=True):
+    def to_table(self, location, overwrite=True, **kwargs):
         """
         The ``to_table`` method exports a geo enabled dataframe to a :class:`~arcgis.features.Table` object.
 
@@ -2412,6 +2412,10 @@ class GeoAccessor(object):
         overwrite                       Optional Boolean.  If True and if the table exists, it will be
                                         deleted and overwritten.  This is default.  If False, the table and
                                         the table exists, and exception will be raised.
+        ---------------------------     --------------------------------------------------------------------
+        sanitize_columns                Optional Boolean. If True, column names will be converted to
+                                        string, invalid characters removed and other checks will be
+                                        performed. The default is False.
         ===========================     ====================================================================
 
         :return: String
@@ -2420,11 +2424,18 @@ class GeoAccessor(object):
         from arcgis.features.geo._io.fileops import to_table
         from ._tools._utils import run_and_hide
 
+        sanitize_columns = kwargs.pop("sanitize_columns", False)
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
         location = os.path.abspath(location)
         table = run_and_hide(
-            to_table, **{"geo": self, "location": location, "overwrite": overwrite}
+            to_table,
+            **{
+                "geo": self,
+                "location": location,
+                "overwrite": overwrite,
+                "sanitize_columns": sanitize_columns,
+            },
         )
         self._data.columns = origin_columns
         self._data.index = origin_index
