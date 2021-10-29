@@ -53,7 +53,7 @@ def _infer_type(df, col):
     nn = list(df[nn].index)
     if len(nn) > 0:
         val = df[col][nn[0]]
-        if isinstance(val, six.string_types):
+        if isinstance(val, str):
             return "TEXT"
         elif isinstance(val, tuple([int] + [np.int32])):
             return "INTEGER"
@@ -343,7 +343,7 @@ def from_table(filename, **kwargs):
 
 
 # --------------------------------------------------------------------------
-def to_table(geo, location, overwrite=True):
+def to_table(geo, location, overwrite=True, sanitize_columns=False):
     """
     Exports a geo enabled dataframe to a table.
 
@@ -355,6 +355,10 @@ def to_table(geo, location, overwrite=True):
     overwrite                       Optional Boolean.  If True and if the table exists, it will be
                                     deleted and overwritten.  This is default.  If False, the table and
                                     the table exists, and exception will be raised.
+    ---------------------------     --------------------------------------------------------------------
+    sanitize_columns                Optional Boolean. If True, column names will be converted to
+                                    string, invalid characters removed and other checks will be
+                                    performed. The default is False.
     ===========================     ====================================================================
 
     :return: String
@@ -362,8 +366,18 @@ def to_table(geo, location, overwrite=True):
     out_location = os.path.dirname(location)
     fc_name = os.path.basename(location)
     df = geo._data
+    old_column, old_index = None, None
+    if sanitize_columns:
+        old_column = df.columns.tolist()
+        old_index = copy.deepcopy(df.index)
+        _sanitize_column_names(geo, inplace=True)
+
     if location.lower().find(".csv") > -1:
         geo._data.to_csv(location)
+        if not old_column is None:
+            geo._data.columns = old_column
+        if not old_index is None:
+            geo._data.index = old_index
         return location
     elif HASARCPY:
         import arcpy
@@ -431,8 +445,15 @@ def to_table(geo, location, overwrite=True):
                     irows.insertRow(row.tolist())
                 except:
                     print("row %s could not be inserted." % idx)
+        if not old_column is None:
+            geo._data.columns = old_column
+        if not old_index is None:
+            geo._data.index = old_index
         return fc
-
+    if not old_column is None:
+        geo._data.columns = old_column
+    if not old_index is None:
+        geo._data.index = old_index
     return
 
 
@@ -701,7 +722,7 @@ def to_featureclass(
     ---------------     ----------------------------------------------------
     sanitize_columns    Optional Boolean. If True, column names will be
                         converted to string, invalid characters removed and
-                        other checks will be performed. The default is True.
+                        other checks will be performed. The default is False.
     ---------------     ----------------------------------------------------
     ham_m               Optional Boolean to indicate if data has linear
                         referencing (m) values. Default is False.
@@ -856,10 +877,11 @@ def to_featureclass(
             df.columns = original_columns
             fc = None
             raise
-        except:
+        except Exception as e:
             # something failed in try so reset columns to original columns
             # return empty item
             fc = None
+            raise e
         finally:
             df.columns = original_columns
         return fc
