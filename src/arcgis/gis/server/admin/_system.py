@@ -73,7 +73,7 @@ class SystemManager(BaseServer):
         """
         directs = []
         url = self._url + "/directories"
-        params = {"f": "json"}
+        params = {"f": "json", 'private': False}
         res = self._con.get(path=url, params=params)
         for direct in res["directories"]:
             directs.append(
@@ -86,6 +86,7 @@ class SystemManager(BaseServer):
         return directs
 
     # ----------------------------------------------------------------------
+    @property
     def directories(self):
         """
         :return:
@@ -1292,7 +1293,7 @@ class ServerDirectory(BaseServer):
         description,
         *,
         use_local_dir=None,
-        local_dir=None
+        local_dir=None,
     ):
         """
         The server directory's edit operation allows you to change the path
