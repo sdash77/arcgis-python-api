@@ -34,14 +34,15 @@ class Image(object):
     Class representing an image from a url or file
     """
 
-    def __init__(self, path: str, story):
+    def __init__(self, path: Optional[str], story=None, node_id=None):
         """
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         path                    Required String. The file path to the image that will be added.
         ------------------      --------------------------------------------------------------------
-        story                   Required StoryMap. The story map the image is/will be a part of.
+        story                   Optional StoryMap. The story map the image is/will be a part of.
+                                If none assigned, one will be assigned when added to a story.
         ==================      ====================================================================
 
         This creates an Image item containing:
@@ -52,20 +53,40 @@ class Image(object):
             - self._type: The type of node and it's extension
             - self._story: The story the this content is associated with.
         """
-
-        self._path = path
-        self._url = False
-        # assign ids
-        self._node = "n-" + uuid.uuid4().hex[0:6]
-        self._resource_node = "r-" + uuid.uuid4().hex[0:6]
-        type = mimetypes.guess_type(path)[0]
-        if type is None:
-            http = urllib3.PoolManager()
-            response = http.request("GET", path)
-            type = response.headers["Content-Type"]
-            self._url = True
-        self._type = type.split("/")
         self._story = story
+        self._url = False
+
+        # If node exists in story, then create from resources and node dict.
+        # If node doesn't already exist, create a new instance
+        existing = self._check_node(node_id=node_id)
+        if existing is True:
+            self._node = node_id
+            self._resource_node = self._story._properties["nodes"][self._node]["data"][
+                "image"
+            ]
+            if (
+                self._story._properties["resources"][self._resource_node]["data"][
+                    "provider"
+                ]
+                == "uri"
+            ):
+                self._url = True
+            if self._url is True:
+                self._path = self._story._properties["resources"][self._resource_node][
+                    "data"
+                ]["src"]
+            else:
+                self._path = self._story._properties["resources"][self._resource_node][
+                    "data"
+                ]["resourceId"]
+        elif existing is False:
+            self._path = path
+            self._node = "n-" + uuid.uuid4().hex[0:6]
+            self._resource_node = "r-" + uuid.uuid4().hex[0:6]
+
+            # determine if url or file path
+            if _parse.urlparse(self._path).scheme != "":
+                self._url = True
 
     # ----------------------------------------------------------------------
     @property
@@ -82,8 +103,8 @@ class Image(object):
         """
         if self._check_node:
             return {
-                "node_dict": self._story.properties["nodes"][self._node],
-                "resource_dict": self._story.properties["resources"][
+                "node_dict": self._story._properties["nodes"][self._node],
+                "resource_dict": self._story._properties["resources"][
                     self._resource_node
                 ],
             }
@@ -104,7 +125,7 @@ class Image(object):
             The image that is being used.
         """
         if self._check_node:
-            return self._story.properties["resources"][self._resource_node]["data"][
+            return self._story._properties["resources"][self._resource_node]["data"][
                 "resourceId"
             ]
 
@@ -131,14 +152,16 @@ class Image(object):
             The caption that is being used.
         """
         if self._check_node:
-            return self._story.properties["nodes"][self._node]["data"]["caption"]
+            return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
         if self._check_node:
             if isinstance(caption, str):
-                self._story.properties["nodes"][self._node]["data"]["caption"] = caption
+                self._story._properties["nodes"][self._node]["data"][
+                    "caption"
+                ] = caption
             return self.caption
 
     # ----------------------------------------------------------------------
@@ -156,13 +179,13 @@ class Image(object):
         :return:
             The alternate text that is being used.
         """
-        return self._story.properties["nodes"][self._node]["data"]["alt"]
+        return self._story._properties["nodes"][self._node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
         if self._check_node:
-            self._story.properties["nodes"][self._node]["data"]["alt"] = alt_text
+            self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
             return self.alt_text
 
     # ----------------------------------------------------------------------
@@ -175,13 +198,14 @@ class Image(object):
         return self._story._delete(self._node, self._resource_node)
 
     # ----------------------------------------------------------------------
-    def _add_image(self, caption=None, alt_text=None, display=None):
+    def _add_image(self, caption=None, alt_text=None, display=None, story=None):
+        self._story = story
         # Make an add resource call
         if self._url is False:
             self._story._add_resource(self._path)
 
         # Create image nodes
-        self._story.properties["nodes"][self._node] = {
+        self._story._properties["nodes"][self._node] = {
             "type": "image",
             "data": {
                 "image": self._resource_node,
@@ -195,7 +219,7 @@ class Image(object):
         if self._url is False:
             im = _Image.open(self._path)
             w, h = im.size
-            self._story.properties["resources"][self._resource_node] = {
+            self._story._properties["resources"][self._resource_node] = {
                 "type": "image",
                 "data": {
                     "resourceId": os.path.basename(os.path.normpath(self._path)),
@@ -208,7 +232,7 @@ class Image(object):
             data = requests.get(self._path).content
             im = _Image.open(_io.BytesIO(data))
             w, h = im.size
-            self._story.properties["resources"][self._resource_node] = {
+            self._story._properties["resources"][self._resource_node] = {
                 "type": "image",
                 "data": {
                     "src": self._path,
@@ -248,13 +272,19 @@ class Image(object):
             # Update the resource
             self._story._remove_resource(resource_id)
             self._story._add_resource(new_image)
+        self._path = new_image
 
     # ----------------------------------------------------------------------
-    def _check_node(self):
-        if self._node in self._story.properties["nodes"]:
+    def _check_node(self, node_id=None):
+        if node_id:
+            if node_id in self._story._properties["nodes"]:
+                return True
+            else:
+                return False
+        elif "_node" in self and self._node in self._story._properties["nodes"]:
             return True
         else:
-            raise Warning("Image must be added to story before making changes.")
+            return False
 
 
 ###############################################################################################################
@@ -263,25 +293,31 @@ class Video(object):
     Class representing a video from a url or file
     """
 
-    def __init__(self, path: str, story):
+    def __init__(self, path: Optional[str] = None, story=None, node_id=None):
         """
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         path                    Required String. The file path to the video that will be added.
         ------------------      --------------------------------------------------------------------
-        story                   Required StoryMap. The story map the image is/will be a part of.
+        story                   StoryMap. The story map the image is/will be a part of.
         ==================      ====================================================================
         """
-        self._path = path
-
-        # assign ids
-        self._node = "n-" + uuid.uuid4().hex[0:6]
-        self._resource_node = "r-" + uuid.uuid4().hex[0:6]
-
-        mt = mimetypes.guess_type(path)[0].lower()
-        self._type = mt.split("/")
         self._story = story
+
+        existing = self._check_node(node_id)
+        if existing is True:
+            self._node = node_id
+            self._resource_node = self._story._properties["nodes"][self._node]["data"][
+                "video"
+            ]
+            self._path = self._storyp.properties["resources"][self._resource_node][
+                "data"
+            ]["resourceId"]
+        else:
+            self._path = path
+            self._node = "n-" + uuid.uuid4().hex[0:6]
+            self._resource_node = "r-" + uuid.uuid4().hex[0:6]
 
     # ----------------------------------------------------------------------
     @property
@@ -298,8 +334,8 @@ class Video(object):
         """
         if self._check_node:
             return {
-                "node_dict": self._story.properties["nodes"][self._node],
-                "resource_dict": self._story.properties["resources"][
+                "node_dict": self._story._properties["nodes"][self._node],
+                "resource_dict": self._story._properties["resources"][
                     self._resource_node
                 ],
             }
@@ -320,7 +356,7 @@ class Video(object):
             The video that is being used.
         """
         if self._check_node:
-            return self._story.properties["resources"][self._resource_node]["data"][
+            return self._story._properties["resources"][self._resource_node]["data"][
                 "resourceId"
             ]
 
@@ -347,14 +383,16 @@ class Video(object):
             The caption that is being used.
         """
         if self._check_node:
-            return self._story.properties["nodes"][self._node]["data"]["caption"]
+            return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
         if self._check_node:
             if isinstance(caption, str):
-                self._story.properties["nodes"][self._node]["data"]["caption"] = caption
+                self._story._properties["nodes"][self._node]["data"][
+                    "caption"
+                ] = caption
             return self.caption
 
     # ----------------------------------------------------------------------
@@ -373,13 +411,13 @@ class Video(object):
             The alternate text that is being used.
         """
         if self._check_node:
-            return self._story.properties["nodes"][self._node]["data"]["alt"]
+            return self._story._properties["nodes"][self._node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
         if self._check_node:
-            self._story.properties["nodes"][self._node]["data"]["alt"] = alt_text
+            self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
             return self.alt_text
 
     # ----------------------------------------------------------------------
@@ -392,12 +430,13 @@ class Video(object):
         return self._story._delete(self._node, self._resource_node)
 
     # ----------------------------------------------------------------------
-    def _add_video(self, caption=None, alt_text=None, display=None):
+    def _add_video(self, caption=None, alt_text=None, display=None, story=None):
+        self._story = story
         # Make an add resource call
         self._story._add_resource(self._path)
 
         # Create video nodes
-        self._story.properties["nodes"][self._node] = {
+        self._story._properties["nodes"][self._node] = {
             "type": "video",
             "data": {
                 "video": self._resource_node,
@@ -408,7 +447,7 @@ class Video(object):
         }
 
         # Create resource node
-        self._story.properties["resources"][self._resource_node] = {
+        self._story._properties["resources"][self._resource_node] = {
             "type": "video",
             "data": {
                 "resourceId": os.path.basename(os.path.normpath(self._path)),
@@ -423,17 +462,22 @@ class Video(object):
         self._resource_node["data"]["resourceId"] = os.path.basename(
             os.path.normpath(new_video)
         )
-
+        self._path = new_video
         # Update the resource
         self._story._remove_resource(resource_id)
         self._story._add_resource(new_video)
 
     # ----------------------------------------------------------------------
-    def _check_node(self):
-        if self._node in self._story.properties["nodes"]:
+    def _check_node(self, node_id=None):
+        if node_id:
+            if node_id in self._story._properties["nodes"]:
+                return True
+            else:
+                return False
+        elif "_node" in self and self._node in self._story._properties["nodes"]:
             return True
         else:
-            raise Warning("Video must be added to story before making changes.")
+            return False
 
 
 ###############################################################################################################
@@ -443,24 +487,31 @@ class Audio(object):
 
     """
 
-    def __init__(self, path: str, story):
+    def __init__(self, path: Optional[str] = None, story=None, node_id=None):
         """
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         path                    Required String. The file path to the image that will be added.
         ------------------      --------------------------------------------------------------------
-        story                   Required StoryMap. The story map the image is/will be a part of.
+        story                   StoryMap. The story map the image is/will be a part of.
         ==================      ====================================================================
         """
-
-        self._path = path
-
-        # assign ids
-        self._node = "n-" + uuid.uuid4().hex[0:6]
-        self._resource_node = "r-" + uuid.uuid4().hex[0:6]
-
         self._story = story
+
+        existing = self._check_node(node_id)
+        if existing is True:
+            self._node = node_id
+            self._resource_node = self._story._properties["nodes"][self._node]["data"][
+                "audio"
+            ]
+            self._path = self._storyp.properties["resources"][self._resource_node][
+                "data"
+            ]["resourceId"]
+        else:
+            self._path = path
+            self._node = "n-" + uuid.uuid4().hex[0:6]
+            self._resource_node = "r-" + uuid.uuid4().hex[0:6]
 
     # ----------------------------------------------------------------------
     @property
@@ -477,8 +528,8 @@ class Audio(object):
         """
         if self._check_node:
             return {
-                "node_dict": self._story.properties["nodes"][self._node],
-                "resource_dict": self._story.properties["resources"][
+                "node_dict": self._story._properties["nodes"][self._node],
+                "resource_dict": self._story._properties["resources"][
                     self._resource_node
                 ],
             }
@@ -499,7 +550,7 @@ class Audio(object):
             The audio that is being used.
         """
         if self._check_node:
-            return self._story.properties["resources"][self._resource_node]["data"][
+            return self._story._properties["resources"][self._resource_node]["data"][
                 "resourceId"
             ]
 
@@ -526,14 +577,16 @@ class Audio(object):
             The caption that is being used.
         """
         if self._check_node:
-            return self._story.properties["nodes"][self._node]["data"]["caption"]
+            return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
         if self._check_node:
             if isinstance(caption, str):
-                self._story.properties["nodes"][self._node]["data"]["caption"] = caption
+                self._story._properties["nodes"][self._node]["data"][
+                    "caption"
+                ] = caption
             return self.caption
 
     # ----------------------------------------------------------------------
@@ -552,13 +605,13 @@ class Audio(object):
             The alternate text that is being used.
         """
         if self._check_node:
-            return self._story.properties["nodes"][self._node]["data"]["alt"]
+            return self._story._properties["nodes"][self._node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
         if self._check_node:
-            self._story.properties["nodes"][self._node]["data"]["alt"] = alt_text
+            self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
             return self.alt_text
 
     # ----------------------------------------------------------------------
@@ -571,12 +624,13 @@ class Audio(object):
         return self._story._delete(self._node, self._resource_node)
 
     # ----------------------------------------------------------------------
-    def _add_audio(self, caption=None, alt_text=None, display=None):
+    def _add_audio(self, caption=None, alt_text=None, display=None, story=None):
+        self._story = story
         # Make an add resource call
         self._story._add_resource(self._path)
 
         # Create image nodes
-        self._story.properties["nodes"][self._node] = {
+        self._story._properties["nodes"][self._node] = {
             "type": "audio",
             "data": {
                 "audio": self._resource_node,
@@ -587,7 +641,7 @@ class Audio(object):
         }
 
         # Create resource node
-        self._story.properties["resources"][self._resource_node] = {
+        self._story._properties["resources"][self._resource_node] = {
             "type": "audio",
             "data": {
                 "resourceId": os.path.basename(os.path.normpath(self._path)),
@@ -602,17 +656,22 @@ class Audio(object):
         self._resource_node["data"]["resourceId"] = os.path.basename(
             os.path.normpath(new_audio)
         )
-
+        self._path = new_audio
         # Update the resource
         self._story._remove_resource(resource_id)
         self._story._add_resource(new_audio)
 
     # ----------------------------------------------------------------------
-    def _check_node(self):
-        if self._node in self._story.properties["nodes"]:
+    def _check_node(self, node_id=None):
+        if node_id:
+            if node_id in self._story._properties["nodes"]:
+                return True
+            else:
+                return False
+        elif "_node" in self and self._node in self._story._properties["nodes"]:
             return True
         else:
-            raise Warning("Audio must be added to story before making changes.")
+            return False
 
 
 ###############################################################################################################
@@ -621,7 +680,7 @@ class Embed(object):
     Class representing an embedded video, audio, or webpage.
     """
 
-    def __init__(self, path: str, story):
+    def __init__(self, path: Optional[str] = None, story=None, node_id=None):
         """
         ==================      ====================================================================
         **Argument**            **Description**
@@ -629,12 +688,18 @@ class Embed(object):
         path                    Required String. The url that will be added as a webpage, video, or
                                 audio embed into the story.
         ------------------      --------------------------------------------------------------------
-        story                   Required StoryMap. The story map the image is/will be a part of.
+        story                   StoryMap. The story map the image is/will be a part of.
         ==================      ====================================================================
         """
-        self._path = path
-        self._node = "n-" + uuid.uuid4().hex[0:6]
         self._story = story
+
+        existing = self._check_node(node_id)
+        if existing is True:
+            self._node = node_id
+            self._path = self._storyp.properties["nodes"][self._node]["data"]["url"]
+        else:
+            self._path = path
+            self._node = "n-" + uuid.uuid4().hex[0:6]
 
     # ----------------------------------------------------------------------
     @property
@@ -650,7 +715,7 @@ class Embed(object):
         """
         if self._check_node:
             return {
-                "node_dict": self._story.properties["nodes"][self._node],
+                "node_dict": self._story._properties["nodes"][self._node],
             }
 
     # ----------------------------------------------------------------------
@@ -669,7 +734,7 @@ class Embed(object):
             The embed that is being used.
         """
         if self._check_node:
-            return self._story.properties["nodes"][self._node]["data"]["url"]
+            return self._story._properties["nodes"][self._node]["data"]["url"]
 
     # ----------------------------------------------------------------------
     @link.setter
@@ -694,14 +759,16 @@ class Embed(object):
             The caption that is being used.
         """
         if self._check_node:
-            return self._story.properties["nodes"][self._node]["data"]["caption"]
+            return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
         if self._check_node:
             if isinstance(caption, str):
-                self._story.properties["nodes"][self._node]["data"]["caption"] = caption
+                self._story._properties["nodes"][self._node]["data"][
+                    "caption"
+                ] = caption
             return self.caption
 
     # ----------------------------------------------------------------------
@@ -720,13 +787,13 @@ class Embed(object):
             The alternate text that is being used.
         """
         if self._check_node:
-            return self._story.properties["nodes"][self._node]["data"]["alt"]
+            return self._story._properties["nodes"][self._node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
         if self._check_node:
-            self._story.properties["nodes"][self._node]["data"]["alt"] = alt_text
+            self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
             return self.alt_text
 
     # ----------------------------------------------------------------------
@@ -739,10 +806,11 @@ class Embed(object):
         return self._story._delete(self._node)
 
     # ----------------------------------------------------------------------
-    def _add_link(self, caption=None, alt_text=None):
+    def _add_link(self, caption=None, alt_text=None, story=None):
+        self._story = story
         sections = _parse.urlparse(self._path)
         # Create embed nodes
-        self._story.properties["nodes"][self._node] = {
+        self._story._properties["nodes"][self._node] = {
             "type": "embed",
             "data": {
                 "url": self._path,
@@ -759,16 +827,21 @@ class Embed(object):
     def _update_link(self, new_link):
         sections = _parse.urlparse(new_link)
         self._path = new_link
-        self._story.properties["nodes"][self._node]["data"]["url"] = self._path
-        self._story.properties["nodes"][self._node]["data"]["title"] = sections.netloc
-        self._story.properties["nodes"][self._node]["data"]["providerUrl"] = self._path
+        self._story._properties["nodes"][self._node]["data"]["url"] = self._path
+        self._story._properties["nodes"][self._node]["data"]["title"] = sections.netloc
+        self._story._properties["nodes"][self._node]["data"]["providerUrl"] = self._path
 
     # ----------------------------------------------------------------------
-    def _check_node(self):
-        if self._node in self._story.properties["nodes"]:
+    def _check_node(self, node_id=None):
+        if node_id:
+            if node_id in self._story._properties["nodes"]:
+                return True
+            else:
+                return False
+        elif "_node" in self and self._node in self._story._properties["nodes"]:
             return True
         else:
-            raise Warning("Webpage must be added to story before making changes.")
+            return False
 
 
 ###############################################################################################################
@@ -778,7 +851,9 @@ class Map(object):
 
     """
 
-    def __init__(self, item: arcgis.gis.Item, story):
+    def __init__(
+        self, item: Optional[arcgis.gis.Item] = None, story=None, node_id=None
+    ):
         """
         =================       ====================================================================
         **Argument**            **Description**
@@ -786,49 +861,73 @@ class Map(object):
         item                    An Item of type WebMap or WebScene or a String representing the item
                                 id to add to the story map.
         ------------------      --------------------------------------------------------------------
-        story                   Required StoryMap. The story map the image is/will be a part of.
+        story                   StoryMap. The story map the image is/will be a part of.
         =================       ====================================================================
 
         """
-
-        # If string id get the item
-        if isinstance(item, str):
-            item = arcgis.env.active_gis.content.get(item)
-
-        # Create map object to extract properties
-        if isinstance(item, arcgis.gis.Item):
-            if item.type == "Web Map":
-                map_item = arcgis.mapping.WebMap(item)
-            elif item.type == "Web Scene":
-                map_item = arcgis.mapping.WebScene(item)
-            else:
-                raise ValueError("Item must be of Type Webmap or Web Scene")
-
-        self._node = "n-" + uuid.uuid4().hex[0:6]
-        self._resource_node = "r-" + item.id
-
-        # Assign properties
-        self._path = item
-        if len(map_item._mapview.center) > 0:
-            self._center = map_item._mapview.center
-        else:
-            self._center = None
-        if len(map_item._mapview.extent) > 0:
-            self._extent = map_item._mapview.extent
-        else:
-            self._extent = None
-        self._viewpoint = None
-        layers = []
-        # Create layer dictionary:
-        for layer in map_item.layers:
-            layer_props = {}
-            layer_props["id"] = layer["id"]
-            layer_props["title"] = layer["title"]
-            layer_props["visible"] = layer["visibility"]
-            layers.append(layer_props)
-        self._map_layers = layers
-        self._type = item.type
         self._story = story
+
+        existing = self._check_node(node_id)
+
+        if existing:
+            self._node = node_id
+            self._resource_node = self._story._properties["nodes"][self._node]["data"][
+                "map"
+            ]
+            self._path = self._resource_node[2::]
+            self._map_layers = self._story._properties["resources"][
+                self._resource_node
+            ]["data"]["mapLayers"]
+            self._extent = self._story._properties["resources"][self._resource_node][
+                "data"
+            ]["extent"]
+            self._center = self._story._properties["resources"][self._resource_node][
+                "data"
+            ]["center"]
+            self._viewpoint = self._story._properties["resources"][self._resource_node][
+                "data"
+            ]["viewpoint"]
+            self._type = self._story._properties["resources"][self._resource_node][
+                "data"
+            ]["itemType"]
+        else:
+            # If string id get the item
+            if isinstance(item, str):
+                item = arcgis.env.active_gis.content.get(item)
+
+            # Create map object to extract properties
+            if isinstance(item, arcgis.gis.Item):
+                if item.type == "Web Map":
+                    map_item = arcgis.mapping.WebMap(item)
+                elif item.type == "Web Scene":
+                    map_item = arcgis.mapping.WebScene(item)
+                else:
+                    raise ValueError("Item must be of Type Webmap or Web Scene")
+
+            self._node = "n-" + uuid.uuid4().hex[0:6]
+            self._resource_node = "r-" + item.id
+
+            # Assign properties
+            self._path = item
+            if len(map_item._mapview.center) > 0:
+                self._center = map_item._mapview.center
+            else:
+                self._center = None
+            if len(map_item._mapview.extent) > 0:
+                self._extent = map_item._mapview.extent
+            else:
+                self._extent = None
+            self._viewpoint = None
+            layers = []
+            # Create layer dictionary:
+            for layer in map_item.layers:
+                layer_props = {}
+                layer_props["id"] = layer["id"]
+                layer_props["title"] = layer["title"]
+                layer_props["visible"] = layer["visibility"]
+                layers.append(layer_props)
+            self._map_layers = layers
+            self._type = item.type
 
     # ----------------------------------------------------------------------
     @property
@@ -845,8 +944,8 @@ class Map(object):
         """
         if self._check_node:
             return {
-                "node_dict": self._story.properties["nodes"][self._node],
-                "resource_dict": self._story.properties["resources"][
+                "node_dict": self._story._properties["nodes"][self._node],
+                "resource_dict": self._story._properties["resources"][
                     self._resource_node
                 ],
             }
@@ -872,7 +971,7 @@ class Map(object):
             The item id for the map that is being used.
         """
         if self._check_node:
-            return self._story.properties["resources"][self._resource_node]["data"][
+            return self._story._properties["resources"][self._resource_node]["data"][
                 "itemId"
             ]
 
@@ -901,14 +1000,16 @@ class Map(object):
             The caption that is being used.
         """
         if self._check_node:
-            return self._story.properties["nodes"][self._node]["data"]["caption"]
+            return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
         if self._check_node:
             if isinstance(caption, str):
-                self._story.properties["nodes"][self._node]["data"]["caption"] = caption
+                self._story._properties["nodes"][self._node]["data"][
+                    "caption"
+                ] = caption
             return self.caption
 
     # ----------------------------------------------------------------------
@@ -927,13 +1028,13 @@ class Map(object):
             The alternate text that is being used.
         """
         if self._check_node:
-            return self._story.properties["nodes"][self._node]["data"]["alt"]
+            return self._story._properties["nodes"][self._node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
         if self._check_node:
-            self._story.properties["nodes"][self._node]["data"]["alt"] = alt_text
+            self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
             return self.alt_text
 
     # ----------------------------------------------------------------------
@@ -943,7 +1044,7 @@ class Map(object):
         Get the display type of the map.
         """
         if self._check_node:
-            return self._story.properties["nodes"][self._node]["config"]["size"]
+            return self._story._properties["nodes"][self._node]["config"]["size"]
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -953,20 +1054,22 @@ class Map(object):
         return self._story._delete(self._node, self._resource_node)
 
     # ----------------------------------------------------------------------
-    def _add_map(self, caption=None, alt_text=None, display=None, previous_node=None):
-
+    def _add_map(
+        self, caption=None, alt_text=None, display=None, previous_node=None, story=None
+    ):
+        self._story = story
         # To change webmap, resouce id needs to change but not the previous node id
         node = previous_node if previous_node is not None else self._node
 
         # Create webmap nodes
-        self._story.properties["nodes"][node] = {
+        self._story._properties["nodes"][node] = {
             "type": "webmap",
             "data": {"map": self._resource_node, "caption": caption, "alt": alt_text,},
             "config": {"size": display},
         }
 
         # Create resource node
-        self._story.properties["resources"][self._resource_node] = {
+        self._story._properties["resources"][self._resource_node] = {
             "type": "webmap",
             "data": {
                 "extent": self._extent,
@@ -984,7 +1087,7 @@ class Map(object):
     def _update_map(self, new_map):
         # Previous node stays the same but old resource is deleted
         # Resource node gets updated since item changes
-        del self._story.properties["resources"][self._resource_node]
+        del self._story._properties["resources"][self._resource_node]
         self._resource_node = new_map._resource_node
 
         new_map._add_map(
@@ -992,14 +1095,20 @@ class Map(object):
             alt_text=self.alt_text,
             display=self.display,
             previous_node=self._node,
+            story=self._story,
         )
 
     # ----------------------------------------------------------------------
-    def _check_node(self):
-        if self._node in self._story.properties["nodes"]:
+    def _check_node(self, node_id=None):
+        if node_id:
+            if node_id in self._story._properties["nodes"]:
+                return True
+            else:
+                return False
+        elif "_node" in self and self._node in self._story._properties["nodes"]:
             return True
         else:
-            raise Warning("Map must be added to story before making changes.")
+            return False
 
 
 ###############################################################################################################
@@ -1011,10 +1120,11 @@ class Text(object):
 
     def __init__(
         self,
-        story,
-        text: str,
+        text: Optional[str] = None,
         style: TextStyles = TextStyles.PARAGRAPH,
         color: str = "000",
+        story=None,
+        node_id=None,
     ):
         """
 
@@ -1029,8 +1139,6 @@ class Text(object):
                                     <a href=\"https://www.google.com\" rel=\"noopener noreferrer\"
                                     target=\"_blank\">hyperlink</a> and a
                                     <span class=\"sm-text-color-080\">custom color</span>"
-        ------------------      --------------------------------------------------------------------
-        story                   Required StoryMap. The story map the image is/will be a part of.
         ------------------      --------------------------------------------------------------------
         style                   Optional TextStyles type. There are 7 different styles of text that can be
                                 added to a story.
@@ -1047,6 +1155,8 @@ class Text(object):
                                 'numbered-list'.
 
                                 Ex: custom_color = "080"
+        ------------------      --------------------------------------------------------------------
+        story                   StoryMap. The story map the image is/will be a part of.
         ==================      ====================================================================
 
 
@@ -1091,22 +1201,29 @@ class Text(object):
         ===================     ====================================================================
 
         """
-        self._node = uuid.uuid4().hex[0:6]
-        self._text = text
         self._story = story
-        if isinstance(style, TextStyles):
-            self._style = style.value
 
-        # Color only applies certain styles
-        if self._style in [
-            "paragraph",
-            "large-paragraph",
-            "bullet-list",
-            "numbered-list",
-        ]:
-            self._color = color
+        existing = self._check_node(node_id)
+        if existing is True:
+            self._node = node_id
+            self._text = self._story._properties["nodes"]["data"]["text"]
+            self._style = self._story._properties["nodes"]["data"]["type"]
         else:
-            self._color = None
+            self._node = uuid.uuid4().hex[0:6]
+            self._text = text
+            if isinstance(style, TextStyles):
+                self._style = style.value
+
+            # Color only applies certain styles
+            if self._style in [
+                "paragraph",
+                "large-paragraph",
+                "bullet-list",
+                "numbered-list",
+            ]:
+                self._color = color
+            else:
+                self._color = None
 
     # ----------------------------------------------------------------------
     @property
@@ -1136,14 +1253,14 @@ class Text(object):
         """
         if self._check_node:
             return {
-                "node_dict": self._story.properties["nodes"][self._node],
+                "node_dict": self._story._properties["nodes"][self._node],
             }
 
     # ----------------------------------------------------------------------
     @properties.setter
     def properties(self, text):
         if self._check_node:
-            self._story.properties["nodes"][self._node] = text
+            self._story._properties["nodes"][self._node] = text
             return self.properties
 
     # ----------------------------------------------------------------------
@@ -1156,23 +1273,28 @@ class Text(object):
         return self._story._delete(self._node)
 
     # ----------------------------------------------------------------------
-    def _add_text(self):
-
-        self._story.properties["nodes"][self._node] = {
+    def _add_text(self, story=None):
+        self._story = story
+        self._story._properties["nodes"][self._node] = {
             "type": "text",
             "data": {"type": self._style, "text": self._text,},
         }
         if self._color is not None:
-            self._story.properties["nodes"][self._node]["data"]["customTextColors"] = [
+            self._story._properties["nodes"][self._node]["data"]["customTextColors"] = [
                 self._color
             ]
 
     # ----------------------------------------------------------------------
-    def _check_node(self):
-        if self._node in self._story.properties["nodes"]:
+    def _check_node(self, node_id=None):
+        if node_id:
+            if node_id in self._story._properties["nodes"]:
+                return True
+            else:
+                return False
+        elif "_node" in self and self._node in self._story._properties["nodes"]:
             return True
         else:
-            raise Warning("Text must be added to story before making changes.")
+            return False
 
 
 ###############################################################################################################
@@ -1181,24 +1303,37 @@ class Button(object):
     Class representing a button
     """
 
-    def __init__(self, story, link: str = None, text: str = None):
+    def __init__(
+        self,
+        link: Optional[str] = None,
+        text: Optional[str] = None,
+        story=None,
+        node_id=None,
+    ):
         """
         ==================      ====================================================================
         **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        story                   Required StoryMap. The story map the image is/will be a part of.
         ------------------      --------------------------------------------------------------------
         link                    Required String. When user clicks on button, they will be brought to
                                 the link.
         ------------------      --------------------------------------------------------------------
         text                    Required String. The text that shows on the button.
+        ------------------      --------------------------------------------------------------------
+        story                   StoryMap. The story map the image is/will be a part of.
         ==================      ====================================================================
 
         """
-        self._node = uuid.uuid4().hex[0:6]
-        self._link = link
-        self._text = text
         self._story = story
+        existing = self._check_node(node_id)
+
+        if existing is True:
+            self._node = node_id
+            self._link = self._story._properties["nodes"][node_id]["data"]["link"]
+            self._text = self._story._properties["nodes"][node_id]["data"]["text"]
+        else:
+            self._node = uuid.uuid4().hex[0:6]
+            self._link = link
+            self._text = text
 
     # ----------------------------------------------------------------------
     @property
@@ -1225,13 +1360,13 @@ class Button(object):
             The Button dictionary for the node.
         """
         if self._check_node:
-            return {"node_dict": self._story.properties["nodes"][self._node]}
+            return {"node_dict": self._story._properties["nodes"][self._node]}
 
     # ----------------------------------------------------------------------
     @properties.setter
     def properties(self, button):
         if self._check_node:
-            self._story.properties["nodes"][self._node] = button
+            self._story._properties["nodes"][self._node] = button
             return self.properties
 
     # ----------------------------------------------------------------------
@@ -1242,18 +1377,24 @@ class Button(object):
         return self._story._delete(self._node)
 
     # ----------------------------------------------------------------------
-    def _add_button(self):
-        self._story.properties["nodes"][self._node] = {
+    def _add_button(self, story):
+        self._story = story
+        self._story._properties["nodes"][self._node] = {
             "type": "button",
             "data": {"text": self._text, "link": self._link},
         }
 
     # ----------------------------------------------------------------------
-    def _check_node(self):
-        if self._node in self._story.properties["nodes"]:
+    def _check_node(self, node_id=None):
+        if node_id:
+            if node_id in self._story._properties["nodes"]:
+                return True
+            else:
+                return False
+        elif "_node" in self and self._node in self._story._properties["nodes"]:
             return True
         else:
-            raise Warning("Button must be added to story before making changes.")
+            return False
 
 
 ###############################################################################################################
@@ -1276,8 +1417,10 @@ class Swipe(object):
         if self._type != "swipe":
             raise Exception("This node is not of type swipe.")
         self._slides = self._data["data"]["contents"]
-        media_node = self._story.properties["nodes"][self._node]["data"]["content"]["0"]
-        self._media_type = story.properties["nodes"][media_node]["type"]
+        media_node = self._story._properties["nodes"][self._node]["data"]["content"][
+            "0"
+        ]
+        self._media_type = story._properties["nodes"][media_node]["type"]
 
     # ----------------------------------------------------------------------
     @property
@@ -1294,13 +1437,13 @@ class Swipe(object):
         :return:
             The caption that is being used.
         """
-        return self._story.properties["nodes"][self._node]["data"]["caption"]
+        return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
         if isinstance(caption, str):
-            self._story.properties["nodes"][self._node]["data"]["caption"] = caption
+            self._story._properties["nodes"][self._node]["data"]["caption"] = caption
         return self.caption
 
     # ----------------------------------------------------------------------
@@ -1318,12 +1461,12 @@ class Swipe(object):
         :return:
             The alternate text that is being used.
         """
-        return self._story.properties["nodes"][self._node]["data"]["alt"]
+        return self._story._properties["nodes"][self._node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        self._story.properties["nodes"][self._node]["data"]["alt"] = alt_text
+        self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
         return self.alt_text
 
     # ----------------------------------------------------------------------
@@ -1353,18 +1496,18 @@ class Swipe(object):
                 "Media type is established as image. Can only accept another image."
             )
         # If user has created the content but not added to the story yet.
-        if content._node not in self._story.properties["nodes"]:
+        if content._node not in self._story._properties["nodes"]:
             if isinstance(content, Image):
                 content._add_image(self._story)
         elif isinstance(content, Map):
             content._add_map(self._story)
         # Add to content in position wanted
         if position == "left":
-            self._story.properties["nodes"][self._node]["data"]["content"][
+            self._story._properties["nodes"][self._node]["data"]["content"][
                 "0"
             ] = content._node
         else:
-            self._story.properties["nodes"][self._node]["data"]["content"][
+            self._story._properties["nodes"][self._node]["data"]["content"][
                 "1"
             ] = content._node
 
@@ -1396,11 +1539,11 @@ class Sidecar(object):
         """
         self._story = story
         self._node = node
-        self._type = story.properties["nodes"][node]["data"]["type"]
+        self._type = story._properties["nodes"][node]["data"]["type"]
         if self._type != "sidecar":
             raise Exception("This node is not of type sidecar.")
         self._subtype = node["data"]["subtype"]
-        self._slides = story.properties["nodes"][node]["children"]
+        self._slides = story._properties["nodes"][node]["children"]
 
     # ----------------------------------------------------------------------
     @property
@@ -1417,13 +1560,13 @@ class Sidecar(object):
         :return:
             The caption that is being used.
         """
-        return self._story.properties["nodes"][self._node]["data"]["caption"]
+        return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
         if isinstance(caption, str):
-            self._story.properties["nodes"][self._node]["data"]["caption"] = caption
+            self._story._properties["nodes"][self._node]["data"]["caption"] = caption
         return self.caption
 
     # ----------------------------------------------------------------------
@@ -1441,12 +1584,12 @@ class Sidecar(object):
         :return:
             The alternate text that is being used.
         """
-        return self._story.properties["nodes"][self._node]["data"]["alt"]
+        return self._story._properties["nodes"][self._node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        self._story.properties["nodes"][self._node]["data"]["alt"] = alt_text
+        self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
         return self.alt_text
 
     # ----------------------------------------------------------------------
@@ -1467,14 +1610,14 @@ class Sidecar(object):
         """
         # Find children nodes
         slide = self._slides[slide_number - 1]
-        slide_node = self._story.properties["nodes"][slide]
+        slide_node = self._story._properties["nodes"][slide]
         narrative_panel = slide_node["children"][0]
         media_item = None
         if len(slide_node["children"]) == 2:
             media_item = slide_node["children"][1]
 
         # Check to see if content has been added to node properties
-        if content._node not in self._story.properties["nodes"]:
+        if content._node not in self._story._properties["nodes"]:
             self._add_item_story(content)
 
         # Insert new content
@@ -1520,9 +1663,9 @@ class Sidecar(object):
         """
         sidecar_tree = [self._node]
         for slide in self._slides:
-            narrative_panel = self._story.properties["nodes"][slide]["children"][0]
-            text = self._story.properties["nodes"][narrative_panel]["children"]
-            media_item = self._story.properties["nodes"][slide]["children"][1]
+            narrative_panel = self._story._properties["nodes"][slide]["children"][0]
+            text = self._story._properties["nodes"][narrative_panel]["children"]
+            media_item = self._story._properties["nodes"][slide]["children"][1]
             sidecar_tree.append(
                 {
                     "Slide: "
@@ -1547,11 +1690,11 @@ class Sidecar(object):
     # ----------------------------------------------------------------------
     def _remove_associated(self, slide):
         # Remove narrative panel and text associated
-        narrative_panel = self._story.properties["nodes"][slide]["children"][0]
+        narrative_panel = self._story._properties["nodes"][slide]["children"][0]
         self._story._delete(narrative_panel["children"][0])
         self._story._delete(narrative_panel)
         # Remove media item
-        media_item = self._story.properties["nodes"][slide]["children"][1]
+        media_item = self._story._properties["nodes"][slide]["children"][1]
         self._story._delete(media_item)
 
     # ----------------------------------------------------------------------
@@ -1586,10 +1729,10 @@ class Slideshow(object):
         """
         self._story = story
         self._node = node
-        self._type = story.properties["nodes"][node]["data"]["type"]
+        self._type = story._properties["nodes"][node]["data"]["type"]
         if self._type != "slideshow":
             raise Exception("This node is not of type slideshow")
-        self._slides = story.properties["nodes"][node]["children"]
+        self._slides = story._properties["nodes"][node]["children"]
 
     # ----------------------------------------------------------------------
     @property
@@ -1606,13 +1749,13 @@ class Slideshow(object):
         :return:
             The caption that is being used.
         """
-        return self._story.properties["nodes"][self._node]["data"]["caption"]
+        return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
         if isinstance(caption, str):
-            self._story.properties["nodes"][self._node]["data"]["caption"] = caption
+            self._story._properties["nodes"][self._node]["data"]["caption"] = caption
         return self.caption
 
     # ----------------------------------------------------------------------
@@ -1630,12 +1773,12 @@ class Slideshow(object):
         :return:
             The alternate text that is being used.
         """
-        return self._story.properties["nodes"][self._node]["data"]["alt"]
+        return self._story._properties["nodes"][self._node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        self._story.properties["nodes"][self._node]["data"]["alt"] = alt_text
+        self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
         return self.alt_text
 
     # ----------------------------------------------------------------------
@@ -1654,12 +1797,12 @@ class Slideshow(object):
         """
         # Find children
         slide = self._slides[slide_number - 1]
-        slide_node = self._story.properties["nodes"][slide]
+        slide_node = self._story._properties["nodes"][slide]
         narrative_panel = slide_node["children"][0]
         media_item = slide_node["children"][1]
 
         # Check to see if content has been added to node properties
-        if content._node not in self._story.properties["nodes"]:
+        if content._node not in self._story._properties["nodes"]:
             self._add_item_story(content)
 
         # Insert new content
@@ -1705,9 +1848,9 @@ class Slideshow(object):
         """
         slideshow_tree = [self._node]
         for slide in self._slides:
-            narrative_panel = self._story.properties["nodes"][slide]["children"][0]
-            text = self._story.properties["nodes"][narrative_panel]["children"]
-            media_item = self._story.properties["nodes"][slide]["children"][1]
+            narrative_panel = self._story._properties["nodes"][slide]["children"][0]
+            text = self._story._properties["nodes"][narrative_panel]["children"]
+            media_item = self._story._properties["nodes"][slide]["children"][1]
             slideshow_tree.append(
                 {
                     "Slide: %s"
@@ -1732,11 +1875,11 @@ class Slideshow(object):
     # ----------------------------------------------------------------------
     def _remove_associated(self, slide):
         # Remove narrative panel and text associated
-        narrative_panel = self._story.properties["nodes"][slide]["children"][0]
+        narrative_panel = self._story._properties["nodes"][slide]["children"][0]
         self._story._delete(narrative_panel["children"][0])
         self._story._delete(narrative_panel)
         # Remove media item
-        media_item = self._story.properties["nodes"][slide]["children"][1]
+        media_item = self._story._properties["nodes"][slide]["children"][1]
         self._story._delete(media_item)
 
     # ----------------------------------------------------------------------
