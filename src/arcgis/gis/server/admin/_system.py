@@ -73,7 +73,7 @@ class SystemManager(BaseServer):
         """
         directs = []
         url = self._url + "/directories"
-        params = {"f": "json", 'private': False}
+        params = {"f": "json", "private": False}
         res = self._con.get(path=url, params=params)
         for direct in res["directories"]:
             directs.append(
