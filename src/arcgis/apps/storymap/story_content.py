@@ -34,7 +34,7 @@ class Image(object):
     Class representing an image from a url or file
     """
 
-    def __init__(self, path: Optional[str], story=None, node_id=None):
+    def __init__(self, path: Optional[str] = None, story=None, node_id=None):
         """
         ==================      ====================================================================
         **Argument**            **Description**
@@ -50,12 +50,13 @@ class Image(object):
             - self._url: A boolean indicating whether the image is from a url
             - self._node: A unique id for use in the story's nodes dictionary
             - self._resource_node: A unique id for use in the story's resources dictionary
-            - self._type: The type of node and it's extension
+            - self._type: The type of node
             - self._story: The story the this content is associated with.
         """
         self._story = story
+        self._type = "image"
         self._url = False
-
+        self._node = None
         # If node exists in story, then create from resources and node dict.
         # If node doesn't already exist, create a new instance
         existing = self._check_node(node_id=node_id)
@@ -85,7 +86,7 @@ class Image(object):
             self._resource_node = "r-" + uuid.uuid4().hex[0:6]
 
             # determine if url or file path
-            if _parse.urlparse(self._path).scheme != "":
+            if _parse.urlparse(self._path).scheme == "https":
                 self._url = True
 
     # ----------------------------------------------------------------------
@@ -245,7 +246,7 @@ class Image(object):
     # ----------------------------------------------------------------------
     def _update_image(self, new_image):
         # Check if new_image is url or path
-        if _parse.urlparse(new_image).scheme != "":
+        if _parse.urlparse(new_image).scheme == "https":
             # Update the height and width for the image
             data = requests.get(new_image).content
             im = _Image.open(_io.BytesIO(data))
@@ -281,7 +282,7 @@ class Image(object):
                 return True
             else:
                 return False
-        elif "_node" in self and self._node in self._story._properties["nodes"]:
+        elif self._story is not None and self._node in self._story._properties["nodes"]:
             return True
         else:
             return False
@@ -304,14 +305,15 @@ class Video(object):
         ==================      ====================================================================
         """
         self._story = story
-
+        self._type = "video"
+        self._node = None
         existing = self._check_node(node_id)
         if existing is True:
             self._node = node_id
             self._resource_node = self._story._properties["nodes"][self._node]["data"][
                 "video"
             ]
-            self._path = self._storyp.properties["resources"][self._resource_node][
+            self._path = self._story._properties["resources"][self._resource_node][
                 "data"
             ]["resourceId"]
         else:
@@ -474,7 +476,7 @@ class Video(object):
                 return True
             else:
                 return False
-        elif "_node" in self and self._node in self._story._properties["nodes"]:
+        elif self._story is not None and self._node in self._story._properties["nodes"]:
             return True
         else:
             return False
@@ -498,14 +500,15 @@ class Audio(object):
         ==================      ====================================================================
         """
         self._story = story
-
+        self._type = "audio"
+        self._node = None
         existing = self._check_node(node_id)
         if existing is True:
             self._node = node_id
             self._resource_node = self._story._properties["nodes"][self._node]["data"][
                 "audio"
             ]
-            self._path = self._storyp.properties["resources"][self._resource_node][
+            self._path = self._story._properties["resources"][self._resource_node][
                 "data"
             ]["resourceId"]
         else:
@@ -668,7 +671,7 @@ class Audio(object):
                 return True
             else:
                 return False
-        elif "_node" in self and self._node in self._story._properties["nodes"]:
+        elif self._story is not None and self._node in self._story._properties["nodes"]:
             return True
         else:
             return False
@@ -692,11 +695,12 @@ class Embed(object):
         ==================      ====================================================================
         """
         self._story = story
-
+        self._type = "embed"
+        self._node = None
         existing = self._check_node(node_id)
         if existing is True:
             self._node = node_id
-            self._path = self._storyp.properties["nodes"][self._node]["data"]["url"]
+            self._path = self._story._properties["nodes"][self._node]["data"]["url"]
         else:
             self._path = path
             self._node = "n-" + uuid.uuid4().hex[0:6]
@@ -838,7 +842,7 @@ class Embed(object):
                 return True
             else:
                 return False
-        elif "_node" in self and self._node in self._story._properties["nodes"]:
+        elif self._story is not None and self._node in self._story._properties["nodes"]:
             return True
         else:
             return False
@@ -866,7 +870,8 @@ class Map(object):
 
         """
         self._story = story
-
+        self._type = "webmap"
+        self._node = None
         existing = self._check_node(node_id)
 
         if existing:
@@ -1105,7 +1110,7 @@ class Map(object):
                 return True
             else:
                 return False
-        elif "_node" in self and self._node in self._story._properties["nodes"]:
+        elif self._story is not None and self._node in self._story._properties["nodes"]:
             return True
         else:
             return False
@@ -1202,12 +1207,13 @@ class Text(object):
 
         """
         self._story = story
-
+        self._type = "text"
+        self._node = None
         existing = self._check_node(node_id)
         if existing is True:
             self._node = node_id
-            self._text = self._story._properties["nodes"]["data"]["text"]
-            self._style = self._story._properties["nodes"]["data"]["type"]
+            self._text = self._story._properties["nodes"][self._node]["data"]["text"]
+            self._style = self._story._properties["nodes"][self._node]["data"]["type"]
         else:
             self._node = uuid.uuid4().hex[0:6]
             self._text = text
@@ -1291,7 +1297,7 @@ class Text(object):
                 return True
             else:
                 return False
-        elif "_node" in self and self._node in self._story._properties["nodes"]:
+        elif self._story is not None and self._node in self._story._properties["nodes"]:
             return True
         else:
             return False
@@ -1324,6 +1330,8 @@ class Button(object):
 
         """
         self._story = story
+        self._type = "button"
+        self._node = None
         existing = self._check_node(node_id)
 
         if existing is True:
@@ -1391,7 +1399,7 @@ class Button(object):
                 return True
             else:
                 return False
-        elif "_node" in self and self._node in self._story._properties["nodes"]:
+        elif self._story is not None and self._node in self._story._properties["nodes"]:
             return True
         else:
             return False
@@ -1498,9 +1506,9 @@ class Swipe(object):
         # If user has created the content but not added to the story yet.
         if content._node not in self._story._properties["nodes"]:
             if isinstance(content, Image):
-                content._add_image(self._story)
+                content._add_image(story=self._story)
         elif isinstance(content, Map):
-            content._add_map(self._story)
+            content._add_map(story=self._story)
         # Add to content in position wanted
         if position == "left":
             self._story._properties["nodes"][self._node]["data"]["content"][
@@ -1700,15 +1708,15 @@ class Sidecar(object):
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
         if isinstance(content, Image):
-            content._add_image(self._story)
+            content._add_image(story=self._story)
         elif isinstance(content, Video):
-            content._add_video(self._story)
+            content._add_video(story=self._story)
         elif isinstance(content, Embed):
-            content._add_link(self._story)
+            content._add_link(story=self._story)
         elif isinstance(content, Map):
-            content._add_map(self._story)
+            content._add_map(story=self._story)
         elif isinstance(content, Text):
-            content._add_text()
+            content._add_text(story=self._story)
 
 
 ###############################################################################################################
@@ -1885,12 +1893,12 @@ class Slideshow(object):
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
         if isinstance(content, Image):
-            content._add_image()
+            content._add_image(story=self._story)
         elif isinstance(content, Video):
-            content._add_video()
+            content._add_video(story=self._story)
         elif isinstance(content, Embed):
-            content._add_link()
+            content._add_link(story=self._story)
         elif isinstance(content, Map):
-            content._add_map()
+            content._add_map(story=self._story)
         elif isinstance(content, Text):
-            content._add_text()
+            content._add_text(story=self._story)

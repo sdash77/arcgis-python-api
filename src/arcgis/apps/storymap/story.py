@@ -1,9 +1,6 @@
 from typing import Optional, Union
 import uuid
 from enum import Enum
-
-from six import add_metaclass
-from arcgis import gis
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
@@ -27,40 +24,51 @@ class Themes(Enum):
 
 
 ###############################################################################################################
-class _StoryMapFactory(type):
+class StoryMap(object):
     """
-    Generates a StoryMap object from an item or new template
+    A Story Map is a web map that has been thoughtfully created, given context, and provided
+    with supporting information so it becomes a stand-alone resource. It integrates maps, legends,
+    text, photos, and video and provides functionality, such as swipe, pop-ups, and time sliders,
+    that helps users explore this content.
+
+    ArcGIS StoryMaps is the next-generation storytelling tool in ArcGIS, and story authors are
+    encouraged to use this tool to create stories.
     """
 
-    def __call__(cls, item=None, gis=None):
-        """generates the proper type of layer from a given url"""
+    _properties = None
+    _gis = None
+    _itemid = None
+    _item = None
+    _resources = None
+
+    def __init__(self, item=None, gis=None):
         if gis is None:
             gis = arcgis.env.active_gis
-            cls._gis = gis
+            self._gis = gis
         else:
-            cls._gis = gis
+            self._gis = gis
         if gis._portal.is_logged_in is False:
             # CHECK TO SEE IF AUTHENTICATED
             raise Exception("Must be logged into an Enterprise Account")
         if item and isinstance(item, str):
             item = gis.content.get(item)
         if item and isinstance(item, arcgis.gis.Item) and item.type == "StoryMap":
-            cls._item = item
-            cls._itemid = cls._item.itemid
-            cls._properties = cls._item.get_data()
-            cls._resources = cls._item.resources.list()
+            self._item = item
+            self._itemid = self._item.itemid
+            self._properties = self._item.get_data()
+            self._resources = self._item.resources.list()
             # If story is a draft, get properties from resource file.
             if (
-                cls._properties == {}
-                or "unpublished" in cls._properties
-                and cls._properties["unpublished"] is True
+                self._properties == {}
+                or "unpublished" in self._properties
+                and self._properties["unpublished"] is True
             ):
-                for resource in cls._resources:
+                for resource in self._resources:
                     for key, val in resource.items():
                         if key == "resource" and val == "draft.json":
                             # Open JSON file for properties
-                            data = cls._item.resources.get(val, try_json=True)
-                            cls._properties = data
+                            data = self._item.resources.get(val, try_json=True)
+                            self._properties = data
         elif (
             item
             and isinstance(item, arcgis.gis.Item)
@@ -68,8 +76,7 @@ class _StoryMapFactory(type):
         ):
             raise ValueError("Item is not a Story Map")
         else:
-            cls._create_new_storymap()
-        return cls
+            self._create_new_storymap()
 
     # ----------------------------------------------------------------------
     def _create_new_storymap(self):
@@ -100,6 +107,28 @@ class _StoryMapFactory(type):
         self._resources = self._item.resources.list()
 
     # ----------------------------------------------------------------------
+    def _repr_html_(self):
+        """
+        HTML Representation for IPython Notebook
+        """
+        return (
+            "<iframe src=" + self._item.url + "title=" + self._item.title + "></iframe>"
+        )
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return json.dumps(self._properties)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return self.__str__()
+
+    # ----------------------------------------------------------------------
+    def _refresh(self):
+        if self._item:
+            self._properties = json.loads(self._item.get_data())
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """This property returns the storymap's JSON"""
@@ -126,35 +155,6 @@ class _StoryMapFactory(type):
         return node_order
 
     # ----------------------------------------------------------------------
-    def _assign_node_class(self, node_id):
-        node_type = self._properties["nodes"][node_id]["type"]
-        if node_type == "image":
-            node = Content.Image(story=self, node_id=node_id)
-        elif node_type == "video":
-            node = Content.Video(story=self, node_id=node_id)
-        elif node_type == "audio":
-            node = Content.Audio(story=self, node_id=node_id)
-        elif node_type == "embed":
-            node = Content.Embed(story=self, node_id=node_id)
-        elif node_type == "webmap":
-            node = Content.Map(story=self, node_id=node_id)
-        elif node_type == "text":
-            node = Content.Text(story=self, node_id=node_id)
-        elif node_type == "button":
-            node = Content.Button(story=self, node_id=node_id)
-        elif node_type == "immersive":
-            subtype = self._properties["nodes"][node_id]["data"]["type"]
-            if subtype == "swipe":
-                node = Content.Swipe(node_id, self)
-            if subtype == "slideshow":
-                node = Content.Slideshow(node_id, self)
-            if subtype == "sidecar":
-                node = Content.Sidecar(node_id, self)
-        else:
-            node = node_type
-        return node
-
-    # ----------------------------------------------------------------------
     @property
     def navigation_items(self):
         """
@@ -169,51 +169,6 @@ class _StoryMapFactory(type):
         except:
             return None
 
-
-###############################################################################################################
-@add_metaclass(_StoryMapFactory)
-class StoryMap(object):
-    """
-    A Story Map is a web map that has been thoughtfully created, given context, and provided
-    with supporting information so it becomes a stand-alone resource. It integrates maps, legends,
-    text, photos, and video and provides functionality, such as swipe, pop-ups, and time sliders,
-    that helps users explore this content.
-
-    ArcGIS StoryMaps is the next-generation storytelling tool in ArcGIS, and story authors are
-    encouraged to use this tool to create stories.
-    """
-
-    _properties = None
-    _gis = None
-    _itemid = None
-    _item = None
-    _resources = None
-
-    def __init__(self, item=None, gis=None):
-        super(StoryMap, self).__init__(item, gis)
-
-    # ----------------------------------------------------------------------
-    def _repr_html_(self):
-        """
-        HTML Representation for IPython Notebook
-        """
-        return (
-            "<iframe src=" + self._item.url + "title=" + self._item.title + "></iframe>"
-        )
-
-    # ----------------------------------------------------------------------
-    def __str__(self):
-        return json.dumps(self._properties)
-
-    # ----------------------------------------------------------------------
-    def __repr__(self):
-        return self.__str__()
-
-    # ----------------------------------------------------------------------
-    def _refresh(self):
-        if self._item:
-            self._properties = json.loads(self._item.get_data())
-
     # ----------------------------------------------------------------------
     def list(self, type: Optional[str] = None, node_id: Optional[str] = None):
         """
@@ -226,8 +181,9 @@ class StoryMap(object):
                             If none specified, list of all nodes returned.
 
                             Values: "image" | "video" | "audio" | "embed" | "webmap" | "text" |
-                                    "button" | "separator" | "expressmap" | "webscene" | "immersive"|
-                                    "swipe"
+                                    "button" | "separator" | "expressmap" | "webscene" | "immersive"
+        ---------------     --------------------------------------------------------------------
+        node_id             Optional string. The node id for the node that should be returned.
         ===============     ====================================================================
 
         :return: List of node ids and their types in order of appearance in the story map.
@@ -245,15 +201,19 @@ class StoryMap(object):
         elif node_id is not None:
             all_nodes = self.node_order
             for node in all_nodes:
-                ids = list(node.values())[0].split(",")
-                if node_id in ids:
+                id = list(node.keys())[0]
+                if node_id == id:
                     return node
         else:
             all_nodes = self.node_order
             for node in all_nodes:
-                keywords = list(node.values())[0].split(",")
-                if type.lower() in keywords:
-                    spec_type.append(node)
+                keyword = list(node.values())[0]
+                if isinstance(keyword, str):
+                    if type.lower() in keyword:
+                        spec_type.append(node)
+                else:
+                    if type.lower() in keyword._type:
+                        spec_type.append(node)
             return tuple(spec_type)
 
     # ----------------------------------------------------------------------
@@ -489,7 +449,7 @@ class StoryMap(object):
         elif isinstance(content, Content.Audio):
             content._add_audio(caption, alt_text, display, self)
         elif isinstance(content, Content.Map):
-            content._add_map(caption, alt_text, display, self)
+            content._add_map(caption, alt_text, display, story=self)
         elif isinstance(content, Content.Embed):
             content._add_link(caption, alt_text, self)
         elif isinstance(content, Content.Button):
@@ -767,13 +727,30 @@ class StoryMap(object):
         return resp
 
     # ----------------------------------------------------------------------
-    def _update_properties(self, node_id, caption, alt_text, display):
+    def _assign_node_class(self, node_id):
         node_type = self._properties["nodes"][node_id]["type"]
-        # Update main node
-        if caption is not None:
-            self._properties["nodes"][node_id]["data"]["caption"] = caption
-        if alt_text is not None:
-            self._properties["nodes"][node_id]["data"]["alt"] = alt_text
-        if display is not None and node_type in ["image", "video", "audio", "webmap"]:
-            self._properties["nodes"][node_id]["config"]["size"] = display
-        return self._properties["nodes"][node_id]
+        if node_type == "image":
+            node = Content.Image(story=self, node_id=node_id)
+        elif node_type == "video":
+            node = Content.Video(story=self, node_id=node_id)
+        elif node_type == "audio":
+            node = Content.Audio(story=self, node_id=node_id)
+        elif node_type == "embed":
+            node = Content.Embed(story=self, node_id=node_id)
+        elif node_type == "webmap":
+            node = Content.Map(story=self, node_id=node_id)
+        elif node_type == "text":
+            node = Content.Text(story=self, node_id=node_id)
+        elif node_type == "button":
+            node = Content.Button(story=self, node_id=node_id)
+        elif node_type == "immersive":
+            subtype = self._properties["nodes"][node_id]["data"]["type"]
+            if subtype == "swipe":
+                node = Content.Swipe(node_id, self)
+            if subtype == "slideshow":
+                node = Content.Slideshow(node_id, self)
+            if subtype == "sidecar":
+                node = Content.Sidecar(node_id, self)
+        else:
+            node = node_type
+        return node
