@@ -404,9 +404,7 @@ class Video(object):
                 "caption": caption,
                 "alt": alt_text,
             },
-            "config": {
-                "size": display,
-            },
+            "config": {"size": display,},
         }
 
         # Create resource node
@@ -760,10 +758,10 @@ class Embed(object):
     # ----------------------------------------------------------------------
     def _update_link(self, new_link):
         sections = _parse.urlparse(new_link)
-
-        self._node["data"]["url"] = self._path
-        self._node["data"]["title"] = sections.netloc
-        self._node["data"]["providerUrl"] = self._path
+        self._path = new_link
+        self._story.properties["nodes"][self._node]["data"]["url"] = self._path
+        self._story.properties["nodes"][self._node]["data"]["title"] = sections.netloc
+        self._story.properties["nodes"][self._node]["data"]["providerUrl"] = self._path
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -963,11 +961,7 @@ class Map(object):
         # Create webmap nodes
         self._story.properties["nodes"][node] = {
             "type": "webmap",
-            "data": {
-                "map": self._resource_node,
-                "caption": caption,
-                "alt": alt_text,
-            },
+            "data": {"map": self._resource_node, "caption": caption, "alt": alt_text,},
             "config": {"size": display},
         }
 
@@ -1166,10 +1160,7 @@ class Text(object):
 
         self._story.properties["nodes"][self._node] = {
             "type": "text",
-            "data": {
-                "type": self._style,
-                "text": self._text,
-            },
+            "data": {"type": self._style, "text": self._text,},
         }
         if self._color is not None:
             self._story.properties["nodes"][self._node]["data"]["customTextColors"] = [
@@ -1337,9 +1328,7 @@ class Swipe(object):
 
     # ----------------------------------------------------------------------
     def edit(
-        self,
-        content: Optional[Union[Image, Map]] = None,
-        position: str = "right",
+        self, content: Optional[Union[Image, Map]] = None, position: str = "right",
     ):
         """
         Edit the media content of a Swipe item.
@@ -1462,9 +1451,7 @@ class Sidecar(object):
 
     # ----------------------------------------------------------------------
     def edit(
-        self,
-        content: Union[Image, Video, Map, Text, Embed],
-        slide_number: int,
+        self, content: Union[Image, Video, Map, Text, Embed], slide_number: int,
     ):
         """
         Edit slide text or media content. Media Content can be of type Image, Video, Map, or Embed.
