@@ -73,7 +73,6 @@ else:
         'requests-kerberos;platform_system=="Windows"',
         'winkerberos;platform_system=="Windows"',
         "requests-gssapi",
-        "sphinx-autodoc-typehints"
     ]
 
 

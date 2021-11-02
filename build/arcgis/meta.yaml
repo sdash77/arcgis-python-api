@@ -19,6 +19,7 @@ requirements:
   - ipywidgets >=7
   - widgetsnbextension >=3
   - pandas >=1
+  - sphinx_autodoc_typehints
   - numpy >=1.16.2
   - matplotlib
   - keyring >=19, <21.8.0
@@ -44,6 +45,7 @@ requirements:
   - ipywidgets >=7
   - widgetsnbextension >=3
   - pandas >=1
+  - sphinx_autodoc_typehints
   - ujson >=3
   - numpy >=1.16.2
   - pyshp >=2
