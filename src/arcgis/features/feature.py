@@ -2,13 +2,16 @@
 In the GIS, entities located in space with a set of properties can be represented as features. This module has the types
 to represent features and collection of features.
 """
-import copy
-import json
-import ujson as _ujson
-import os
-import re
-import tempfile
-import uuid
+from arcgis.auth.tools import LazyLoader
+
+copy = LazyLoader("copy")
+json = LazyLoader("json")
+_ujson = LazyLoader("ujson")
+os = LazyLoader("os")
+re = LazyLoader("re")
+tempfile = LazyLoader("tempfile")
+uuid = LazyLoader("uuid")
+
 from datetime import datetime
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._spatial import json_to_featureclass
@@ -25,7 +28,7 @@ from arcgis.geometry import (
 from arcgis.gis import Layer
 
 try:
-    import arcpy
+    arcpy = LazyLoader("arcpy", strict=True)
 
     HASARCPY = True
 except:
@@ -851,12 +854,6 @@ class FeatureSet(object):
 
         import pandas as pd
 
-        try:
-            import arcpy
-
-            HASARCPY = True
-        except ImportError:
-            HASARCPY = False
         features = []
         index = 0
         sr = None

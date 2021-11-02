@@ -328,7 +328,7 @@ class _GISService(object):
                     and self._con._auth.lower() != "anon"
                 ):
                     try:
-                        self._token = self._con.generate_portal_server_token(url)
+                        self._token = self._gis._con._create_token(url)
                     except Exception as e:  # GUESSED Auth Wrong, try anonymously
                         if (
                             str(e).find(
