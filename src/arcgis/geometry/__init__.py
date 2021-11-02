@@ -81,3 +81,5 @@ geometry type and returns the correct type as the example below demonstrates:
 from ._types import *
 from .functions import *
 from . import filters
+
+__all__ = ["Polygon"]
