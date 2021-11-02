@@ -49,3 +49,4 @@ dependencies:
   - python-certifi-win32
   - cachetools
   - black
+  - sphinx-autodoc-typehints
