@@ -11,6 +11,7 @@ package:
 requirements:
   build:
   - python
+  - sphinx_autodoc_typehints
   - cachetools
   - ujson >=3
   - setuptools
