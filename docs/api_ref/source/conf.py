@@ -84,9 +84,9 @@ sys.path.insert(0, os.path.abspath("../../../src"))
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.coverage",
-    "sphinx_autodoc_typehints",
 ]
 
+autodoc_typehints = "description"
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
@@ -135,7 +135,7 @@ exclude_patterns = []
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
-add_module_names = False
+# add_module_names = True
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
