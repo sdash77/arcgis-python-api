@@ -10912,6 +10912,8 @@ class Item(dict):
             "Excel",
             "Vector Tile Package",
         ]
+        if export_format not in formats:
+            raise Error("Unsupported export format: " + export_format)
         if export_format == "GeoPackage":
             export_format = "geoPackage"
         user_id = self._user_id
