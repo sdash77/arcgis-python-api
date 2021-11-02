@@ -133,7 +133,6 @@ class Indicator(_BaseWidget):
             {
                 "type": "serviceDataset",
                 "dataSource": self._datasource,
-                "filter":[],
                 "outFields": ["*"],
                 "groupByFields": [],
                 "orderByFields": [],
