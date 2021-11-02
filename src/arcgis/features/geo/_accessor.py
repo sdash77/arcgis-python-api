@@ -2443,7 +2443,7 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_featurelayer(
-        self, title, gis=None, tags=None, folder=None, sanitize_columns=False
+        self, title=None, gis=None, tags=None, folder=None, sanitize_columns=False
     ):
         """
         The ``to_featurelayer`` method publishes a spatial dataframe to a new
@@ -2452,7 +2452,8 @@ class GeoAccessor(object):
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        title                           Required string. The name of the service
+        title                           Optional string. The name of the service. If not provided, a random
+                                        string is generated.
         ---------------------------     --------------------------------------------------------------------
         gis                             Optional GIS. The GIS connection object
         ---------------------------     --------------------------------------------------------------------
@@ -2481,6 +2482,9 @@ class GeoAccessor(object):
         content = gis.content
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
+        if title is None:
+            title = uuid.uuid4().hex
+
         result = content.import_data(
             self._data,
             folder=folder,
