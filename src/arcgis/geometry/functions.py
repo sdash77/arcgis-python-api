@@ -14,6 +14,7 @@ from arcgis.geometry import (
     Polygon,
     SpatialReference,
 )
+import arcgis.geometry as geom
 import arcgis.env
 from arcgis.gis import GIS
 
@@ -112,7 +113,7 @@ class LengthUnits(Enum):
 
 # -------------------------------------------------------------------------
 def areas_and_lengths(
-    polygons: Polygon,
+    polygons: geom.Polygon,
     length_unit: str,
     area_unit: str,
     calculation_type: str,
