@@ -206,9 +206,9 @@ def areas_and_lengths(
 
 # -------------------------------------------------------------------------
 def auto_complete(
-    polygons: Polygon,
-    polylines: Polyline,
-    spatial_ref: SpatialReference,
+    polygons: Optional[Polygon] = None,
+    polylines: Optional[Polyline] = None,
+    spatial_ref: Optional[SpatialReference] = None,
     gis: Optional[GIS] = None,
     future: bool = False,
 ):
