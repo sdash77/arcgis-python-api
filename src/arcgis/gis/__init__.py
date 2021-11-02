@@ -10844,7 +10844,6 @@ class Item(dict):
         enforce_fld_vis=None,
         tags=None,
         snippet=None,
-        overwrite=False,
     ):
         """
         The ``export`` method is used to export a service item to the specified export format.
@@ -10881,9 +10880,6 @@ class Item(dict):
         tags                Optional String.  A comma seperated value of item descriptors.
         ---------------     --------------------------------------------------------------------
         snippet             Optional String. A short descriptive piece of text.
-        ---------------     --------------------------------------------------------------------
-        overwrite           Optional Boolean. If the export Item exists, the item will be
-                            replaced with the new one.
         ===============     ====================================================================
 
         :return:
@@ -10912,6 +10908,8 @@ class Item(dict):
             "Excel",
             "Vector Tile Package",
         ]
+        if export_format not in formats:
+            raise Error("Unsupported export format: " + export_format)
         if export_format == "GeoPackage":
             export_format = "geoPackage"
         user_id = self._user_id
