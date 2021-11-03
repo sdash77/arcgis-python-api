@@ -447,7 +447,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                 try:
                     irows.insertRow(row.tolist())
                 except:
-                    _logging.log("row %s could not be inserted." % idx)
+                    _logging.warn("row %s could not be inserted." % idx)
         if not old_column is None:
             geo._data.columns = old_column
         if not old_index is None:
@@ -872,7 +872,7 @@ def to_featureclass(
                     try:
                         irows.insertRow(row)
                     except Exception as e:
-                        _logging.log(
+                        _logging.warn(
                             f"Could not insert the row because of error message: {e}. Recheck your data."
                         )
 
