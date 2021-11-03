@@ -2137,7 +2137,7 @@ class FeatureLayer(Layer):
         field_mappings=None,
         edits=None,
         source_info=None,
-        upsert=True,
+        upsert=False,
         skip_updates=False,
         use_globalids=False,
         update_geometry=True,
@@ -2161,16 +2161,16 @@ class FeatureLayer(Layer):
         ========================   ====================================================================
         **Argument**               **Description**
         ------------------------   --------------------------------------------------------------------
-        item_id                    optional string. The ID for the Portal item that contains the source
+        item_id                    Optional string. The ID for the Portal item that contains the source
                                    file.
                                    Used in conjunction with editsUploadFormat.
         ------------------------   --------------------------------------------------------------------
-        upload_format              required string. The source append data format. The default is
+        upload_format              Required string. The source append data format. The default is
                                    featureCollection.
-                                   Values: sqlite | shapefile | filegdb | featureCollection |
-                                   geojson | csv | excel
+                                   Values: 'sqlite' | 'shapefile' | 'filegdb' | 'featureCollection' |
+                                   'geojson' | 'csv' | 'excel'
         ------------------------   --------------------------------------------------------------------
-        source_table_name          required string. Required even when the source data contains only
+        source_table_name          Required string. Required even when the source data contains only
                                    one table, e.g., for file geodatabase.
 
                                    .. code-block:: python
@@ -2178,7 +2178,7 @@ class FeatureLayer(Layer):
                                        # Example usage:
                                        source_table_name=  "Building"
         ------------------------   --------------------------------------------------------------------
-        field_mappings             optional list. Used to map source data to a destination layer.
+        field_mappings             Optional list. Used to map source data to a destination layer.
                                    Syntax: fieldMappings=[{"name" : <"targetName">,
                                                            "sourceName" : < "sourceName">}, ...]
                                    .. code-block:: python
@@ -2187,14 +2187,14 @@ class FeatureLayer(Layer):
                                        fieldMappings=[{"name" : "CountyID",
                                                        "sourceName" : "GEOID10"}]
         ------------------------   --------------------------------------------------------------------
-        edits                      optional string. Only feature collection json is supported. Append
+        edits                      Optional string. Only feature collection json is supported. Append
                                    supports all format through the upload_id or item_id.
         ------------------------   --------------------------------------------------------------------
-        source_info                optional dictionary. This is only needed when appending data from
+        source_info                Optional dictionary. This is only needed when appending data from
                                    excel or csv. The appendSourceInfo can be the publishing parameter
                                    returned from analyze the csv or excel file.
         ------------------------   --------------------------------------------------------------------
-        upsert                     optional boolean. Optional parameter specifying whether the edits
+        upsert                     Optional boolean. Optional parameter specifying whether the edits
                                    needs to be applied as updates if the feature already exists.
                                    Default is true.
         ------------------------   --------------------------------------------------------------------
