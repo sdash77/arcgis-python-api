@@ -842,7 +842,7 @@ def to_featureclass(
                     dtypes.append((col, np.int32))
                 else:
                     if (
-                        df[col].dtype.name == 'object'
+                        df[col].dtype.name == "object"
                         and df[col].first_valid_index()
                         and isinstance(df[col][idx], datetime.datetime)
                     ):
