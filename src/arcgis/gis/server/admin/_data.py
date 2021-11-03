@@ -341,12 +341,16 @@ class DataStoreManager(BaseServer):
             from arcgis.gis.server.catalog import ServicesDirectory
             from arcgis.gis.server import Uploads
 
-            up = Uploads(url=f"{base_url}/uploads", gis=self._con,)
+            up = Uploads(
+                url=f"{base_url}/uploads",
+                gis=self._con,
+            )
 
             if self._con._portal_connection:
                 sd_url = f"{os.path.dirname(base_url)}/rest/services"
                 d = ServicesDirectory(
-                    url=sd_url, portal_connection=self._con._portal_connection,
+                    url=sd_url,
+                    portal_connection=self._con._portal_connection,
                 )
             elif isinstance(self._con, Connection):
                 sd_url = f"{os.path.dirname(base_url)}/rest/services"
