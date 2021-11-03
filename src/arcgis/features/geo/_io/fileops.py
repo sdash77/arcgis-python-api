@@ -7,6 +7,7 @@ import os
 import uuid
 import copy
 from pathlib import Path, PurePath
+import logging
 import datetime
 import ujson as _ujson
 import numpy as np
@@ -37,6 +38,8 @@ try:
     SHPVERSION = [int(i) for i in shapefile.__version__.split(".")]
 except:
     HASPYSHP = False
+
+_logging = logging.getLogger(__name__)
 # --------------------------------------------------------------------------
 def _infer_type(df, col):
     """
@@ -444,7 +447,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                 try:
                     irows.insertRow(row.tolist())
                 except:
-                    print("row %s could not be inserted." % idx)
+                    _logging.log("row %s could not be inserted." % idx)
         if not old_column is None:
             geo._data.columns = old_column
         if not old_index is None:
@@ -866,7 +869,12 @@ def to_featureclass(
                     for idx in dt_fld_idx:
                         if isinstance(row[idx], type(pd.NaT)):
                             row[idx] = None
-                    irows.insertRow(row)
+                    try:
+                        irows.insertRow(row)
+                    except Exception as e:
+                        _logging.log(
+                            f"Could not insert the row because of error message: {e}. Recheck your data."
+                        )
 
                 q = df[geo._name].isna()
                 df.loc[q, "SHAPE"] = null_geom  # set null values to proper JSON
