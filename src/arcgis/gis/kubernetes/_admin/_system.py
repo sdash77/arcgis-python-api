@@ -122,6 +122,17 @@ class Indexer(_BaseKube):
     This resource contains connection information to the default indexing service.
     """
 
+    def reconfigure(self) -> bool:
+        """
+        his operation recreates the index service metadata, schema, and data in the event it becomes corrupted.
+
+        :returns: Boolean
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/reconfigureIndex"
+        res = self._con.post(url, params)
+        return res.get("status", "failed") == "success"
+
     @property
     def status(self):
         """
