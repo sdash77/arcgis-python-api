@@ -826,6 +826,8 @@ def to_featureclass(
                     if issubclass(u, str):
                         mlen = df[col].str.len().max()
                         dtypes.append((col, "<U%s" % int(mlen)))
+                    elif u is datetime.datetime:
+                        dtypes.append((col, "<M8[us]"))
                     else:
                         try:
                             if df[col][idx] is None:
@@ -839,10 +841,26 @@ def to_featureclass(
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
                 else:
-                    dtypes.append((col, df[col].dtype.type))
+                    if (
+                        df[col].dtype.name == "object"
+                        and df[col].first_valid_index()
+                        and isinstance(df[col][idx], datetime.datetime)
+                    ):
+                        dtypes.append((col, "<M8[us]"))
+                    else:
+                        dtypes.append((col, df[col].dtype.type))
+            from arcgis._impl.common._utils import chunks as _chunks
 
-            array = np.array([], np.dtype(dtypes))
-            arcpy.da.ExtendTable(fc, oidfld, array, join_dummy, append_only=False)
+            smaller_dtypes = [[dtypes[0]] + flds for flds in _chunks(dtypes[1:], 10)]
+            smaller_array = [np.array([], np.dtype(d)) for d in smaller_dtypes]
+            for array in smaller_array:
+                try:
+
+                    arcpy.da.ExtendTable(
+                        fc, oidfld, array, join_dummy, append_only=False
+                    )
+                except Exception as e:
+                    print(e)
 
             # 3. Insert the Data
             fields = arcpy.ListFields(fc)
