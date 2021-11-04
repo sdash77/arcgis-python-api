@@ -459,8 +459,8 @@ class WebMap(HasTraits, collections.OrderedDict):
                 elif isinstance(layer, arcgis.realtime.StreamLayer):
                     layer_type = "ArcGISStreamLayer"
 
-                if hasattr(layer.container.properties, "serviceItemId"):
-                    item_id = layer.container.properties.serviceItemId
+                if hasattr(layer.properties, "serviceItemId"):
+                    item_id = layer.properties.serviceItemId
             elif isinstance(layer, arcgis.features.FeatureSet):
                 layer_type = "ArcGISFeatureLayer"
         elif isinstance(layer, arcgis.gis.Item):
@@ -479,18 +479,12 @@ class WebMap(HasTraits, collections.OrderedDict):
                     if layer.type == "Feature Collection":
                         options["serviceItemId"] = layer.itemid
                     for lyr in layer.layers:  # recurse - works for all.
-                        if isinstance(lyr, VectorTileLayer):
-                            lyr.properties.serviceItemId = (
-                                layer.id
-                            )  # Vector Tile Service does not automatically have this
-                            lyr.properties.name = layer.name
+                        lyr.properties.serviceItemId = layer.id
+                        lyr.properties.name = layer.name
                         self.add_layer(lyr, dict(options))
                 if hasattr(layer, "tables"):
                     for tbl in layer.tables:  # recurse - works for all.
-                        if isinstance(tbl, VectorTileLayer):
-                            tbl.properties.serviceItemId = (
-                                layer.id
-                            )  # Vector Tile Service does not automatically have this
+                        tbl.properties.serviceItemId = layer.id
                         self.add_table(tbl, options)
                 return (
                     True  # end add_layer execution after iterating through each layer.
