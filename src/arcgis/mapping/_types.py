@@ -459,8 +459,8 @@ class WebMap(HasTraits, collections.OrderedDict):
                 elif isinstance(layer, arcgis.realtime.StreamLayer):
                     layer_type = "ArcGISStreamLayer"
 
-                if hasattr(layer.properties, "serviceItemId"):
-                    item_id = layer.properties.serviceItemId
+                if hasattr(layer.container.properties, "serviceItemId"):
+                    item_id = layer.container.properties.serviceItemId
             elif isinstance(layer, arcgis.features.FeatureSet):
                 layer_type = "ArcGISFeatureLayer"
         elif isinstance(layer, arcgis.gis.Item):
