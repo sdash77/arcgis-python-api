@@ -2,6 +2,17 @@ import unittest
 
 from arcgis.gis import GIS
 from arcgis.realtime.velocity.feeds_manager import Feed
+from arcgis.realtime.velocity.feeds import RSS
+from arcgis.realtime.velocity.http_authentication_type import (
+    NoAuth,
+    BasicAuth,
+    CertificateAuth,
+)
+from arcgis.realtime.velocity.input.format import GeoRssFormat
+from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+from arcgis.realtime.velocity.feeds.run_interval import RunInterval
+
 
 try:
     # Use your ArcGIS enterprise url and credentials to run the test
@@ -20,7 +31,58 @@ except:
 class TestFeedsApiMethods(unittest.TestCase):
     velocity = gis.velocity
     feeds = velocity.feeds
-    feed_item = feeds.get("e4d3c42193b14b48b912306919617010")
+
+    # RSS Properties
+    name = "rss_feed_1"
+    description = "some description about the rss feed"
+    url = "https://web.a4iot.com/RSS/usgs_non_georss_float.xml"
+    http_auth = NoAuth()
+    # http_auth = BasicAuth(username="user1", password="123")
+    # http_auth = CertificateAuth(pfx_file_http_location="https://some.where", password="123")
+
+    http_headers = {}
+    # http_headers = {
+    #     "Content-Type": "application/json"
+    # }
+
+    # data_format = GeoRssFormat()
+
+    rss = RSS(
+        label=name,
+        description=description,
+        rss_url=url,
+        http_auth_type=http_auth,
+        http_headers=http_headers,
+        data_format=None,
+    )
+
+    rss.rename_field("title", "updated_field")
+    rss.remove_field("description")
+    rss.set_track_id("link")
+    # time interval
+    time = TimeInterval(interval_start_field="pubDate", interval_end_field="updated")
+    rss.set_time_config(time=time)
+    geometry = XYZGeometry(
+        x_field="category_longitude",
+        y_field="category_latitude",
+        wkid=4326,
+        z_field="category_altitude",
+        z_unit="Meters",
+    )
+    rss.set_geometry_config(geometry=geometry)
+    rss.run_interval = RunInterval(
+        cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
+    )
+
+    print(feeds.create(feed=rss))
+
+    feeds.items
+
+
+
+    # rss_feed = feeds._sample_message(input_type="feed")
+    # print(rss_feed)
+    #feed_item = feeds.get("e4d3c42193b14b48b912306919617010")
 
     # ----------------------------------------------------------------------
     @unittest.skipIf(SKIP_SOME_TESTS, "test_get_all_feeds skipping")
@@ -96,6 +158,8 @@ class TestFeedsApiMethods(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     # ----------------------------------------------------------------------
+
+    @unittest.skipIf(SKIP_SOME_TESTS, "test_feed_metrics skipping")
     def test_feed_status(self):
         print("\n ---- test_feed_status ----")
         try:

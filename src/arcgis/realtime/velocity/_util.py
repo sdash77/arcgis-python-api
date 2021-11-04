@@ -1,3 +1,6 @@
+import re
+
+
 class _Util:
     """
     Private class that provides wrapper functions for Connection objects
@@ -56,7 +59,7 @@ class _Util:
         return self._parse_response(response)
 
     # ----------------------------------------------------------------------
-    def _post_request(self, task_type, id, payload=None):
+    def _post_request(self, task_type, id, payload=None, raise_error=True):
         """
         Private wrapper function that  builds the absolute url from
         the base url + sub-path and then passing it to the xhr POST reqest
@@ -66,17 +69,23 @@ class _Util:
         :param id: unique id of a task
         :return: Endpoint response
         """
-        path = f"{task_type}/{id}/"
-        url = f'{self._base_url}{path}?{self._params.get("authorization")}'
+        if id is not None:
+            path = f"{task_type}/{id}/"
+        else:
+            path = f"{task_type}/"
 
+        url = f'{self._base_url}{path}?{self._params.get("authorization")}'
         if payload is None:
             payload = {}
 
-        params = {**self._params, "data": payload}
+        params = {**self._params, "json": payload}
 
         response = self._gis._con.post(url, params, post_json=True, try_json=True)
 
-        return self._parse_response(response)
+        if raise_error is False:
+            return response
+        else:
+            return self._parse_response(response)
 
     # ----------------------------------------------------------------------
     def _delete_request(self, path):
@@ -182,3 +191,56 @@ class _Util:
                 return True
             else:
                 return response
+
+    # ----------------------------------------------------------------------
+    def _validate_response(self, response):
+        if isinstance(response, dict) and response.get("status") == "error":
+            return False
+        elif isinstance(response, list):
+            for item in response:
+                if item.get("status") == "error":
+                    return False
+                else:
+                    return True
+        else:
+            return True
+
+    # ----------------------------------------------------------------------
+    def sample_messages(self, input_type, payload=None):
+        """
+        Gets sample from a feed or source
+        :param input_type: "feed" | "sources"
+        :param payload: payload for the sample message
+        :return: Sample message response including derived schema and raw samples
+        """
+        if payload is None:
+            raise AttributeError("Post request payload is empty")
+
+        path = f"{input_type}/sampleMessages"
+        _response = self._post_request(path, id=None, payload=payload)
+        return _response
+
+    # ----------------------------------------------------------------------
+    def test_connection(self, input_type, payload=None):
+        """
+        Tests Connection to a feed, source, output
+        :param input_type: "feed" | "sources" | "outputs"
+        :param payload: payload for the feed
+        Return True if test connection is successfully
+        :return: boolean
+        A dictionary with error details.
+        """
+        if payload is None:
+           raise AttributeError("Post request payload is empty")
+
+        path = f"{input_type}/testConnection"
+
+        _response = self._post_request(
+            path, id=None, payload=payload, raise_error=False
+        )
+        return self._validate_response(_response)
+
+    # ----------------------------------------------------------------------
+    def is_valid(self, label):
+        pattern = "^[A-Za-z0-9_ ]*$"
+        return bool(re.match(pattern, label))

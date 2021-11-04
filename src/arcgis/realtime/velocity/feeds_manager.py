@@ -51,3 +51,21 @@ class FeedsManager:
         """
         feed_item = self._util._get("feed", id)
         return Feed(self._gis, self._util, feed_item)
+
+    # ----------------------------------------------------------------------
+    # TODO: need to decide what return type we want here Boolean or simple label and id of newly created feed
+    def create(self, feed=None):
+        """
+        Creates a new feed configuration
+        :param feed: an instance of Feed like RSS, HTTPoller etc.
+        :return: Id and label of the newly created feed
+        """
+        if feed is None:
+            raise "Feed not found"
+        else:
+            feed_configuration = feed._build()
+            response = self._util._post_request(
+                "feed", id=None, payload=feed_configuration
+            )
+            if response is not None:
+                return self.get(response["id"])

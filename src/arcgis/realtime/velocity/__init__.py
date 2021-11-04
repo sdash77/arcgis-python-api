@@ -12,3 +12,4 @@ from .velocity import BigDataAnalyticsManager
 from .feeds_manager import Feed
 from .realtime_analytics_manager import RealTimeAnalytics
 from .bigdata_analytics_manager import BigDataAnalytics
+
