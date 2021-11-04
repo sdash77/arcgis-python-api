@@ -1754,7 +1754,9 @@ class FeatureLayerCollectionManager(_GISResource):
                         add_def["layers"].append(
                             {
                                 "adminLayerInfo": {
-                                    "popupInfo": data["layers"][0]["popupInfo"] if "layers" in data else None,
+                                    "popupInfo": data["layers"][0]["popupInfo"]
+                                    if "layers" in data
+                                    else None,
                                     "viewLayerDefinition": {
                                         "sourceServiceName": os.path.basename(
                                             os.path.dirname(fs.url)
