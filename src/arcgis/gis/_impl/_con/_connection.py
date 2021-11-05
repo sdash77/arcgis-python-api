@@ -112,6 +112,7 @@ class Connection(object):
     _custom_auth = None
     _custom_adapter = None
     legacy = None
+    _server_log = None
     # ----------------------------------------------------------------------
     def __init__(self, baseurl=None, username=None, password=None, **kwargs):
         """initializer
@@ -340,7 +341,7 @@ class Connection(object):
         root = fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
         params = {"f": "json"}
         results = []
-        for pt in ["/info", "/rest/info", "/sharing/rest/info"]:
+        for pt in ["/info", "/rest/info", "/sharing/rest/info", "/rest/services"]:
             try:
 
                 www_auth = s.get(
@@ -1541,51 +1542,8 @@ class Connection(object):
             return self._session.auth.token
         elif isinstance(self._session.auth, EsriUserTokenAuth):
             return self._session.auth.token
-        if str(self._auth).lower() in ["builtin", "oauth"]:
-            if self._expiration is None or self._expiration <= 5:
-                self._expiration = 6
-            if self._create_time and (
-                datetime.datetime.now()
-                < self._create_time + datetime.timedelta(minutes=self._expiration)
-            ):
-                return self._token
-            elif (
-                self._create_time is None
-                and self._auth == "BUILTIN"
-                and self._product in ["SERVER", "FEDERATED_SERVER"]
-            ):
-                self._token = self._server_token()
-                return self._token
-            elif (
-                self._product in ["FEDERATED_SERVER", "GEOEVENT"]
-                and self._portal_connection
-            ):
-                self._token = self._server_token()
-                return self._token
-            elif (
-                self._create_time is None
-                and self._product in ["PORTAL", "AGOL", "AGO", "ENTERPRISE"]
-                and self._auth == "BUILTIN"
-            ):
-                self._token = self._enterprise_token()
-                return self._token
-            else:
-                self._create_time = None
-                return self.token
-        elif str(self._auth.lower()) in ["home"]:
-            if self._create_time is None:
-                self._create_time = datetime.datetime.now()
-            if self._expiration is None:
-                self._expiration = 1440
-            if datetime.datetime.now() >= self._create_time + datetime.timedelta(
-                minutes=self._expiration
-            ):
-                raise Exception("Token is Expired. Please relogin to portal")
-            return self._token
-        elif str(self._auth).lower() == "pro" or self._baseurl.lower() == "pro":
-            self._create_time = datetime.datetime.now()
-            self._token = self._pro_token()
-            return self._token
+        elif isinstance(self._session.auth, EsriNotebookAuth):
+            return self._session.auth.token
         return None
 
     # ----------------------------------------------------------------------
@@ -1594,168 +1552,6 @@ class Connection(object):
         """gets/sets the token"""
         if self._token != value:
             self._token = value
-
-    # ----------------------------------------------------------------------
-    def _pro_token(self):
-        """gets the token for various products"""
-        if self._auth.lower() == "pro" and HASARCPY:
-            resp = arcpy.GetSigninToken()
-            if resp:
-                if "referer" in resp:
-                    self._referer = resp["referer"]
-                if self._session:
-                    self._session.headers["Referer"] = self._referer
-                else:
-                    self._referer = resp["referer"]
-                    self._session = self._create_session()
-                if "token" in resp:
-                    return resp["token"]
-            else:
-                raise Exception(
-                    (
-                        "Could not login using Pro authencation."
-                        "Please verify in Pro that you are logged in."
-                    )
-                )
-        return
-
-    # ----------------------------------------------------------------------
-    def _server_token(self):
-        """generates a server token"""
-        if (
-            self._token_url is None
-            and self._portal_connection is None
-            and self._product in ["SERVER", "FEDERATED_SERVER"]
-        ):
-            parsed = urlparse(self.baseurl)
-            b = parsed.netloc
-            if len(parsed.path) > 1:
-                wa = parsed.path[1:].split("/")[0]
-            else:
-                wa = "arcgis"
-            ep = "admin/generateToken"
-            self._token_url = "https://%s/%s/%s" % (b, wa, ep)
-        elif self._token_url is None and self._portal_connection:
-            token_url = self._portal_connection._baseurl
-            p = urlparse(token_url)
-            self._token_url = "%s://%s/%s/sharing/rest/generateToken" % (
-                "https",
-                p.netloc,
-                p.path[1:].split("/")[0],
-            )
-        if self._portal_connection:
-            # self._token_url = token_url
-            if self._portal_connection._auth.lower() == "home":
-                self._referer = ""
-            ptoken = self._portal_connection.token
-            postdata = {
-                "serverURL": self._baseurl,
-                "token": ptoken,
-                "expiration": str(self._expiration),
-                "f": "json",
-                "request": "getToken",
-                "referer": self._referer,
-            }
-        else:
-            postdata = {
-                "username": self._username,
-                "password": self._password,
-                #'client': 'requestip',
-                "referer": self._referer,
-                "expiration": self._expiration,
-                "f": "json",
-            }
-        res = self.post(
-            path=self._token_url, params=postdata, ssl=True, add_token=False
-        )
-        if "error" in res:
-            raise Exception(res["error"])
-        self._create_time = datetime.datetime.fromtimestamp(
-            int(res["expires"]) / 1000
-        ) - datetime.timedelta(minutes=self._expiration)
-        self._token = res["token"]
-        return res["token"]
-
-    # ----------------------------------------------------------------------
-    def _enterprise_token(self):
-        """generates a portal/agol token"""
-        if self._referer is None and self._portal_connection is None:
-            self._referer = "http"
-        elif (
-            self._referer is None
-            and self._portal_connection
-            and self._portal_connection._auth.lower() == "home"
-        ):
-            self._referer = ""
-        postdata = {
-            "username": self._username,
-            "password": self._password,
-            "client": "referer",
-            "referer": self._referer,
-            "expiration": self._expiration,
-            "f": "json",
-        }
-        if self._token_url is None:
-            if self._product in ["AGO", "AGOL"]:
-                self._token_url = (
-                    "https://%s/sharing/rest/generateToken"
-                    % urlparse(self._baseurl).netloc
-                )
-            else:
-                parsed = urlparse(self._baseurl)
-                path = parsed.path
-                if path.startswith("/"):
-                    path = path[1:]
-                self._token_url = "https://%s/%s/sharing/rest/generateToken" % (
-                    parsed.netloc,
-                    path.split("/")[0],
-                )
-
-        res = self.post(path=self._token_url, params=postdata, add_token=False)
-        if "error" in res:
-            raise Exception(res["error"])
-        self._create_time = datetime.datetime.fromtimestamp(
-            res["expires"] / 1000
-        ) - datetime.timedelta(minutes=self._expiration)
-        return res["token"]
-
-    # ----------------------------------------------------------------------
-    def generate_portal_server_token(self, serverUrl, expiration=1440):
-        """generates a server token using Portal token"""
-        if self._auth.lower() in ["pki", "iwa"]:
-            postdata = {
-                "request": "getToken",
-                "serverURL": serverUrl,
-                "referer": self._referer,
-                "f": "json",
-            }
-            if expiration:
-                postdata["expiration"] = expiration
-        else:
-            token = self.token
-            postdata = {
-                "serverURL": serverUrl,
-                "token": token,
-                "expiration": str(expiration),
-                "f": "json",
-                "request": "getToken",
-                "referer": self._referer,
-            }
-        if self._token_url is None:
-            if self.baseurl.endswith("/"):
-                resp = self.post("generateToken", postdata, ssl=True, add_token=False)
-            else:
-                resp = self.post("/generateToken", postdata, ssl=True, add_token=False)
-        else:
-            resp = self.post(
-                path=self._token_url, postdata=postdata, ssl=True, add_token=False
-            )
-        if isinstance(resp, dict) and resp:
-            return resp.get("token")
-        else:
-            raise Exception(
-                f"Could not generate the token for the service. \n Error Message: \n {resp}"
-            )
 
     # ----------------------------------------------------------------------
     def _check_product(self):
@@ -1773,12 +1569,13 @@ class Connection(object):
                     parsed.netloc,
                     path,
                 )
-
+            self._product = "SERVER"
             return "SERVER"
         if baseurl is None:
             return "UNKNOWN"
         if baseurl.lower().find("arcgis.com") > -1:
             parsed = urlparse(self._baseurl)
+            self._product = "AGOL"
             self._token_url = "https://%s/sharing/rest/generateToken" % parsed.netloc
             return "AGOL"
         elif baseurl.lower().find("/sharing/rest") > -1:
@@ -1839,6 +1636,7 @@ class Connection(object):
             ):
                 self._token_url = None
                 self._auth = "OTHER"
+            self._product = "PORTAL"
             return "PORTAL"
         else:
             # Brute Force Method
@@ -1846,17 +1644,18 @@ class Connection(object):
             root = (
                 fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             )
-            # root = baseurl.lower().split("/sharing")[0]
-            # root = baseurl.lower().split('/rest')[0]
-            parts = ["/info", "/rest/info", "/sharing/rest/info"]
+            parts = ["/info", "/rest/services", "/rest/info", "/sharing/rest/info"]
             params = {"f": "json"}
             for pt in parts:
                 try:
-                    # print(pt)
+
                     res = self.get(
                         root + pt, params=params, add_token=False, allow_redirects=False
                     )
-                    if (
+                    if "folders" in res:
+                        self._product = "SERVER"
+                        return self._check_product()
+                    elif (
                         self._token_url is None
                         and res is not None
                         and isinstance(res, dict)
@@ -1900,6 +1699,7 @@ class Connection(object):
                     if t_parsed.lower() != b_parsed.lower():
                         self._token_url = None
                         if self._portal_connection:
+                            self._product = "FEDERATED_SERVER"
                             return "FEDERATED_SERVER"
                         else:
                             from arcgis.gis import GIS
@@ -1912,14 +1712,97 @@ class Connection(object):
                                 password=self._password,
                                 verify_cert=self._verify_cert,
                             )._con
+                            self._product = "FEDERATED_SERVER"
                             return "FEDERATED_SERVER"
+                    self._product = "SERVER"
                     return "SERVER"
                 elif (
                     isinstance(res, dict)
                     and "currentVersion" in res
                     and self._token_url is None
                 ):
+                    self._product = "SERVER"
                     return "SERVER"
                 del pt
                 del res
+        self._product = "PORTAL"
         return "PORTAL"
+
+    def _create_token(self, url: str) -> str:
+        """
+        When a service needs a token that is not in the token, this method obtains it.
+        Only the following authentications require a URL: EsriPKIAuth, EsriBasicAuth, EsriKerberosAuth, EsriWindowsAuth, or EsriGenTokenAuth
+        :returns: str (token is possible)
+        """
+        from arcgis.auth import (
+            EsriNotebookAuth,
+            EsriAPIKeyAuth,
+            EsriPKIAuth,
+            EsriBasicAuth,
+            EsriKerberosAuth,
+            EsriWindowsAuth,
+            BaseEsriAuth,
+        )
+        from arcgis.auth.tools import parse_url
+
+        if isinstance(
+            self._session.auth,
+            (
+                EsriUserTokenAuth,
+                EsriOAuth2Auth,
+                EsriNotebookAuth,
+                EsriAPIKeyAuth,
+                ArcGISProAuth,
+                EsriBuiltInAuth,
+            ),
+        ):
+            return self._session.auth.token
+        elif isinstance(self._session.auth, EsriGenTokenAuth):
+            return self._session.auth.token(url)
+        elif isinstance(
+            self._session.auth,
+            (EsriPKIAuth, EsriBasicAuth, EsriKerberosAuth, EsriWindowsAuth),
+        ):
+            if self._server_log is None:
+                self._server_log = {}
+            parsed = parse_url(url)
+            expiration = 16000
+            if parsed.port:
+                if parsed.port in parsed.netloc:
+                    server_url = f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+                else:
+                    server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
+            else:
+                server_url = (
+                    f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+                )
+            postdata = {
+                "request": "getToken",
+                "serverURL": server_url,
+                "referer": self._referer or "http",
+                "f": "json",
+            }
+
+            if expiration:
+                postdata["expiration"] = expiration
+            if parsed.netloc in self._server_log:
+                token_url = self._server_log[parsed.netloc]
+            else:
+                info = self._session.get(
+                    server_url + "/rest/info?f=json",
+                    auth=self._session.auth,
+                    verify=self._verify_cert,
+                ).json()
+                token_url = info["authInfo"]["tokenServicesUrl"]
+                self._server_log[parsed.netloc] = token_url
+
+            token = self._session.post(
+                token_url,
+                data=postdata,
+                auth=self._session.auth,
+                verify=self._verify_cert,
+            )
+            return token.json().get("token", None)
+        elif isinstance(self._session.auth, BaseEsriAuth):
+            return self._session.auth.token
+        return None
