@@ -15,7 +15,7 @@ class Indexer(BasePortalAdmin):
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(System, self).__init__(url=url, gis=gis, **kwargs)
+        super(Indexer, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
         if isinstance(gis, Connection):
             self._con = gis
@@ -45,6 +45,7 @@ class Indexer(BasePortalAdmin):
         url = f"{self._url}/status"
         return self._con.get(url, params)
 
+    # ----------------------------------------------------------------------
     def reindex(self, mode, includes=None):
         """
         The operation allows you to generate or update the indexes for content, such as users, groups, and items stored in the database store.
@@ -67,8 +68,19 @@ class Indexer(BasePortalAdmin):
         params = {"f": "json", "mode": mode, "includes": includes}
         res = self._con.post(url, params)
         if "status" in res:
-            return res["status"] == "success"
+            return res["status"] in ["success", 'suceess']
         return res
+
+    # ----------------------------------------------------------------------
+    def reconfigure(self) -> bool:
+        """
+        This operation recreates the index service metadata, schema, and data in the event it becomes corrupted.
+        :returns: Boolean
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/reconfigure"
+        res = self._con.post(url, params)
+        return res.get("status", "failed") == "success"
 
 
 ########################################################################
