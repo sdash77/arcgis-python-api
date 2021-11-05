@@ -1011,6 +1011,17 @@ class Version(object):
             )
         return None
 
+    # ----------------------------------------------------------------------
+    def _run_async(self, fn, **inputs):
+        """runs the inputs asynchronously"""
+        import concurrent.futures
+
+        tp = concurrent.futures.ThreadPoolExecutor(1)
+        future = tp.submit(fn=fn, **inputs)
+        tp.shutdown(False)
+        return future
+
+    # ----------------------------------------------------------------------
     def _status_via_url(self, con, url, params):
         """
         performs the asynchronous check to see if the operation finishes
