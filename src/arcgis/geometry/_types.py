@@ -3249,25 +3249,16 @@ class Polygon(Geometry):
         if sr is None:
             sr = {"wkid": 4326}
 
-        coordkey = "coordinates"
-        for d in data:
-            if d.lower() == "coordinates":
-                coordkey = d
-        coordinates = data[coordkey]
-        typekey = "type"
-        for d in data:
-            if d.lower() == "type":
-                typekey = d
-
-        if data[typekey].lower() == "polygon":
+        coordinates = data["coordinates"]
+        if data["type"].lower() == "polygon":
             coordinates = [coordinates]
+
         part_list = []
         for part in coordinates:
-            part_item = []
             for ring in part:
+                part_item = []
                 for coord in reversed(ring):
                     part_item.append(coord)
-            if part_item:
                 part_list.append(part_item)
         return cls({"rings": part_list, "spatialReference": sr})
 

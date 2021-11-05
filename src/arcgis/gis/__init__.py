@@ -2867,6 +2867,16 @@ class UserManager(object):
                                             user_type='Creator')
 
         """
+        if any(
+            [
+                user.username.lower() == username.lower()
+                for user in self.search(query=username)
+            ]
+        ):
+            raise Exception(
+                "User %s already exists. Please provide a different username."
+                % username
+            )
         kwargs = {
             "username": username,
             "password": password,
@@ -6376,6 +6386,9 @@ class ContentManager(object):
         ---------------------  --------------------------------------------------------------------------
         capabilities           optional string. specifies the operations that can be performed on the
                                feature layer service. The default is Query.
+        ---------------------  --------------------------------------------------------------------------
+        sanitize_columns       Optional boolean. The default is False.  When true, the column name will
+                               modified in order to allow for successful publishing.
         =====================  ==========================================================================
 
 
@@ -6383,6 +6396,7 @@ class ContentManager(object):
            A :class:`feature collection <arcgis.features.FeatureCollection>` or :class:`feature layer <arcgis.features.FeatureLayer>`
            that can be used for analysis, visualization, or published to the GIS as an :class:`~arcgis.gis.Item`.
         """
+        sanitize_columns = kwargs.pop("sanitize_columns", False)
         if item_id and self._gis.version <= [7, 1]:
             item_id = None
             import warnings
@@ -6444,7 +6458,8 @@ class ContentManager(object):
                 fgdb = result[0]
 
                 ds = df.spatial.to_featureclass(
-                    location=os.path.join(fgdb, os.path.basename(temp_dir))
+                    location=os.path.join(fgdb, os.path.basename(temp_dir)),
+                    sanitize_columns=sanitize_columns,
                 )
 
                 zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
@@ -6478,7 +6493,10 @@ class ContentManager(object):
                     uuid4().hex[:5],
                 )
 
-                ds = df.spatial.to_featureclass(location=os.path.join(temp_dir, name))
+                ds = df.spatial.to_featureclass(
+                    location=os.path.join(temp_dir, name),
+                    sanitize_columns=sanitize_columns,
+                )
                 zip_shp = zipws(path=temp_dir, outfile=temp_zip, keep=False)
                 item = self.add(
                     item_properties={"title": title, "tags": tags},
@@ -10836,7 +10854,6 @@ class Item(dict):
         enforce_fld_vis=None,
         tags=None,
         snippet=None,
-        overwrite=False,
     ):
         """
         The ``export`` method is used to export a service item to the specified export format.
@@ -10873,9 +10890,6 @@ class Item(dict):
         tags                Optional String.  A comma seperated value of item descriptors.
         ---------------     --------------------------------------------------------------------
         snippet             Optional String. A short descriptive piece of text.
-        ---------------     --------------------------------------------------------------------
-        overwrite           Optional Boolean. If the export Item exists, the item will be
-                            replaced with the new one.
         ===============     ====================================================================
 
         :return:
@@ -10904,6 +10918,8 @@ class Item(dict):
             "Excel",
             "Vector Tile Package",
         ]
+        if export_format not in formats:
+            raise Error("Unsupported export format: " + export_format)
         if export_format == "GeoPackage":
             export_format = "geoPackage"
         user_id = self._user_id
