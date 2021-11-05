@@ -68,7 +68,7 @@ class Indexer(BasePortalAdmin):
         params = {"f": "json", "mode": mode, "includes": includes}
         res = self._con.post(url, params)
         if "status" in res:
-            return res["status"] in ["success", 'suceess']
+            return res["status"] in ["success", "suceess"]
         return res
 
     # ----------------------------------------------------------------------
