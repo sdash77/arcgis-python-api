@@ -1,10 +1,12 @@
+from arcgis.auth.tools import LazyLoader
+
 try:
-    import arcpy
+    arcpy = LazyLoader("arcpy", strict=True)
 
     hasArcPy = True
 except:
     hasArcPy = False
-import tempfile
+tempfile = LazyLoader("tempfile")
 
 # ----------------------------------------------------------------------
 def scratchFolder():

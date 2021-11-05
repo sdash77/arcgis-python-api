@@ -7,9 +7,9 @@ from arcgis.gis import GIS, ProfileManager
 import pandas as pd
 from arcgis.features._async import EditFeatureJob
 
-if 'your_dev_online_profile' in ProfileManager().list():
+if "your_dev_online_profile" in ProfileManager().list():
 
-    gis = GIS(profile='your_dev_online_profile', verify_cert=False, trust_env=True)
+    gis = GIS(profile="your_dev_online_profile", verify_cert=False, trust_env=True)
     do_not_skip_me = True
     msg = "All systems go!"
 else:
@@ -18,17 +18,17 @@ else:
 
 data = [
     {
-        'FID': 1,
-        'FID_1': 1.0,
-        'id': 12.0,
-        'name': 'Paeroa Domain',
-        'areahectar': 5.7401,
-        'SHAPE_Leng': 0.01036701182584,
-        'SHAPE_Area': 5.842267309e-06,
-        'Shape__Area': 91108.265625,
-        'Shape__Length': 1262.64617186528,
-        'SHAPE': {
-            'rings': [
+        "FID": 1,
+        "FID_1": 1.0,
+        "id": 12.0,
+        "name": "Paeroa Domain",
+        "areahectar": 5.7401,
+        "SHAPE_Leng": 0.01036701182584,
+        "SHAPE_Area": 5.842267309e-06,
+        "Shape__Area": 91108.265625,
+        "Shape__Length": 1262.64617186528,
+        "SHAPE": {
+            "rings": [
                 [
                     [19555988.3754161, -4492173.63357922],
                     [19555908.4132901, -4492270.05311721],
@@ -77,21 +77,21 @@ data = [
                     [19555988.3754161, -4492173.63357922],
                 ]
             ],
-            'spatialReference': {'wkid': 102100, 'latestWkid': 3857},
+            "spatialReference": {"wkid": 102100, "latestWkid": 3857},
         },
     },
     {
-        'FID': 2,
-        'FID_1': 2.0,
-        'id': 13.0,
-        'name': 'Primrose Hill Recreation Reserve',
-        'areahectar': 3.9948,
-        'SHAPE_Leng': 0.009853325081233,
-        'SHAPE_Area': 4.066026563e-06,
-        'Shape__Area': 63409.1875,
-        'Shape__Length': 1196.50992446609,
-        'SHAPE': {
-            'rings': [
+        "FID": 2,
+        "FID_1": 2.0,
+        "id": 13.0,
+        "name": "Primrose Hill Recreation Reserve",
+        "areahectar": 3.9948,
+        "SHAPE_Leng": 0.009853325081233,
+        "SHAPE_Area": 4.066026563e-06,
+        "Shape__Area": 63409.1875,
+        "Shape__Length": 1196.50992446609,
+        "SHAPE": {
+            "rings": [
                 [
                     [19556346.300307, -4492336.05629265],
                     [19556187.7393846, -4492377.86026006],
@@ -125,7 +125,7 @@ data = [
                     [19556346.300307, -4492336.05629265],
                 ]
             ],
-            'spatialReference': {'wkid': 102100, 'latestWkid': 3857},
+            "spatialReference": {"wkid": 102100, "latestWkid": 3857},
         },
     },
 ]
@@ -140,8 +140,8 @@ class TestApplyEditsAsync(unittest.TestCase):
         item = gis.content.import_data(df)
         edit_data = [
             {
-                'geometry': {
-                    'rings': [
+                "geometry": {
+                    "rings": [
                         [
                             [19536507.772708487, -4490968.119315104],
                             [19542546.29794301, -4492879.045022231],
@@ -150,15 +150,15 @@ class TestApplyEditsAsync(unittest.TestCase):
                             [19536507.772708487, -4490968.119315104],
                         ]
                     ],
-                    'spatialReference': {'wkid': 102100, 'latestWkid': 3857},
+                    "spatialReference": {"wkid": 102100, "latestWkid": 3857},
                 },
-                'attributes': {
-                    'FID_1': None,
-                    'id': None,
-                    'name': None,
-                    'areahectar': None,
-                    'SHAPE_Leng': None,
-                    'SHAPE_Area': None,
+                "attributes": {
+                    "FID_1": None,
+                    "id": None,
+                    "name": None,
+                    "areahectar": None,
+                    "SHAPE_Leng": None,
+                    "SHAPE_Area": None,
                 },
             }
         ]
@@ -176,5 +176,5 @@ class TestApplyEditsAsync(unittest.TestCase):
                 item.delete()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

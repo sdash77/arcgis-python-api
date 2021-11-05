@@ -18,9 +18,10 @@ import zipfile
 import configparser
 from contextlib import contextmanager
 import functools
+
 from datetime import datetime
 import logging
-from typing import Tuple, Any, Dict, List
+from typing import Tuple, Any, Dict, List, Optional
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 import concurrent.futures
@@ -196,6 +197,10 @@ class GIS(object):
                             "http" : "http://10.343.10.22:111",
                             "https" : "https://127.343.13.22:6443",
                         }
+    ----------------    ---------------------------------------------------------------
+    expiration          Optional Integer.  The default is 60 minutes.  The expiration
+                        time for a given token.  This is used for user provided tokens
+                        and API Keys.
 
     ================    ===============================================================
 
@@ -311,6 +316,7 @@ class GIS(object):
         self._referer = kwargs.pop("referer", None)
         self._timeout = kwargs.pop("timeout", 600)  # default timeout is 600 seconds
         custom_auth = kwargs.pop("custom_auth", None)
+        custom_adapter = kwargs.pop("adapter", None)
         self._expiration = kwargs.pop("expiration", None)
         from arcgis._impl.tools import _Tools
 
@@ -442,6 +448,9 @@ class GIS(object):
                 trust_env=kwargs.get("trust_env", None),
                 timeout=self._timeout,
                 proxy=kwargs.get("proxy", None),
+                custom_adapter=custom_adapter,
+                token=self._utoken,
+                is_hosted_nb_home=self._is_hosted_nb_home,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -462,16 +471,13 @@ class GIS(object):
                     trust_env=kwargs.get("trust_env", None),
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
+                    token=self._utoken,
+                    is_hosted_nb_home=self._is_hosted_nb_home,
                 )
             if self._is_hosted_nb_home:
-                # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
                 self._portal.con._session.headers.pop("Referer", None)
-            if not (self._utoken is None):
-                self._portal.con._token = self._utoken
-                self._portal.con.token = self._utoken
-                self._portal.con._auth = "HOME"
-
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
                 raise RuntimeError(
@@ -527,22 +533,20 @@ class GIS(object):
                         expiration=self._expiration,
                         referer=self._referer,
                         custom_auth=custom_auth,
-                        # token=self._utoken,
                         trust_env=kwargs.get("trust_env", None),
                         client_secret=client_secret,
                         timeout=self._timeout,
                         proxy=kwargs.get("proxy", None),
+                        custom_adapter=custom_adapter,
+                        token=self._utoken,
+                        is_hosted_nb_home=self._is_hosted_nb_home,
                     )
                     self._portal = pp
         except:
             pass
 
         force_refresh = False
-        if not (self._utoken is None) and self._portal.con._auth != "HOME":
-            self._portal.con._token = self._utoken
-            self._portal.con._auth = "BUILTIN"
-            force_refresh = True
-        elif self._portal.con._auth == "HOME":
+        if self._portal.con._auth in ["HOME", "USER_TOKEN"]:
             force_refresh = True
 
         # If a token was injected, then force refresh to get updated properties
@@ -817,6 +821,7 @@ class GIS(object):
                 assert required_json_keys.issubset(json_data)
                 self._url = json_data["privatePortalUrl"]
                 self._public_portal_url = json_data["publicPortalUrl"]
+                self._referer = json_data.get("referer", "")
                 if "token" in json_data:
                     self._utoken = json_data["token"]
                 self._expiration = json_data.get("expiration", None)
@@ -2794,6 +2799,7 @@ class UserManager(object):
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
                           the user set their password by clicking on a link that is emailed to him/her.
+                          When the `provider` is **enterprise**, password is optional.
         ----------------  -------------------------------------------------------------------------------
         firstname         Required string. The first name for the user
         ----------------  -------------------------------------------------------------------------------
@@ -2861,6 +2867,16 @@ class UserManager(object):
                                             user_type='Creator')
 
         """
+        if any(
+            [
+                user.username.lower() == username.lower()
+                for user in self.search(query=username)
+            ]
+        ):
+            raise Exception(
+                "User %s already exists. Please provide a different username."
+                % username
+            )
         kwargs = {
             "username": username,
             "password": password,
@@ -3337,8 +3353,15 @@ class UserManager(object):
                 "idpUsername": idp_username,
                 "userLicenseTypeId": user_type,
             }
+            if "password" in params and params["password"] is None:
+                params.pop("password", None)
             self._portal.con.post(createuser_url, params)
+            if params["username"].find("\\") > -1:
+                d = params["username"].split("\\")
+                d.reverse()
+                username = "@".join(d)
             user = self.get(username)
+
             for grp in groups:
                 grp.add_users([username])
             if thumbnail is not None:
@@ -3357,6 +3380,7 @@ class UserManager(object):
         must_approve=False,
         expiration="1 Day",
         validate_email=True,
+        message_text=None,
     ):
         """
         The ``invite`` method invites a :class:`~arcgis.gis.User` object to an organization by email.
@@ -3364,27 +3388,30 @@ class UserManager(object):
         ================  ===============================================================================
         **Argument**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        email             Required string. The user's email that will be invited to the organization.
+        email             Required String. The user's email that will be invited to the organization.
         ----------------  -------------------------------------------------------------------------------
-        role              Optional string. The role for the user account. The default value is org_user.
+        role              Optional String. The role for the user account. The default value is org_user.
                           Other possible values are org_publisher, org_admin, org_viewer.
         ----------------  -------------------------------------------------------------------------------
-        level             Optional string. The account level. The default is 2.
+        level             Optional String. The account level. The default is 2.
                           See `User types, roles, and privileges <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
                           for full details.
         ----------------  -------------------------------------------------------------------------------
-        provider          Optional string. The provider for the account. The default value is arcgis.
+        provider          Optional String. The provider for the account. The default value is arcgis.
                           The other possible value is enterprise.
         ----------------  -------------------------------------------------------------------------------
         must_approve      Optional boolean. After a user accepts the invite, if True, and administrator
                           must approve of the individual joining the organization. The default is False.
         ----------------  -------------------------------------------------------------------------------
-        expiration        Optional string.  The default is '1 Day'. This is the time the emailed user has
+        expiration        Optional String.  The default is '1 Day'. This is the time the emailed user has
                           to accept the invitation request until it expires.
                           The values are: 1 Day (default), 3 Days, 1 Week, or 2 Weeks.
         ----------------  -------------------------------------------------------------------------------
         validate_email    Optional boolean. If True (default) the Enterprise will ensure that the email
                           is properly formatted. If false, no check will occur
+        ----------------  -------------------------------------------------------------------------------
+        message_text      Optional String. Added to the message of the invitation and can provide further
+                          instructions, a welcome, or any other personalized text to the person invited.
         ================  ===============================================================================
 
         :return:
@@ -3397,8 +3424,6 @@ class UserManager(object):
             >>> gis.users.invite("user1234@email.com", role=org_admin, provider=enterprise)
 
         """
-        if self._gis._portal.is_arcgisonline == False:
-            raise Exception("This method is only for ArcGIS Online.")
         time_lookup = {
             "1 Day".upper(): 1440,
             "3 Days".upper(): 4320,
@@ -3411,9 +3436,11 @@ class UserManager(object):
             raise ValueError("Invalid expiration.")
 
         url = self._portal.resturl + "/portals/self/inviteByEmail"
-        msg = "You have been invited you to join an ArcGIS Online Organization, %s" % (
+        msg = "You have been invited you to join an ArcGIS Organization, %s. " % (
             self._gis.properties["name"]
         )
+        if message_text:
+            msg = msg + "{text}".format(text=message_text)
         params = {
             "f": "json",
             "emails": email,
@@ -3910,7 +3937,6 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     @property
     def me(self):
-
         """
         The ``me`` property retrieves the information of the logged in :class:`~arcgis.gis.User` object.
         """
@@ -5670,7 +5696,17 @@ class ContentManager(object):
                 kwargs["max_items"] = num
                 kwargs["start"] = new_start
                 params.append(copy.deepcopy(kwargs))
-            items = {"results": [], "start": start, "num": 100, "total": -999}
+            total_count = -999
+            next_start_tracker = -1
+            items = {
+                "results": [],
+                "start": start,
+                "num": 100,
+                "total": total_count,
+                "query": query,
+                "nextStart": next_start_tracker,
+            }
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 future_to_url = {
                     executor.submit(self.advanced_search, **param): param
@@ -5679,10 +5715,17 @@ class ContentManager(object):
                 for future in concurrent.futures.as_completed(future_to_url):
                     result = future_to_url[future]
                     data = future.result()
+                    if data.get("nextStart", -1) > next_start_tracker:
+                        next_start_tracker = data.get("nextStart", -1)
                     if "results" in data:
                         items["results"].extend(data["results"])
+
             if len(items["results"]) > max_items:
                 items["results"] = items["results"][:max_items]
+                items["nextStart"] = max_items
+            else:
+                items["nextStart"] = next_start_tracker
+            items["total"] = len(items["results"])
             return items
 
     def _market_listings(
@@ -6242,7 +6285,7 @@ class ContentManager(object):
         ================  ==========================================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------------------------
-        df                Required string. Pandas dataframe or arcgis.SpatialDataFrame
+        df                Required DataFrame. Pandas dataframe
         ----------------  --------------------------------------------------------------------------
         address_fields    Optional dictionary. Dictionary containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }.
         ----------------  --------------------------------------------------------------------------
@@ -6343,6 +6386,9 @@ class ContentManager(object):
         ---------------------  --------------------------------------------------------------------------
         capabilities           optional string. specifies the operations that can be performed on the
                                feature layer service. The default is Query.
+        ---------------------  --------------------------------------------------------------------------
+        sanitize_columns       Optional boolean. The default is False.  When true, the column name will
+                               modified in order to allow for successful publishing.
         =====================  ==========================================================================
 
 
@@ -6350,6 +6396,7 @@ class ContentManager(object):
            A :class:`feature collection <arcgis.features.FeatureCollection>` or :class:`feature layer <arcgis.features.FeatureLayer>`
            that can be used for analysis, visualization, or published to the GIS as an :class:`~arcgis.gis.Item`.
         """
+        sanitize_columns = kwargs.pop("sanitize_columns", False)
         if item_id and self._gis.version <= [7, 1]:
             item_id = None
             import warnings
@@ -6357,7 +6404,7 @@ class ContentManager(object):
             warnings.warn(
                 "`item_id` is not allowed at this version of Portal, please use Enterprise 10.8.1+"
             )
-        from arcgis.features import FeatureCollection, SpatialDataFrame, FeatureSet
+        from arcgis.features import FeatureCollection, FeatureSet
 
         from arcgis._impl.common._utils import zipws
 
@@ -6381,16 +6428,12 @@ class ContentManager(object):
             has_pyshp = False
         if isinstance(df, FeatureSet):
             df = df.sdf
-        if (
-            has_arcpy == False
-            and has_pyshp == False
-            and (isinstance(df, SpatialDataFrame) or _is_geoenabled(df))
-        ):
+        if has_arcpy == False and has_pyshp == False and _is_geoenabled(df):
             raise Exception(
                 "Spatially enabled DataFrame's must have either pyshp or"
                 + " arcpy available to use import_data"
             )
-        elif isinstance(df, SpatialDataFrame) or _is_geoenabled(df):
+        elif _is_geoenabled(df):
             import random
             import string
 
@@ -6413,14 +6456,11 @@ class ContentManager(object):
                     **{"out_folder_path": temp_dir, "out_name": name},
                 )
                 fgdb = result[0]
-                if isinstance(df, SpatialDataFrame):
-                    ds = df.to_featureclass(
-                        out_location=fgdb, out_name=os.path.basename(temp_dir)
-                    )
-                else:
-                    ds = df.spatial.to_featureclass(
-                        location=os.path.join(fgdb, os.path.basename(temp_dir))
-                    )
+
+                ds = df.spatial.to_featureclass(
+                    location=os.path.join(fgdb, os.path.basename(temp_dir)),
+                    sanitize_columns=sanitize_columns,
+                )
 
                 zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
                 item = self.add(
@@ -6452,12 +6492,11 @@ class ContentManager(object):
                     random.choice(string.ascii_lowercase),
                     uuid4().hex[:5],
                 )
-                if isinstance(df, SpatialDataFrame):
-                    ds = df.to_featureclass(out_location=temp_dir, out_name=name)
-                else:
-                    ds = df.spatial.to_featureclass(
-                        location=os.path.join(temp_dir, name)
-                    )
+
+                ds = df.spatial.to_featureclass(
+                    location=os.path.join(temp_dir, name),
+                    sanitize_columns=sanitize_columns,
+                )
                 zip_shp = zipws(path=temp_dir, outfile=temp_zip, keep=False)
                 item = self.add(
                     item_properties={"title": title, "tags": tags},
@@ -8626,6 +8665,34 @@ class Group(dict):
         return apps
 
     # ----------------------------------------------------------------------
+    def application(self, user: str):
+        """
+        The ``application`` method retrieves one group application for the given group.
+
+        ==================  ====================================
+        **Argument**        **Description**
+        ------------------  ------------------------------------
+        user                Required String. The username of
+                            the user applying to join the group.
+        ==================  ====================================
+
+        .. note::
+            The ``application`` method is available to administrators of the group or administrators of an organization
+            if the group is part of one.
+        """
+        try:
+            path = "%scommunity/groups/%s/applications/%s" % (
+                self._portal.resturl,
+                self.groupid,
+                user,
+            )
+            params = {"f": "json"}
+            res = self._portal.con.post(path, params)
+            return GroupApplication(url=path, gis=self._gis)
+        except:
+            print()
+
+    # ----------------------------------------------------------------------
     @property
     def protected(self):
         """
@@ -8744,23 +8811,23 @@ class GroupApplication(object):
 
     def decline(self):
         """
-        The ``accept`` method is used to manage a :class:`~arcgis.gis.User` application. When a
-        :class:`~arcgis.gis.User` to join a :class:`~arcgis.gis.Group`, a
-        ``GroupApplication`` object is created. Group administrators choose to delete this application
-        using the ``delete`` operation. This operation deletes the application and creates a notification for the user
+        The ``decline`` method is used to manage a :class:`~arcgis.gis.User` application. When a
+        :class:`~arcgis.gis.User` asks to join a :class:`~arcgis.gis.Group`, a
+        ``GroupApplication`` object is created. Group administrators choose to decline this application
+        using the ``decline`` operation. This operation deletes the application and creates a notification for the user
         indicating that the user's group application was declined. This method is very similar to the
         :attr:`~arcgis.gis.GroupApplication.accept` method, which accepts rather than declines the application to
         join a group.
 
         .. note::
-            The ``delete`` method is only available to group owners and administrators.
+            The ``decline`` method is only available to group owners and administrators.
 
         .. code-block:: python
 
             # Usage Example
 
             >>> group_app = group.applications[0]
-            >>> groupapplication.delete()
+            >>> groupapplication.decline()
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -9274,6 +9341,36 @@ class User(dict):
             raise Exception(
                 "The operation delete_thumbnail is not supported on this portal."
             )
+
+    def expire_password(self, temporary_password: Optional[str] = None) -> bool:
+        """
+        Expires the current user's Password.
+
+        =====================  ==========================================================
+        **Argument**           **Description**
+        ---------------------  ----------------------------------------------------------
+        temporary_password     Optional String. Allows the administrator to set a new
+                               temporary password for a given user. This is available on
+                               ArcGIS Enterprise Only.
+        =====================  ==========================================================
+
+        :returns: Boolean
+        """
+        if temporary_password and self._gis._portal.is_arcgisonline == False:
+
+            url = f"{self._gis._portal.resturl}community/users/{self.username}/update"
+            params = {"f": "json", "password": temporary_password}
+            resp = self._gis._con.post(url, params)
+        url = (
+            f"{self._gis._portal.resturl}community/users/{self.username}/expirePassword"
+        )
+        if self._gis._portal.is_arcgisonline:
+
+            params = {"f": "json", "expiration": -1}
+        else:
+            params = {"f": "json", "expiration": 1}
+        resp = self._gis._con.post(url, params)
+        return resp.get("success", False)
 
     def reset(
         self,
@@ -10747,7 +10844,6 @@ class Item(dict):
         enforce_fld_vis=None,
         tags=None,
         snippet=None,
-        overwrite=False,
     ):
         """
         The ``export`` method is used to export a service item to the specified export format.
@@ -10784,9 +10880,6 @@ class Item(dict):
         tags                Optional String.  A comma seperated value of item descriptors.
         ---------------     --------------------------------------------------------------------
         snippet             Optional String. A short descriptive piece of text.
-        ---------------     --------------------------------------------------------------------
-        overwrite           Optional Boolean. If the export Item exists, the item will be
-                            replaced with the new one.
         ===============     ====================================================================
 
         :return:
@@ -10815,6 +10908,8 @@ class Item(dict):
             "Excel",
             "Vector Tile Package",
         ]
+        if export_format not in formats:
+            raise Error("Unsupported export format: " + export_format)
         if export_format == "GeoPackage":
             export_format = "geoPackage"
         user_id = self._user_id
@@ -12133,8 +12228,10 @@ class Item(dict):
 
         """
         The ``dependent_upon`` method returns items, urls, etc that this item is dependent on.
-        This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available only
-        with an ArcGIS Enterprise."""
+
+        .. note::
+            This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available only
+            with an ArcGIS Enterprise."""
         return self._portal.get_item_dependencies(self.itemid)
 
     def dependent_to(self):
@@ -12370,11 +12467,12 @@ class Item(dict):
         overwrite              Optional boolean.   If True, the hosted feature service is overwritten.
                                Only available in ArcGIS Enterprise 10.5+ and ArcGIS Online.
         -------------------    ---------------------------------------------------------------
-        file_type              Optional string.  Some formats are not automatically detected, when this occurs, the
-                               file_type can be specified: serviceDefinition,shapefile,csv,
-                               tilePackage, featureService, featureCollection, fileGeodatabase,
-                               geojson, scenepackage, vectortilepackage, imageCollection,
-                               mapService, and sqliteGeodatabase are valid entries. This is an
+        file_type              Optional string.  Some formats are not automatically detected,
+                               when this occurs, the file_type can be specified:
+                               serviceDefinition, shapefile, csv, excel, tilePackage,
+                               featureService, featureCollection, fileGeodatabase, geojson,
+                               scenepackage, vectortilepackage, imageCollection, mapService,
+                               and sqliteGeodatabase are valid entries. This is an
                                optional parameter.
         -------------------    ---------------------------------------------------------------
         build_initial_cache    Optional boolean.  The boolean value (default False), if true
@@ -14146,18 +14244,22 @@ class _GISResource(object):
                 params["Raster"] = self._uri
 
         if type(self).__name__ == "VectorTileLayer":  # VectorTileLayer is GET only
-            dictdata = self._con.get(self.url, params, token=self._lazy_token)
+            dictdata = self._con.get(self.url, params)  # , token=self._lazy_token)
         else:
             try:
                 if is_raster:
                     dictdata = self._con.post(
-                        self.url, params, token=self._lazy_token, timeout=None
+                        self.url, params, timeout=None  # token=self._lazy_token,
                     )
                 else:
-                    dictdata = self._con.post(self.url, params, token=self._lazy_token)
+                    dictdata = self._con.post(
+                        self.url, params
+                    )  # , token=self._lazy_token)
             except Exception as e:
                 if hasattr(e, "msg") and e.msg == "Method Not Allowed":
-                    dictdata = self._con.get(self.url, params, token=self._lazy_token)
+                    dictdata = self._con.get(
+                        self.url, params
+                    )  # , token=self._lazy_token)
                 elif str(e).lower().find("token required") > -1:
                     dictdata = self._con.get(self.url, params)
                 else:
@@ -14187,21 +14289,6 @@ class _GISResource(object):
 
         with _DisableLogger():
             try:
-                # try as a federated server
-                if self._con.token is None:
-                    self._lazy_token = self._con.generate_portal_server_token(
-                        serverUrl=self.url
-                    )
-                else:
-                    from ._impl._con import Connection
-
-                    if isinstance(self._con, Connection):
-                        self._lazy_token = self._con.generate_portal_server_token(
-                            serverUrl=self._url
-                        )
-                    else:
-                        self._lazy_token = self._con.token
-
                 self._refresh()
 
             except HTTPError as httperror:  # service maybe down

@@ -494,7 +494,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         return "<%s>" % (type(self).__name__)
 
     def _get_road_orient_data(self, data, **kwargs):
-        # if (not self._data._imagery_type in ['RGB', 'ASSUMED_RGB']):
+        #    if (not self._data._imagery_type in ['RGB', 'ASSUMED_RGB']):
         #    # TODO: Implement Road Orientation model for MS imagery
         #    raise NotImplementedError('Road Orientation Model does not suppport Multispectral imagery yet!')
         road_data_obj = ClassifiedTilesData(

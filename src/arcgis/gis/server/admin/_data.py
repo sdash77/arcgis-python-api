@@ -145,7 +145,7 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def federate_data_item(self):
+    def federate_data_item(self, path: str) -> bool:
         """
         This operation can be used to create a data store item in the portal
         for a data store that has been registered with one of the portal's
@@ -337,22 +337,24 @@ class DataStoreManager(BaseServer):
         USER=sde;VERSION=sde.DEFAULT;AUTHENTICATION_MODE=DBMS'
         """
         if str(sde).lower().endswith(".sde"):
-
+            base_url = os.path.dirname(self._url)
             from arcgis.gis.server.catalog import ServicesDirectory
             from arcgis.gis.server import Uploads
 
             up = Uploads(
-                url=self._con.baseurl.replace("rest/services", "admin/uploads"),
+                url=f"{base_url}/uploads",
                 gis=self._con,
             )
 
             if self._con._portal_connection:
+                sd_url = f"{os.path.dirname(base_url)}/rest/services"
                 d = ServicesDirectory(
-                    url=self._con.baseurl,
+                    url=sd_url,
                     portal_connection=self._con._portal_connection,
                 )
             elif isinstance(self._con, Connection):
-                d = ServicesDirectory(url=self._con.baseurl)
+                sd_url = f"{os.path.dirname(base_url)}/rest/services"
+                d = ServicesDirectory(url=sd_url)
                 d._con = self._con
 
             try:
