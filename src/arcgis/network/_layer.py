@@ -2,12 +2,12 @@ from __future__ import annotations
 import json
 import logging
 import datetime
-from typing import Any, Optional, Union
 
-from arcgis.geometry import Point, Polygon, Polyline
 from arcgis.gis import Layer, _GISResource
 
 # Supported Data Types
+from typing import Any, Optional, Union
+from arcgis.geometry import Point, Polygon, Polyline
 from arcgis.features import Feature, FeatureSet
 from arcgis.features import FeatureLayer, Table
 from arcgis.network import _utils
