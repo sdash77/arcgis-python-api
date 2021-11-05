@@ -16,6 +16,7 @@ time = LazyLoader("time")
 datetime = LazyLoader("datetime")
 arcgis = LazyLoader("arcgis")
 _arcgis_features = LazyLoader("arcgis.features")
+_arcgis_mapping = LazyLoader("arcgis.mapping")
 _gis = LazyLoader("arcgis.gis")
 _env = LazyLoader("arcgis.env")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
@@ -474,7 +475,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
                 elif isinstance(layer, _arcgis_features.MapImageLayer):
                     layer_type = "ArcGISMapServiceLayer"
-                elif isinstance(layer, _arcgis_features.VectorTileLayer):
+                elif isinstance(layer, _arcgis_mapping.VectorTileLayer):
                     layer_type = "VectorTileLayer"
                 elif isinstance(layer, StreamLayer):
                     layer_type = "ArcGISStreamLayer"
@@ -732,7 +733,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         # endregion
 
         # Add Vector Tile Layer Properties
-        if isinstance(layer, _arcgis_features.VectorTileLayer):
+        if isinstance(layer, _arcgis_mapping.VectorTileLayer):
             new_layer["type"] = "VectorTileLayer"
             new_layer["styleUrl"] = f"{layer.url}/resources/styles/"
 
