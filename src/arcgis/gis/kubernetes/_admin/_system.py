@@ -124,12 +124,12 @@ class Indexer(_BaseKube):
 
     def reconfigure(self) -> bool:
         """
-        his operation recreates the index service metadata, schema, and data in the event it becomes corrupted.
+        This operation recreates the index service metadata, schema, and data in the event it becomes corrupted.
 
         :returns: Boolean
         """
         params = {"f": "json"}
-        url = f"{self._url}/reconfigureIndex"
+        url = f"{self._url}/reconfigure"
         res = self._con.post(url, params)
         return res.get("status", "failed") == "success"
 
