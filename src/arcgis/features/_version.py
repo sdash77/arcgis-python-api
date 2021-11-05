@@ -652,7 +652,7 @@ class Version(object):
         return res
 
     # ----------------------------------------------------------------------
-    def reconcile(self, end_with_conflict=False, with_post=False):
+    def reconcile(self, end_with_conflict=False, with_post=False, conflict_detection="byObject", future=False):
         """
         Reconcile a version against the DEFAULT version. The reconcile
         operation requires that you are the only user currently editing the
