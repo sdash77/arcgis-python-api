@@ -4,7 +4,8 @@ from arcgis.auth.tools import LazyLoader
 
 os = LazyLoader("os")
 env = LazyLoader("arcgis.env")
-features = LazyLoader("arcgis.features")
+from arcgis import features
+
 geoanalytics = LazyLoader("arcgis.geoanalytics")
 geocoding = LazyLoader("arcgis.geocoding")
 geometry = LazyLoader("arcgis.geometry")

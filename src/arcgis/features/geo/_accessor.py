@@ -2347,7 +2347,7 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_featureclass(
-        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
+        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=False
     ):
         """
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
@@ -2385,7 +2385,9 @@ class GeoAccessor(object):
             "in_memory",
         ]:
             location = os.path.abspath(path=location)
-        return to_featureclass(
+        origin_columns = self._data.columns.tolist()
+        origin_index = copy.deepcopy(self._data.index)
+        result = to_featureclass(
             self,
             location=location,
             overwrite=overwrite,
@@ -2393,9 +2395,12 @@ class GeoAccessor(object):
             sanitize_columns=sanitize_columns,
             has_m=has_m,
         )
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return result
 
     # ----------------------------------------------------------------------
-    def to_table(self, location, overwrite=True):
+    def to_table(self, location, overwrite=True, **kwargs):
         """
         The ``to_table`` method exports a geo enabled dataframe to a :class:`~arcgis.features.Table` object.
 
@@ -2407,6 +2412,10 @@ class GeoAccessor(object):
         overwrite                       Optional Boolean.  If True and if the table exists, it will be
                                         deleted and overwritten.  This is default.  If False, the table and
                                         the table exists, and exception will be raised.
+        ---------------------------     --------------------------------------------------------------------
+        sanitize_columns                Optional Boolean. If True, column names will be converted to
+                                        string, invalid characters removed and other checks will be
+                                        performed. The default is False.
         ===========================     ====================================================================
 
         :return: String
@@ -2415,15 +2424,27 @@ class GeoAccessor(object):
         from arcgis.features.geo._io.fileops import to_table
         from ._tools._utils import run_and_hide
 
-        return run_and_hide(
-            to_table, **{"geo": self, "location": location, "overwrite": overwrite}
+        sanitize_columns = kwargs.pop("sanitize_columns", False)
+        origin_columns = self._data.columns.tolist()
+        origin_index = copy.deepcopy(self._data.index)
+        location = os.path.abspath(location)
+        table = run_and_hide(
+            to_table,
+            **{
+                "geo": self,
+                "location": location,
+                "overwrite": overwrite,
+                "sanitize_columns": sanitize_columns,
+            },
         )
-        # return to_table(geo=self,
-        #                location=location,
-        #                overwrite=overwrite)
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return table
 
     # ----------------------------------------------------------------------
-    def to_featurelayer(self, title, gis=None, tags=None, folder=None):
+    def to_featurelayer(
+        self, title=None, gis=None, tags=None, folder=None, sanitize_columns=False
+    ):
         """
         The ``to_featurelayer`` method publishes a spatial dataframe to a new
         :class:`~arcgis.features.FeatureLayer` object.
@@ -2431,7 +2452,8 @@ class GeoAccessor(object):
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        title                           Required string. The name of the service
+        title                           Optional string. The name of the service. If not provided, a random
+                                        string is generated.
         ---------------------------     --------------------------------------------------------------------
         gis                             Optional GIS. The GIS connection object
         ---------------------------     --------------------------------------------------------------------
@@ -2440,6 +2462,10 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         folder                          Optional string. Name of the folder where the featurelayer item
                                         and imported data would be stored.
+        ---------------------------     --------------------------------------------------------------------
+        sanitize_columns                Optional Boolean. If True, column names will be converted to string,
+                                        invalid characters removed and other checks will be performed. The
+                                        default is False.
         ===========================     ====================================================================
 
         :return:
@@ -2447,13 +2473,28 @@ class GeoAccessor(object):
 
         """
         from arcgis import env
+        import copy
 
         if gis is None:
             gis = env.active_gis
             if gis is None:
                 raise ValueError("GIS object must be provided")
         content = gis.content
-        return content.import_data(self._data, folder=folder, title=title, tags=tags)
+        origin_columns = self._data.columns.tolist()
+        origin_index = copy.deepcopy(self._data.index)
+        if title is None:
+            title = uuid.uuid4().hex
+
+        result = content.import_data(
+            self._data,
+            folder=folder,
+            title=title,
+            tags=tags,
+            sanitize_columns=sanitize_columns,
+        )
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return result
 
     # ----------------------------------------------------------------------
     @staticmethod
@@ -3109,7 +3150,12 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_feature_collection(
-        self, name=None, drawing_info=None, extent=None, global_id_field=None
+        self,
+        name=None,
+        drawing_info=None,
+        extent=None,
+        global_id_field=None,
+        sanitize_columns=False,
     ):
         """
         The ``to_feature_collection`` converts a spatially enabled a Pandas DataFrame to a
@@ -3132,15 +3178,27 @@ class GeoAccessor(object):
                                DataFrame.
         ---------------------  ---------------------------------------------------------------
         global_id_field        Optional string. The Global ID field of the dataset.
+        ---------------------  ---------------------------------------------------------------
+        sanitize_columns       Optional Boolean. If True, column names will be converted to string,
+                               invalid characters removed and other checks will be performed. The
+                               default is False.
         =====================  ===============================================================
 
         :return:
             A :class:`~arcgis.features.FeatureCollection` object
         """
         from arcgis.features import FeatureCollection
-        import string
+        import string, copy
         import random
 
+        old_columns, old_index = None, None
+        if sanitize_columns:
+
+            old_columns = self._data.columns.tolist()
+            old_index = copy.deepcopy(self._data.index)
+            pd.DataFrame.reset_index(self._data)
+            self._data.reset_index(drop=True)
+            self.sanitize_column_names(inplace=True)
         if name is None:
             name = random.choice(string.ascii_letters) + uuid.uuid4().hex[:5]
         template = {"showLegend": True, "layers": []}
@@ -3258,6 +3316,9 @@ class GeoAccessor(object):
         }
         if global_id_field is not None:
             layer["layerDefinition"]["globalIdField"] = global_id_field
+        if not old_columns is None and not old_index is None:
+            self._data.columns = old_columns
+            self._data.index = old_index
         return FeatureCollection(layer)
 
     # ---------------------------------------------------------------------
