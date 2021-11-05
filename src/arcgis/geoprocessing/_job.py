@@ -37,6 +37,7 @@ class GPJob(object):
 
     """
 
+    _cancelled = None
     _future = None
     _jobid = None
     _url = None
@@ -63,6 +64,7 @@ class GPJob(object):
         self._jobid = jobid
         self._url = task_url
         self._gis = gis
+        self._cancelled = False
 
     # ----------------------------------------------------------------------
     @property
@@ -164,12 +166,13 @@ class GPJob(object):
             params = {"f": "json"}
             res = self._gis._con.post(url, params)
             if "jobStatus" in res:
-                self._future.set_result({"jobStatus": "esriJobCancelled"})
                 self._future.cancel()
-                return True
+                self._future.set_result({"jobStatus": "esriJobCancelled"})
+                self._cancelled = True
+                return self._cancelled
             self._future.set_result({"jobStatus": "esriJobCancelled"})
             self._future.cancel()
-            # self._future.set_result({'jobStatus' : 'esriJobCancelled'})
+
             return res
         except:
             self._future.cancel()
@@ -182,7 +185,8 @@ class GPJob(object):
 
         :return: boolean
         """
-        return self._future.cancelled()
+
+        return self._cancelled
 
     # ----------------------------------------------------------------------
     def running(self):

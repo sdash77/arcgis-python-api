@@ -468,7 +468,8 @@ class _RasterRenderingService(Layer):
                     )
         self.url = url
         if url:
-            self.token = gis._con.generate_portal_server_token(serverUrl=url)
+            self.token = gis._con._create_token(url)
+
         else:
             self.token = None
 
@@ -6146,9 +6147,7 @@ class ImageryLayer(Layer):
                     if (
                         (hasattr(self, "_lazy_token")) and self._lazy_token is None
                     ) or not hasattr(self, "_lazy_token"):
-                        token = self._gis._con.generate_portal_server_token(
-                            serverUrl=self._url
-                        )
+                        token = self._gis._con._create_token(self._url)
                         self._lazy_token = token
                 except Exception as e:
                     token = self._token
@@ -6161,6 +6160,11 @@ class ImageryLayer(Layer):
                         dictdata = self._con.get(self.url, params, token=token)
                     elif str(e).lower().find("token required") > -1:
                         dictdata = self._con.get(self.url, params)
+                    elif str(e).lower().find("invalid token") > -1:
+                        dictdata = self._con.post(
+                            self.url, params, token=None, timeout=None
+                        )
+                        self._lazy_token = None  # got info as public service
                     else:
                         raise e
             self._original_info = dictdata
@@ -11528,7 +11532,7 @@ class RasterCollection:
                               on the specification of the STAC API in use and the request_method
                               parameter value).
 
-                              For the “bbox” query parameter, :class:`~arcgis.geometry.Envelope`
+                              For the `bbox` query parameter, :class:`~arcgis.geometry.Envelope`
                               and :class:`~arcgis.geometry.Polygon`
                               objects are also accepted (in any spatial reference).
 
