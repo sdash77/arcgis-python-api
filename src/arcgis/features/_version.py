@@ -35,6 +35,7 @@ class VersionManager(object):
     _versions = None
     _properties = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url, gis, flc=None):
         """init"""
         if isinstance(gis, GIS):
@@ -188,7 +189,8 @@ class VersionManager(object):
 
         """
         url = "%s/versionInfos" % self._url
-        params = {"ownerFilter": owner, "includeHidden": show_hidden, "f": "json"}
+        params = {"ownerFilter": owner,
+                  "includeHidden": show_hidden, "f": "json"}
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
@@ -262,6 +264,7 @@ class Version(object):
     _properties = None
     _validation = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url, flc, gis=None, session_guid=None, mode=None):
         """Constructor"""
         if mode:
@@ -670,20 +673,56 @@ class Version(object):
         ------------------     --------------------------------------------------------------------
         with_post              Optional Boolean. If True the with_post causes a post of the current
                                version following the reconcile.
+        ------------------     --------------------------------------------------------------------
+        conflict_detection     Optional String. Specify whether the conditions required for
+                               conflicts to occur are defined by object (row) or attribute (column).
+
+                               The default is `byObject`.
+
+                               .. note::
+                                   This parameter was introduced at ArcGIS Enterprise 10.9
+
+                               Values: `byObject` | `byAttribute`
+
+        --------------------   --------------------------------------------------------------------
+        future                 Optional boolean. If true, the request is processed as an asynchronous
+                               job and a URL is returned that points a location displaying the status
+                               of the job.
+
+                               .. note::
+                                   This parameter was introduced at ArcGIS Enterprise 10.9.1
+
+                               The default is False.
         ==================     ====================================================================
+
+        :returns: Boolean
 
         """
         if self._mode == "edit":
             params = {
                 "f": "json",
-                "sessionID": self._guid,
+                "sessionId": self._guid,
                 "abortIfConflicts": end_with_conflict,
                 "withPost": with_post,
+                "conflictDetection": conflict_detection,
+                "async": future,
             }
             url = "%s/reconcile" % self._url
-            res = self._con.post(url, params)
-            return res["success"]
-        return False
+
+            if future:
+                res = self._con.post(path=url, postdata=params)
+                future = self._run_async(
+                    self._status_via_url,
+                    con=self._con,
+                    url=res["statusUrl"],
+                    params={"f": "json"},
+                )
+                return future
+            else:
+                res = self._con.post(url, params)
+                if "success" in res:
+                    return res
+                return res
 
     # ----------------------------------------------------------------------
     def restore(self, rows):
@@ -795,7 +834,8 @@ class Version(object):
 
         """
         url = "%s/differences" % self._url
-        params = {"f": "json", "sessionID": self._guid, "resultType": result_type}
+        params = {"f": "json", "sessionID": self._guid,
+                  "resultType": result_type}
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
@@ -972,3 +1012,31 @@ class Version(object):
                 "Version must be in `edit` mode inorder to apply edits to this version."
             )
         return None
+
+    def _status_via_url(self, con, url, params):
+        """
+        performs the asynchronous check to see if the operation finishes
+        """
+        status_allowed = [
+            v.lower()
+            for v in [
+                "Executing",
+                "Pending",
+                "InProgress",
+                "Completed",
+                "CompletedWithErrors",
+            ]
+        ]
+        status = con.get(url, params)
+        while (
+                status["status"].lower() in status_allowed
+                and status["status"].lower() != "completed"
+        ):
+            if status["status"].lower() == "completed":
+                return status
+            elif "fail" in status["status"].lower():
+                break
+            elif "error" in status["status"].lower():
+                break
+            status = con.get(url, {"f": "json"})
+        return status
