@@ -32,6 +32,7 @@ from ._async.jobs import GeometryJob
 from arcgis.raster._util import _set_context as _set_raster_context
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing._job import RAJob
+from functools import lru_cache
 
 _log = logging.getLogger(__name__)
 
@@ -327,7 +328,7 @@ class _GISService(object):
                     and self._con._auth.lower() != "anon"
                 ):
                     try:
-                        self._token = self._con.generate_portal_server_token(url)
+                        self._token = self._gis._con._create_token(url)
                     except Exception as e:  # GUESSED Auth Wrong, try anonymously
                         if (
                             str(e).find(
@@ -16914,6 +16915,7 @@ class _Tools(object):
         self._orthomapping = None
         self._packaging = None
 
+    @lru_cache(maxsize=255)
     def _validate_url(self, url):
         res = self._gis._private_service_url(url)
         if "privateServiceUrl" in res:
@@ -16923,6 +16925,7 @@ class _Tools(object):
         return url
 
     @property
+    @lru_cache(maxsize=255)
     def geocoders(self):
         """the geocoders, if available and configured"""
         if self._geocoders is not None:
@@ -16947,6 +16950,7 @@ class _Tools(object):
         return self._geocoders
 
     @property
+    @lru_cache(maxsize=255)
     def geometry(self):
         """the portal's geometry  tools, if available and configured"""
         if self._geometry is not None:
@@ -16964,6 +16968,7 @@ class _Tools(object):
             return None
 
     @property
+    @lru_cache(maxsize=255)
     def rasteranalysis(self):
         """the portal's raster analysis tools, if available and configured"""
         if self._raster_analysis is not None:
@@ -16988,6 +16993,7 @@ class _Tools(object):
             return None
 
     @property
+    @lru_cache(maxsize=255)
     def geoanalytics(self):
         """the portal's bigdata analytics tools, if available and configured"""
         if self._geoanalytics is not None:
@@ -17007,6 +17013,7 @@ class _Tools(object):
             return None
 
     @property
+    @lru_cache(maxsize=255)
     def featureanalysis(self):
         """the portal's spatial analysis tools, if available and configured"""
         if self._analysis is not None:
@@ -17029,6 +17036,7 @@ class _Tools(object):
             return None
 
     @property
+    @lru_cache(maxsize=255)
     def packaging(self):
         """The Portal's Packaging Tools"""
         if self._packaging is not None:
@@ -17050,6 +17058,7 @@ class _Tools(object):
         return None
 
     @property
+    @lru_cache(maxsize=255)
     def orthomapping(self):
         """the portal's Ortho-Mapping tools, if available and configured"""
         if self._analysis is not None:

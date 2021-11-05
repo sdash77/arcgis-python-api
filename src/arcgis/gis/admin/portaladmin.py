@@ -323,7 +323,7 @@ class PortalAdminManager(BasePortalAdmin):
         if self._license is None:
             from ._license import LicenseManager
 
-            url = "%s/portaladmin/license" % self._gis._portal.url
+            url = f"{self._gis._portal.resturl}/portals/self/purchases"
             self._license = LicenseManager(url=url, gis=self._gis)
         return self._license
 

@@ -4,6 +4,7 @@ from arcgis import gis
 from arcgis._impl.common._isd import InsensitiveDict
 from .admin.administration import Server
 import logging
+from functools import lru_cache
 
 _log = logging.getLogger(__name__)
 ###########################################################################
@@ -52,6 +53,7 @@ class ServerManager(object):
         return InsensitiveDict(res)
 
     # ----------------------------------------------------------------------
+    @lru_cache(maxsize=100)
     def list(self):
         """
         The ``list`` method retrieves all servers in a :class:`~arcgis.gis.GIS`, retrieving a list of admin services.

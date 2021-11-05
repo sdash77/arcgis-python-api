@@ -253,8 +253,10 @@ class System(BasePortalAdmin):
         See main ``properties`` property docstring
         """
         url = "%s/properties/update" % self._url
-        params = {"f": "json", "properties": properties}
+        params = {"f": "pjson", "properties": properties}
         self._con.post(path=url, params=params)
+        self._con._create_session()
+        self._con.token
 
     # ----------------------------------------------------------------------
     @property

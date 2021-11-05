@@ -348,9 +348,6 @@ class NotebookManager(object):
             url,
             params,
             files={"manifestFile": manifest},
-            add_headers=[
-                ("X-Esri-Authorization", "bearer {token}".format(token=self._con.token))
-            ],
         )
         return res
 
@@ -491,9 +488,6 @@ class Runtime(object):
             url,
             params,
             files={"manifestFile": manifest},
-            add_headers=[
-                ("X-Esri-Authorization", "bearer {token}".format(token=self._con.token))
-            ],
         )
         if "status" in res:
             return res["status"] == "success"

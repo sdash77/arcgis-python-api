@@ -304,7 +304,6 @@ class UX(object):
                 "key": "localizedOrgProperties",
                 "text": json.dumps({"default": {"name": name, "description": None}}),
                 "f": "json",
-                "token": self._gis._con.token,
             }
             url = f"{self._gis._portal.resturl}portals/self/addResource"
             res = self._gis._con.post(url, params)
