@@ -3738,30 +3738,26 @@ class VectorTileLayer(Layer):
     # ----------------------------------------------------------------------
     def vector_tile(self, level, row, column):
         """
-                The ``vector_tile`` method represents a single vector tile for the map.
+        The ``vector_tile`` method represents a single vector tile for the map.
 
-                .. note::
-                    The bytes for the tile at the specified level, row and column are
-                    returned in PBF format. If a tile is not found, an error is returned.
+        .. note::
+            The bytes for the tile at the specified level, row and column are
+            returned in PBF format. If a tile is not found, an error is returned.
 
-        <<<<<<< HEAD
-                ============================    ================================================
-                **Argument**                    **Description**
-                ----------------------------    ------------------------------------------------
-                level                           Required string. A level number as a string.
-                ----------------------------    ------------------------------------------------
-                row                             Required string. Number of the row that the tile
-                                                belongs to.
-                ----------------------------    ------------------------------------------------
-                column                          Required string. Number of the column that tile
-                                                belongs to.
-                ============================    ================================================
+        ============================    ================================================
+        **Argument**                    **Description**
+        ----------------------------    ------------------------------------------------
+        level                           Required string. A level number as a string.
+        ----------------------------    ------------------------------------------------
+        row                             Required string. Number of the row that the tile
+                                        belongs to.
+        ----------------------------    ------------------------------------------------
+        column                          Required string. Number of the column that tile
+                                        belongs to.
+        ============================    ================================================
 
-                :returns:
-        =======
-                :return:
-        >>>>>>> master
-                    Bytes in PBF format
+        :returns:
+            Bytes in PBF format
         """
         url = "{url}/tile/{level}/{row}/{column}.pbf".format(
             url=self._url, level=level, row=row, column=column
