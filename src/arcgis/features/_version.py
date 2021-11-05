@@ -189,8 +189,7 @@ class VersionManager(object):
 
         """
         url = "%s/versionInfos" % self._url
-        params = {"ownerFilter": owner,
-                  "includeHidden": show_hidden, "f": "json"}
+        params = {"ownerFilter": owner, "includeHidden": show_hidden, "f": "json"}
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
@@ -834,8 +833,7 @@ class Version(object):
 
         """
         url = "%s/differences" % self._url
-        params = {"f": "json", "sessionID": self._guid,
-                  "resultType": result_type}
+        params = {"f": "json", "sessionID": self._guid, "resultType": result_type}
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
@@ -1029,8 +1027,8 @@ class Version(object):
         ]
         status = con.get(url, params)
         while (
-                status["status"].lower() in status_allowed
-                and status["status"].lower() != "completed"
+            status["status"].lower() in status_allowed
+            and status["status"].lower() != "completed"
         ):
             if status["status"].lower() == "completed":
                 return status
