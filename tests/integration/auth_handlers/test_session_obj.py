@@ -27,11 +27,11 @@ class TestBasicEsriSession(unittest.TestCase):
 
     def test_es_close(self):
         es = EsriSession()
-        assert es.update_headers('fish') == False
+        assert es.update_headers("fish") == False
 
     def test_es_no_referer(self):
         es = EsriSession()
-        es._session.headers.pop('referer', None)
+        es._session.headers.pop("referer", None)
         assert es.referer in [False, None]
 
     def test_es_verify_cert(self):
@@ -49,7 +49,7 @@ class TestBasicEsriSession(unittest.TestCase):
 
     def test_auth_basic(self):
         es = EsriSession()
-        es.auth = ('apple', 'sharing')
+        es.auth = ("apple", "sharing")
         assert es.auth
 
     def test_stream(self):
@@ -57,7 +57,7 @@ class TestBasicEsriSession(unittest.TestCase):
         assert es.stream == True
         es.stream = False
         assert es.stream == False
-        es.stream = 'foo'
+        es.stream = "foo"
         assert es.stream == False
         del es
 

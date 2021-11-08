@@ -3,7 +3,7 @@ from arcgis.gis import GIS
 from arcgis.gis.server.catalog import ServicesDirectory
 from arcgis.gis._impl._profile import ServerProfileManager
 
-PROFILES = ['your_enterprise_profile']
+PROFILES = ["your_enterprise_profile"]
 
 
 class TestServerProfileSD(unittest.TestCase):
@@ -11,7 +11,7 @@ class TestServerProfileSD(unittest.TestCase):
 
     def test_service_directory(self):
         """
-        Tests the Service Directory Connection 
+        Tests the Service Directory Connection
         """
         for profile in PROFILES:
             gis = GIS(profile=profile)
@@ -19,11 +19,11 @@ class TestServerProfileSD(unittest.TestCase):
                 url=gis._url.replace("/portal", "/server"),
                 username=gis._username,
                 password=gis._password,
-                profile='server_profile',
+                profile="server_profile",
                 verify_cert=False,
             )
             del sd
-            sd = ServicesDirectory(profile='server_profile', verify_cert=False)
+            sd = ServicesDirectory(profile="server_profile", verify_cert=False)
             assert sd.properties
             assert sd.admin.logs.query()
 

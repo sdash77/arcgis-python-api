@@ -94,7 +94,7 @@ class TestURLParseLogic(unittest.TestCase):
         )
 
 
-@unittest.skip('i want to')
+@unittest.skip("i want to")
 class TestGenerateTokenAuth(unittest.TestCase):
     """
     Tests the EsriSession GenerateToken Auth
@@ -162,7 +162,7 @@ class TestArcGISTokenAuth(unittest.TestCase):
         assert builtin.suspend()
 
     def test_get_auth_no_auth(self):
-        """tests the workflow to use a token then a call to where the token is not valid to """
+        """tests the workflow to use a token then a call to where the token is not valid to"""
 
         from arcgis.auth import EsriBuiltInAuth
 
@@ -184,9 +184,7 @@ class TestArcGISTokenAuth(unittest.TestCase):
         session.close()
 
     def test_oauth_builtin_questions_not_set(self):
-        """
-
-        """
+        """ """
         username = "esri_requests"
         password = "portalaccount1"
         from arcgis.auth import EsriBuiltInAuth
@@ -210,7 +208,7 @@ class TestArcGISTokenAuth(unittest.TestCase):
             auth = EsriBuiltInAuth(
                 url=url,
                 username="FakeAccountDNE",
-                password='terrible.password1',
+                password="terrible.password1",
                 verify_cert=False,
             )
             auth.token
