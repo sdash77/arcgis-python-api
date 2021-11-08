@@ -117,7 +117,12 @@ class Portal(object):
                 url = arcpy.GetActivePortalURL() or "https://www.arcgis.com/"
                 self.url = url
             except ImportError:
-                raise ImportError("Could not import arcpy")
+                raise ImportError(
+                    (
+                        "The login failed because the arcpy library could not be found in your Python environment. "
+                        "Try logging in with a different set of credentials."
+                    )
+                )
             except:
                 raise ValueError("Could not use Pro authentication.")
         else:

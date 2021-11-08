@@ -1,3 +1,4 @@
+import os
 import logging as _logging
 import arcgis
 
@@ -91,10 +92,7 @@ def export_map(
         "layout_template": layout_template,
         "gis": gis,
     }
-    url = gis.properties.helperServices.printTask.url[
-        : -len("/Export%20Web%20Map%20Task")
-    ]
-
+    url = os.path.dirname(gis.properties.helperServices.printTask.url)
     return _execute_gp_tool(
         gis, "Export Web Map Task", kwargs, param_db, return_values, _use_async, url
     )
@@ -149,9 +147,7 @@ def get_layout_templates(gis=None):
     if gis is None:
         gis = arcgis.env.active_gis
 
-    url = gis.properties.helperServices.printTask.url[
-        : -len("/Export%20Web%20Map%20Task")
-    ]
+    url = os.path.dirname(gis.properties.helperServices.printTask.url)
     kwargs = {"gis": gis}
     return _execute_gp_tool(
         gis,

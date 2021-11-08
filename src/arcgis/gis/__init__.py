@@ -197,6 +197,10 @@ class GIS(object):
                             "http" : "http://10.343.10.22:111",
                             "https" : "https://127.343.13.22:6443",
                         }
+    ----------------    ---------------------------------------------------------------
+    expiration          Optional Integer.  The default is 60 minutes.  The expiration
+                        time for a given token.  This is used for user provided tokens
+                        and API Keys.
 
     ================    ===============================================================
 
@@ -2795,6 +2799,7 @@ class UserManager(object):
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
                           the user set their password by clicking on a link that is emailed to him/her.
+                          When the `provider` is **enterprise**, password is optional.
         ----------------  -------------------------------------------------------------------------------
         firstname         Required string. The first name for the user
         ----------------  -------------------------------------------------------------------------------
@@ -2862,6 +2867,16 @@ class UserManager(object):
                                             user_type='Creator')
 
         """
+        if any(
+            [
+                user.username.lower() == username.lower()
+                for user in self.search(query=username)
+            ]
+        ):
+            raise Exception(
+                "User %s already exists. Please provide a different username."
+                % username
+            )
         kwargs = {
             "username": username,
             "password": password,
@@ -3338,8 +3353,15 @@ class UserManager(object):
                 "idpUsername": idp_username,
                 "userLicenseTypeId": user_type,
             }
+            if "password" in params and params["password"] is None:
+                params.pop("password", None)
             self._portal.con.post(createuser_url, params)
+            if params["username"].find("\\") > -1:
+                d = params["username"].split("\\")
+                d.reverse()
+                username = "@".join(d)
             user = self.get(username)
+
             for grp in groups:
                 grp.add_users([username])
             if thumbnail is not None:
@@ -5674,7 +5696,17 @@ class ContentManager(object):
                 kwargs["max_items"] = num
                 kwargs["start"] = new_start
                 params.append(copy.deepcopy(kwargs))
-            items = {"results": [], "start": start, "num": 100, "total": -999}
+            total_count = -999
+            next_start_tracker = -1
+            items = {
+                "results": [],
+                "start": start,
+                "num": 100,
+                "total": total_count,
+                "query": query,
+                "nextStart": next_start_tracker,
+            }
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 future_to_url = {
                     executor.submit(self.advanced_search, **param): param
@@ -5683,10 +5715,17 @@ class ContentManager(object):
                 for future in concurrent.futures.as_completed(future_to_url):
                     result = future_to_url[future]
                     data = future.result()
+                    if data.get("nextStart", -1) > next_start_tracker:
+                        next_start_tracker = data.get("nextStart", -1)
                     if "results" in data:
                         items["results"].extend(data["results"])
+
             if len(items["results"]) > max_items:
                 items["results"] = items["results"][:max_items]
+                items["nextStart"] = max_items
+            else:
+                items["nextStart"] = next_start_tracker
+            items["total"] = len(items["results"])
             return items
 
     def _market_listings(
@@ -6347,6 +6386,9 @@ class ContentManager(object):
         ---------------------  --------------------------------------------------------------------------
         capabilities           optional string. specifies the operations that can be performed on the
                                feature layer service. The default is Query.
+        ---------------------  --------------------------------------------------------------------------
+        sanitize_columns       Optional boolean. The default is False.  When true, the column name will
+                               modified in order to allow for successful publishing.
         =====================  ==========================================================================
 
 
@@ -6354,6 +6396,7 @@ class ContentManager(object):
            A :class:`feature collection <arcgis.features.FeatureCollection>` or :class:`feature layer <arcgis.features.FeatureLayer>`
            that can be used for analysis, visualization, or published to the GIS as an :class:`~arcgis.gis.Item`.
         """
+        sanitize_columns = kwargs.pop("sanitize_columns", False)
         if item_id and self._gis.version <= [7, 1]:
             item_id = None
             import warnings
@@ -6415,7 +6458,8 @@ class ContentManager(object):
                 fgdb = result[0]
 
                 ds = df.spatial.to_featureclass(
-                    location=os.path.join(fgdb, os.path.basename(temp_dir))
+                    location=os.path.join(fgdb, os.path.basename(temp_dir)),
+                    sanitize_columns=sanitize_columns,
                 )
 
                 zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
@@ -6449,7 +6493,10 @@ class ContentManager(object):
                     uuid4().hex[:5],
                 )
 
-                ds = df.spatial.to_featureclass(location=os.path.join(temp_dir, name))
+                ds = df.spatial.to_featureclass(
+                    location=os.path.join(temp_dir, name),
+                    sanitize_columns=sanitize_columns,
+                )
                 zip_shp = zipws(path=temp_dir, outfile=temp_zip, keep=False)
                 item = self.add(
                     item_properties={"title": title, "tags": tags},
@@ -9941,6 +9988,16 @@ class User(dict):
                 l.revoke(username=self.username, entitlements="*", suppress_email=True)
         for bundle in self._gis.admin.license.bundles:
             bundle.revoke(users=self.username)
+        if reassign_to:
+            # reassigns the group owner to the reassigned_to user.
+            [
+                grp.reassign_to(User(gis=self._gis, username=reassign_to))
+                for grp in self.groups
+                if grp.owner == self.username
+            ]
+        else:
+            # delete the groups owned by the user
+            [grp.delete() for grp in self.groups if grp.owner == self.username]
         return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username):
@@ -10797,7 +10854,6 @@ class Item(dict):
         enforce_fld_vis=None,
         tags=None,
         snippet=None,
-        overwrite=False,
     ):
         """
         The ``export`` method is used to export a service item to the specified export format.
@@ -10834,9 +10890,6 @@ class Item(dict):
         tags                Optional String.  A comma seperated value of item descriptors.
         ---------------     --------------------------------------------------------------------
         snippet             Optional String. A short descriptive piece of text.
-        ---------------     --------------------------------------------------------------------
-        overwrite           Optional Boolean. If the export Item exists, the item will be
-                            replaced with the new one.
         ===============     ====================================================================
 
         :return:
@@ -10865,6 +10918,8 @@ class Item(dict):
             "Excel",
             "Vector Tile Package",
         ]
+        if export_format not in formats:
+            raise Error("Unsupported export format: " + export_format)
         if export_format == "GeoPackage":
             export_format = "geoPackage"
         user_id = self._user_id
@@ -14244,22 +14299,6 @@ class _GISResource(object):
 
         with _DisableLogger():
             try:
-                """
-                # try as a federated server
-                if self._con.token is None:
-                    self._lazy_token = self._con.generate_portal_server_token(
-                        serverUrl=self.url
-                    )
-                else:
-                    from ._impl._con import Connection
-
-                    if isinstance(self._con, Connection):
-                        self._lazy_token = self._con.generate_portal_server_token(
-                            serverUrl=self._url
-                        )
-                    else:
-                        self._lazy_token = self._con.token
-                """
                 self._refresh()
 
             except HTTPError as httperror:  # service maybe down
