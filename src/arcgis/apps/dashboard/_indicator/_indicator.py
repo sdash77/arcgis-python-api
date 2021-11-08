@@ -125,7 +125,7 @@ class Indicator(_BaseWidget):
             self._datasource = {
                 "type": "featureServiceDataSource",
                 "itemId": self.item.itemid,
-                "layerId": self.layer, 
+                "layerId": self.layer,
                 "table": True,
             }
 
@@ -344,7 +344,7 @@ class IndicatorData(object):
             raise Exception("Please select from 'AND', 'OR'")
         if condition in ["between", "not between"]:
             if not kwargs["start"] and kwargs["end"]:
-                raise Exception("Please provide 'start' and 'end' values as parameters")    
+                raise Exception("Please provide 'start' and 'end' values as parameters")
             else:
                 self._val1 = kwargs.get("start")
                 self, _val2 = kwargs.get("end")
@@ -356,7 +356,7 @@ class IndicatorData(object):
                         "start": self._val1,
                         "end": self._val2,
                     }
-                )   
+                )
         if condition in [
             "equal",
             "not equal",
@@ -389,6 +389,7 @@ class IndicatorData(object):
             )
         else:
             raise Exception("Please provide a 'value' parameter for comparison")
+
 
 class ReferenceData(object):
     @classmethod
