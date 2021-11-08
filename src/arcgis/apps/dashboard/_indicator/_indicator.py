@@ -224,10 +224,10 @@ class Indicator(_BaseWidget):
             json_data["defaultSettings"]["backgroundColor"] = self._background_color
 
         if self.title:
-            json_data['defaultSettings'] = {
-                'topSection': {'fontSize': 80, 'textInfo': {'text': self.title}},
-                'middleSection': {'fontSize': 160, 'textInfo': {'text': '{value}'}},
-                'bottomSection': {'fontSize': 80, 'textInfo': {}},
+            json_data["defaultSettings"] = {
+                "topSection": {"fontSize": 80, "textInfo": {"text": self.title}},
+                "middleSection": {"fontSize": 160, "textInfo": {"text": "{value}"}},
+                "bottomSection": {"fontSize": 80, "textInfo": {}},
             }
 
         return json_data
