@@ -105,10 +105,10 @@ class Indicator(_BaseWidget):
     def _convert_to_json(self):
 
         self._reference_statistic = []
-        self._statistic_defintion = []
+        self._statistic_definition = []
 
         if self._data.value_type == "statistic":
-            self._statistic_defintion.append(
+            self._statistic_definition.append(
                 {
                     "onStatisticField": self.data.value_field,
                     "outStatisticFieldName": "value",
@@ -125,7 +125,7 @@ class Indicator(_BaseWidget):
             self._datasource = {
                 "type": "featureServiceDataSource",
                 "itemId": self.item.itemid,
-                "layerId": 0,
+                "layerId": self.layer, 
                 "table": True,
             }
 
@@ -136,7 +136,7 @@ class Indicator(_BaseWidget):
                 "outFields": ["*"],
                 "groupByFields": [],
                 "orderByFields": [],
-                "statisticDefinitions": self._statistic_defintion,
+                "statisticDefinitions": self._statistic_definition,
                 "querySpatialRelationship": "esriSpatialRelIntersects",
                 "returnGeometry": False,
                 "clientSideStatistics": False,
