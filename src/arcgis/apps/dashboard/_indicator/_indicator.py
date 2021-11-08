@@ -342,9 +342,22 @@ class IndicatorData(object):
             self._filter_join = join
         else:
             raise Exception("Please select from 'AND', 'OR'")
+        if condition in ["between", "not between"]:
+            if not kwargs["start"] and kwargs["end"]:
+                raise Exception("Please provide 'start' and 'end' values as parameters")    
+            else:
+                self._val1 = kwargs.get("start")
+                self, _val2 = kwargs.get("end")
+                self._filters.append(
+                    {
+                        "filtertype": self._filter_join,
+                        "field": self._filter_field,
+                        "operator": self._filter_condition,
+                        "start": self._val1,
+                        "end": self._val2,
+                    }
+                )   
         if condition in [
-            "between",
-            "not between",
             "equal",
             "not equal",
             "greater than",
@@ -357,22 +370,6 @@ class IndicatorData(object):
             self._filter_condition = condition
         else:
             raise Exception("Please select the right condition")
-
-        if condition in ["between", "not between"]:
-            self._val1 = kwargs.get("start")
-            self, _val2 = kwargs.get("end")
-            self._filters.append(
-                {
-                    "filtertype": self._filter_join,
-                    "field": self._filter_field,
-                    "operator": self._filter_condition,
-                    "start": self._val1,
-                    "end": self._val2,
-                }
-            )
-        else:
-            raise Exception("Please provide 'start' and 'end' values as parameters")
-
         if condition in [
             "equal",
             "not equal",
@@ -392,7 +389,6 @@ class IndicatorData(object):
             )
         else:
             raise Exception("Please provide a 'value' parameter for comparison")
-
 
 class ReferenceData(object):
     @classmethod
