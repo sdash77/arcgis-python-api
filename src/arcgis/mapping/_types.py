@@ -29,6 +29,13 @@ SpatialReference = LazyLoader("arcgis.geometry.SpatialReference")
 Polygon = LazyLoader("arcgis.geometry.Polygon")
 Geometry = LazyLoader("arcgis.geometry.Geometry")
 StreamLayer = LazyLoader("arcgis.realtime.StreamLayer")
+FeatureLayer = LazyLoader("arcgis.features.FeatureLayer")
+FeatureSet = LazyLoader("arcgis.features.FeatureSet")
+ImageryLayer = LazyLoader("arcgis.raster.ImageryLayer")
+Table = LazyLoader("arcgis.features.Table")
+FeatureCollection = LazyLoader("arcgis.features.FeatureCollection")
+Item = LazyLoader("arcgis.gis.Item")
+
 
 try:
     from traitlets import HasTraits, observe
@@ -308,9 +315,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     def __str__(self):
         return json.dumps(self, default=_utils._date_handler)
 
-    def add_table(
-        self, table: _arcgis_features.Table, options: Optional[dict[str, Any]] = None
-    ):
+    def add_table(self, table: Table, options: Optional[dict[str, Any]] = None):
         """
         Adds the given Table to the ``WebMap``.
 
@@ -335,23 +340,23 @@ class WebMap(HasTraits, collections.OrderedDict):
             table = Table('https://some-url.com/')
             wm.add_layer(table)
         """
-        if not isinstance(table, _arcgis_features.Table):
+        if not isinstance(table, Table):
             raise Exception("Type of object passed in must of type 'Table'")
         self.add_layer(table, options)
 
     def add_layer(
         self,
         layer: Union[
-            _arcgis_features.FeatureLayer,
+            FeatureLayer,
             MapImageLayer,
             SceneLayer,
-            arcgis.raster.ImageryLayer,
+            ImageryLayer,
             VectorTileLayer,
             StreamLayer,
-            _arcgis_features.FeatureSet,
-            _gis.Item,
-            _arcgis_features.FeatureCollection,
-            _arcgis_features.Table,
+            FeatureSet,
+            Item,
+            FeatureCollection,
+            Table,
         ],
         options: Optional[dict[str, Any]] = None,
     ):
@@ -398,9 +403,9 @@ class WebMap(HasTraits, collections.OrderedDict):
         if options is None:
             options = {}
         if (
-            isinstance(layer, _arcgis_features.FeatureLayer)
+            isinstance(layer, FeatureLayer)
             and "renderer" not in options
-            and not isinstance(layer, _arcgis_features.Table)
+            and not isinstance(layer, Table)
         ):
             options["renderer"] = json.loads(layer.renderer.json)
         elif hasattr(layer, "spatial"):
@@ -451,21 +456,19 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         # region infer layer type
         layer_type = None
-        if isinstance(layer, _gis.Layer) or isinstance(
-            layer, _arcgis_features.FeatureSet
-        ):
+        if isinstance(layer, _gis.Layer) or isinstance(layer, FeatureSet):
             if hasattr(layer, "properties"):
                 if hasattr(layer.properties, "name"):
                     title = layer.properties.name if title is None else title
 
                 # find layer type
                 if (
-                    isinstance(layer, _arcgis_features.FeatureLayer)
-                    or isinstance(layer, _arcgis_features.FeatureCollection)
-                    or isinstance(layer, _arcgis_features.FeatureSet)
+                    isinstance(layer, FeatureLayer)
+                    or isinstance(layer, FeatureCollection)
+                    or isinstance(layer, FeatureSet)
                 ):
                     # Can be either a FeatureLayer or a table: figure it out
-                    if isinstance(layer, _arcgis_features.Table):
+                    if isinstance(layer, Table):
                         layer_type = "Table"
                     else:
                         layer_type = "ArcGISFeatureLayer"
@@ -482,7 +485,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
                 if hasattr(layer.properties, "serviceItemId"):
                     item_id = layer.properties.serviceItemId
-            elif isinstance(layer, _arcgis_features.FeatureSet):
+            elif isinstance(layer, FeatureSet):
                 layer_type = "ArcGISFeatureLayer"
         elif isinstance(layer, _gis.Item):
             # set the item's extent
@@ -644,7 +647,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             }
 
         # inmem FeatureSets - typically those which users pass to the `MapView.draw()` method
-        if isinstance(layer, _arcgis_features.FeatureSet):
+        if isinstance(layer, FeatureSet):
             if not layer_spatial_ref:
                 if hasattr(layer, "spatial_reference"):
                     layer_spatial_ref = layer.spatial_reference
@@ -758,15 +761,15 @@ class WebMap(HasTraits, collections.OrderedDict):
             }
 
             fields_list = []
-            if isinstance(layer, _arcgis_features.FeatureLayer) or isinstance(
+            if isinstance(layer, FeatureLayer) or isinstance(
                 layer, arcgis.raster.ImageryLayer
             ):
                 if hasattr(layer.properties, "fields"):
                     fields_list = layer.properties.fields
-            elif isinstance(layer, _arcgis_features.FeatureSet):
+            elif isinstance(layer, FeatureSet):
                 if hasattr(layer, "fields"):
                     fields_list = layer.fields
-            elif isinstance(layer, _arcgis_features.FeatureCollection):
+            elif isinstance(layer, FeatureCollection):
                 if hasattr(layer.properties, "layerDefinition"):
                     if hasattr(layer.properties.layerDefinition, "fields"):
                         fields_list = layer.properties.layerDefinition.fields
@@ -794,19 +797,17 @@ class WebMap(HasTraits, collections.OrderedDict):
             popup = None
 
         if popup:
-            if isinstance(layer, _arcgis_features.FeatureLayer) or isinstance(
+            if isinstance(layer, FeatureLayer) or isinstance(
                 layer, arcgis.raster.ImageryLayer
             ):
                 new_layer["popupInfo"] = popup
-            elif isinstance(layer, _arcgis_features.FeatureSet) or isinstance(
-                layer, _arcgis_features.FeatureCollection
-            ):
+            elif isinstance(layer, FeatureSet) or isinstance(layer, FeatureCollection):
                 new_layer["featureCollection"]["layers"][0]["popupInfo"] = popup
 
         # endregion
 
         # region sort layers into 'operationalLayers' or 'tables'
-        if isinstance(layer, _arcgis_features.Table):
+        if isinstance(layer, Table):
             if "tables" not in self._webmapdict.keys():
                 # There are no tables yet, create one here
                 self._webmapdict["tables"] = [new_layer]
@@ -1555,7 +1556,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         else:
             return []
 
-    def remove_table(self, table: _arcgis_features.Table):
+    def remove_table(self, table: Table):
         """
         The ``remove_table`` method removes the specified table from the ``WebMap``.
 
@@ -1574,7 +1575,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         self._webmapdict["tables"].remove(table)
         self._tables.remove(_mixins.PropertyMap(table))
 
-    def remove_layer(self, layer: _arcgis_features.FeatureLayer):
+    def remove_layer(self, layer: FeatureLayer):
         """
         The ``remove_layer`` method removes the specified layer from the ``WebMap``.
 
@@ -2701,7 +2702,8 @@ class OfflineMapAreaManager(object):
 
                                - hour - a value between 0-23 (integers)
                                - minute a value between 0-60 (integers)
-                               - nthday - this is used for monthly only. This say the refresh will occur on the 'x' day of the month.
+                               - nthday - this is used for monthly only. This say the refresh will occur
+                                 on the 'x' day of the month.
                                - day_of_week - a value between 0-6 where 0 is Sunday and 6 is Saturday.
 
                                Example **Daily**:
@@ -3205,7 +3207,7 @@ class OfflineMapAreaManager(object):
 
         # Call update on Item with Refresh Information
         # import datetime
-        item = _gis.Item(gis=self._gis, itemid=oma_result)
+        item = Item(gis=self._gis, itemid=oma_result)
         update_items = {
             "snippet": "Map with no advanced offline settings set (default is assumed to be features and attachments)",
             "title": item_properties["title"] if "title" in item_properties else None,
@@ -3367,12 +3369,12 @@ class OfflineMapAreaManager(object):
         # setup_oma_result.result()
         _log.info(str(setup_oma_result.result()))
         # endregion
-        return _gis.Item(gis=self._gis, itemid=oma_result)
+        return Item(gis=self._gis, itemid=oma_result)
 
     # ----------------------------------------------------------------------
     def modify_refresh_schedule(
         self,
-        item: _gis.Item,
+        item: Item,
         refresh_schedule: Optional[str] = None,
         refresh_rates: Optional[dict[str, int]] = None,
     ):
@@ -3613,7 +3615,7 @@ class OfflineMapAreaManager(object):
                env.verbose = True
         """
         # find if 1 or a list of area items is provided
-        if isinstance(offline_map_area_items, arcgis.gis.Item):
+        if isinstance(offline_map_area_items, Item):
             offline_map_area_items = [offline_map_area_items]
         elif isinstance(offline_map_area_items, str):
             offline_map_area_items = [offline_map_area_items]
@@ -3631,12 +3633,12 @@ class OfflineMapAreaManager(object):
 
         else:
             for offline_map_area_item in offline_map_area_items:
-                if isinstance(offline_map_area_item, arcgis.gis.Item):
+                if isinstance(offline_map_area_item, Item):
                     _related_packages.extend(
                         offline_map_area_item.related_items("Area2Package", "forward")
                     )
                 elif isinstance(offline_map_area_item, str):
-                    offline_map_area_item = _gis.Item(
+                    offline_map_area_item = Item(
                         gis=self._gis, itemid=offline_map_area_item
                     )
                     _related_packages.extend(
@@ -3936,7 +3938,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         elif "output" in job_response:
             allResults = job_response["output"]
             if allResults["itemId"]:
-                return arcgis.gis.Item(gis=self._gis, itemid=allResults["itemId"])
+                return Item(gis=self._gis, itemid=allResults["itemId"])
             else:
                 if self._gis._portal.is_arcgisonline:
                     return [
@@ -4332,7 +4334,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
     # ----------------------------------------------------------------------
     def import_tiles(
         self,
-        item: _gis.Item,
+        item: Item,
         levels: Optional[Union[str, list[int]]] = None,
         extent: Optional[Union[str, dict[str, int]]] = None,
         merge: bool = False,
@@ -4406,7 +4408,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         }
         if isinstance(item, str):
             params["sourceItemId"] = item
-        elif isinstance(item, arcgis.gis.Item):
+        elif isinstance(item, Item):
             params["sourceItemId"] = item.itemid
         else:
             raise ValueError("The `item` must be a string or Item")
@@ -4659,7 +4661,7 @@ class MapImageLayer(arcgis.gis.Layer):
             pass
 
     @classmethod
-    def fromitem(cls, item: _gis.Item):
+    def fromitem(cls, item: Item):
         if not item.type == "Map Service":
             raise TypeError("item must be a type of Map Service, not " + item.type)
         return cls(item.url, item._gis)
@@ -4852,9 +4854,7 @@ class MapImageLayer(arcgis.gis.Layer):
             url = "%s/dynamicLayer" % self._url
             d = urlencode(layer)
             url += "?layer=%s" % d
-            return _arcgis_features.FeatureLayer(
-                url=url, gis=self._gis, dynamic_layer=layer
-            )
+            return FeatureLayer(url=url, gis=self._gis, dynamic_layer=layer)
         return None
 
     # ----------------------------------------------------------------------
@@ -5971,7 +5971,7 @@ class MapImageLayer(arcgis.gis.Layer):
             elif "output" in job_response:
                 allResults = job_response["output"]
                 if allResults["itemId"]:
-                    return arcgis.gis.Item(gis=self._gis, itemid=allResults["itemId"])
+                    return Item(gis=self._gis, itemid=allResults["itemId"])
                 else:
                     if self._gis._portal.is_arcgisonline:
                         return [
