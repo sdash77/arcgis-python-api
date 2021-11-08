@@ -191,7 +191,7 @@ class AttachmentManager(object):
 
             query = self._layer.query(
                 where=where,
-                object_ids=",".join(object_ids),
+                object_ids=",".join(map(str, object_ids)),
                 global_ids=",".join(global_ids),
                 return_ids_only=True,
             )
@@ -1706,16 +1706,22 @@ class FeatureLayerCollectionManager(_GISResource):
         if is_none_or_empty(view_layers) and is_none_or_empty(view_tables):
             # When view_layers and view_tables are not specified, create a view from all layers and tables
             for lyr in fs.layers:
+                lyr_id = lyr.manager.properties.serviceItemId
+                data_path = "content/items/" + lyr_id + "/data"
+                data = item._portal.con.get(path=data_path)
                 add_def["layers"].append(
                     {
                         "adminLayerInfo": {
+                            "popupInfo": data["layers"][0]["popupInfo"]
+                            if "layers" in data
+                            else None,
                             "viewLayerDefinition": {
                                 "sourceServiceName": os.path.basename(
                                     os.path.dirname(fs.url)
                                 ),
                                 "sourceLayerId": lyr.manager.properties["id"],
                                 "sourceLayerFields": "*",
-                            }
+                            },
                         },
                         "name": lyr.manager.properties["name"],
                     }
@@ -1742,16 +1748,22 @@ class FeatureLayerCollectionManager(_GISResource):
             if view_layers:
                 if isinstance(view_layers, list):
                     for lyr in view_layers:
+                        lyr_id = lyr.manager.properties.serviceItemId
+                        data_path = "content/items/" + lyr_id + "/data"
+                        data = item._portal.con.get(path=data_path)
                         add_def["layers"].append(
                             {
                                 "adminLayerInfo": {
+                                    "popupInfo": data["layers"][0]["popupInfo"]
+                                    if "layers" in data
+                                    else None,
                                     "viewLayerDefinition": {
                                         "sourceServiceName": os.path.basename(
                                             os.path.dirname(fs.url)
                                         ),
                                         "sourceLayerId": lyr.manager.properties["id"],
                                         "sourceLayerFields": "*",
-                                    }
+                                    },
                                 },
                                 "name": lyr.manager.properties["name"],
                             }

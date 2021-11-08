@@ -1,22 +1,36 @@
 __version__ = "2.0.0"
 
-from . import env
-from . import features, geoanalytics, geocoding, geometry
-from . import geoprocessing, network, raster, realtime, schematics
-import os
+from arcgis.auth.tools import LazyLoader
 
-if os.environ.get("DISABLE_ARCGIS_LEARN", None) == "1":
-    from . import mapping, apps
-else:
-    from . import mapping, apps, learn
+os = LazyLoader("os")
+env = LazyLoader("arcgis.env")
+from arcgis import features
+
+geoanalytics = LazyLoader("arcgis.geoanalytics")
+geocoding = LazyLoader("arcgis.geocoding")
+geometry = LazyLoader("arcgis.geometry")
+geoprocessing = LazyLoader("arcgis.geoprocessing")
+network = LazyLoader("arcgis.network")
+raster = LazyLoader("arcgis.raster")
+realtime = LazyLoader("arcgis.realtime")
+schematics = LazyLoader("arcgis.schematics")
+mapping = LazyLoader("arcgis.mapping")
+apps = LazyLoader("arcgis.apps")
+
+if not os.environ.get("DISABLE_ARCGIS_LEARN", None) == "1":
+    learn = LazyLoader("arcgis.learn")
 
 from arcgis.gis import GIS
 from .features.analysis import *
 from .geocoding import geocode
 
+
 try:
     import pandas as pd
-    from .features.geo import GeoAccessor, GeoSeriesAccessor
+    from arcgis.features.geo import GeoAccessor
+    from arcgis.features.geo import GeoSeriesAccessor
+
+
 except ImportError as e:
     pass
 

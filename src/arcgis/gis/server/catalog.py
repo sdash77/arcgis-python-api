@@ -1,4 +1,3 @@
-import os
 import ssl
 import logging
 from urllib.parse import urlparse
@@ -6,6 +5,7 @@ from ._common import BaseServer
 from .._impl._con import Connection
 from ._service import Service
 from arcgis.gis import GIS
+from arcgis.gis._impl._profile import ServerProfileManager
 
 _log = logging.getLogger()
 ########################################################################
@@ -93,22 +93,30 @@ class ServicesDirectory(BaseServer):
     _con = None
     _gis = None
     _url = None
+    _pmgr = None
     _adminurl = None
     _properties = None
     # ----------------------------------------------------------------------
     def __init__(
         self,
-        url,
-        username=None,
-        password=None,
-        key_file=None,
-        cert_file=None,
-        verify_cert=False,
+        url: str = None,
+        username: str = None,
+        password: str = None,
+        key_file: str = None,
+        cert_file: str = None,
+        verify_cert: bool = False,
         **kwargs,
     ):
         """Constructor"""
         super(ServicesDirectory, self)
-
+        profile = kwargs.pop("profile", None)
+        if profile:
+            # pm = self._pm
+            url, username, password, key_file, cert_file, client_id = self._profile_mgr(
+                profile, url, username, password, cert_file, key_file, client_id=None
+            )
+        if profile is None and url is None:
+            raise ValueError("A `url` must be given when a `profile` is not provided.")
         if url.lower().find("/rest") == -1 and url.endswith("/rest") == False:
             url = "%s/rest/services" % url
         if (
@@ -117,6 +125,7 @@ class ServicesDirectory(BaseServer):
         ):
             url = "%s/services" % url
         self._url = url
+
         self._username = username
         self._password = password
         self._key_file = key_file
@@ -125,7 +134,6 @@ class ServicesDirectory(BaseServer):
         self._is_agol = kwargs.pop("is_agol", False)
         con = kwargs.pop("con", None)
         if verify_cert == False:
-            import ssl
 
             ssl._create_default_https_context = ssl._create_unverified_context
         aurl = None
@@ -156,6 +164,7 @@ class ServicesDirectory(BaseServer):
                 cert_file=cert_file,
                 portal_connection=self._portal_connection,
                 verify_cert=verify_cert,
+                product="SERVER",
                 **kwargs,
             )
         self._gis = kwargs.pop("gis", None)
@@ -172,6 +181,48 @@ class ServicesDirectory(BaseServer):
             except:
                 pass
         self._init(self._con)
+
+    def _profile_mgr(
+        self, profile, url, username, password, cert_file, key_file, client_id=None
+    ):
+        if profile not in self._pm.list():
+            _log.info("Adding new profile {} to config...".format(profile))
+            self._pm.create(
+                profile=profile,
+                url=url,
+                username=username,
+                password=password,
+                key_file=key_file,
+                cert_file=cert_file,
+                client_id=client_id,
+            )
+        elif profile in self._pm.list():
+            # run an update to be safe.
+            self._pm.update(
+                profile,
+                url=url,
+                username=username,
+                password=password,
+                key_file=key_file,
+                cert_file=cert_file,
+                client_id=client_id,
+            )
+        if (
+            profile in self._pm.list()
+        ):  # check if the profile name was successfully added, if so, use the profile credentials
+            return self._pm._retrieve(profile)
+        else:
+            _log.info(
+                f"Profile {profile} was not saved, using user provided credentials for the `GIS` object."
+            )
+
+    # ----------------------------------------------------------------------
+    @property
+    def _pm(self) -> ServerProfileManager:
+        """Returns the Server Profile Manager"""
+        if self._pmgr is None:
+            self._pmgr = ServerProfileManager()
+        return self._pmgr
 
     # ----------------------------------------------------------------------
     def __str__(self):

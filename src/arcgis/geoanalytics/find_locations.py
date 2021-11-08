@@ -257,6 +257,10 @@ def geocode_locations(
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     try:
+        params["future"] = True
+        if hasattr(tbx, "geocode_locations") == False:
+            url = gis.properties.helperServices.geoanalytics.url
+            tbx = _import_toolbox(url, gis=gis)
         gpjob = tbx.geocode_locations(**params)
         if future:
             return GAJob(gpjob=gpjob, return_service=output_service)
