@@ -10,6 +10,7 @@ def test_built_in_auth():
         url="https://rqawiniwa02pt.ags.esri.com/gis",
         username="gisproadv1",
         password="portalaccount1",
+        verify_cert=False,
     )
 
     print("Logged in as: " + built_in_auth.properties.user.username)
