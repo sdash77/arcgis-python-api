@@ -1,15 +1,12 @@
-from logging import raiseExceptions
-import os
 import sys
-import unittest
-from arcgis import geometry
 
 sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus_main\src")
+import os
+import unittest
 
-from arcgis.features.layer import FeatureLayer
 from arcgis.gis import GIS
 
-gis = GIS(profile="your_online_profile")
+gis = GIS(profile="your_online_profile", verify_cert=False)
 
 # Major cities point layer
 try:
@@ -19,7 +16,10 @@ except:
     fp = "./major_cities"
     if os.path.isfile(path=fp):
         item = gis.content.add(
-            item_properties={"title": "major_cities", "type": "File Geodatabase",},
+            item_properties={
+                "title": "major_cities",
+                "type": "File Geodatabase",
+            },
             data=fp,
         )
         pitem = item.publish()

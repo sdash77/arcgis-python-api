@@ -1,14 +1,14 @@
-import os
 import sys
-import unittest
 
 sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus_main\src")
+import os
+import unittest
 
 from arcgis.features.layer import FeatureLayer
 from arcgis.mapping import MapImageLayer, MapImageLayerManager
 from arcgis.gis import GIS
 
-gis = GIS(profile="your_online_profile")
+gis = GIS(profile="your_online_profile", verify_cert=False)
 
 # MapImageLayer
 try:
@@ -44,10 +44,10 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         # Must chech that supportDynamicLayers = True in layer properties
         try:
-            gis.content.get("0135e658729c4b55b76a3e556c70a325")
+            item_online = gis.content.get("0135e658729c4b55b76a3e556c70a325")
             layer_to_add = {
-                "id": "0135e658729c4b55b76a3e556c70a325",
-                "source": "https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/2",
+                "id": item_online.id,
+                "source": item_online.layers[0].url,
                 "definitionExpression": "",
                 "drawingInfo": {
                     "renderer": "Simple Renderer",

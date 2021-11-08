@@ -7,9 +7,9 @@ def test_built_in_auth():
 
     # Login with built-in for a federated server
     built_in_auth = GIS(
-        url="https://rqalnxbi01pt.esri.com/gis/home/",
-        username="apps0001",
-        password="testapps0001",
+        url="https://rqawiniwa02pt.ags.esri.com/gis",
+        username="gisproadv1",
+        password="portalaccount1",
     )
 
     print("Logged in as: " + built_in_auth.properties.user.username)
