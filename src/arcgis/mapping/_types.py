@@ -29,7 +29,6 @@ SpatialReference = LazyLoader("arcgis.geometry.SpatialReference")
 Polygon = LazyLoader("arcgis.geometry.Polygon")
 Geometry = LazyLoader("arcgis.geometry.Geometry")
 StreamLayer = LazyLoader("arcgis.realtime.StreamLayer")
-FeatureLayer = LazyLoader("arcgis.features.layer.FeatureLayer")
 FeatureSet = LazyLoader("arcgis.features.FeatureSet")
 ImageryLayer = LazyLoader("arcgis.raster.ImageryLayer")
 Table = LazyLoader("arcgis.features.Table")
@@ -347,7 +346,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     def add_layer(
         self,
         layer: Union[
-            FeatureLayer,
+            _arcgis_features.FeatureLayer,
             MapImageLayer,
             SceneLayer,
             ImageryLayer,
@@ -403,7 +402,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         if options is None:
             options = {}
         if (
-            isinstance(layer, FeatureLayer)
+            isinstance(layer, _arcgis_features.FeatureLayer)
             and "renderer" not in options
             and not isinstance(layer, Table)
         ):
@@ -463,7 +462,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
                 # find layer type
                 if (
-                    isinstance(layer, FeatureLayer)
+                    isinstance(layer, _arcgis_features.FeatureLayer)
                     or isinstance(layer, FeatureCollection)
                     or isinstance(layer, FeatureSet)
                 ):
@@ -761,7 +760,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             }
 
             fields_list = []
-            if isinstance(layer, FeatureLayer) or isinstance(
+            if isinstance(layer, _arcgis_features.FeatureLayer) or isinstance(
                 layer, arcgis.raster.ImageryLayer
             ):
                 if hasattr(layer.properties, "fields"):
@@ -797,7 +796,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             popup = None
 
         if popup:
-            if isinstance(layer, FeatureLayer) or isinstance(
+            if isinstance(layer, _arcgis_features.FeatureLayer) or isinstance(
                 layer, arcgis.raster.ImageryLayer
             ):
                 new_layer["popupInfo"] = popup
@@ -1575,7 +1574,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         self._webmapdict["tables"].remove(table)
         self._tables.remove(_mixins.PropertyMap(table))
 
-    def remove_layer(self, layer: FeatureLayer):
+    def remove_layer(self, layer: _arcgis_features.FeatureLayer):
         """
         The ``remove_layer`` method removes the specified layer from the ``WebMap``.
 
@@ -4854,7 +4853,9 @@ class MapImageLayer(arcgis.gis.Layer):
             url = "%s/dynamicLayer" % self._url
             d = urlencode(layer)
             url += "?layer=%s" % d
-            return FeatureLayer(url=url, gis=self._gis, dynamic_layer=layer)
+            return _arcgis_features.FeatureLayer(
+                url=url, gis=self._gis, dynamic_layer=layer
+            )
         return None
 
     # ----------------------------------------------------------------------
