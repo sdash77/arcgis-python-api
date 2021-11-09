@@ -766,6 +766,8 @@ class StoryMap(object):
             subtype = self._properties["nodes"][node_id]["data"]["type"]
             if subtype == "sidecar":
                 node = Content.Sidecar(node_id, self)
+            else:
+                node = subtype
         else:
             node = node_type
         return node

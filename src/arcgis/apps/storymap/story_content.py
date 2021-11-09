@@ -1551,11 +1551,12 @@ class Swipe(object):
         """
         self._node = node
         self._story = story
-        self._type = self._data["type"]
-        if self._type != "swipe":
-            raise Exception("This node is not of type swipe.")
-        self._slides = self._data["data"]["contents"]
-        media_node = self._story._properties["nodes"][self._node]["data"]["content"][
+        self._type = "swipe"
+        self._slides = self._story._properties["nodes"][self._node]["data"]["contents"]
+
+        # Find the type of media that the swipe supports.
+        # Both contents are of the same type so only need to look at one.
+        media_node = self._story._properties["nodes"][self._node]["data"]["contents"][
             "0"
         ]
         self._media_type = story._properties["nodes"][media_node]["type"]
