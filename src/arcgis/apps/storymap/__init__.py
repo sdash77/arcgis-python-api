@@ -11,7 +11,6 @@ from .story_content import (
     Text,
     Button,
     Map,
-    Slideshow,
     Sidecar,
     Swipe,
     TextStyles,
