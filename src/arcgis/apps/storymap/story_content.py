@@ -1,3 +1,4 @@
+from __future__ import annotations
 from enum import Enum
 from typing import Optional, Union
 import uuid
@@ -40,9 +41,6 @@ class Image(object):
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         path                    Required String. The file path to the image that will be added.
-        ------------------      --------------------------------------------------------------------
-        story                   Optional StoryMap. The story map the image is/will be a part of.
-                                If none assigned, one will be assigned when added to a story.
         ==================      ====================================================================
 
         This creates an Image item containing:
@@ -300,6 +298,163 @@ class Image(object):
     def _check_node(self):
         if self._story is None:
             return False
+        elif self._node is None:
+            return False
+        else:
+            return True
+
+
+###############################################################################################################
+class Gallery(object):
+    """
+    Class representing an Image Gallery from Images
+    """
+
+    def __init__(self, story=None, node_id=None):
+        """
+        Create an empty gallery. To add images to the gallery, use the add method in the Gallery class.
+        """
+        self._story = story
+        self._type = "gallery"
+        self._node = None
+        existing = self._check_node()
+        if existing is True:
+            self._node = node_id
+            self._children = self._story._properties["nodes"][node_id]["children"]
+        elif existing is False:
+            self._children = []
+            self._node = "n-" + uuid.uuid4().hex[0:6]
+
+    # ----------------------------------------------------------------------
+    @property
+    def images(self):
+        """
+        Get/Set list of image nodes in the image gallery
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        node_list               List of node ids for the images in the gallery. Nodes must already be
+                                in the gallery and this list will adjust the order of the images.
+
+                                To add new images to the gallery use: Gallery.add_images(images)
+                                To delete an image from a gallery use: Gallery.delete_image(node_id)
+        ==================      ====================================================================
+        """
+        if self._check_node():
+            # Update incase addition or removal was made in between last check.
+            self._children = self._story._properties["nodes"][self._node]["children"]
+            return self._children
+
+    # ----------------------------------------------------------------------
+    @images.setter
+    def images(self, node_list):
+        if self._check_node():
+            self._children = node_list
+            self._story._properties["nodes"][self._node]["children"] = node_list
+        return self.images
+
+    # ----------------------------------------------------------------------
+    @property
+    def caption(self):
+        """
+        Get/Set the caption property for the swipe.
+
+        ==================  ========================================
+        **Argument**        **Description**
+        ------------------  ----------------------------------------
+        caption             String. The new caption for the Gallery.
+        ==================  ========================================
+
+        :return:
+            The caption that is being used.
+        """
+        return self._story._properties["nodes"][self._node]["data"]["caption"]
+
+    # ----------------------------------------------------------------------
+    @caption.setter
+    def caption(self, caption):
+        if isinstance(caption, str):
+            self._story._properties["nodes"][self._node]["data"]["caption"] = caption
+        return self.caption
+
+    # ----------------------------------------------------------------------
+    @property
+    def alt_text(self):
+        """
+        Get/Set the alternte text property for the swipe.
+
+        ==================  ========================================
+        **Argument**        **Description**
+        ------------------  ----------------------------------------
+        alt_text            String. The new alt_text for the Gallery.
+        ==================  ========================================
+
+        :return:
+            The alternate text that is being used.
+        """
+        return self._story._properties["nodes"][self._node]["data"]["alt"]
+
+    # ----------------------------------------------------------------------
+    @alt_text.setter
+    def alt_text(self, alt_text):
+        self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
+        return self.alt_text
+
+    # ----------------------------------------------------------------------
+    def add_images(self, images: list[Image]):
+        """
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        images                  Required list of images of type Image.
+        ==================      ====================================================================
+        """
+        if self._check_node():
+            if images is not None:
+                for image in images:
+                    if image._node not in self._story._properties["nodes"]:
+                        image._add_image(story=self._story)
+                    self._story._properties["nodes"][self._node]["children"].append(
+                        image._node
+                    )
+        return self.images
+
+    # ----------------------------------------------------------------------
+    def delete_image(self, image: str):
+        """
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        image                   Required String. The node id for the image to be removed from the gallery.
+        ==================      ====================================================================
+        """
+        if image in self.images:
+            self._story._properties["nodes"][self._node]["children"].remove(image)
+            self._story._delete(image)
+        return self.images
+
+    # ----------------------------------------------------------------------
+    def _add_gallery(self, caption=None, alt_text=None, display=None, story=None):
+        self._story = story
+
+        # Create image nodes
+        self._story._properties["nodes"][self._node] = {
+            "type": "gallery",
+            "data": {
+                "galleryLayout": display if display is not None else "jigsaw",
+                "caption": caption,
+                "alt": alt_text,
+            },
+            "children": self._children,
+        }
+
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        if self._story is None:
+            return False
+        elif self._node is None:
+            return False
         else:
             return True
 
@@ -322,8 +477,6 @@ class Video(object):
                                     url must be an embed url.
                                     Example: "https://www.youtube.com/embed/G6b7Kgvd0iA"
 
-        ------------------      --------------------------------------------------------------------
-        story                   StoryMap. The story map the image is/will be a part of.
         ==================      ====================================================================
         """
         self._story = story
@@ -574,6 +727,8 @@ class Video(object):
     def _check_node(self):
         if self._story is None:
             return False
+        elif self._node is None:
+            return False
         else:
             return True
 
@@ -596,8 +751,6 @@ class Audio(object):
                                     url must be an embed url.
                                     Example: "https://www.youtube.com/embed/G6b7Kgvd0iA"
 
-        ------------------      --------------------------------------------------------------------
-        story                   StoryMap. The story map the image is/will be a part of.
         ==================      ====================================================================
         """
         self._story = story
@@ -844,6 +997,8 @@ class Audio(object):
     def _check_node(self):
         if self._story is None:
             return False
+        elif self._node is None:
+            return False
         else:
             return True
 
@@ -861,8 +1016,6 @@ class Embed(object):
         ------------------      --------------------------------------------------------------------
         path                    Required String. The url that will be added as a webpage, video, or
                                 audio embed into the story.
-        ------------------      --------------------------------------------------------------------
-        story                   StoryMap. The story map the image is/will be a part of.
         ==================      ====================================================================
         """
         self._story = story
@@ -1016,6 +1169,8 @@ class Embed(object):
     def _check_node(self):
         if self._story is None:
             return False
+        elif self._node is None:
+            return False
         else:
             return True
 
@@ -1036,8 +1191,6 @@ class Map(object):
         -----------------       --------------------------------------------------------------------
         item                    An Item of type WebMap or WebScene or a String representing the item
                                 id to add to the story map.
-        ------------------      --------------------------------------------------------------------
-        story                   StoryMap. The story map the image is/will be a part of.
         =================       ====================================================================
 
         """
@@ -1284,6 +1437,8 @@ class Map(object):
     def _check_node(self):
         if self._story is None:
             return False
+        elif self._node is None:
+            return False
         else:
             return True
 
@@ -1332,8 +1487,6 @@ class Text(object):
                                 'numbered-list'.
 
                                 Ex: custom_color = "080"
-        ------------------      --------------------------------------------------------------------
-        story                   StoryMap. The story map the image is/will be a part of.
         ==================      ====================================================================
 
 
@@ -1469,6 +1622,8 @@ class Text(object):
     def _check_node(self):
         if self._story is None:
             return False
+        elif self._node is None:
+            return False
         else:
             return True
 
@@ -1494,8 +1649,6 @@ class Button(object):
                                 the link.
         ------------------      --------------------------------------------------------------------
         text                    Required String. The text that shows on the button.
-        ------------------      --------------------------------------------------------------------
-        story                   StoryMap. The story map the image is/will be a part of.
         ==================      ====================================================================
 
         """
@@ -1565,6 +1718,8 @@ class Button(object):
     # ----------------------------------------------------------------------
     def _check_node(self):
         if self._story is None:
+            return False
+        elif self._node is None:
             return False
         else:
             return True
@@ -1718,7 +1873,7 @@ class Sidecar(object):
         self._type = story._properties["nodes"][node]["data"]["type"]
         if self._type != "sidecar":
             raise Exception("This node is not of type sidecar.")
-        self._subtype = node["data"]["subtype"]
+        self._subtype = story._properties["nodes"][node]["data"]["subtype"]
         self._slides = story._properties["nodes"][node]["children"]
 
     # ----------------------------------------------------------------------

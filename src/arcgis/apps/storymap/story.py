@@ -407,6 +407,7 @@ class StoryMap(object):
                 Content.Map,
                 Content.Button,
                 Content.Text,
+                Content.Gallery,
             ]
         ] = None,
         caption: Optional[str] = None,
@@ -420,7 +421,7 @@ class StoryMap(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        content             Optional content of type: Image, Video, Audio, Embed, Map, Button,
+        content             Optional content of type: Image, Gallery, Video, Audio, Embed, Map, Button,
                             or Text. If none is provided, a separator is added.
         ---------------     --------------------------------------------------------------------
         caption             Optional String. Custom text to caption the webmap.
@@ -431,6 +432,9 @@ class StoryMap(object):
                             Used for Image, Video, Audio, or Map object.
 
                             Values: "small" | "wide" | "full" | "float"
+
+                            For Gallery:
+                            Values: "jigsaw" | "square-dynamic"
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the content will be
                             added. To see all node positions use the ```children``` property.
@@ -463,6 +467,8 @@ class StoryMap(object):
 
         if isinstance(content, Content.Image):
             content._add_image(caption, alt_text, display, self)
+        elif isinstance(content, Content.Gallery):
+            content._add_gallery(caption, alt_text, display, self)
         elif isinstance(content, Content.Video):
             content._add_video(caption, alt_text, display, self)
         elif isinstance(content, Content.Audio):
