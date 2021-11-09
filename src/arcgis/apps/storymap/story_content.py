@@ -102,7 +102,7 @@ class Image(object):
         ..note:
             To change various properties of the Image use the other property setters.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return {
                 "node_dict": self._story._properties["nodes"][self._node],
                 "resource_dict": self._story._properties["resources"][
@@ -125,15 +125,20 @@ class Image(object):
         :return:
             The image that is being used.
         """
-        if self._check_node is True:
-            return self._story._properties["resources"][self._resource_node]["data"][
-                "resourceId"
-            ]
+        if self._check_node() is True:
+            if self._url is False:
+                return self._story._properties["resources"][self._resource_node][
+                    "data"
+                ]["resourceId"]
+            else:
+                return self._story._properties["resources"][self._resource_node][
+                    "data"
+                ]["src"]
 
     # ----------------------------------------------------------------------
     @image.setter
     def image(self, path):
-        if self._check_node is True:
+        if self._check_node() is True:
             self._update_image(path)
             return self.image
 
@@ -152,13 +157,13 @@ class Image(object):
         :return:
             The caption that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
-        if self._check_node is True:
+        if self._check_node() is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self._node]["data"][
                     "caption"
@@ -185,7 +190,7 @@ class Image(object):
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        if self._check_node is True:
+        if self._check_node() is True:
             self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
             return self.alt_text
 
@@ -251,25 +256,41 @@ class Image(object):
             data = requests.get(new_image).content
             im = _Image.open(_io.BytesIO(data))
             w, h = im.size
-            self._resource_node["data"]["height"] = h
-            self._resource_node["data"]["width"] = w
+            self._story._properties["resources"][self._resource_node]["data"][
+                "height"
+            ] = h
+            self._story._properties["resources"][self._resource_node]["data"][
+                "width"
+            ] = w
 
             # Update resource dictionary
-            self._resource_node["data"]["src"] = new_image
-            self._resource_node["data"]["provider"] = "uri"
+            self._story._properties["resources"][self._resource_node]["data"][
+                "src"
+            ] = new_image
+            self._story._properties["resources"][self._resource_node]["data"][
+                "provider"
+            ] = "uri"
         else:
             # Update the height and width for the image
             im = _Image.open(new_image)
             w, h = im.size
-            self._resource_node["data"]["height"] = h
-            self._resource_node["data"]["width"] = w
+            self._story._properties["resources"][self._resource_node]["data"][
+                "height"
+            ] = h
+            self._story._properties["resources"][self._resource_node]["data"][
+                "width"
+            ] = w
 
             # Update resource dictionary
-            resource_id = self._resource_node["data"]["resourceId"]
-            self._resource_node["data"]["resourceId"] = os.path.basename(
-                os.path.normpath(new_image)
-            )
-            self._resource_node["data"]["provider"] = "item-resource"
+            resource_id = self._story._properties["resources"][self._resource_node][
+                "data"
+            ]["resourceId"]
+            self._story._properties["resources"][self._resource_node]["data"][
+                "resourceId"
+            ] = os.path.basename(os.path.normpath(new_image))
+            self._story._properties["resources"][self._resource_node]["data"][
+                "provider"
+            ] = "item-resource"
             # Update the resource
             self._story._remove_resource(resource_id)
             self._story._add_resource(new_image)
@@ -345,7 +366,7 @@ class Video(object):
         ..note:
             To change various properties of the Video use the other property setters.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             vid_dict = {
                 "node_dict": self._story._properties["nodes"][self._node],
             }
@@ -370,7 +391,7 @@ class Video(object):
         :return:
             The video that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             if self._resource_node:
                 return self._story._properties["resources"][self._resource_node][
                     "data"
@@ -381,7 +402,7 @@ class Video(object):
     # ----------------------------------------------------------------------
     @video.setter
     def video(self, path):
-        if self._check_node is True:
+        if self._check_node() is True:
             self._update_video(path)
             return self.video
 
@@ -400,13 +421,13 @@ class Video(object):
         :return:
             The caption that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
-        if self._check_node is True:
+        if self._check_node() is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self._node]["data"][
                     "caption"
@@ -428,20 +449,20 @@ class Video(object):
         :return:
             The alternate text that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["nodes"][self._node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        if self._check_node is True:
+        if self._check_node() is True:
             self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
             return self.alt_text
 
     # ----------------------------------------------------------------------
     @property
     def display(self):
-        if self._check_node is True:
+        if self._check_node() is True:
             if self._url is True:
                 return self._story._properties["nodes"][self._node]["data"]["display"]
             else:
@@ -517,14 +538,19 @@ class Video(object):
         # Cannot use same method as image since video url is turned into type embed.
         self._path = new_video
         if self._resource_node:
-            resource_id = self._resource_node["data"]["resourceId"]
+            # If resource node present, remove resource from item
+            resource_id = self._story._properties["resources"][self._resource_node][
+                "data"
+            ]["resourceId"]
             self._story._remove_resource(resource_id)
+            # Remove the resource node since should not exist for url
+            del self._story._properties["resources"][self._resource_node]
         if _parse.urlparse(new_video).scheme == "https":
             self._url = True
+            self._resource_node = None
             self._add_video(
                 caption=self.caption,
                 alt_text=self.alt_text,
-                display=self.display,
                 story=self._story,
                 node_id=self._node,
             )
@@ -532,11 +558,13 @@ class Video(object):
             # If the node was not a file path before, need to create resource id
             if self._resource_node is None:
                 self._resource_node = "r-" + uuid.uuid4().hex[0:6]
+            # display depends on self._url so get it before
+            display = self.display
             self._url = False
             self._add_video(
                 caption=self.caption,
                 alt_text=self.alt_text,
-                display=self.display,
+                display=display,
                 story=self._story,
                 node_id=self._node,
                 resource_node=self._resource_node,
@@ -612,7 +640,7 @@ class Audio(object):
         ..note:
             To change various properties of the Audio use the other property setters.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             aud_dict = {
                 "node_dict": self._story._properties["nodes"][self._node],
             }
@@ -637,7 +665,7 @@ class Audio(object):
         :return:
             The audio that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             if self._resource_node:
                 return self._story._properties["resources"][self._resource_node][
                     "data"
@@ -648,7 +676,7 @@ class Audio(object):
     # ----------------------------------------------------------------------
     @audio.setter
     def audio(self, path):
-        if self._check_node is True:
+        if self._check_node() is True:
             self._update_audio(path)
             return self.audio
 
@@ -667,13 +695,13 @@ class Audio(object):
         :return:
             The caption that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
-        if self._check_node is True:
+        if self._check_node() is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self._node]["data"][
                     "caption"
@@ -695,20 +723,20 @@ class Audio(object):
         :return:
             The alternate text that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["nodes"][self._node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        if self._check_node is True:
+        if self._check_node() is True:
             self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
             return self.alt_text
 
     # ----------------------------------------------------------------------
     @property
     def display(self):
-        if self._check_node is True:
+        if self._check_node() is True:
             if self._url is True:
                 return self._story._properties["nodes"][self._node]["data"]["display"]
             else:
@@ -781,14 +809,19 @@ class Audio(object):
         # Cannot use same method as image since video url is turned into type embed.
         self._path = new_audio
         if self._resource_node:
-            resource_id = self._resource_node["data"]["resourceId"]
+            resource_id = self._story._properties["resources"][self._resource_node][
+                "data"
+            ]["resourceId"]
             self._story._remove_resource(resource_id)
         if _parse.urlparse(new_audio).scheme == "https":
             self._url = True
+            if self._resource_node:
+                # Remove the resource node since should not exist for url
+                del self._story._properties["resources"][self._resource_node]
+            self._resource_node = None
             self._add_audio(
                 caption=self.caption,
                 alt_text=self.alt_text,
-                display=self.display,
                 story=self._story,
                 node_id=self._node,
             )
@@ -796,11 +829,12 @@ class Audio(object):
             # If the node was not a file path before, need to create resource id
             if self._resource_node is None:
                 self._resource_node = "r-" + uuid.uuid4().hex[0:6]
+            display = self.display
             self._url = False
             self._add_audio(
                 caption=self.caption,
                 alt_text=self.alt_text,
-                display=self.display,
+                display=display,
                 story=self._story,
                 node_id=self._node,
                 resource_node=self._resource_node,
@@ -854,7 +888,7 @@ class Embed(object):
         ..note:
             To change various properties of the Embed use the other property setters.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return {
                 "node_dict": self._story._properties["nodes"][self._node],
             }
@@ -874,13 +908,13 @@ class Embed(object):
         :return:
             The embed that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["nodes"][self._node]["data"]["url"]
 
     # ----------------------------------------------------------------------
     @link.setter
     def link(self, path):
-        if self._check_node is True:
+        if self._check_node() is True:
             self._update_link(path)
             return self.link
 
@@ -899,13 +933,13 @@ class Embed(object):
         :return:
             The caption that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
-        if self._check_node is True:
+        if self._check_node() is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self._node]["data"][
                     "caption"
@@ -927,20 +961,20 @@ class Embed(object):
         :return:
             The alternate text that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["nodes"][self._node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        if self._check_node is True:
+        if self._check_node() is True:
             self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
             return self.alt_text
 
     # ----------------------------------------------------------------------
     @property
     def display(self):
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["nodes"][self._node]["data"]["display"]
 
     # ----------------------------------------------------------------------
@@ -1017,6 +1051,7 @@ class Map(object):
             self._resource_node = self._story._properties["nodes"][self._node]["data"][
                 "map"
             ]
+            # The item id is in the resource node
             self._path = self._resource_node[2::]
             self._map_layers = self._story._properties["resources"][
                 self._resource_node
@@ -1085,7 +1120,7 @@ class Map(object):
         ..note:
             To change various properties of the Map use the other property setters.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return {
                 "node_dict": self._story._properties["nodes"][self._node],
                 "resource_dict": self._story._properties["resources"][
@@ -1113,7 +1148,7 @@ class Map(object):
         :return:
             The item id for the map that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["resources"][self._resource_node]["data"][
                 "itemId"
             ]
@@ -1121,7 +1156,7 @@ class Map(object):
     # ----------------------------------------------------------------------
     @map.setter
     def map(self, map):
-        if self._check_node is True:
+        if self._check_node() is True:
             if not isinstance(map, Map):
                 map = Map(map)
             self._update_map(map)
@@ -1142,13 +1177,13 @@ class Map(object):
         :return:
             The caption that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["nodes"][self._node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
-        if self._check_node is True:
+        if self._check_node() is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self._node]["data"][
                     "caption"
@@ -1170,13 +1205,13 @@ class Map(object):
         :return:
             The alternate text that is being used.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["nodes"][self._node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        if self._check_node is True:
+        if self._check_node() is True:
             self._story._properties["nodes"][self._node]["data"]["alt"] = alt_text
             return self.alt_text
 
@@ -1186,7 +1221,7 @@ class Map(object):
         """
         Get the display type of the map.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return self._story._properties["nodes"][self._node]["config"]["size"]
 
     # ----------------------------------------------------------------------
@@ -1394,7 +1429,7 @@ class Text(object):
         :return:
             The Text dictionary for the node.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return {
                 "node_dict": self._story._properties["nodes"][self._node],
             }
@@ -1402,7 +1437,7 @@ class Text(object):
     # ----------------------------------------------------------------------
     @properties.setter
     def properties(self, text):
-        if self._check_node is True:
+        if self._check_node() is True:
             self._story._properties["nodes"][self._node] = text
             return self.properties
 
@@ -1502,13 +1537,13 @@ class Button(object):
         :return:
             The Button dictionary for the node.
         """
-        if self._check_node is True:
+        if self._check_node() is True:
             return {"node_dict": self._story._properties["nodes"][self._node]}
 
     # ----------------------------------------------------------------------
     @properties.setter
     def properties(self, button):
-        if self._check_node is True:
+        if self._check_node() is True:
             self._story._properties["nodes"][self._node] = button
             return self.properties
 

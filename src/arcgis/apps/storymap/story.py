@@ -112,9 +112,16 @@ class StoryMap(object):
         """
         HTML Representation for IPython Notebook
         """
-        return (
-            "<iframe src=" + self._item.url + "title=" + self._item.title + "></iframe>"
-        )
+        try:
+            return (
+                "<iframe src="
+                + self._item.url
+                + "title="
+                + self._item.title
+                + "></iframe>"
+            )
+        except:
+            return None
 
     # ----------------------------------------------------------------------
     def __str__(self):
