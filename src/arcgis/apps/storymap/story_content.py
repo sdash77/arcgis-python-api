@@ -95,6 +95,8 @@ class Image(object):
         :return:
             A dictionary depicting the node dictionary and resource
             dictionary for the image.
+            If nothing is returned, make sure your content has been added
+            to the story.
 
         ..note:
             To change various properties of the Image use the other property setters.
@@ -358,6 +360,7 @@ class Video(object):
         :return:
             A dictionary depicting the node dictionary and resource
             dictionary for the video.
+            If nothing is returned, make sure the content is part of the story.
 
         ..note:
             To change various properties of the Video use the other property setters.
@@ -632,6 +635,7 @@ class Audio(object):
         :return:
             A dictionary depicting the node dictionary and resource
             dictionary for the audio.
+            If nothing is returned, make sure the content is part of the story.
 
         ..note:
             To change various properties of the Audio use the other property setters.
@@ -881,6 +885,7 @@ class Embed(object):
 
         :return:
             A dictionary depicting the node dictionary for the embed.
+            If nothing is returned, make sure the content is part of the story.
 
         ..note:
             To change various properties of the Embed use the other property setters.
@@ -1110,6 +1115,7 @@ class Map(object):
         :return:
             A dictionary depicting the node dictionary and resource
             dictionary for the map.
+            If nothing it returned, make sure the content is part of the story.
 
         ..note:
             To change various properties of the Map use the other property setters.
@@ -1420,6 +1426,7 @@ class Text(object):
 
         :return:
             The Text dictionary for the node.
+            If nothing is returned, make sure the content is part of the story.
         """
         if self._check_node() is True:
             return {
@@ -1523,6 +1530,7 @@ class Button(object):
 
         :return:
             The Button dictionary for the node.
+            If nothing is returned, make sure the content is part of the story.
         """
         if self._check_node() is True:
             return {"node_dict": self._story._properties["nodes"][self._node]}
@@ -1585,6 +1593,10 @@ class Gallery(object):
     def properties(self):
         """
         Get properties of the Gallery object
+
+        :return:
+            A dictionary depicting the node in the story.
+            If nothing is returned, make sure the gallery is part of the story.
         """
         if self._check_node() is True:
             return {
@@ -1607,6 +1619,10 @@ class Gallery(object):
                                 To add new images to the gallery use: Gallery.add_images(images)
                                 To delete an image from a gallery use: Gallery.delete_image(node_id)
         ==================      ====================================================================
+
+        :return:
+            A list of node ids in order of image appearance in the gallery.
+            If nothing is returned, make sure the gallery is part of the story.
         """
         if self._check_node():
             # Update incase addition or removal was made in between last check.
@@ -1761,6 +1777,20 @@ class Swipe(object):
             "0"
         ]
         self._media_type = story._properties["nodes"][media_node]["type"]
+
+    # ----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """
+        Get properties of the Swipe object
+
+        :return:
+            A dictionary depicting the node in the story.
+        """
+        if self._check_node() is True:
+            return {
+                "node_dict": self._story._properties["nodes"][self._node],
+            }
 
     # ----------------------------------------------------------------------
     @property
