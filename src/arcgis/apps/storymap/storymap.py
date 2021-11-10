@@ -6,8 +6,10 @@ from arcgis import env
 from arcgis.gis import GIS
 from arcgis.gis import Item
 from ._ref import reference
+from arcgis._impl.common._deprecate import deprecated
 
 
+@deprecated(deprecated_in="2.0.0", removed_in=None, current_version="2.0.0")
 class JournalStoryMap(object):
     """
     Represents a Journal Story Map
@@ -75,7 +77,7 @@ class JournalStoryMap(object):
         visible=True,
         alt_text="",
         display="stretch",
-        **kwargs
+        **kwargs,
     ):
         """
         Adds a new section to the StoryMap
