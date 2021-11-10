@@ -34,6 +34,7 @@ storymap_2 = {
         "n-4xkUEe": {
             "type": "story",
             "data": {"storyTheme": "r-vlc4Kp"},
+            "config": {"coverDate": "first-published"},
             "children": ["n-aTn8ak", "n-1AItUD", "n-cOeTah"],
         },
         "n-aTn8ak": {

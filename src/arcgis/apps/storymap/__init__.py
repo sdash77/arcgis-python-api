@@ -12,6 +12,7 @@ from .story_content import (
     Button,
     Map,
     Sidecar,
+    Gallery,
     Swipe,
     TextStyles,
 )
