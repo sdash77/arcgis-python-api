@@ -35,7 +35,7 @@ class Image(object):
     Class representing an image from a url or file
     """
 
-    def __init__(self, path: Optional[str] = None, story=None, node_id=None):
+    def __init__(self, path: Optional[str] = None, **kwargs):
         """
         ==================      ====================================================================
         **Argument**            **Description**
@@ -51,15 +51,14 @@ class Image(object):
             - self._type: The type of node
             - self._story: The story the this content is associated with.
         """
-        self._story = story
+        self._story = kwargs.pop("story", None)
         self._type = "image"
         self._url = False
-        self._node = None
+        self._node = kwargs.pop("node_id", None)
         # If node exists in story, then create from resources and node dict.
         # If node doesn't already exist, create a new instance
         existing = self._check_node()
         if existing is True:
-            self._node = node_id
             self._resource_node = self._story._properties["nodes"][self._node]["data"][
                 "image"
             ]
@@ -310,7 +309,7 @@ class Video(object):
     Class representing a video from a url or file
     """
 
-    def __init__(self, path: Optional[str] = None, story=None, node_id=None):
+    def __init__(self, path: Optional[str] = None, **kwargs):
         """
         ==================      ====================================================================
         **Argument**            **Description**
@@ -324,13 +323,12 @@ class Video(object):
 
         ==================      ====================================================================
         """
-        self._story = story
+        self._story = kwargs.pop("story", None)
         self._type = "video"
         self._url = False
-        self._node = None
+        self._node = kwargs.pop("node_id", None)
         existing = self._check_node()
         if existing is True:
-            self._node = node_id
             if self._story._properties["nodes"][self._node]["type"] == "video":
                 self._resource_node = self._story._properties["nodes"][self._node][
                     "data"
@@ -524,6 +522,7 @@ class Video(object):
                     "caption": caption,
                     "alt": alt_text,
                     "display": "inline",
+                    "aspectRatio": 1.778,
                     "addedAsEmbedCode": True,
                 },
             }
@@ -585,7 +584,7 @@ class Audio(object):
 
     """
 
-    def __init__(self, path: Optional[str] = None, story=None, node_id=None):
+    def __init__(self, path: Optional[str] = None, **kwargs):
         """
         ==================      ====================================================================
         **Argument**            **Description**
@@ -598,13 +597,12 @@ class Audio(object):
 
         ==================      ====================================================================
         """
-        self._story = story
+        self._story = kwargs.pop("story", None)
         self._type = "audio"
         self._url = False
-        self._node = None
+        self._node = kwargs.pop("node_id", None)
         existing = self._check_node()
         if existing is True:
-            self._node = node_id
             if self._story._properties["nodes"][self._node]["type"] == "audio":
                 self._resource_node = self._story._properties["nodes"][self._node][
                     "data"
@@ -752,8 +750,8 @@ class Audio(object):
     # ----------------------------------------------------------------------
     def _add_audio(
         self,
-        caption=None,
-        alt_text=None,
+        caption="",
+        alt_text="",
         display=None,
         story=None,
         node_id=None,
@@ -791,10 +789,12 @@ class Audio(object):
                 "type": "embed",
                 "data": {
                     "url": self._path,
-                    "embedType": "audio",
+                    "embedType": "link",
                     "caption": caption,
                     "alt": alt_text,
                     "display": "inline",
+                    "providerUrl": os.path.basename(os.path.normpath(self._path)),
+                    "embedSrc": self._path,
                     "addedAsEmbedCode": True,
                 },
             }
@@ -854,7 +854,7 @@ class Embed(object):
     Class representing an embedded video, audio, or webpage.
     """
 
-    def __init__(self, path: Optional[str] = None, story=None, node_id=None):
+    def __init__(self, path: Optional[str] = None, **kwargs):
         """
         ==================      ====================================================================
         **Argument**            **Description**
@@ -863,12 +863,11 @@ class Embed(object):
                                 audio embed into the story.
         ==================      ====================================================================
         """
-        self._story = story
+        self._story = kwargs.pop("story", None)
         self._type = "embed"
-        self._node = None
+        self._node = kwargs.pop("node_id", None)
         existing = self._check_node()
         if existing is True:
-            self._node = node_id
             self._path = self._story._properties["nodes"][self._node]["data"]["url"]
         else:
             self._path = path
@@ -1027,9 +1026,7 @@ class Map(object):
 
     """
 
-    def __init__(
-        self, item: Optional[arcgis.gis.Item] = None, story=None, node_id=None
-    ):
+    def __init__(self, item: Optional[arcgis.gis.Item] = None, **kwargs):
         """
         =================       ====================================================================
         **Argument**            **Description**
@@ -1039,13 +1036,12 @@ class Map(object):
         =================       ====================================================================
 
         """
-        self._story = story
+        self._story = kwargs.pop("story", None)
         self._type = "webmap"
-        self._node = None
+        self._node = kwargs.pop("node_id", None)
         existing = self._check_node()
 
         if existing:
-            self._node = node_id
             self._resource_node = self._story._properties["nodes"][self._node]["data"][
                 "map"
             ]
@@ -1300,8 +1296,7 @@ class Text(object):
         text: Optional[str] = None,
         style: TextStyles = TextStyles.PARAGRAPH,
         color: str = "000",
-        story=None,
-        node_id=None,
+        **kwargs
     ):
         """
 
@@ -1376,12 +1371,11 @@ class Text(object):
         ===================     ====================================================================
 
         """
-        self._story = story
+        self._story = kwargs.pop("story", None)
         self._type = "text"
-        self._node = None
+        self._node = kwargs.pop("node_id", None)
         existing = self._check_node()
         if existing is True:
-            self._node = node_id
             self._text = self._story._properties["nodes"][self._node]["data"]["text"]
             self._style = self._story._properties["nodes"][self._node]["data"]["type"]
         else:
@@ -1480,11 +1474,7 @@ class Button(object):
     """
 
     def __init__(
-        self,
-        link: Optional[str] = None,
-        text: Optional[str] = None,
-        story=None,
-        node_id=None,
+        self, link: Optional[str] = None, text: Optional[str] = None, **kwargs
     ):
         """
         ==================      ====================================================================
@@ -1497,15 +1487,14 @@ class Button(object):
         ==================      ====================================================================
 
         """
-        self._story = story
+        self._story = kwargs.pop("story", None)
         self._type = "button"
-        self._node = None
+        self._node = kwargs.pop("node_id", None)
         existing = self._check_node()
 
         if existing is True:
-            self._node = node_id
-            self._link = self._story._properties["nodes"][node_id]["data"]["link"]
-            self._text = self._story._properties["nodes"][node_id]["data"]["text"]
+            self._link = self._story._properties["nodes"][self._node]["data"]["link"]
+            self._text = self._story._properties["nodes"][self._node]["data"]["text"]
         else:
             self._node = uuid.uuid4().hex[0:6]
             self._link = link
@@ -1576,21 +1565,31 @@ class Gallery(object):
     Class representing an Image Gallery from Images
     """
 
-    def __init__(self, story=None, node_id=None):
+    def __init__(self, **kwargs):
         """
         Create an empty gallery.
         In order to add images to the gallery, use the add method in the Gallery class.
         """
-        self._story = story
+        self._story = kwargs.pop("story", None)
         self._type = "gallery"
-        self._node = None
+        self._node = kwargs.pop("node_id", None)
         existing = self._check_node()
         if existing is True:
-            self._node = node_id
-            self._children = self._story._properties["nodes"][node_id]["children"]
+            self._children = self._story._properties["nodes"][self._node]["children"]
         elif existing is False:
             self._children = []
             self._node = "n-" + uuid.uuid4().hex[0:6]
+
+    # ----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """
+        Get properties of the Gallery object
+        """
+        if self._check_node() is True:
+            return {
+                "node_dict": self._story._properties["nodes"][self._node],
+            }
 
     # ----------------------------------------------------------------------
     @property
@@ -1702,8 +1701,14 @@ class Gallery(object):
         ==================      ====================================================================
         """
         if image in self.images:
+            # Remove from the gallery list
             self._story._properties["nodes"][self._node]["children"].remove(image)
-            self._story._delete(image)
+            # Remove from the story
+            if "image" in self._story._properties["nodes"][image]["data"]:
+                resource_node = self._story._properties["nodes"][image]["data"]["image"]
+            else:
+                resource_node = None
+            self._story._delete(image, resource_node)
         return self.images
 
     # ----------------------------------------------------------------------
@@ -1733,7 +1738,7 @@ class Gallery(object):
 
 ###############################################################################################################
 class Swipe(object):
-    def __init__(self, node: str, story):
+    def __init__(self, story, node: str):
         """
         Create an Swipe immersive object from a pre-existing immersive node.
 
@@ -1860,7 +1865,7 @@ class Swipe(object):
 
 ###############################################################################################################
 class Sidecar(object):
-    def __init__(self, node: str, story):
+    def __init__(self, story, node: str):
         """
         Create an Sidecar immersive object from a pre-existing immersive node.
 

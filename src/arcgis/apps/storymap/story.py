@@ -42,7 +42,25 @@ class StoryMap(object):
     _item = None
     _resources = None
 
-    def __init__(self, item=None, gis=None):
+    def __init__(
+        self,
+        item: Optional[Union[arcgis.gis.Item, str]] = None,
+        gis: Optional[arcgis.gis.GIS] = None,
+    ):
+        """
+        Create a Story Map object to make edits to a story. Can be created from an item of type 'Story Map',
+        an item id for that type of item, or if nothing is passed, a new story is created from a generic draft.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item                Optional String or Item. The string for an item id or an item of type
+                            'Story Map'. If no item is passed, a new story is created and saved to
+                            your active portal.
+        ---------------     --------------------------------------------------------------------
+        gis                 Optional instance of GIS. If none provided the active gis is used.
+        ===============     ====================================================================
+        """
         if gis is None:
             gis = arcgis.env.active_gis
             self._gis = gis
@@ -144,7 +162,7 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
-    def node_order(self):
+    def nodes(self):
         """
         This propertry returns the storymap's main nodes in order of appearance in the story
 
@@ -168,7 +186,7 @@ class StoryMap(object):
         """
         Get a list of the nodes that are linked in the navigation node.
         """
-        nav = self.list("navigation")[0]
+        nav = self.get("navigation")[0]
         for key, value in nav.items():
             node_id = key
         try:
@@ -177,7 +195,7 @@ class StoryMap(object):
             return None
 
     # ----------------------------------------------------------------------
-    def list(self, type: Optional[str] = None, node_id: Optional[str] = None):
+    def get(self, type: Optional[str] = None, node: Optional[str] = None):
         """
         Find the nodes for each type of item.
 
@@ -191,30 +209,34 @@ class StoryMap(object):
                                     "button" | "separator" | "expressmap" | "webscene" | "immersive"
         ---------------     --------------------------------------------------------------------
         node_id             Optional string. The node id for the node that should be returned.
+                            This will return the class of the node if of type story content.
         ===============     ====================================================================
 
-        :return: List of node ids and their types in order of appearance in the story map.
+        :return:
+            If type specified: List of node ids and their types in order of appearance in the story map.
+            If node_id specified: The node itself.
+
 
         ..code-block:: python
 
             >>> story = StoryMap(<story item>)
-            >>> story.list_nodes("text")
+            >>> story.get("text")
 
         """
         spec_type = []
-
+        node_id = node
         if type is None and node_id is None:
-            return self.node_order
+            return self.nodes
         elif node_id is not None:
             # return a specific node
-            all_nodes = self.node_order
+            all_nodes = self.nodes
             for node in all_nodes:
                 id = list(node.keys())[0]
                 if node_id == id:
-                    return node
+                    return list(node.values())[0]
         else:
             # return all nodes of a certain type
-            all_nodes = self.node_order
+            all_nodes = self.nodes
             for node in all_nodes:
                 keyword = list(node.values())[0]
                 if isinstance(keyword, str):
@@ -247,9 +269,12 @@ class StoryMap(object):
         attribution         Optional String. The attribution to be added. (Seen on right side of
                             the credits.)
         ===============     ====================================================================
+
+        :return:
+            The node ids for the text that belongs to credits
         """
         # Find credit node
-        dict_node = self.list_nodes("credits")[0]
+        dict_node = self.get("credits")[0]
         for key, value in dict_node.items():
             credits_node = key
         credits = self._properties["nodes"][credits_node]
@@ -303,7 +328,7 @@ class StoryMap(object):
             story.save()
 
         """
-        dict_node = self.node_order[0]
+        dict_node = self.nodes[0]
         for key, value in dict_node.items():
             story_cover_node = key
         orig_data = self._properties["nodes"][story_cover_node]["data"]
@@ -319,6 +344,8 @@ class StoryMap(object):
             },
         }
         if image is not None:
+            if image._node not in self._properties["nodes"]:
+                image._add_image(story=self)
             self._properties["nodes"][story_cover_node]["children"] = [image._node]
         return self._properties["nodes"][story_cover_node]
 
@@ -335,7 +362,7 @@ class StoryMap(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         nodes               Optional list of dictionaries. The node ids to navigate to.
-                            Use ```navigation_list``` property to get the current list.
+                            Use ```navigation``` property to get the current list.
 
                             ..note:
                                 If a current list exists, copy and add to this list. Pass in entire
@@ -374,16 +401,17 @@ class StoryMap(object):
         return self._properties["nodes"][node_id]
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: Themes = Themes.SUMMIT):
+    def theme(self, theme: Union[Themes, str] = Themes.SUMMIT):
         """
         Each story has a theme node in it's resources. This method can be used to change the theme
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        theme               Required Themes Style. The theme to set the story to.
+        theme               Required Themes Style or custom theme item id.
+                            The theme to set the story to.
 
-                            Values: SUMMIT | TIDAL | MESA | RIDGELINE | SLATE | OBSIDIAN
+                            Values: SUMMIT | TIDAL | MESA | RIDGELINE | SLATE | OBSIDIAN | "<item_id>"
         ===============     ====================================================================
         """
 
@@ -394,6 +422,10 @@ class StoryMap(object):
                         self._properties["resources"][node]["data"][
                             "themeId"
                         ] = theme.value
+                    if isinstance(theme, str):
+                        self._properties["resources"][node]["data"][
+                            "themeItemId"
+                        ] = theme
 
     # ----------------------------------------------------------------------
     def add(
@@ -457,7 +489,7 @@ class StoryMap(object):
             # Example to add a Separator
             >>> new_node = new_story.add()
 
-            >>> print(new_story.node_order)
+            >>> print(new_story.nodes)
 
         """
         if content and content._node in self._properties["nodes"]:
@@ -501,7 +533,7 @@ class StoryMap(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         node_id             Required String. The node id for the content that will be moved. Find a
-                            list of node order by using the ```node_order``` property.
+                            list of node order by using the ```nodes``` property.
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the content will be
                             added. If no position is provided, the node will be placed at the end.
@@ -659,48 +691,26 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     def _delete(self, node_id, resource_id=None):
-        """
-        Delete a node from the story.
+        # Check if node is in story
+        if node_id not in self._properties["nodes"]:
+            return False
 
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        node_id             Required String. The node id for the content that will be deleted.
-                            To see the node ids for different types of items use ```list_nodes```
-                            method.
-        ===============     ====================================================================
+        root_id = self._properties["root"]
+        children = self._properties["nodes"][root_id]["children"]
 
-        ..code-block:: python
+        # Remove from children of story
+        if node_id in children:
+            self._properties["nodes"][root_id]["children"].remove(node_id)
+        # Remove from nodes dictionary
+        del self._properties["nodes"][node_id]
 
-            new_story = StoryMap()
+        # Remove from resources dictionary
+        # Note: not all keys are in resources
+        resource = self._properties["resources"].pop(resource_id, None)
+        if resource is not None and "resourceId" in resource["data"]:
+            self._remove_resource(resource["data"]["resourceId"])
 
-            # Example with Image
-            >>> image1 = Image("<image-path>.jpg/jpeg/png/gif")
-            >>> new_node = new_story.add(image1, "my caption", "my alt-text", "float", 2)
-            >>> new_story.delete(new_node)
-
-        """
-        for key, value in self._properties["nodes"].items():
-            if key == node_id:
-                root_id = self._properties["root"]
-                children = self._properties["nodes"][root_id]["children"]
-
-                # Remove from children of story
-                if node_id in children:
-                    children.remove(node_id)
-
-                # Remove from nodes dictionary
-                del self._properties["nodes"][node_id]
-
-                # Remove from resources dictionary
-                # Note: not all keys are in resources
-                resource = self._properties["resources"].pop(resource_id, None)
-
-                if resource is not None:
-                    self._remove_resource(resource["data"]["resourceId"])
-                return True
-            else:
-                return False
+        return True
 
     # ----------------------------------------------------------------------
     def _add_child(self, node_id, position=None):
@@ -773,12 +783,14 @@ class StoryMap(object):
         elif node_type == "button":
             node = Content.Button(story=self, node_id=node_id)
         elif node_type == "swipe":
-            node = Content.Swipe(node_id, self)
+            node = Content.Swipe(self, node_id)
+        elif node_type == "gallery":
+            node = Content.Gallery(story=self, node_id=node_id)
         elif node_type == "immersive":
             # immersive has subtype sidecar, and tour
             subtype = self._properties["nodes"][node_id]["data"]["type"]
             if subtype == "sidecar":
-                node = Content.Sidecar(node_id, self)
+                node = Content.Sidecar(self, node_id)
             else:
                 node = subtype
         else:
