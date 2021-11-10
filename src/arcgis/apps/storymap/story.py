@@ -247,7 +247,7 @@ class StoryMap(object):
                     # Find all story content instances
                     if type.lower() in keyword._type:
                         spec_type.append(node)
-            return tuple(spec_type)
+            return spec_type
 
     # ----------------------------------------------------------------------
     def credits(
@@ -658,10 +658,10 @@ class StoryMap(object):
         """
         # Check if item id exists
         item = self._gis.content.get(self._itemid)
-        item.delete()
+        return item.delete()
 
     # ----------------------------------------------------------------------
-    def duplicate_story(self, title: Optional[str] = None):
+    def duplicate(self, title: Optional[str] = None):
         """
         Duplicate the story.
 
