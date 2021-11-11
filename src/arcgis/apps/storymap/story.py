@@ -461,12 +461,15 @@ class StoryMap(object):
         alt_text            Optional String. Custom text to be used for screen readers.
         ---------------     --------------------------------------------------------------------
         display             Optional String. How the item will be displayed in the story map.
-                            Used for Image, Video, Audio, or Map object.
 
+                            For Image, Video, Audio, or Map object.
                             Values: "small" | "wide" | "full" | "float"
 
                             For Gallery:
                             Values: "jigsaw" | "square-dynamic"
+
+                            For Embed:
+                            Values: "card" | "inline"
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the content will be
                             added. To see all node positions use the ```children``` property.
@@ -508,7 +511,7 @@ class StoryMap(object):
         elif isinstance(content, Content.Map):
             content._add_map(caption, alt_text, display, story=self)
         elif isinstance(content, Content.Embed):
-            content._add_link(caption, alt_text, self)
+            content._add_link(caption, alt_text, display, self)
         elif isinstance(content, Content.Button):
             content._add_button(self)
         elif isinstance(content, Content.Text):

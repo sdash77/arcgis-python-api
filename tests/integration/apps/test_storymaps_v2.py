@@ -160,7 +160,7 @@ class TestStoryMap(unittest.TestCase):
     def test_delete(self):
         """Test delete method on an Audio node. Each content has this delete method"""
         # Audio through URL
-        thunder = Audio("https://freesound.org/embed/sound/iframe/436076/simple/large/")
+        thunder = Audio(content + r"\channel_isl.mp3")
         story.add(thunder)
         assert thunder.properties
 
