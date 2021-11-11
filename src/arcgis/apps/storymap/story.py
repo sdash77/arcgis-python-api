@@ -331,9 +331,9 @@ class StoryMap(object):
             },
         }
         if image is not None:
-            if image._node not in self._properties["nodes"]:
+            if image.node not in self._properties["nodes"]:
                 image._add_image(story=self)
-            self._properties["nodes"][story_cover_node]["children"] = [image._node]
+            self._properties["nodes"][story_cover_node]["children"] = [image.node]
         return self._properties["nodes"][story_cover_node]
 
     # ----------------------------------------------------------------------
@@ -541,10 +541,10 @@ class StoryMap(object):
             >>> print(new_story.nodes)
 
         """
-        if content and content._node in self._properties["nodes"]:
+        if content and content.node in self._properties["nodes"]:
             raise Exception("This node already exists. Please try updating instead.")
 
-        node_id = content._node if content is not None else uuid.uuid4().hex[0:6]
+        node_id = content.node if content is not None else uuid.uuid4().hex[0:6]
 
         if isinstance(content, Content.Image):
             content._add_image(caption, alt_text, display, self)
