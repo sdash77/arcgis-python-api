@@ -258,7 +258,7 @@ def find_existing_locations(
                                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
 
                                                 .. code-block:: python
-                                                
+
                                                     # Example Usage
                                                     context = {"extent": {"xmin": 3164569.408035,
                                                                         "ymin": -9187921.892449,
