@@ -2073,8 +2073,8 @@ class Sidecar(object):
             # Remove current media content and add new content as media
             if media_item:
                 self._story._delete(media_item)
-                self._story._properties["nodes"][slide_node]["children"].pop(1)
-            self._story._properties["nodes"][slide_node].insert(1, content.node)
+                self._story._properties["nodes"][slide]["children"].pop(1)
+            self._story._properties["nodes"][slide].insert(1, content.node)
 
     # ----------------------------------------------------------------------
     def remove_slide(self, slide: str):
