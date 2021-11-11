@@ -268,47 +268,6 @@ class StoryMap(object):
             return spec_type
 
     # ----------------------------------------------------------------------
-    def credits(
-        self,
-        content: Optional[str] = None,
-        attribution: Optional[str] = None,
-    ):
-        """
-        Add credits to the story.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        content             Optional String. The content to be added. (Seen on the left side of
-                            the credits.)
-
-                            Make sure text has '<strong> </strong>' tags.
-        ---------------     --------------------------------------------------------------------
-        attribution         Optional String. The attribution to be added. (Seen on right side of
-                            the credits.)
-        ===============     ====================================================================
-
-        :return:
-            The node ids for the text that belongs to credits
-        """
-        # Find credit node
-        dict_node = self.get("credits")[0]
-        for key, value in dict_node.items():
-            credits_node = key
-        credits = self._properties["nodes"][credits_node]
-
-        # Create new content node
-        content_node = "n-" + uuid.uuid4().hex[0:6]
-        self._properties["nodes"][content_node] = {
-            "type": "attribution",
-            "data": {"content": content, "attribution": attribution},
-        }
-
-        # Add to children of credits
-        credits["children"].append(content_node)
-        return credits["children"]
-
-    # ----------------------------------------------------------------------
     def story_cover(
         self,
         title: Optional[str] = None,
@@ -444,6 +403,47 @@ class StoryMap(object):
                         self._properties["resources"][node]["data"][
                             "themeItemId"
                         ] = theme
+
+    # ----------------------------------------------------------------------
+    def credits(
+        self,
+        content: Optional[str] = None,
+        attribution: Optional[str] = None,
+    ):
+        """
+        Add credits to the story.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        content             Optional String. The content to be added. (Seen on the left side of
+                            the credits.)
+
+                            Make sure text has '<strong> </strong>' tags.
+        ---------------     --------------------------------------------------------------------
+        attribution         Optional String. The attribution to be added. (Seen on right side of
+                            the credits.)
+        ===============     ====================================================================
+
+        :return:
+            The node ids for the text that belongs to credits
+        """
+        # Find credit node
+        dict_node = self.get("credits")[0]
+        for key, value in dict_node.items():
+            credits_node = key
+        credits = self._properties["nodes"][credits_node]
+
+        # Create new content node
+        content_node = "n-" + uuid.uuid4().hex[0:6]
+        self._properties["nodes"][content_node] = {
+            "type": "attribution",
+            "data": {"content": content, "attribution": attribution},
+        }
+
+        # Add to children of credits
+        credits["children"].append(content_node)
+        return credits["children"]
 
     # ----------------------------------------------------------------------
     def add(
