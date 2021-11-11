@@ -33,7 +33,8 @@ class StoryMap(object):
     that helps users explore this content.
 
     ArcGIS StoryMaps is the next-generation storytelling tool in ArcGIS, and story authors are
-    encouraged to use this tool to create stories.
+    encouraged to use this tool to create stories. The Python API can help you create and edit
+    your stories.
     """
 
     _properties = None
@@ -160,7 +161,7 @@ class StoryMap(object):
         """
         Get/Set the date shown on the story cover.
 
-        Values: "first-published" | "last-published" | "none"
+            Values: "first-published" | "last-published" | "none"
         """
         root = self._properties["root"]
         return self._properties["nodes"][root]["config"]["coverDate"]
@@ -175,17 +176,14 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @property
     def properties(self):
-        """This property returns the storymap's JSON"""
+        """This property returns the storymap's JSON."""
         return self._properties
 
     # ----------------------------------------------------------------------
     @property
     def nodes(self):
         """
-        This propertry returns the storymap's main nodes in order of appearance in the story
-
-        To see sub-nodes then use the corresponding immersive class to list the nodes for
-        immersive types.
+        Get main nodes in order of appearance in the story.
         """
         root_id = self._properties["root"]
         children = self._properties["nodes"][root_id]["children"]
@@ -215,7 +213,7 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def get(self, node: Optional[str] = None, type: Optional[str] = None):
         """
-        Find the nodes for each type of item.
+        Get node(s) by type or by their id.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -226,19 +224,27 @@ class StoryMap(object):
         type                Optional string. The type of nodes that user wants returned.
                             If none specified, list of all nodes returned.
 
-                            Values: "image" | "video" | "audio" | "embed" | "webmap" | "text" |
-                                    "button" | "separator" | "expressmap" | "webscene" | "immersive"
+
+                                Values: "image" | "video" | "audio" | "embed" | "webmap" | "text" |
+                                "button" | "separator" | "expressmap" | "webscene" | "immersive"
         ===============     ====================================================================
 
         :return:
             If type specified: List of node ids and their types in order of appearance in the story map.
+
             If node_id specified: The node itself.
 
 
-        ..code-block:: python
+        .. code-block:: python
 
             >>> story = StoryMap(<story item>)
-            >>> story.get("text")
+
+            # Example get by type
+            >>> story.get(type = "text")
+
+            # Example by id
+            >>> text = story.get(node= "<id for text node>")
+            >>> text.properties
 
         """
         spec_type = []
@@ -268,7 +274,7 @@ class StoryMap(object):
             return spec_type
 
     # ----------------------------------------------------------------------
-    def story_cover(
+    def cover(
         self,
         title: Optional[str] = None,
         type: str = "full",
@@ -277,7 +283,11 @@ class StoryMap(object):
         image: Optional[Image] = None,
     ):
         """
-        All stories come with a story cover node. This method allows you to edit the story cover.
+        A story's cover is at the top of the story and always the first node.
+        This method allows the cover to be edited by updating the title, byline, image, and more.
+
+        .. note::
+            To change the date seen on the story cover, use the ``cover_date`` property.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -298,10 +308,10 @@ class StoryMap(object):
 
         :return: Dictionary representation of the story cover node.
 
-        ..code-block:: python
+        .. code-block:: python
 
             story = StoryMap(<story item>)
-            story.story_cover(title="My Story Title", type="minimal", summary="My little summary", by_line="python_dev")
+            story.cover(title="My Story Title", type="minimal", summary="My little summary", by_line="python_dev")
             story.save()
 
         """
@@ -331,29 +341,32 @@ class StoryMap(object):
         """
         Story navigation is a way for authors to add headings as
         links to allow readers to navigate between different sections
-        of a story. The story navigation node takes h2 blocks as its only allowed children.
-        You can only have 10 h2 child nodes as visible and act as links within a story.
-        The h2 node’s text can only allow up to 30 characters.
+        of a story. The story navigation node takes ``TextStyle.HEADING`` text styles
+        as its only allowed children.
+        You can only have 10 :class:`~arcgis.apps.storymap.story_content.Text` child nodes
+        as visible and act as links within a story.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         nodes               Optional list of dictionaries. The node ids to navigate to.
-                            Use ```navigation``` property to get the current list.
+                            Use ``navigation`` property to get the current list.
 
-                            ..note:
+                            .. code-block:: python
+
+                                nodes = [{
+                                    "nodeId": "n-R9XpeZ",
+                                    "nodeID": "n-8wzjrC",
+                                    "nodeID": "n-lA9Qac"
+                                }]
+
+                            .. note:
                                 If a current list exists, copy and add to this list. Pass in entire
                                 list again as current list will be overwritten.
-
-                            Example:
-                            nodes = [{
-                                "nodeId": "n-R9XpeZ",
-                                "nodeID": "n-8wzjrC",
-                                "nodeID": "n-lA9Qac"
-                            }]
         ---------------     --------------------------------------------------------------------
         hidden              Optional boolean. If True, the navigation is hidden.
         ===============     ====================================================================
+
         """
 
         # Check if navigation node already exists
@@ -411,7 +424,10 @@ class StoryMap(object):
         attribution: Optional[str] = None,
     ):
         """
-        Add credits to the story.
+        Credits are found at the end of the story and are always the last node. Content and
+        attribution can be added to them.
+
+        To create a credit, add the text that should be shown on each side of the divider.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -426,7 +442,7 @@ class StoryMap(object):
         ===============     ====================================================================
 
         :return:
-            The node ids for the text that belongs to credits
+            A list of strings that are the node ids for the text nodes that belong to credits.
         """
         # Find credit node
         dict_node = self.get("credits")[0]
@@ -466,13 +482,25 @@ class StoryMap(object):
         position: Optional[int] = None,
     ):
         """
-        Add and content to the story map
+        Use this method to add content to your StoryMap. Content can be of various types and when
+        you add this content you can specify a caption, alt_text, display style, and the position
+        at which it will be in your story.
+
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        content             Optional content of type: Image, Gallery, Video, Audio, Embed, Map, Button,
-                            or Text. If none is provided, a separator is added.
+        content             Optional content of type:
+                            :class:`~arcgis.apps.storymap.story_content.Image`,
+                            :class:`~arcgis.apps.storymap.story_content.Gallery`,
+                            :class:`~arcgis.apps.storymap.story_content.Video`,
+                            :class:`~arcgis.apps.storymap.story_content.Audio`,
+                            :class:`~arcgis.apps.storymap.story_content.Embed`,
+                            :class:`~arcgis.apps.storymap.story_content.Map`,
+                            :class:`~arcgis.apps.storymap.story_content.Text`,
+                            :class:`~arcgis.apps.storymap.story_content.Button`
+
+                            If none is provided, a separator is added.
         ---------------     --------------------------------------------------------------------
         caption             Optional String. Custom text to caption the webmap.
         ---------------     --------------------------------------------------------------------
@@ -480,20 +508,20 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         display             Optional String. How the item will be displayed in the story map.
 
-                            For Image, Video, Audio, or Map object.
-                            Values: "small" | "wide" | "full" | "float"
+                                For Image, Video, Audio, or Map object.
+                                    Values: "small" | "wide" | "full" | "float"
 
-                            For Gallery:
-                            Values: "jigsaw" | "square-dynamic"
+                                For Gallery:
+                                    Values: "jigsaw" | "square-dynamic"
 
-                            For Embed:
-                            Values: "card" | "inline"
+                                For Embed:
+                                    Values: "card" | "inline"
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the content will be
-                            added. To see all node positions use the ```children``` property.
+                            added. To see all node positions use the ``node`` property.
         ===============     ====================================================================
 
-        :return: The node-id for the added content as a String.
+        :return: A String depicting the node id for the content that was added.
 
         .. code-block:: python
 
@@ -548,13 +576,13 @@ class StoryMap(object):
         """
         Move a node to another position. The node currently at that position will
         be moved down one space. The node at the current position can be deleted
-        instead of moved if delete_current is set to True.
+        instead of moved if `delete_current` is set to True.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         node_id             Required String. The node id for the content that will be moved. Find a
-                            list of node order by using the ```nodes``` property.
+                            list of node order by using the ``nodes`` property.
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the content will be
                             added. If no position is provided, the node will be placed at the end.
@@ -601,7 +629,13 @@ class StoryMap(object):
         publish: bool = False,
     ):
         """
-        Saves an StoryMap to the GIS
+        This method will save your Story Map to your active GIS. The story will be saved
+        with unpublished changes unless `publish` parameter is specified to True.
+
+        The story is by default published as private.
+
+        The title only needs to be specified if a change is wanted, otherwise exisiting title
+        is used.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -692,10 +726,10 @@ class StoryMap(object):
         title               Optional string. The title of the duplicated story.
         ===============     ====================================================================
 
-        ..code-block:: python
+        .. code-block:: python
 
-            story = StoryMap(<story item>)
-            story.duplicate("A Story Copy")
+            >>> story = StoryMap(<story item>)
+            >>> story.duplicate("A Story Copy")
 
         """
         item = self._gis.content.get(self._itemid)

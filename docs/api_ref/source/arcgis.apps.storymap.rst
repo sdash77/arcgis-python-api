@@ -1,37 +1,98 @@
-arcgis.apps.storymap package
+arcgis.apps.storymap module
 ============================
 
-Submodules
-----------
+.. automodule:: arcgis.apps.storymap
 
-arcgis.apps.storymap.story module
+The :class:`~arcgis.apps.storymap.story.StoryMap` is the main entry point into the Story Map module.
+
+StoryMap
 ---------------------------------
-
-.. automodule:: arcgis.apps.storymap.story
+.. autoclass:: arcgis.apps.storymap.story.StoryMap
    :members:
    :undoc-members:
    :show-inheritance:
 
-arcgis.apps.storymap.story\_content module
-------------------------------------------
 
-.. automodule:: arcgis.apps.storymap.story_content
+Image
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Image
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Video
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Video
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Audio
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Audio
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Embed
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Embed
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Map
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Map
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Text
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Text
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Button
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Button
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Gallery
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Gallery
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Swipe
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Swipe
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Sidecar
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Sidecar
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Timeline
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Timeline
    :members:
    :undoc-members:
    :show-inheritance:
 
 arcgis.apps.storymap.storymap module
 ------------------------------------
-
 .. automodule:: arcgis.apps.storymap.storymap
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: arcgis.apps.storymap
    :members:
    :undoc-members:
    :show-inheritance:

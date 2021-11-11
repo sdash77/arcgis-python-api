@@ -32,25 +32,16 @@ class TextStyles(Enum):
 ###############################################################################################################
 class Image(object):
     """
-    Class representing an image from a url or file
+    Class representing an ``image`` from a url or file.
+
+    ==================      ====================================================================
+    **Argument**            **Description**
+    ------------------      --------------------------------------------------------------------
+    path                    Required String. The file path to the image that will be added.
+    ==================      ====================================================================
     """
 
     def __init__(self, path: Optional[str] = None, **kwargs):
-        """
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        path                    Required String. The file path to the image that will be added.
-        ==================      ====================================================================
-
-        This creates an Image item containing:
-            - self._path: The image path or url
-            - self._url: A boolean indicating whether the image is from a url
-            - self.node: A unique id for use in the story's nodes dictionary
-            - self.resource_node: A unique id for use in the story's resources dictionary
-            - self._type: The type of node
-            - self._story: The story the this content is associated with.
-        """
         self._story = kwargs.pop("story", None)
         self._type = "image"
         self._url = False
@@ -97,9 +88,6 @@ class Image(object):
             dictionary for the image.
             If nothing is returned, make sure your content has been added
             to the story.
-
-        ..note:
-            To change various properties of the Image use the other property setters.
         """
         if self._check_node() is True:
             return {
@@ -193,11 +181,11 @@ class Image(object):
 
     # ----------------------------------------------------------------------
     @property
-    def display(self, display):
+    def display(self):
         """
         Get/Set display for image.
 
-        Values: "small" | "wide" | "full" | "float"
+        ``Values: "small" | "wide" | "full" | "float"``
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
@@ -324,23 +312,22 @@ class Image(object):
 ###############################################################################################################
 class Video(object):
     """
-    Class representing a video from a url or file
+    Class representing a ``video`` from a url or file
+
+    ==================      ====================================================================
+    **Argument**            **Description**
+    ------------------      --------------------------------------------------------------------
+    path                    Required String. The file path or embed url to the video that will
+                            be added.
+
+                            .. note::
+                                URL must be an embed url.
+                                Example: "https://www.youtube.com/embed/G6b7Kgvd0iA"
+
+    ==================      ====================================================================
     """
 
     def __init__(self, path: Optional[str] = None, **kwargs):
-        """
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        path                    Required String. The file path or embed url to the video that will
-                                be added.
-
-                                ..note:
-                                    url must be an embed url.
-                                    Example: "https://www.youtube.com/embed/G6b7Kgvd0iA"
-
-        ==================      ====================================================================
-        """
         self._story = kwargs.pop("story", None)
         self._type = "video"
         self._url = False
@@ -378,7 +365,7 @@ class Video(object):
             dictionary for the video.
             If nothing is returned, make sure the content is part of the story.
 
-        ..note:
+        .. note::
             To change various properties of the Video use the other property setters.
         """
         if self._check_node() is True:
@@ -478,9 +465,9 @@ class Video(object):
         """
         Get/Set display for the video.
 
-        Values: “small” | “wide” | “full” | “float”
+        ``Values: “small” | “wide” | “full” | “float”``
 
-        ..note:
+        .. note::
             Cannot change display when video is created from a url
         """
         if self._check_node() is True:
@@ -613,23 +600,18 @@ class Video(object):
 ###############################################################################################################
 class Audio(object):
     """
-    Class representing an audio from a url or file
+    This class represents content that is of type ``audio``. It can be created from
+    a file path and added to the story.
+
+    ==================      ====================================================================
+    **Argument**            **Description**
+    ------------------      --------------------------------------------------------------------
+    path                    Required String. The file path to the audio that will be added.
+    ==================      ====================================================================
 
     """
 
     def __init__(self, path: Optional[str] = None, **kwargs):
-        """
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        path                    Required String. The file path to the image that will be added.
-
-                                ..note:
-                                    url must be an embed url.
-                                    Example: "https://www.youtube.com/embed/G6b7Kgvd0iA"
-
-        ==================      ====================================================================
-        """
         # Audio cannot be added by Url at this time.
         if _parse.urlparse(path).scheme == "https":
             raise ValueError(
@@ -661,10 +643,9 @@ class Audio(object):
         :return:
             A dictionary depicting the node dictionary and resource
             dictionary for the audio.
+
             If nothing is returned, make sure the content is part of the story.
 
-        ..note:
-            To change various properties of the Audio use the other property setters.
         """
         if self._check_node() is True:
             return {
@@ -678,7 +659,7 @@ class Audio(object):
     @property
     def audio(self):
         """
-        Get/Set the audio property.
+        Get/Set the audio path.
 
         ==================  ========================================
         **Argument**        **Description**
@@ -762,7 +743,7 @@ class Audio(object):
         """
         Get/Set display for audio.
 
-        Values: "small" | "wide" | "float"
+            ``Values: "small" | "wide" | "float"``
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
@@ -844,18 +825,18 @@ class Audio(object):
 ###############################################################################################################
 class Embed(object):
     """
-    Class representing an embedded video, audio, or webpage.
+    Class representing a ``webpage`` or ``embedded audio``.
+    Embed will show as a card in the story.
+
+    ==================      ====================================================================
+    **Argument**            **Description**
+    ------------------      --------------------------------------------------------------------
+    path                    Required String. The url that will be added as a webpage, video, or
+                            audio embed into the story.
+    ==================      ====================================================================
     """
 
     def __init__(self, path: Optional[str] = None, **kwargs):
-        """
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        path                    Required String. The url that will be added as a webpage, video, or
-                                audio embed into the story.
-        ==================      ====================================================================
-        """
         self._story = kwargs.pop("story", None)
         self._type = "embed"
         self.node = kwargs.pop("node_id", None)
@@ -872,12 +853,12 @@ class Embed(object):
         """
         Get properties for the Embed.
 
+        .. note::
+            To change various properties of the Embed use the other property setters.
+
         :return:
             A dictionary depicting the node dictionary for the embed.
             If nothing is returned, make sure the content is part of the story.
-
-        ..note:
-            To change various properties of the Embed use the other property setters.
         """
         if self._check_node() is True:
             return {
@@ -966,7 +947,7 @@ class Embed(object):
         """
         Get/Set display for embed.
 
-        Values: "card" | "inline"
+        ``Values: "card" | "inline"``
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["data"]["display"]
@@ -1026,20 +1007,18 @@ class Embed(object):
 ###############################################################################################################
 class Map(object):
     """
-    Class representing a webmap or webscene for the story
+    Class representing a ``webmap`` or ``webscene`` for the story
 
+    =================       ====================================================================
+    **Argument**            **Description**
+    -----------------       --------------------------------------------------------------------
+    item                    An Item of type :class:`~arcgis.mapping.WebMap` or
+                            :class:`~arcgis.mapping.WebScene` or a String representing the item
+                            id to add to the story map.
+    =================       ====================================================================
     """
 
     def __init__(self, item: Optional[arcgis.gis.Item] = None, **kwargs):
-        """
-        =================       ====================================================================
-        **Argument**            **Description**
-        -----------------       --------------------------------------------------------------------
-        item                    An Item of type WebMap or WebScene or a String representing the item
-                                id to add to the story map.
-        =================       ====================================================================
-
-        """
         self._story = kwargs.pop("story", None)
         self._type = "webmap"
         self.node = kwargs.pop("node_id", None)
@@ -1116,7 +1095,7 @@ class Map(object):
             dictionary for the map.
             If nothing it returned, make sure the content is part of the story.
 
-        ..note:
+        .. note::
             To change various properties of the Map use the other property setters.
         """
         if self._check_node() is True:
@@ -1137,10 +1116,14 @@ class Map(object):
         **Argument**        **Description**
         ------------------  ----------------------------------------
         map                 One of three choices:
-                            - String: item id for an Item of type 'webmap'
-                            or 'webscene'.
-                            - The Item itself.
-                            - An instance of Map that has not been added
+
+                            * String: item id for an Item of type
+                            :class:`~arcgis.mapping.WebMap`
+                            or :class:`~arcgis.mapping.WebScene`.
+
+                            * The Item itself.
+
+                            * An instance of Map that has not been added
                             to the story.
         ==================  ========================================
 
@@ -1218,7 +1201,7 @@ class Map(object):
         """
         Get/Set the display type of the map.
 
-        Values: "standard" | "wide" | "full" | "float"
+        ``Values: "standard" | "wide" | "full" | "float"``
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
@@ -1299,7 +1282,75 @@ class Map(object):
 ###############################################################################################################
 class Text(object):
     """
-    Class representing a text
+    Class representing a ``text`` and a style of text.
+
+    ==================      ====================================================================
+    **Argument**            **Description**
+    ------------------      --------------------------------------------------------------------
+    text                    Required String. The text that will be shown in the story.
+
+
+                                Example:
+                                "Paragraph with <strong>bold</strong>,
+                                <em>italic</em> and
+                                <a href=\"https://www.google.com\" rel=\"noopener noreferrer\"
+                                target=\"_blank\">hyperlink</a> and a
+                                <span class=\"sm-text-color-080\">custom color</span>"
+    ------------------      --------------------------------------------------------------------
+    style                   Optional TextStyles type. There are 7 different styles of text that can be
+                            added to a story.
+
+                            ``Values: PARAGRPAH | LARGEPARAGRAPH | NUMBERLIST | BULLETLIST |
+                            HEADING | SUBHEADING | QUOTE``
+    ------------------      --------------------------------------------------------------------
+    custom_color            Optional String. The hex color value without the #.
+                            Only available when type is either 'paragraph', 'bullet-list', or
+                            'numbered-list'.
+
+
+                            Ex: custom_color = "080"
+    ==================      ====================================================================
+
+
+    Properties of the different text types:
+
+    ===================     ====================================================================
+    **Type**                **Text**
+    -------------------     --------------------------------------------------------------------
+    paragraph               String can contain the following tags for text formatting:
+                            <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
+                            and a class attribute to indicate color formatting:
+                            class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
+
+                            ``Values: themeColor1 | themeColor2 | themeColor3 | customTextColors``
+    -------------------     --------------------------------------------------------------------
+    large-paragraph         String can contain the following tags for text formatting:
+                            <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
+                            and a class attribute to indicate color formatting:
+                            class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
+
+                            ``Values: themeColor1 | themeColor2 | themeColor3 | customTextColors``
+    -------------------     --------------------------------------------------------------------
+    heading                 String can only contain <em> tag
+    -------------------     --------------------------------------------------------------------
+    subheading              String can only contain <em> tag
+    -------------------     --------------------------------------------------------------------
+    bullet-list             String can contain the following tags for text formatting:
+                            <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
+                            and a class attribute to indicate color formatting:
+                            class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
+
+                            ``Values: themeColor1 | themeColor2 | themeColor3 | customTextColors``
+    -------------------     --------------------------------------------------------------------
+    numbered-list           String can contain the following tags for text formatting:
+                            <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
+                            and a class attribute to indicate color formatting:
+                            class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
+
+                            ``Values: themeColor1 | themeColor2 | themeColor3 | customTextColors``
+    -------------------     --------------------------------------------------------------------
+    quote                   String can only contain <strong> and <em> tags
+    ===================     ====================================================================
 
     """
 
@@ -1310,79 +1361,6 @@ class Text(object):
         color: str = "000",
         **kwargs,
     ):
-        """
-
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        text                    Required String. The text that will be shown in the story.
-
-                                Example:
-                                    "Paragraph with <strong>bold</strong>,
-                                    <em>italic</em> and
-                                    <a href=\"https://www.google.com\" rel=\"noopener noreferrer\"
-                                    target=\"_blank\">hyperlink</a> and a
-                                    <span class=\"sm-text-color-080\">custom color</span>"
-        ------------------      --------------------------------------------------------------------
-        style                   Optional TextStyles type. There are 7 different styles of text that can be
-                                added to a story.
-
-                                Values: PARAGRPAH | LARGEPARAGRAPH | NUMBERLIST | BULLETLIST |
-                                        HEADING | SUBHEADING | QUOTE
-
-                                ..note:
-                                    To make text withing these types bold, italic, or hyperlink the
-                                    text parameter must include these.
-        ------------------      --------------------------------------------------------------------
-        custom_color            Optional String. The hex color value without the #.
-                                Only available when type is either 'paragraph', 'bullet-list', or
-                                'numbered-list'.
-
-                                Ex: custom_color = "080"
-        ==================      ====================================================================
-
-
-        Properties of the different text types:
-
-        ===================     ====================================================================
-        **Type**                **Text**
-        -------------------     --------------------------------------------------------------------
-        paragraph               String can contain the following tags for text formatting:
-                                <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
-                                and a class attribute to indicate color formatting:
-                                class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
-
-                                Values: themeColor1 | themeColor2 | themeColor3 | customTextColors
-        -------------------     --------------------------------------------------------------------
-        large-paragraph         String can contain the following tags for text formatting:
-                                <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
-                                and a class attribute to indicate color formatting:
-                                class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
-
-                                Values: themeColor1 | themeColor2 | themeColor3 | customTextColors
-        -------------------     --------------------------------------------------------------------
-        heading                 String can only contain <em> tag
-        -------------------     --------------------------------------------------------------------
-        subheading              String can only contain <em> tag
-        -------------------     --------------------------------------------------------------------
-        bullet-list             String can contain the following tags for text formatting:
-                                <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
-                                and a class attribute to indicate color formatting:
-                                class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
-
-                                Values: themeColor1 | themeColor2 | themeColor3 | customTextColors
-        -------------------     --------------------------------------------------------------------
-        numbered-list           String can contain the following tags for text formatting:
-                                <strong>, <em>, <a href="{link}" rel="noopener noreferer” target=”_blank”
-                                and a class attribute to indicate color formatting:
-                                class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
-
-                                Values: themeColor1 | themeColor2 | themeColor3 | customTextColors
-        -------------------     --------------------------------------------------------------------
-        quote                   String can only contain <strong> and <em> tags
-        ===================     ====================================================================
-
-        """
         self._story = kwargs.pop("story", None)
         self._type = "text"
         self.node = kwargs.pop("node_id", None)
@@ -1419,15 +1397,16 @@ class Text(object):
         text                Dictionary. Holds new values for the text
                             node.
 
-                            Must resemble this structure:
-                            {
-                                "type": "text",
-                                "data": {
-                                    "type": <value of TextStyles Class>,
-                                    "text": <text>,
-                                    "customTextColors": <Optional colors as an array>
-                                }
-                            }
+                            .. code-block:: python
+
+                                Must resemble this structure:
+                                {
+                                    "type": "text",
+                                    "data": {
+                                        "type": <value of TextStyles Class>,
+                                        "text": <text>,
+                                        "customTextColors": <Optional colors as an array>
+                                }  }
         ==================  ==================================================
 
         :return:
@@ -1483,23 +1462,22 @@ class Text(object):
 ###############################################################################################################
 class Button(object):
     """
-    Class representing a button
+    Class representing a ``button``.
+
+    ==================      ====================================================================
+    **Argument**            **Description**
+    ------------------      --------------------------------------------------------------------
+    link                    Required String. When user clicks on button, they will be brought to
+                            the link.
+    ------------------      --------------------------------------------------------------------
+    text                    Required String. The text that shows on the button.
+    ==================      ====================================================================
+
     """
 
     def __init__(
         self, link: Optional[str] = None, text: Optional[str] = None, **kwargs
     ):
-        """
-        ==================      ====================================================================
-        **Argument**            **Description**
-        ------------------      --------------------------------------------------------------------
-        link                    Required String. When user clicks on button, they will be brought to
-                                the link.
-        ------------------      --------------------------------------------------------------------
-        text                    Required String. The text that shows on the button.
-        ==================      ====================================================================
-
-        """
         self._story = kwargs.pop("story", None)
         self._type = "button"
         self.node = kwargs.pop("node_id", None)
@@ -1524,14 +1502,15 @@ class Button(object):
         ------------------  --------------------------------------------------
         button              Dictionary. Holds new values for the button node.
 
-                            Must resemble this structure:
-                            {
-                                "type": "button",
-                                "data": {
-                                    "text": <button text>,
-                                    "link": <button link>
-                                }
-                            }
+                            .. code-block:: python
+
+                                Must resemble this structure:
+                                {
+                                    "type": "button",
+                                    "data": {
+                                        "text": <button text>,
+                                        "link": <button link>
+                                }   }
         ==================  ==================================================
 
         :return:
@@ -1576,14 +1555,26 @@ class Button(object):
 ###############################################################################################################
 class Gallery(object):
     """
-    Class representing an Image Gallery from Images
+    Class representing an ``image gallery``
+
+    To begin with a new gallery, simply call the class. Once added to the story,
+    you can add up to 12 images.
+
+    .. code-block:: python
+
+        # Images to add to the gallery.
+        >>> image1 = Image(<url or path>)
+        >>> image2 = Image(<url or path>)
+        >>> image3 = Image(<url or path>)
+
+        # Create a gallery and add
+        >>> gallery = Gallery()
+        >>> my_story.add(gallery)
+        >>> gallery.add([image1, image2, image3])
     """
 
     def __init__(self, **kwargs):
-        """
-        Create an empty gallery.
-        In order to add images to the gallery, use the add method in the Gallery class.
-        """
+        """ """
         self._story = kwargs.pop("story", None)
         self._type = "gallery"
         self.node = kwargs.pop("node_id", None)
@@ -1696,7 +1687,7 @@ class Gallery(object):
         """
         Get/Set the display type of the Gallery.
 
-        Values: "jigsaw" | "square-dynamic"
+        ``Values: "jigsaw" | "square-dynamic"``
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
@@ -1778,18 +1769,31 @@ class Gallery(object):
 
 ###############################################################################################################
 class Swipe(object):
-    def __init__(self, story, node: str):
-        """
-        Create an Swipe immersive object from a pre-existing immersive node.
+    """
+    Create an Swipe object from a pre-existing ``swipe`` node.
 
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        node                Required String. The node id for the swipe type.
-        ---------------     --------------------------------------------------------------------
-        story               Required StoryMap that the swipe belongs to.
-        ===============     ====================================================================
-        """
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    node                Required String. The node id for the swipe type.
+    ---------------     --------------------------------------------------------------------
+    story               Required StoryMap that the swipe belongs to.
+    ===============     ====================================================================
+
+    .. code-block:: python
+
+        >>> my_story.nodes #use to find swipe node id
+
+        # Method 1: Use the Swipe Class
+        >>> swipe = Swipe(my_story, <node_id>)
+
+        # Method 2: Use the get method in story
+        >>> swipe = my_story.get(node = <node_id>)
+
+    """
+
+    def __init__(self, story, node: str):
+
         self.node = node
         self._story = story
         self._type = "swipe"
@@ -1919,20 +1923,31 @@ class Swipe(object):
 
 ###############################################################################################################
 class Sidecar(object):
+    """
+    Create an Sidecar immersive object from a pre-existing ``immersive`` node.
+
+    A sidecar is composed of slides. Slides are composed of two nodes: a narrative panel and a media node.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    node_id             Required String. The node id for the sidecar type.
+    ---------------     --------------------------------------------------------------------
+    story               Required StoryMap that the sidecar belongs to.
+    ===============     ====================================================================
+
+    .. code-block:: python
+
+        >>> my_story.nodes #use to find sidecar node id
+
+        # Method 1: Use the Sidecar Class
+        >>> sidecar = Sidecar(my_story, <node_id>)
+
+        # Method 2: Use the get method in story
+        >>> sidecar = my_story.get(node = <node_id>)
+    """
+
     def __init__(self, story, node: str):
-        """
-        Create an Sidecar immersive object from a pre-existing immersive node.
-
-        A sidecar is composed of slides. Slides are composed of two nodes: a narrative panel and a media node.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        node_id             Required String. The node id for the sidecar type.
-        ---------------     --------------------------------------------------------------------
-        story               Required StoryMap that the sidecar belongs to.
-        ===============     ====================================================================
-        """
         self._story = story
         self.node = node
         self._type = story._properties["nodes"][node]["data"]["type"]
@@ -2129,21 +2144,32 @@ class Sidecar(object):
 
 ###############################################################################################################
 class Timeline(object):
+    """
+    Create an Timeline object from a pre-existing ``timeline`` node.
+
+    A timeline is composed of events.
+    Events are composed of maximum three nodes: an image, a sub-heading text, and a paragraph text.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    node_id             Required String. The node id for the timeline type.
+    ---------------     --------------------------------------------------------------------
+    story               Required StoryMap that the timeline belongs to.
+    ===============     ====================================================================
+
+    .. code-block:: python
+
+        >>> my_story.nodes #use to find timeline node id
+
+        # Method 1: Use the Timeline Class
+        >>> timeline = Timeline(my_story, <node_id>)
+
+        # Method 2: Use the get method in story
+        >>> timeline = my_story.get(node = <node_id>)
+    """
+
     def __init__(self, story, node: str):
-        """
-        Create an Timeline object from a pre-existing node.
-
-        A timeline is composed of events.
-        Events are composed of maximum three nodes: an image, a sub-heading text, and a paragraph text.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        node_id             Required String. The node id for the timeline type.
-        ---------------     --------------------------------------------------------------------
-        story               Required StoryMap that the timeline belongs to.
-        ===============     ====================================================================
-        """
         self._story = story
         self.node = node
         self._type = story._properties["nodes"][node]["type"]
@@ -2180,7 +2206,7 @@ class Timeline(object):
         """
         Get/Set the style of the timeline
 
-        Values: "waterfall" | "single-slide" | "condensed"
+        ``Values: "waterfall" | "single-slide" | "condensed"``
         """
         return self._story._properties["nodes"][self.node]["data"]["type"]
 
