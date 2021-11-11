@@ -1943,6 +1943,33 @@ class Sidecar(object):
 
     # ----------------------------------------------------------------------
     @property
+    def properties(self):
+        """
+        List all slides and their children
+
+        :return:
+            A list where the first item is the node id for the sidecar. Next
+            items are dictionary of slides and their children.
+        """
+        sidecar_tree = [self.node]
+        for slide in self._slides:
+            narrative_panel = self._story._properties["nodes"][slide]["children"][0]
+            text = self._story._properties["nodes"][narrative_panel]["children"]
+            media_item = self._story._properties["nodes"][slide]["children"][1]
+            sidecar_tree.append(
+                {
+                    "Slide: "
+                    + slide: [
+                        "Narrative Panel: " + narrative_panel,
+                        "Text: " + text[0],
+                        "Media Item: " + media_item,
+                    ]
+                }
+            )
+        return sidecar_tree
+
+    # ----------------------------------------------------------------------
+    @property
     def caption(self):
         """
         Get/Set the caption property for the sidecar.
@@ -2022,59 +2049,34 @@ class Sidecar(object):
         if isinstance(content, Text):
             # If content is text then update the narrative panel by removing old text and adding new
             old_text_node = narrative_panel["children"][0]
-            narrative_panel["children"].pop(0)
+            self._story._properties["nodes"][narrative_panel]["children"].pop(0)
             self._story._delete(old_text_node)
-            narrative_panel["children"].insert(0, content.node)
+            self._story._properties["nodes"][narrative_panel]["children"].insert(
+                0, content.node
+            )
         else:
             # Remove current media content and add new content as media
             if media_item:
                 self._story._delete(media_item)
-                slide_node["children"].pop(1)
-            slide_node["children"].insert(1, content.node)
+                self._story._properties["nodes"][slide_node]["children"].pop(1)
+            self._story._properties["nodes"][slide_node].insert(1, content.node)
 
     # ----------------------------------------------------------------------
-    def remove_slide(self, slide_number: int):
+    def remove_slide(self, slide: str):
         """
         Remove a slide from the sidecar.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        slide_number        Required Integer. The slide that will be removed. First slide is 1.
+        slide               Required String. The node id for the slide that will be removed.
         ===============     ====================================================================
         """
         # Remove slide and all associated children.
-        slide = self._slides[slide_number - 1]
-        self._slide.remove(slide_number - 1)
+        self._story._properties["nodes"][self.node]["children"].remove(slide)
+        self._slide.remove(slide)
         self._story._delete(slide)
         self._remove_associated(slide)
-
-    # ----------------------------------------------------------------------
-    @property
-    def properties(self):
-        """
-        List all slides and their children
-
-        :return:
-            A list where the first item is the node id for the sidecar. Next
-            items are dictionary of slides and their children.
-        """
-        sidecar_tree = [self.node]
-        for slide in self._slides:
-            narrative_panel = self._story._properties["nodes"][slide]["children"][0]
-            text = self._story._properties["nodes"][narrative_panel]["children"]
-            media_item = self._story._properties["nodes"][slide]["children"][1]
-            sidecar_tree.append(
-                {
-                    "Slide: "
-                    + slide: [
-                        "Narrative Panel: " + narrative_panel,
-                        "Text: " + text[0],
-                        "Media Item: " + media_item,
-                    ]
-                }
-            )
-        return sidecar_tree
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -2091,9 +2093,25 @@ class Sidecar(object):
         narrative_panel = self._story._properties["nodes"][slide]["children"][0]
         self._story._delete(narrative_panel["children"][0])
         self._story._delete(narrative_panel)
-        # Remove media item
-        media_item = self._story._properties["nodes"][slide]["children"][1]
-        self._story._delete(media_item)
+
+        # Remove media item and resource node if one exists
+        if len(self._story._properties["nodes"][slide]["children"]) > 1:
+            media_item = self._story._properties["nodes"][slide]["children"][1]
+            if "image" in self._story._properties["nodes"][media_item]["data"]:
+                resource_node = self._story._properties["nodes"][media_item]["data"][
+                    "image"
+                ]
+            elif "video" in self._story._properties["nodes"][media_item]["data"]:
+                resource_node = self._story._properties["nodes"][media_item]["data"][
+                    "video"
+                ]
+            elif self._story._properties["nodes"][media_item]["type"] == "webmap":
+                resource_node = self._story._properties["nodes"][media_item]["data"][
+                    "map"
+                ]
+            else:
+                resource_node = None
+            self._story._delete(media_item, resource_node)
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
@@ -2110,3 +2128,250 @@ class Sidecar(object):
 
 
 ###############################################################################################################
+class Timeline(object):
+    def __init__(self, story, node: str):
+        """
+        Create an Timeline object from a pre-existing node.
+
+        A timeline is composed of events.
+        Events are composed of maximum three nodes: an image, a sub-heading text, and a paragraph text.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        node_id             Required String. The node id for the timeline type.
+        ---------------     --------------------------------------------------------------------
+        story               Required StoryMap that the timeline belongs to.
+        ===============     ====================================================================
+        """
+        self._story = story
+        self.node = node
+        self._type = story._properties["nodes"][node]["type"]
+        if self._type != "timeline":
+            raise Exception("This node is not of type timeline.")
+        self._subtype = story._properties["nodes"][node]["data"]["type"]
+        self._events = story._properties["nodes"][node]["children"]
+
+    # ----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """
+        List all events and their children
+
+        :return:
+            A list where the first item is the node id for the timeline. Next
+            items are dictionary of events and their children.
+        """
+        timeline = {self.node: {}}
+        for event in self._events:
+            timeline[self.node][event] = {}
+            for child in self._story._properties["nodes"][event]["children"]:
+                node_type = self._story._properties["nodes"][child]["type"]
+                if node_type == "text":
+                    node_type = self._story._properties["nodes"][child]["data"]["type"]
+                    if node_type == "h3":
+                        node_type = "subheading"
+                timeline[self.node][event][node_type] = child
+        return timeline
+
+    # ----------------------------------------------------------------------
+    @property
+    def style(self):
+        """
+        Get/Set the style of the timeline
+
+        Values: "waterfall" | "single-slide" | "condensed"
+        """
+        return self._story._properties["nodes"][self.node]["data"]["type"]
+
+    # ----------------------------------------------------------------------
+    @style.setter
+    def style(self, style):
+        self._story._properties["nodes"][self.node]["data"]["type"] = style
+        return self.style
+
+    # ----------------------------------------------------------------------
+    @property
+    def caption(self):
+        """
+        Get/Set the caption property for the timeline.
+
+        ==================  ========================================
+        **Argument**        **Description**
+        ------------------  ----------------------------------------
+        caption             String. The new caption for the Timeline.
+        ==================  ========================================
+
+        :return:
+            The caption that is being used.
+        """
+        return self._story._properties["nodes"][self.node]["data"]["caption"]
+
+    # ----------------------------------------------------------------------
+    @caption.setter
+    def caption(self, caption):
+        if isinstance(caption, str):
+            self._story._properties["nodes"][self.node]["data"]["caption"] = caption
+        return self.caption
+
+    # ----------------------------------------------------------------------
+    @property
+    def alt_text(self):
+        """
+        Get/Set the alternte text property for the timeline.
+
+        ==================  ========================================
+        **Argument**        **Description**
+        ------------------  ----------------------------------------
+        alt_text            String. The new alt_text for the Timeline.
+        ==================  ========================================
+
+        :return:
+            The alternate text that is being used.
+        """
+        return self._story._properties["nodes"][self.node]["data"]["alt"]
+
+    # ----------------------------------------------------------------------
+    @alt_text.setter
+    def alt_text(self, alt_text):
+        self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
+        return self.alt_text
+
+    # ----------------------------------------------------------------------
+    def edit(
+        self,
+        content: Union[Image, Text],
+        event: int,
+    ):
+        """
+        Edit event text or image content.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        content             Required content to replace current content.
+                            Item type can be Image or Text.
+
+                            Text can only be of style TextStyles.SUBHEADING or TextStyles.PARAGRAPH
+        ---------------     --------------------------------------------------------------------
+        event               Required Integer. The event that will be edited. First event is 1.
+        ===============     ====================================================================
+        """
+        # Find children nodes
+        event = self._events[event - 1]
+
+        # Get position of new item, if None: needs to be added in.
+        position = self._find_position_content(content, event)
+
+        # Check to see if content has been added to node properties
+        if content.node not in self._story._properties["nodes"]:
+            self._add_item_story(content)
+
+        # Insert new content
+        if isinstance(content, Text):
+            if position:
+                old_text_node = self._story._properties["nodes"][event]["children"].pop(
+                    position
+                )
+                self._story._delete(old_text_node)
+                self._story._properties["nodes"][event]["children"].insert(
+                    position, content.node
+                )
+            else:
+                self._story._properties["nodes"][event]["children"].append(content.node)
+        elif isinstance(content, Image):
+            # Remove current image content and add new content
+            if position:
+                old_image_node = self._story._properties["nodes"][event][
+                    "children"
+                ].pop(position)
+                if "image" in self._story._properties["nodes"][old_image_node]["data"]:
+                    resource_node = self._story._properties["nodes"][old_image_node][
+                        "data"
+                    ]["image"]
+                else:
+                    resource_node = None
+                self._story._delete(old_image_node, resource_node)
+                self._story._properties["nodes"][event]["children"].insert(
+                    position, content.node
+                )
+            else:
+                self._story._properties["nodes"][event]["children"].append(content.node)
+
+    # ----------------------------------------------------------------------
+    def remove_event(self, event: str):
+        """
+        Remove an event from the timeline.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        event               Required String. The node id for the timeline event that will be removed.
+        ===============     ====================================================================
+        """
+        self._story._properties["nodes"][self.node]["children"].remove(event)
+        self._events.remove(event)
+        self._story._delete(event)
+        self._remove_associated(event)
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the node
+
+        :return: True if successful.
+        """
+        return self._story._delete(self.node)
+
+    # ----------------------------------------------------------------------
+    def _remove_associated(self, event):
+        # Remove narrative panel and text associated
+        children = self._story._properties["nodes"][event]["children"]
+        for child in children:
+            if self._story._properties["nodes"][child]["type"] == "image":
+                if "image" in self._story._properties["nodes"][child]["data"]:
+                    resource_node = self._story._properties["nodes"][child]["data"][
+                        "image"
+                    ]
+            else:
+                resource_node = None
+            self._story._delete(child, resource_node)
+        self._story._delete(event)
+
+    # ----------------------------------------------------------------------
+    def _find_position_content(self, content, event_node):
+        # Find the position in which to insert the new content
+        if isinstance(content, Text):
+            content_type = "text"
+            subtype = content._style
+        elif isinstance(content, Image):
+            content_type = "image"
+
+        # Find the position of the node that corresponds to the content being added
+        # If a user does not previously have a type of content, the position is None.
+        for child in self._story._properties["nodes"][event_node]["children"]:
+            if (
+                self._story._properties["nodes"][child]["type"] == content_type
+                and content_type == "image"
+            ):
+                position = self._story._properties["nodes"][event_node][
+                    "children"
+                ].index(child)
+            elif (
+                self._story._properties["nodes"][child]["type"] == content_type
+                and self._story._properties["nodes"][child]["data"]["type"] == subtype
+            ):
+                position = self._story._properties["nodes"][event_node][
+                    "children"
+                ].index(child)
+            else:
+                # Content type doesn't exist yet and will need to be added in.
+                position = None
+        return position
+
+    # ----------------------------------------------------------------------
+    def _add_item_story(self, content):
+        if isinstance(content, Image):
+            content._add_image(story=self._story)
+        elif isinstance(content, Text):
+            content._add_text(story=self._story)

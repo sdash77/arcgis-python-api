@@ -13,6 +13,7 @@ from .story_content import (
     Map,
     Sidecar,
     Gallery,
+    Timeline,
     Swipe,
     TextStyles,
 )

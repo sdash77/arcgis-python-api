@@ -156,6 +156,24 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
+    def cover_date(self):
+        """
+        Get/Set the date shown on the story cover.
+
+        Values: "first-published" | "last-published" | "none"
+        """
+        root = self._properties["root"]
+        return self._properties["nodes"][root]["config"]["coverDate"]
+
+    # ----------------------------------------------------------------------
+    @cover_date.setter
+    def cover_date(self, date):
+        root = self._properties["root"]
+        self._properties["nodes"][root]["config"]["coverDate"] = date
+        return self.cover_date
+
+    # ----------------------------------------------------------------------
+    @property
     def properties(self):
         """This property returns the storymap's JSON"""
         return self._properties
@@ -195,21 +213,21 @@ class StoryMap(object):
             return None
 
     # ----------------------------------------------------------------------
-    def get(self, type: Optional[str] = None, node: Optional[str] = None):
+    def get(self, node: Optional[str] = None, type: Optional[str] = None):
         """
         Find the nodes for each type of item.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
+        node_id             Optional string. The node id for the node that should be returned.
+                            This will return the class of the node if of type story content.
+        ---------------     --------------------------------------------------------------------
         type                Optional string. The type of nodes that user wants returned.
                             If none specified, list of all nodes returned.
 
                             Values: "image" | "video" | "audio" | "embed" | "webmap" | "text" |
                                     "button" | "separator" | "expressmap" | "webscene" | "immersive"
-        ---------------     --------------------------------------------------------------------
-        node_id             Optional string. The node id for the node that should be returned.
-                            This will return the class of the node if of type story content.
         ===============     ====================================================================
 
         :return:
@@ -789,6 +807,8 @@ class StoryMap(object):
             node = Content.Swipe(self, node_id)
         elif node_type == "gallery":
             node = Content.Gallery(story=self, node_id=node_id)
+        elif node_type == "timeline":
+            node = Content.Timeline(self, node_id)
         elif node_type == "immersive":
             # immersive has subtype sidecar, and tour
             subtype = self._properties["nodes"][node_id]["data"]["type"]
