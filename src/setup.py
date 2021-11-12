@@ -169,9 +169,13 @@ class egg_info(_egg_info):
 
 
 # Read the description.md file
-description_md_file = open("pypi_long_description.md", "r")
-long_description = description_md_file.read()
-description_md_file.close()
+try:
+
+    description_md_file = open("pypi_long_description.md", "r")
+    long_description = description_md_file.read()
+    description_md_file.close()
+except:
+    long_description = "ArcGIS API for Python"
 
 # Assemble the `data_files` list of all non-python files
 data_files = [
@@ -275,9 +279,7 @@ kwargs = {
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    "extras_require": {
-        "gp": ["dill"],
-    },
+    "extras_require": {"gp": ["dill"],},
     # extras_require={
     #     'dev': ['check-manifest'],
     #     'test': ['coverage'],

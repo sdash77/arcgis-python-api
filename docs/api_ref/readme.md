@@ -38,10 +38,11 @@ Next, build the API ref as explained earlier and ensure the version number, copy
 ----------------------------
 
 ## One-time set up notes:
-In your dev environment (conda) install sphinx
+Ensure that you have created env with python=3.7.x version. In your dev environment (conda) install sphinx
 ```
-conda install sphinx
-pip install sphinx-rtd-theme
+conda install -c http://zion/conda/master/ arcgis
+conda install sphinx=3.2.1
+pip install sphinx-rtd-theme==0.5.2
 ```
 
 Then make a `docs` dir next to the `src` directory. The `docs` will house the build files for documentation and also the built `html` pages in RTD theme. Then
