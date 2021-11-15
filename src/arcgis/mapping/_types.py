@@ -4213,19 +4213,8 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
                 if max_export_tile_count
                 else self.properties.maxExportTilesCount
             )
-            if source_item_id:
+            if source_item_id:  # only online
                 params["sourceItemId"] = source_item_id
-            else:
-                item_id = VectorTileLayer(
-                    self.properties.url, gis=self._gis
-                ).properties.serviceItemId
-                item = self._gis.content.get(item_id)
-                related_items = item.related_items(rel_type="Service2Data")
-                if len(related_items) > 0:
-                    params["sourceItemId"] = related_items[0].id
-                # params["sourceItemId"] = VectorTileLayer(
-                #    self.properties.url, gis=self._gis
-                # ).properties.serviceItemId
         elif self._gis._is_agol == False:
             params["runAsync"] = True
             params["services"] = {
