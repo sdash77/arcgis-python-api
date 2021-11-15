@@ -41,6 +41,12 @@ class Indicator(_BaseWidget):
         self._novalue = NoDataProperties._nodata_init()
 
         self._data = IndicatorData._create_data()
+        if not self._data._value_field in [fld["name"] 
+                                           for fld in 
+                                           item.layers[layer].properties.fields]:
+            self._data._value_field = [i["fields"] 
+                                       for i in item.layers[layer].properties.indexes
+                                       if i["isUnique"]][0]
         self._reference = ReferenceData._create_data()
 
         self._max_display_features = 50
@@ -240,7 +246,7 @@ class IndicatorData(object):
 
         data._value_type = "statistic"
         data._statistic = "count"
-        data._value_field = "FID"
+        data._value_field = ""
         data._factor = 1
         data._offset = 0
         data._filters = []
@@ -373,6 +379,7 @@ class IndicatorData(object):
             "less than or equal",
             "is null",
             "is not null",
+            "contains",
         ]:
             self._filter_condition = condition
         else:
