@@ -105,15 +105,15 @@ def _post_install():
         activate_map_widget = False
 
     if activate_map_widget:
-        log.warn("Attempting to activate map widget...")
+        log.warning("Attempting to activate map widget...")
         try:
-            log.warn(
+            log.warning(
                 nbext.install_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
-            log.warn(
+            log.warning(
                 nbext.enable_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
-            log.warn(
+            log.warning(
                 nbext.enable_nbextension_python(
                     "widgetsnbextension", sys_prefix=True, logger=log
                 )
@@ -129,7 +129,7 @@ def _post_install():
         if "Install Certificates.command" in potential_cert_script:
             try:
                 cmd_output = check_output(potential_cert_script, stderr=STDOUT)
-                log.warn(
+                log.warning(
                     "OpenSSL workaround for OSX completed successfully. "
                     "See https://bugs.python.org/issue28150 for info. "
                     "Output: {}".format(cmd_output.decode("utf-8"))

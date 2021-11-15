@@ -228,7 +228,7 @@ def _display_results_in_browser(output_xml_files, output_coverage_files, output_
             webbrowser.open(pathlib.Path(output_executed_notebooks_index_file).as_uri())
 
     except Exception as e:
-        log.warn("Could not display results in a browser:")
+        log.warning("Could not display results in a browser:")
         log.exception(e)
         log.info("Skipping browser display and continuing...")
 
