@@ -10809,8 +10809,9 @@ class Item(dict):
 
         """
         data_path = "content/items/" + self.itemid + "/data"
-        if "name" in self or "title" in self:
-            file_name = self.name or self.title
+        if file_name is None:
+            if "name" in self or "title" in self:
+                file_name = self.name or self.title
         if not save_path:
             save_path = self._workdir
         try:
