@@ -115,6 +115,10 @@ author = "Esri"
 # Usually you set "language" from the command line for these cases.
 language = None
 
+
+# This value controls how to represent typehints.
+autodoc_typehints = "none"
+
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
 # today = ''

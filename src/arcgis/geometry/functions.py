@@ -206,8 +206,8 @@ def areas_and_lengths(
 
 # -------------------------------------------------------------------------
 def auto_complete(
-    polygons: Optional[Polygon] = None,
-    polylines: Optional[Polyline] = None,
+    polygons: Optional[list[Polygon]] = None,
+    polylines: Optional[list[Polyline]] = None,
     spatial_ref: Optional[SpatialReference] = None,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -221,9 +221,9 @@ def auto_complete(
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
-    polygons          An array of :class:`~arcgis.geometry.Polygon` objects
+    polygons          A List of :class:`~arcgis.geometry.Polygon` objects
     ----------------  -------------------------------------------------------------------------------
-    polylines         An List of :class:`~arcgis.geometry.Polyline` objects
+    polylines         A List of :class:`~arcgis.geometry.Polyline` objects
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries WKID
     ----------------  -------------------------------------------------------------------------------
