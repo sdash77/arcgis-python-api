@@ -1,399 +1,6 @@
 import json
 from arcgis.gis import Layer, _GISResource, Item, GIS
 
-###########################################################################
-class Object3DLayer(Layer):
-    """
-    The ``Object3DLayer`` rresents a Web scene 3D Object layer.
-
-    .. note::
-        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
-
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    url                    Required string, specify the url ending in /SceneServer/
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
-                           used.
-    ==================     ====================================================================
-
-    .. code-block:: python
-
-        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
-
-        from arcgis.mapping import SceneLayer
-        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
-
-        type(s_layer)
-        >> arcgis.mapping._types.Point3DLayer
-
-        print(s_layer.properties.layers[0].name)
-        >> 'your layer name'
-    """
-
-    def __init__(self, url, gis=None):
-        """
-        Constructs a SceneLayer given a web scene layer URL
-        """
-        super(Object3DLayer, self).__init__(url, gis)
-
-    @property
-    def _lyr_dict(self):
-        url = self.url
-
-        lyr_dict = {"type": "SceneLayer", "url": url}
-        if self._token is not None:
-            lyr_dict["serviceToken"] = self._token
-
-        if self.filter is not None:
-            lyr_dict["filter"] = self.filter
-        if self._time_filter is not None:
-            lyr_dict["time"] = self._time_filter
-        return lyr_dict
-
-    # ----------------------------------------------------------------------
-    @property
-    def _lyr_json(self):
-        url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += "?token=" + self._token
-
-        lyr_dict = {"type": "SceneLayer", "url": url}
-
-        if self.filter is not None:
-            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
-        if self._time_filter is not None:
-            lyr_dict["time"] = self._time_filter
-        return lyr_dict
-
-
-###########################################################################
-class IntegratedMeshLayer(Layer):
-    """
-    The ``IntegratedMeshLayer`` class represents a Web scene Integrated Mesh layer.
-
-    .. note::
-        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
-
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    url                    Required string, specify the url ending in /SceneServer/
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
-                           used.
-    ==================     ====================================================================
-
-    .. code-block:: python
-
-        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
-
-        from arcgis.mapping import SceneLayer
-        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
-
-        type(s_layer)
-        >> arcgis.mapping._types.Point3DLayer
-
-        print(s_layer.properties.layers[0].name)
-        >> 'your layer name'
-    """
-
-    def __init__(self, url, gis=None):
-        """
-        Constructs a SceneLayer given a web scene layer URL
-        """
-        super(IntegratedMeshLayer, self).__init__(url, gis)
-
-    @property
-    def _lyr_dict(self):
-        url = self.url
-
-        lyr_dict = {"type": "IntegratedMeshLayer", "url": url}
-        if self._token is not None:
-            lyr_dict["serviceToken"] = self._token
-
-        if self.filter is not None:
-            lyr_dict["filter"] = self.filter
-        if self._time_filter is not None:
-            lyr_dict["time"] = self._time_filter
-        return lyr_dict
-
-    # ----------------------------------------------------------------------
-    @property
-    def _lyr_json(self):
-        url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += "?token=" + self._token
-
-        lyr_dict = {"type": "IntegratedMeshLayer", "url": url}
-
-        if self.filter is not None:
-            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
-        if self._time_filter is not None:
-            lyr_dict["time"] = self._time_filter
-        return lyr_dict
-
-
-###########################################################################
-class Point3DLayer(Layer):
-    """
-    The ``Point3DLayer`` class represents a Web scene 3D Point layer.
-
-    .. note::
-        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
-
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    url                    Required string, specify the url ending in /SceneServer/
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
-                           used.
-    ==================     ====================================================================
-
-    .. code-block:: python
-
-        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
-
-        from arcgis.mapping import SceneLayer
-        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
-
-        type(s_layer)
-        >> arcgis.mapping._types.Point3DLayer
-
-        print(s_layer.properties.layers[0].name)
-        >> 'your layer name'
-    """
-
-    def __init__(self, url, gis=None):
-        """
-        Constructs a SceneLayer given a web scene layer URL
-        """
-        super(Point3DLayer, self).__init__(url, gis)
-
-    # ----------------------------------------------------------------------
-    @property
-    def _lyr_dict(self):
-        url = self.url
-
-        lyr_dict = {"type": "SceneLayer", "url": url}
-        if self._token is not None:
-            lyr_dict["serviceToken"] = self._token
-
-        if self.filter is not None:
-            lyr_dict["filter"] = self.filter
-        if self._time_filter is not None:
-            lyr_dict["time"] = self._time_filter
-        return lyr_dict
-
-    # ----------------------------------------------------------------------
-    @property
-    def _lyr_json(self):
-        url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += "?token=" + self._token
-
-        lyr_dict = {"type": "SceneLayer", "url": url}
-
-        if self.filter is not None:
-            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
-        if self._time_filter is not None:
-            lyr_dict["time"] = self._time_filter
-        return lyr_dict
-
-
-###########################################################################
-class PointCloudLayer(Layer):
-    """
-    The ``PointCloudLayer`` class represents a Web scene Point Cloud layer.
-
-    .. note::
-        Point Cloud layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
-
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    url                    Required string, specify the url ending in /SceneServer/
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
-                           used.
-    ==================     ====================================================================
-
-    .. code-block:: python
-
-        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
-
-        from arcgis.mapping import SceneLayer
-        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
-
-        type(s_layer)
-        >> arcgis.mapping._types.PointCloudLayer
-
-        print(s_layer.properties.layers[0].name)
-        >> 'your layer name'
-    """
-
-    def __init__(self, url, gis=None):
-        """
-        Constructs a SceneLayer given a web scene layer URL
-        """
-        super(PointCloudLayer, self).__init__(url, gis)
-
-    @property
-    def _lyr_dict(self):
-        url = self.url
-
-        lyr_dict = {"type": "PointCloudLayer", "url": url}
-        if self._token is not None:
-            lyr_dict["serviceToken"] = self._token
-
-        if self.filter is not None:
-            lyr_dict["filter"] = self.filter
-        if self._time_filter is not None:
-            lyr_dict["time"] = self._time_filter
-        return lyr_dict
-
-    # ----------------------------------------------------------------------
-    @property
-    def _lyr_json(self):
-        url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += "?token=" + self._token
-
-        lyr_dict = {"type": "PointCloudLayer", "url": url}
-
-        if self.filter is not None:
-            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
-        if self._time_filter is not None:
-            lyr_dict["time"] = self._time_filter
-        return lyr_dict
-
-
-###########################################################################
-class BuildingLayer(Layer):
-    """
-    The ``BuildingLayer`` class represents a Web building layer.
-
-    .. note::
-        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
-
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    url                    Required string, specify the url ending in /SceneServer/
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
-                           used.
-    ==================     ====================================================================
-
-    .. code-block:: python
-
-        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
-
-        from arcgis.mapping import SceneLayer
-        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
-
-        type(s_layer)
-        >> arcgis.mapping._types.BuildingLayer
-
-        print(s_layer.properties.layers[0].name)
-        >> 'your layer name'
-    """
-
-    def __init__(self, url, gis=None):
-        """
-        Constructs a SceneLayer given a web scene layer URL
-        """
-        super(BuildingLayer, self).__init__(url, gis)
-
-    @property
-    def _lyr_dict(self):
-        url = self.url
-
-        lyr_dict = {"type": "BuildingSceneLayer", "url": url}
-        if self._token is not None:
-            lyr_dict["serviceToken"] = self._token
-
-        if self.filter is not None:
-            lyr_dict["filter"] = self.filter
-        if self._time_filter is not None:
-            lyr_dict["time"] = self._time_filter
-        return lyr_dict
-
-    # ----------------------------------------------------------------------
-    @property
-    def _lyr_json(self):
-        url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += "?token=" + self._token
-
-        lyr_dict = {"type": "BuildingSceneLayer", "url": url}
-
-        if self.filter is not None:
-            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
-        if self._time_filter is not None:
-            lyr_dict["time"] = self._time_filter
-        return lyr_dict
-
-
-###########################################################################
-class _SceneLayerFactory(type):
-    """
-    Factory that generates the Scene Layers
-
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    url                    Required string, specify the url ending in /SceneServer/
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
-                           used.
-    ==================     ====================================================================
-
-    .. code-block:: python
-
-        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
-
-        from arcgis.mapping import SceneLayer
-        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
-
-        type(s_layer)
-        >> arcgis.mapping._types.PointCloudLayer
-
-        print(s_layer.properties.layers[0].name)
-        >> 'your layer name'
-    """
-
-    def __call__(cls, url, gis=None):
-        lyr = Layer(url=url, gis=gis)
-        props = lyr.properties
-        if "sublayers" in props:
-            return BuildingLayer(url=url, gis=gis)
-        elif "layerType" in props:
-            lt = props.layerType
-        else:
-            lt = props.layers[0].layerType
-        if str(lt).lower() == "pointcloud":
-            return PointCloudLayer(url=url, gis=gis)
-        elif str(lt).lower() == "point":
-            return Point3DLayer(url=url, gis=gis)
-        elif str(lt).lower() == "3dobject":
-            return Object3DLayer(url=url, gis=gis)
-        elif str(lt).lower() == "building":
-            return BuildingLayer(url=url, gis=gis)
-        elif str(lt).lower() == "IntegratedMesh".lower():
-            return IntegratedMeshLayer(url=url, gis=gis)
-        return lyr
-
-
-###########################################################################
-
 
 class SceneLayerManager(_GISResource):
     """
@@ -413,7 +20,7 @@ class SceneLayerManager(_GISResource):
         The ``refresh`` operation refreshes a service, which clears the web
         server cache for the service.
         """
-        url = self._url + "/refresh"
+        url = self._url + "SceneServer/refresh"
         params = {"f": "json", "serviceDefinition": service_definition}
 
         res = self._con.post(url, params)
@@ -444,6 +51,19 @@ class SceneLayerManager(_GISResource):
         url = self._url + "/swap"
         params = {"f": "json", "targetServiceName": target_service_name}
         return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def jobs(self):
+        """
+        The tile service job summary (jobs) resource represents a
+        summary of all jobs associated with a vector tile service.
+        Each job contains a jobid that corresponds to the specific
+        jobid run and redirects you to the Job Statistics page.
+
+        """
+        url = self._url + "/jobs"
+        params = {"f": "json"}
+        return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
     def cancel_job(self, job_id):
@@ -513,11 +133,12 @@ class SceneLayerManager(_GISResource):
             # USAGE EXAMPLE
 
             >>> from arcgis.gis import GIS
+            >>> from arcgis.mapping import SceneLayer
 
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
             >>> scene_item = gis.content.get('abcd_item-id')
-            >>> scene_layer = scene_item.layers[0]
+            >>> scene_layer = SceneLayer(scene_item.sourceUrl, gis)
             >>> sl_manager = scene_layer.manager
             >>> imported_tiles = sl_manager.import_tiles(item = "<item_id>",
                                                           levels = "11-20",
@@ -582,11 +203,12 @@ class SceneLayerManager(_GISResource):
             # USAGE EXAMPLE
 
             >>> from arcgis.gis import GIS
+            >>> from arcgis.mapping import SceneLayer
 
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
             >>> scene_item = gis.content.get('abcd_item-id')
-            >>> scene_layer = scene_item.layers[0]
+            >>> scene_layer = SceneLayer(scene_item.sourceUrl, gis)
             >>> sl_manager = scene_layer.manager
             >>> update_tiles = sl_manager.update_tiles(levels = "11-20",
                                                         extent = {"xmin":6224324.092137296,
@@ -663,7 +285,7 @@ class SceneLayerManager(_GISResource):
         ---------------------       ------------------------------------------------------
         max_scale                   Required float. Sets the services maximum scale for caching.
         ---------------------       ------------------------------------------------------
-        source_item_id              Required String. The Source Item ID is the GeoWarehouse Item ID of the map service
+        source_item_id              Required String. The Source Item ID is the GeoWarehouse Item ID of the scene service
         ---------------------       ------------------------------------------------------
         export_tiles_allowed        Required boolean. ``exports_tiles_allowed`` sets the value to let users export tiles
         ---------------------       ------------------------------------------------------
@@ -760,6 +382,589 @@ class SceneLayerManager(_GISResource):
 
 
 ###########################################################################
+class Object3DLayer(Layer):
+    """
+    The ``Object3DLayer`` rresents a Web scene 3D Object layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /SceneServer/
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
+
+        from arcgis.mapping import SceneLayer
+        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
+
+        type(s_layer)
+        >> arcgis.mapping._types.Point3DLayer
+
+        print(s_layer.properties.layers[0].name)
+        >> 'your layer name'
+    """
+
+    def __init__(self, url, gis=None):
+        """
+        Constructs a SceneLayer given a web scene layer URL
+        """
+        super(Object3DLayer, self).__init__(url, gis)
+        self._admin = None
+
+    @property
+    def _lyr_dict(self):
+        url = self.url
+
+        lyr_dict = {"type": "SceneLayer", "url": url}
+        if self._token is not None:
+            lyr_dict["serviceToken"] = self._token
+
+        if self.filter is not None:
+            lyr_dict["filter"] = self.filter
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += "?token=" + self._token
+
+        lyr_dict = {"type": "SceneLayer", "url": url}
+
+        if self.filter is not None:
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def manager(self):
+        if self._admin is None:
+            """
+            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+            which provides methods and properties for administering this service.
+            """
+            if self._gis._portal.is_arcgisonline:
+                rd = {"/rest/services/": "/rest/admin/services/"}
+            else:
+                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+            adminURL = self._str_replace(self._url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+            self._admin = SceneLayerManager(adminURL, self._gis, self)
+        return self._admin
+
+    # ----------------------------------------------------------------------
+    def _str_replace(self, mystring, rd):
+        """Replaces a value based on a key/value pair where the
+        key is the text to replace and the value is the new value.
+
+        The find/replace is case insensitive.
+
+        """
+        import re
+
+        patternDict = {}
+        for key, value in rd.items():
+            pattern = re.compile(re.escape(key), re.IGNORECASE)
+            patternDict[value] = pattern
+        for key in patternDict:
+            regex_obj = patternDict[key]
+            mystring = regex_obj.sub(key, mystring)
+        return mystring
+
+
+###########################################################################
+class IntegratedMeshLayer(Layer):
+    """
+    The ``IntegratedMeshLayer`` class represents a Web scene Integrated Mesh layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /SceneServer/
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
+
+        from arcgis.mapping import SceneLayer
+        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
+
+        type(s_layer)
+        >> arcgis.mapping._types.Point3DLayer
+
+        print(s_layer.properties.layers[0].name)
+        >> 'your layer name'
+    """
+
+    def __init__(self, url, gis=None):
+        """
+        Constructs a SceneLayer given a web scene layer URL
+        """
+        super(IntegratedMeshLayer, self).__init__(url, gis)
+        self._admin = None
+
+    @property
+    def _lyr_dict(self):
+        url = self.url
+
+        lyr_dict = {"type": "IntegratedMeshLayer", "url": url}
+        if self._token is not None:
+            lyr_dict["serviceToken"] = self._token
+
+        if self.filter is not None:
+            lyr_dict["filter"] = self.filter
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += "?token=" + self._token
+
+        lyr_dict = {"type": "IntegratedMeshLayer", "url": url}
+
+        if self.filter is not None:
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def manager(self):
+        """
+        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+        which provides methods and properties for administering this service.
+        """
+        if self._admin is None:
+            if self._gis._portal.is_arcgisonline:
+                rd = {"/rest/services/": "/rest/admin/services/"}
+            else:
+                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+            adminURL = self._str_replace(self._url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                if adminURL.split("/")[-1] == "layers":
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+            self._admin = SceneLayerManager(adminURL, self._gis, self)
+        return self._admin
+
+    # ----------------------------------------------------------------------
+    def _str_replace(self, mystring, rd):
+        """Replaces a value based on a key/value pair where the
+        key is the text to replace and the value is the new value.
+
+        The find/replace is case insensitive.
+
+        """
+        import re
+
+        patternDict = {}
+        for key, value in rd.items():
+            pattern = re.compile(re.escape(key), re.IGNORECASE)
+            patternDict[value] = pattern
+        for key in patternDict:
+            regex_obj = patternDict[key]
+            mystring = regex_obj.sub(key, mystring)
+        return mystring
+
+
+###########################################################################
+class Point3DLayer(Layer):
+    """
+    The ``Point3DLayer`` class represents a Web scene 3D Point layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /SceneServer/
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
+
+        from arcgis.mapping import SceneLayer
+        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
+
+        type(s_layer)
+        >> arcgis.mapping._types.Point3DLayer
+
+        print(s_layer.properties.layers[0].name)
+        >> 'your layer name'
+    """
+
+    def __init__(self, url, gis=None):
+        """
+        Constructs a SceneLayer given a web scene layer URL
+        """
+        super(Point3DLayer, self).__init__(url, gis)
+        self._admin = None
+
+    # ----------------------------------------------------------------------
+    @property
+    def _lyr_dict(self):
+        url = self.url
+
+        lyr_dict = {"type": "SceneLayer", "url": url}
+        if self._token is not None:
+            lyr_dict["serviceToken"] = self._token
+
+        if self.filter is not None:
+            lyr_dict["filter"] = self.filter
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += "?token=" + self._token
+
+        lyr_dict = {"type": "SceneLayer", "url": url}
+
+        if self.filter is not None:
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def manager(self):
+        if self._admin is None:
+            """
+            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+            which provides methods and properties for administering this service.
+            """
+            if self._gis._portal.is_arcgisonline:
+                rd = {"/rest/services/": "/rest/admin/services/"}
+            else:
+                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+            adminURL = self._str_replace(self._url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+            self._admin = SceneLayerManager(adminURL, self._gis, self)
+        return self._admin
+
+    # ----------------------------------------------------------------------
+    def _str_replace(self, mystring, rd):
+        """Replaces a value based on a key/value pair where the
+        key is the text to replace and the value is the new value.
+
+        The find/replace is case insensitive.
+
+        """
+        import re
+
+        patternDict = {}
+        for key, value in rd.items():
+            pattern = re.compile(re.escape(key), re.IGNORECASE)
+            patternDict[value] = pattern
+        for key in patternDict:
+            regex_obj = patternDict[key]
+            mystring = regex_obj.sub(key, mystring)
+        return mystring
+
+
+###########################################################################
+class PointCloudLayer(Layer):
+    """
+    The ``PointCloudLayer`` class represents a Web scene Point Cloud layer.
+
+    .. note::
+        Point Cloud layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /SceneServer/
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
+
+        from arcgis.mapping import SceneLayer
+        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
+
+        type(s_layer)
+        >> arcgis.mapping._types.PointCloudLayer
+
+        print(s_layer.properties.layers[0].name)
+        >> 'your layer name'
+    """
+
+    def __init__(self, url, gis=None):
+        """
+        Constructs a SceneLayer given a web scene layer URL
+        """
+        super(PointCloudLayer, self).__init__(url, gis)
+        self._admin = None
+
+    @property
+    def _lyr_dict(self):
+        url = self.url
+
+        lyr_dict = {"type": "PointCloudLayer", "url": url}
+        if self._token is not None:
+            lyr_dict["serviceToken"] = self._token
+
+        if self.filter is not None:
+            lyr_dict["filter"] = self.filter
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += "?token=" + self._token
+
+        lyr_dict = {"type": "PointCloudLayer", "url": url}
+
+        if self.filter is not None:
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def manager(self):
+        if self._admin is None:
+            """
+            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+            which provides methods and properties for administering this service.
+            """
+            if self._gis._portal.is_arcgisonline:
+                rd = {"/rest/services/": "/rest/admin/services/"}
+            else:
+                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+            adminURL = self._str_replace(self._url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+            self._admin = SceneLayerManager(adminURL, self._gis, self)
+        return self._admin
+
+    # ----------------------------------------------------------------------
+    def _str_replace(self, mystring, rd):
+        """Replaces a value based on a key/value pair where the
+        key is the text to replace and the value is the new value.
+
+        The find/replace is case insensitive.
+
+        """
+        import re
+
+        patternDict = {}
+        for key, value in rd.items():
+            pattern = re.compile(re.escape(key), re.IGNORECASE)
+            patternDict[value] = pattern
+        for key in patternDict:
+            regex_obj = patternDict[key]
+            mystring = regex_obj.sub(key, mystring)
+        return mystring
+
+
+###########################################################################
+class BuildingLayer(Layer):
+    """
+    The ``BuildingLayer`` class represents a Web building layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /SceneServer/
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
+
+        from arcgis.mapping import SceneLayer
+        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
+
+        type(s_layer)
+        >> arcgis.mapping._types.BuildingLayer
+
+        print(s_layer.properties.layers[0].name)
+        >> 'your layer name'
+    """
+
+    def __init__(self, url, gis=None):
+        """
+        Constructs a SceneLayer given a web scene layer URL
+        """
+        super(BuildingLayer, self).__init__(url, gis)
+        self._admin = None
+
+    @property
+    def _lyr_dict(self):
+        url = self.url
+
+        lyr_dict = {"type": "BuildingSceneLayer", "url": url}
+        if self._token is not None:
+            lyr_dict["serviceToken"] = self._token
+
+        if self.filter is not None:
+            lyr_dict["filter"] = self.filter
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += "?token=" + self._token
+
+        lyr_dict = {"type": "BuildingSceneLayer", "url": url}
+
+        if self.filter is not None:
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def manager(self):
+        if self._admin is None:
+            """
+            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+            which provides methods and properties for administering this service.
+            """
+            if self._gis._portal.is_arcgisonline:
+                rd = {"/rest/services/": "/rest/admin/services/"}
+            else:
+                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+            adminURL = self._str_replace(self._url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+            self._admin = SceneLayerManager(adminURL, self._gis, self)
+        return self._admin
+
+    # ----------------------------------------------------------------------
+    def _str_replace(self, mystring, rd):
+        """Replaces a value based on a key/value pair where the
+        key is the text to replace and the value is the new value.
+
+        The find/replace is case insensitive.
+
+        """
+        import re
+
+        patternDict = {}
+        for key, value in rd.items():
+            pattern = re.compile(re.escape(key), re.IGNORECASE)
+            patternDict[value] = pattern
+        for key in patternDict:
+            regex_obj = patternDict[key]
+            mystring = regex_obj.sub(key, mystring)
+        return mystring
+
+
+###########################################################################
+class _SceneLayerFactory(type):
+    """
+    Factory that generates the Scene Layers
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /SceneServer/
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
+
+        from arcgis.mapping import SceneLayer
+        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
+
+        type(s_layer)
+        >> arcgis.mapping._types.PointCloudLayer
+
+        print(s_layer.properties.layers[0].name)
+        >> 'your layer name'
+    """
+
+    def __call__(cls, url, gis=None):
+        lyr = Layer(url=url, gis=gis)
+        props = lyr.properties
+        if "sublayers" in props:
+            return BuildingLayer(url=url, gis=gis)
+        elif "layerType" in props:
+            lt = props.layerType
+        else:
+            lt = props.layers[0].layerType
+        if str(lt).lower() == "pointcloud":
+            return PointCloudLayer(url=url, gis=gis)
+        elif str(lt).lower() == "point":
+            return Point3DLayer(url=url, gis=gis)
+        elif str(lt).lower() == "3dobject":
+            return Object3DLayer(url=url, gis=gis)
+        elif str(lt).lower() == "building":
+            return BuildingLayer(url=url, gis=gis)
+        elif str(lt).lower() == "IntegratedMesh".lower():
+            return IntegratedMeshLayer(url=url, gis=gis)
+        return lyr
+
+
+###########################################################################
 class SceneLayer(Layer, metaclass=_SceneLayerFactory):
     """
     The ``SceneLayer`` class represents a Web scene layer.
@@ -799,20 +1004,3 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
         Constructs a SceneLayer given a web scene layer URL
         """
         super(SceneLayer, self).__init__(url, gis)
-
-    @property
-    def manager(self):
-        if self._admin is None:
-            """
-            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-            which provides methods and properties for administering this service.
-            """
-            if self._gis._portal.is_arcgisonline:
-                rd = {"/rest/services/": "/rest/admin/services/"}
-            else:
-                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
-            adminURL = self._str_replace(self._url, rd)
-            if adminURL.split("/")[-1].isdigit():
-                url = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-            self._admin = SceneLayerManager(adminURL, self._gis, self)
-        return self._admin

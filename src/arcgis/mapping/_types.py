@@ -3665,264 +3665,6 @@ class WebScene(collections.OrderedDict):
 
 
 ###########################################################################
-class VectorTileLayer(arcgis.gis.Layer):
-    def __init__(self, url, gis=None):
-        super(VectorTileLayer, self).__init__(url, gis)
-
-    @classmethod
-    def fromitem(cls, item):
-        if not item.type == "Vector Tile Service":
-            raise TypeError(
-                "item must be a type of Vector Tile Service, not " + item.type
-            )
-
-        return cls(item.url, item._gis)
-
-    # ----------------------------------------------------------------------
-    @property
-    def styles(self):
-        url = "{url}/resources/styles".format(url=self._url)
-        params = {"f": "json"}
-        return self._con.get(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    @property
-    def manager(self):
-        """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.VectorTileLayerManager` class
-        which provides methods and properties for administering this service.
-        """
-        if self._gis._portal.is_arcgisonline:
-            rd = {"/rest/services/": "/rest/admin/services/"}
-        else:
-            rd = {"/rest/": "/admin/", "/VectorTileServer": ".VectorTileServer"}
-        adminURL = self._str_replace(self._url, rd)
-        if adminURL.split("/")[-1].isdigit():
-            adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-        self._admin = VectorTileLayerManager(adminURL, self._gis, self)
-        return self._admin
-
-    # ----------------------------------------------------------------------
-    def tile_fonts(self, fontstack, stack_range):
-        """
-         The ``tile_fonts`` method retrieves glyphs in
-         `protocol buffer format. <https://developers.google.com/protocol-buffers/>`_
-
-         .. note::
-            The template url for this fonts resource is represented in Vector Tile Style resource.
-
-        :return:
-            Glyphs in PBF format
-        """
-        url = "{url}/resources/fonts/{fontstack}/{stack_range}.pbf".format(
-            url=self._url, fontstack=fontstack, stack_range=stack_range
-        )
-        params = {}
-        return self._con.get(path=url, params=params, force_bytes=True)
-
-    # ----------------------------------------------------------------------
-    def vector_tile(self, level, row, column):
-        """
-        The ``vector_tile`` method represents a single vector tile for the map.
-
-        .. note::
-            The bytes for the tile at the specified level, row and column are
-            returned in PBF format. If a tile is not found, an error is returned.
-
-        :return:
-            Bytes in PBF format
-        """
-        url = "{url}/tile/{level}/{row}/{column}.pbf".format(
-            url=self._url, level=level, row=row, column=column
-        )
-        params = {}
-        return self._con.get(path=url, params=params, try_json=False, force_bytes=True)
-
-    # ----------------------------------------------------------------------
-    def tile_sprite(self, out_format="sprite.json"):
-        """
-        The ``tile_sprite`` resource retrieves sprite images and metadata
-
-        :return:
-            Sprite image and metadata.
-        """
-        url = "{url}/resources/sprites/{f}".format(url=self._url, f=out_format)
-        return self._con.get(path=url, params={})
-
-    # ----------------------------------------------------------------------
-    @property
-    def info(self):
-        """
-        The ``info`` property retrieves the relative paths to a list of resource files.
-
-        :return:
-           A List of relative paths
-        """
-        url = "{url}/resources/info".format(url=self._url)
-        params = {"f": "json"}
-        return self._con.get(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    def export_tiles(
-        self,
-        levels=None,
-        export_extent=None,
-        polygon=None,
-        max_export_tile_count=10000,
-    ):
-        """
-        Export vector tile layer
-
-        =====================       =======================================================
-        **Argument**                **Description**
-        ---------------------       -------------------------------------------------------
-        levels                      Required string.Specifies the tiled service levels to export.
-                                    The values should correspond to Level IDs. The values
-                                    can be comma-separated values or a range of values.
-                                    Ensure that the tiles are present at each specified level.
-
-                                    .. code-block:: python
-                                    # Example:
-
-                                        //Comma-separated values
-                                        levels=1,2,3,4,5,6,7,8,9
-
-                                        //Ranged values
-                                        levels=1-4, 7-9
-        ---------------------       -------------------------------------------------------
-        export_extent               Dictionary of the extent (bounding box) of the vector
-                                    tile package to be exported.
-                                    The extent should be within the specified spatial reference.
-                                    The default value is the full extent of the tiled map service.
-
-                                    .. code-block:: python
-                                    # Example:
-
-                                        {
-                                        "xmin": -109.55, "ymin" : 25.76,
-                                        "xmax": -86.39, "ymax" : 49.94,
-                                        "spatialReference": {"wkid": 4326}
-                                        }
-        ---------------------       -------------------------------------------------------
-        polygon                     Introduced at 10.7. A JSON representation of a polygon,
-                                    containing an array of rings and a spatialReference.
-
-                                    .. code-block:: python
-                                    # Example:
-
-                                        {
-                                        "rings": [
-                                            [[6453,16815],[10653,16423],[14549,5204],[-7003,6939],[6453,16815]],
-                                            [[914,7992],[3140,11429],[1510,10525],[914,7992]]
-                                        ],
-                                        "spatialReference": {"wkid": 54004}
-                                        }
-        ---------------------       -------------------------------------------------------
-        max_export_tile_count       Optional float. ``max_export_tile_count``sets the maximum
-                                    amount of tiles to be exported from a single call.
-
-                                    .. note::
-                                        The default value is 100000.
-                                    Required boolean. ``exports_tiles_allowed`` sets the value to let users export tiles
-        =====================       =======================================================
-
-        :returns:
-            A path to downloaded file
-        """
-        if not self.properties.exportTilesAllowed:
-            raise arcgis.gis.Error(
-                "Export Tiles operation is not allowed for this service. Enable offline mode."
-            )
-        if not levels:
-            raise ValueError("Parameter levels is mandatory for this operation.")
-        params = {
-            "f": "json",
-            "exportBy": "levelId",
-            "maxExportTileCount": max_export_tile_count,
-            "levels": levels,
-        }
-        if export_extent:
-            params["exportExtent"] = export_extent
-        # parameter introduced at 10.7
-        if polygon and self.gis.version >= [7, 1]:
-            params["polygon"] = polygon
-
-        url = "{url}/exportTiles".format(url=self._url)
-        exportJob = self._con.get(path=url, params=params)
-
-        path = "%s/jobs/%s" % (url, exportJob["jobId"])
-
-        resp_params = {"f": "json"}
-        job_response = self._con.post(path, resp_params)
-
-        if "status" in job_response or "jobStatus" in job_response:
-            status = job_response.get("status") or job_response.get("jobStatus")
-            while not status == "esriJobSucceeded":
-                time.sleep(5)
-
-                job_response = self._con.post(path, params)
-                status = job_response.get("status") or job_response.get("jobStatus")
-                if status in [
-                    "esriJobFailed",
-                    "esriJobCancelling",
-                    "esriJobCancelled",
-                    "esriJobTimedOut",
-                ]:
-                    print(str(job_response["messages"]))
-                    raise Exception("Job Failed with status " + status)
-        else:
-            raise Exception("No job results.")
-
-        if "results" in job_response:
-
-            allResults = job_response["results"]
-
-            for k, v in allResults.items():
-                if k == "out_service_url":
-                    value = v.value
-                    params = {"f": "json"}
-                    gpRes = self._con.get(path=value, params=params)
-                    return gpRes["folders"]
-                else:
-                    return None
-        elif "output" in job_response:
-            allResults = job_response["output"]
-            if allResults["itemId"]:
-                return arcgis.gis.Item(gis=self._gis, itemid=allResults["itemId"])
-            else:
-                if self._gis._portal.is_arcgisonline:
-                    return [
-                        self._con.get(url, try_json=False, add_token=False)
-                        for url in allResults["outputUrl"]
-                    ]
-                else:
-                    return [
-                        self._con.get(url, try_json=False)
-                        for url in allResults["outputUrl"]
-                    ]
-        else:
-            raise Exception(job_response)
-
-    def _str_replace(self, mystring, rd):
-        """Replaces a value based on a key/value pair where the
-        key is the text to replace and the value is the new value.
-
-        The find/replace is case insensitive.
-
-        """
-        import re
-
-        patternDict = {}
-        for key, value in rd.items():
-            pattern = re.compile(re.escape(key), re.IGNORECASE)
-            patternDict[value] = pattern
-        for key in patternDict:
-            regex_obj = patternDict[key]
-            mystring = regex_obj.sub(key, mystring)
-        return mystring
-
-
-###########################################################################
 class VectorTileLayerManager(arcgis.gis._GISResource):
     """
     The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted vector tile layers.
@@ -4267,6 +4009,264 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             params["extent"] = extent
         url = self._url + "/deleteTiles"
         return self._con.post(url, params)
+
+
+###########################################################################
+class VectorTileLayer(arcgis.gis.Layer):
+    def __init__(self, url, gis=None):
+        super(VectorTileLayer, self).__init__(url, gis)
+
+    @classmethod
+    def fromitem(cls, item):
+        if not item.type == "Vector Tile Service":
+            raise TypeError(
+                "item must be a type of Vector Tile Service, not " + item.type
+            )
+
+        return cls(item.url, item._gis)
+
+    # ----------------------------------------------------------------------
+    @property
+    def styles(self):
+        url = "{url}/resources/styles".format(url=self._url)
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def manager(self):
+        """
+        The ``manager`` property returns an instance of :class:`~arcgis.mapping.VectorTileLayerManager` class
+        which provides methods and properties for administering this service.
+        """
+        if self._gis._portal.is_arcgisonline:
+            rd = {"/rest/services/": "/rest/admin/services/"}
+        else:
+            rd = {"/rest/": "/admin/", "/VectorTileServer": ".VectorTileServer"}
+        adminURL = self._str_replace(self._url, rd)
+        if adminURL.split("/")[-1].isdigit():
+            adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+        self._admin = VectorTileLayerManager(adminURL, self._gis, self)
+        return self._admin
+
+    # ----------------------------------------------------------------------
+    def tile_fonts(self, fontstack, stack_range):
+        """
+         The ``tile_fonts`` method retrieves glyphs in
+         `protocol buffer format. <https://developers.google.com/protocol-buffers/>`_
+
+         .. note::
+            The template url for this fonts resource is represented in Vector Tile Style resource.
+
+        :return:
+            Glyphs in PBF format
+        """
+        url = "{url}/resources/fonts/{fontstack}/{stack_range}.pbf".format(
+            url=self._url, fontstack=fontstack, stack_range=stack_range
+        )
+        params = {}
+        return self._con.get(path=url, params=params, force_bytes=True)
+
+    # ----------------------------------------------------------------------
+    def vector_tile(self, level, row, column):
+        """
+        The ``vector_tile`` method represents a single vector tile for the map.
+
+        .. note::
+            The bytes for the tile at the specified level, row and column are
+            returned in PBF format. If a tile is not found, an error is returned.
+
+        :return:
+            Bytes in PBF format
+        """
+        url = "{url}/tile/{level}/{row}/{column}.pbf".format(
+            url=self._url, level=level, row=row, column=column
+        )
+        params = {}
+        return self._con.get(path=url, params=params, try_json=False, force_bytes=True)
+
+    # ----------------------------------------------------------------------
+    def tile_sprite(self, out_format="sprite.json"):
+        """
+        The ``tile_sprite`` resource retrieves sprite images and metadata
+
+        :return:
+            Sprite image and metadata.
+        """
+        url = "{url}/resources/sprites/{f}".format(url=self._url, f=out_format)
+        return self._con.get(path=url, params={})
+
+    # ----------------------------------------------------------------------
+    @property
+    def info(self):
+        """
+        The ``info`` property retrieves the relative paths to a list of resource files.
+
+        :return:
+           A List of relative paths
+        """
+        url = "{url}/resources/info".format(url=self._url)
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    def export_tiles(
+        self,
+        levels=None,
+        export_extent=None,
+        polygon=None,
+        max_export_tile_count=10000,
+    ):
+        """
+        Export vector tile layer
+
+        =====================       =======================================================
+        **Argument**                **Description**
+        ---------------------       -------------------------------------------------------
+        levels                      Required string.Specifies the tiled service levels to export.
+                                    The values should correspond to Level IDs. The values
+                                    can be comma-separated values or a range of values.
+                                    Ensure that the tiles are present at each specified level.
+
+                                    .. code-block:: python
+                                    # Example:
+
+                                        //Comma-separated values
+                                        levels=1,2,3,4,5,6,7,8,9
+
+                                        //Ranged values
+                                        levels=1-4, 7-9
+        ---------------------       -------------------------------------------------------
+        export_extent               Dictionary of the extent (bounding box) of the vector
+                                    tile package to be exported.
+                                    The extent should be within the specified spatial reference.
+                                    The default value is the full extent of the tiled map service.
+
+                                    .. code-block:: python
+                                    # Example:
+
+                                        {
+                                        "xmin": -109.55, "ymin" : 25.76,
+                                        "xmax": -86.39, "ymax" : 49.94,
+                                        "spatialReference": {"wkid": 4326}
+                                        }
+        ---------------------       -------------------------------------------------------
+        polygon                     Introduced at 10.7. A JSON representation of a polygon,
+                                    containing an array of rings and a spatialReference.
+
+                                    .. code-block:: python
+                                    # Example:
+
+                                        {
+                                        "rings": [
+                                            [[6453,16815],[10653,16423],[14549,5204],[-7003,6939],[6453,16815]],
+                                            [[914,7992],[3140,11429],[1510,10525],[914,7992]]
+                                        ],
+                                        "spatialReference": {"wkid": 54004}
+                                        }
+        ---------------------       -------------------------------------------------------
+        max_export_tile_count       Optional float. ``max_export_tile_count``sets the maximum
+                                    amount of tiles to be exported from a single call.
+
+                                    .. note::
+                                        The default value is 100000.
+                                    Required boolean. ``exports_tiles_allowed`` sets the value to let users export tiles
+        =====================       =======================================================
+
+        :returns:
+            A path to downloaded file
+        """
+        if not self.properties.exportTilesAllowed:
+            raise arcgis.gis.Error(
+                "Export Tiles operation is not allowed for this service. Enable offline mode."
+            )
+        if not levels:
+            raise ValueError("Parameter levels is mandatory for this operation.")
+        params = {
+            "f": "json",
+            "exportBy": "levelId",
+            "maxExportTileCount": max_export_tile_count,
+            "levels": levels,
+        }
+        if export_extent:
+            params["exportExtent"] = export_extent
+        # parameter introduced at 10.7
+        if polygon and self.gis.version >= [7, 1]:
+            params["polygon"] = polygon
+
+        url = "{url}/exportTiles".format(url=self._url)
+        exportJob = self._con.get(path=url, params=params)
+
+        path = "%s/jobs/%s" % (url, exportJob["jobId"])
+
+        resp_params = {"f": "json"}
+        job_response = self._con.post(path, resp_params)
+
+        if "status" in job_response or "jobStatus" in job_response:
+            status = job_response.get("status") or job_response.get("jobStatus")
+            while not status == "esriJobSucceeded":
+                time.sleep(5)
+
+                job_response = self._con.post(path, params)
+                status = job_response.get("status") or job_response.get("jobStatus")
+                if status in [
+                    "esriJobFailed",
+                    "esriJobCancelling",
+                    "esriJobCancelled",
+                    "esriJobTimedOut",
+                ]:
+                    print(str(job_response["messages"]))
+                    raise Exception("Job Failed with status " + status)
+        else:
+            raise Exception("No job results.")
+
+        if "results" in job_response:
+
+            allResults = job_response["results"]
+
+            for k, v in allResults.items():
+                if k == "out_service_url":
+                    value = v.value
+                    params = {"f": "json"}
+                    gpRes = self._con.get(path=value, params=params)
+                    return gpRes["folders"]
+                else:
+                    return None
+        elif "output" in job_response:
+            allResults = job_response["output"]
+            if allResults["itemId"]:
+                return arcgis.gis.Item(gis=self._gis, itemid=allResults["itemId"])
+            else:
+                if self._gis._portal.is_arcgisonline:
+                    return [
+                        self._con.get(url, try_json=False, add_token=False)
+                        for url in allResults["outputUrl"]
+                    ]
+                else:
+                    return [
+                        self._con.get(url, try_json=False)
+                        for url in allResults["outputUrl"]
+                    ]
+        else:
+            raise Exception(job_response)
+
+    def _str_replace(self, mystring, rd):
+        """Replaces a value based on a key/value pair where the
+        key is the text to replace and the value is the new value.
+
+        The find/replace is case insensitive.
+
+        """
+        import re
+
+        patternDict = {}
+        for key, value in rd.items():
+            pattern = re.compile(re.escape(key), re.IGNORECASE)
+            patternDict[value] = pattern
+        for key in patternDict:
+            regex_obj = patternDict[key]
+            mystring = regex_obj.sub(key, mystring)
+        return mystring
 
 
 ###########################################################################
