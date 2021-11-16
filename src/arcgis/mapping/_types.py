@@ -481,9 +481,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                     for lyr in layer.layers:  # recurse - works for all.
                         lyr.properties.serviceItemId = layer.id
                         if isinstance(lyr, VectorTileLayer):
-                            lyr.properties.serviceItemId = (
-                                layer.id
-                            )  # Vector Tile Service does not automatically have this
+                            # Vector Tile Service does not automatically have this
                             lyr.properties.name = layer.name
                         self.add_layer(lyr, dict(options))
                 if hasattr(layer, "tables"):
