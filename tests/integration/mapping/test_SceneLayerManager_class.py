@@ -9,9 +9,6 @@ from arcgis.mapping import SceneLayer
 
 # Initialize manager
 online_admin = GIS(
-    url="https://devgeosaurus.mapsdevext.arcgis.com/",
-    username="naubry_devgeosaurus",
-    password="ArcGISAPITeam1",
     profile="your_dev_profile",
     verify_cert=False,
 )
