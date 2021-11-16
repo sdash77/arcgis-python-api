@@ -68,25 +68,27 @@ class StoryMap(object):
         else:
             self._gis = gis
         if gis._portal.is_logged_in is False:
-            # CHECK TO SEE IF AUTHENTICATED
+            # check to see if user is authenticated
             raise Exception("Must be logged into an Enterprise Account")
         if item and isinstance(item, str):
+            # get item using the item id
             item = gis.content.get(item)
         if item and isinstance(item, arcgis.gis.Item) and item.type == "StoryMap":
+            # set item properties
             self._item = item
             self._itemid = self._item.itemid
             self._properties = self._item.get_data()
             self._resources = self._item.resources.list()
-            # If story is a draft, get properties from resource file.
             if (
                 self._properties == {}
                 or "unpublished" in self._properties
                 and self._properties["unpublished"] is True
             ):
+                # If story is a draft, get properties from resource file.
                 for resource in self._resources:
                     for key, val in resource.items():
                         if key == "resource" and val == "draft.json":
-                            # Open JSON file for properties
+                            # Open JSON draft file for properties
                             data = self._item.resources.get(val, try_json=True)
                             self._properties = data
         elif (
@@ -94,16 +96,23 @@ class StoryMap(object):
             and isinstance(item, arcgis.gis.Item)
             and "StoryMap" not in item.typeKeywords
         ):
+            # Throw error if item is not of type Story Map
             raise ValueError("Item is not a Story Map")
         else:
+            # If no item was provided create a new story map
             self._create_new_storymap()
 
     # ----------------------------------------------------------------------
     def _create_new_storymap(self):
+        # get template from _ref folder
         template = arcgis.apps.storymap._ref.storymap_2
+        # set properties
         self._properties = template
+        # assign text for resource call
         text = json.dumps(template)
+        # create a temporary title
         title = "StoryMap %s" % uuid.uuid4().hex[:10]
+        # will be posted as a draft using these keywords
         typeKeywords = ",".join(
             [
                 "arcgis-storymaps",
@@ -114,16 +123,20 @@ class StoryMap(object):
                 "smsdraftresourceid:draft_" + str(int(time.time())) + ".json",
             ]
         )
+        # set the item properties dict
         item_properties = {
             "title": title,
             "text": json.dumps(self._properties),
             "typeKeywords": typeKeywords,
             "type": "StoryMap",
         }
+        # add item to active gis and set properties
         item = self._gis.content.add(item_properties=item_properties)
         self._item = item
         self._itemid = item.itemid
+        # make a resource call with the template to create json draft needed
         self._add_resource(resource_name="draft.json", text=text)
+        # assign resources to item
         self._resources = self._item.resources.list()
 
     # ----------------------------------------------------------------------
@@ -169,6 +182,12 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @cover_date.setter
     def cover_date(self, date):
+        """
+        Get/Set the date shown on the story cover.
+
+            Values: "first-published" | "last-published" | "none"
+        """
+        # cover date is found in story node (i.e. root node id)
         root = self._properties["root"]
         self._properties["nodes"][root]["config"]["coverDate"] = date
         return self.cover_date
@@ -185,11 +204,14 @@ class StoryMap(object):
         """
         Get main nodes in order of appearance in the story.
         """
+        # get rood node id since it is story node id
         root_id = self._properties["root"]
+        # get list of children from story node
         children = self._properties["nodes"][root_id]["children"]
         nodes = self._properties["nodes"]
 
         node_order = []
+        # for each node assign correct class type to be accessed if needed by user
         for child in children:
             if child in nodes:
                 node = self._assign_node_class(child)
@@ -202,6 +224,7 @@ class StoryMap(object):
         """
         Get a list of the nodes that are linked in the navigation node.
         """
+        # navigation item has list of links corresponding to the text nodes in the navigation
         nav = self.get("navigation")[0]
         for key, value in nav.items():
             node_id = key
@@ -249,11 +272,14 @@ class StoryMap(object):
         """
         spec_type = []
         node_id = node
+
         if type is None and node_id is None:
+            # return all nodes in order
             return self.nodes
         elif node_id is not None:
             # return a specific node
             all_nodes = self.nodes
+            # find the node in the list and return it
             for node in all_nodes:
                 id = list(node.keys())[0]
                 if node_id == id:
@@ -264,11 +290,11 @@ class StoryMap(object):
             for node in all_nodes:
                 keyword = list(node.values())[0]
                 if isinstance(keyword, str):
-                    # Not a type of story content
+                    # Not a type of story content (i.e. navigation)
                     if type.lower() in keyword:
                         spec_type.append(node)
                 else:
-                    # Find all story content instances
+                    # Find all story content instances (i.e. Text)
                     if type.lower() in keyword._type:
                         spec_type.append(node)
             return spec_type
@@ -315,11 +341,17 @@ class StoryMap(object):
             story.save()
 
         """
+        # story cover is always first node
         dict_node = self.nodes[0]
+
+        # get the node id
         for key, value in dict_node.items():
             story_cover_node = key
+
+        # get original data of story cover
         orig_data = self._properties["nodes"][story_cover_node]["data"]
 
+        # set the new values, if any
         self._properties["nodes"][story_cover_node] = {
             "type": "storycover",
             "data": {
@@ -330,8 +362,11 @@ class StoryMap(object):
                 "titlePanelPosition": "start",
             },
         }
+
+        # set the cover image
         if image is not None:
             if image.node not in self._properties["nodes"]:
+                # must be added to story resources
                 image._add_image(story=self)
             self._properties["nodes"][story_cover_node]["children"] = [image.node]
         return self._properties["nodes"][story_cover_node]
@@ -404,15 +439,17 @@ class StoryMap(object):
                             Values: SUMMIT | TIDAL | MESA | RIDGELINE | SLATE | OBSIDIAN | "<item_id>"
         ===============     ====================================================================
         """
-
+        # find the node corresponding to the story theme in resources
         for node, node_info in self._properties["resources"].items():
             for key, val in node_info.items():
                 if key == "type" and val == "story-theme":
                     if isinstance(theme, Themes):
+                        # theme comes from Themes class
                         self._properties["resources"][node]["data"][
                             "themeId"
                         ] = theme.value
                     if isinstance(theme, str):
+                        # theme is an item of type Story Theme
                         self._properties["resources"][node]["data"][
                             "themeItemId"
                         ] = theme
@@ -446,6 +483,7 @@ class StoryMap(object):
         """
         # Find credit node
         dict_node = self.get("credits")[0]
+        # Get credit node id
         for key, value in dict_node.items():
             credits_node = key
         credits = self._properties["nodes"][credits_node]
@@ -544,8 +582,10 @@ class StoryMap(object):
         if content and content.node in self._properties["nodes"]:
             raise Exception("This node already exists. Please try updating instead.")
 
+        # Node id included in all content except separator so create node id for that
         node_id = content.node if content is not None else uuid.uuid4().hex[0:6]
 
+        # Find instance of content and call correct method
         if isinstance(content, Content.Image):
             content._add_image(caption, alt_text, display, self)
         elif isinstance(content, Content.Gallery):
@@ -563,6 +603,7 @@ class StoryMap(object):
         elif isinstance(content, Content.Text):
             content._add_text(self)
         else:
+            # If no content passed, separator is added
             self._properties["nodes"][node_id] = {"type": "separator"}
 
         # Add to story children
@@ -603,6 +644,7 @@ class StoryMap(object):
             >>> new_story.move(new_node, 3, False)
 
         """
+        # Get list of story children
         root_id = self._properties["root"]
         children = self._properties["nodes"][root_id]["children"]
 
@@ -666,7 +708,7 @@ class StoryMap(object):
             text=json.dumps(self._properties),
         )
 
-        # Find type keywords to use
+        # Find type keywords to use based on whether to publish or not
         if publish is True:
             typeKeywords = ",".join(
                 [
@@ -732,8 +774,10 @@ class StoryMap(object):
             >>> story.duplicate("A Story Copy")
 
         """
+        # get the item to copy
         item = self._gis.content.get(self._itemid)
 
+        # enterprise has no copy_item
         if item._portal.is_arcgisonline is False:
             # TODO: TEST THIS
             return self._gis.content.clone_items(items=[item])
@@ -750,6 +794,7 @@ class StoryMap(object):
         if node_id not in self._properties["nodes"]:
             return False
 
+        # Get list of nodes in the story
         root_id = self._properties["root"]
         children = self._properties["nodes"][root_id]["children"]
 
@@ -776,14 +821,19 @@ class StoryMap(object):
         and credits. The second node is always navigation. If visible is not set
         to True is simply won't be seen but stays in position 2.
         """
+        # Get list of children in story
         root_id = self._properties["root"]
         last = len(self._properties["nodes"][root_id]["children"]) - 1
 
         if position and position < last and position != 0:
+            # If the position adheres to rules then add node
             self._properties["nodes"][root_id]["children"].insert(position, node_id)
         elif position and (position == 0 or position == 1):
+            # First and second node reserved for story cover and navigation
+            # Add as third node if user specified position 0 or 1
             self._properties["nodes"][root_id]["children"].insert(2, node_id)
         else:
+            # Last node is reserved for credits so add before this if user wanted last position
             self._properties["nodes"][root_id]["children"].insert(last, node_id)
 
     # ----------------------------------------------------------------------
@@ -815,7 +865,9 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     def _assign_node_class(self, node_id):
+        # Find the node type to assign to correct class
         node_type = self._properties["nodes"][node_id]["type"]
+        # Create an instance of this class using existing node properties
         if node_type == "image":
             node = Content.Image(story=self, node_id=node_id)
         elif node_type == "video":
@@ -823,12 +875,10 @@ class StoryMap(object):
         elif node_type == "audio":
             node = Content.Audio(story=self, node_id=node_id)
         elif node_type == "embed":
-            # embed has subtype: video, audio, or link
+            # embed has subtype: video or link
             subtype = self._properties["nodes"][node_id]["data"]["embedType"]
             if subtype == "video":
                 node = Content.Video(story=self, node_id=node_id)
-            elif subtype == "audio":
-                node = Content.Audio(story=self, node_id=node_id)
             else:
                 node = Content.Embed(story=self, node_id=node_id)
         elif node_type == "webmap":
@@ -844,12 +894,13 @@ class StoryMap(object):
         elif node_type == "timeline":
             node = Content.Timeline(self, node_id)
         elif node_type == "immersive":
-            # immersive has subtype sidecar, and tour
+            # immersive has subtype sidecar (more to add later)
             subtype = self._properties["nodes"][node_id]["data"]["type"]
             if subtype == "sidecar":
                 node = Content.Sidecar(self, node_id)
             else:
                 node = subtype
         else:
+            # if not of type story content then just return name of type
             node = node_type
         return node
