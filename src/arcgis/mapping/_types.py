@@ -3923,8 +3923,6 @@ class VectorTileLayer(arcgis.gis.Layer):
 
 
 ###########################################################################
-
-
 class VectorTileLayerManager(arcgis.gis._GISResource):
     """
     The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted vector tile layers.
@@ -4290,10 +4288,10 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         The ``refresh`` operation refreshes a service, which clears the web
         server cache for the service.
         """
-        url = self._url + "/MapServer/refresh"
+        url = self._url + "/refresh"
         params = {"f": "json", "serviceDefinition": service_definition}
 
-        res = self._con.post(self._url, params)
+        res = self._con.post(url, params)
 
         super(MapImageLayerManager, self)._refresh()
 
@@ -4397,13 +4395,14 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             >>> map_layer_item = gis.content.get('abcd_item-id')
             >>> map_image_layer = map_layer_item.layers[0]
             >>> mil_manager = map_image_layer.manager
-            >>> imported_tiles = mil_manager.import_tiles(levels = "11-20",
+            >>> imported_tiles = mil_manager.import_tiles(item="<item-id>",
+                                                          levels = "11-20",
                                                           extent = {"xmin":6224324.092137296,
                                                                     "ymin":487347.5253569535,
                                                                     "xmax":11473407.698535524,
                                                                     "ymax":4239488.369818687,
                                                                     "spatialReference":{"wkid":102100}
-                                                                    }
+                                                                    },
                                                           merge = True,
                                                         replace = True
                                                           )
