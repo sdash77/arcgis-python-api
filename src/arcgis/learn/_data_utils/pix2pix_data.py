@@ -509,6 +509,7 @@ def prepare_pix2pix_data(
     resize_to,
     norm_pct,
     _is_multispectral,
+    working_dir,
     **kwargs,
 ):
     norm_stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]  # kwargs.get('norm_stats', stats)
@@ -552,6 +553,8 @@ def prepare_pix2pix_data(
     if label_nc:
         data.label_nc = len(data.mask_map) + 1
     data.chip_size = data.resize_to
+    if working_dir is not None:
+        data.path = Path(os.path.abspath(working_dir))
     data._temp_folder = _prepare_working_dir(path)
     data.show_batch = types.MethodType(show_batch, data)
 
