@@ -321,9 +321,9 @@ class StoryMap(object):
         title               Optional string. The title of the StoryMap cover.
         ---------------     --------------------------------------------------------------------
         type                Optional string. The type of story cover to be used in the story.
-                            By default, it is “full”
+                            By default, it is "full"
 
-                            Values: “full” | “sidebyside“ | “minimal"
+                            Values: "full" | "sidebyside" | "minimal"
         ---------------     --------------------------------------------------------------------
         summary             Optional string. The description of the story.
         ---------------     --------------------------------------------------------------------
