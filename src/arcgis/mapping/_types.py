@@ -3686,10 +3686,13 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         """
         The refresh operation clears and refreshes the service cache.
         """
-        url = self._url + "/refresh"
-        params = {"f": "json"}
-        res = self._con.post(path=url, params=params)
-        return res
+        if self._gis._is_agol:
+            url = self._url + "/refresh"
+            params = {"f": "json"}
+            res = self._con.post(path=url, params=params)
+            return res
+        else:
+            raise Exception("Refresh method is not available for Enterprise Service.")
 
     # ----------------------------------------------------------------------
     def rebuild_cache(self):
@@ -3699,9 +3702,12 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         The results of the operation is a response indicating success, which
         redirects you to the Job Statistics page, or failure.
         """
-        url = self._url + "/rebuildCache"
-        params = {"f": "json"}
-        return self._con.get(url, params)
+        if self._gis._is_agol:
+            url = self._url + "/rebuildCache"
+            params = {"f": "json"}
+            return self._con.get(url, params)
+        else:
+            raise Exception("Rebuild cache method is not available for Enterprise Service.")
 
     # ----------------------------------------------------------------------
     def swap(self, target_service_name):
@@ -3720,9 +3726,12 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         :returns: dictionary indicating success or error
 
         """
-        url = self._url + "/swap"
-        params = {"f": "json", "targetServiceName": target_service_name}
-        return self._con.post(url, params)
+        if self._gis._is_agol:
+            url = self._url + "/swap"
+            params = {"f": "json", "targetServiceName": target_service_name}
+            return self._con.post(url, params)
+        else:
+            raise Exception("Swap method is not available for Enterprise Service.")
 
     # ----------------------------------------------------------------------
     def status(self):
@@ -3740,9 +3749,12 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         jobid run and redirects you to the Job Statistics page.
 
         """
-        url = self._url + "/jobs"
-        params = {"f": "json"}
-        return self._con.get(url, params)
+        if self._gis._is_agol:
+            url = self._url + "/jobs"
+            params = {"f": "json"}
+            return self._con.get(url, params)
+        else:
+            raise Exception("Jobs method is not available for Enterprise Service.")
 
     # ----------------------------------------------------------------------
     def job_statistics(self, job_id):
@@ -3753,9 +3765,12 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         jobid run and redirects you to the Job Statistics page.
 
         """
-        url = self._url + "/jobs/{job_id}".format(job_id=job_id)
-        params = {"f": "json"}
-        return self._con.post(url, params)
+        if self._gis._is_agol:
+            url = self._url + "/jobs/{job_id}".format(job_id=job_id)
+            params = {"f": "json"}
+            return self._con.post(url, params)
+        else:
+            raise Exception("Job statistics method is not available for Enterprise Service.")
 
     # ----------------------------------------------------------------------
     def delete_job(self, job_id):
@@ -3766,9 +3781,12 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         it will remove all information about the job from the system. To cancel a
         job in progress without removing information, use the Cancel Job operation.
         """
-        url = self._url + "jobs/{job_id}/delete".format(job_id=job_id)
-        params = {"f": "json"}
-        return self._con.post(url, params)
+        if self._gis._is_agol:
+            url = self._url + "jobs/{job_id}/delete".format(job_id=job_id)
+            params = {"f": "json"}
+            return self._con.post(url, params)
+        else:
+            raise Exception("Delete job method is not available for Enterprise Service.")
 
     # ----------------------------------------------------------------------
     def cancel_job(self, job_id):
@@ -3778,9 +3796,12 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         operation is a response indicating success or failure with error
         code and description.
         """
-        url = self._url + "jobs/{job_id}/cancel".format(job_id=job_id)
-        params = {"f": "json"}
-        return self._con.post(url, params)
+        if self._gis._is_agol:
+            url = self._url + "jobs/{job_id}/cancel".format(job_id=job_id)
+            params = {"f": "json"}
+            return self._con.post(url, params)
+        else:
+            raise Exception("Refresh method is not available for Enterprise Service.")
 
     # ----------------------------------------------------------------------
     def update_tiles(self, levels=None, extent=None):
