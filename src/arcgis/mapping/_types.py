@@ -3589,7 +3589,7 @@ class OfflineMapAreaManager(object):
                         offline_map_area_item.related_items("Area2Package", "forward")
                     )
                 elif isinstance(offline_map_area_item, str):
-                    offline_map_area_item = Item(
+                    offline_map_area_item = _gis.Item(
                         gis=self._gis, itemid=offline_map_area_item
                     )
                     _related_packages.extend(
@@ -4384,10 +4384,10 @@ class VectorTileLayer(arcgis.gis.Layer):
 ###########################################################################
 class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
     """
-    The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
+    The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted map image layers.
     A :class:`~arcgis.mapping.MapImageLayer` offers access to layer content.
 
-    ..note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
+    ..note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/MapServer/
     """
 
     def __init__(self, url, gis=None, map_img_lyr=None):

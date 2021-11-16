@@ -1,5 +1,6 @@
 import json
 from arcgis.gis import Layer, _GISResource, Item, GIS
+from arcgis.gis.server.admin._services import Service
 
 
 class SceneLayerManager(_GISResource):
@@ -382,6 +383,77 @@ class SceneLayerManager(_GISResource):
 
 
 ###########################################################################
+class EnterpriseSceneLayerManager(_GISResource):
+    """
+    The ``EnterpriseSceneLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted scene layers.
+    A :class:`~arcgis.mapping.SceneLayer` offers access to layer content.
+
+    ..note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/SceneServer/
+    """
+
+    def __init__(self, url, gis=None, scene_lyr=None):
+        if url.split("/")[-1].isdigit():
+            url = url.replace(f"/{url.split('/')[-1]}", "")
+        super(SceneLayerManager, self).__init__(url, gis)
+        self._sl = scene_lyr
+
+    # ----------------------------------------------------------------------
+    def edit(self, service_dictionairy):
+        """
+        To edit a service, you need to submit the complete JSON
+        representation of the service, which includes the updates to the
+        service properties. Editing a service causes the service to be
+        restarted with updated properties.
+
+        ===================     ====================================================================
+        **Argument**            **Description**
+        -------------------     --------------------------------------------------------------------
+        service_dictionairy     Required dict. The service JSON as a dictionary.
+        ===================     ====================================================================
+
+
+        :return: boolean
+        """
+        sl_service = Service(self.url, self._gis)
+        return sl_service.edit(service_dictionairy)
+
+    # ----------------------------------------------------------------------
+    def start(self):
+        """starts the specific service"""
+        sl_service = Service(self.url, self._gis)
+        return sl_service.start()
+
+    # ----------------------------------------------------------------------
+    def stop(self):
+        """stops the specific service"""
+        sl_service = Service(self.url, self._gis)
+        return sl_service.stop()
+
+    # ----------------------------------------------------------------------
+    def change_provider(self, provider: str):
+        """
+        Allows for the switching of the service provide and how it is hosted on the ArcGIS Server instance.
+
+        Values:
+
+           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap
+           + 'ArcObjects11': means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
+           + 'DMaps': means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
+
+        :return: Boolean
+
+        """
+        sl_service = Service(self.url, self._gis)
+        return sl_service.change_provider(provider)
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """deletes a service from arcgis server"""
+        sl_service = Service(self.url, self._gis)
+        return sl_service.delete()
+
+
+###########################################################################
 class Object3DLayer(Layer):
     """
     The ``Object3DLayer`` rresents a Web scene 3D Object layer.
@@ -455,16 +527,21 @@ class Object3DLayer(Layer):
         if self._admin is None:
             """
             The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
             which provides methods and properties for administering this service.
             """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = SceneLayerManager(adminURL, self._gis, self)
             else:
                 rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
-            adminURL = self._str_replace(self._url, rd)
-            if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-            self._admin = SceneLayerManager(adminURL, self._gis, self)
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = EnterpriseSceneLayerManager(adminURL, self._gis, self)
         return self._admin
 
     # ----------------------------------------------------------------------
@@ -558,21 +635,24 @@ class IntegratedMeshLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def manager(self):
-        """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-        which provides methods and properties for administering this service.
-        """
         if self._admin is None:
+            """
+            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+            which provides methods and properties for administering this service.
+            """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = SceneLayerManager(adminURL, self._gis, self)
             else:
                 rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
-            adminURL = self._str_replace(self._url, rd)
-            if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-                if adminURL.split("/")[-1] == "layers":
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
                     adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-            self._admin = SceneLayerManager(adminURL, self._gis, self)
+                self._admin = EnterpriseSceneLayerManager(adminURL, self._gis, self)
         return self._admin
 
     # ----------------------------------------------------------------------
@@ -670,16 +750,21 @@ class Point3DLayer(Layer):
         if self._admin is None:
             """
             The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
             which provides methods and properties for administering this service.
             """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = SceneLayerManager(adminURL, self._gis, self)
             else:
                 rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
-            adminURL = self._str_replace(self._url, rd)
-            if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-            self._admin = SceneLayerManager(adminURL, self._gis, self)
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = EnterpriseSceneLayerManager(adminURL, self._gis, self)
         return self._admin
 
     # ----------------------------------------------------------------------
@@ -776,16 +861,21 @@ class PointCloudLayer(Layer):
         if self._admin is None:
             """
             The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
             which provides methods and properties for administering this service.
             """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = SceneLayerManager(adminURL, self._gis, self)
             else:
                 rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
-            adminURL = self._str_replace(self._url, rd)
-            if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-            self._admin = SceneLayerManager(adminURL, self._gis, self)
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = EnterpriseSceneLayerManager(adminURL, self._gis, self)
         return self._admin
 
     # ----------------------------------------------------------------------
@@ -882,16 +972,21 @@ class BuildingLayer(Layer):
         if self._admin is None:
             """
             The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
             which provides methods and properties for administering this service.
             """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = SceneLayerManager(adminURL, self._gis, self)
             else:
                 rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
-            adminURL = self._str_replace(self._url, rd)
-            if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-            self._admin = SceneLayerManager(adminURL, self._gis, self)
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = EnterpriseSceneLayerManager(adminURL, self._gis, self)
         return self._admin
 
     # ----------------------------------------------------------------------
