@@ -22,6 +22,7 @@ _utils = LazyLoader("arcgis._impl.common._utils")
 _geometry = LazyLoader("arcgis.geometry")
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
 _forms = LazyLoader("arcgis.mapping.forms")
+_services = LazyLoader("arcgis.gis.server.admin._services")
 
 from arcgis.mapping._scenelyrs import SceneLayer
 
@@ -3665,6 +3666,79 @@ class WebScene(collections.OrderedDict):
 
 
 ###########################################################################
+class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
+    """
+    The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
+    A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
+
+    ..note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
+    """
+
+    def __init__(self, url, gis=None, vect_tile_lyr=None):
+        if url.split("/")[-1].isdigit():
+            url = url.replace(f"/{url.split('/')[-1]}", "")
+        if gis._is_agol and gis.version <= [8, 4]:
+            raise Warning("Manager not available. Update version of Enterprise")
+        super(EnterpriseVectorTileLayerManager, self).__init__(url, gis)
+        self._vtl = vect_tile_lyr
+
+    # ----------------------------------------------------------------------
+    def edit(self, service_dictionairy):
+        """
+        To edit a service, you need to submit the complete JSON
+        representation of the service, which includes the updates to the
+        service properties. Editing a service causes the service to be
+        restarted with updated properties.
+
+        ===================     ====================================================================
+        **Argument**            **Description**
+        -------------------     --------------------------------------------------------------------
+        service_dictionairy     Required dict. The service JSON as a dictionary.
+        ===================     ====================================================================
+
+
+        :return: boolean
+        """
+        vtl_service = _services.Service(self.url, self._gis)
+        return vtl_service.edit(service_dictionairy)
+
+    # ----------------------------------------------------------------------
+    def start(self):
+        """starts the specific service"""
+        vtl_service = _services.Service(self.url, self._gis)
+        return vtl_service.start()
+
+    # ----------------------------------------------------------------------
+    def stop(self):
+        """stops the specific service"""
+        vtl_service = _services.Service(self.url, self._gis)
+        return vtl_service.stop()
+
+    # ----------------------------------------------------------------------
+    def change_provider(self, provider: str):
+        """
+        Allows for the switching of the service provide and how it is hosted on the ArcGIS Server instance.
+
+        Values:
+
+           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap
+           + 'ArcObjects11': means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
+           + 'DMaps': means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
+
+        :return: Boolean
+
+        """
+        vtl_service = _services.Service(self.url, self._gis)
+        return vtl_service.change_provider(provider)
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """deletes a service from arcgis server"""
+        vtl_service = _services.Service(self.url, self._gis)
+        return vtl_service.delete()
+
+
+###########################################################################
 class VectorTileLayerManager(arcgis.gis._GISResource):
     """
     The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted vector tile layers.
@@ -3707,7 +3781,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             params = {"f": "json"}
             return self._con.get(url, params)
         else:
-            raise Exception("Rebuild cache method is not available for Enterprise Service.")
+            raise Exception(
+                "Rebuild cache method is not available for Enterprise Service."
+            )
 
     # ----------------------------------------------------------------------
     def swap(self, target_service_name):
@@ -3770,7 +3846,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             params = {"f": "json"}
             return self._con.post(url, params)
         else:
-            raise Exception("Job statistics method is not available for Enterprise Service.")
+            raise Exception(
+                "Job statistics method is not available for Enterprise Service."
+            )
 
     # ----------------------------------------------------------------------
     def delete_job(self, job_id):
@@ -3786,7 +3864,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             params = {"f": "json"}
             return self._con.post(url, params)
         else:
-            raise Exception("Delete job method is not available for Enterprise Service.")
+            raise Exception(
+                "Delete job method is not available for Enterprise Service."
+            )
 
     # ----------------------------------------------------------------------
     def cancel_job(self, job_id):
@@ -3889,9 +3969,12 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         :returns:
            A boolean or dictionary
         """
-        url = self._url + "/jobs/%s/rerun" % job_id
-        params = {"f": "json", "rerun": code}
-        return self._con.post(url, params)
+        if self._gis._is_agol:
+            url = self._url + "/jobs/%s/rerun" % job_id
+            params = {"f": "json", "rerun": code}
+            return self._con.post(url, params)
+        else:
+            raise Exception("Refresh method is not available for Enterprise Service.")
 
     # ----------------------------------------------------------------------
     def edit_tile_service(
@@ -4022,14 +4105,17 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             >>> type(deleted_tiles)
             <Dictionary>
         """
-        params = {
-            "f": "json",
-            "levels": levels,
-        }
-        if extent:
-            params["extent"] = extent
-        url = self._url + "/deleteTiles"
-        return self._con.post(url, params)
+        if self._gis._is_agol:
+            params = {
+                "f": "json",
+                "levels": levels,
+            }
+            if extent:
+                params["extent"] = extent
+            url = self._url + "/deleteTiles"
+            return self._con.post(url, params)
+        else:
+            raise Exception("Refresh method is not available for Enterprise Service.")
 
 
 ###########################################################################
@@ -4057,17 +4143,22 @@ class VectorTileLayer(arcgis.gis.Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.VectorTileLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.mapping.VectorTileLayerManager` class or
+        :class:`~arcgis.mapping.EnterpriseVectorTileLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._gis._portal.is_arcgisonline:
             rd = {"/rest/services/": "/rest/admin/services/"}
+            adminURL = self._str_replace(self._url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+            self._admin = VectorTileLayerManager(adminURL, self._gis, self)
         else:
             rd = {"/rest/": "/admin/", "/VectorTileServer": ".VectorTileServer"}
-        adminURL = self._str_replace(self._url, rd)
-        if adminURL.split("/")[-1].isdigit():
-            adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-        self._admin = VectorTileLayerManager(adminURL, self._gis, self)
+            adminURL = self._str_replace(self._url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+            self._admin = EnterpriseVectorTileLayerManager(adminURL, self._gis, self)
         return self._admin
 
     # ----------------------------------------------------------------------
@@ -4288,6 +4379,77 @@ class VectorTileLayer(arcgis.gis.Layer):
             regex_obj = patternDict[key]
             mystring = regex_obj.sub(key, mystring)
         return mystring
+
+
+###########################################################################
+class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
+    """
+    The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
+    A :class:`~arcgis.mapping.MapImageLayer` offers access to layer content.
+
+    ..note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
+    """
+
+    def __init__(self, url, gis=None, map_img_lyr=None):
+        if url.split("/")[-1].isdigit():
+            url = url.replace(f"/{url.split('/')[-1]}", "")
+        super(EnterpriseMapImageLayerManager, self).__init__(url, gis)
+        self._ms = map_img_lyr
+
+    # ----------------------------------------------------------------------
+    def edit(self, service_dictionairy):
+        """
+        To edit a service, you need to submit the complete JSON
+        representation of the service, which includes the updates to the
+        service properties. Editing a service causes the service to be
+        restarted with updated properties.
+
+        ===================     ====================================================================
+        **Argument**            **Description**
+        -------------------     --------------------------------------------------------------------
+        service_dictionairy     Required dict. The service JSON as a dictionary.
+        ===================     ====================================================================
+
+
+        :return: boolean
+        """
+        mil_service = _services.Service(self.url, self._gis)
+        return mil_service.edit(service_dictionairy)
+
+    # ----------------------------------------------------------------------
+    def start(self):
+        """starts the specific service"""
+        mil_service = _services.Service(self.url, self._gis)
+        return mil_service.start()
+
+    # ----------------------------------------------------------------------
+    def stop(self):
+        """stops the specific service"""
+        mil_service = _services.Service(self.url, self._gis)
+        return mil_service.stop()
+
+    # ----------------------------------------------------------------------
+    def change_provider(self, provider: str):
+        """
+        Allows for the switching of the service provide and how it is hosted on the ArcGIS Server instance.
+
+        Values:
+
+           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap
+           + 'ArcObjects11': means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
+           + 'DMaps': means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
+
+        :return: Boolean
+
+        """
+        mil_service = _services.Service(self.url, self._gis)
+        return mil_service.change_provider(provider)
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """deletes a service from arcgis server"""
+        mil_service = _services.Service(self.url, self._gis)
+        return mil_service.delete()
 
 
 ###########################################################################
@@ -4777,16 +4939,21 @@ class MapImageLayer(arcgis.gis.Layer):
         if self._admin is None:
             """
             The ``manager`` property returns an instance of :class:`~arcgis.mapping.MapImageLayerManager` class
+            for ArcGIS Online and :class:`~arcgis.mapping.EnterpriseMapImageLayerManager` class for ArcGIS Enterprise
             which provides methods and properties for administering this service.
             """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = MapImageLayerManager(adminURL, self._gis, self)
             else:
                 rd = {"/rest/": "/admin/", "/MapServer": ".MapServer"}
-            adminURL = self._str_replace(self._url, rd)
-            if adminURL.split("/")[-1].isdigit():
-                url = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-            self._admin = MapImageLayerManager(adminURL, self._gis, self)
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = EnterpriseMapImageLayerManager(adminURL, self._gis, self)
         return self._admin
 
     # ----------------------------------------------------------------------
