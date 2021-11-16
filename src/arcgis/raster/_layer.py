@@ -212,7 +212,13 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
+            from arcgis.mapping import ImageryLayer
+            from arcgis.gis import GIS
+
             # Example Usage
+            gis = GIS(url, username, password)
+            img_lyr = ImageryLayer("<url>", gis)
+            img_lyr_cache_manager = img_lyr.cache_manager
             imported_tiles = img_lyr_cache_manager.import_tiles(item = item1,
                                                                 levels = "11-20",
                                                                 extent = {
@@ -275,7 +281,13 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
+            from arcgis.mapping import ImageryLayer
+            from arcgis.gis import GIS
+
             # Example Usage
+            gis = GIS(url, username, password)
+            img_lyr = ImageryLayer("<url>", gis)
+            img_lyr_cache_manager = img_lyr.cache_manager
             updated_tiles = img_lyr_cache_manager.update_tiles(levels = "11-20",
                                                                extent = {
                                                                             "xmin":6224324.092137296,
@@ -417,7 +429,13 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
+            from arcgis.mapping import ImageryLayer
+            from arcgis.gis import GIS
+
             # Example Usage
+            gis = GIS(url, username, password)
+            img_lyr = ImageryLayer("<url>", gis)
+            img_lyr_cache_manager = img_lyr.cache_manager
             deleted_tiles = img_lyr_cache_manager.delete_tiles(levels = "11-20",
                                                                extent = {
                                                                             "xmin":6224324.092137296,

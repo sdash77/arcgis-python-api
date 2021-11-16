@@ -799,3 +799,20 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
         Constructs a SceneLayer given a web scene layer URL
         """
         super(SceneLayer, self).__init__(url, gis)
+
+    @property
+    def manager(self):
+        if self._admin is None:
+            """
+            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+            which provides methods and properties for administering this service.
+            """
+            if self._gis._portal.is_arcgisonline:
+                rd = {"/rest/services/": "/rest/admin/services/"}
+            else:
+                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+            adminURL = self._str_replace(self._url, rd)
+            if adminURL.split("/")[-1].isdigit():
+                url = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+            self._admin = SceneLayerManager(adminURL, self._gis, self)
+        return self._admin

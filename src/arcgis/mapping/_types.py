@@ -4387,13 +4387,12 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.mapping import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
-            >>> map_layer_item = gis.content.get('abcd_item-id')
-            >>> map_image_layer = map_layer_item.layers[0]
+            >>> map_image_layer = MapImageLayer("<url>", gis)
             >>> mil_manager = map_image_layer.manager
             >>> imported_tiles = mil_manager.import_tiles(item="<item-id>",
                                                           levels = "11-20",
@@ -4457,13 +4456,12 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.mapping import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
-            >>> map_layer_item = gis.content.get('abcd_item-id')
-            >>> map_image_layer = map_layer_item.layers[0]
+            >>> map_image_layer = MapImageLayer("<url>", gis)
             >>> mil_manager = map_image_layer.manager
             >>> update_tiles = mil_manager.update_tiles(levels = "11-20",
                                                         extent = {"xmin":6224324.092137296,
@@ -4554,13 +4552,14 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.mapping import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
-
-            >>> MapImageLayerManager.edit_tile_service(service_definition = "updated service definition",
+            >>> map_image_layer = MapImageLayer("<url>", gis)
+            >>> mil_manager = map_image_layer.manager
+            >>> mil_manager.edit_tile_service(service_definition = "updated service definition",
                                                         min_scale = 50,
                                                         max_scale = 100,
                                                         source_item_id = "geowarehouse_item_id",
@@ -4609,13 +4608,14 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.mapping import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
-
-            >>> deleted_tiles = MapImageLayerManager.delete_tiles(levels = "11-20",
+            >>> map_image_layer = MapImageLayer("<url>", gis)
+            >>> mil_manager = map_image_layer.manager
+            >>> deleted_tiles = mil_manager.delete_tiles(levels = "11-20",
                                                   extent = {"xmin":6224324.092137296,
                                                             "ymin":487347.5253569535,
                                                             "xmax":11473407.698535524,
@@ -4763,11 +4763,6 @@ class MapImageLayer(arcgis.gis.Layer):
             else:
                 rd = {"/rest/": "/admin/", "/MapServer": ".MapServer"}
             adminURL = self._str_replace(self._url, rd)
-            # res = search("/rest/", url).span()
-            # addText = "admin/"
-            # part1 = url[:res[1]]
-            # part2 = url[res[1]:]
-            # adminURL = url.replace("/rest/", "/admin/").replace("/MapServer", ".MapServer")#"%s%s%s" % (part1, addText, part2)
             if adminURL.split("/")[-1].isdigit():
                 url = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
             self._admin = MapImageLayerManager(adminURL, self._gis, self)
