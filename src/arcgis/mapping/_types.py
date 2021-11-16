@@ -3970,12 +3970,12 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
         .. note::
             The ``swap`` operation is for ArcGIS Online only.
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        target_service_     Required string. Name of service you want to swap with.
-                    name
-        ===============     ====================================================
+
+        ====================        ====================================================
+        **Argument**                **Description**
+        --------------------        ----------------------------------------------------
+        target_service_name         Required string. Name of service you want to swap with.
+        ====================        ====================================================
 
         :returns: dictionary indicating success or error
 
@@ -4140,6 +4140,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         min_scale=None,
         max_scale=None,
         max_export_tile_count=None,
+        service_name=None,
     ):
         """
         The edit operation enables editing the service exportTilesAllowed,
@@ -4161,6 +4162,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         -----------------     ------------------------------------------------------
         max_export_tile_      Optional int. ``max_export_tile_count``sets the maximum amount
         count                 of tiles to be exported from a single call.
+        -----------------     ------------------------------------------------------
+        service_name          Optional String. Name of the service to edit. This only
+                              only applies for enterprise.
         =================     ======================================================
 
         .. code-block:: python
@@ -4217,6 +4221,55 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         url = self._url + "/edit"
         return self._con.post(path=url, params=params)
 
+    # ----------------------------------------------------------------------
+    def delete_tiles(self, levels, extent=None):
+        """
+        The ``delete_tiles`` method deletes tiles from the current cache.
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        extent              Optional dictionary,  If specified, the tiles within
+                            this extent will be deleted or will be deleted based
+                            on the service's full extent.
+        ---------------     ----------------------------------------------------
+        levels              Required string, The level to delete.
+                            Example, 0-5,10,11-20 or 1,2,3 or 0-5
+        ===============     ====================================================
+
+        :return:
+           A dictionary
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import VectorTileLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> deleted_tiles = VectorTileLayerManager.delete_tiles(levels = "11-20",
+                                                  extent = {"xmin":6224324.092137296,
+                                                            "ymin":487347.5253569535,
+                                                            "xmax":11473407.698535524,
+                                                            "ymax":4239488.369818687,
+                                                            "spatialReference":{"wkid":102100}
+                                                            }
+                                                  )
+            >>> type(deleted_tiles)
+            <Dictionary>
+        """
+        params = {
+            "f": "json",
+            "levels": levels,
+        }
+        if extent:
+            params["extent"] = extent
+        url = self._url + "/deleteTiles"
+        return self._con.post(url, params)
+
 
 ###########################################################################
 class MapImageLayerManager(arcgis.gis._GISResource):
@@ -4247,6 +4300,27 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         self._ms._refresh()
 
         return res
+
+    # ----------------------------------------------------------------------
+    def swap(self, target_service_name):
+        """
+        The swap operation replaces the current service cache with an existing one.
+
+        .. note::
+            The ``swap`` operation is for ArcGIS Online only.
+
+        ====================        ====================================================
+        **Argument**                **Description**
+        --------------------        ----------------------------------------------------
+        target_service_name         Required string. Name of service you want to swap with.
+        ====================        ====================================================
+
+        :returns: dictionary indicating success or error
+
+        """
+        url = self._url + "/swap"
+        params = {"f": "json", "targetServiceName": target_service_name}
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def cancel_job(self, job_id):

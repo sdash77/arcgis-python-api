@@ -103,6 +103,27 @@ class ImageryLayerCacheManager(_GISResource):
         return self._con.post(url, params, timeout=None)
 
     # ----------------------------------------------------------------------
+    def swap(self, target_service_name):
+        """
+        The swap operation replaces the current service cache with an existing one.
+
+        .. note::
+            The ``swap`` operation is for ArcGIS Online only.
+
+        ====================        ====================================================
+        **Argument**                **Description**
+        --------------------        ----------------------------------------------------
+        target_service_name         Required string. Name of service you want to swap with.
+        ====================        ====================================================
+
+        :returns: dictionary indicating success or error
+
+        """
+        url = self._url + "/swap"
+        params = {"f": "json", "targetServiceName": target_service_name}
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
     @property
     def jobs(self):
         """
