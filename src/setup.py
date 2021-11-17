@@ -264,6 +264,7 @@ kwargs = {
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
     # What does your project relate to?
     "keywords": "gis arcgis geographic spatial spatial-data "
@@ -298,9 +299,7 @@ kwargs = {
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    "extras_require": {
-        "gp": ["dill"],
-    },
+    "extras_require": {"gp": ["dill"],},
     # extras_require={
     #     'dev': ['check-manifest'],
     #     'test': ['coverage'],
