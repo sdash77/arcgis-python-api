@@ -12,7 +12,6 @@ from arcgis.gis import Layer, Item
 from arcgis.geometry import Geometry, Envelope
 from arcgis.features import FeatureSet
 from arcgis.gis import _GISResource
-from arcgis.gis.server.admin._services import Service
 import logging
 import arcgis as _arcgis
 import base64
