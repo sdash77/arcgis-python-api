@@ -4186,22 +4186,35 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         }
         # request sent to AGO Org
         if self._gis._is_agol:
-            params["serviceDefinition"] = {}
+            params = {
+                "minScale": 0.0,
+                "maxScale": 0.0,
+                "exportTilesAllowed": False,
+                "maxExportTilesCount": 100000,
+                "f": "json",
+            }
+
             if min_scale:
-                params["serviceDefinition"]["minScale"] = float(min_scale)
+                params["minScale"] = float(min_scale)
+            else:
+                params.pop("minScale", None)
             if max_scale:
-                params["serviceDefinition"]["maxScale"] = float(max_scale)
-            params["serviceDefinition"]["exportTilesAllowed"] = (
-                export_tiles_allowed
-                if export_tiles_allowed
-                else self.properties.exportTilesAllowed
-            )
-            params["serviceDefinition"]["maxExportTilesCount"] = (
+                params["maxScale"] = float(max_scale)
+            else:
+                params.pop("maxScale", None)
+            if export_tiles_allowed:
+
+                params["exportTilesAllowed"] = export_tiles_allowed
+            else:
+                params["exportTilesAllowed"] = self.properties.exportTilesAllowed
+
+            params["maxExportTilesCount"] = (
                 max_export_tile_count
                 if max_export_tile_count
                 else self.properties.maxExportTilesCount
             )
-            params["sourceItemId"] = source_item_id
+            if source_item_id:  # only online
+                params["sourceItemId"] = source_item_id
         elif self._gis._is_agol == False:
             params["runAsync"] = True
             params["services"] = {
@@ -4212,8 +4225,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             params["services"]["properties"] = {
                 "exportTilesAllowed": export_tiles_allowed
             }
-            params["services"]["serviceName"] = service_name
-
+            params["services"]["serviceName"] = self.properties.name
         url = self._url + "/edit"
         return self._con.post(path=url, params=params)
 
