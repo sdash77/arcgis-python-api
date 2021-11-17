@@ -2778,7 +2778,10 @@ class UserManager(object):
         .. note::
             Only an administrator can call this method.
 
-        **To create a viewer account, choose role='org_viewer' and level='viewer'**
+            A member's `user_type` determines the default `role` that can be assigned to the member. User types
+            compatible with each role are noted in the table below (within the `user_type` section).
+
+        **To create a viewer account, choose role='viewer' and user_type='viewer'**
 
         .. note:
             When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
@@ -2825,13 +2828,19 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         level             Optional string. The account level. (ArcGIS Enterprise prior to version 10.7.
                           See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
-                          for full details.)
+                          for full details.) The GIS Professional `user_type` can be assigned at the following three levels, which correspond to the three license levels of ArcGIS Pro:
+                           - GIS Professional Basic
+                           - GIS Professional Standard
+                           - GIS Professional Advanced
         ----------------  -------------------------------------------------------------------------------
-        user_type         Required string. The account user type. This can be creator or viewer.  The
+        user_type         Required string. The account user type. This can be creator, viewer, etc.  The
                           type effects what applications a user can use and what actions they can do in
                           the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online.
                           See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
                           for full details.)
+                           - Members assigned the ``viewer`` role cannot create or share content, or perform analysis, and the ``viewer`` role is compatible with all user types.
+                           - The Data Editor role ``viewplusedit`` is compatible with all user types except ``viewer``.
+                           - The ``org_user``, ``org_publisher``, and ``org_admin`` roles are compatible with the Creator, GIS Professional, Storyteller, and Insights Analyst user types.
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
                           which means unlimited. (10.7+)
