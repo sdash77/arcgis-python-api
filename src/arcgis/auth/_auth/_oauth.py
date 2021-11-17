@@ -249,7 +249,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
     def handle_40x(self, r, **kwargs):
         """Handles Case where token is invalid"""
 
-        if (r.status_code < 500 and r.status_code > 399) and str(r.text).lower().find(
+        if (r.status_code < 500 and r.status_code > 399) or str(r.text).lower().find(
             "invalid token"
         ) > -1:
             # Recreate the request without the token

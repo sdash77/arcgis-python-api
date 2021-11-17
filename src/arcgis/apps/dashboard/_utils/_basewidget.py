@@ -351,10 +351,10 @@ def add_row(elements, height=1):
     =========================   ===========================================
     """
 
-    elements = _auto_calculate_width(elements)
+    elements = _auto_calculate_height(elements)
     json = {
         "type": "stackLayoutElement",
-        "orientation": "col",
+        "orientation": "row",
         "elements": [],
         "width": 1,
         "height": height,
@@ -394,10 +394,10 @@ def add_column(elements, width=1):
     =========================   ===========================================
     """
 
-    elements = _auto_calculate_height(elements)
+    elements = _auto_calculate_width(elements)
     json = {
         "type": "stackLayoutElement",
-        "orientation": "row",
+        "orientation": "col",
         "elements": [],
         "width": width,
         "height": 1,

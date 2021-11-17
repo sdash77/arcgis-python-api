@@ -117,7 +117,12 @@ class Portal(object):
                 url = arcpy.GetActivePortalURL() or "https://www.arcgis.com/"
                 self.url = url
             except ImportError:
-                raise ImportError("Could not import arcpy")
+                raise ImportError(
+                    (
+                        "The login failed because the arcpy library could not be found in your Python environment. "
+                        "Try logging in with a different set of credentials."
+                    )
+                )
             except:
                 raise ValueError("Could not use Pro authentication.")
         else:
@@ -508,6 +513,9 @@ class Portal(object):
         path = "content/users/" + owner
         if folder and folder != "/":
             folder_id = self.get_folder_id(owner, folder)
+            if folder_id is None:
+                self.create_folder(owner, folder)
+                folder_id = self.get_folder_id(owner, folder)
             path += "/" + folder_id
         path += "/createService"
 

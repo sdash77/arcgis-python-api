@@ -144,11 +144,13 @@ def _geojson_type_to_esri_type(type_):
 class BaseGeometry(dict):
     _ao = None
     _type = None
+    _typ = None
     _HASARCPY = None
     _HASSHAPELY = None
     _class_attributes = {
         "_ao",
         "_type",
+        "_typ",
         "_HASARCPY",
         "_HASSHAPELY",
         "_ipython_canary_method_should_not_exist_",
@@ -2918,6 +2920,7 @@ class MultiPoint(Geometry):
         are ignored.
     """
 
+    _typ = "Multipoint"
     _type = "Multipoint"
 
     def __init__(self, iterable=None, **kwargs):
@@ -3041,6 +3044,7 @@ class Point(Geometry):
     ``point`` has **no** location in space.
     """
 
+    _typ = "Point"
     _type = "Point"
     # ----------------------------------------------------------------------
     def __init__(self, iterable=None):
@@ -3159,6 +3163,7 @@ class Polygon(Geometry):
     ring orientation is not as described above.
     """
 
+    _typ = "Polygon"
     _type = "Polygon"
 
     def __init__(self, iterable=None, **kwargs):
@@ -3262,25 +3267,16 @@ class Polygon(Geometry):
         if sr is None:
             sr = {"wkid": 4326}
 
-        coordkey = "coordinates"
-        for d in data:
-            if d.lower() == "coordinates":
-                coordkey = d
-        coordinates = data[coordkey]
-        typekey = "type"
-        for d in data:
-            if d.lower() == "type":
-                typekey = d
-
-        if data[typekey].lower() == "polygon":
+        coordinates = data["coordinates"]
+        if data["type"].lower() == "polygon":
             coordinates = [coordinates]
+
         part_list = []
         for part in coordinates:
-            part_item = []
             for ring in part:
+                part_item = []
                 for coord in reversed(ring):
                     part_item.append(coord)
-            if part_item:
                 part_list.append(part_item)
         return cls({"rings": part_list, "spatialReference": sr})
 
@@ -3303,6 +3299,7 @@ class Polyline(Geometry):
     stream for ``Polylines`` and  :class:`~arcgis.geometry.Polygon` objects is a syntax error.
     """
 
+    _typ = "Polyline"
     _type = "Polyline"
 
     def __init__(self, iterable=None, **kwargs):
@@ -3432,6 +3429,7 @@ class Envelope(Geometry):
         or a `NaN` string.
     """
 
+    _typ = "Envelope"
     _type = "Envelope"
 
     def __init__(self, iterable=None, **kwargs):
@@ -3650,6 +3648,7 @@ class SpatialReference(BaseGeometry):
         Starting at 10.3, Image Service supports image coordinate systems.
     """
 
+    _typ = "SpatialReference"
     _type = "SpatialReference"
 
     def __init__(self, iterable=None, **kwargs):

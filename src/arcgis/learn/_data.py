@@ -2251,6 +2251,7 @@ def prepare_data(
             resize_to=resize_to,
             norm_pct=norm_pct,
             _is_multispectral=_is_multispectral,
+            working_dir=working_dir,
             **kwargs,
         )
         data._imagery_type_a = imagery_type_a

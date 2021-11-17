@@ -1416,8 +1416,8 @@ def trim_extend(
 
 
 def union(
-    spatial_ref: Optional[Union[int, dict[str, Any]]],
     geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
+    spatial_ref: Optional[Union[str, dict[str:str]]] = None,
     gis: Optional[GIS] = None,
     future: bool = False,
 ):
@@ -1432,13 +1432,17 @@ def union(
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
-    geometries        An array of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
-                      :class:`~arcgis.geometry.Polyline`, or :class:`~arcgis.geometry.Polygon` objects.
+    geometries        Required. An array of :class:`~arcgis.geometry.Point`,
+                      :class:`~arcgis.geometry.MultiPoint`, :class:`~arcgis.geometry.Polyline`,
+                      or :class:`~arcgis.geometry.Polygon` objects.
                       The structure of each geometry in the array is the
                       same as the structure of the JSON geometry objects returned by
                       the ArcGIS REST API.
     ----------------  -------------------------------------------------------------------------------
-    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    spatial_ref       An optional String or JSON Dict representing the wkid to be used. The default is the
+                      spatial reference found in the geometry or, if None found, then "4326".
+
+                      Example: "4326" or {"wkid":"4326"}
     ----------------  -------------------------------------------------------------------------------
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
@@ -1448,4 +1452,13 @@ def union(
     """
     if gis is None:
         gis = arcgis.env.active_gis
+    if spatial_ref is None:
+        spatial_ref = [
+            geom.spatialReference
+            for geom in geometries
+            if "spatialReference" in geom and geom.spatialReference is not None
+        ]
+        spatial_ref = spatial_ref[0] if len(spatial_ref) > 0 else "4326"
+    if isinstance(spatial_ref, dict):
+        spatial_ref = spatial_ref["wkid"]
     return gis._tools.geometry.union(spatial_ref, geometries, future=future)
