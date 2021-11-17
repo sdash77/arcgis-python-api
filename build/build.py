@@ -441,7 +441,7 @@ def _run_shell_cmd(cmd):
         log.debug("cmd output => {}".format(str_output))
         return str_output
     except subprocess.CalledProcessError as e:
-        log.warn(
+        log.warning(
             "cmd failed, returned non-zero code. Output:\n"
             "{}".format(e.output.decode("utf-8"))
         )
