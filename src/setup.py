@@ -335,7 +335,7 @@ kwargs = {
     #     ],
     # },
 }
-"""
+
 try:
     setup(**kwargs)
 except Exception:
@@ -345,5 +345,3 @@ except Exception:
     )
     kwargs["setup_requires"] = []
     setup(**kwargs)
-"""
-print(get_version())
