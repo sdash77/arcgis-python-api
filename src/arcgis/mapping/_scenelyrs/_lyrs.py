@@ -1,6 +1,8 @@
 import json
 from arcgis.gis import Layer, _GISResource, Item, GIS
-from arcgis.gis.server.admin._services import Service
+from arcgis.auth.tools import LazyLoader
+
+_services = LazyLoader("arcgis.gis.server.admin._services")
 
 
 class SceneLayerManager(_GISResource):
@@ -414,19 +416,19 @@ class EnterpriseSceneLayerManager(_GISResource):
 
         :return: boolean
         """
-        sl_service = Service(self.url, self._gis)
+        sl_service = _services.Service(self.url, self._gis)
         return sl_service.edit(service_dictionairy)
 
     # ----------------------------------------------------------------------
     def start(self):
         """starts the specific service"""
-        sl_service = Service(self.url, self._gis)
+        sl_service = _services.Service(self.url, self._gis)
         return sl_service.start()
 
     # ----------------------------------------------------------------------
     def stop(self):
         """stops the specific service"""
-        sl_service = Service(self.url, self._gis)
+        sl_service = _services.Service(self.url, self._gis)
         return sl_service.stop()
 
     # ----------------------------------------------------------------------
@@ -443,13 +445,13 @@ class EnterpriseSceneLayerManager(_GISResource):
         :return: Boolean
 
         """
-        sl_service = Service(self.url, self._gis)
+        sl_service = _services.Service(self.url, self._gis)
         return sl_service.change_provider(provider)
 
     # ----------------------------------------------------------------------
     def delete(self):
         """deletes a service from arcgis server"""
-        sl_service = Service(self.url, self._gis)
+        sl_service = _services.Service(self.url, self._gis)
         return sl_service.delete()
 
 
