@@ -467,6 +467,10 @@ pansharpen
 __________
 .. autofunction:: arcgis.raster.functions.pansharpen
 
+percentile
+__________
+.. autofunction:: arcgis.raster.functions.percentile
+
 plus
 ____
 .. autofunction:: arcgis.raster.functions.plus

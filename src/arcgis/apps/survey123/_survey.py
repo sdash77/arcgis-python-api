@@ -308,7 +308,6 @@ class Survey:
             "utcOffset": utc_offset,
             "uploadInfo": json.dumps(None),
             "f": "json",
-            "token": self._si._gis._con.token,
             "username": self._si._gis.users.me.username,
             "locale": locale,
         }
@@ -425,7 +424,6 @@ class Survey:
         params = {
             "featureLayerUrl": self._ssi.layers[0].url,
             "surveyItemId": self._si.id,
-            "token": self._si._gis._con.token,
             "portalUrl": self._si._gis._url,
             "f": "json",
         }
@@ -465,7 +463,6 @@ class Survey:
         params = {
             "featureLayerUrl": self._ssi.layers[0].url,
             "surveyItemId": self._si.id,
-            "token": self._si._gis._con.token,
             "portalUrl": self._si._gis._url,
             "f": "json",
         }
@@ -534,7 +531,6 @@ class Survey:
         params = {
             "featureLayerUrl": self._ssi.layers[0].url,
             "surveyItemId": self._si.id,
-            "token": self._si._gis._con.token,
             "portalUrl": self._si._gis._url,
             "f": "json",
         }
@@ -590,7 +586,6 @@ class Survey:
             "featureLayerUrl": self._ssi.layers[0].url,
             "queryParameters": where,
             "templateItemId": report_template.id,
-            "token": self._si._gis._con.token,
             "surveyItemId": self._si.id,
             "portalUrl": self._si._gis._url,
             "f": "json",
@@ -677,7 +672,6 @@ class Survey:
             "featureLayerUrl": self._ssi.layers[0].url,
             "utcOffset": utc_offset,
             "f": "json",
-            "token": self._si._gis._con.token,
             "locale": locale,
         }
         if merge_files:
@@ -708,7 +702,6 @@ class Survey:
         params = {
             "f": "json",
             "username": self._si._gis.users.me.username,
-            "token": self._si._gis._con.token,
             "portalUrl": self._si._gis._url,
         }
         status_url = "https://{base}/api/featureReport/jobs/{jid}/status".format(

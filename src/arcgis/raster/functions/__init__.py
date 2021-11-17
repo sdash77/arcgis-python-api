@@ -2439,6 +2439,8 @@ def local(
     cellsize_type="FirstOf",
     astype=None,
     process_as_multiband=None,
+    percentile_value=90,
+    percentile_interpolation_type="AUTO_DETECT",
 ):
     """
     The local function allows you to perform bitwise, conditional, logical, mathematical, and statistical operations on
@@ -2461,16 +2463,23 @@ def local(
     extent_type                          Optional string. Specifies the extent to be used for the function.
 
                                          - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
                                          - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
                                          - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
                                          - "LastOf" - Use the extent of the last input raster to determine the processing extent.
     --------------------------------     --------------------------------------------------------------------
     cellsize_type                        Optional string. Specifies the cell size to be used for the function.
 
                                          - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
                                          - "MinOf" - Use the smallest cell size of all the input rasters.
+
                                          - "MaxOf" - Use the largest cell size of all the input rasters.
+
                                          - "MeanOf" - Use the mean cell size of all the input rasters.
+
                                          - "LastOf" - Use the last cell size of the input rasters.
     --------------------------------     --------------------------------------------------------------------
     astype                               Optional string. Specifies the output pixel type.
@@ -2478,12 +2487,41 @@ def local(
     --------------------------------     --------------------------------------------------------------------
     process_as_multiband                 Optional boolean. Set to True to process as multiband.
                                          Applicable for operations - Majority, Maximum, Mean, Median, Minimum,
-                                         Minority, Range, Standard Deviation, Sum, and Variety.
+                                         Minority, Percentile, Range, Standard Deviation, Sum, and Variety.
+    --------------------------------     --------------------------------------------------------------------
+    percentile_value                     Optional float. The percentile to calculate. The default is 90, indicating the 90th percentile.
+                                         The values can range from 0 to 100. The 0th percentile is essentially equivalent to the minimum
+                                         statistic, and the 100th percentile is equivalent to maximum. A value of 50 will produce
+                                         essentially the same result as the median statistic.
+
+                                         Parameter is honoured only if operation is 94 or 93 (Percentile operation)
+    --------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type        Optional string. Specifies the method of interpolation to be used when
+                                         the specified percentile value lies between two input cell values.
+
+                                         - AUTO_DETECT-If the input rasters are of integer pixel type, the NEAREST
+                                           method is used. If the input rasters are of floating point pixel type,
+                                           the LINEAR method is used. This is the default.
+
+                                         - NEAREST-The nearest available value to the desired percentile is used.
+                                           In this case, the output pixel type is the same as that of the input rasters.
+
+                                         - LINEAR-The weighted average of the two surrounding values from the desired
+                                           percentile is used. In this case, the output pixel type is floating point.
+
+                                         Parameter is honoured only if operation is 94 or 93 or 41 or 69 (Percentile or Median operation)
     ================================     ====================================================================
 
-    :return: The output raster.
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the mean function on a list of input rasters.
+
+        mean_raster = local([raster1, raster2, raster3], operation=68)
     """
     # redacted - The local function works on single band or the first band of an image only, and the output is single band.
+
     raster = rasters
 
     layer, raster, raster_ra = _raster_input(raster)
@@ -2518,6 +2556,30 @@ def local(
             ] = process_as_multiband
         else:
             raise RuntimeError("process_as_multiband should be an instance of bool")
+
+    if operation == 94 or operation == 93:
+        if percentile_value is not None:
+            template_dict["rasterFunctionArguments"][
+                "PercentileValue"
+            ] = percentile_value
+    if operation == 94 or operation == 93 or operation == 41 or operation == 69:
+        if percentile_interpolation_type is not None:
+            percentile_interpolation_type_list = [
+                "AUTO_DETECT",
+                "NEAREST",
+                "LINEAR",
+            ]
+            if (
+                percentile_interpolation_type.upper()
+                not in percentile_interpolation_type_list
+            ):
+                raise RuntimeError(
+                    "percentile_interpolation_type should be one of the following "
+                    + str(percentile_interpolation_type_list)
+                )
+            template_dict["rasterFunctionArguments"][
+                "PercentileInterpolationType"
+            ] = percentile_interpolation_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
@@ -4759,6 +4821,7 @@ def med(
     ignore_nodata=False,
     astype=None,
     process_as_multiband=None,
+    percentile_interpolation_type="AUTO_DETECT",
 ):
     """
     The med function calculates the middle value of the pixels on a pixel-by-pixel basis.
@@ -4768,7 +4831,7 @@ def med(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer object. If a scalar is needed for the
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4795,9 +4858,24 @@ def med(
     --------------------------------     --------------------------------------------------------------------
     ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
     --------------------------------     --------------------------------------------------------------------
-    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    astype                               Optional string. Specifies the output pixel type.
+
+                                         Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     --------------------------------     --------------------------------------------------------------------
     process_as_multiband                 Optional boolean. Set to True to process as multiband.
+    --------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type        Optional string. Specifies the method of interpolation to be used when
+                                         the median lies between two input cell values.
+
+                                         - AUTO_DETECT-If the input rasters are of integer pixel type, the NEAREST
+                                           method is used. If the input rasters are of floating point pixel type,
+                                           the LINEAR method is used. This is the default.
+
+                                         - NEAREST-The nearest available value to the desired percentile is used.
+                                           In this case, the output pixel type is the same as that of the input rasters.
+
+                                         - LINEAR-The weighted average of the two surrounding values from the desired
+                                           percentile is used. In this case, the output pixel type is floating point.
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -4809,6 +4887,7 @@ def med(
         med_raster = med([raster1, raster2, raster3])
 
     """
+
     opnum = 69 if ignore_nodata else 41
     return local(
         rasters,
@@ -4817,6 +4896,7 @@ def med(
         cellsize_type=cellsize_type,
         astype=astype,
         process_as_multiband=process_as_multiband,
+        percentile_interpolation_type=percentile_interpolation_type,
     )
 
 
@@ -6186,6 +6266,97 @@ def _pick(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     return local(
         rasters, 84, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
+
+
+def percentile(
+    rasters,
+    percentile_value=90,
+    percentile_interpolation_type="AUTO_DETECT",
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    ignore_nodata=False,
+    astype=None,
+    process_as_multiband=None,
+):
+
+    """
+    The percentile function calculates the percentile of the inputs.
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double.
+    --------------------------------     --------------------------------------------------------------------
+    percentile_value                     Optional float. The percentile to calculate. The default is 90, indicating the 90th percentile.
+                                         The values can range from 0 to 100. The 0th percentile is essentially equivalent to the minimum
+                                         statistic, and the 100th percentile is equivalent to maximum. A value of 50 will produce
+                                         essentially the same result as the median statistic.
+    --------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type        Optional string. Specifies the method of interpolation to be used when
+                                         the specified percentile value lies between two input cell values.
+
+                                         - AUTO_DETECT-If the input rasters are of integer pixel type, the NEAREST
+                                           method is used. If the input rasters are of floating point pixel type,
+                                           the LINEAR method is used. This is the default.
+
+                                         - NEAREST-The nearest available value to the desired percentile is used.
+                                           In this case, the output pixel type is the same as that of the input rasters.
+
+                                         - LINEAR-The weighted average of the two surrounding values from the desired
+                                           percentile is used. In this case, the output pixel type is floating point.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type.
+                                         Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    process_as_multiband                 Optional boolean. Set to True to process as multiband.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Calculates the 90th percentile on a list of input rasters.
+
+        percentile_raster = percentile([raster1, raster2, raster3], percentile_value=90)
+    """
+
+    opnum = 94 if ignore_nodata else 93
+    return local(
+        rasters,
+        opnum,
+        extent_type=extent_type,
+        cellsize_type=cellsize_type,
+        astype=astype,
+        process_as_multiband=process_as_multiband,
+        percentile_value=percentile_value,
+        percentile_interpolation_type=percentile_interpolation_type,
     )
 
 
@@ -9009,9 +9180,7 @@ def _raster_item(raster, raster_id=None):
                 if (
                     (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
                 ) or not hasattr(raster, "_lazy_token"):
-                    raster._lazy_token = raster._gis._con.generate_portal_server_token(
-                        serverUrl=url
-                    )
+                    raster._lazy_token = raster._gis._con._create_token(url)
                 if isinstance(raster._lazy_token, str):
                     url = url + "?token=" + raster._lazy_token
             except:
@@ -9905,10 +10074,7 @@ def aggregate(
 
     """
 
-    from arcgis.raster._util import (
-        _local_function_template,
-        _percentile_function_template,
-    )
+    from arcgis.raster._util import _local_function_template
 
     layer, raster, raster_ra = _raster_input(raster)
 
@@ -9949,22 +10115,20 @@ def aggregate(
                 opnum = 74 if ignore_nodata else 55
             elif aggregation_function.upper() == "VARIETY":
                 opnum = 75 if ignore_nodata else 58
+            elif aggregation_function.upper() == "PERCENTILE":
+                opnum = 94 if ignore_nodata else 93
 
-            if opnum is None:
-                if aggregation_function.upper() == "PERCENTILE":
-                    template_dict["rasterFunctionArguments"][
-                        "AggregationFunction"
-                    ] = _percentile_function_template(
-                        ignore_nodata=ignore_nodata,
-                        percentile=percentile_value,
-                        percentile_interpolation_type=percentile_interpolation_type,
-                    )
-                else:
-                    raise RuntimeError("Invalid aggregation_function")
-            else:
-                template_dict["rasterFunctionArguments"][
-                    "AggregationFunction"
-                ] = _local_function_template(opnum)
+            if percentile_interpolation_type.upper() == "NEAREST":
+                percentile_interpolation_type = 2
+            elif percentile_interpolation_type.upper() == "LINEAR":
+                percentile_interpolation_type = 3
+            template_dict["rasterFunctionArguments"][
+                "AggregationFunction"
+            ] = _local_function_template(
+                operation_number=opnum,
+                percentile_value=percentile_value,
+                percentile_interpolation_type=percentile_interpolation_type,
+            )
         if (
             "type"
             not in template_dict["rasterFunctionArguments"]["AggregationFunction"]

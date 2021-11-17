@@ -280,7 +280,7 @@ class AutoML(object):
 
     def predict_proba(self):
         """
-        :returns output from AutoML's model.predict_proba()
+        :returns output from AutoML's model.predict_proba() with prediction probability for the training data
         """
         if (self._data._is_classification == "classification") or (
             self._data._is_classification == True
@@ -290,7 +290,11 @@ class AutoML(object):
                     "This method is not available when the model is initiated for prediction"
                 )
             else:
-                return self._model.predict_proba(self._data._dataframe)
+                cols = (
+                    self._data._continuous_variables + self._data._categorical_variables
+                )
+                data_df = pd.DataFrame(self._data._ml_data[0], columns=cols)
+                return self._model.predict_proba(data_df)
         else:
             raise Exception("This method is applicable only for classification models.")
 
