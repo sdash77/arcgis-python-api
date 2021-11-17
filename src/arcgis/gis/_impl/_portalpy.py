@@ -513,6 +513,9 @@ class Portal(object):
         path = "content/users/" + owner
         if folder and folder != "/":
             folder_id = self.get_folder_id(owner, folder)
+            if folder_id is None:
+                self.create_folder(owner, folder)
+                folder_id = self.get_folder_id(owner, folder)
             path += "/" + folder_id
         path += "/createService"
 
