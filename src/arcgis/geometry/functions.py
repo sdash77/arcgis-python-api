@@ -2,7 +2,9 @@
 The ``Functions`` module is used to take :class:`~arcgis.geometry.Geometry` types as parameters and return
 :class:`~arcgis.geometry.Geometry` type results.
 """
+from __future__ import annotations
 from enum import Enum
+from typing import Optional, Union
 import arcgis.env
 
 
@@ -1335,7 +1337,12 @@ def trim_extend(
     )
 
 
-def union(spatial_ref, geometries, gis=None, future=False):
+def union(
+    geometries,
+    spatial_ref: Optional[Union[str, dict[str:str]]] = None,
+    gis=None,
+    future=False,
+):
     """
     The ``union`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
     This function constructs the set-theoretic union of the geometries
@@ -1347,13 +1354,17 @@ def union(spatial_ref, geometries, gis=None, future=False):
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
-    geometries        An array of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
-                      :class:`~arcgis.geometry.Polyline`, or :class:`~arcgis.geometry.Polygon` objects.
+    geometries        Required. An array of :class:`~arcgis.geometry.Point`,
+                      :class:`~arcgis.geometry.MultiPoint`, :class:`~arcgis.geometry.Polyline`,
+                      or :class:`~arcgis.geometry.Polygon` objects.
                       The structure of each geometry in the array is the
                       same as the structure of the JSON geometry objects returned by
                       the ArcGIS REST API.
     ----------------  -------------------------------------------------------------------------------
-    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    spatial_ref       An optional String or JSON Dict representing the wkid to be used. The default is the
+                      spatial reference found in the geometry.
+
+                      Example: "4326" or {"wkid":"4326"}
     ----------------  -------------------------------------------------------------------------------
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
@@ -1363,4 +1374,8 @@ def union(spatial_ref, geometries, gis=None, future=False):
     """
     if gis is None:
         gis = arcgis.env.active_gis
+    if spatial_ref is None:
+        spatial_ref = geometries[0].spatialReference
+    if isinstance(spatial_ref, dict):
+        spatial_ref = spatial_ref["wkid"]
     return gis._tools.geometry.union(spatial_ref, geometries, future=future)
