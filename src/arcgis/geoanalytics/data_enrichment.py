@@ -246,7 +246,7 @@ def calculate_motion_statistics(
     param_db = inspect_function_inputs(tbx.calculate_motion_statistics, **params)
     param_db["future"] = True
     try:
-        gpjob = tbx.calculate_motion_statistics(**params)
+        gpjob = tbx.calculate_motion_statistics(**param_db)
         if future:
             return GAJob(gpjob=gpjob, return_service=output_service)
         gpjob.result()

@@ -191,7 +191,7 @@ def trace_proximity_events(
     spatial_search_distance_unit: str,
     temporal_search_distance: float,
     temporal_search_distance_unit: str,
-    entity_id_field: Optional[str] = None,
+    entity_id_field: str,
     entities_of_interest_ids: Optional[list[str]] = None,
     entities_of_interest_layer: Optional[
         Union[
@@ -239,7 +239,7 @@ def trace_proximity_events(
     temporal_search_distance_unit                                          Required String. The unit of `temporal_search_distance`.
                                                                            Values: Milliseconds | Seconds | Minutes | Hours | Days | Weeks| Months | Years
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    entity_id_field                                                        Optional String. The field used to identify distinct entities.
+    entity_id_field                                                        Required String. The field used to identify distinct entities.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     entities_of_interest_ids                                               Optional List. JSON used to specify one or more entities that you are
                                                                            interested in tracing from. You can optionally include a time to start tracing

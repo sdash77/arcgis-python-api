@@ -90,7 +90,7 @@ class TestNotebook(unittest.TestCase):
                 return
             except Exception as e:
                 last_thrown_exception = e
-                log.warn(
+                log.warning(
                     f"\n---\nNotebook {self.notebook_file_name_no_ext} failed on "
                     f"attempt {i+1} of {self.num_attempts} with this exception:"
                 )

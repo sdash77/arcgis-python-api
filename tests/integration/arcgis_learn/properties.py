@@ -1,5 +1,5 @@
 import os
-
+from fastai.vision.transform import rotate, brightness, contrast
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from arcgis.learn import (
     MLModel,
@@ -27,6 +27,10 @@ from arcgis.learn import (
     ChangeDetector,
     MultiTaskRoadExtractor,
     TimeSeriesModel,
+    DeepSort,
+    MMSegmentation,
+    MMDetection,
+    AutoML, MLModel
 )
 import json
 from arcgis.learn.text import SequenceToSequence
@@ -1116,6 +1120,125 @@ data = {
         "regression_parameter": "r2_score",
         "regression_test_score": 0.1,
         "regression_epochs": 10,
+        "inferencing_parameter": {
+            "model_type": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
+    },
+    "deepsort": {
+        "model_name": "deepsort",
+        "datapath": "deepsort_data",
+        "datapath_ms": "deepsort_data_ms",
+        "model": DeepSort,
+        "model_test": "deepsort_test",
+        "prepare_data": {
+            "path": os.path.join(
+                data_folder, "deepsort_data"
+            ),
+            "batch_size":10,
+            "transforms": ([
+                rotate(degrees=30, p=0.5),
+                brightness(change=(0.4, 0.6)),
+                contrast(scale=(0.75, 1.5))
+            ], []),
+            "resize_to": (128,64)
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "confusion_matrix",
+        "regression_test_score": 0.3,
+        "regression_epochs": 3,
+        "inferencing_parameter": {
+            "model_type": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
+    },
+    "mmsegmentation": {
+        "model_name": "mmsegmentation",
+        "datapath": "mmsegmentation_data",
+        "datapath_ms": "mmsegmentation_data_ms",
+        "model": MMSegmentation,
+        "model_test": "mmsegmentation_test",
+        "prepare_data": {
+            "path": os.path.join(
+                data_folder, "mmsegmentation_data"
+            ),
+            "batch_size":2
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "per_class_metrics",
+        "regression_test_score": 0.4,
+        "regression_epochs": 3,
+        "inferencing_parameter": {
+            "model_type": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
+    },
+    "mmdetection": {
+        "model_name": "mmdetection",
+        "datapath": "mmdetection_data",
+        "datapath_ms": "mmdetection_data_ms",
+        "model": MMDetection,
+        "model_test": "mmdetection_test",
+        "prepare_data": {
+            "path": os.path.join(
+                data_folder, "mmdetection_data"
+            ),
+            "batch_size":2
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "average_precision_score",
+        "regression_test_score": 0.2,
+        "regression_epochs": 2,
+        "inferencing_parameter": {
+            "model_type": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
+    },
+    "mlmodel": {
+        "model_name": "mlmodel",
+        "datapath": "automl_data",
+        "datapath_ms": "automl_data_ms",
+        "model": MLModel,
+        "model_test": "automl_test",
+        "prepare_tabular_data": {
+            "path": os.path.join(
+                data_folder, "automl_data", "automl_data.csv"
+            )
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": True,
+        "regression_parameter": "automl_score",
+        "regression_test_score": 0.4,
+        "regression_epochs": 3,
+        "inferencing_parameter": {
+            "model_type": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
+    },
+    "automl": {
+        "model_name": "automl",
+        "datapath": "automl_data",
+        "datapath_ms": "automl_data_ms",
+        "model": AutoML,
+        "model_test": "automl_test",
+        "prepare_tabular_data": {
+            "path": os.path.join(
+                data_folder, "automl_data", "automl_data.csv"
+            )
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": True,
+        "regression_parameter": "automl_score",
+        "regression_test_score": 0.4,
+        "regression_epochs": 3,
         "inferencing_parameter": {
             "model_type": "pass",
         },

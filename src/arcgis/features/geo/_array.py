@@ -1,26 +1,19 @@
 from distutils.version import LooseVersion
-
-
-import operator
-import json
-import numpy as np
-
-from pandas.core.arrays import ExtensionArray
-from pandas.core.dtypes.dtypes import ExtensionDtype
-from arcgis.geometry import Geometry
-import pandas as pd
-from .parser import _to_geo_array
-
 import numbers
 import operator
 import warnings
+import operator
+import json
 
 import numpy as np
 import pandas as pd
+
+
+from pandas.core.arrays import ExtensionArray
+from pandas.core.dtypes.dtypes import ExtensionDtype
 from pandas.api.extensions import ExtensionArray
 
 from collections.abc import Iterable
-import json
 from arcgis.geometry import Geometry
 
 # -----------------------------------------------------------------------------
@@ -791,7 +784,7 @@ class GeoArray(ExtensionArray):
             name="angle_distance_to",
             left=self.data,
             right=second_geometry,
-            **{"method": method}
+            **{"method": method},
         )
 
     # ----------------------------------------------------------------------
@@ -861,7 +854,7 @@ class GeoArray(ExtensionArray):
             name="contains",
             left=self.data,
             right=second_geometry,
-            **{"relation": relation}
+            **{"relation": relation},
         )
 
     # ----------------------------------------------------------------------
@@ -937,7 +930,7 @@ class GeoArray(ExtensionArray):
         return _binary_op_geo(
             name="densify",
             left=self.data,
-            **{"method": method, "distance": distance, "deviation": deviation}
+            **{"method": method, "distance": distance, "deviation": deviation},
         )
 
     # ----------------------------------------------------------------------
@@ -1138,7 +1131,7 @@ class GeoArray(ExtensionArray):
             name="intersect",
             left=self.data,
             right=second_geometry,
-            **{"dimension": dimension}
+            **{"dimension": dimension},
         )
 
     # ----------------------------------------------------------------------
@@ -1162,7 +1155,7 @@ class GeoArray(ExtensionArray):
             name="measure_on_line",
             left=self.data,
             right=second_geometry,
-            **{"as_percentage": as_percentage}
+            **{"as_percentage": as_percentage},
         )
 
     # ----------------------------------------------------------------------
@@ -1210,7 +1203,7 @@ class GeoArray(ExtensionArray):
         return _binary_op_geo(
             name="point_from_angle_and_distance",
             left=self.data,
-            **{"angle": angle, "distance": distance, "method": method}
+            **{"angle": angle, "distance": distance, "method": method},
         )
 
     # ----------------------------------------------------------------------
@@ -1237,7 +1230,7 @@ class GeoArray(ExtensionArray):
         return _binary_op_geo(
             name="position_along_line",
             left=self.data,
-            **{"value": value, "use_percentage": use_percentage}
+            **{"value": value, "use_percentage": use_percentage},
         )
 
     # ----------------------------------------------------------------------
@@ -1262,7 +1255,7 @@ class GeoArray(ExtensionArray):
             **{
                 "spatial_reference": spatial_reference,
                 "transformation_name": transformation_name,
-            }
+            },
         )
 
     # ----------------------------------------------------------------------
@@ -1289,7 +1282,7 @@ class GeoArray(ExtensionArray):
             name="query_point_and_distance",
             left=self.data,
             right=second_geometry,
-            **{"use_percentage": use_percentage}
+            **{"use_percentage": use_percentage},
         )
 
     # ----------------------------------------------------------------------
@@ -1324,7 +1317,7 @@ class GeoArray(ExtensionArray):
                 "start_measure": start_measure,
                 "end_measure": end_measure,
                 "use_percentage": use_percentage,
-            }
+            },
         )
 
     # ----------------------------------------------------------------------
@@ -1423,7 +1416,7 @@ class GeoArray(ExtensionArray):
             name="within",
             left=self.data,
             right=second_geometry,
-            **{"relation": relation}
+            **{"relation": relation},
         )
 
 

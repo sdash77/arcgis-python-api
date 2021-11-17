@@ -1,13 +1,13 @@
 """
 IO operations for Feature Classes
 """
+from arcgis.auth.tools import LazyLoader
 import io
 import os
-import sys
 import uuid
 import copy
 from pathlib import Path, PurePath
-import shutil
+import logging
 import datetime
 import ujson as _ujson
 import numpy as np
@@ -16,16 +16,16 @@ from contextlib import closing
 import zipfile
 from arcgis.geometry import Geometry
 
-try:
-    import arcpy
-    from arcpy import da
 
+try:
+
+    arcpy = LazyLoader("arcpy", strict=True)
     HASARCPY = True
 except:
     HASARCPY = False
 
 try:
-    import fiona
+    fiona = LazyLoader("fiona", strict=True)
 
     HASFIONA = True
 except:
@@ -38,6 +38,8 @@ try:
     SHPVERSION = [int(i) for i in shapefile.__version__.split(".")]
 except:
     HASPYSHP = False
+
+_logging = logging.getLogger(__name__)
 # --------------------------------------------------------------------------
 def _infer_type(df, col):
     """
@@ -54,7 +56,7 @@ def _infer_type(df, col):
     nn = list(df[nn].index)
     if len(nn) > 0:
         val = df[col][nn[0]]
-        if isinstance(val, six.string_types):
+        if isinstance(val, str):
             return "TEXT"
         elif isinstance(val, tuple([int] + [np.int32])):
             return "INTEGER"
@@ -303,15 +305,18 @@ def from_table(filename, **kwargs):
     :return: pd.DataFrame
 
     """
+
     filename = _ensure_path_string(filename)
 
     if HASARCPY and not filename.lower().endswith(".dbf"):
+        import arcpy
+
         where = kwargs.pop("where", None)
         fields = kwargs.pop("fields", "*")
         skip_nulls = kwargs.pop("skip_nulls", True)
         null_value = kwargs.pop("null_value", None)
         return pd.DataFrame(
-            da.TableToNumPyArray(
+            arcpy.da.TableToNumPyArray(
                 in_table=filename,
                 field_names=fields,
                 where_clause=where,
@@ -320,6 +325,8 @@ def from_table(filename, **kwargs):
             )
         )
     elif HASARCPY and filename.lower().endswith(".dbf"):
+        import arcpy
+
         scur = arcpy.da.SearchCursor(
             in_table=filename, field_names=fields, where_clause=where
         )
@@ -339,7 +346,7 @@ def from_table(filename, **kwargs):
 
 
 # --------------------------------------------------------------------------
-def to_table(geo, location, overwrite=True):
+def to_table(geo, location, overwrite=True, sanitize_columns=False):
     """
     Exports a geo enabled dataframe to a table.
 
@@ -351,6 +358,10 @@ def to_table(geo, location, overwrite=True):
     overwrite                       Optional Boolean.  If True and if the table exists, it will be
                                     deleted and overwritten.  This is default.  If False, the table and
                                     the table exists, and exception will be raised.
+    ---------------------------     --------------------------------------------------------------------
+    sanitize_columns                Optional Boolean. If True, column names will be converted to
+                                    string, invalid characters removed and other checks will be
+                                    performed. The default is False.
     ===========================     ====================================================================
 
     :return: String
@@ -358,10 +369,22 @@ def to_table(geo, location, overwrite=True):
     out_location = os.path.dirname(location)
     fc_name = os.path.basename(location)
     df = geo._data
+    old_column, old_index = None, None
+    if sanitize_columns:
+        old_column = df.columns.tolist()
+        old_index = copy.deepcopy(df.index)
+        _sanitize_column_names(geo, inplace=True)
+
     if location.lower().find(".csv") > -1:
         geo._data.to_csv(location)
+        if not old_column is None:
+            geo._data.columns = old_column
+        if not old_index is None:
+            geo._data.index = old_index
         return location
     elif HASARCPY:
+        import arcpy
+
         columns = df.columns.tolist()
         join_dummy = "AEIOUYAJC81Z"
         try:
@@ -378,7 +401,7 @@ def to_table(geo, location, overwrite=True):
         fc = arcpy.CreateTable_management(out_path=out_location, out_name=fc_name)[0]
         # 2. Add the Fields and Data Types
         #
-        oidfld = da.Describe(fc)["OIDFieldName"]
+        oidfld = arcpy.da.Describe(fc)["OIDFieldName"]
         for col in columns[:]:
             if col.lower() in ["fid", "oid", "objectid"]:
                 dtypes.append((col, np.int32))
@@ -419,14 +442,21 @@ def to_table(geo, location, overwrite=True):
             for fld in fields
             if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
         ]
-        with da.InsertCursor(fc, icols) as irows:
+        with arcpy.da.InsertCursor(fc, icols) as irows:
             for idx, row in df[dfcols].iterrows():
                 try:
                     irows.insertRow(row.tolist())
                 except:
-                    print("row %s could not be inserted." % idx)
+                    _logging.warn("row %s could not be inserted." % idx)
+        if not old_column is None:
+            geo._data.columns = old_column
+        if not old_index is None:
+            geo._data.index = old_index
         return fc
-
+    if not old_column is None:
+        geo._data.columns = old_column
+    if not old_index is None:
+        geo._data.index = old_index
     return
 
 
@@ -526,7 +556,7 @@ def from_featureclass(filename, **kwargs):
         count = 0
         dfs = []
         shape_field_idx = cursor_fields.index("SHAPE@JSON")
-        with da.SearchCursor(
+        with arcpy.da.SearchCursor(
             filename,
             field_names=cursor_fields,
             where_clause=where_clause,
@@ -695,7 +725,7 @@ def to_featureclass(
     ---------------     ----------------------------------------------------
     sanitize_columns    Optional Boolean. If True, column names will be
                         converted to string, invalid characters removed and
-                        other checks will be performed. The default is True.
+                        other checks will be performed. The default is False.
     ---------------     ----------------------------------------------------
     ham_m               Optional Boolean to indicate if data has linear
                         referencing (m) values. Default is False.
@@ -782,7 +812,7 @@ def to_featureclass(
             )[0]
 
             # 2. Add the Fields and Data Types
-            oidfld = da.Describe(fc)["OIDFieldName"]
+            oidfld = arcpy.da.Describe(fc)["OIDFieldName"]
             for col in columns[:]:
                 if col.lower() in ["fid", "oid", "objectid"]:
                     dtypes.append((col, np.int32))
@@ -796,6 +826,8 @@ def to_featureclass(
                     if issubclass(u, str):
                         mlen = df[col].str.len().max()
                         dtypes.append((col, "<U%s" % int(mlen)))
+                    elif u is datetime.datetime:
+                        dtypes.append((col, "<M8[us]"))
                     else:
                         try:
                             if df[col][idx] is None:
@@ -809,10 +841,26 @@ def to_featureclass(
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
                 else:
-                    dtypes.append((col, df[col].dtype.type))
+                    if (
+                        df[col].dtype.name == "object"
+                        and df[col].first_valid_index()
+                        and isinstance(df[col][idx], datetime.datetime)
+                    ):
+                        dtypes.append((col, "<M8[us]"))
+                    else:
+                        dtypes.append((col, df[col].dtype.type))
+            from arcgis._impl.common._utils import chunks as _chunks
 
-            array = np.array([], np.dtype(dtypes))
-            arcpy.da.ExtendTable(fc, oidfld, array, join_dummy, append_only=False)
+            smaller_dtypes = [[dtypes[0]] + flds for flds in _chunks(dtypes[1:], 10)]
+            smaller_array = [np.array([], np.dtype(d)) for d in smaller_dtypes]
+            for array in smaller_array:
+                try:
+
+                    arcpy.da.ExtendTable(
+                        fc, oidfld, array, join_dummy, append_only=False
+                    )
+                except Exception as e:
+                    print(e)
 
             # 3. Insert the Data
             fields = arcpy.ListFields(fc)
@@ -827,7 +875,7 @@ def to_featureclass(
                 if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
             ] + [df.spatial.name]
 
-            with da.InsertCursor(fc, icols) as irows:
+            with arcpy.da.InsertCursor(fc, icols) as irows:
                 dt_fld_idx = [
                     irows.fields.index(col)
                     for col in df.columns
@@ -839,19 +887,30 @@ def to_featureclass(
                     for idx in dt_fld_idx:
                         if isinstance(row[idx], type(pd.NaT)):
                             row[idx] = None
-                    irows.insertRow(row)
+                    try:
+                        irows.insertRow(row)
+                    except Exception as e:
+                        _logging.warn(
+                            f"Could not insert the row because of error message: {e}. Recheck your data."
+                        )
 
                 q = df[geo._name].isna()
                 df.loc[q, "SHAPE"] = null_geom  # set null values to proper JSON
                 np.apply_along_axis(_insert_row, 1, df[dfcols].values)
+
                 df.loc[q, "SHAPE"] = None  # reset null values
-        except:
+        except ValueError as ve:
+            df.columns = original_columns
+            fc = None
+            raise
+        except Exception as e:
             # something failed in try so reset columns to original columns
             # return empty item
             fc = None
+            raise e
         finally:
             df.columns = original_columns
-            return fc
+        return fc
     elif HASPYSHP:
         if fc_name.endswith(".shp") == False:
             fc_name = "%s.shp" % fc_name

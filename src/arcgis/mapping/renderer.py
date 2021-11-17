@@ -634,8 +634,7 @@ def generate_renderer(
                             allowed renderer types based on the geometry.
 
     ----------------------  ---------------------------------------------------------
-    sdf_or_series           optional Pandas Series/GeoSeries. The
-                            spatial dataset to render.
+    sdf_or_series           optional Pandas Series. The spatial dataset to render.
     ----------------------  ---------------------------------------------------------
     label                   optional string. Name of the layer in the TOC/Legend
     ----------------------  ---------------------------------------------------------

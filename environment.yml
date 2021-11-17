@@ -35,10 +35,11 @@ dependencies:
 - pytorch=1.1.0
 - cudatoolkit
 - rtree>=0.8.3
+- lxml
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6
-  - sphinx-rtd-theme
+  - sphinx-rtd-theme=0.5.2
   - pytest-blockage
   - junit2html
   - coverage
