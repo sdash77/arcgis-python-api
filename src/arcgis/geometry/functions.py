@@ -1362,7 +1362,7 @@ def union(
                       the ArcGIS REST API.
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       An optional String or JSON Dict representing the wkid to be used. The default is the
-                      spatial reference found in the geometry.
+                      spatial reference found in the geometry or, if None found, then "4326".
 
                       Example: "4326" or {"wkid":"4326"}
     ----------------  -------------------------------------------------------------------------------
@@ -1375,7 +1375,12 @@ def union(
     if gis is None:
         gis = arcgis.env.active_gis
     if spatial_ref is None:
-        spatial_ref = geometries[0].spatialReference
+        spatial_ref = [
+            geom.spatialReference
+            for geom in geometries
+            if "spatialReference" in geom and geom.spatialReference is not None
+        ]
+        spatial_ref = spatial_ref[0] if len(spatial_ref) > 0 else "4326"
     if isinstance(spatial_ref, dict):
         spatial_ref = spatial_ref["wkid"]
     return gis._tools.geometry.union(spatial_ref, geometries, future=future)
