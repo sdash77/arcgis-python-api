@@ -2718,7 +2718,7 @@ class GeoAccessor(object):
                             the records returned.
         ---------------     ----------------------------------------------------
         skip_nulls          Optional Boolean. This controls whether records
-                            using nulls are skipped.
+                            using nulls are skipped. Default is True.
         ---------------     ----------------------------------------------------
         null_value          Optional String/Integer/Float. Replaces null values
                             from the input with a new value.

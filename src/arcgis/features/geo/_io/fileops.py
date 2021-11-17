@@ -297,7 +297,7 @@ def from_table(filename, **kwargs):
                         the records returned.
     ---------------     ----------------------------------------------------
     skip_nulls          Optional Boolean. This controls whether records
-                        using nulls are skipped.
+                        using nulls are skipped. Default is True.
     ---------------     ----------------------------------------------------
     null_value          Optional String/Integer/Float. Replaces null values
                         from the input with a new value.
@@ -329,7 +329,9 @@ def from_table(filename, **kwargs):
         import arcpy
 
         scur = arcpy.da.SearchCursor(
-            in_table=filename, field_names=fields, where_clause=where
+            in_table=filename,
+            field_names=kwargs.pop("fields", None),
+            where_clause=kwargs.pop("where", None),
         )
         array = scur._as_array()
         del scur
