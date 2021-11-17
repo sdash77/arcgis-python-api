@@ -757,7 +757,7 @@ class TextClassifier(ArcGISModel):
                     warnings.warn(
                         f'Validation dataset classes {list(set(labels))} does not match the training dataset \
 classes {list(target_names)}, you could use "stratify=True" with prepare_textdata or try increasing the minority class \
-samples. Metrics are only bieng calculated for classes present in the validation dataset.'
+samples. Metrics are only being calculated for classes present in the validation dataset.'
                     )
                     target_names = set(labels)
                 output_dict = classification_report(

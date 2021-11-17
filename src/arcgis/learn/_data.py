@@ -791,15 +791,13 @@ def prepare_textdata(
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    stratify                Applies only to single label text 
-                            classification.
-                            Optional bool.
-                            Enabled by default
-                            Set False to disable stratification.
-                            While stratification is enabled, prepare_data 
-                            will try to maintain the class proportion in 
-                            train and validation data according to the 
+    stratify                Optional boolean.
+                            If True, prepare_textdata
+                            will try to maintain the class proportion in
+                            train and validation data according to the
                             val_split_pct.
+                            The default value is True.
+                            Note: Applies only to single-label text classification.
     =====================   ===========================================
 
     :returns: `TextData` object
@@ -1259,17 +1257,16 @@ def prepare_data(
                             when specifying `classes_of_interest`.
                             Applicable only for dataset_type='PointCloud'.
     ---------------------   -------------------------------------------
-    stratify                Applies only to single label feature classification 
-                            and pixel classification.
-                            Optional bool.
-                            Enabled by default for feature classification.
-                            Disabled by default for pixel calssification.
-                            Set True to enable stratification.
-                            Set False to disable stratification.
-                            While stratification is enabled, prepare_data 
-                            will try to maintain the class proportion in 
-                            train and validation data according to the 
+    stratify                Optional boolean.
+                            If True, prepare_data
+                            will try to maintain the class proportion in
+                            train and validation data according to the
                             val_split_pct.
+                            Default value feature classification is True.
+                            Default value pixel classification is False.
+
+                            Note: Applies only to single label feature classification
+                            and pixel classification.
     =====================   ===========================================
 
     :return: data object
@@ -2080,13 +2077,6 @@ def prepare_data(
                     .split_by_rand_pct(val_split_pct, seed=seed)
                     .label_from_func(get_y_func)
                 )
-            # train_labels = np.unique(data.train.y.items).tolist()
-            # val_labels = np.unique(data.valid.y.items).tolist()
-        #             if train_labels != val_labels and dataset_type=='Labeled_Tiles': #for when training classes and validation classes do not match.
-        #                 warnings.warn(f'Validation dataset classes {val_labels} does not match the training dataset \
-        # classes {train_labels}, you could use "stratify=True" with prepare_data or try increasing \
-        # the minority class samples. Model metrics will only be calculated based on the classes \
-        # present in validation dataset.')
 
         else:
             if images_df is not None:

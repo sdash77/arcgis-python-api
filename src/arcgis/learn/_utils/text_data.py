@@ -325,11 +325,6 @@ class TextDataObject:
 
                 x, y = train_df[text_cols], train_df[label_col]
                 unique_labels = y.value_counts()[y.value_counts() == 1].index.tolist()
-                # req_instances_per_class = int(0.8/val_split_pct)
-                # classes_below_req_intances = y.value_counts()[y.value_counts()<req_instances_per_class].index.tolist()
-                # if len(classes_below_req_intances)>0:
-                #                     always_warn(f'For valid statification all classes should have more than {req_instances_per_class} data points, \
-                # class(es) {",".join(classes_below_req_intances)} in your data does not meet the condition.')
 
                 for (
                     label
@@ -363,14 +358,6 @@ class TextDataObject:
             # Resetting dataframe indexes for training anf validation dataframe
             train_df.reset_index(drop=True, inplace=True)
             valid_df.reset_index(drop=True, inplace=True)
-            #             if len(label_cols) == 1:
-            #                 train_labels = set(train_df[label_cols[0]].to_list())
-            #                 val_labels = set(valid_df[label_cols[0]].to_list())
-            #                 if train_labels != val_labels:
-            #                     always_warn(f'Validation dataset classes {val_labels} does not match the training dataset \
-            # classes {train_labels}, you could use "stratify=True" with prepare_data or try increasing \
-            # the minority class samples. Model metrics will only be calculated based on the classes \
-            # present in validation dataset.')
             del temp_df
         if len(label_cols) > 1:
             text_data.classes = label_cols
