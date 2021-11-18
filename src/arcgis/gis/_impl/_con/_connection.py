@@ -140,7 +140,7 @@ class Connection(object):
         legacy boolean. If True the token will be appended to the URL for GET and in the FORM POST.
         timeout:int=600
         use_gen_token = boolean - Uses the GenTokenAuth over EsriBuiltInAuth
-        
+
         """
         from arcgis.gis import GIS
 
@@ -347,7 +347,9 @@ class Connection(object):
             try:
 
                 www_auth = s.get(
-                    root + pt, params=params, verify=self._verify_cert,
+                    root + pt,
+                    params=params,
+                    verify=self._verify_cert,
                 ).headers.get("www-authenticate", "")
                 results.append(www_auth)
             except:
