@@ -1490,7 +1490,7 @@ def batch_geocode(
     =========================     ================================================================
     **Argument**                  **Description**
     -------------------------     ----------------------------------------------------------------
-    addresses                     required list of strings or dictionaries.
+    addresses                     Required list of strings or dictionaries.
                                   A list of addresses to be geocoded.
                                   For passing in the location name as a single line of text -
                                   single field batch geocoding - use a string.
@@ -1526,7 +1526,7 @@ def batch_geocode(
                                        "Postal": "90045"
                                    }]
     -------------------------     ----------------------------------------------------------------
-    source_country                optional string, The ``source_country`` parameter is
+    source_country                Optional string, The ``source_country`` parameter is
                                   only supported by geocoders published using StreetMap
                                   Premium locators.
 
@@ -1535,19 +1535,19 @@ def batch_geocode(
                                     with ArcGIS 10.3 for Server and later versions.
 
     -------------------------     ----------------------------------------------------------------
-    category                      The ``category`` parameter is only supported by geocode
+    category                      Optional String. The ``category`` parameter is only supported by geocode
                                   services published using StreetMap Premium locators.
     -------------------------     ----------------------------------------------------------------
-    out_sr                        optional dictionary, The spatial reference of the
+    out_sr                        Optional dictionary, The spatial reference of the
                                   x/y coordinates returned by a geocode request. This
                                   is useful for applications using a map with a spatial
                                   reference different than that of the geocode service.
     -------------------------     ----------------------------------------------------------------
-    as_featureset                 optional boolean, if True, the result set is
+    as_featureset                 Optional boolean, if True, the result set is
                                   returned as a FeatureSet object, else it is a
                                   dictionary.
     -------------------------     ----------------------------------------------------------------
-    geocoder                      optional :class:`~arcgis.geocoding.Geocoder`,
+    geocoder                      Optional :class:`~arcgis.geocoding.Geocoder`,
                                   the geocoder to be used.
 
                                   .. note::
