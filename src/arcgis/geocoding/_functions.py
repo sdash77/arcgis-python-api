@@ -1519,6 +1519,7 @@ def batch_geocode(
                                        "Region": "CA",
                                        "Postal": "92373"
                                    },{
+                                       "OBJECTID": 2,
                                        "Address": "1 World Way",
                                        "City": "Los Angeles",
                                        "Region": "CA",
