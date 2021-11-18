@@ -138,6 +138,10 @@ def _from_xy(df, x_column, y_column, sr=None):
     ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)
     df["SHAPE"] = GeoArray(ags_geom)
     df.spatial.name
+    for i in range(len(df)):
+        shape = df.loc[i]["SHAPE"]
+        if "EMPTY" in shape.WKT:
+            df.iat[i, df.columns.get_loc("SHAPE")] = None
     return df
 
 
@@ -296,7 +300,7 @@ def from_table(filename, **kwargs):
                         the records returned.
     ---------------     ----------------------------------------------------
     skip_nulls          Optional Boolean. This controls whether records
-                        using nulls are skipped.
+                        using nulls are skipped. Default is True.
     ---------------     ----------------------------------------------------
     null_value          Optional String/Integer/Float. Replaces null values
                         from the input with a new value.
@@ -328,7 +332,9 @@ def from_table(filename, **kwargs):
         import arcpy
 
         scur = arcpy.da.SearchCursor(
-            in_table=filename, field_names=fields, where_clause=where
+            in_table=filename,
+            field_names=kwargs.pop("fields", None),
+            where_clause=kwargs.pop("where", None),
         )
         array = scur._as_array()
         del scur
@@ -1072,6 +1078,7 @@ def _pyshp2(df, out_path, out_name):
             "Polyline": shapefile.POLYLINE,
             "null": shapefile.NULL,
         }
+
         if os.path.isdir(out_path) == False:
             os.makedirs(out_path)
         out_fc = os.path.join(out_path, out_name)
@@ -1087,6 +1094,8 @@ def _pyshp2(df, out_path, out_name):
         shpfile = shapefile.Writer(
             target=out_fc, shapeType=GEOMTYPELOOKUP[geom_type], autoBalance=True
         )
+
+        # Start writing to shapefile
         dfields = []
         cfields = []
         for c in df.columns:
@@ -1094,6 +1103,9 @@ def _pyshp2(df, out_path, out_name):
             if idx > -1:
                 if isinstance(df[c].loc[idx], Geometry):
                     geom_field = (c, "GEOMETRY")
+                    geom_column = c
+                    # Since geometry is present, handle None type geometry occurrence
+                    query_index = _handle_none_type_geometry(df, geom_type, geom_column)
                 else:
                     cfields.append(c)
                     if isinstance(df[c].loc[idx], (str)):
@@ -1114,8 +1126,9 @@ def _pyshp2(df, out_path, out_name):
                         shpfile.field(name=c, fieldType="L", size=1)
             del c
             del idx
+
         for idx, row in df.iterrows():
-            geom = row[df.spatial._name]
+            geom = row[df.spatial.name]
             if geom.type == "Polygon":
                 shpfile.poly(geom["rings"])
             elif geom.type == "Polyline":
@@ -1162,9 +1175,44 @@ def _pyshp2(df, out_path, out_name):
             # Unable to write PRJ file.
             pass
 
+        # Change back null columns to None
+        for index, row in query_index.items():
+            if row is True:
+                df.iat[index, df.columns.get_loc(geom_column)] = None
+
         del shpfile
         return out_fc
     return None
+
+
+def _handle_none_type_geometry(df, geom_type, geom_column):
+    # Handle none type geometry occurrence
+
+    # bool to see if empty
+    query = df[geom_column].isnull()
+    df_view = df[query]
+    empty = df_view.empty
+
+    if empty is False:
+        for idx, row in df_view.iterrows():
+            if df.loc[idx][geom_column] is None:
+                if geom_type == "Point":
+                    df.iat[idx, df.columns.get_loc(geom_column)] = Geometry(
+                        {
+                            "x": np.NAN,
+                            "y": np.NAN,
+                            "spatialReference": df.spatial.sr,
+                        }
+                    )
+                elif geom_type == "Poyline":
+                    df.iat[idx, df.columns.get_loc(geom_column)] = Geometry(
+                        {"paths": []}
+                    ).WKT
+                elif geom_type == "Polygon":
+                    df.iat[idx, df.columns.get_loc(geom_column)] = Geometry(
+                        {"rings": []}
+                    ).WKT
+    return query
 
 
 def _sanitize_column_names(
