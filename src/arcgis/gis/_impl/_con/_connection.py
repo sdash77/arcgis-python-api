@@ -139,10 +139,12 @@ class Connection(object):
         trust_env = T/F if to ignore netrc files
         legacy boolean. If True the token will be appended to the URL for GET and in the FORM POST.
         timeout:int=600
-
+        use_gen_token = boolean - Uses the GenTokenAuth over EsriBuiltInAuth
+        
         """
         from arcgis.gis import GIS
 
+        self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
         self._proxy = kwargs.pop("proxy", None)
         self._timeout = kwargs.pop("timeout", 600)
@@ -345,9 +347,7 @@ class Connection(object):
             try:
 
                 www_auth = s.get(
-                    root + pt,
-                    params=params,
-                    verify=self._verify_cert,
+                    root + pt, params=params, verify=self._verify_cert,
                 ).headers.get("www-authenticate", "")
                 results.append(www_auth)
             except:
@@ -502,16 +502,27 @@ class Connection(object):
                     legacy=self.legacy,
                 )
             else:
-
-                self._session.auth = EsriBuiltInAuth(
-                    url=self._baseurl,
-                    username=self._username,
-                    password=self._password,
-                    expiration=self._timeout,
-                    legacy=False,
-                    verify_cert=self._verify_cert,
-                    referer=self._referer,
-                )
+                if self._use_gen_token:
+                    self._session.auth = EsriGenTokenAuth(
+                        token_url=self._token_url,
+                        referer=self._referer,
+                        username=self._username,
+                        password=self._password,
+                        portal_auth=None,
+                        time_out=1440,
+                        verify_cert=self._verify_cert,
+                        legacy=self.legacy,
+                    )
+                else:
+                    self._session.auth = EsriBuiltInAuth(
+                        url=self._baseurl,
+                        username=self._username,
+                        password=self._password,
+                        expiration=self._timeout,
+                        legacy=False,
+                        verify_cert=self._verify_cert,
+                        referer=self._referer,
+                    )
         elif self._auth.lower() == "user_token":
             self._session.auth = EsriUserTokenAuth(
                 token=self._token, referer=self._referer, verify_cert=self._verify_cert
@@ -636,6 +647,7 @@ class Connection(object):
                 cert = (self._cert_file, self._key_file)
             else:
                 cert = None
+
             resp = self._session.get(
                 url=url, params=params, cert=cert, verify=self._verify_cert
             )
