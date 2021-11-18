@@ -3702,13 +3702,13 @@ class UserManager(object):
                                only required if paging is needed.
         ------------------     --------------------------------------------------------------------
         sort_field             Optional String. Responses from the `search` operation can be
-                               sorted on various fields. `avgrating` is the default.
+                               sorted on various fields. `username` is the default.
         ------------------     --------------------------------------------------------------------
         sort_order             Optional String. The sequence into which a collection of
                                records are arranged after they have been sorted. The allowed
                                values are: asc for ascending and desc for descending.
         ------------------     --------------------------------------------------------------------
-        as_dict                Required Boolean. If True, the response comes back as a dictionary.
+        as_dict                Optional Boolean. If True, the response comes back as a dictionary.
         ==================     ====================================================================
 
         :return:
@@ -3718,7 +3718,7 @@ class UserManager(object):
 
             # Usage Example
 
-            >>> gis.users.advanced_search(query ="1234", sort_order = "username", max_users=20, as_dict=20)
+            >>> gis.users.advanced_search(query ="1234", sort_field = "username", max_users=20, as_dict=20)
         """
         from arcgis.gis._impl import _search
 
@@ -3885,7 +3885,7 @@ class UserManager(object):
 
             # Usage Example
 
-            >>> gis.users.search(query ="1234", sort_order = "username", max_users=20)
+            >>> gis.users.search(query ="1234", sort_field = "username", max_users=20)
         """
         ut = {"creator": "creatorUT", "viewer": "viewerUT"}
         if user_type and user_type.lower() in ut:
