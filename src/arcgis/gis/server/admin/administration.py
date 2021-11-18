@@ -40,7 +40,7 @@ class Server(BaseServer):
 
         # Usage Example 2: Get a stand-alone ArcGIS Server site that has Web Adaptor installed
 
-        server_base_url = "https://example.site.com"
+        server_base_url = "https://example.com"
 
         gis_server = Server(url=f"{server_base_url}/web_adaptor/admin",
                             token_url=f"{server_base_url}/web_adaptor/tokens/generateToken",
@@ -121,14 +121,14 @@ class Server(BaseServer):
 
         # Usage Example 3: Get the ArcGIS Server site that is federated to an Enterprise (using ``gis``)
 
-        server_base_url = "https://example.site.com"
+        server_base_url = "https://example.com"
         gis = GIS(profile="your_ent_admin_profile")
         gis_server = Server(url=f"{server_base_url}/web_adaptor/admin",
                             gis = gis)
 
         # Usage Example 4: Get the ArcGIS Server site that is federated to an Enterprise (using ``portal_connection``)
 
-        server_base_url = "https://example.site.com"
+        server_base_url = "https://example.com"
         gis = GIS(profile="your_ent_admin_profile")
         gis_server = Server(url=f"{server_base_url}/web_adaptor/admin",
                             portal_connection=gis._portal.con)
