@@ -2918,6 +2918,137 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Automated Creations
+
+    def test_create_automation_creation_successfully_returns(self):
+        # Arrange
+        template_id = self.create_job_template()
+        props = {
+            "adds": [
+                {
+                    "automationName": "test_one",
+                    "automationType": "Scheduled",
+                    "enabled": True,
+                    "details": "{\"timeType\":\"NumberOfDays\",\"dayOfMonth\":1,\"hour\":8,\"minutes\":0}"
+                },
+                {
+                    "automationName": "test_two",
+                    "automationType": "Scheduled",
+                    "enabled": True,
+                    "details": "{\"timeType\":\"DayOfWeek\",\"dayOfWeek\":2,\"hour\":8,\"minutes\":0,"
+                               "\"endDate\":1921305600000} "
+                }
+            ],
+            "updates": [],
+            "deletes": []
+        }
+
+        # Act
+        actual = self.connection.workflow_manager.automated_creation(template_id, props)
+        creations = self.connection.workflow_manager.job_template_automated_creations(template_id)
+
+        # Assert
+        self.assertEqual(len(creations), 2, "Incorrect size")
+
+        id_one = creations[0]["automationId"]
+        id_two = creations[1]["automationId"]
+
+        props_two = {
+              "adds": [{
+                    "automationName": "test_three",
+                    "automationType": "Scheduled",
+                    "enabled": True,
+                    "details": "{\"timeType\":\"NumberOfDays\",\"dayOfMonth\":1,\"hour\":8,\"minutes\":0}"
+                }],
+              "updates": [
+                {
+                  "automationId": id_two,
+                  "automationName": "test_two_updated"
+                }
+              ],
+              "deletes": [
+                id_one
+              ]
+            }
+
+        self.connection.workflow_manager.automated_creation(template_id, props_two)
+        creations_two = self.connection.workflow_manager.job_template_automated_creations(template_id)
+
+        for c in creations_two:
+            if c["automationId"] == id_two:
+                break;
+
+        self.assertEqual(c["automationName"], "test_two_updated", "Incorrect size")
+        self.assertEqual(len(creations_two), 2, "Incorrect size")
+
+    def test_get_automation_creation_successfully_returns(self):
+        # Arrange
+        template_id = self.create_job_template()
+        props = {
+            "adds": [
+                {
+                    "automationName": "test_one",
+                    "automationType": "Scheduled",
+                    "enabled": True,
+                    "details": "{\"timeType\":\"NumberOfDays\",\"dayOfMonth\":1,\"hour\":8,\"minutes\":0}"
+                },
+                {
+                    "automationName": "test_two",
+                    "automationType": "Scheduled",
+                    "enabled": True,
+                    "details": "{\"timeType\":\"DayOfWeek\",\"dayOfWeek\":2,\"hour\":8,\"minutes\":0,"
+                               "\"endDate\":1921305600000} "
+                }
+            ],
+            "updates": [],
+            "deletes": []
+        }
+
+        # Act
+        self.connection.workflow_manager.automated_creation(template_id, props)
+        creations = self.connection.workflow_manager.job_template_automated_creations(template_id)
+
+        # Assert
+        self.assertEqual(len(creations), 2, "Incorrect size")
+
+    def test_get_specific_automation_creation_returns_successfully(self):
+        # Arrange
+        template_id = self.create_job_template()
+        props = {
+            "adds": [
+                {
+                    "automationName": "test_one",
+                    "automationType": "Scheduled",
+                    "enabled": True,
+                    "details": "{\"timeType\":\"NumberOfDays\",\"dayOfMonth\":1,\"hour\":8,\"minutes\":0}"
+                },
+                {
+                    "automationName": "test_two",
+                    "automationType": "Scheduled",
+                    "enabled": True,
+                    "details": "{\"timeType\":\"DayOfWeek\",\"dayOfWeek\":2,\"hour\":8,\"minutes\":0,"
+                               "\"endDate\":1921305600000} "
+                }
+            ],
+            "updates": [],
+            "deletes": []
+        }
+
+        # Act
+        self.connection.workflow_manager.automated_creation(template_id, props)
+        creations = self.connection.workflow_manager.job_template_automated_creations(template_id)
+
+        id_one = creations[0]["automationId"]
+        actual = self.connection.workflow_manager.job_template_automated_creation(template_id, id_one)
+
+        # Assert
+        self.assertEqual(actual["automationName"], "test_one", "Incorrect automated creation found")
+        self.assertEqual(actual["automationType"], "Scheduled", "Incorrect automated creation found")
+        self.assertEqual(len(creations), 2, "Incorrect size")
+
+
+    # endregion
+
 
 if __name__ == "__main__":
     unittest.main()

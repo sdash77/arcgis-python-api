@@ -219,7 +219,6 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
-
 class JobManager:
     """
     Represents a helper class for workflow manager jobs. Accessible as the
@@ -751,7 +750,6 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-
 class WorkflowManager:
     """
     Represents a connection to a Workflow Manager instance or item.
@@ -1110,7 +1108,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        props               Reuqired list. A list of Props objects to update
+        props               Required list. A list of Props objects to update
                             (Prop object example: {'propName': 'string', 'value': 'string'})
         ===============     ====================================================================
 
@@ -1858,6 +1856,100 @@ class WorkflowManager:
             return post_lookup.put(self._gis, url)
         except:
             self._handle_error(sys.exc_info())
+
+    def job_template_automated_creations(self, template_id):
+        """
+        Returns an active job with the given ID
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        template_id         Required string. Job Template Id
+        ===============     ====================================================================
+
+        :return:
+            list of automatedCreations associated with the JobTemplate
+
+        """
+        try:
+            return_obj = json.loads(
+                json.dumps(
+                    self._gis._con.get(
+                        "{base}/jobTemplates/{jobTemplateId}/automatedCreation".format(
+                            base=self._url, jobTemplateId=template_id),
+                        params={"token": self._gis._con.token},
+                    )
+                )
+            )
+            return return_obj["automations"]
+        except:
+            self._handle_error(sys.exc_info())
+
+    def job_template_automated_creation(self, template_id, automation_id):
+        """
+        Returns an active job with the given ID
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        template_id         Required string. Job Template Id
+        ---------------     --------------------------------------------------------------------
+        automation_id       Required string. Automation Creation Id
+        ===============     ====================================================================
+
+        :return:
+            list of automated creations associated with the JobTemplate
+
+        """
+        try:
+            return_obj = json.loads(
+                json.dumps(
+                    self._gis._con.get(
+                        "{base}/jobTemplates/{jobTemplateId}/automatedCreation/{automationId}".format(
+                            base=self._url, jobTemplateId=template_id, automationId=automation_id),
+                        params={"token": self._gis._con.token},
+                    )
+                )
+            )
+            return return_obj
+        except:
+            self._handle_error(sys.exc_info())
+
+    def automated_creation(self, template_id, props):
+        """
+        Returns an active job with the given ID
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        template_id         Required string. Job Template Id
+        ---------------     --------------------------------------------------------------------
+        props               Required object. The automation objects to create, update or delete
+        ===============     ====================================================================
+
+        :return:
+            success object
+
+        """
+        url = "{base}/jobTemplates/{jobTemplateId}/automatedCreation?token={token}".format(
+            base=self._url, jobTemplateId=template_id, token=self._gis._con.token
+        )
+
+        return_obj = json.loads(
+            self._gis._con.post(
+                url,
+                props,
+                add_token=False,
+                post_json=True,
+                try_json=False,
+                json_encode=False,
+            )
+        )
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
+        return return_obj
 
 class LookUpTable(object):
     """
