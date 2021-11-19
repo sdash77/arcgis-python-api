@@ -1103,6 +1103,10 @@ class Map(object):
             self._type = self._story._properties["resources"][self.resource_node][
                 "data"
             ]["itemType"]
+            if self._type == "Web Scene":
+                self._lighting_date = self._story._properties["resources"][
+                    self.resource_node
+                ]["data"]["lightingDate"]
         else:
             # Create new instance
             if isinstance(item, str):
@@ -1120,24 +1124,45 @@ class Map(object):
             self.node = "n-" + uuid.uuid4().hex[0:6]
             self.resource_node = "r-" + item.id
             self._path = item
-            self._center = map_item._mapview.center
-            self._extent = map_item._mapview.extent
-            self._zoom = map_item._mapview.zoom if map_item.zoom is not False else 2
-            # construct viewpoint
-            self._viewpoint = {}
-            self._viewpoint["rotation"] = map_item._mapview.rotation
-            self._viewpoint["scale"] = map_item._mapview.scale
-            self._viewpoint["targetGeometry"] = {}
-            layers = []
-            # Create layer dictionary:
-            for layer in map_item.layers:
-                layer_props = {}
-                layer_props["id"] = layer["id"]
-                layer_props["title"] = layer["title"]
-                layer_props["visible"] = layer["visibility"]
-                layers.append(layer_props)
-            self._map_layers = layers
             self._type = item.type
+            if item.type == "Web Map":
+                self._center = map_item._mapview.center
+                self._extent = map_item._mapview.extent
+                self._zoom = map_item._mapview.zoom if map_item.zoom is not False else 2
+                self._viewpoint = {}
+
+                layers = []
+                # Create layer dictionary:
+                for layer in map_item.layers:
+                    layer_props = {}
+                    layer_props["id"] = layer["id"]
+                    layer_props["title"] = layer["title"]
+                    layer_props["visible"] = layer["visibility"]
+                    layers.append(layer_props)
+                self._map_layers = layers
+            # Add properties for Web Scene
+            elif item.type == "Web Scene":
+                layers = []
+                # Create layer dictionary:
+                for layer in map_item["operationalLayers"]:
+                    layer_props = {}
+                    layer_props["id"] = layer["id"]
+                    layer_props["title"] = layer["title"]
+                    layer_props["visible"] = True
+                    layers.append(layer_props)
+                self._map_layers = layers
+                # Create the Map View to use
+                view = arcgis.widgets.MapView(
+                    arcgis.env.active_gis, map_item, mode="3D"
+                )
+                self._center = view.center
+                self._extent = view.extent
+                self._zoom = view.zoom if view.zoom > -1 else 2
+                self._viewpoint = {}
+                self._camera = map_item["initialState"]["viewpoint"]
+                self._lighting_date = map_item["initialState"]["environment"][
+                    "lighting"
+                ]["datetime"]
 
     # ----------------------------------------------------------------------
     @property
@@ -1172,15 +1197,17 @@ class Map(object):
         ------------------  ----------------------------------------
         map                 One of three choices:
 
-                            * String: item id for an Item of type
+                            * String being an item id for an Item of type
                             :class:`~arcgis.mapping.WebMap`
                             or :class:`~arcgis.mapping.WebScene`.
 
-                            * The Item itself.
-
-                            * An instance of Map that has not been added
-                            to the story.
+                            * An :class:`~arcgis.gis.Item` of type
+                            :class:`~arcgis.mapping.WebMap`
+                            or :class:`~arcgis.mapping.WebScene`.
         ==================  ========================================
+
+        .. note::
+            Only replace Map with a new map of same type.
 
         :return:
             The item id for the map that is being used.
@@ -1194,8 +1221,6 @@ class Map(object):
     @map.setter
     def map(self, map):
         if self._check_node() is True:
-            if not isinstance(map, Map):
-                map = Map(map)
             self._update_map(map)
             return self.map
 
@@ -1279,22 +1304,17 @@ class Map(object):
         return self._story._delete(self.node, self.resource_node)
 
     # ----------------------------------------------------------------------
-    def _add_map(
-        self, caption=None, alt_text=None, display=None, previous_node=None, story=None
-    ):
+    def _add_map(self, caption=None, alt_text=None, display=None, story=None):
         self._story = story
-        # To change webmap, resouce id needs to change but not the previous node id
-        node = previous_node if previous_node is not None else self.node
 
         # Create webmap nodes
         # This represents the map as seen in the story
-        self._story._properties["nodes"][node] = {
+        self._story._properties["nodes"][self.node] = {
             "type": "webmap",
             "data": {
                 "map": self.resource_node,
                 "caption": caption,
                 "alt": alt_text,
-                "mapLayers": self._map_layers,
                 "extent": self._extent,
                 "center": self._center,
                 "zoom": 2,
@@ -1302,7 +1322,6 @@ class Map(object):
             },
             "config": {"size": display},
         }
-
         # Create resource node
         # This represents the original map item and it's properties
         self._story._properties["resources"][self.resource_node] = {
@@ -1319,19 +1338,58 @@ class Map(object):
             },
         }
 
-    # ----------------------------------------------------------------------
-    def _update_map(self, new_map):
-        # Previous node id stays the same but old resource changes since dependent on item id.
-        # Resource node gets deleted and new one added since item changes.
-        del self._story._properties["resources"][self.resource_node]
-        self.resource_node = new_map.resource_node
+        # Add for Web Scene
+        if self._type == "Web Scene":
+            self._story._properties["resources"][self.resource_node]["data"][
+                "lightingDate"
+            ] = self._lighting_date
+            self._story._properties["resources"][self.resource_node]["data"][
+                "camera"
+            ] = self._camera
+            self._story._properties["nodes"][self.node]["data"][
+                "lightingDate"
+            ] = self._lighting_date
+            self._story._properties["nodes"][self.node]["data"]["camera"] = self._camera
 
-        new_map._add_map(
-            caption=self.caption,
-            display=self.display,
-            previous_node=self.node,
-            story=self._story,
-        )
+    # ----------------------------------------------------------------------
+    def _update_map(self, map):
+        new_map = Map(map)
+        # Check for error.
+        if (
+            new_map._type
+            != self._story._properties["resources"][self.resource_node]["data"][
+                "itemType"
+            ]
+        ):
+            raise ValueError("New Map must be of same type as the exisiting map.")
+
+        # Get all the old properties but update with new map
+        self._story._properties["resources"][
+            new_map.resource_node
+        ] = self._story._properties["resources"].pop(self.resource_node)
+        self.resource_node = new_map.resource_node
+        self._story._properties["resources"][new_map.resource_node]["data"][
+            "itemId"
+        ] = new_map._path.id
+        # Update path to resource node
+        self._story._properties["nodes"][self.node]["data"][
+            "map"
+        ] = new_map.resource_node
+
+        # Add for Web Scene
+        if self._type == "Web Scene":
+            self._story._properties["resources"][self.resource_node]["data"][
+                "lightingDate"
+            ] = new_map._lighting_date
+            self._story._properties["resources"][self.resource_node]["data"][
+                "camera"
+            ] = new_map._camera
+            self._story._properties["nodes"][self.node]["data"][
+                "lightingDate"
+            ] = new_map._lighting_date
+            self._story._properties["nodes"][self.node]["data"][
+                "camera"
+            ] = new_map._camera
 
     # ----------------------------------------------------------------------
     def _check_node(self):
