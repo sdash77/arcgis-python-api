@@ -171,6 +171,10 @@ class GIS(object):
 
                         ex: 127.0.0.1
     ----------------    ---------------------------------------------------------------
+    use_gen_token       Optional Boolean. The default is `False`. For older
+                        Enterprises, the BUILT-IN users can specify using the
+                        generateToken end point for creating the token.
+    ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ----------------    ---------------------------------------------------------------
     token               Optional string. This is the Enterprise token for built-in
@@ -311,6 +315,7 @@ class GIS(object):
         certificate verification in the Python process. However, this should not be done in production environments and is
         strongly discouraged.
         """
+        self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._proxy_host = kwargs.pop("proxy_host", None)
         self._proxy_port = kwargs.pop("proxy_port", 80)
         self._referer = kwargs.pop("referer", None)
@@ -451,6 +456,7 @@ class GIS(object):
                 custom_adapter=custom_adapter,
                 token=self._utoken,
                 is_hosted_nb_home=self._is_hosted_nb_home,
+                use_gen_token=self._use_gen_token,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -474,6 +480,7 @@ class GIS(object):
                     custom_adapter=custom_adapter,
                     token=self._utoken,
                     is_hosted_nb_home=self._is_hosted_nb_home,
+                    use_gen_token=self._use_gen_token,
                 )
             if self._is_hosted_nb_home:
                 self._portal.con._referer = ""
@@ -540,6 +547,7 @@ class GIS(object):
                         custom_adapter=custom_adapter,
                         token=self._utoken,
                         is_hosted_nb_home=self._is_hosted_nb_home,
+                        use_gen_token=self._use_gen_token,
                     )
                     self._portal = pp
         except:
