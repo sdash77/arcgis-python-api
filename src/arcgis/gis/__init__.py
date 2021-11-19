@@ -2778,7 +2778,10 @@ class UserManager(object):
         .. note::
             Only an administrator can call this method.
 
-        **To create a viewer account, choose role='org_viewer' and level='viewer'**
+            A member's `user_type` determines the default `role` that can be assigned to the member. User types
+            compatible with each role are noted in the table below (within the `user_type` section).
+
+        **To create a viewer account, choose role='viewer' and user_type='viewer'**
 
         .. note:
             When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
@@ -2825,13 +2828,19 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         level             Optional string. The account level. (ArcGIS Enterprise prior to version 10.7.
                           See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
-                          for full details.)
+                          for full details.) The GIS Professional `user_type` can be assigned at the following three levels, which correspond to the three license levels of ArcGIS Pro:
+                           - GIS Professional Basic
+                           - GIS Professional Standard
+                           - GIS Professional Advanced
         ----------------  -------------------------------------------------------------------------------
-        user_type         Required string. The account user type. This can be creator or viewer.  The
+        user_type         Required string. The account user type. This can be creator, viewer, etc.  The
                           type effects what applications a user can use and what actions they can do in
                           the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online.
                           See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
                           for full details.)
+                           - Members assigned the ``viewer`` role cannot create or share content, or perform analysis, and the ``viewer`` role is compatible with all user types.
+                           - The Data Editor role ``viewplusedit`` is compatible with all user types except ``viewer``.
+                           - The ``org_user``, ``org_publisher``, and ``org_admin`` roles are compatible with the Creator, GIS Professional, Storyteller, and Insights Analyst user types.
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
                           which means unlimited. (10.7+)
@@ -3702,13 +3711,13 @@ class UserManager(object):
                                only required if paging is needed.
         ------------------     --------------------------------------------------------------------
         sort_field             Optional String. Responses from the `search` operation can be
-                               sorted on various fields. `avgrating` is the default.
+                               sorted on various fields. `username` is the default.
         ------------------     --------------------------------------------------------------------
         sort_order             Optional String. The sequence into which a collection of
                                records are arranged after they have been sorted. The allowed
                                values are: asc for ascending and desc for descending.
         ------------------     --------------------------------------------------------------------
-        as_dict                Required Boolean. If True, the response comes back as a dictionary.
+        as_dict                Optional Boolean. If True, the response comes back as a dictionary.
         ==================     ====================================================================
 
         :return:
@@ -3718,7 +3727,7 @@ class UserManager(object):
 
             # Usage Example
 
-            >>> gis.users.advanced_search(query ="1234", sort_order = "username", max_users=20, as_dict=20)
+            >>> gis.users.advanced_search(query ="1234", sort_field = "username", max_users=20, as_dict=20)
         """
         from arcgis.gis._impl import _search
 
@@ -3885,7 +3894,7 @@ class UserManager(object):
 
             # Usage Example
 
-            >>> gis.users.search(query ="1234", sort_order = "username", max_users=20)
+            >>> gis.users.search(query ="1234", sort_field = "username", max_users=20)
         """
         ut = {"creator": "creatorUT", "viewer": "viewerUT"}
         if user_type and user_type.lower() in ut:
