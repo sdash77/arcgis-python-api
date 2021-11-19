@@ -766,7 +766,8 @@ class StoryMap(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        title               Optional string. The title of the duplicated story.
+        title               Optional string. The title of the duplicated story. Only available for
+                            ArcGISOnline.
         ===============     ====================================================================
 
         .. code-block:: python
@@ -780,7 +781,6 @@ class StoryMap(object):
 
         # enterprise has no copy_item
         if item._portal.is_arcgisonline is False:
-            # TODO: TEST THIS
             return self._gis.content.clone_items(items=[item])
         else:
             return item.copy_item(
