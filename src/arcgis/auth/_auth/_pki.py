@@ -43,6 +43,14 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
         return f"<{self.__class__.__name__}>"
 
     # ----------------------------------------------------------------------
+    @property
+    def token(self) -> str:
+        """
+        returns the authentication token
+        """
+        return None
+
+    # ----------------------------------------------------------------------
     def generate_portal_server_token(self, r, **kwargs):
         """generates a server token using Portal token"""
         parsed = parse_url(r.url)

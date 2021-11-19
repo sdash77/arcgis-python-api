@@ -105,15 +105,15 @@ def _post_install():
         activate_map_widget = False
 
     if activate_map_widget:
-        log.warn("Attempting to activate map widget...")
+        log.warning("Attempting to activate map widget...")
         try:
-            log.warn(
+            log.warning(
                 nbext.install_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
-            log.warn(
+            log.warning(
                 nbext.enable_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
-            log.warn(
+            log.warning(
                 nbext.enable_nbextension_python(
                     "widgetsnbextension", sys_prefix=True, logger=log
                 )
@@ -129,7 +129,7 @@ def _post_install():
         if "Install Certificates.command" in potential_cert_script:
             try:
                 cmd_output = check_output(potential_cert_script, stderr=STDOUT)
-                log.warn(
+                log.warning(
                     "OpenSSL workaround for OSX completed successfully. "
                     "See https://bugs.python.org/issue28150 for info. "
                     "Output: {}".format(cmd_output.decode("utf-8"))
@@ -169,9 +169,13 @@ class egg_info(_egg_info):
 
 
 # Read the description.md file
-description_md_file = open("pypi_long_description.md", "r")
-long_description = description_md_file.read()
-description_md_file.close()
+try:
+
+    description_md_file = open("pypi_long_description.md", "r")
+    long_description = description_md_file.read()
+    description_md_file.close()
+except:
+    long_description = "ArcGIS API for Python"
 
 # Assemble the `data_files` list of all non-python files
 data_files = [
@@ -199,12 +203,31 @@ data_files += (
     ]
 )
 
+
+def get_version():
+    """gets the version from environment variable or sets via manually setting"""
+    MAJOR = "2"
+    MINOR = "0"
+    try:
+        import os
+
+        def __path(filename):
+            return os.path.join(os.path.dirname(__file__), filename)
+
+        MICRO = "0"
+        if os.path.exists(__path("build.info")):
+            MICRO = open(__path("build.info")).read().strip()
+    except:
+        MICRO = "0"
+    return f"{MAJOR}.{MINOR}.{MICRO}"
+
+
 kwargs = {
     "name": "arcgis",
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    "version": "2.0.0",
+    "version": get_version(),
     "description": "ArcGIS API for Python",
     "long_description": long_description,
     "long_description_content_type": "text/markdown",
