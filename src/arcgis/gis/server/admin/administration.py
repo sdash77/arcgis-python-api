@@ -40,7 +40,7 @@ class Server(BaseServer):
 
         # Usage Example 2: Get a stand-alone ArcGIS Server site that has Web Adaptor installed
 
-        server_base_url = "https://example.site.com"
+        server_base_url = "https://example.com"
 
         gis_server = Server(url=f"{server_base_url}/web_adaptor/admin",
                             token_url=f"{server_base_url}/web_adaptor/tokens/generateToken",
@@ -65,8 +65,13 @@ class Server(BaseServer):
     ------------------     --------------------------------------------------------------------
     gis                    Optional string. The GIS object representing the ArcGIS Enterprise portal which this
                            ArcGIS Server site is federated with. The GIS object should be logged in with a username
-                           in the publisher or administrator Role in order to administer the server.
+                           in the publisher or administrator Role in order to administer the server. If this
+                           parameter is not present, a combination of other keyword arguments must be present.
     ==================     ====================================================================
+
+    .. note::
+        If the ``gis`` argument is not present, any number of combinations of keyword arguments will initialize a
+        functioning ``Server`` object. See examples below.
 
     =====================     ====================================================================
     **Optional Argument**     **Description**
@@ -111,6 +116,22 @@ class Server(BaseServer):
     initialize                Optional boolean. If True, the object will attempt to reach out to
                               the URL resource and populate at creation time. The default is False.
     =====================     ====================================================================
+
+    .. code-block:: python
+
+        # Usage Example 3: Get the ArcGIS Server site that is federated to an Enterprise (using ``gis``)
+
+        server_base_url = "https://example.com"
+        gis = GIS(profile="your_ent_admin_profile")
+        gis_server = Server(url=f"{server_base_url}/web_adaptor/admin",
+                            gis = gis)
+
+        # Usage Example 4: Get the ArcGIS Server site that is federated to an Enterprise (using ``portal_connection``)
+
+        server_base_url = "https://example.com"
+        gis = GIS(profile="your_ent_admin_profile")
+        gis_server = Server(url=f"{server_base_url}/web_adaptor/admin",
+                            portal_connection=gis._portal.con)
 
     """
 

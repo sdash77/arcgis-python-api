@@ -103,6 +103,27 @@ class ImageryLayerCacheManager(_GISResource):
         return self._con.post(url, params, timeout=None)
 
     # ----------------------------------------------------------------------
+    def swap(self, target_service_name):
+        """
+        The swap operation replaces the current service cache with an existing one.
+
+        .. note::
+            The ``swap`` operation is for ArcGIS Online only.
+
+        ====================        ====================================================
+        **Argument**                **Description**
+        --------------------        ----------------------------------------------------
+        target_service_name         Required string. Name of service you want to swap with.
+        ====================        ====================================================
+
+        :returns: dictionary indicating success or error
+
+        """
+        url = self._url + "/swap"
+        params = {"f": "json", "targetServiceName": target_service_name}
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
     @property
     def jobs(self):
         """
@@ -191,7 +212,13 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
+            from arcgis.mapping import ImageryLayer
+            from arcgis.gis import GIS
+
             # Example Usage
+            gis = GIS(url, username, password)
+            img_lyr = ImageryLayer("<url>", gis)
+            img_lyr_cache_manager = img_lyr.cache_manager
             imported_tiles = img_lyr_cache_manager.import_tiles(item = item1,
                                                                 levels = "11-20",
                                                                 extent = {
@@ -254,7 +281,13 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
+            from arcgis.mapping import ImageryLayer
+            from arcgis.gis import GIS
+
             # Example Usage
+            gis = GIS(url, username, password)
+            img_lyr = ImageryLayer("<url>", gis)
+            img_lyr_cache_manager = img_lyr.cache_manager
             updated_tiles = img_lyr_cache_manager.update_tiles(levels = "11-20",
                                                                extent = {
                                                                             "xmin":6224324.092137296,
@@ -396,7 +429,13 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
+            from arcgis.mapping import ImageryLayer
+            from arcgis.gis import GIS
+
             # Example Usage
+            gis = GIS(url, username, password)
+            img_lyr = ImageryLayer("<url>", gis)
+            img_lyr_cache_manager = img_lyr.cache_manager
             deleted_tiles = img_lyr_cache_manager.delete_tiles(levels = "11-20",
                                                                extent = {
                                                                             "xmin":6224324.092137296,
