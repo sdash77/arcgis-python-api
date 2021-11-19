@@ -198,6 +198,27 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
+    @property
+    def health_check(self):
+        """
+        Checks the health of Workflow Manager Server and if the cluster is active (if applicable).
+
+        :return:
+            boolean
+
+        """
+
+        url = "{base}/healthCheck?token={token}".format(
+            base=self._url, token=self._gis._con.token
+        )
+
+        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
+        return return_obj
+
 
 class JobManager:
     """
@@ -282,6 +303,31 @@ class JobManager:
                 base=self._url, token=self._gis._con.token
             )
             return Job.manage_jobs(self._gis, url, job_ids, "Close")
+        except:
+            self._handle_error(sys.exc_info())
+
+    def reopen(self, job_ids):
+        """
+        Reopens a single or multiple jobs with specific Job IDs
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        job_ids             Required list of job ID strings
+        ===============     ====================================================================
+
+        :return:
+            success object
+
+        """
+        try:
+            url = "{base}/jobs/manage?token={token}".format(
+                base=self._url, token=self._gis._con.token
+            )
+            return Job.manage_jobs(self._gis, url, job_ids, "Close")
+            url = "{base}/jobs/manage?token={token}".format(
+                base=self._url, token=self._gis._con.token
+            )
         except:
             self._handle_error(sys.exc_info())
 
@@ -1018,12 +1064,6 @@ class WorkflowManager:
 
         """
         try:
-            a = self._gis._con.get(
-                "{base}/jobTemplates".format(base=self._url),
-                params={"token": self._gis._con.token},
-            )["jobTemplates"]
-            b = json.dumps(a)
-            c = json.loads(b)
             template_array = json.loads(
                 json.dumps(
                     self._gis._con.get(
@@ -1280,6 +1320,31 @@ class WorkflowManager:
             return JobDiagram.get(
                 self._gis,
                 "{base}/diagrams/{diagram}".format(base=self._url, diagram=id),
+                {"token": self._gis._con.token},
+            )
+        except:
+            self._handle_error(sys.exc_info())
+
+    def diagram_version(self, diagram_id, version_id):
+        """
+        Returns the :class:`diagram <arcgis.gis.workflowmanager.JobDiagram>` with the given version ID
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        diagram_id          Required string. Diagram ID
+        ---------------     --------------------------------------------------------------------
+        version_id          Required string. Diagram Version ID
+        ===============     ====================================================================
+
+        :return:
+             Specified version of the Workflow Manager :class:`~arcgis.gis.workflowmanager.JobDiagram` object
+
+        """
+        try:
+            return JobDiagram.get(
+                self._gis,
+                "{base}/diagrams/{diagram}/{diagramVersion}".format(base=self._url, diagram=diagram_id, diagramVersion=version_id),
                 {"token": self._gis._con.token},
             )
         except:
@@ -1588,6 +1653,30 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
+    def delete_diagram_version(self, diagram_id, version_id):
+        """
+        Deletes a diagram version by ID
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        diagram_id          Required string. Diagram ID
+        ---------------     --------------------------------------------------------------------
+        version_id          Required string. Diagram Version ID
+        ===============     ====================================================================
+
+        :return:
+            boolean
+
+        """
+        try:
+            url = "{base}/diagrams/{diagramid}/{diagramVersion}?token={token}".format(
+                base=self._url, diagramid=diagram_id, diagramVersion=version_id, token=self._gis._con.token
+            )
+            return JobDiagram.delete(self._gis, url)
+        except:
+            self._handle_error(sys.exc_info())
+
     @property
     def saved_searches(self):
         """
@@ -1625,6 +1714,251 @@ class WorkflowManager:
 
         return return_obj["tableDefinitions"]
 
+    def share_job_template(self, template_id, group_ids):
+        """
+        Shares a job template with the list of groups
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        template_id         Required string. Saved Search id
+        ---------------     --------------------------------------------------------------------
+        group_ids           Required list. List of Workflow Group Ids
+        ===============     ====================================================================
+
+        :return:
+            boolean
+        """
+        try:
+            url = "{base}/jobTemplates/{templateId}/shareWith?token={token}".format(
+                base=self._url, templateId=template_id, token=self._gis._con.token
+            )
+            post_dict = {"groupIds": group_ids}
+
+            return_obj = json.loads(
+                self._gis._con.post(
+                    url,
+                    post_dict,
+                    add_token=False,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
+            )
+
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj:
+                return return_obj["success"]
+        except:
+            self._handle_error(sys.exc_info())
+
+    def job_template_share_details(self, template_id):
+        """
+        Returns the list of groups that the job_template is shared with by template_id.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        template_id         Template ID
+        ===============     ====================================================================
+
+        :return:
+            list of class:`~arcgis.gis.workflowmanager.Group` ID
+
+        """
+
+        url = "{base}/jobTemplates/{templateId}/shareWith?token={token}".format(
+            base=self._url, templateId=template_id, token=self._gis._con.token
+        )
+        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
+        return return_obj["groupIds"]
+
+    def lookups(self, type):
+        """
+        Returns LookUp Tables by given type
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        type                Required string.
+        ===============     ====================================================================
+
+        :return:
+           Workflow Manager :class:`LookUpTable <arcgis.gis.workflowmanager.LookUpTable>` Object
+
+        """
+        try:
+            return LookUpTable.get(
+                self._gis,
+                "{base}/lookups/{lookupType}".format(
+                    base=self._url, lookupType=type
+                ),
+                {"token": self._gis._con.token},
+            )
+        except:
+            self._handle_error(sys.exc_info())
+
+    def delete_lookup(self, type):
+        """
+        Deletes a job template with the given ID
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        type                Required string.
+        ===============     ====================================================================
+
+        :return:
+            status code
+
+        """
+        try:
+            res = LookUpTable.delete(
+                self._gis,
+                "{base}/lookups/{lookupType}?token={token}".format(
+                    base=self._url,
+                    lookupType=type,
+                    item=self._item.id,
+                    token=self._gis._con.token,
+                ),
+            )
+            return res
+        except:
+            self._handle_error(sys.exc_info())
+
+    def create_lookup(self, type, lookups):
+        """
+        Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        type                Required string. Lookup type
+        ---------------     --------------------------------------------------------------------
+        lookups             Required list. List of lookups to be created / updated
+        ===============     ====================================================================
+
+        :return:
+            boolean
+
+        """
+        try:
+            url = "{base}/lookups/{lookupType}?token={token}".format(
+                base=self._url, lookupType=type, token=self._gis._con.token
+            )
+
+            post_lookup = LookUpTable({"lookups": lookups})
+
+            return post_lookup.put(self._gis, url)
+        except:
+            self._handle_error(sys.exc_info())
+
+class LookUpTable(object):
+    """
+    Represents a Workflow Manager Look Up object with accompanying GET, POST, and DELETE methods
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    init_data           data object representing relevant parameters for GET or POST calls
+    ===============     ====================================================================
+    """
+
+    _camelCase_to_underscore = _camelCase_to_underscore
+    _underscore_to_camelcase = _underscore_to_camelcase
+
+    def __init__(self, init_data, gis=None, url=None):
+        for key in init_data:
+            setattr(self, _camelCase_to_underscore(key), init_data[key])
+        self._gis = gis
+        self._url = url
+
+    def __getattr__(self, item):
+        possible_fields = [
+            "default_assigned_to",
+            "last_updated_by",
+            "diagram_id",
+            "extended_property_table_definitions",
+            "description",
+            "job_template_name",
+            "job_template_id",
+            "default_start_date",
+            "default_priority_name",
+            "last_updated_date",
+            "job_start_date_type",
+            "diagram_name",
+            "default_job_duration",
+            "default_due_date",
+            "state",
+            "category",
+            "default_assigned_type",
+            "default_description",
+        ]
+        gis = object.__getattribute__(self, "_gis")
+        url = object.__getattribute__(self, "_url")
+        id = object.__getattribute__(self, "job_template_id")
+        full_object = json.loads(
+            json.dumps(gis._con.get(url, {"token": gis._con.token}))
+        )
+        try:
+            setattr(self, _camelCase_to_underscore(item), full_object[item])
+            return full_object[item]
+        except KeyError:
+            if item in possible_fields:
+                setattr(self, _camelCase_to_underscore(item), None)
+                return None
+            else:
+                raise KeyError(f'The attribute "{item}" is invalid for Job Templates')
+
+    def get(gis, url, params):
+        lookup_dict = json.loads(json.dumps(gis._con.get(url, params)))
+        return LookUpTable(lookup_dict, gis, url)
+
+    def put(self, gis, url):
+        put_dict = {
+            _underscore_to_camelcase(k): v
+            for k, v in self.__dict__.items()
+            if v is not None
+        }
+        return_obj = json.loads(
+            gis._con.put(
+                url,
+                put_dict,
+                add_token=False,
+                post_json=True,
+                try_json=False,
+                json_encode=False,
+            )
+        )
+        if "error" in return_obj:
+            gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
+        return_obj = {
+            _camelCase_to_underscore(k): v
+            for k, v in return_obj.items()
+            if v is not None and not k.startswith("_")
+        }
+        return return_obj
+
+    def delete(gis, url):
+        return_obj = json.loads(gis._con.delete(url, add_token=False, try_json=False))
+        if "error" in return_obj:
+            gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
+        return_obj = {
+            _camelCase_to_underscore(k): v
+            for k, v in return_obj.items()
+            if v is not None and not k.startswith("_")
+        }
+        return return_obj
 
 class SavedSearchesManager:
     """
@@ -1855,6 +2189,70 @@ class SavedSearchesManager:
         except:
             self._handle_error(sys.exc_info())
 
+    def share(self, search_id, group_ids):
+        """
+        Shares a saved search with the list of groups
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        search_id           Required string. Saved Search id
+        ---------------     --------------------------------------------------------------------
+        group_ids           Required list. List of Workflow Group Ids
+        ===============     ====================================================================
+
+        :return:
+            boolean
+        """
+        try:
+            url = "{base}/searches/{searchId}/shareWith?token={token}".format(
+                base=self._url, searchId=search_id, token=self._gis._con.token
+            )
+            post_dict = {"groupIds": group_ids}
+
+            return_obj = json.loads(
+                self._gis._con.post(
+                    url,
+                    post_dict,
+                    add_token=False,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
+            )
+
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj:
+                return return_obj["success"]
+        except:
+            self._handle_error(sys.exc_info())
+
+    def share_details(self, search_id):
+        """
+        Returns the list of groups that the saved search is shared with by searchId.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        search_id           Search ID
+        ===============     ====================================================================
+
+        :return:
+            list of class:`~arcgis.gis.workflowmanager.Group` ID
+
+        """
+
+        url = "{base}/searches/{searchId}/shareWith?token={token}".format(
+            base=self._url, searchId=search_id, token=self._gis._con.token
+        )
+        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
+        return return_obj["groupIds"]
 
 class Job(object):
     """
@@ -1993,7 +2391,7 @@ class Job(object):
             return return_obj["success"]
         return return_obj
 
-    def add_attachment(self, attachment):
+    def add_attachment(self, attachment, alias=None, folder=None):
         """
         Adds an attachment to the job
 
@@ -2001,6 +2399,10 @@ class Job(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         attachment          Filepath to attachment
+        ---------------     --------------------------------------------------------------------
+        alias               Optional string. Alias for the attachment
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. Folder for the attachment
         ===============     ====================================================================
 
         :return:
@@ -2013,6 +2415,7 @@ class Job(object):
         return_obj = json.loads(
             self._gis._con.post(
                 url,
+                params={"alias": alias, "folder": folder},
                 files={"attachment": attachment},
                 add_token=True,
                 try_json=False,
@@ -2276,6 +2679,54 @@ class Job(object):
         }
         return return_obj
 
+    def add_comment(self, comment):
+        """
+        Adds a comment to the job
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        comment             Required string. Comment to add to job
+        ===============     ====================================================================
+
+        :return:
+            Workflow Manager Comment Id
+
+        """
+        url = "{base}/jobs/{jobId}/comments".format(
+            base=self._url, jobId=self.job_id
+        )
+        post_obj = {"comment": comment}
+
+        return_obj = json.loads(
+            self._gis._con.post(
+                url,
+                post_obj,
+                add_token=False,
+                post_json=True,
+                try_json=False,
+                json_encode=False,
+            )
+        )
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        return return_obj["commentId"]
+
+    @property
+    def comments(self):
+        """
+        Gets the comments of a job given job ID
+
+        :return:
+            `list <https://docs.python.org/3/library/stdtypes.html#list>`_ of comments
+
+        """
+
+        url = "{base}/jobs/{jobId}/comments?token={token}".format(
+            base=self._url, jobId=self.job_id, token=self._gis._con.token
+        )
+        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+        return return_obj["jobComments"]
 
 class WMRole(object):
     """

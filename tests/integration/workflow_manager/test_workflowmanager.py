@@ -141,7 +141,7 @@ class TestWorkflowManager(unittest.TestCase):
         )
 
     def create_job(
-        self, count=1, template_name="Introduction to Workflow Manager", job_id=None
+            self, count=1, template_name="Introduction to Workflow Manager", job_id=None
     ):
         job_templates = self.connection.workflow_manager.job_templates
         job_template = {}
@@ -432,7 +432,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.role(test_id)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -451,8 +451,8 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         valid_role = {
             "description": "Role with basic privileges to manage jobs. Privileges "
-            "assigned are assign job to group, assign job to individual, "
-            "update holds, attachments and queries",
+                           "assigned are assign job to group, assign job to individual, "
+                           "update holds, attachments and queries",
             "privileges": [
                 "jobAssignGroup",
                 "jobUpdateHolds",
@@ -498,7 +498,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.wm_role(test_id)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     def test_create_wm_role_successfully_returns(self):
@@ -526,7 +526,7 @@ class TestWorkflowManager(unittest.TestCase):
             )
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -642,7 +642,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.group(test_id)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     def test_update_group(self):
@@ -679,7 +679,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.update_group(test_id, {})
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -720,39 +720,18 @@ class TestWorkflowManager(unittest.TestCase):
     def test_get_valid_searches(self):
         # Arrange
         valid_search = {
-            "definition": {
-                "displayNames": [
-                    "Assigned To",
-                    "Name",
-                    "Current Step",
-                    "Type",
-                    "Priority",
-                    "Due Date",
-                    "Status",
-                ],
-                "fields": [
-                    "assignedTo",
-                    "jobName",
-                    "currentStep",
-                    "jobTemplateName",
-                    "priority",
-                    "dueDate",
-                    "jobStatus",
-                ],
-                "num": 50,
-                "q": "\"assignedType='User' AND closed=0 AND assignedTo='\" "
-                '+ $currentUser + "\' "',
-                "sortFields": [
-                    {"field": "jobName", "sortOrder": "Asc"},
-                    {"field": "priority", "sortOrder": "Asc"},
-                ],
-                "start": 0,
-            },
-            "name": "My Jobs",
-            "searchId": "rrUF60TFQCe2K0vtgSsYpA",
-            "searchType": "Standard",
-            "sortIndex": 1000,
-        }
+            'searchId': 'rrUF60TFQCe2K0vtgSsYpA',
+            'name': 'My Jobs',
+            'definition': {'q': '"assignedType=\'User\' AND closed=0 AND assignedTo=\'" + $currentUser + "\' "',
+                           'fields': ['assignedTo', 'jobName', 'dueDate', 'jobTemplateName', 'currentStep', 'priority',
+                                      'jobStatus'],
+                           'displayNames': ['Assigned To', 'Name', 'Due', 'Type', 'Step', 'Priority', 'Status'],
+                           'sortFields': [{'field': 'jobName', 'sortOrder': 'Asc'},
+                                          {'field': 'priority', 'sortOrder': 'Asc'}],
+                           'start': 0,
+                           'num': 50},
+            'searchType': 'Standard',
+            'sortIndex': 1000}
 
         valid_chart = {
             "searchId": "KPHh4-l1SaKRkO8eZLoeEA",
@@ -784,7 +763,7 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         diagram_id = "abcde12345"
         user_query = (
-            "assignedType='User' AND closed=0 AND diagramId='" + diagram_id + "' "
+                "assignedType='User' AND closed=0 AND diagramId='" + diagram_id + "' "
         )
         expected = {
             "q": "assigned_type='User' AND closed=0 AND diagram='abcde12345' ",
@@ -816,7 +795,7 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         diagram_id = "abcde12345"
         user_query = (
-            "assignedType='User' AND closed=0 AND diagramId='" + diagram_id + "' "
+                "assignedType='User' AND closed=0 AND diagramId='" + diagram_id + "' "
         )
         expected = {
             "q": "assigned_type='User' AND closed=0 AND diagram='abcde12345' ",
@@ -847,7 +826,7 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         diagram_id = "abcde12345"
         user_query = (
-            "assignedType='User' AND closed=0 AND diagram_id='" + diagram_id + "' "
+                "assignedType='User' AND closed=0 AND diagram_id='" + diagram_id + "' "
         )
 
         # Act
@@ -857,7 +836,7 @@ class TestWorkflowManager(unittest.TestCase):
             )
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # region Create Saved Search
@@ -994,7 +973,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.saved_searches.delete(test_id)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1037,6 +1016,125 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Share Searches
+
+    def test_share_details_returns_successfully(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Search   " + uniqueness
+        search_id = uniqueness[0:22]
+        default_group_name = "Workflow Manager Admin " + self.connection.item_name
+        groups = self.connection.workflow_manager.groups
+
+        for group in groups:
+            if group["title"] == default_group_name:
+                break
+
+        search = self.connection.workflow_manager.saved_searches.create(
+            name=name,
+            definition={
+                "q": "closed=0",
+                "start": 0,
+                "num": 50,
+                "fields": [
+                    "assignedTo",
+                    "jobName",
+                    "currentStep",
+                    "jobTemplateName",
+                    "priority",
+                    "dueDate",
+                    "jobStatus",
+                ],
+                "displayNames": [
+                    "Assigned To",
+                    "Name",
+                    "Current Step",
+                    "Type",
+                    "Priority",
+                    "Due Date",
+                    "Status",
+                ],
+                "sortFields": [
+                    {"field": "jobName", "sortOrder": "Asc"},
+                    {"field": "priority", "sortOrder": "Asc"},
+                ],
+            },
+            search_type="Standard",
+            sort_index=5000,
+            search_id=search_id,
+        )
+
+        # Act
+        actual = self.connection.workflow_manager.saved_searches.share_details(search)
+
+        # Assert
+        self.assertIsInstance(actual, list, "Incorrect return type")
+        self.assertEqual(actual, [], "Incorrect return type")
+
+        self.connection.workflow_manager.saved_searches.share(search, [group["id"]])
+
+        actual_two = self.connection.workflow_manager.saved_searches.share_details(search)
+
+        self.assertIsInstance(actual_two, list, "Incorrect return type")
+        self.assertEqual(actual_two, [group["id"]], "Incorrect return type")
+
+    def test_share_saved_search_returns_successfully(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Search   " + uniqueness
+        search_id = uniqueness[0:22]
+        default_group_name = "Workflow Manager Admin " + self.connection.item_name
+        groups = self.connection.workflow_manager.groups
+
+        for group in groups:
+            if group["title"] == default_group_name:
+                break
+
+        search = self.connection.workflow_manager.saved_searches.create(
+            name=name,
+            definition={
+                "q": "closed=0",
+                "start": 0,
+                "num": 50,
+                "fields": [
+                    "assignedTo",
+                    "jobName",
+                    "currentStep",
+                    "jobTemplateName",
+                    "priority",
+                    "dueDate",
+                    "jobStatus",
+                ],
+                "displayNames": [
+                    "Assigned To",
+                    "Name",
+                    "Current Step",
+                    "Type",
+                    "Priority",
+                    "Due Date",
+                    "Status",
+                ],
+                "sortFields": [
+                    {"field": "jobName", "sortOrder": "Asc"},
+                    {"field": "priority", "sortOrder": "Asc"},
+                ],
+            },
+            search_type="Standard",
+            sort_index=5000,
+            search_id=search_id,
+        )
+
+        # Act
+        actual = self.connection.workflow_manager.saved_searches.share(search, [group["id"]])
+
+        # Assert
+        self.assertIsInstance(actual, bool, "Incorrect return type")
+        self.assertEqual(actual, True, "Incorrect return type")
+
+    # endregion
+
     # endregion
 
     # region Settings
@@ -1062,7 +1160,7 @@ class TestWorkflowManager(unittest.TestCase):
             x
             for x in settings
             if x["propName"] == "smtpDefaultSenderDisplayName"
-            and x["value"] == "Updated Name"
+               and x["value"] == "Updated Name"
         ]
 
         # Assert
@@ -1122,7 +1220,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1182,7 +1280,7 @@ class TestWorkflowManager(unittest.TestCase):
             )
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1210,7 +1308,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.jobs.get(test_id)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1344,7 +1442,7 @@ class TestWorkflowManager(unittest.TestCase):
         )
 
     def test_update_job_with_updated_extended_properties_with_domain_successfully_returns(
-        self,
+            self,
     ):
         # Arrange
         job_id = self.create_job_robust()[0]
@@ -1378,7 +1476,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.jobs.get(job_id).update(updated_job_object)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1404,7 +1502,35 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.jobs.close(test_id)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
+    # region Reopen Jobs
+
+    def test_reopen_jobs(self):
+        # Arrange
+        id_list = self.create_job(count=3)
+
+        # Act
+        close_jobs = self.connection.workflow_manager.jobs.close(id_list)
+        reopen_jobs = self.connection.workflow_manager.jobs.reopen(id_list)
+
+        # Assert
+        self.assertTrue(close_jobs, "Incorrect return type")
+        self.assertTrue(reopen_jobs, "Incorrect return type")
+
+    def test_reopen_jobs_returns_not_found(self):
+        # Arrange
+        test_id = ["bad_id_12345"]
+
+        # Act
+        try:
+            self.connection.workflow_manager.jobs.reopen(test_id)
+        except Exception as testException:
+            assert True, (
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1430,7 +1556,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.jobs.upgrade(test_id)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1456,7 +1582,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.jobs.delete(test_id)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1487,10 +1613,10 @@ class TestWorkflowManager(unittest.TestCase):
         new_location = {
             "geometryType": "Polygon",
             "geometry": '{"rings":[[[-6848757.734349992,3330625.6782390587],'
-            "[-2256822.369376309,6774572.424655061],"
-            "[-2935181.886149995,1973920.9766344912],"
-            "[-6848757.734349992,3330625.6782390587]]],"
-            '"spatialReference":{"latestWkid":3857,"wkid":102100}}',
+                        "[-2256822.369376309,6774572.424655061],"
+                        "[-2935181.886149995,1973920.9766344912],"
+                        "[-6848757.734349992,3330625.6782390587]]],"
+                        '"spatialReference":{"latestWkid":3857,"wkid":102100}}',
         }
         geo = Geometry(new_location["geometry"])
 
@@ -1520,10 +1646,10 @@ class TestWorkflowManager(unittest.TestCase):
         new_location = {
             "geometryType": "Polyline",
             "geometry": '{"paths":[[[-5283327.395069996,-1730934.0112043545],'
-            "[1500210.4448956922,1921738.3728870638],"
-            "[-10397060.1336323,4739512.983591061],"
-            "[-10449247.514693994,4739512.983591061]]],"
-            '"spatialReference":{"latestWkid":3857,"wkid":102100}}',
+                        "[1500210.4448956922,1921738.3728870638],"
+                        "[-10397060.1336323,4739512.983591061],"
+                        "[-10449247.514693994,4739512.983591061]]],"
+                        '"spatialReference":{"latestWkid":3857,"wkid":102100}}',
         }
         geo = Geometry(new_location["geometry"])
 
@@ -1553,7 +1679,7 @@ class TestWorkflowManager(unittest.TestCase):
         new_location = {
             "geometryType": "Multipoint",
             "geometry": '{"spatialReference":{"latestWkid":3857,"wkid":102100},'
-            '"points":[[15067267.015569989,-2983278.2826283537]]}',
+                        '"points":[[15067267.015569989,-2983278.2826283537]]}',
         }
         geo = Geometry(new_location["geometry"])
         # Act
@@ -1607,7 +1733,7 @@ class TestWorkflowManager(unittest.TestCase):
             )
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     def test_job_linked_attachment_returns_successfully(self):
@@ -1650,7 +1776,7 @@ class TestWorkflowManager(unittest.TestCase):
             )
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     def test_add_attachment_returns_successfully(self):
@@ -1678,7 +1804,7 @@ class TestWorkflowManager(unittest.TestCase):
         except Exception as testException:
             print(testException)
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     def test_update_attachment_returns_successfully(self):
@@ -1735,7 +1861,7 @@ class TestWorkflowManager(unittest.TestCase):
             )
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1761,7 +1887,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.jobs.get(job_id).history
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1796,7 +1922,7 @@ class TestWorkflowManager(unittest.TestCase):
             )
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1829,8 +1955,41 @@ class TestWorkflowManager(unittest.TestCase):
             )
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
+
+    # endregion
+
+    # region Comments
+
+    def test_comments_returns_successfully(self):
+        # Arrange
+        job_id = self.create_job()[0]
+        url = "../README.md"
+
+        # Act
+        self.connection.workflow_manager.jobs.get(job_id).add_comment("This is a comment")
+        self.connection.workflow_manager.jobs.get(job_id).add_comment("This is a comment")
+        comments = self.connection.workflow_manager.jobs.get(job_id).comments
+        has_comment = len(comments) == 2
+
+        # Assert
+        self.assertIsInstance(comments, list, "Incorrect return type")
+        self.assertTrue(has_comment, "comments from job are not returned")
+
+    def test_add_comments_returns_successfully(self):
+        # Arrange
+        job_id = self.create_job()[0]
+        url = "../README.md"
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.get(job_id).add_comment("This is a comment")
+        comments = self.connection.workflow_manager.jobs.get(job_id).comments
+        has_comment = comments[0]['commentId'] == actual
+
+        # Assert
+        self.assertIsInstance(actual, str, "Incorrect return type")
+        self.assertTrue(has_comment, "commentId is not added to the job")
 
     # endregion
 
@@ -1904,7 +2063,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.job_template(test_id)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1957,7 +2116,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -1985,8 +2144,63 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.delete_job_template(test_id)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
+
+    # endregion
+
+    # region Share Templates
+
+    def test_job_template_share_details_returns_successfully(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Search   " + uniqueness
+        search_id = uniqueness[0:22]
+        default_group_name = "Workflow Manager Admin " + self.connection.item_name
+        groups = self.connection.workflow_manager.groups
+
+        for group in groups:
+            if group["title"] == default_group_name:
+                break
+
+        template = self.create_job_template()
+
+        # Act
+        actual = self.connection.workflow_manager.job_template_share_details(template)
+
+        # Assert
+        self.assertIsInstance(actual, list, "Incorrect return type")
+        self.assertEqual(actual, [], "Incorrect return type")
+
+        self.connection.workflow_manager.share_job_template(template, [group["id"]])
+
+        actual_two = self.connection.workflow_manager.job_template_share_details(template)
+
+        self.assertIsInstance(actual_two, list, "Incorrect return type")
+        self.assertEqual(actual_two, [group["id"]], "Incorrect return type")
+
+    def test_share_job_template_returns_successfully(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Search   " + uniqueness
+        search_id = uniqueness[0:22]
+        default_group_name = "Workflow Manager Admin " + self.connection.item_name
+        groups = self.connection.workflow_manager.groups
+
+        for group in groups:
+            if group["title"] == default_group_name:
+                break
+
+        template = self.create_job_template()
+
+        # Act
+        actual = self.connection.workflow_manager.share_job_template(template, [group["id"]])
+
+        # Assert
+        self.assertIsInstance(actual, bool, "Incorrect return type")
+        self.assertEqual(actual, True, "Incorrect return type")
 
     # endregion
 
@@ -2001,7 +2215,7 @@ class TestWorkflowManager(unittest.TestCase):
         intro_diagram = {
             "active": True,
             "description": "This diagram will provide a walkthrough of some of the basic steps that can "
-            "be used to make up a Workflow",
+                           "be used to make up a Workflow",
             "diagram_id": "99o2QTePTqq-BHRHK_Aeag",
             "diagramName": "Introduction to Workflow Manager",
         }
@@ -2052,6 +2266,356 @@ class TestWorkflowManager(unittest.TestCase):
         # Act
         with self.assertRaisesRegex(Exception, "Diagram bad_id_12345 was not found"):
             self.connection.workflow_manager.diagram(test_id)
+
+    # endregion
+
+    # region Get Diagram Version
+
+    def test_get_specific_diagram_version(self):
+        # Arrange
+        old_id = self.create_diagram()
+        actual = self.connection.workflow_manager.update_diagram(
+            body={
+                "annotations": [],
+                "active": True,
+                "data_sources": [
+                    {"name": "dsource", "sourceType": "string", "url": "string"}
+                ],
+                "description": "UPDATED",
+                "diagram_id": old_id,
+                "diagram_name": "UPDATED " + str(datetime.datetime.now()),
+                "diagram_version": 2,
+                "display_grid": True,
+                "initial_step_id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                "initial_step_name": "Start/End",
+                "steps": [
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": False,
+                        "color": "130, 202, 237",
+                        "description": "Step to be put at the start and end of a workflow",
+                        "helpText": "Start/End help text",
+                        "helpUrl": "Start/End help url",
+                        "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                        "labelColor": "black",
+                        "name": "Start/End",
+                        "outlineColor": "130, 202, 237",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0,0,100,50",
+                        "proceedNext": True,
+                        "shape": 3,
+                        "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                    },
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": True,
+                        "color": "242, 226, 121",
+                        "description": "Step to indicate manual work, with no additional logic",
+                        "helpText": "Manual Step help text",
+                        "helpUrl": "Manual Step help url",
+                        "id": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                        "labelColor": "black",
+                        "name": "Manual Step 1",
+                        "outlineColor": "242, 226, 121",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "f7c67858-5ccf-f428-9356-72ada9d8600a",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 126}, {"x": 0, "y": 174}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0, -100, 100, 50",
+                        "proceedNext": True,
+                        "shape": 1,
+                        "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
+                    },
+                ],
+            }
+        )
+        version_one = self.connection.workflow_manager.diagram_version(old_id, 1)
+        version_two = self.connection.workflow_manager.diagram_version(old_id, 2)
+
+        # Act
+
+        # Assert
+        self.assertEqual(version_one.description, "Test Description", "Incorrect Version description")
+        self.assertEqual(version_two.description, "UPDATED", "Incorrect Version description")
+
+    def test_get_diagram_version_returns_error(self):
+        # Arrange
+        old_id = self.create_diagram()
+        actual = self.connection.workflow_manager.update_diagram(
+            body={
+                "annotations": [],
+                "active": True,
+                "data_sources": [
+                    {"name": "dsource", "sourceType": "string", "url": "string"}
+                ],
+                "description": "UPDATED",
+                "diagram_id": old_id,
+                "diagram_name": "UPDATED " + str(datetime.datetime.now()),
+                "diagram_version": 2,
+                "display_grid": True,
+                "initial_step_id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                "initial_step_name": "Start/End",
+                "steps": [
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": False,
+                        "color": "130, 202, 237",
+                        "description": "Step to be put at the start and end of a workflow",
+                        "helpText": "Start/End help text",
+                        "helpUrl": "Start/End help url",
+                        "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                        "labelColor": "black",
+                        "name": "Start/End",
+                        "outlineColor": "130, 202, 237",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0,0,100,50",
+                        "proceedNext": True,
+                        "shape": 3,
+                        "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                    },
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": True,
+                        "color": "242, 226, 121",
+                        "description": "Step to indicate manual work, with no additional logic",
+                        "helpText": "Manual Step help text",
+                        "helpUrl": "Manual Step help url",
+                        "id": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                        "labelColor": "black",
+                        "name": "Manual Step 1",
+                        "outlineColor": "242, 226, 121",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "f7c67858-5ccf-f428-9356-72ada9d8600a",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 126}, {"x": 0, "y": 174}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0, -100, 100, 50",
+                        "proceedNext": True,
+                        "shape": 1,
+                        "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
+                    },
+                ],
+            }
+        )
+
+        # Act
+        try:
+            # version 3 does not exist
+            self.connection.workflow_manager.diagram_version(old_id, 3)
+
+        except Exception as testException:
+            assert True, (
+                    "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
+    # region Delete Diagram Version
+
+    def test_delete_specific_diagram_version(self):
+        # Arrange
+        old_id = self.create_diagram()
+        actual = self.connection.workflow_manager.update_diagram(
+            body={
+                "annotations": [],
+                "active": True,
+                "data_sources": [
+                    {"name": "dsource", "sourceType": "string", "url": "string"}
+                ],
+                "description": "UPDATED",
+                "diagram_id": old_id,
+                "diagram_name": "UPDATED " + str(datetime.datetime.now()),
+                "diagram_version": 2,
+                "display_grid": True,
+                "initial_step_id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                "initial_step_name": "Start/End",
+                "steps": [
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": False,
+                        "color": "130, 202, 237",
+                        "description": "Step to be put at the start and end of a workflow",
+                        "helpText": "Start/End help text",
+                        "helpUrl": "Start/End help url",
+                        "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                        "labelColor": "black",
+                        "name": "Start/End",
+                        "outlineColor": "130, 202, 237",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0,0,100,50",
+                        "proceedNext": True,
+                        "shape": 3,
+                        "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                    },
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": True,
+                        "color": "242, 226, 121",
+                        "description": "Step to indicate manual work, with no additional logic",
+                        "helpText": "Manual Step help text",
+                        "helpUrl": "Manual Step help url",
+                        "id": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                        "labelColor": "black",
+                        "name": "Manual Step 1",
+                        "outlineColor": "242, 226, 121",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "f7c67858-5ccf-f428-9356-72ada9d8600a",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 126}, {"x": 0, "y": 174}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0, -100, 100, 50",
+                        "proceedNext": True,
+                        "shape": 1,
+                        "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
+                    },
+                ],
+            }
+        )
+        version_one = self.connection.workflow_manager.diagram_version(old_id, 1)
+        version_two = self.connection.workflow_manager.diagram_version(old_id, 2)
+
+        # Act
+        actual = self.connection.workflow_manager.delete_diagram_version(old_id, 2)
+
+        # Assert
+        self.assertEqual(version_one.description, "Test Description", "Incorrect Version description")
+        self.assertEqual(version_two.description, "UPDATED", "Incorrect Version description")
+        self.assertTrue(actual, "Deleted diagram version successfully")
+
+    def test_delete_diagram_returns_error(self):
+        # Arrange
+        old_id = self.create_diagram()
+        actual = self.connection.workflow_manager.update_diagram(
+            body={
+                "annotations": [],
+                "active": True,
+                "data_sources": [
+                    {"name": "dsource", "sourceType": "string", "url": "string"}
+                ],
+                "description": "UPDATED",
+                "diagram_id": old_id,
+                "diagram_name": "UPDATED " + str(datetime.datetime.now()),
+                "diagram_version": 2,
+                "display_grid": True,
+                "initial_step_id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                "initial_step_name": "Start/End",
+                "steps": [
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": False,
+                        "color": "130, 202, 237",
+                        "description": "Step to be put at the start and end of a workflow",
+                        "helpText": "Start/End help text",
+                        "helpUrl": "Start/End help url",
+                        "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                        "labelColor": "black",
+                        "name": "Start/End",
+                        "outlineColor": "130, 202, 237",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0,0,100,50",
+                        "proceedNext": True,
+                        "shape": 3,
+                        "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                    },
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": True,
+                        "color": "242, 226, 121",
+                        "description": "Step to indicate manual work, with no additional logic",
+                        "helpText": "Manual Step help text",
+                        "helpUrl": "Manual Step help url",
+                        "id": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                        "labelColor": "black",
+                        "name": "Manual Step 1",
+                        "outlineColor": "242, 226, 121",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "f7c67858-5ccf-f428-9356-72ada9d8600a",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 126}, {"x": 0, "y": 174}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0, -100, 100, 50",
+                        "proceedNext": True,
+                        "shape": 1,
+                        "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
+                    },
+                ],
+            }
+        )
+
+        # Act
+        try:
+            # version 3 does not exist
+            self.connection.workflow_manager.delete_diagram_version(old_id, 3)
+
+        except Exception as testException:
+            assert True, (
+                    "Expected error returned during test: " + testException.__str__()
+            )
 
     # endregion
 
@@ -2184,7 +2748,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -2210,7 +2774,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.delete_diagram(test_id)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -2246,7 +2810,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager.job_diagram(test_id)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -2279,6 +2843,78 @@ class TestWorkflowManager(unittest.TestCase):
         # Assert
         self.assertIsInstance(actual, list, "Incorrect return type")
         self.assertTrue(contains_table, "Incorrect return type")
+
+    # endregion
+
+    # region  LookUp Tables
+
+    # region Get LookUps by Type
+
+    def test_get_lookups(self):
+        # Act
+        priorities = self.connection.workflow_manager.lookups("priority")
+        statuses = self.connection.workflow_manager.lookups("status")
+
+        # Assert
+        self.assertIsInstance(statuses.lookups, list, "Incorrect lookups returned")
+        self.assertIsInstance(priorities.lookups, list, "Incorrect lookups returned")
+
+    def test_get_lookups_returns_not_found(self):
+        # Arrange
+        test_type = "bad_id_12345"
+
+        # Act
+        try:
+            self.connection.workflow_manager.lookups(test_type)
+        except Exception as testException:
+            assert True, (
+                    "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
+    # region Create Look up Table
+
+    def test_create_lookup_successfully_returns(self):
+        # Arrange
+        lookups = [{"lookupName": "Low", "value": 0},
+                   {"lookupName": "Medium", "value": 5},
+                   {"lookupName": "High", "value": 10},
+                   {"lookupName": "EXTRA", "value": 15},
+                   {"lookupName": "TEST", "value": 110}]
+
+        # Act
+        actual = self.connection.workflow_manager.create_lookup("priority", lookups)
+        testing = self.connection.workflow_manager.lookups("priority")
+
+        # Assert
+        self.assertIsInstance(actual, bool, "Incorrect return type")
+        self.assertEqual(actual, True, "Incorrect size")
+        self.assertEqual(5, len(testing.lookups), "Incorrect size")
+
+    # endregion
+
+    # region Delete LookupTable
+
+    def test_delete_lookup_successfully_returns(self):
+        # Arrange
+        lookups = [{"lookupName": "Low", "value": 0},
+                   {"lookupName": "Medium", "value": 5},
+                   {"lookupName": "High", "value": 10},
+                   {"lookupName": "EXTRA", "value": 15},
+                   {"lookupName": "TEST", "value": 110}]
+
+        # Act
+        actual = self.connection.workflow_manager.create_lookup("test", lookups)
+        testing = self.connection.workflow_manager.delete_lookup("test")
+
+        # Assert
+        self.assertIsInstance(actual, bool, "Incorrect return type")
+        self.assertEqual(actual, True, "Incorrect size")
+        self.assertIsInstance(testing, bool, "Incorrect return type")
+        self.assertEqual(testing, True, "Incorrect size")
+
+    # endregion
 
     # endregion
 
