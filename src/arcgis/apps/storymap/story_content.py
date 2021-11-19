@@ -1075,7 +1075,6 @@ class Map(object):
 
     def __init__(self, item: Optional[arcgis.gis.Item] = None, **kwargs):
         self._story = kwargs.pop("story", None)
-        self._type = "webmap"
         self.node = kwargs.pop("node_id", None)
         # Check if node exists else create new instance
         existing = self._check_node()
@@ -1098,6 +1097,9 @@ class Map(object):
             self._viewpoint = self._story._properties["resources"][self.resource_node][
                 "data"
             ]["viewpoint"]
+            self._zoom = self._story._properties["resources"][self.resource_node][
+                "data"
+            ]["zoom"]
             self._type = self._story._properties["resources"][self.resource_node][
                 "data"
             ]["itemType"]
@@ -1113,20 +1115,19 @@ class Map(object):
                 elif item.type == "Web Scene":
                     map_item = arcgis.mapping.WebScene(item)
                 else:
-                    raise ValueError("Item must be of Type Webmap or Web Scene")
+                    raise ValueError("Item must be of Type Web Map or Web Scene")
             # Assign properties
             self.node = "n-" + uuid.uuid4().hex[0:6]
             self.resource_node = "r-" + item.id
             self._path = item
-            if len(map_item._mapview.center) > 0:
-                self._center = map_item._mapview.center
-            else:
-                self._center = None
-            if len(map_item._mapview.extent) > 0:
-                self._extent = map_item._mapview.extent
-            else:
-                self._extent = None
-            self._viewpoint = None
+            self._center = map_item._mapview.center
+            self._extent = map_item._mapview.extent
+            self._zoom = map_item._mapview.zoom if map_item.zoom is not False else 2
+            # construct viewpoint
+            self._viewpoint = {}
+            self._viewpoint["rotation"] = map_item._mapview.rotation
+            self._viewpoint["scale"] = map_item._mapview.scale
+            self._viewpoint["targetGeometry"] = {}
             layers = []
             # Create layer dictionary:
             for layer in map_item.layers:
@@ -1258,7 +1259,10 @@ class Map(object):
         ``Values: "standard" | "wide" | "full" | "float"``
         """
         if self._check_node() is True:
-            return self._story._properties["nodes"][self.node]["config"]["size"]
+            if "config" in self._story._properties["nodes"][self.node]:
+                return self._story._properties["nodes"][self.node]["config"]["size"]
+            else:
+                return None
 
     # ----------------------------------------------------------------------
     @display.setter
@@ -1283,17 +1287,24 @@ class Map(object):
         node = previous_node if previous_node is not None else self.node
 
         # Create webmap nodes
+        # This represents the map as seen in the story
         self._story._properties["nodes"][node] = {
             "type": "webmap",
             "data": {
                 "map": self.resource_node,
                 "caption": caption,
                 "alt": alt_text,
+                "mapLayers": self._map_layers,
+                "extent": self._extent,
+                "center": self._center,
+                "zoom": 2,
+                "viewpoint": self._viewpoint,
             },
             "config": {"size": display},
         }
 
         # Create resource node
+        # This represents the original map item and it's properties
         self._story._properties["resources"][self.resource_node] = {
             "type": "webmap",
             "data": {
@@ -1317,7 +1328,6 @@ class Map(object):
 
         new_map._add_map(
             caption=self.caption,
-            alt_text=self.alt_text,
             display=self.display,
             previous_node=self.node,
             story=self._story,

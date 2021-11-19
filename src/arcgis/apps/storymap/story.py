@@ -225,7 +225,7 @@ class StoryMap(object):
         Get a list of the nodes that are linked in the navigation node.
         """
         # navigation item has list of links corresponding to the text nodes in the navigation
-        nav = self.get("navigation")[0]
+        nav = self.get(type="navigation")[0]
         for key, value in nav.items():
             node_id = key
         try:
@@ -295,7 +295,8 @@ class StoryMap(object):
                         spec_type.append(node)
                 else:
                     # Find all story content instances (i.e. Text)
-                    if type.lower() in keyword._type:
+                    # Map types are upercase and have spaces so handle
+                    if type.lower() in keyword._type.lower().replace(" ", ""):
                         spec_type.append(node)
             return spec_type
 
@@ -482,7 +483,7 @@ class StoryMap(object):
             A list of strings that are the node ids for the text nodes that belong to credits.
         """
         # Find credit node
-        dict_node = self.get("credits")[0]
+        dict_node = self.get(type="credits")[0]
         # Get credit node id
         for key, value in dict_node.items():
             credits_node = key
@@ -746,7 +747,7 @@ class StoryMap(object):
         res = self._item.update(item_properties=p)
         self._item = self._gis.content.get(self._itemid)
 
-        return res
+        return self._item.url
 
     # ----------------------------------------------------------------------
     def delete_story(self):
