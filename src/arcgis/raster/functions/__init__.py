@@ -11510,6 +11510,162 @@ def contour(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
+def dimensional_moving_statistics(
+    raster,
+    dimension=None,
+    backward_window=1,
+    forward_window=1,
+    statistics_type="MEAN",
+    percentile_value=90,
+    percentile_interpolation_type="AUTO_DETECT",
+    circular_wrap_value=360,
+):
+    """
+    The sum function calculates statistics over a moving window on multidimensional data along a specified dimension.
+
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a float.
+    --------------------------------     --------------------------------------------------------------------
+    dimension                            Optional string. The name of the dimension along which the window will move.
+
+                                         The default value is the first dimension other than x,y found in the 
+                                         input multidimensional raster.
+    --------------------------------     --------------------------------------------------------------------
+    backward_window                      Optional integer. The value of how many slices before or above to 
+                                         be included in the defined window. The value must be a positive integer 
+                                         from 1 to 100. The default value is 1.
+
+                                         The unit of this parameter is slice.
+    --------------------------------     --------------------------------------------------------------------
+    forward_window                       Optional integer. The value of how many slices after or below to 
+                                         be included in the defined window. The value must be a positive integer 
+                                         from 1 to 100. The default value is 1.
+
+                                         The unit of this parameter is slice.
+    --------------------------------     --------------------------------------------------------------------
+    statistics_type                      Optional string. Statistic type to be calculated. Default is MEAN
+
+                                            - MEAN - The mean (average value) of the cells in the defined \
+                                            window will be calculated. This is the default.
+
+                                            - MAJORITY - The majority (value that occurs most often) of the \
+                                            cells in the defined window will be identified.
+
+                                            - MAXIMUM - The maximum (largest value) of the cells in the \
+                                            defined window will be identified.
+
+                                            - MEDIAN - The median of the cells in the neighborhood will be \
+                                            identified.
+
+                                            - MINIMUM - The minimum (smallest value) of the cells in the \
+                                            neighborhood will be identified..
+
+                                            - PERCENTILE - A percentile of the cells in the neighborhood \ 
+                                            will be calculated. When this statistics type is selected, the \ 
+                                            Percentile Value and Percentile Interpolation Type parameters \ 
+                                            become available. Use these new parameters to designate the \ 
+                                            percentile to calculate and choose the interpolation type to \ 
+                                            use, respectively.
+    --------------------------------     --------------------------------------------------------------------
+    percentile_value                     Optional float. The percentile that will be calculated when PERCENTILE
+                                         is selected as the statistics type. The default is 90, for the 90th percentile.
+
+                                         The values can range from 0 through 100. The 0th percentile is essentially 
+                                         equivalent to the minimum statistic, and the 100th percentile is equivalent 
+                                         to the maximum statistic, with the exception that the result will be floating 
+                                         point. A value of 50 will produce the same result as the median statistic.
+    --------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type        Optional string. Specifies the method of interpolation to be used when the 
+                                         specified percentile value lies between two input cell values.
+
+                                            - AUTO_DETECT - If the input value raster has integer pixel type, the \
+                                            NEAREST method is used. If the input value raster has floating point \
+                                            pixel type, then the LINEAR method is used. This is the default.
+
+                                            - NEAREST - Nearest value to the desired percentile. In this case, the \
+                                            output pixel type is same as that of the input value raster.
+
+                                            - LINEAR - Weighted average of two surrounding values from the desired \
+                                            percentile. In this case, the output pixel type is floating point.
+    --------------------------------     --------------------------------------------------------------------
+    circular_wrap_value                  Optional float. The value that will be used to round a linear value to 
+                                         the range of a given circular mean.
+
+                                         Its value must be positive. The default value is 360 degrees.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Calculates MEAN statistics over a moving window on multidimensional data along StdTime dimension.
+
+        op = dimensional_moving_statistics(raster, "StdTime")
+
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "DimensionalMovingStatistics",
+        "rasterFunctionArguments": {"Raster": raster},
+    }
+
+    if dimension is not None:
+        template_dict["rasterFunctionArguments"]["Dimension"] = dimension
+    if backward_window is not None:
+        template_dict["rasterFunctionArguments"]["BackwardWindow"] = backward_window
+    if forward_window is not None:
+        template_dict["rasterFunctionArguments"]["ForwardWindow"] = forward_window
+
+    statistics_types = {
+        "MEAN": 3,
+        "CIRCULAR_MEAN": 13,
+        "MAJORITY": 1,
+        "MAXIMUM": 2,
+        "MEDIAN": 4,
+        "MINIMUM": 5,
+        "PERCENTILE": 12,
+    }
+    if statistics_type is not None:
+        if statistics_type.upper() not in statistics_types.keys():
+            raise RuntimeError(
+                "statistics_type should be one of the following "
+                + str(statistics_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["StatisticsType"] = statistics_types[
+            statistics_type
+        ]
+
+    if percentile_value is not None:
+        template_dict["rasterFunctionArguments"]["percentile_value"] = percentile_value
+
+    percentile_interpolation_type_list = ["AUTO_DETECT", "NEAREST", "LINEAR"]
+    if percentile_interpolation_type is not None:
+        if (
+            percentile_interpolation_type.upper()
+            not in percentile_interpolation_type_list
+        ):
+            raise RuntimeError(
+                "percentile_interpolation_type should be one of the following "
+                + str(percentile_interpolation_type_list)
+            )
+        template_dict["rasterFunctionArguments"][
+            "percentile_interpolation_type"
+        ] = percentile_interpolation_type
+
+    if circular_wrap_value is not None:
+        template_dict["rasterFunctionArguments"][
+            "CircularWrapValue"
+        ] = circular_wrap_value
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
 class RFT:
     def __init__(self, raster_function_template, gis=None):
         try:

@@ -211,6 +211,10 @@ detect_change_using_change_analysis_raster
 __________________________________________
 .. autofunction:: arcgis.raster.functions.detect_change_using_change_analysis_raster
 
+dimensional_moving_statistics
+_____________________________
+.. autofunction:: arcgis.raster.functions.dimensional_moving_statistics
+
 divide
 ______
 .. autofunction:: arcgis.raster.functions.divide
