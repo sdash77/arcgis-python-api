@@ -123,6 +123,7 @@ class StoryMap(object):
                 "Web Application",
                 "smstatusdraft",
                 "smversiondraft:20.35.0",
+                "smdraftversion:python-api-1.0",
                 "smsdraftresourceid:draft_" + str(int(time.time())) + ".json",
             ]
         )
