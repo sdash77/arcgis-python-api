@@ -232,7 +232,14 @@ class StoryMap(object):
         for key, value in nav.items():
             node_id = key
         try:
-            return self._properties["nodes"][node_id]["data"]["links"]
+            links = self._properties["nodes"][node_id]["data"]["links"]
+            node_ids = []
+            for link in links:
+                for key, value in link.items():
+                    # Only return list of node_ids this way easier for navigation method
+                    if key == "nodeId":
+                        node_ids.append(value)
+            return node_ids
         except:
             return None
 
