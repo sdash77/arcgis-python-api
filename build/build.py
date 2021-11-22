@@ -42,7 +42,7 @@ SUPPORTED_LINUX = ['linux-64']
 SUPPORTED_OSX = ['osx-64']
 SUPPORTED_UNIX = SUPPORTED_LINUX + SUPPORTED_OSX
 SUPPORTED_OSES = SUPPORTED_WIN + SUPPORTED_LINUX + SUPPORTED_OSX
-SUPPORTED_PYS = ['3.6', '3.7', '3.8', '3.9']  # , '3.9'
+SUPPORTED_PYS = ['3.7', '3.8', '3.9']  # , '3.9'
 DEFAULT_PYS = SUPPORTED_PYS
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
