@@ -40,10 +40,10 @@ storymap_2 = {
         "n-aTn8ak": {
             "type": "storycover",
             "data": {
-                "type": "full",
+                "type": "minimal",
                 "title": "",
                 "summary": "",
-                "byline": "User Name",
+                "byline": "",
                 "titlePanelPosition": "start",
             },
         },

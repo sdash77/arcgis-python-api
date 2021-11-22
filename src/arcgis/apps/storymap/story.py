@@ -106,12 +106,14 @@ class StoryMap(object):
     def _create_new_storymap(self):
         # get template from _ref folder
         template = arcgis.apps.storymap._ref.storymap_2
+        # add correct by-line
+        template["nodes"]["n-aTn8ak"]["data"]["byline"] = self._gis._username
         # set properties
         self._properties = template
         # assign text for resource call
         text = json.dumps(template)
         # create a temporary title
-        title = "StoryMap %s" % uuid.uuid4().hex[:10]
+        title = "StoryMap via Python %s" % uuid.uuid4().hex[:10]
         # will be posted as a draft using these keywords
         typeKeywords = ",".join(
             [
@@ -304,7 +306,7 @@ class StoryMap(object):
     def cover(
         self,
         title: Optional[str] = None,
-        type: str = "full",
+        type: str = None,
         summary: Optional[str] = None,
         by_line: Optional[str] = None,
         image: Optional[Image] = None,
@@ -322,9 +324,8 @@ class StoryMap(object):
         title               Optional string. The title of the StoryMap cover.
         ---------------     --------------------------------------------------------------------
         type                Optional string. The type of story cover to be used in the story.
-                            By default, it is "full"
 
-                            Values: "full" | "sidebyside" | "minimal"
+                            ``Values: "full" | "sidebyside" | "minimal"``
         ---------------     --------------------------------------------------------------------
         summary             Optional string. The description of the story.
         ---------------     --------------------------------------------------------------------
@@ -356,7 +357,7 @@ class StoryMap(object):
         self._properties["nodes"][story_cover_node] = {
             "type": "storycover",
             "data": {
-                "type": type,
+                "type": orig_data["type"] if type is None else type,
                 "title": orig_data["title"] if title is None else title,
                 "summary": orig_data["summary"] if summary is None else summary,
                 "byline": orig_data["byline"] if by_line is None else by_line,
@@ -370,6 +371,12 @@ class StoryMap(object):
                 # must be added to story resources
                 image._add_image(story=self)
             self._properties["nodes"][story_cover_node]["children"] = [image.node]
+        else:
+            # get original image
+            if "children" in self._properties["nodes"][story_cover_node]:
+                media = self._properties["nodes"][story_cover_node]["children"][0]
+                self._properties["nodes"][story_cover_node]["children"] = [media]
+
         return self._properties["nodes"][story_cover_node]
 
     # ----------------------------------------------------------------------
@@ -460,6 +467,8 @@ class StoryMap(object):
         self,
         content: Optional[str] = None,
         attribution: Optional[str] = None,
+        heading: Optional[str] = None,
+        description: Optional[str] = None,
     ):
         """
         Credits are found at the end of the story and are always the last node. Content and
@@ -474,9 +483,15 @@ class StoryMap(object):
                             the credits.)
 
                             Make sure text has '<strong> </strong>' tags.
+                            Adds to the existing credits.
         ---------------     --------------------------------------------------------------------
         attribution         Optional String. The attribution to be added. (Seen on right side of
                             the credits.)
+                            Adds to the existing credits.
+        ---------------     --------------------------------------------------------------------
+        heading             Optional String. Replace current heading for credits.
+        ---------------     --------------------------------------------------------------------
+        description         Optional String. Replace current description for credits.
         ===============     ====================================================================
 
         :return:
@@ -487,18 +502,57 @@ class StoryMap(object):
         # Get credit node id
         for key, value in dict_node.items():
             credits_node = key
-        credits = self._properties["nodes"][credits_node]
+        children = self._properties["nodes"][credits_node]["children"]
 
-        # Create new content node
-        content_node = "n-" + uuid.uuid4().hex[0:6]
-        self._properties["nodes"][content_node] = {
-            "type": "attribution",
-            "data": {"content": content, "attribution": attribution},
-        }
+        nodes = []
+        if content or attribution:
+            # Create new content node
+            node = "n-" + uuid.uuid4().hex[0:6]
+            self._properties["nodes"][node] = {
+                "type": "attribution",
+                "data": {"content": content, "attribution": attribution},
+            }
+            nodes.append(node)
+
+        # Create new heading and remove old one
+        if heading:
+            # Create new content node
+            node = "n-" + uuid.uuid4().hex[0:6]
+            self._properties["nodes"][node] = {
+                "type": "text",
+                "data": {"text": heading, "type": "h4"},
+            }
+            nodes.append(node)
+            # Find and remove node corresponding to current heading
+            for child in children:
+                if (
+                    self._properties["nodes"][child]["type"] == "text"
+                    and self._properties["nodes"][child]["data"]["type"] == "h4"
+                ):
+                    del self._properties["nodes"][child]
+                    self._properties["nodes"][credits_node]["children"].remove(child)
+
+        if description:
+            # Create new content node
+            node = "n-" + uuid.uuid4().hex[0:6]
+            self._properties["nodes"][node] = {
+                "type": "text",
+                "data": {"text": description, "type": "paragraph"},
+            }
+            nodes.append(node)
+            # Find and remove node corresponding to current heading
+            for child in children:
+                if (
+                    self._properties["nodes"][child]["type"] == "text"
+                    and self._properties["nodes"][child]["data"]["type"] == "paragraph"
+                ):
+                    del self._properties["nodes"][child]
+                    self._properties["nodes"][credits_node]["children"].remove(child)
 
         # Add to children of credits
-        credits["children"].append(content_node)
-        return credits["children"]
+        for node_id in nodes:
+            self._properties["nodes"][credits_node]["children"].append(node_id)
+        return self._properties["nodes"][credits_node]["children"]
 
     # ----------------------------------------------------------------------
     def add(
@@ -650,7 +704,7 @@ class StoryMap(object):
         children = self._properties["nodes"][root_id]["children"]
 
         # Remove node id from list since it will be added again at another position
-        children.remove(node_id)
+        self._properties["nodes"][root_id]["children"].remove(node_id)
 
         # If delete_current is True then remove the node currently at this position
         if delete_current:
@@ -658,7 +712,7 @@ class StoryMap(object):
                 raise Exception(
                     "First and last nodes are reserved for Story Cover and Credits"
                 )
-            children.pop(position)
+            self._properties["nodes"][root_id]["children"].pop(position)
 
         # Add node to new position
         self._add_child(node_id, position)
