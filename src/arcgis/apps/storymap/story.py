@@ -811,7 +811,7 @@ class StoryMap(object):
         res = self._item.update(item_properties=p)
         self._item = self._gis.content.get(self._itemid)
 
-        return self._item.url
+        return self._item
 
     # ----------------------------------------------------------------------
     def delete_story(self):
