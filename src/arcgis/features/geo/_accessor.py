@@ -2443,7 +2443,13 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_featurelayer(
-        self, title=None, gis=None, tags=None, folder=None, sanitize_columns=False
+        self,
+        title=None,
+        gis=None,
+        tags=None,
+        folder=None,
+        sanitize_columns=False,
+        service_name=None,
     ):
         """
         The ``to_featurelayer`` method publishes a spatial dataframe to a new
@@ -2466,6 +2472,8 @@ class GeoAccessor(object):
         sanitize_columns                Optional Boolean. If True, column names will be converted to string,
                                         invalid characters removed and other checks will be performed. The
                                         default is False.
+        ---------------------------     --------------------------------------------------------------------
+        service_name                    Optional String. The name for the service that will be added to the Item.
         ===========================     ====================================================================
 
         :return:
@@ -2484,14 +2492,29 @@ class GeoAccessor(object):
         origin_index = copy.deepcopy(self._data.index)
         if title is None:
             title = uuid.uuid4().hex
-
+        if service_name:
+            # sanitize name
+            service_name = service_name.replace(" ", "")
+            if service_name[0].isnumeric():
+                raise ValueError(
+                    "First character of service_name cannot be an integer."
+                )
+            if (
+                content.is_service_name_available(service_name, "featureService")
+                is False
+            ):
+                raise ValueError(
+                    "This service name is unavailable for Feature Service."
+                )
         result = content.import_data(
             self._data,
             folder=folder,
             title=title,
             tags=tags,
             sanitize_columns=sanitize_columns,
+            service_name=service_name,
         )
+        result
         self._data.columns = origin_columns
         self._data.index = origin_index
         return result
