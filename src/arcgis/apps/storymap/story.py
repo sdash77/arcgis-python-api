@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, Union
 import uuid
 from enum import Enum
@@ -222,7 +223,7 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
-    def navigation(self):
+    def navigation_list(self):
         """
         Get a list of the nodes that are linked in the navigation node.
         """
@@ -380,32 +381,25 @@ class StoryMap(object):
         return self._properties["nodes"][story_cover_node]
 
     # ----------------------------------------------------------------------
-    def navigation(self, nodes: Optional[list] = None, hidden: Optional[bool] = None):
+    def navigation(
+        self, nodes: Optional[list[str]] = None, hidden: Optional[bool] = None
+    ):
         """
         Story navigation is a way for authors to add headings as
         links to allow readers to navigate between different sections
         of a story. The story navigation node takes ``TextStyle.HEADING`` text styles
         as its only allowed children.
-        You can only have 10 :class:`~arcgis.apps.storymap.story_content.Text` child nodes
+        You can only have 30 :class:`~arcgis.apps.storymap.story_content.Text` child nodes
         as visible and act as links within a story.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        nodes               Optional list of dictionaries. The node ids to navigate to.
-                            Use ``navigation`` property to get the current list.
+        nodes               Optional list of nodes to include in the navigation. These nodes can
+                            only be of style heading ("h2").
+                            Include in order. This will override current list and order.
 
-                            .. code-block:: python
-
-                                nodes = [{
-                                    "nodeId": "n-R9XpeZ",
-                                    "nodeID": "n-8wzjrC",
-                                    "nodeID": "n-lA9Qac"
-                                }]
-
-                            .. note:
-                                If a current list exists, copy and add to this list. Pass in entire
-                                list again as current list will be overwritten.
+                            To see current list use ``navigation_list`` property.
         ---------------     --------------------------------------------------------------------
         hidden              Optional boolean. If True, the navigation is hidden.
         ===============     ====================================================================
@@ -418,20 +412,28 @@ class StoryMap(object):
                 if key == "type" and val == "navigation":
                     node_id = node
 
+        links = []
         # If none is provided, set to what is already there
-        if nodes is None:
-            nodes = self._properties["nodes"][node_id]["data"]["links"]
+        if nodes is not None:
+            # check nodes are correct and add in order with linkType
+            for node in nodes:
+                if self._properties["nodes"][node]["data"]["type"] == "h2":
+                    links.append({"nodeId": node, "linkType": "story-heading"})
+                elif self._properties["nodes"][node]["data"]["type"] == "h4":
+                    links.append({"nodeId": node, "linkType": "credits-heading"})
+        else:
+            links = self._properties["nodes"][node_id]["data"]["links"]
         if hidden is None:
             hidden = self._properties["nodes"][node_id]["config"]["isHidden"]
 
         # Update navigation
         self._properties["nodes"][node_id] = {
             "type": "navigation",
-            "data": {"links": nodes},
+            "data": {"links": links},
             "config": {"isHidden": hidden},
         }
 
-        return self._properties["nodes"][node_id]
+        return self.navigation_list
 
     # ----------------------------------------------------------------------
     def theme(self, theme: Union[Themes, str] = Themes.SUMMIT):
