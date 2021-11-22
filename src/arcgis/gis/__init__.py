@@ -7359,6 +7359,7 @@ class ResourceManager(object):
         text=None,
         archive=False,
         access=None,
+        properties=None,
     ):
         """
         The ``add`` operation adds new file resources to an existing item. For example, an image that is
@@ -7399,6 +7400,9 @@ class ResourceManager(object):
                           which makes the item resource have the same access as the item.
 
                           Supported values: `private` or `inherit`.
+        ----------------  ---------------------------------------------------------------
+        properties        Optional Dictionary. Set the properties for the resources such
+                          as the `editInfo`.
         ================  ===============================================================
 
         :return:
@@ -7450,8 +7454,11 @@ class ResourceManager(object):
         if text is not None:
             params["text"] = text
         params["archive"] = "true" if archive else "false"
+        if isinstance(properties, dict):
+            params["properties"] = properties
         if access and str(access) in ["inherit", "private"]:
             params["access"] = access
+        # IF properties passed in, add them to params
         resp = self._portal.con.post(query_url, params, files=files, compress=False)
         return resp
 

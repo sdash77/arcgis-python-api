@@ -34,7 +34,7 @@ class Image(object):
     """
     Class representing an ``image`` from a url or file.
 
-    .. warning:: 
+    .. warning::
         Image must be smaller than 10 MB to avoid having issues when saving or publishing.
 
     ==================      ====================================================================

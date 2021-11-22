@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Optional, Union
 import uuid
 from enum import Enum
-from arcgis.apps.storymap.story_content import Image
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
@@ -318,7 +317,7 @@ class StoryMap(object):
         type: str = None,
         summary: Optional[str] = None,
         by_line: Optional[str] = None,
-        image: Optional[Image] = None,
+        image: Optional[Content.Image] = None,
     ):
         """
         A story's cover is at the top of the story and always the first node.
@@ -913,8 +912,19 @@ class StoryMap(object):
                 if resource["resource"] in file:
                     is_present = True
                     resp = True
+        properties = {
+            "editInfo": {
+                "editor": self._gis._username,
+                "modified": str(int(time.time())),
+                "id": uuid.uuid4().hex[0:21],
+                "app": "python-api",
+            }
+        }
+
         if is_present is False:
-            resp = resource_manager.add(file=file, file_name=resource_name, text=text)
+            resp = resource_manager.add(
+                file=file, file_name=resource_name, text=text, properties=properties
+            )
         self._resources = self._item.resources.list()
         return resp
 
