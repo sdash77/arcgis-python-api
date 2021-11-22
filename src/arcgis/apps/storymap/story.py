@@ -889,7 +889,7 @@ class StoryMap(object):
         root_id = self._properties["root"]
         last = len(self._properties["nodes"][root_id]["children"]) - 1
 
-        if position and position < last and position != 0:
+        if position and position < last and position != 0 and position != 1:
             # If the position adheres to rules then add node
             self._properties["nodes"][root_id]["children"].insert(position, node_id)
         elif position and (position == 0 or position == 1):

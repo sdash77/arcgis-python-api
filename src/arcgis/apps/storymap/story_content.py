@@ -1213,9 +1213,10 @@ class Map(object):
             The item id for the map that is being used.
         """
         if self._check_node() is True:
-            return self._story._properties["resources"][self.resource_node]["data"][
+            map_id = self._story._properties["resources"][self.resource_node]["data"][
                 "itemId"
             ]
+            return self._story._gis.content.get(map_id)
 
     # ----------------------------------------------------------------------
     @map.setter
