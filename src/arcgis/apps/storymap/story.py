@@ -732,11 +732,17 @@ class StoryMap(object):
         self,
         title: Optional[str] = None,
         tags: Optional[list] = None,
+        access: str = "private",
         publish: bool = False,
     ):
         """
         This method will save your Story Map to your active GIS. The story will be saved
-        as a draft or with unpublished changes.
+        with unpublished changes unless `publish` parameter is specified to True.
+
+        The story is by default published as private.
+
+        The title only needs to be specified if a change is wanted, otherwise exisiting title
+        is used.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -744,6 +750,11 @@ class StoryMap(object):
         title               Optional string. The title of the StoryMap.
         ---------------     --------------------------------------------------------------------
         tags                Optional string. The tags of the StoryMap.
+        ---------------     --------------------------------------------------------------------
+        access              Optional string. The access of the StoryMap such as 'private' or 'public'
+        ---------------     --------------------------------------------------------------------
+        publish             Optional boolean. If True, the story is saved and also published.
+                            Default is false so story is saved with unpublished changes.
         ===============     ====================================================================
 
 
@@ -795,7 +806,7 @@ class StoryMap(object):
             p["title"] = title
         if tags:
             p["tags"] = tags
-        p["access"] = "private"
+        p["access"] = access
 
         res = self._item.update(item_properties=p)
         self._item = self._gis.content.get(self._itemid)
