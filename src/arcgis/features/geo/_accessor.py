@@ -2474,6 +2474,8 @@ class GeoAccessor(object):
                                         default is False.
         ---------------------------     --------------------------------------------------------------------
         service_name                    Optional String. The name for the service that will be added to the Item.
+                                        Name cannot be used already and cannot contain special characters, spaces,
+                                        or a numerical value as the first letter.
         ===========================     ====================================================================
 
         :return:
@@ -2514,7 +2516,6 @@ class GeoAccessor(object):
             sanitize_columns=sanitize_columns,
             service_name=service_name,
         )
-        result
         self._data.columns = origin_columns
         self._data.index = origin_index
         return result

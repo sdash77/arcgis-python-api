@@ -6456,7 +6456,10 @@ class ContentManager(object):
             import random
             import string
 
-            temp_dir = os.path.join(tempfile.gettempdir(), "a" + uuid4().hex[:7])
+            service_name = kwargs.pop("service_name", None)
+            if service_name is None:
+                service_name = "a" + uuid4().hex[:7]
+            temp_dir = os.path.join(tempfile.gettempdir(), service_name)
             title = kwargs.pop("title", uuid4().hex)
             tags = kwargs.pop("tags", "FGDB")
             target_sr = kwargs.pop("target_sr", 102100)
@@ -6464,19 +6467,18 @@ class ContentManager(object):
             os.makedirs(temp_dir)
             temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
             if has_arcpy:
-                service_name = kwargs.pop("service_name", None)
-                if service_name is None:
-                    name = "%s%s.gdb" % (
-                        random.choice(string.ascii_lowercase),
-                        uuid4().hex[:5],
-                    )
-                else:
-                    name = service_name
                 from arcgis.features.geo._tools._utils import run_and_hide
 
                 result = run_and_hide(
                     fn=arcpy.CreateFileGDB_management,
-                    **{"out_folder_path": temp_dir, "out_name": name},
+                    **{
+                        "out_folder_path": temp_dir,
+                        "out_name": "%s%s.gdb"
+                        % (
+                            random.choice(string.ascii_lowercase),
+                            uuid4().hex[:5],
+                        ),
+                    },
                 )
                 fgdb = result[0]
 
@@ -6496,11 +6498,9 @@ class ContentManager(object):
                     folder=folder,
                 )
                 shutil.rmtree(temp_dir, ignore_errors=True)
-                if service_name is None:
-                    service_name = os.path.splitext(item["name"])[0]
                 publish_parameters = {
                     "hasStaticData": True,
-                    "name": service_name,
+                    "name": os.path.splitext(item["name"])[0],
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": capabilities},
                 }
@@ -6529,12 +6529,9 @@ class ContentManager(object):
                     folder=folder,
                 )
                 shutil.rmtree(temp_dir, ignore_errors=True)
-                service_name = kwargs.pop("service_name", None)
-                if service_name is None:
-                    service_name = os.path.splitext(item["name"])[0]
                 publish_parameters = {
                     "hasStaticData": True,
-                    "name": service_name,
+                    "name": os.path.splitext(item["name"])[0],
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": capabilities},
                 }
