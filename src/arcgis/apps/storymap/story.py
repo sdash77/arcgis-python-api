@@ -35,6 +35,24 @@ class StoryMap(object):
     ArcGIS StoryMaps is the next-generation storytelling tool in ArcGIS, and story authors are
     encouraged to use this tool to create stories. The Python API can help you create and edit
     your stories.
+
+    Create a Story Map object to make edits to a story. Can be created from an item of type 'Story Map',
+    an item id for that type of item, or if nothing is passed, a new story is created from a generic draft.
+
+    If an Item or item_id is passed in, only published changes are taken from the Story Map. If
+    you have unpublished changes, they will not appear when you construct your story with the API.
+    If you start to work on your Story that has unpublished changes and save from the Python API, your
+    unpublished changes on the GUI will be overwritten with your work from the API.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    item                Optional String or Item. The string for an item id or an item of type
+                        'Story Map'. If no item is passed, a new story is created and saved to
+                        your active portal.
+    ---------------     --------------------------------------------------------------------
+    gis                 Optional instance of GIS. If none provided the active gis is used.
+    ===============     ====================================================================
     """
 
     _properties = None
@@ -48,20 +66,7 @@ class StoryMap(object):
         item: Optional[Union[arcgis.gis.Item, str]] = None,
         gis: Optional[arcgis.gis.GIS] = None,
     ):
-        """
-        Create a Story Map object to make edits to a story. Can be created from an item of type 'Story Map',
-        an item id for that type of item, or if nothing is passed, a new story is created from a generic draft.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        item                Optional String or Item. The string for an item id or an item of type
-                            'Story Map'. If no item is passed, a new story is created and saved to
-                            your active portal.
-        ---------------     --------------------------------------------------------------------
-        gis                 Optional instance of GIS. If none provided the active gis is used.
-        ===============     ====================================================================
-        """
+        """ """
         if gis is None:
             gis = arcgis.env.active_gis
             self._gis = gis
@@ -121,7 +126,7 @@ class StoryMap(object):
                 "StoryMap",
                 "Web Application",
                 "smstatusdraft",
-                "smversiondraft:20.35.0",
+                "smversiondraft:21.43.0",
                 "smdraftversion:python-api-1.0",
                 "smsdraftresourceid:draft_" + str(int(time.time())) + ".json",
             ]
@@ -246,7 +251,9 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def get(self, node: Optional[str] = None, type: Optional[str] = None):
         """
-        Get node(s) by type or by their id.
+        Get node(s) by type or by their id. Using this function will help grab a specific node
+        from the story if a node id is provided. Set this to a variable and this way edits can be
+        made on the node in the story.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -274,10 +281,12 @@ class StoryMap(object):
 
             # Example get by type
             >>> story.get(type = "text")
+            Returns a list of all nodes of type text
 
             # Example by id
             >>> text = story.get(node= "<id for text node>")
             >>> text.properties
+            Returns a specific node of type text
 
         """
         spec_type = []
@@ -322,6 +331,8 @@ class StoryMap(object):
         """
         A story's cover is at the top of the story and always the first node.
         This method allows the cover to be edited by updating the title, byline, image, and more.
+        Changing one part of the story cover will not change the rest of the story cover. If just the
+        image is passed in then only the image will change.
 
         .. note::
             To change the date seen on the story cover, use the ``cover_date`` property.
@@ -399,6 +410,9 @@ class StoryMap(object):
         You can only have 30 :class:`~arcgis.apps.storymap.story_content.Text` child nodes
         as visible and act as links within a story.
 
+        The text nodes must already exist in the story. Pass the list of node ids for the heading
+        text nodes to assign them to the navigation.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -411,6 +425,16 @@ class StoryMap(object):
         hidden              Optional boolean. If True, the navigation is hidden.
         ===============     ====================================================================
 
+        :return:
+            List of nodes in the navigation.
+
+        .. code-block:: python
+
+            #Example
+            >>> story = StoryMap("<existing story id>")
+            >>> story.navigation_list
+
+            >>> story.navigation(["<header node id>", "<header node id>"], False)
         """
 
         # Check if navigation node already exists
@@ -445,7 +469,8 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def theme(self, theme: Union[Themes, str] = Themes.SUMMIT):
         """
-        Each story has a theme node in it's resources. This method can be used to change the theme
+        Each story has a theme node in it's resources. This method can be used to change the theme.
+        To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -455,6 +480,13 @@ class StoryMap(object):
 
                             Values: SUMMIT | TIDAL | MESA | RIDGELINE | SLATE | OBSIDIAN | "<item_id>"
         ===============     ====================================================================
+
+        .. code-block:: python
+
+            >>> from arcgis.apps.storymap import Themes
+
+            >>> story = StoryMap()
+            >>> story.theme(Themes.TIDAL)
         """
         # find the node corresponding to the story theme in resources
         for node, node_info in self._properties["resources"].items():
@@ -480,10 +512,16 @@ class StoryMap(object):
         description: Optional[str] = None,
     ):
         """
-        Credits are found at the end of the story and are always the last node. Content and
-        attribution can be added to them.
+        Credits are found at the end of the story and thus are always the last node.
 
         To create a credit, add the text that should be shown on each side of the divider.
+        Content represents the text seen on the left side and attribution is in line with content
+        on the right side of the divider. (i.e. 'content' | 'attribution')
+
+        Adding ``content`` and ``attribution`` will add a new line to the credits and will not change previous
+        credits.
+
+        Adding ``heading`` and ``description`` will change what is currently in place.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -505,6 +543,12 @@ class StoryMap(object):
 
         :return:
             A list of strings that are the node ids for the text nodes that belong to credits.
+
+        .. code-block:: python
+
+            #Example
+            >>> story = StoryMap()
+            >>> story.credits("Python Dev" , "Python API Team", "Thank You", "A big thank you to those who contributed")
         """
         # Find credit node
         dict_node = self.get(type="credits")[0]
@@ -584,10 +628,11 @@ class StoryMap(object):
         position: Optional[int] = None,
     ):
         """
-        Use this method to add content to your StoryMap. Content can be of various types and when
+        Use this method to add content to your StoryMap. Content can be of various class types and when
         you add this content you can specify a caption, alt_text, display style, and the position
         at which it will be in your story.
 
+        Not passing in any content means a separator will be added.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -731,7 +776,7 @@ class StoryMap(object):
         self,
         title: Optional[str] = None,
         tags: Optional[list] = None,
-        access: str = "private",
+        access: str = None,
         publish: bool = False,
     ):
         """
@@ -743,6 +788,11 @@ class StoryMap(object):
         The title only needs to be specified if a change is wanted, otherwise exisiting title
         is used.
 
+        .. warning::
+            Publishing your story through the Python API means it will not go through the Story Map
+            issue checker. It is recommended to publish through the Story Maps builder if you
+            want your story to go through the issue checker.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -750,14 +800,17 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         tags                Optional string. The tags of the StoryMap.
         ---------------     --------------------------------------------------------------------
-        access              Optional string. The access of the StoryMap such as 'private' or 'public'
+        access              Optional string. The access of the StoryMap. If none is specified, the
+                            current access type is kept.
+
+                            ``Values: "private" | "public" | "shared" | "org"
         ---------------     --------------------------------------------------------------------
         publish             Optional boolean. If True, the story is saved and also published.
                             Default is false so story is saved with unpublished changes.
         ===============     ====================================================================
 
 
-        :return: Boolean indicating success or failure.
+        :return: The Item that was saved to your active GIS.
 
         """
         # Remove old draft item
@@ -780,9 +833,10 @@ class StoryMap(object):
                     "Story Map",
                     "Web Application",
                     "smstatuspublished",
-                    "smversionpublished:20.35.0",
+                    "smversionpublished:21.43.0",
                     "smpublisheddate:" + str(int(time.time())),
-                    "smversiondraft:20.35.0",
+                    "smversiondraft:21.43.0",
+                    "smdraftversion:python-api-1.0",
                     "smdraftresourceid:" + draft,
                 ]
             )
@@ -793,9 +847,10 @@ class StoryMap(object):
                     "Story Map",
                     "Web Application",
                     "smstatusunpublishedchanges",
-                    "smversiondraft:20.35.0",
+                    "smversiondraft:21.43.0",
+                    "smdraftversion:python-api-1.0",
                     "smdraftresourceid:" + draft,
-                    "smversionpublished:20.35.0",
+                    "smversionpublished:21.43.0",
                     "smpublisheddate:" + str(int(time.time())),
                 ]
             )
@@ -805,7 +860,7 @@ class StoryMap(object):
             p["title"] = title
         if tags:
             p["tags"] = tags
-        p["access"] = access
+        p["access"] = access if access is not None else self._item.access
 
         res = self._item.update(item_properties=p)
         self._item = self._gis.content.get(self._itemid)
@@ -824,7 +879,8 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def duplicate(self, title: Optional[str] = None):
         """
-        Duplicate the story.
+        Duplicate the story. All items will be duplicated as they are. This allows you to create
+        a story template and duplicate it when you want to work with it.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -833,11 +889,18 @@ class StoryMap(object):
                             ArcGISOnline.
         ===============     ====================================================================
 
+        :return:
+            The Item that was created.
+
         .. code-block:: python
 
+            # Example for ArcGIS Online
             >>> story = StoryMap(<story item>)
             >>> story.duplicate("A Story Copy")
 
+            # Example for ArcGIS Enterprise
+            >>> story = StoryMap(<story item>)
+            >>> story.duplicate()
         """
         # get the item to copy
         item = self._gis.content.get(self._itemid)
