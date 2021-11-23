@@ -4074,16 +4074,10 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        out_sr                The spatial reference of the boundary's geometry.
-
-                              The spatial reference can be specified as either a well-known ID or
-                              as a spatial reference JSON object.
-
+        out_sr                The spatial reference of the boundary's geometry. The spatial reference
+                              can be specified as a well-known ID.
                               If the ``out_SR`` is not specified, the boundary will be reported in the
                               spatial reference of the image service.
-
-                              Example:
-                                4326
         =================     ====================================================================
 
         :returns: A dictionary with the image tile cache scheme information.
@@ -15698,6 +15692,12 @@ class RasterCatalogItem(object):
     @property
     def sensor(self):
         """
+        The ``sensor`` property returns information about the sensor.
+        Example:
+        {
+            "name": "IdentityXform",
+            "sensor_provider": "esri"
+        }
         """
         url = "%s/info/sensor" % self._url
         return self._con.get(path=url, params={"f": "json"})
