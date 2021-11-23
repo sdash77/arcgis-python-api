@@ -4086,7 +4086,7 @@ class ImageryLayer(Layer):
                                 4326
         =================     ====================================================================
 
-        :returns: A dictionary showing volume values for each geometry in the input geometries array
+        :returns: A dictionary with the image tile cache scheme information.
 
         """
         if self.tiles_only:
@@ -4136,7 +4136,7 @@ class ImageryLayer(Layer):
                               the image. By default, the spatial reference of the image is used.
         =================     ====================================================================
 
-        :returns: A legend as a dictionary by default, or as an HTML table if as_html is True
+        :returns: A dictionary with the computed rotation angle of a raster.
         
         """
         if self.tiles_only:
