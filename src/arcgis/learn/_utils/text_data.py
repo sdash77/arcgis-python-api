@@ -684,7 +684,9 @@ class TextDataObject:
                 if x[0]
             ]
             results.append(entity_dict)
-        df = pd.DataFrame(results,)
+        df = pd.DataFrame(
+            results,
+        )
         df.fillna("", inplace=True)
         return df
 
