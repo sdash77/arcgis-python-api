@@ -152,16 +152,7 @@ class StoryMap(object):
         """
         HTML Representation for IPython Notebook
         """
-        try:
-            return (
-                "<iframe src="
-                + self._item.url
-                + "title="
-                + self._item.title
-                + "></iframe>"
-            )
-        except:
-            return None
+        return self._item._repr_html_()
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -175,6 +166,23 @@ class StoryMap(object):
     def _refresh(self):
         if self._item:
             self._properties = json.loads(self._item.get_data())
+
+    # ----------------------------------------------------------------------
+    def show(self, width: Optional[int] = None, height: Optional[int] = None):
+        """
+        Show a preview of the story
+        """
+        if self._item:
+            width = 700 if width is None else width
+            height = 350 if height is None else height
+            from IPython.display import IFrame
+
+            return IFrame(
+                src=self._item.url,
+                width=width,
+                height=height,
+                params="title=" + self._item.title,
+            )
 
     # ----------------------------------------------------------------------
     @property
@@ -827,6 +835,14 @@ class StoryMap(object):
 
         # Find type keywords to use based on whether to publish or not
         if publish is True:
+            # Remove old publish item
+            for resource in self._resources:
+                if "publish_data" in resource["resource"]:
+                    self._remove_resource(file=resource["resource"])
+            # Add new publish
+            self._add_resource(
+                resource_name="publish_data.json", text=json.dumps(self._properties)
+            )
             typeKeywords = ",".join(
                 [
                     "arcgis-storymaps",
@@ -840,6 +856,14 @@ class StoryMap(object):
                     "smdraftresourceid:" + draft,
                 ]
             )
+            p = {"typeKeywords": typeKeywords, "text": json.dumps(self._properties)}
+            if title:
+                p["title"] = title
+            if tags:
+                p["tags"] = tags
+            p["access"] = access if access is not None else self._item.access
+
+            self._item.update(item_properties=p)
         else:
             typeKeywords = ",".join(
                 [
@@ -854,17 +878,16 @@ class StoryMap(object):
                     "smpublisheddate:" + str(int(time.time())),
                 ]
             )
+            p = {"typeKeywords": typeKeywords}
+            if title:
+                p["title"] = title
+            if tags:
+                p["tags"] = tags
+            p["access"] = access if access is not None else self._item.access
 
-        p = {"typeKeywords": typeKeywords, "text": json.dumps(self._properties)}
-        if title:
-            p["title"] = title
-        if tags:
-            p["tags"] = tags
-        p["access"] = access if access is not None else self._item.access
+            self._item.update(item_properties=p)
 
-        res = self._item.update(item_properties=p)
         self._item = self._gis.content.get(self._itemid)
-
         return self._item
 
     # ----------------------------------------------------------------------
