@@ -6469,16 +6469,13 @@ class ContentManager(object):
             if has_arcpy:
                 from arcgis.features.geo._tools._utils import run_and_hide
 
+                name = "%s%s.gdb" % (
+                    random.choice(string.ascii_lowercase),
+                    uuid4().hex[:5],
+                )
                 result = run_and_hide(
                     fn=arcpy.CreateFileGDB_management,
-                    **{
-                        "out_folder_path": temp_dir,
-                        "out_name": "%s%s.gdb"
-                        % (
-                            random.choice(string.ascii_lowercase),
-                            uuid4().hex[:5],
-                        ),
-                    },
+                    **{"out_folder_path": temp_dir, "out_name": name},
                 )
                 fgdb = result[0]
 
