@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7467\src")
+# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7467\src")
 from arcgis.auth.tools import LazyLoader
 
 logging = LazyLoader("logging")
@@ -9,7 +9,7 @@ _service = LazyLoader("arcgis.gis.server._service")
 from arcgis.gis import GIS, agoserver, server
 import unittest
 
-PROFILES = ['your_dev_online_profile', 'your_online_profile']
+PROFILES = ["your_dev_online_profile", "your_online_profile"]
 
 
 class TestAgolServer(unittest.TestCase):
@@ -70,17 +70,17 @@ class TestAGOLAdminServerTileManager(unittest.TestCase):
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False)
             sm = gis.admin.servers.tile_server[0]
-            if len(sm.properties['services']) > 0:
-                name = sm.properties['services'][0]
-                assert sm.get(sm.properties['services'][0]['name'])
+            if len(sm.properties["services"]) > 0:
+                name = sm.properties["services"][0]
+                assert sm.get(sm.properties["services"][0]["name"])
 
     def test_status(self):
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False)
             sm = gis.admin.servers.tile_server[0]
-            if len(sm.properties['services']) > 0:
-                name = sm.properties['services'][0]
-                assert sm.status(sm.properties['services'][0]['name'])
+            if len(sm.properties["services"]) > 0:
+                name = sm.properties["services"][0]
+                assert sm.status(sm.properties["services"][0]["name"])
 
     def test_is_tile_service(self):
         for profile in PROFILES:
@@ -110,41 +110,41 @@ class TestAGOLAdminServerFeatureManager(unittest.TestCase):
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False)
             sm = gis.admin.servers.feature_server[0]
-            if len(sm.properties['services']) > 0:
-                name = sm.properties['services'][0]
-                assert sm.get(name['adminServiceInfo']['name'])
+            if len(sm.properties["services"]) > 0:
+                name = sm.properties["services"][0]
+                assert sm.get(name["adminServiceInfo"]["name"])
 
     def test_status(self):
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False)
             sm = gis.admin.servers.feature_server[0]
-            if len(sm.properties['services']) > 0:
-                name = sm.properties['services'][0]
-                assert sm.status(name['adminServiceInfo']['name'])
+            if len(sm.properties["services"]) > 0:
+                name = sm.properties["services"][0]
+                assert sm.status(name["adminServiceInfo"]["name"])
 
 
 class TestHostingServerProperty(unittest.TestCase):
     def setUp(self):
         from arcgis.gis import ProfileManager
 
-        if not 'gpportal' in ProfileManager().list():
+        if not "gpportal" in ProfileManager().list():
             GIS(
-                profile='gpportal',
-                username='admin',
-                password='esri.agp',
-                url='https://gpportal.esri.com/portal',
+                profile="gpportal",
+                username="admin",
+                password="esri.agp",
+                url="https://gpportal.esri.com/portal",
             )
 
     def test_enterprise_hosting_servers(self):
         """tests if a list of hosting servers is returns"""
-        gis = GIS(profile='gpportal', verify_cert=False)
+        gis = GIS(profile="gpportal", verify_cert=False)
         assert isinstance(gis.hosting_servers, list)
         if len(gis.hosting_servers) > 0:
             assert isinstance(gis.hosting_servers[0], server.ServicesDirectory)
 
     def test_AGOL_hosting_servers(self):
         """tests if a list of hosting servers is returns"""
-        gis = GIS(profile='your_online_profile', verify_cert=False)
+        gis = GIS(profile="your_online_profile", verify_cert=False)
         assert isinstance(gis.hosting_servers, list)
         if len(gis.hosting_servers) > 0:
             assert isinstance(gis.hosting_servers[0], agoserver.AGOLServicesDirectory)
