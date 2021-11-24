@@ -6406,6 +6406,8 @@ class ContentManager(object):
         ---------------------  --------------------------------------------------------------------------
         sanitize_columns       Optional boolean. The default is False.  When true, the column name will
                                modified in order to allow for successful publishing.
+        ---------------------  --------------------------------------------------------------------------
+        service_name           Optional String. The name for the service that will be added to the Item.
         =====================  ==========================================================================
 
 
@@ -6454,7 +6456,10 @@ class ContentManager(object):
             import random
             import string
 
-            temp_dir = os.path.join(tempfile.gettempdir(), "a" + uuid4().hex[:7])
+            service_name = kwargs.pop("service_name", None)
+            if service_name is None:
+                service_name = "a" + uuid4().hex[:7]
+            temp_dir = os.path.join(tempfile.gettempdir(), service_name)
             title = kwargs.pop("title", uuid4().hex)
             tags = kwargs.pop("tags", "FGDB")
             target_sr = kwargs.pop("target_sr", 102100)
@@ -6462,12 +6467,12 @@ class ContentManager(object):
             os.makedirs(temp_dir)
             temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
             if has_arcpy:
+                from arcgis.features.geo._tools._utils import run_and_hide
+
                 name = "%s%s.gdb" % (
                     random.choice(string.ascii_lowercase),
                     uuid4().hex[:5],
                 )
-                from arcgis.features.geo._tools._utils import run_and_hide
-
                 result = run_and_hide(
                     fn=arcpy.CreateFileGDB_management,
                     **{"out_folder_path": temp_dir, "out_name": name},
@@ -7376,6 +7381,7 @@ class ResourceManager(object):
         text=None,
         archive=False,
         access=None,
+        properties=None,
     ):
         """
         The ``add`` operation adds new file resources to an existing item. For example, an image that is
@@ -7416,6 +7422,9 @@ class ResourceManager(object):
                           which makes the item resource have the same access as the item.
 
                           Supported values: `private` or `inherit`.
+        ----------------  ---------------------------------------------------------------
+        properties        Optional Dictionary. Set the properties for the resources such
+                          as the `editInfo`.
         ================  ===============================================================
 
         :return:
@@ -7467,8 +7476,11 @@ class ResourceManager(object):
         if text is not None:
             params["text"] = text
         params["archive"] = "true" if archive else "false"
+        if isinstance(properties, dict):
+            params["properties"] = properties
         if access and str(access) in ["inherit", "private"]:
             params["access"] = access
+        # IF properties passed in, add them to params
         resp = self._portal.con.post(query_url, params, files=files, compress=False)
         return resp
 

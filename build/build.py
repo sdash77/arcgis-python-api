@@ -25,7 +25,7 @@ ESRI_REQUESTS_CHANNEL = "http://zion/conda/esri_requests/"
 
 BASE_BUILD_CMD = (
     "cd {build_dir} && conda build "
-    + f"-c {ESRI_CHANNEL_DEV} -c {ESRI_REQUESTS_CHANNEL} "
+    + f"-c {ESRI_CHANNEL_DEV} -c {ESRI_REQUESTS_CHANNEL} -c conda-forge -c esri "
     + "arcgis --py {python_version} --output-folder {output_dir}"
 )
 BASE_CONVERT_CMD = (
@@ -42,7 +42,7 @@ SUPPORTED_LINUX = ['linux-64']
 SUPPORTED_OSX = ['osx-64']
 SUPPORTED_UNIX = SUPPORTED_LINUX + SUPPORTED_OSX
 SUPPORTED_OSES = SUPPORTED_WIN + SUPPORTED_LINUX + SUPPORTED_OSX
-SUPPORTED_PYS = ['3.6', '3.7', '3.8']  # , '3.9'
+SUPPORTED_PYS = ['3.7', '3.8', '3.9']  # , '3.9'
 DEFAULT_PYS = SUPPORTED_PYS
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))

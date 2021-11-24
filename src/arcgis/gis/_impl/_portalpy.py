@@ -302,21 +302,21 @@ class Portal(object):
             be provided.
 
 
-        ============     ====================================================
-        **Argument**     **Description**
-        ------------     ----------------------------------------------------
-        item_properties  required dictionary, see below for the keys and values
-        ------------     ----------------------------------------------------
-        data             optional string, either a path or URL to the data
-        ------------     ----------------------------------------------------
-        thumbnail        optional string, either a path or URL to an image
-        ------------     ----------------------------------------------------
-        metadata         optional string, either a path or URL to metadata.
-        ------------     ----------------------------------------------------
-        owner            optional string, defaults to logged in user.
-        ------------     ----------------------------------------------------
-        folder           optional string, content folder where placing item
-        ============     ====================================================
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        item_properties     Required dictionary, see below for the keys and values
+        ---------------     ----------------------------------------------------
+        data                Optional string, either a path or URL to the data
+        ---------------     ----------------------------------------------------
+        thumbnail           Optional string, either a path or URL to an image
+        ---------------     ----------------------------------------------------
+        metadata            Optional string, either a path or URL to metadata.
+        ---------------     ----------------------------------------------------
+        owner               Optional string, defaults to logged in user.
+        ---------------     ----------------------------------------------------
+        folder              Optional string, content folder where placing item
+        ===============     ====================================================
 
 
         ================  ============================================================================
