@@ -122,12 +122,6 @@ class TestAGOLAdminServerFeatureManager(unittest.TestCase):
                 name = sm.properties['services'][0]
                 assert sm.status(name['adminServiceInfo']['name'])
 
-    def test_is_tile_service(self):
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False)
-            sm = gis.admin.servers.feature_server[0]
-            assert sm.is_tile_server in [True, False]
-
 
 class TestHostingServerProperty(unittest.TestCase):
     def setUp(self):
