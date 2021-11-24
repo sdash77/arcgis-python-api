@@ -347,7 +347,7 @@ class SceneLayerManager(_GISResource):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def delete_tiles(self, levels: str, extent: Optional[str, dict] = None):
+    def delete_tiles(self, levels: str, extent: Optional[Union[str, dict]] = None):
         """
         The ``delete_tiles`` method deletes tiles from the current cache.
 
