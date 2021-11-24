@@ -293,7 +293,10 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
         self._oauth = OAuth2Session(self._clientid, redirect_uri=redirect_uri)
         authorization_url, state = self._oauth.authorization_url(
-            self._auth_url, expiration=20160, style="dark", locale="en-US",
+            self._auth_url,
+            expiration=20160,
+            style="dark",
+            locale="en-US",
         )
         self._authorization_url = authorization_url
         self._state = state
