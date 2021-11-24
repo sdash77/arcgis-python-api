@@ -8,35 +8,28 @@ import math
 import tempfile
 from pathlib import Path
 from zipfile import ZipFile
-
+import traceback
 import arcgis
 from arcgis.features import FeatureLayer
 from arcgis.raster.analytics import copy_raster
-
 from .._utils.tabular_data import TabularDataObject, explain_prediction
 
-HAS_SK_LEARN = True
-HAS_SHAP = True
+
 try:
     import sklearn
     from sklearn import *
-except:
-    HAS_SK_LEARN = False
+    import pandas as pd
 
-try:
-    import shap
+    HAS_ML_DEPS = True
 except:
-    HAS_SHAP = False
+    missing_deps_trace = traceback.format_exc()
+    HAS_ML_DEPS = False
 
 HAS_FAST_PROGRESS = True
 try:
     from fastprogress.fastprogress import progress_bar
 except:
     HAS_FAST_PROGRESS = False
-try:
-    import pandas as pd
-except:
-    pass
 
 _PROTOCOL_LEVEL = 2
 
@@ -104,8 +97,8 @@ class MLModel(object):
     """
 
     def __init__(self, data, model_type, **kwargs):
-        if not HAS_SK_LEARN:
-            raise Exception("This module requires scikit-learn.")
+        if not HAS_ML_DEPS:
+            raise Exception(missing_deps_trace)
 
         self._data = data
         (
@@ -443,8 +436,8 @@ class MLModel(object):
 
         :return: `MLModel` Object
         """
-        if not HAS_SK_LEARN:
-            raise Exception("This module requires scikit-learn.")
+        if not HAS_ML_DEPS:
+            raise Exception(missing_deps_trace)
 
         emd_path = str(emd_path)
 
@@ -778,10 +771,11 @@ class MLModel(object):
         :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
 
         """
-
         rasters = explanatory_rasters if explanatory_rasters else []
         if explain:
-            if not HAS_SHAP:
+            try:
+                import shap
+            except:
                 warnings.warn(
                     "Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working."
                 )

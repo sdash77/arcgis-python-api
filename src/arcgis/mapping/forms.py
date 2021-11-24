@@ -417,7 +417,7 @@ class FormInfo:
         input_type: Optional[Union[str, dict]] = None,
         required_expression=None,
         index: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Adds a single field :class:`~arcgis.mapping.forms.FormElement` element to the end of the form.
@@ -478,7 +478,7 @@ class FormInfo:
             hint=hint,
             input_type=input_type,
             required_expression=required_expression,
-            **kwargs
+            **kwargs,
         )
         return self.add(element, index=index)
 
@@ -489,7 +489,7 @@ class FormInfo:
         visibility_expression=None,
         initial_state: Optional[str] = None,
         index: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Adds a single :class:`~arcgis.mapping.forms.GroupElement` to the form
@@ -519,7 +519,7 @@ class FormInfo:
             description=description,
             visibility_expression=visibility_expression,
             initial_state=initial_state,
-            **kwargs
+            **kwargs,
         )
         return self.add(group_el, index=index)
 
@@ -849,7 +849,7 @@ class FormElement:
         description=None,
         label=None,
         visibility_expression=None,
-        **kwargs
+        **kwargs,
     ):
         self._form = form
         self._element_type = element_type
@@ -999,7 +999,7 @@ class FormFieldElement(FormElement):
         hint=None,
         input_type=None,
         required_expression=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             form=form,
@@ -1007,7 +1007,7 @@ class FormFieldElement(FormElement):
             description=description,
             label=label,
             visibility_expression=visibility_expression,
-            **kwargs
+            **kwargs,
         )
         self._domain = domain
         self._editable = editable
@@ -1195,7 +1195,7 @@ class FormGroupElement(FormElement):
         description=None,
         label=None,
         visibility_expression=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             form=form,
@@ -1203,7 +1203,7 @@ class FormGroupElement(FormElement):
             description=description,
             label=label,
             visibility_expression=visibility_expression,
-            **kwargs
+            **kwargs,
         )
         if elements is None:
             elements = []
@@ -1280,7 +1280,7 @@ class FormGroupElement(FormElement):
         input_type: Optional[Union[dict, str]] = None,
         required_expression=None,
         index: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Adds a single field :class:`~arcgis.mapping.forms.FormElement` element to the end of the group.
@@ -1339,7 +1339,7 @@ class FormGroupElement(FormElement):
             hint=hint,
             input_type=input_type,
             required_expression=required_expression,
-            **kwargs
+            **kwargs,
         )
         return self.add(element, index=index)
 
