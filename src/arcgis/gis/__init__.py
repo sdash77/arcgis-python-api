@@ -174,6 +174,10 @@ class GIS(object):
 
                         ex: 127.0.0.1
     ----------------    ---------------------------------------------------------------
+    use_gen_token       Optional Boolean. The default is `False`. For older
+                        Enterprises, the BUILT-IN users can specify using the
+                        generateToken end point for creating the token.
+    ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ----------------    ---------------------------------------------------------------
     token               Optional string. This is the Enterprise token for built-in
@@ -314,6 +318,7 @@ class GIS(object):
         certificate verification in the Python process. However, this should not be done in production environments and is
         strongly discouraged.
         """
+        self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._proxy_host = kwargs.pop("proxy_host", None)
         self._proxy_port = kwargs.pop("proxy_port", 80)
         self._referer = kwargs.pop("referer", None)
@@ -454,6 +459,7 @@ class GIS(object):
                 custom_adapter=custom_adapter,
                 token=self._utoken,
                 is_hosted_nb_home=self._is_hosted_nb_home,
+                use_gen_token=self._use_gen_token,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -477,6 +483,7 @@ class GIS(object):
                     custom_adapter=custom_adapter,
                     token=self._utoken,
                     is_hosted_nb_home=self._is_hosted_nb_home,
+                    use_gen_token=self._use_gen_token,
                 )
             if self._is_hosted_nb_home:
                 self._portal.con._referer = ""
@@ -543,6 +550,7 @@ class GIS(object):
                         custom_adapter=custom_adapter,
                         token=self._utoken,
                         is_hosted_nb_home=self._is_hosted_nb_home,
+                        use_gen_token=self._use_gen_token,
                     )
                     self._portal = pp
         except:
@@ -2822,7 +2830,10 @@ class UserManager(object):
         .. note::
             Only an administrator can call this method.
 
-        **To create a viewer account, choose role='org_viewer' and level='viewer'**
+            A member's `user_type` determines the default `role` that can be assigned to the member. User types
+            compatible with each role are noted in the table below (within the `user_type` section).
+
+        **To create a viewer account, choose role='viewer' and user_type='viewer'**
 
         .. note:
             When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
@@ -2869,13 +2880,19 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         level             Optional integer. The account level. (ArcGIS Enterprise prior to version 10.7.
                           See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
-                          for full details.)
+                          for full details.) The GIS Professional `user_type` can be assigned at the following three levels, which correspond to the three license levels of ArcGIS Pro:
+                           - GIS Professional Basic
+                           - GIS Professional Standard
+                           - GIS Professional Advanced
         ----------------  -------------------------------------------------------------------------------
-        user_type         Required string. The account user type. This can be creator or viewer.  The
+        user_type         Required string. The account user type. This can be creator, viewer, etc.  The
                           type effects what applications a user can use and what actions they can do in
                           the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online.
                           See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
                           for full details.)
+                           - Members assigned the ``viewer`` role cannot create or share content, or perform analysis, and the ``viewer`` role is compatible with all user types.
+                           - The Data Editor role ``viewplusedit`` is compatible with all user types except ``viewer``.
+                           - The ``org_user``, ``org_publisher``, and ``org_admin`` roles are compatible with the Creator, GIS Professional, Storyteller, and Insights Analyst user types.
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
                           which means unlimited. (10.7+)
@@ -3747,13 +3764,13 @@ class UserManager(object):
                                only required if paging is needed.
         ------------------     --------------------------------------------------------------------
         sort_field             Optional String. Responses from the `search` operation can be
-                               sorted on various fields. `avgrating` is the default.
+                               sorted on various fields. `username` is the default.
         ------------------     --------------------------------------------------------------------
         sort_order             Optional String. The sequence into which a collection of
                                records are arranged after they have been sorted. The allowed
                                values are: asc for ascending and desc for descending.
         ------------------     --------------------------------------------------------------------
-        as_dict                Required Boolean. If True, the response comes back as a dictionary.
+        as_dict                Optional Boolean. If True, the response comes back as a dictionary.
         ==================     ====================================================================
 
         :return:
@@ -3763,7 +3780,7 @@ class UserManager(object):
 
             # Usage Example
 
-            >>> gis.users.advanced_search(query ="1234", sort_order = "username", max_users=20, as_dict=20)
+            >>> gis.users.advanced_search(query ="1234", sort_field = "username", max_users=20, as_dict=20)
         """
         from arcgis.gis._impl import _search
 
@@ -3930,7 +3947,7 @@ class UserManager(object):
 
             # Usage Example
 
-            >>> gis.users.search(query ="1234", sort_order = "username", max_users=20)
+            >>> gis.users.search(query ="1234", sort_field = "username", max_users=20)
         """
         ut = {"creator": "creatorUT", "viewer": "viewerUT"}
         if user_type and user_type.lower() in ut:
@@ -6443,6 +6460,8 @@ class ContentManager(object):
         ---------------------  --------------------------------------------------------------------------
         sanitize_columns       Optional boolean. The default is False.  When true, the column name will
                                modified in order to allow for successful publishing.
+        ---------------------  --------------------------------------------------------------------------
+        service_name           Optional String. The name for the service that will be added to the Item.
         =====================  ==========================================================================
 
 
@@ -6491,7 +6510,10 @@ class ContentManager(object):
             import random
             import string
 
-            temp_dir = os.path.join(tempfile.gettempdir(), "a" + uuid4().hex[:7])
+            service_name = kwargs.pop("service_name", None)
+            if service_name is None:
+                service_name = "a" + uuid4().hex[:7]
+            temp_dir = os.path.join(tempfile.gettempdir(), service_name)
             title = kwargs.pop("title", uuid4().hex)
             tags = kwargs.pop("tags", "FGDB")
             target_sr = kwargs.pop("target_sr", 102100)
@@ -6499,12 +6521,12 @@ class ContentManager(object):
             os.makedirs(temp_dir)
             temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
             if has_arcpy:
+                from arcgis.features.geo._tools._utils import run_and_hide
+
                 name = "%s%s.gdb" % (
                     random.choice(string.ascii_lowercase),
                     uuid4().hex[:5],
                 )
-                from arcgis.features.geo._tools._utils import run_and_hide
-
                 result = run_and_hide(
                     fn=arcpy.CreateFileGDB_management,
                     **{"out_folder_path": temp_dir, "out_name": name},
@@ -7432,6 +7454,7 @@ class ResourceManager(object):
         text: Optional[str] = None,
         archive: bool = False,
         access: Optional[str] = None,
+        properties: Optional[dict] = None,
     ):
         """
         The ``add`` operation adds new file resources to an existing item. For example, an image that is
@@ -7472,6 +7495,9 @@ class ResourceManager(object):
                           which makes the item resource have the same access as the item.
 
                           Supported values: `private` or `inherit`.
+        ----------------  ---------------------------------------------------------------
+        properties        Optional Dictionary. Set the properties for the resources such
+                          as the `editInfo`.
         ================  ===============================================================
 
         :return:
@@ -7523,8 +7549,11 @@ class ResourceManager(object):
         if text is not None:
             params["text"] = text
         params["archive"] = "true" if archive else "false"
+        if isinstance(properties, dict):
+            params["properties"] = properties
         if access and str(access) in ["inherit", "private"]:
             params["access"] = access
+        # IF properties passed in, add them to params
         resp = self._portal.con.post(query_url, params, files=files, compress=False)
         return resp
 
@@ -10093,6 +10122,16 @@ class User(dict):
                 l.revoke(username=self.username, entitlements="*", suppress_email=True)
         for bundle in self._gis.admin.license.bundles:
             bundle.revoke(users=self.username)
+        if reassign_to:
+            # reassigns the group owner to the reassigned_to user.
+            [
+                grp.reassign_to(User(gis=self._gis, username=reassign_to))
+                for grp in self.groups
+                if grp.owner == self.username
+            ]
+        else:
+            # delete the groups owned by the user
+            [grp.delete() for grp in self.groups if grp.owner == self.username]
         return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username: str):
@@ -10906,8 +10945,9 @@ class Item(dict):
 
         """
         data_path = "content/items/" + self.itemid + "/data"
-        if "name" in self or "title" in self:
-            file_name = self.name or self.title
+        if file_name is None:
+            if "name" in self or "title" in self:
+                file_name = self.name or self.title
         if not save_path:
             save_path = self._workdir
         try:

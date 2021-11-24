@@ -290,12 +290,23 @@ class ServicesDirectory(BaseServer):
     # ----------------------------------------------------------------------
     def list(self, folder: Optional[str] = None):
         """
-        The ``list`` method returns a list of services at the given folder, and can retrieve a variety of services.
-        Examples include a ``Feature Service``, ``Map Service``, ``Vector Tile``, ``Geoprocessing Service``, etc.
+        The ``list`` method returns a list of services at the given folder.
+        The objects will vary in type according to the type of service. For
+        example, ``Feature Services``
+        return :class:`~arcgis.features.FeatureLayerCollection` objects,
+        ``Geoprocessing Services`` return
+        :class:`~arcgis.geoprocessing._tool.Toolbox` objects, while ``Map
+        Services`` return :class:`~arcgis.mapping.MapImageLayer` objects.
 
         .. note::
-            This method is not to be confused with the :attr:`~arcgis.server.ServerManager.list` method, in the
-            :class:`~arcgis.server.ServerManager` class, which returns an admin service.
+            This method is not to be confused with the
+            :attr:`~arcgis.gis.server.ServerManager.list` method of the
+            :class:`~arcgis.gis.server.ServerManager` class, which returns
+            :class:`~arcgis.gis.server.Server` or
+            :class:`~arcgis.gis.nb.NotebookServer` objects, or the
+            :class:`~arcgis.gis.server.ServiceManager.list` method of
+            the :class:`~arcgis.gis.server.ServiceManager` class, which
+            returns a list of :class:`~arcgis.gis.server.Service` objects.
 
         """
         services = []

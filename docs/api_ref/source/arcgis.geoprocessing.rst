@@ -31,3 +31,9 @@ GPJob
 .. autoclass:: arcgis.geoprocessing.GPJob
     :members:
     :undoc-members:
+    
+Toolbox
+------------- 
+.. autoclass:: arcgis.geoprocessing._tool.Toolbox
+    :members:
+    :undoc-members:

@@ -9,49 +9,33 @@ import math
 import time
 from pathlib import Path
 import traceback
-
 import arcgis
 from arcgis.features import FeatureLayer
 
-HAS_SK_LEARN = True
-HAS_AUTOML = True
-HAS_FASTAI = True
-HAS_NUMPY = True
+
+HAS_AUTO_ML_DEPS = True
 import_exception = None
 
 try:
     from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
     from arcgis.learn._utils.tabular_data import TabularDataObject
     from arcgis.learn._utils.common import _get_emd_path
+
+    HAS_FASTAI = True
 except:
     import_exception = traceback.format_exc()
     HAS_FASTAI = False
 
 try:
-    from supervised.automl import AutoML as base_AutoML
-except Exception as e:
-    import_exception = "\n".join(
-        traceback.format_exception(type(e), e, e.__traceback__)
-    )
-    HAS_AUTOML = False
-
-try:
+    import sklearn
+    from sklearn import *
     import numpy as np
     import pandas as pd
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
     )
-    HAS_NUMPY = False
-
-try:
-    import sklearn
-    from sklearn import *
-except Exception as e:
-    import_exception = "\n".join(
-        traceback.format_exception(type(e), e, e.__traceback__)
-    )
-    HAS_SK_LEARN = False
+    HAS_AUTO_ML_DEPS = False
 
 HAS_FAST_PROGRESS = True
 try:
@@ -132,12 +116,17 @@ class AutoML(object):
         algorithms=None,
         eval_metric="auto",
     ):
-        if not HAS_SK_LEARN:
+        try:
+            from supervised.automl import AutoML as base_AutoML
+        except Exception as e:
+            import_exception = "\n".join(
+                traceback.format_exception(type(e), e, e.__traceback__)
+            )
             _raise_fastai_import_error(import_exception=import_exception)
-        if not HAS_AUTOML:
+
+        if not HAS_AUTO_ML_DEPS:
             _raise_fastai_import_error(import_exception=import_exception)
-        if not HAS_NUMPY:
-            _raise_fastai_import_error(import_exception=import_exception)
+
         self._data = data
         if getattr(self._data, "_is_unsupervised", False):
             raise Exception(
@@ -280,7 +269,7 @@ class AutoML(object):
 
     def predict_proba(self):
         """
-        :returns output from AutoML's model.predict_proba()
+        :returns output from AutoML's model.predict_proba() with prediction probability for the training data
         """
         if (self._data._is_classification == "classification") or (
             self._data._is_classification == True
@@ -290,7 +279,11 @@ class AutoML(object):
                     "This method is not available when the model is initiated for prediction"
                 )
             else:
-                return self._model.predict_proba(self._data._dataframe)
+                cols = (
+                    self._data._continuous_variables + self._data._categorical_variables
+                )
+                data_df = pd.DataFrame(self._data._ml_data[0], columns=cols)
+                return self._model.predict_proba(data_df)
         else:
             raise Exception("This method is applicable only for classification models.")
 
@@ -412,9 +405,11 @@ class AutoML(object):
 
         :return: `AutoML` Object
         """
+        if not HAS_FASTAI:
+            _raise_fastai_import_error(import_exception=import_exception)
         emd_path = _get_emd_path(emd_path)
-        if not HAS_SK_LEARN:
-            raise Exception("This module requires scikit-learn.")
+        if not HAS_AUTO_ML_DEPS:
+            _raise_fastai_import_error(import_exception=import_exception)
 
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")
@@ -630,6 +625,8 @@ class AutoML(object):
                 raster_columns.append((raster, categorical))
 
         with warnings.catch_warnings():
+            if not HAS_FASTAI:
+                _raise_fastai_import_error(import_exception=import_exception)
             warnings.simplefilter("ignore", UserWarning)
             (
                 processed_dataframe,
