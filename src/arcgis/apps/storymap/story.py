@@ -39,8 +39,8 @@ class StoryMap(object):
     Create a Story Map object to make edits to a story. Can be created from an item of type 'Story Map',
     an item id for that type of item, or if nothing is passed, a new story is created from a generic draft.
 
-    If an Item or item_id is passed in, only published changes are taken from the Story Map. If
-    you have unpublished changes, they will not appear when you construct your story with the API.
+    If an Item or item_id is passed in, only published changes or new drafts are taken from the Story Map.
+    If you have a story with unpublished changes, they will not appear when you construct your story with the API.
     If you start to work on your Story that has unpublished changes and save from the Python API, your
     unpublished changes on the GUI will be overwritten with your work from the API.
 
