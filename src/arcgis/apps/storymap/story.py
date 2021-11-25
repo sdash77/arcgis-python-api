@@ -853,18 +853,22 @@ class StoryMap(object):
             for keyword in typeKeywords:
                 if "smdraftresourceid" in keyword:
                     typeKeywords.remove(keyword)
-                    typeKeywords.append("smdraftresourceid:" + draft)
                 if "smpublisheddate" in keyword:
                     typeKeywords.remove(keyword)
-                    typeKeywords.append("smpublisheddate:" + str(int(time.time())))
                 if (
                     "smstatusunpublishedchanges" in keyword
                     or "smstatusdraft" in keyword
                 ):
                     typeKeywords.remove(keyword)
-                    typeKeywords.append("smstatuspublished")
-            if "smdraftversion:python-api-2.0" not in typeKeywords:
-                typeKeywords.append("smdraftversion:python-api-2.0")
+            new_typeKeywords = [
+                "smstatuspublished",
+                "smversiondraft:21.43.0",
+                "smversionpublished:21.43.0",
+                "smdraftversion:python-api-2.0",
+                "smdraftresourceid:" + draft,
+                "smversionpublished:21.43.0",
+                "smpublisheddate:" + str(int(time.time())),
+            ]
             p = {"typeKeywords": typeKeywords, "text": json.dumps(self._properties)}
             if title:
                 p["title"] = title
