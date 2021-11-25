@@ -1035,7 +1035,7 @@ class Embed(object):
                 "embedType": "link",
                 "title": sections.netloc,
                 "description": caption,
-                "providerUrl": self._path,
+                "providerUrl": sections.netloc,
                 "alt": alt_text,
                 "display": display,
             },
@@ -1050,7 +1050,9 @@ class Embed(object):
         # update dictionary properties
         self._story._properties["nodes"][self.node]["data"]["url"] = self._path
         self._story._properties["nodes"][self.node]["data"]["title"] = sections.netloc
-        self._story._properties["nodes"][self.node]["data"]["providerUrl"] = self._path
+        self._story._properties["nodes"][self.node]["data"][
+            "providerUrl"
+        ] = sections.netloc
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -1140,7 +1142,10 @@ class Map(object):
                     layer_props = {}
                     layer_props["id"] = layer["id"]
                     layer_props["title"] = layer["title"]
-                    layer_props["visible"] = layer["visibility"]
+                    if "visibility" in layer:
+                        layer_props["visible"] = layer["visibility"]
+                    elif "layer_visibility" in map_item:
+                        layer_props["visible"] = map_item["layer_visibility"]
                     layers.append(layer_props)
                 self._map_layers = layers
             # Add properties for Web Scene
@@ -1151,7 +1156,10 @@ class Map(object):
                     layer_props = {}
                     layer_props["id"] = layer["id"]
                     layer_props["title"] = layer["title"]
-                    layer_props["visible"] = True
+                    if "visibility" in layer:
+                        layer_props["visible"] = layer["visibility"]
+                    else:
+                        layer_props["visible"] = False
                     layers.append(layer_props)
                 self._map_layers = layers
                 # Create the Map View to use
@@ -1496,7 +1504,7 @@ class Text(object):
             self._text = self._story._properties["nodes"][self.node]["data"]["text"]
             self._style = self._story._properties["nodes"][self.node]["data"]["type"]
         else:
-            self.node = uuid.uuid4().hex[0:6]
+            self.node = "n-" + uuid.uuid4().hex[0:6]
             self._text = text
             if isinstance(style, TextStyles):
                 self._style = style.value
@@ -1616,7 +1624,7 @@ class Button(object):
             self._link = self._story._properties["nodes"][self.node]["data"]["link"]
             self._text = self._story._properties["nodes"][self.node]["data"]["text"]
         else:
-            self.node = uuid.uuid4().hex[0:6]
+            self.node = "n-" + uuid.uuid4().hex[0:6]
             self._link = link
             self._text = text
 
