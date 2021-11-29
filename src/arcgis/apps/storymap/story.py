@@ -39,8 +39,8 @@ class StoryMap(object):
     Create a Story Map object to make edits to a story. Can be created from an item of type 'Story Map',
     an item id for that type of item, or if nothing is passed, a new story is created from a generic draft.
 
-    If an Item or item_id is passed in, only published changes are taken from the Story Map. If
-    you have unpublished changes, they will not appear when you construct your story with the API.
+    If an Item or item_id is passed in, only published changes or new drafts are taken from the Story Map.
+    If you have a story with unpublished changes, they will not appear when you construct your story with the API.
     If you start to work on your Story that has unpublished changes and save from the Python API, your
     unpublished changes on the GUI will be overwritten with your work from the API.
 
@@ -92,7 +92,11 @@ class StoryMap(object):
                 # If story is a draft, get properties from resource file.
                 for resource in self._resources:
                     for key, val in resource.items():
-                        if key == "resource" and val == "draft.json":
+                        if (
+                            key == "resource"
+                            and "draft" in val
+                            and "expressmap" not in val
+                        ):
                             # Open JSON draft file for properties
                             data = self._item.resources.get(val, try_json=True)
                             self._properties = data
@@ -127,14 +131,13 @@ class StoryMap(object):
                 "Web Application",
                 "smstatusdraft",
                 "smversiondraft:21.43.0",
-                "smdraftversion:python-api-1.0",
-                "smsdraftresourceid:draft_" + str(int(time.time())) + ".json",
+                "smdraftversion:python-api-" + arcgis.__version__,
+                "smdraftresourceid:draft_" + str(int(time.time())) + ".json",
             ]
         )
         # set the item properties dict
         item_properties = {
             "title": title,
-            "text": json.dumps(self._properties),
             "typeKeywords": typeKeywords,
             "type": "StoryMap",
         }
@@ -172,23 +175,26 @@ class StoryMap(object):
         """
         Show a preview of the story
         """
-        if self._item:
-            width = 700 if width is None else width
-            height = 350 if height is None else height
-            from IPython.display import IFrame
+        try:
+            if self._item:
+                width = 700 if width is None else width
+                height = 350 if height is None else height
+                from IPython.display import IFrame
 
-            return IFrame(
-                src=self._item.url,
-                width=width,
-                height=height,
-                params="title=" + self._item.title,
-            )
+                return IFrame(
+                    src=self._item.url,
+                    width=width,
+                    height=height,
+                    params="title=" + self._item.title,
+                )
+        except:
+            return self._item.url
 
     # ----------------------------------------------------------------------
     @property
     def cover_date(self):
         """
-        Get/Set the date shown on the story cover.
+        Get/Set the date type shown on the story cover.
 
             Values: "first-published" | "last-published" | "none"
         """
@@ -388,7 +394,9 @@ class StoryMap(object):
                 "title": orig_data["title"] if title is None else title,
                 "summary": orig_data["summary"] if summary is None else summary,
                 "byline": orig_data["byline"] if by_line is None else by_line,
-                "titlePanelPosition": "start",
+                "titlePanelPosition": orig_data["titlePanelPosition"]
+                if by_line is None
+                else "start",
             },
         }
 
@@ -700,7 +708,7 @@ class StoryMap(object):
             raise Exception("This node already exists. Please try updating instead.")
 
         # Node id included in all content except separator so create node id for that
-        node_id = content.node if content is not None else uuid.uuid4().hex[0:6]
+        node_id = content.node if content is not None else "n-" + uuid.uuid4().hex[0:6]
 
         # Find instance of content and call correct method
         if isinstance(content, Content.Image):
@@ -809,7 +817,8 @@ class StoryMap(object):
         tags                Optional string. The tags of the StoryMap.
         ---------------     --------------------------------------------------------------------
         access              Optional string. The access of the StoryMap. If none is specified, the
-                            current access type is kept.
+                            current access type is kept. This is used when `publish` parameter is set
+                            to True.
 
                             ``Values: "private" | "public" | "shared" | "org"
         ---------------     --------------------------------------------------------------------
@@ -823,7 +832,7 @@ class StoryMap(object):
         """
         # Remove old draft item
         for resource in self._resources:
-            if "draft_" in resource["resource"]:
+            if "draft" in resource["resource"]:
                 self._remove_resource(file=resource["resource"])
 
         # Add new draft
@@ -843,19 +852,27 @@ class StoryMap(object):
             self._add_resource(
                 resource_name="publish_data.json", text=json.dumps(self._properties)
             )
-            typeKeywords = ",".join(
-                [
-                    "arcgis-storymaps",
-                    "Story Map",
-                    "Web Application",
-                    "smstatuspublished",
-                    "smversionpublished:21.43.0",
-                    "smpublisheddate:" + str(int(time.time())),
-                    "smversiondraft:21.43.0",
-                    "smdraftversion:python-api-1.0",
-                    "smdraftresourceid:" + draft,
-                ]
-            )
+            # Set the typekeywords
+            typeKeywords = self._item.typeKeywords
+            for keyword in typeKeywords:
+                if "smdraftresourceid" in keyword:
+                    typeKeywords.remove(keyword)
+                if "smpublisheddate" in keyword:
+                    typeKeywords.remove(keyword)
+                if (
+                    "smstatusunpublishedchanges" in keyword
+                    or "smstatusdraft" in keyword
+                ):
+                    typeKeywords.remove(keyword)
+            new_typeKeywords = [
+                "smstatuspublished",
+                "smversiondraft:21.43.0",
+                "smversionpublished:21.43.0",
+                "smdraftversion:python-api-" + arcgis.__version__,
+                "smdraftresourceid:" + draft,
+                "smversionpublished:21.43.0",
+                "smpublisheddate:" + str(int(time.time())),
+            ]
             p = {"typeKeywords": typeKeywords, "text": json.dumps(self._properties)}
             if title:
                 p["title"] = title
@@ -865,25 +882,48 @@ class StoryMap(object):
 
             self._item.update(item_properties=p)
         else:
-            typeKeywords = ",".join(
-                [
-                    "arcgis-storymaps",
-                    "Story Map",
-                    "Web Application",
+            # Set the type keywords
+            typeKeywords = self._item.typeKeywords
+            previously_published = False
+            for keyword in typeKeywords:
+                if "smdraftresourceid" in keyword:
+                    # Update the draft
+                    typeKeywords.remove(keyword)
+                if "smpublisheddate" in keyword:
+                    # Update the date
+                    previously_published = True
+                    typeKeywords.remove(keyword)
+                if "smstatuspublished" in keyword or "smstatusdraft" in keyword:
+                    # Set correct status
+                    typeKeywords.remove(keyword)
+            if previously_published is True:
+                # unpublished changes mode
+                new_typeKeywords = [
                     "smstatusunpublishedchanges",
                     "smversiondraft:21.43.0",
-                    "smdraftversion:python-api-1.0",
+                    "smdraftversion:python-api-" + arcgis.__version__,
                     "smdraftresourceid:" + draft,
                     "smversionpublished:21.43.0",
                     "smpublisheddate:" + str(int(time.time())),
                 ]
-            )
+            if previously_published is False:
+                # still in draft mode
+                new_typeKeywords = [
+                    "smstatusdraft",
+                    "smversiondraft:21.43.0",
+                    "smdraftversion:python-api-" + arcgis.__version__,
+                    "smdraftresourceid:" + draft,
+                ]
+            for keyword in new_typeKeywords:
+                typeKeywords.append(keyword)
+            typeKeywords = list(set(typeKeywords))
+            typeKeywords = ",".join(typeKeywords)
             p = {"typeKeywords": typeKeywords}
             if title:
                 p["title"] = title
             if tags:
                 p["tags"] = tags
-            p["access"] = access if access is not None else self._item.access
+            p["access"] = self._item.access
 
             self._item.update(item_properties=p)
 

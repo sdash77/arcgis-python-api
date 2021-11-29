@@ -391,7 +391,7 @@ class PortalAdminManager(BasePortalAdmin):
         if "message" in mode:
             params["description"] = mode.pop("message", "")
         res = self._con.post(url, params)
-        if "status" is res and res["status"] != "success":
+        if "status" in res and res["status"] != "success":
             raise RuntimeError(res)
 
     # ----------------------------------------------------------------------
