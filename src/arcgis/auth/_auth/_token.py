@@ -444,13 +444,23 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     @property
     def token(self):
         """obtains the login token"""
-        if self._auth_token:
-            if (_dt.datetime.now() + _dt.timedelta(minutes=5)) >= self._expiration_time:
-                self._refresh()
-            return self._auth_token["access_token"]
-        else:
+        try:
+            if self._auth_token:
+                if (
+                    _dt.datetime.now() + _dt.timedelta(minutes=5)
+                ) >= self._expiration_time:
+                    self._refresh()
+                return self._auth_token["access_token"]
+            else:
+                self._init_token_auth_handshake()
+                return self.token
+        except:
+            self._auth_token = None
             self._init_token_auth_handshake()
-            return self.token
+            if self._auth_token:
+                return self.token
+            else:
+                raise
         return None
 
     # ----------------------------------------------------------------------
