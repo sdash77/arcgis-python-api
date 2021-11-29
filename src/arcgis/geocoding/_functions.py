@@ -128,7 +128,7 @@ class Geocoder(_GISResource):
         out_fields               optional string, name of all the fields to inlcude.
                                  The default is "*" which means all fields.
         --------------------     ----------------------------------------------------
-        max_location             optional integer, The number of locations to be
+        max_locations            optional integer, The number of locations to be
                                  returned from the service. The default is 20.
         --------------------     ----------------------------------------------------
         magic_key                The find operation retrieves results quicker when
