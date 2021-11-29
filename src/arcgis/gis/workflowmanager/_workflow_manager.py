@@ -1762,7 +1762,7 @@ class WorkflowManager:
         ===============     ====================================================================
 
         :return:
-            list of class:`~arcgis.gis.workflowmanager.Group` ID
+            list of :class:`~arcgis.gis.workflowmanager.Group` ID
 
         """
 
@@ -1845,6 +1845,22 @@ class WorkflowManager:
         :return:
             boolean
 
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Creating a Lookup Table
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            # create the lookups object
+            lookups = [{"lookupName": "Low", "value": 0},
+                       {"lookupName": "Medium", "value": 5},
+                       {"lookupName": "High", "value": 10},
+                       {"lookupName": "EXTRA", "value": 15},
+                       {"lookupName": "TEST", "value": 110}]
+
+            wm.create_lookup("priority", lookups)
+            >> True  # returns true if created successfully
         """
         try:
             url = "{base}/lookups/{lookupType}?token={token}".format(
@@ -1929,6 +1945,35 @@ class WorkflowManager:
 
         :return:
             success object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Creating a automated creation for a job template
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            # create the props object with the required automation properties
+            props = {
+                  "adds": [{
+                        "automationName": "auto_mation",
+                        "automationType": "Scheduled",
+                        "enabled": True,
+                        "details": "{\"timeType\":\"NumberOfDays\",\"dayOfMonth\":1,\"hour\":8,\"minutes\":0}"
+                    }],
+                  "updates": [
+                    {
+                      "automationId": "abc123",
+                      "automationName": "automation_updated"
+                    }
+                  ],
+                  "deletes": [
+                    "def456"
+                  ]
+                }
+
+            wm.automated_creation("template_id", props)
+            >> True  # returns true if created successfully
 
         """
         url = "{base}/jobTemplates/{jobTemplateId}/automatedCreation?token={token}".format(
@@ -2331,7 +2376,7 @@ class SavedSearchesManager:
         ===============     ====================================================================
 
         :return:
-            list of class:`~arcgis.gis.workflowmanager.Group` ID
+            list of :class:`~arcgis.gis.workflowmanager.Group` ID
 
         """
 
