@@ -92,7 +92,7 @@ class StoryMap(object):
                 # If story is a draft, get properties from resource file.
                 for resource in self._resources:
                     for key, val in resource.items():
-                        if key == "resource" and "draft" in val:
+                        if key == "resource" and "draft" in val and "expressmap" not in val:
                             # Open JSON draft file for properties
                             data = self._item.resources.get(val, try_json=True)
                             self._properties = data
