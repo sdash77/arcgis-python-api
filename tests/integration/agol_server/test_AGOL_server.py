@@ -9,7 +9,7 @@ _service = LazyLoader("arcgis.gis.server._service")
 from arcgis.gis import GIS, agoserver, server
 import unittest
 
-PROFILES = ["your_dev_online_profile", "your_online_profile"]
+PROFILES = ["your_online_profile"]  # "your_dev_online_profile",
 
 
 class TestAgolServer(unittest.TestCase):
