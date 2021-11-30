@@ -490,7 +490,7 @@ def create_buffers(
     """
     if field and distance:
         raise ValueError(
-            "Both a distance and field cannot be specified.  Choose one and resubmit."
+            "Both a distance and a field cannot be specified.  Choose one and resubmit."
         )
     if field is None and distance is None:
         distance = 1
