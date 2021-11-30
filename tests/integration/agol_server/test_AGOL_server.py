@@ -1,6 +1,6 @@
 import sys
 
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7467\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7467\src")
 from arcgis.auth.tools import LazyLoader
 
 logging = LazyLoader("logging")
@@ -33,7 +33,6 @@ class TestAgolServer(unittest.TestCase):
                 assert isinstance(server, agoserver.AGOLServicesDirectory)
                 assert server.properties
                 assert isinstance(server.services, list)
-                assert server.is_tile_server in [True, False]
                 assert len(server.folders) == 0
 
 
@@ -47,6 +46,10 @@ class TestAGOLAdminManager(unittest.TestCase):
             assert gis.admin.servers.properties
             assert gis.admin.servers.tile_server
             assert gis.admin.servers.feature_server
+            for ts in gis.admin.servers.tile_server:
+                assert ts.is_tile_server in [True, False]
+            for fs in gis.admin.servers.feature_server:
+                assert fs.is_tile_server in [True, False]
 
 
 class TestAGOLAdminServerTileManager(unittest.TestCase):
