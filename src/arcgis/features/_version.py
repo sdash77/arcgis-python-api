@@ -583,19 +583,15 @@ class Version(object):
 
         """
         self._properties = None
-        if "isBeingRead" in self.properties and self.properties.isBeingRead:
-            return True
-        elif (
-            "isBeingRead" in self.properties and self.properties.isBeingRead == False
-        ) or "isBeingRead" not in self.properties:
-            params = {"f": "json", "sessionID": self._guid}
-            url = "%s/startReading" % self._url
-            res = self._con.post(url, params)
-            if res["success"]:
-                self._mode = "read"
-                self._properties = None
+        params = {"f": "json", "sessionID": self._guid}
+        url = "%s/startReading" % self._url
+        res = self._con.post(url, params)
+        if res["success"]:
+            self._mode = "read"
+            self._properties = None
             return res["success"]
-        return False
+        else:
+            return False
 
     # ----------------------------------------------------------------------
     def stop_reading(self):
@@ -606,18 +602,17 @@ class Version(object):
 
         """
         self._properties = None
-        if self.properties.isBeingRead:
-
-            params = {"f": "json", "sessionID": self._guid}
-            url = "%s/stopReading" % self._url
-            res = self._con.post(url, params)
-            if res["success"]:
-                self._mode = None
+        params = {"f": "json", "sessionID": self._guid}
+        url = "%s/stopReading" % self._url
+        res = self._con.post(url, params)
+        if res["success"]:
+            self._mode = None
             self._properties = None
             return res["success"]
         elif self.properties.isBeingRead == False:
             return True
-        return False
+        else:
+            return False
 
     # ----------------------------------------------------------------------
     def delete_forward_edits(self, moment):

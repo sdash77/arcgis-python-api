@@ -6,6 +6,8 @@ import warnings
 from zipfile import ZipFile
 import tempfile
 from pathlib import Path
+from typing import Callable
+import copy
 
 HAS_FASTAI = False
 try:
@@ -251,6 +253,73 @@ class ArcGISImageList(ImageList):
 
     def open(self, fn):
         return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
+
+    def label_list_from_func(self, func: Callable, val_split_pct):
+        "Apply `func` to every input to get its label."
+        import pandas as pd
+
+        self._list_of_labels = ["_".join(func(o)) for o in self.items]
+        self._idx_label_tuple_list = [
+            (i, label) for i, label in enumerate(self._list_of_labels)
+        ]
+        label_series = pd.Series(self._list_of_labels)
+        single_instance_labels = list(
+            label_series.value_counts()[label_series.value_counts() == 1].index
+        )
+        req_instances_per_class = int(0.8 / val_split_pct)
+        classes_below_req_intances = list(
+            label_series.value_counts()[
+                label_series.value_counts() < req_instances_per_class
+            ].index
+        )
+        if len(classes_below_req_intances) > 0:
+            always_warn(
+                f'For valid statification all classes should have more than {req_instances_per_class} data points, \
+class(es) {",".join(classes_below_req_intances)} in your data does not meet the condition.'
+            )
+        self._label_idx_mapping = {
+            label: i for i, label in enumerate(self._list_of_labels)
+        }
+        for (
+            label
+        ) in single_instance_labels:  # adding duplicate instance of unique labels
+            self._idx_label_tuple_list.append((self._label_idx_mapping[label], label))
+        return self
+
+    def stratified_split_by_pct(self, valid_pct: float = 0.2, seed: int = None):
+        try:
+            "Split the items in a stratified manner by putting `valid_pct` in the validation set, optional `seed` can be passed."
+            from sklearn.model_selection import train_test_split
+            import random, math
+
+            if valid_pct == 0.0:
+                return self.split_none()
+            if seed is not None:
+                np.random.seed(seed)
+            if (
+                len(set(self._list_of_labels)) > len(self._list_of_labels) * valid_pct
+            ):  # if validation samples length is less than unique labels
+                classes = len(set(self._list_of_labels))
+                xlen = len(self._list_of_labels)
+                sample_shortage = math.ceil((classes - xlen * valid_pct) / valid_pct)
+                print(sample_shortage)
+                extra_samples = random.choices(
+                    self._idx_label_tuple_list, k=sample_shortage
+                )
+                self._idx_label_tuple_list.extend(extra_samples)
+            X, y = [], []
+            for index, label in self._idx_label_tuple_list:
+                X.append(index)
+                y.append(label)
+            train_idx, val_idx, _, _ = train_test_split(
+                X, y, test_size=valid_pct, random_state=seed, stratify=y
+            )
+            return self.split_by_idxs(train_idx, val_idx)
+        except Exception as e:
+            warnings.warn(
+                f"Unable to perform stratified splitting [reason : {e}], falling back to random split"
+            )
+            return self.split_by_rand_pct(valid_pct=valid_pct, seed=seed)
 
 
 class ArcGISImageListRGB(ArcGISImageList):
@@ -620,3 +689,10 @@ def _get_device_id():
         device = _get_gpu_device_id() if torch.cuda.is_available() else -1
 
     return device
+
+
+def always_warn(warning_message):
+    warning_filters = copy.deepcopy(warnings.filters)
+    warnings.simplefilter("always", UserWarning)
+    warnings.warn(warning_message)
+    warnings.filters = warning_filters

@@ -25,7 +25,7 @@ ESRI_REQUESTS_CHANNEL = "http://zion/conda/esri_requests/"
 
 BASE_BUILD_CMD = (
     "cd {build_dir} && conda build "
-    + f"-c {ESRI_CHANNEL_DEV} -c {ESRI_REQUESTS_CHANNEL} "
+    + f"-c {ESRI_CHANNEL_DEV} -c {ESRI_REQUESTS_CHANNEL} -c conda-forge -c esri "
     + "arcgis --py {python_version} --output-folder {output_dir}"
 )
 BASE_CONVERT_CMD = (
@@ -42,7 +42,7 @@ SUPPORTED_LINUX = ['linux-64']
 SUPPORTED_OSX = ['osx-64']
 SUPPORTED_UNIX = SUPPORTED_LINUX + SUPPORTED_OSX
 SUPPORTED_OSES = SUPPORTED_WIN + SUPPORTED_LINUX + SUPPORTED_OSX
-SUPPORTED_PYS = ['3.6', '3.7', '3.8', '3.9']
+SUPPORTED_PYS = ['3.7', '3.8', '3.9']  # , '3.9'
 DEFAULT_PYS = SUPPORTED_PYS
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -441,7 +441,7 @@ def _run_shell_cmd(cmd):
         log.debug("cmd output => {}".format(str_output))
         return str_output
     except subprocess.CalledProcessError as e:
-        log.warn(
+        log.warning(
             "cmd failed, returned non-zero code. Output:\n"
             "{}".format(e.output.decode("utf-8"))
         )
@@ -482,7 +482,7 @@ def _determine_current_os():
 def _apply_build_number_to_meta_yaml(build_number: int):
     meta_yaml = {}
     with open(META_YAML_FILE_PATH, "r") as f:
-        meta_yaml = yaml.load(f)
+        meta_yaml = yaml.load(f, Loader=yaml.FullLoader)
         meta_yaml["build"]["number"] = str(build_number)
     with open(META_YAML_FILE_PATH, "w") as f:
         yaml.dump(meta_yaml, f, default_flow_style=False, explicit_start=True)

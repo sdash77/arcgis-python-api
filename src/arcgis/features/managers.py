@@ -1659,6 +1659,11 @@ class FeatureLayerCollectionManager(_GISResource):
         else:
             me = gis.users.me.username
         url = "%s/content/users/%s/createService" % (url, me)
+        if spatial_reference is None:
+            # handle for tables
+            if "spatialReference" in fs.properties:
+                spatial_reference = fs.properties["spatialReference"]
+            # else it stays the spatial reference given or None
         params = {
             "f": "json",
             "isView": True,
@@ -1668,8 +1673,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     "isView": True,
                     "sourceSchemaChangesAllowed": allow_schema_changes,
                     "isUpdatableView": updateable,
-                    "spatialReference": spatial_reference
-                    or fs.properties["spatialReference"],
+                    "spatialReference": spatial_reference,
                     "initialExtent": extent or fs.properties["initialExtent"],
                     "capabilities": capabilities or fs.properties["capabilties"],
                 }

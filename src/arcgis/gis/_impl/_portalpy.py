@@ -99,6 +99,7 @@ class Portal(object):
         **kwargs,
     ):
         """The Portal constructor. Requires URL and optionally username/password."""
+        self._use_gen_token = kwargs.pop("use_gen_token", False)
         url = url.strip()  # be permissive in accepting home app urls
         homepos = url.find("/home")
         trust_env = kwargs.get("trust_env", None)
@@ -187,6 +188,7 @@ class Portal(object):
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
                     is_hosted_nb_home=is_hosted_nb_home,
+                    use_gen_token=self._use_gen_token,
                 )
             else:
                 self.con = Connection(
@@ -211,6 +213,7 @@ class Portal(object):
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
                     is_hosted_nb_home=is_hosted_nb_home,
+                    use_gen_token=self._use_gen_token,
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -299,21 +302,21 @@ class Portal(object):
             be provided.
 
 
-        ============     ====================================================
-        **Argument**     **Description**
-        ------------     ----------------------------------------------------
-        item_properties  required dictionary, see below for the keys and values
-        ------------     ----------------------------------------------------
-        data             optional string, either a path or URL to the data
-        ------------     ----------------------------------------------------
-        thumbnail        optional string, either a path or URL to an image
-        ------------     ----------------------------------------------------
-        metadata         optional string, either a path or URL to metadata.
-        ------------     ----------------------------------------------------
-        owner            optional string, defaults to logged in user.
-        ------------     ----------------------------------------------------
-        folder           optional string, content folder where placing item
-        ============     ====================================================
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        item_properties     Required dictionary, see below for the keys and values
+        ---------------     ----------------------------------------------------
+        data                Optional string, either a path or URL to the data
+        ---------------     ----------------------------------------------------
+        thumbnail           Optional string, either a path or URL to an image
+        ---------------     ----------------------------------------------------
+        metadata            Optional string, either a path or URL to metadata.
+        ---------------     ----------------------------------------------------
+        owner               Optional string, defaults to logged in user.
+        ---------------     ----------------------------------------------------
+        folder              Optional string, content folder where placing item
+        ===============     ====================================================
 
 
         ================  ============================================================================
@@ -513,6 +516,9 @@ class Portal(object):
         path = "content/users/" + owner
         if folder and folder != "/":
             folder_id = self.get_folder_id(owner, folder)
+            if folder_id is None:
+                self.create_folder(owner, folder)
+                folder_id = self.get_folder_id(owner, folder)
             path += "/" + folder_id
         path += "/createService"
 
