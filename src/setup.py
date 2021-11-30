@@ -203,12 +203,31 @@ data_files += (
     ]
 )
 
+
+def get_version():
+    """gets the version from environment variable or sets via manually setting"""
+    MAJOR = "2"
+    MINOR = "0"
+    try:
+        import os
+
+        def __path(filename):
+            return os.path.join(os.path.dirname(__file__), filename)
+
+        MICRO = "0"
+        if os.path.exists(__path("build.info")):
+            MICRO = open(__path("build.info")).read().strip()
+    except:
+        MICRO = "0"
+    return f"{MAJOR}.{MINOR}.{MICRO}"
+
+
 kwargs = {
     "name": "arcgis",
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    "version": "2.0.0",
+    "version": get_version(),
     "description": "ArcGIS API for Python",
     "long_description": long_description,
     "long_description_content_type": "text/markdown",
@@ -245,6 +264,7 @@ kwargs = {
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        # "Programming Language :: Python :: 3.9",
     ],
     # What does your project relate to?
     "keywords": "gis arcgis geographic spatial spatial-data "

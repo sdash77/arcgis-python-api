@@ -3,6 +3,7 @@ import numpy as np
 import math
 import torch.nn.functional as F
 from .._utils.env import _IS_ARCGISPRONOTEBOOK
+import warnings
 
 
 def calculate_intersection(preds, targs, mode):
@@ -208,9 +209,11 @@ def per_class_metrics(self, ignore_classes=[], **kwargs):
     tp_counts = torch.zeros(valid_class_len)
     fp_counts = torch.zeros(valid_class_len)
     fn_counts = torch.zeros(valid_class_len)
+    observed_val_data_classes = []
     for batch in self._data.valid_dl if dl is None else dl:
         x, y = batch
         y = y.to("cpu")
+        observed_val_data_classes.extend(np.unique(y).tolist())
         with torch.no_grad():
             if getattr(self, "_is_model_extension", False):
                 if self._is_multispectral:
@@ -235,6 +238,16 @@ def per_class_metrics(self, ignore_classes=[], **kwargs):
             tp_counts = tp_counts + tp.sum(0)
             fp_counts = fp_counts + fp.sum(0)
             fn_counts = fn_counts + fn.sum(0)
+    train_classes = set([int(c) for c in self._data.classes if c != "NoData"])
+    observed_val_data_classes = set(observed_val_data_classes)
+    if len(train_classes) != len(observed_val_data_classes):
+        print(train_classes - observed_val_data_classes)
+        warnings.warn(
+            f'Validation dataset classes {sorted(list(observed_val_data_classes))} does not match the training dataset \
+classes {sorted(list(train_classes))}, you could use "stratify=True" with prepare_data. If training classes are still \
+missing in validation data you could try increasing the minority class samples. Metrics are only being calculated for \
+classes present in the validation dataset.'
+        )
     precision = calculate_precision(tp_counts, fp_counts)
     recall = calculate_recall(tp_counts, fn_counts)
     f1 = calculate_f1(precision, recall)

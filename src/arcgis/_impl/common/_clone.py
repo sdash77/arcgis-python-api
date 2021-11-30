@@ -2549,7 +2549,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             if "multiScaleGeometryInfo" in layers[layer_id].properties:
                 is_generalized = True
                 layers[layer_id].container.manager.layers[layer_id].update_definition(
-                    {"multiScaleGeometryInfo": None}
+                    {
+                        "multiScaleGeometryInfo": {"levels": []}
+                    }  # {"multiScaleGeometryInfo": None}
                 )
                 layers[layer_id]._refresh()
 

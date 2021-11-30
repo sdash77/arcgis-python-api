@@ -12,7 +12,6 @@ import types
 import traceback
 import copy
 import warnings
-
 from ._utils.env import ARCGIS_ENABLE_TF_BACKEND
 
 import_exception = None
@@ -712,6 +711,7 @@ def prepare_textdata(
     remove_html_tags=False,
     remove_urls=False,
     working_dir=None,
+    **kwargs,
 ):
     """
     Prepares a text data object from the files present at data folder
@@ -786,7 +786,21 @@ def prepare_textdata(
                             for saving trained models and checkpoints.
     =====================   ===========================================
 
-    :return: `TextData` object
+    **Keyword Arguments**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    stratify                Optional boolean.
+                            If True, prepare_textdata
+                            will try to maintain the class proportion in
+                            train and validation data according to the
+                            val_split_pct.
+                            The default value is True.
+                            Note: Applies only to single-label text classification.
+    =====================   ===========================================
+
+    :returns: `TextData` object
 
     """
     # allowed_tasks = ["classification", "summarization", "translation",
@@ -819,6 +833,7 @@ def prepare_textdata(
             process_labels=process_labels,
             remove_html_tags=remove_html_tags,
             remove_urls=remove_urls,
+            **kwargs,
         )
 
     elif task.lower() == "sequence_translation":
@@ -1241,6 +1256,17 @@ def prepare_data(
                             `background_classcode` value. Only applicable
                             when specifying `classes_of_interest`.
                             Applicable only for dataset_type='PointCloud'.
+    ---------------------   -------------------------------------------
+    stratify                Optional boolean.
+                            If True, prepare_data
+                            will try to maintain the class proportion in
+                            train and validation data according to the
+                            val_split_pct.
+                            Default value feature classification is True.
+                            Default value pixel classification is False.
+
+                            Note: Applies only to single label feature classification
+                            and pixel classification.
     =====================   ===========================================
 
     :return: data object
@@ -1785,6 +1811,15 @@ def prepare_data(
         def get_y_func(x, ext=right):
             return x.parents[1] / "labels" / (x.stem + ".{}".format(ext))
 
+        def get_label_pixels(x, ext=right):
+            import numpy as np
+
+            img_arr = ArcGISMSImage.read_image(
+                (x.parents[1] / "labels" / (x.stem + ".{}".format(ext)))
+            )
+            unique_pixels = np.unique(img_arr).astype("str")
+            return unique_pixels
+
         def image_without_label(imagefile, not_label_count=[0], ext=right):
             xmlfile = (
                 imagefile.parents[1] / "labels" / (imagefile.stem + ".{}".format(ext))
@@ -1811,17 +1846,31 @@ def prepare_data(
             }
 
         if data_folders is None and images_df is None:
-            data = (
-                ArcGISSegmentationItemList.from_folder(path / "images")
-                .filter_by_func(remove_image_without_label)
-                .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(
-                    get_y_func,
-                    classes=(["NoData"] + list(class_mapping.values())),
-                    class_mapping=class_mapping,
-                    color_mapping=color_mapping,
+            if kwargs.get("stratify"):
+                data = (
+                    ArcGISSegmentationItemList.from_folder(path / "images")
+                    .filter_by_func(remove_image_without_label)
+                    .label_list_from_func(get_label_pixels)
+                    .stratified_split_by_pct(val_split_pct, seed=seed)
+                    .label_from_func(
+                        get_y_func,
+                        classes=(["NoData"] + list(class_mapping.values())),
+                        class_mapping=class_mapping,
+                        color_mapping=color_mapping,
+                    )
                 )
-            )
+            else:
+                data = (
+                    ArcGISSegmentationItemList.from_folder(path / "images")
+                    .filter_by_func(remove_image_without_label)
+                    .split_by_rand_pct(val_split_pct, seed=seed)
+                    .label_from_func(
+                        get_y_func,
+                        classes=(["NoData"] + list(class_mapping.values())),
+                        class_mapping=class_mapping,
+                        color_mapping=color_mapping,
+                    )
+                )
         else:
             if images_df is not None:
                 # imagesdf should have two columns 0, 1
@@ -2015,11 +2064,20 @@ def prepare_data(
             kwargs_transforms["resize_method"] = ResizeMethod.SQUISH
 
         if data_folders is None and images_df is None:
-            data = (
-                ArcGISImageList.from_folder(path / "images")
-                .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(get_y_func)
-            )
+            if dataset_type == "Labeled_Tiles" and kwargs.get("stratify") != False:
+                data = (
+                    ArcGISImageList.from_folder(path / "images")
+                    .label_list_from_func(get_y_func, val_split_pct)
+                    .stratified_split_by_pct(val_split_pct, seed=seed)
+                    .label_from_func(get_y_func)
+                )
+            else:
+                data = (
+                    ArcGISImageList.from_folder(path / "images")
+                    .split_by_rand_pct(val_split_pct, seed=seed)
+                    .label_from_func(get_y_func)
+                )
+
         else:
             if images_df is not None:
                 src = ArcGISImageList.from_df(images_df, "images")
@@ -2034,11 +2092,19 @@ def prepare_data(
                     imageslist.append(
                         ArcGISImageList.from_folder(data_folder / "images").items
                     )
-                src = (
-                    ArcGISImageList(np.concatenate(imageslist))
-                    .split_by_rand_pct(val_split_pct, seed=seed)
-                    .label_from_func(get_y_func)
-                )
+                if kwargs.get("stratify") != False:
+                    src = (
+                        ArcGISImageList(np.concatenate(imageslist))
+                        .label_list_from_func(get_y_func)
+                        .stratified_split_by_pct(val_split_pct, seed=seed)
+                        .label_from_func(get_y_func)
+                    )
+                else:
+                    src = (
+                        ArcGISImageList(np.concatenate(imageslist))
+                        .split_by_rand_pct(val_split_pct, seed=seed)
+                        .label_from_func(get_y_func)
+                    )
             data = src
         #
         _show_batch_multispectral = show_batch_labeled_tiles
