@@ -2,6 +2,8 @@ import logging
 import urllib.parse
 from typing import Union, List
 from functools import lru_cache
+
+from cachetools import cached, TTLCache
 from arcgis.auth.tools import LazyLoader
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.gis import GIS
@@ -38,6 +40,7 @@ class AGOLServerManager:
         self._gis = gis
 
     @property
+    @lru_cache(maxsize=100)
     def is_tile_server(self) -> bool:
         """
         Returns if the server if hosting tiles or not
@@ -47,15 +50,17 @@ class AGOLServerManager:
         return self._url.lower().find("/tiles/") > -1
 
     @property
+    @cached(cache=TTLCache(maxsize=10, ttl=25))
     def properties(self) -> InsensitiveDict:
         """
-        Returns the server's properties
+        Returns the server's properties. This call is cached for 25 seconds.
 
         :return: Dict
         """
         resp = self._gis._con.get(self._url, {"f": "json"})
         return InsensitiveDict(resp)
 
+    @lru_cache(maxsize=50)
     def get(
         self, name: str
     ) -> Union[
@@ -133,15 +138,16 @@ class AGOLServerManager:
         :returns: list
         """
         services = []
-        if "services" in self.properties:
-            for service in self.properties["services"]:
+        properties = self.properties
+        if "services" in properties:
+            for service in properties["services"]:
                 if "adminServiceInfo" in service:
                     service = service["adminServiceInfo"]
                 name = urllib.parse.quote(service["name"])
-                # if self.is_tile_server:
-                url = f"{self._url}/{name}/{service['type']}"
-                # else:
-                #    url = f"{self._url}/{name}.{service['type']}"
+                if self.is_tile_server:
+                    url = f"{self._url}/{name}/{service['type']}"
+                else:
+                    url = f"{self._url}/{name}.{service['type']}"
                 serivce_type = service["type"].lower()
                 if serivce_type == "mapserver":
 
