@@ -219,6 +219,7 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
+
 class JobManager:
     """
     Represents a helper class for workflow manager jobs. Accessible as the
@@ -749,6 +750,7 @@ class JobManager:
             return Job.manage_jobs(self._gis, url, job_ids, "Delete")
         except:
             self._handle_error(sys.exc_info())
+
 
 class WorkflowManager:
     """
@@ -1342,7 +1344,9 @@ class WorkflowManager:
         try:
             return JobDiagram.get(
                 self._gis,
-                "{base}/diagrams/{diagram}/{diagramVersion}".format(base=self._url, diagram=diagram_id, diagramVersion=version_id),
+                "{base}/diagrams/{diagram}/{diagramVersion}".format(
+                    base=self._url, diagram=diagram_id, diagramVersion=version_id
+                ),
                 {"token": self._gis._con.token},
             )
         except:
@@ -1669,7 +1673,10 @@ class WorkflowManager:
         """
         try:
             url = "{base}/diagrams/{diagramid}/{diagramVersion}?token={token}".format(
-                base=self._url, diagramid=diagram_id, diagramVersion=version_id, token=self._gis._con.token
+                base=self._url,
+                diagramid=diagram_id,
+                diagramVersion=version_id,
+                token=self._gis._con.token,
             )
             return JobDiagram.delete(self._gis, url)
         except:
@@ -1794,9 +1801,7 @@ class WorkflowManager:
         try:
             return LookUpTable.get(
                 self._gis,
-                "{base}/lookups/{lookupType}".format(
-                    base=self._url, lookupType=type
-                ),
+                "{base}/lookups/{lookupType}".format(base=self._url, lookupType=type),
                 {"token": self._gis._con.token},
             )
         except:
@@ -1892,7 +1897,8 @@ class WorkflowManager:
                 json.dumps(
                     self._gis._con.get(
                         "{base}/jobTemplates/{jobTemplateId}/automatedCreation".format(
-                            base=self._url, jobTemplateId=template_id),
+                            base=self._url, jobTemplateId=template_id
+                        ),
                         params={"token": self._gis._con.token},
                     )
                 )
@@ -1922,7 +1928,10 @@ class WorkflowManager:
                 json.dumps(
                     self._gis._con.get(
                         "{base}/jobTemplates/{jobTemplateId}/automatedCreation/{automationId}".format(
-                            base=self._url, jobTemplateId=template_id, automationId=automation_id),
+                            base=self._url,
+                            jobTemplateId=template_id,
+                            automationId=automation_id,
+                        ),
                         params={"token": self._gis._con.token},
                     )
                 )
@@ -1995,6 +2004,7 @@ class WorkflowManager:
         elif "success" in return_obj:
             return return_obj["success"]
         return return_obj
+
 
 class LookUpTable(object):
     """
@@ -2096,6 +2106,7 @@ class LookUpTable(object):
             if v is not None and not k.startswith("_")
         }
         return return_obj
+
 
 class SavedSearchesManager:
     """
@@ -2390,6 +2401,7 @@ class SavedSearchesManager:
         elif "success" in return_obj:
             return return_obj["success"]
         return return_obj["groupIds"]
+
 
 class Job(object):
     """
@@ -2830,9 +2842,7 @@ class Job(object):
             Workflow Manager Comment Id
 
         """
-        url = "{base}/jobs/{jobId}/comments".format(
-            base=self._url, jobId=self.job_id
-        )
+        url = "{base}/jobs/{jobId}/comments".format(base=self._url, jobId=self.job_id)
         post_obj = {"comment": comment}
 
         return_obj = json.loads(
@@ -2864,6 +2874,7 @@ class Job(object):
         )
         return_obj = json.loads(json.dumps(self._gis._con.get(url)))
         return return_obj["jobComments"]
+
 
 class WMRole(object):
     """
