@@ -66,11 +66,10 @@ class WorkflowManagerAdmin:
                 self._url += f"/workflow"
                 self._private_url += f"/workflow"
                 return self._url, self._private_url
-            else:
-                raise RuntimeError(
-                    "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-                    "Administrator to ensure Workflow Manager Server is properly configured."
-                )
+        raise RuntimeError(
+            "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+            "Administrator to ensure Workflow Manager Server is properly configured."
+        )
         return None
 
     def create_item(self, name) -> tuple:
@@ -277,11 +276,10 @@ class JobManager:
                 self._url += f"/workflow/{self._item.id}"
                 self._private_url += f"/workflow/{self._item.id}"
                 return self._url, self._private_url
-            else:
-                raise RuntimeError(
-                    "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-                    "Administrator to ensure Workflow Manager Server is properly configured."
-                )
+        raise RuntimeError(
+            "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+            "Administrator to ensure Workflow Manager Server is properly configured."
+        )
         return None
 
     def close(self, job_ids):
@@ -832,11 +830,10 @@ class WorkflowManager:
                 self._url += f"/workflow/{self._item.id}"
                 self._private_url += f"/workflow/{self._item.id}"
                 return self._url, self._private_url
-            else:
-                raise RuntimeError(
-                    "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-                    "Administrator to ensure Workflow Manager Server is properly configured."
-                )
+        raise RuntimeError(
+            "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+            "Administrator to ensure Workflow Manager Server is properly configured."
+        )
         return None
 
     @property
@@ -2164,11 +2161,10 @@ class SavedSearchesManager:
                 self._url += f"/workflow/{self._item.id}"
                 self._private_url += f"/workflow/{self._item.id}"
                 return self._url, self._private_url
-            else:
-                raise RuntimeError(
-                    "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-                    "Administrator to ensure Workflow Manager Server is properly configured."
-                )
+        raise RuntimeError(
+            "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+            "Administrator to ensure Workflow Manager Server is properly configured."
+        )
         return None
 
     def create(
