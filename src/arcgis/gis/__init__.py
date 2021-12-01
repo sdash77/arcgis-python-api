@@ -3830,7 +3830,51 @@ class UserManager(object):
                 items["results"] = items["results"][:max_items]
             return items
         return None
-
+    
+    def org_search(self, query:str=None, sort_field:str=None, sort_order:str=None) -> tuple:
+        """
+        The `org_search` method allows users to find users within the organization only.  
+        Users can search for details such as `provider`, `fullName` and other user properties
+        where the other user searches are limited.  This operation will not show any user outside 
+        the organization.
+        
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        query             Optional string. The query string.  See notes above. Pass None
+                          to get list of all users in the organization.
+        ----------------  --------------------------------------------------------
+        sort_field        Optional string. Valid values can be username (the default) or created.
+        ----------------  --------------------------------------------------------
+        sort_order        Optional string. Valid values are asc (the default) or desc.
+        ================  ========================================================
+        
+        :returns: List[User]
+        """
+        results = []
+        if query is None:
+            query = "*"
+        url = f"{self._gis._portal.resturl}/portals/self/users/search"
+        params = {
+            "num" : 100,
+            "f" : "json",
+            "q" : query,
+            "start" : 1,
+            "sortField" : sort_field or "",
+            "sortOrder" : sort_order or "",
+        }
+        resp = self._gis._con.get(url, params)
+        results.extend(resp.get("results", []))
+        while resp.get('nextStart', -1) > 0:
+            params['start'] = resp['nextStart']
+            resp = self._gis._con.get(url, params)
+            users = resp.get("results", [])
+            results.extend(users)
+            if len(users) == 0:
+                break
+        return tuple(User(gis=self._gis, 
+                          username=user['username'], 
+                          userdict=user) for user in results)
     # ----------------------------------------------------------------------
     def search(
         self,
