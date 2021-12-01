@@ -809,6 +809,11 @@ class StoryMap(object):
             issue checker. It is recommended to publish through the Story Maps builder if you
             want your story to go through the issue checker.
 
+        .. warning::
+            Changes to the published story may not be visible for up to one hour. You can open
+            the story in the story builder to force changes to appear immediately and perform
+            other optimizations, such as updating the story's social/SEO metadata.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
