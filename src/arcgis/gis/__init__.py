@@ -26,15 +26,16 @@ from urllib.error import HTTPError
 from urllib.parse import urlparse
 import concurrent.futures
 
-import arcgis.env
-from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._utils import _DisableLogger
-from arcgis.gis._impl._con._helpers import _is_http_url
-from arcgis._impl.common._deprecate import deprecated
-from arcgis._impl.common._utils import chunks as _chunks
 from cachetools import cached, TTLCache
-from ._impl import _portalpy
-from ._impl._jb import StatusJob
+
+from arcgis.auth.tools import LazyLoader
+
+arcgis_env = LazyLoader("arcgis.env")
+_mixins = LazyLoader("arcgis._impl.common._mixins")
+_common_utils = LazyLoader("arcgis._impl.common._utils")
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
+_portalpy = LazyLoader("arcgis.gis._impl._portalpy")
+_jb = LazyLoader("arcgis.gis._impl._jb")
 
 _log = logging.getLogger(__name__)
 
@@ -558,7 +559,7 @@ class GIS(object):
             force_refresh = True
 
         # If a token was injected, then force refresh to get updated properties
-        self._lazy_properties = PropertyMap(
+        self._lazy_properties = _mixins.PropertyMap(
             self._portal.get_properties(force=force_refresh)
         )
 
@@ -668,7 +669,7 @@ class GIS(object):
                 pass
         self._tools = _Tools(self)
         if set_active:
-            arcgis.env.active_gis = self
+            arcgis_env.active_gis = self
         if self._product_version is None:
             self._is_agol = self._portal.is_arcgisonline
             self._product_version = [
@@ -1015,7 +1016,7 @@ class GIS(object):
         """
         ``properties`` manages the actual properties of the GIS object.
         """
-        return PropertyMap(self._get_properties(force=True))
+        return _mixins.PropertyMap(self._get_properties(force=True))
 
     def update_properties(self, properties_dict):
         """The ``update_properties`` method updates the GIS's properties from those in ``properties_dict``. This method
@@ -1062,7 +1063,9 @@ class GIS(object):
 
         resp = self._portal.con.post("portals/self/update", postdata)
         if resp:
-            self._lazy_properties = PropertyMap(self._portal.get_properties(force=True))
+            self._lazy_properties = _mixins.PropertyMap(
+                self._portal.get_properties(force=True)
+            )
             # delattr(self, '_lazy_properties') # force refresh of properties when queried next
             return resp.get("success")
 
@@ -1110,6 +1113,47 @@ class GIS(object):
             url = f"{self._portal.resturl}portals/self/urls"
         return self._con.get(url, params=params)
 
+    @property
+    def hosting_servers(self) -> list:
+        """
+        Returns the hosting servers for the GIS
+
+        :returns: list
+        """
+        if self._portal.is_arcgisonline:
+            from arcgis.gis.agoserver._api import AGOLServicesDirectory
+
+            info = self._registered_servers()
+            tile_urls = set(info["urls"].get("tiles", {}).get("https", []))
+            feature_urls = set(info["urls"].get("features", {}).get("https", []))
+            tile_urls = set(info["urls"].get("tiles", {}).get("https", []))
+            tile_urls = [url for url in tile_urls if url not in feature_urls]
+            pid = self.properties.id
+            feature_urls = [
+                AGOLServicesDirectory(
+                    f"https://{url}/{pid}/arcgis/rest/services", gis=self
+                )
+                for url in feature_urls
+            ]
+            tile_urls = [
+                AGOLServicesDirectory(
+                    f"https://{url}/tiles/{pid}/arcgis/rest/services", gis=self
+                )
+                for url in tile_urls
+            ]
+            return feature_urls + tile_urls
+        else:
+            from arcgis.gis.server import ServicesDirectory
+
+            info = self._registered_servers()
+            servers = [
+                ServicesDirectory(server["url"], gis=self)
+                for server in info["servers"]
+                if server.get("serverRole", None) == "HOSTING_SERVER"
+            ]
+            return servers
+        return []
+
     # ----------------------------------------------------------------------
     @property
     def servers(self) -> dict:
@@ -1120,7 +1164,8 @@ class GIS(object):
         :return: dict
         """
         if self._portal.is_arcgisonline:
-            return None
+            info = self._registered_servers()
+            return info
         elif self._portal.is_kubernetes or self._portal.is_arcgisonline == False:
 
             url = self._portal.resturl + f"portals/{self.properties['id']}/servers"
@@ -1675,12 +1720,12 @@ class GroupMigrationManager(object):
                 self._status, **{"job_id": res["jobId"], "key": res["key"]}
             )
             executor.shutdown(False)
-            job = StatusJob(
+            job = _jb.StatusJob(
                 future=futureobj,
                 op="Export Group Content",
                 jobid=res["jobId"],
                 gis=self._gis,
-                notify=arcgis.env.verbose,
+                notify=arcgis_env.verbose,
             )
             if future:
                 return job
@@ -1752,7 +1797,7 @@ class GroupMigrationManager(object):
                 op="Export Group Content",
                 jobid=res["jobId"],
                 gis=self._gis,
-                notify=arcgis.env.verbose,
+                notify=arcgis_env.verbose,
             )
             if future:
                 return job
@@ -3560,7 +3605,7 @@ class UserManager(object):
 
         """
         try:
-            with _DisableLogger():
+            with _common_utils._DisableLogger():
                 user = self._portal.get_user(username)
 
         except RuntimeError as re:
@@ -3618,7 +3663,7 @@ class UserManager(object):
                     else:
                         ul.append(user)
                 results = []
-                for chunk in _chunks(ul, n=25):
+                for chunk in _common_utils.chunks(ul, n=25):
                     params["users"] = ",".join(chunk)
                     res = self._portal.con.post(url, params)
                     results.extend([r["status"] for r in res["results"]])
@@ -3667,7 +3712,7 @@ class UserManager(object):
                     else:
                         ul.append(user)
                 results = []
-                for chunk in _chunks(ul, n=25):
+                for chunk in _common_utils.chunks(ul, n=25):
                     params["users"] = ",".join(chunk)
                     res = self._portal.con.post(url, params)
                     results.extend([r["status"] for r in res["results"]])
@@ -6626,7 +6671,7 @@ class ContentManager(object):
                 postdata["itemIdToCreate"] = item_id
             res = self._portal.con.post(
                 path, postdata
-            )  # , use_ordered_dict=True) - OrderedDict >36< PropertyMap
+            )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
 
             fc = FeatureCollection(res["featureCollection"]["layers"][0])
             return fc
@@ -6679,7 +6724,7 @@ class ContentManager(object):
                 postdata["itemIdToCreate"] = item_id
             res = self._portal.con.post(
                 path, postdata
-            )  # , use_ordered_dict=True) - OrderedDict >36< PropertyMap
+            )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
 
             fc = FeatureCollection(res["featureCollection"]["layers"][0])
             return fc
@@ -6883,7 +6928,7 @@ class ContentManager(object):
             for i in range(0, len(l), n):
                 yield l[i : i + n]
 
-        for i in _chunks(l=updates, n=100):
+        for i in _common_utils.chunks(l=updates, n=100):
             params["items"] = i
 
             res = self._gis._con.post(path=path, postdata=params)
@@ -7181,7 +7226,7 @@ class CategorySchemaManager(object):
         if gis is None:
             import arcgis
 
-            gis = arcgis.env.active_gis
+            gis = arcgis_env.active_gis
         self._gis = gis
 
     # ----------------------------------------------------------------------
@@ -7196,9 +7241,8 @@ class CategorySchemaManager(object):
     @property
     def properties(self):
         """The ``properties`` method retrieves the properties of the schema."""
-        from arcgis._impl.common._mixins import PropertyMap
 
-        return PropertyMap(self.schema)
+        return _mixins.PropertyMap(self.schema)
 
     # ----------------------------------------------------------------------
     @property
@@ -8337,7 +8381,7 @@ class Group(dict):
         )
 
     # ----------------------------------------------------------------------
-    @deprecated(
+    @_common_deprecated.deprecated(
         deprecated_in="v1.5.1",
         removed_in=None,
         current_version=None,
@@ -8836,10 +8880,10 @@ class GroupApplication(object):
         """Loads the properties."""
         try:
             res = self._con.get(self._url, {"f": "json"})
-            self._properties = PropertyMap(res)
+            self._properties = _mixins.PropertyMap(res)
             self._json_dict = res
         except:
-            self._properties = PropertyMap({})
+            self._properties = _mixins.PropertyMap({})
             self._json_dict = {}
 
     @property
@@ -10536,7 +10580,7 @@ class Item(dict):
         super(Item, self).update(itemdict)
         self.__dict__.update(itemdict)
         try:
-            with _DisableLogger():
+            with _common_utils._DisableLogger():
                 self._populate_layers()
         except:
             pass
@@ -10551,14 +10595,14 @@ class Item(dict):
         if name == "layers":
             if self["layers"] == None or self["layers"] == []:
                 try:
-                    with _DisableLogger():
+                    with _common_utils._DisableLogger():
                         self._populate_layers()
                 except Exception as e:
                     if (
                         str(e).lower().find("token required") > -1
                         and self._gis._con._auth.lower() == "pki"
                     ):
-                        with _DisableLogger():
+                        with _common_utils._DisableLogger():
                             self._populate_layers()
                     else:
                         print(e)
@@ -10567,7 +10611,7 @@ class Item(dict):
         elif name == "tables":
             if self["tables"] == None or self["tables"] == []:
                 try:
-                    with _DisableLogger():
+                    with _common_utils._DisableLogger():
                         self._populate_layers()
                 except:
                     pass
@@ -14117,7 +14161,7 @@ class ItemDependency(object):
             res = self._con.get(self._url, params)
             if "list" in res:
                 items += res["list"]
-        self._properties = PropertyMap({"items": items})
+        self._properties = _mixins.PropertyMap({"items": items})
 
     # ----------------------------------------------------------------------
     @property
@@ -14353,7 +14397,7 @@ class _GISResource(object):
                 else:
                     raise e
 
-        self._lazy_properties = PropertyMap(dictdata)
+        self._lazy_properties = _mixins.PropertyMap(dictdata)
 
     @property
     def properties(self):
@@ -14375,7 +14419,7 @@ class _GISResource(object):
         self._lazy_token = None
         err = None
 
-        with _DisableLogger():
+        with _common_utils._DisableLogger():
             try:
                 self._refresh()
 

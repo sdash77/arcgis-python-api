@@ -4491,8 +4491,8 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         res = self._con.post(url, params)
 
         super(MapImageLayerManager, self)._refresh()
-
-        self._ms._refresh()
+        if self._ms:
+            self._ms._refresh()
 
         return res
 
