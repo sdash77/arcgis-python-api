@@ -2194,20 +2194,19 @@ class TestWorkflowManager(unittest.TestCase):
             if group["title"] == default_group_name:
                 break
 
-        template = self.create_job_template()
+        template_id = self.create_job_template()
 
         # Act
-        actual = self.connection.workflow_manager.job_template_share_details(template)
+        template = self.connection.workflow_manager.job_template(template_id)
+        actual = template.share_details
 
         # Assert
         self.assertIsInstance(actual, list, "Incorrect return type")
         self.assertEqual(actual, [], "Incorrect return type")
 
-        self.connection.workflow_manager.share_job_template(template, [group["id"]])
+        template.share([group["id"]])
 
-        actual_two = self.connection.workflow_manager.job_template_share_details(
-            template
-        )
+        actual_two = template.share_details
 
         self.assertIsInstance(actual_two, list, "Incorrect return type")
         self.assertEqual(actual_two, [group["id"]], "Incorrect return type")
@@ -2225,12 +2224,11 @@ class TestWorkflowManager(unittest.TestCase):
             if group["title"] == default_group_name:
                 break
 
-        template = self.create_job_template()
+        template_id = self.create_job_template()
 
         # Act
-        actual = self.connection.workflow_manager.share_job_template(
-            template, [group["id"]]
-        )
+        template = self.connection.workflow_manager.job_template(template_id)
+        actual = template.share([group["id"]])
 
         # Assert
         self.assertIsInstance(actual, bool, "Incorrect return type")
@@ -2990,10 +2988,9 @@ class TestWorkflowManager(unittest.TestCase):
         }
 
         # Act
-        actual = self.connection.workflow_manager.automated_creation(template_id, props)
-        creations = self.connection.workflow_manager.job_template_automated_creations(
-            template_id
-        )
+        template = self.connection.workflow_manager.job_template(template_id)
+        actual = template.create_automated_creation(props)
+        creations = template.automated_creations
 
         # Assert
         self.assertEqual(len(creations), 2, "Incorrect size")
@@ -3014,10 +3011,8 @@ class TestWorkflowManager(unittest.TestCase):
             "deletes": [id_one],
         }
 
-        self.connection.workflow_manager.automated_creation(template_id, props_two)
-        creations_two = self.connection.workflow_manager.job_template_automated_creations(
-            template_id
-        )
+        template.create_automated_creation(props_two)
+        creations_two = template.automated_creations
 
         for c in creations_two:
             if c["automationId"] == id_two:
@@ -3050,10 +3045,9 @@ class TestWorkflowManager(unittest.TestCase):
         }
 
         # Act
-        self.connection.workflow_manager.automated_creation(template_id, props)
-        creations = self.connection.workflow_manager.job_template_automated_creations(
-            template_id
-        )
+        template = self.connection.workflow_manager.job_template(template_id)
+        template.create_automated_creation(props)
+        creations = template.automated_creations
 
         # Assert
         self.assertEqual(len(creations), 2, "Incorrect size")
@@ -3082,15 +3076,12 @@ class TestWorkflowManager(unittest.TestCase):
         }
 
         # Act
-        self.connection.workflow_manager.automated_creation(template_id, props)
-        creations = self.connection.workflow_manager.job_template_automated_creations(
-            template_id
-        )
+        template = self.connection.workflow_manager.job_template(template_id)
+        template.create_automated_creation(props)
+        creations = template.automated_creations
 
         id_one = creations[0]["automationId"]
-        actual = self.connection.workflow_manager.job_template_automated_creation(
-            template_id, id_one
-        )
+        actual = template.automated_creation(id_one)
 
         # Assert
         self.assertEqual(

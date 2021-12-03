@@ -207,9 +207,7 @@ class WorkflowManagerAdmin:
 
         """
 
-        url = "{base}/healthCheck?token={token}".format(
-            base=self._url, token=self._gis._con.token
-        )
+        url = "{base}/healthCheck".format(base=self._url)
 
         return_obj = json.loads(json.dumps(self._gis._con.get(url)))
         if "error" in return_obj:
@@ -322,7 +320,7 @@ class JobManager:
             url = "{base}/jobs/manage?token={token}".format(
                 base=self._url, token=self._gis._con.token
             )
-            return Job.manage_jobs(self._gis, url, job_ids, "Close")
+            return Job.manage_jobs(self._gis, url, job_ids, "Reopen")
             url = "{base}/jobs/manage?token={token}".format(
                 base=self._url, token=self._gis._con.token
             )
@@ -1716,71 +1714,6 @@ class WorkflowManager:
 
         return return_obj["tableDefinitions"]
 
-    def share_job_template(self, template_id, group_ids):
-        """
-        Shares a job template with the list of groups
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        template_id         Required string. Saved Search id
-        ---------------     --------------------------------------------------------------------
-        group_ids           Required list. List of Workflow Group Ids
-        ===============     ====================================================================
-
-        :return:
-            boolean
-        """
-        try:
-            url = "{base}/jobTemplates/{templateId}/shareWith?token={token}".format(
-                base=self._url, templateId=template_id, token=self._gis._con.token
-            )
-            post_dict = {"groupIds": group_ids}
-
-            return_obj = json.loads(
-                self._gis._con.post(
-                    url,
-                    post_dict,
-                    add_token=False,
-                    post_json=True,
-                    try_json=False,
-                    json_encode=False,
-                )
-            )
-
-            if "error" in return_obj:
-                self._gis._con._handle_json_error(return_obj["error"], 0)
-            elif "success" in return_obj:
-                return return_obj["success"]
-        except:
-            self._handle_error(sys.exc_info())
-
-    def job_template_share_details(self, template_id):
-        """
-        Returns the list of groups that the job_template is shared with by template_id.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        template_id         Template ID
-        ===============     ====================================================================
-
-        :return:
-            list of :class:`~arcgis.gis.workflowmanager.Group` ID
-
-        """
-
-        url = "{base}/jobTemplates/{templateId}/shareWith?token={token}".format(
-            base=self._url, templateId=template_id, token=self._gis._con.token
-        )
-        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
-
-        if "error" in return_obj:
-            self._gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj:
-            return return_obj["success"]
-        return return_obj["groupIds"]
-
     def lookups(self, type):
         """
         Returns LookUp Tables by given type
@@ -1875,133 +1808,6 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def job_template_automated_creations(self, template_id):
-        """
-        Returns an active job with the given ID
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        template_id         Required string. Job Template Id
-        ===============     ====================================================================
-
-        :return:
-            list of automatedCreations associated with the JobTemplate
-
-        """
-        try:
-            return_obj = json.loads(
-                json.dumps(
-                    self._gis._con.get(
-                        "{base}/jobTemplates/{jobTemplateId}/automatedCreation".format(
-                            base=self._url, jobTemplateId=template_id
-                        ),
-                        params={"token": self._gis._con.token},
-                    )
-                )
-            )
-            return return_obj["automations"]
-        except:
-            self._handle_error(sys.exc_info())
-
-    def job_template_automated_creation(self, template_id, automation_id):
-        """
-        Returns an active job with the given ID
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        template_id         Required string. Job Template Id
-        ---------------     --------------------------------------------------------------------
-        automation_id       Required string. Automation Creation Id
-        ===============     ====================================================================
-
-        :return:
-            list of automated creations associated with the JobTemplate
-
-        """
-        try:
-            return_obj = json.loads(
-                json.dumps(
-                    self._gis._con.get(
-                        "{base}/jobTemplates/{jobTemplateId}/automatedCreation/{automationId}".format(
-                            base=self._url,
-                            jobTemplateId=template_id,
-                            automationId=automation_id,
-                        ),
-                        params={"token": self._gis._con.token},
-                    )
-                )
-            )
-            return return_obj
-        except:
-            self._handle_error(sys.exc_info())
-
-    def automated_creation(self, template_id, props):
-        """
-        Returns an active job with the given ID
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        template_id         Required string. Job Template Id
-        ---------------     --------------------------------------------------------------------
-        props               Required object. The automation objects to create, update or delete
-        ===============     ====================================================================
-
-        :return:
-            success object
-
-        .. code-block:: python
-
-            # USAGE EXAMPLE: Creating a automated creation for a job template
-
-            # create a WorkflowManager object from the workflow item
-            wm = WorkflowManager(wf_item)
-
-            # create the props object with the required automation properties
-            props = {
-                  "adds": [{
-                        "automationName": "auto_mation",
-                        "automationType": "Scheduled",
-                        "enabled": True,
-                        "details": "{\"timeType\":\"NumberOfDays\",\"dayOfMonth\":1,\"hour\":8,\"minutes\":0}"
-                    }],
-                  "updates": [
-                    {
-                      "automationId": "abc123",
-                      "automationName": "automation_updated"
-                    }
-                  ],
-                  "deletes": [
-                    "def456"
-                  ]
-                }
-
-            wm.automated_creation("template_id", props)
-            >> True  # returns true if created successfully
-
-        """
-        url = "{base}/jobTemplates/{jobTemplateId}/automatedCreation?token={token}".format(
-            base=self._url, jobTemplateId=template_id, token=self._gis._con.token
-        )
-
-        return_obj = json.loads(
-            self._gis._con.post(
-                url,
-                props,
-                add_token=False,
-                post_json=True,
-                try_json=False,
-                json_encode=False,
-            )
-        )
-        if "error" in return_obj:
-            self._gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj:
-            return return_obj["success"]
-        return return_obj
-
 
 class LookUpTable(object):
     """
@@ -2024,26 +1830,6 @@ class LookUpTable(object):
         self._url = url
 
     def __getattr__(self, item):
-        possible_fields = [
-            "default_assigned_to",
-            "last_updated_by",
-            "diagram_id",
-            "extended_property_table_definitions",
-            "description",
-            "job_template_name",
-            "job_template_id",
-            "default_start_date",
-            "default_priority_name",
-            "last_updated_date",
-            "job_start_date_type",
-            "diagram_name",
-            "default_job_duration",
-            "default_due_date",
-            "state",
-            "category",
-            "default_assigned_type",
-            "default_description",
-        ]
         gis = object.__getattribute__(self, "_gis")
         url = object.__getattribute__(self, "_url")
         id = object.__getattribute__(self, "job_template_id")
@@ -2054,11 +1840,7 @@ class LookUpTable(object):
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
         except KeyError:
-            if item in possible_fields:
-                setattr(self, _camelCase_to_underscore(item), None)
-                return None
-            else:
-                raise KeyError(f'The attribute "{item}" is invalid for Job Templates')
+            raise KeyError(f'The attribute "{item}" is invalid for LookUpTables')
 
     def get(gis, url, params):
         lookup_dict = json.loads(json.dumps(gis._con.get(url, params)))
@@ -3039,6 +2821,186 @@ class JobTemplate(object):
             for k, v in return_obj.items()
             if v is not None and not k.startswith("_")
         }
+        return return_obj
+
+    def share(self, group_ids):
+        """
+        Shares a job template with the list of groups
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        group_ids           Required list. List of Workflow Group Ids
+        ===============     ====================================================================
+
+        :return:
+            boolean
+        """
+        try:
+            url = "{base}/shareWith?token={token}".format(
+                base=self._url,
+                templateId=self.job_template_id,
+                token=self._gis._con.token,
+            )
+            post_dict = {"groupIds": group_ids}
+
+            return_obj = json.loads(
+                self._gis._con.post(
+                    url,
+                    post_dict,
+                    add_token=False,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
+            )
+
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj:
+                return return_obj["success"]
+        except:
+            self._handle_error(sys.exc_info())
+
+    @property
+    def share_details(self):
+        """
+        Returns the list of groups that the job_template is shared with by template_id.
+
+        :return:
+            list of :class:`~arcgis.gis.workflowmanager.Group` ID
+
+        """
+
+        url = "{base}/shareWith?token={token}".format(
+            base=self._url, templateId=self.job_template_id, token=self._gis._con.token
+        )
+        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
+        return return_obj["groupIds"]
+
+    @property
+    def automated_creations(self):
+        """
+        Returns an active job with the given ID
+
+        :return:
+            list of automatedCreations associated with the JobTemplate
+
+        """
+        try:
+            return_obj = json.loads(
+                json.dumps(
+                    self._gis._con.get(
+                        "{base}/automatedCreation".format(
+                            base=self._url, jobTemplateId=self.job_template_id
+                        ),
+                        params={"token": self._gis._con.token},
+                    )
+                )
+            )
+            return return_obj["automations"]
+        except:
+            self._handle_error(sys.exc_info())
+
+    def automated_creation(self, automation_id):
+        """
+        Returns the specified automated creation
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        automation_id       Required string. Automation Creation Id
+        ===============     ====================================================================
+
+        :return:
+            automated creation object.
+
+        """
+        try:
+            return_obj = json.loads(
+                json.dumps(
+                    self._gis._con.get(
+                        "{base}/automatedCreation/{automationId}".format(
+                            base=self._url,
+                            jobTemplateId=self.job_template_id,
+                            automationId=automation_id,
+                        ),
+                        params={"token": self._gis._con.token},
+                    )
+                )
+            )
+            return return_obj
+        except:
+            self._handle_error(sys.exc_info())
+
+    def create_automated_creation(self, props):
+        """
+        Creates an automated creation
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        props               Required object. The automation objects to create, update or delete
+        ===============     ====================================================================
+
+        :return:
+            success object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Creating a automated creation for a job template
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            # create the props object with the required automation properties
+            props = {
+                  "adds": [{
+                        "automationName": "auto_mation",
+                        "automationType": "Scheduled",
+                        "enabled": True,
+                        "details": "{\"timeType\":\"NumberOfDays\",\"dayOfMonth\":1,\"hour\":8,\"minutes\":0}"
+                    }],
+                  "updates": [
+                    {
+                      "automationId": "abc123",
+                      "automationName": "automation_updated"
+                    }
+                  ],
+                  "deletes": [
+                    "def456"
+                  ]
+                }
+
+            wm.automated_creation("template_id", props)
+            >> True  # returns true if created successfully
+
+        """
+        url = "{base}/automatedCreation?token={token}".format(
+            base=self._url,
+            jobTemplateId=self.job_template_id,
+            token=self._gis._con.token,
+        )
+
+        return_obj = json.loads(
+            self._gis._con.post(
+                url,
+                props,
+                add_token=False,
+                post_json=True,
+                try_json=False,
+                json_encode=False,
+            )
+        )
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
         return return_obj
 
 
