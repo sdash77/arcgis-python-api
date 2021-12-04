@@ -199,8 +199,8 @@ class GIS(object):
 
                         {
                             "http" : "http://10.343.10.22:111",
-                            "https" : "https://127.343.13.22:6443",
-                        }
+                            "https" : "https://127.343.13.22:6443"
+                        }                       
     ----------------    ---------------------------------------------------------------
     expiration          Optional Integer.  The default is 60 minutes.  The expiration
                         time for a given token.  This is used for user provided tokens

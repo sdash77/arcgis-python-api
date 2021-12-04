@@ -297,7 +297,9 @@ class _DotDensity(object):
         :return:True if successful else False
 
         """
-        mapped_names = [n["field"].lower() for n in self.attributes if "field" in n]
+        mapped_names = [
+            n["field"].lower() for n in self.attributes if "field" in n
+        ]
         if field.lower() in mapped_names:
             idx = mapped_names.index(field.lower())
             self._attributes.pop(idx)
@@ -327,7 +329,9 @@ class _DotDensity(object):
 
 
         """
-        labels = [n["label"].lower() for n in self.attributes if "label" in n]
+        labels = [
+            n["label"].lower() for n in self.attributes if "label" in n
+        ]
         if label.lower() in labels:
             idx = labels.index(label.lower())
             self._attributes.pop(idx)
@@ -370,7 +374,9 @@ class _DotDensity(object):
         return r
 
 
-def _size_info(field, min_value, max_value, min_size=6, max_size=37.5, unit="unknown"):
+def _size_info(
+    field, min_value, max_value, min_size=6, max_size=37.5, unit="unknown"
+):
     """ """
     return {
         "type": "sizeInfo",
@@ -401,7 +407,9 @@ def _color_info(
     psteps = uvalues[:: int(len(uvalues) / len(steps))]
     if psteps[-1] != uvalues[-1]:
         psteps.append(uvalues[-1])
-        steps = np.linspace(0, 254, len(steps) + 1, endpoint=True, dtype=int).tolist()
+        steps = np.linspace(
+            0, 254, len(steps) + 1, endpoint=True, dtype=int
+        ).tolist()
         cmaps = [_cmap2rgb(colors, step) for step in steps]
 
     # value_index = [uvalues[int(s*step_size)] for s in range(steps)]
@@ -471,7 +479,9 @@ def _ri_creator(**kwargs):
     if "ri_type" in kwargs:
         ri["rotatationType"] = kwargs.pop("ri_type")
         ri["valueExpression"] = kwargs.pop("ri_expression", None)
-        ri["valueExpressionTitle"] = kwargs.pop("ri_expression_title", "ri_title")
+        ri["valueExpressionTitle"] = kwargs.pop(
+            "ri_expression_title", "ri_title"
+        )
         ri["field"] = kwargs.pop("ri_field", None)
 
         return ri
@@ -505,7 +515,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     trans_exp_title         The title identifying and describing the associated
                             Arcade expression as defined in the valueExpression
                             property.
-    ----------------------  ---------------------------------------------------------
+    ======================  =========================================================
 
     **Size Info Visual Variable**
 
@@ -550,6 +560,12 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     si_value_unit           A string value indicating the required unit of measurement.
     ======================  =========================================================
 
+    **Rotation Info Visual Variable**
+
+    A rotation variable is a visual variable that defines the rotation of a symbol
+    based on a numeric data value returned from a field or expression. This value is
+    typically used to rotate symbols that indicate directionality.
+
     ======================  =========================================================
     **arguements**          **description**
     ----------------------  ---------------------------------------------------------
@@ -578,7 +594,10 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     import pandas as pd
 
     v = []
-    if isinstance(sdf_or_list, pd.DataFrame) and "trans_info_field" in kwargs:
+    if (
+        isinstance(sdf_or_list, pd.DataFrame)
+        and "trans_info_field" in kwargs
+    ):
         trans_info_field = kwargs["trans_info_field"]
         data = sdf_or_list[trans_info_field].unique().tolist()
     elif isinstance(sdf_or_list, (tuple, list)):
@@ -992,7 +1011,10 @@ def generate_renderer(
                 colors=symbol_args.pop("ci_color", "Reds_r"),
             )
         )
-    if "opacity_expression" in symbol_args and "opacity_stops" in symbol_args:
+    if (
+        "opacity_expression" in symbol_args
+        and "opacity_stops" in symbol_args
+    ):
         vv.append(
             {
                 "type": "transparencyInfo",
@@ -1088,7 +1110,9 @@ def generate_renderer(
             colorStops.append(
                 {
                     "ratio": ratios[idx],
-                    "color": _cmap2rgb(colors=colors[0], step=cstep, alpha=calpha),
+                    "color": _cmap2rgb(
+                        colors=colors[0], step=cstep, alpha=calpha
+                    ),
                 }
             )
             r += ratio
@@ -1239,7 +1263,9 @@ def generate_renderer(
             "visualVariables": symbol_args.pop("visual_variables", vv),
         }
         if "unique_values" not in symbol_args:
-            raise ValueError("unique_values must be provided if field1 is not given.")
+            raise ValueError(
+                "unique_values must be provided if field1 is not given."
+            )
         renderer["uniqueValueInfos"] = symbol_args.pop("unique_values")
     elif render_type == "v":
         renderer = {
@@ -1284,19 +1310,28 @@ def generate_renderer(
             "valueExpressionTitle": symbol_args.pop("arcade_title", None),
             "visualVariables": symbol_args.pop("visual_variables", vv),
             "rotationType": symbol_args.pop("rotation_type", "arithmetic"),
-            "rotationExpression": symbol_args.pop("rotation_expression", None),
+            "rotationExpression": symbol_args.pop(
+                "rotation_expression", None
+            ),
             "normalizationType": symbol_args.pop("normalization_type", None),
-            "normalizationTotal": symbol_args.pop("normalization_total", None),
-            "normalizationField": symbol_args.pop("normalization_field", None),
+            "normalizationTotal": symbol_args.pop(
+                "normalization_total", None
+            ),
+            "normalizationField": symbol_args.pop(
+                "normalization_field", None
+            ),
             "minValue": symbol_args.pop("min_value", 0),
             "field": symbol_args.pop("field"),
             "defaultSymbol": symbol_args.pop(
-                "default_symbol", create_symbol(geometry_type=gt, colors=default_color)
+                "default_symbol",
+                create_symbol(geometry_type=gt, colors=default_color),
             ),
             "defaultLabel": symbol_args.pop("default_label", "Other"),
             "classificationMethod": symbol_args.pop("method", None),
             "classBreakInfos": [],
-            "backgroundFillSymbol": symbol_args.pop("background_fill_symbol", None),
+            "backgroundFillSymbol": symbol_args.pop(
+                "background_fill_symbol", None
+            ),
         }
         minValue = sdf_or_series[renderer["field"]].min()
         maxValue = sdf_or_series[renderer["field"]].max()
@@ -1311,7 +1346,9 @@ def generate_renderer(
 
         # calculate the class breaks from column data
         cbs = []
-        breaks = np.linspace(minValue, maxValue, num=class_count + 1).tolist()
+        breaks = np.linspace(
+            minValue, maxValue, num=class_count + 1
+        ).tolist()
         steps = np.linspace(0, 255, len(breaks), dtype=np.int)
         ss = symbol_args.pop("symbol_style", None)
         st = symbol_args.pop("symbol_type", None)
