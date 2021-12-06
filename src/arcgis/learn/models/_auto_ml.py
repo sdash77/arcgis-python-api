@@ -100,13 +100,18 @@ class AutoML(object):
                             Possible values are:
                             For binary classification - logloss (default), auc, f1, average_precision,
                             accuracy.
-                            For mutliclass classification - logloss (default), f1, accuracy
+                            For multiclass classification - logloss (default), f1, accuracy
                             For regression - rmse (default), mse, mae, r2, mape, spearman, pearson
+
+                            Note - If there are only 2 unique values in the target, then
+                            binary classification is performed,
+                            If number of unique values in the target is between 2 and 20 (included), then
+                            multiclass classification is performed,
+                            In all other cases, regression is performed on the dataset. 
     ---------------------   -------------------------------------------
     n_jobs                  Optional. Int.
                             Number of CPU cores to be used. By default, it is set to -1 which uses
                             all processes.
-
     =====================   ===========================================
 
     :return: `AutoML` Object
@@ -137,6 +142,14 @@ class AutoML(object):
             raise Exception(
                 "Auto ML feature is currently only available for Supervised learning."
             )
+        if data:
+            if (len(data._training_indexes) < 20) & (
+                eval_metric in ["r2", "rmse", "mse", "mape", "spearman", "pearson"]
+            ):
+                warnings.warn(
+                    "The eval metric you have passed, is not valid for a classification usecase. If the use case is regression, then ensure that your dataset has atleast 22 records"
+                )
+                return
 
         if algorithms:
             algorithms = algorithms
