@@ -107,7 +107,7 @@ class AutoML(object):
                             binary classification is performed,
                             If number of unique values in the target is between 2 and 20 (included), then
                             multiclass classification is performed,
-                            In all other cases, regression is performed on the dataset. 
+                            In all other cases, regression is performed on the dataset.
     ---------------------   -------------------------------------------
     n_jobs                  Optional. Int.
                             Number of CPU cores to be used. By default, it is set to -1 which uses
@@ -124,7 +124,7 @@ class AutoML(object):
         mode="Explain",
         algorithms=None,
         eval_metric="auto",
-        n_jobs = -1,
+        n_jobs=-1,
     ):
         try:
             from supervised.automl import AutoML as base_AutoML
@@ -199,7 +199,7 @@ class AutoML(object):
                 explain_level=explain_level,
                 eval_metric=eval_metric,
                 n_jobs=n_jobs,
-                kmeans_features = False
+                kmeans_features=False,
             )
         else:
             result_path = self._data.path

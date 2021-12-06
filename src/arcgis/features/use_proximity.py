@@ -342,9 +342,7 @@ def connect_origins_to_destinations(
         _logger.warn(msg)
         params["measurement_type"] = measurement_type
 
-    return gis._tools.featureanalysis.connect_origins_to_destinations(
-        **params
-    )
+    return gis._tools.featureanalysis.connect_origins_to_destinations(**params)
 
 
 # --------------------------------------------------------------------------

@@ -449,9 +449,7 @@ def summarize_nearby(
             )
             near_type = [
                 i
-                for i in route_service.retrieve_travel_modes()[
-                    "supportedTravelModes"
-                ]
+                for i in route_service.retrieve_travel_modes()["supportedTravelModes"]
                 if i["name"] == near_type
             ][0]
             params["near_type"] = near_type
@@ -567,9 +565,7 @@ def summarize_center_and_dispersion(
         fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion,
         **kwargs,
     )
-    return gis._tools.featureanalysis.summarize_center_and_dispersion(
-        **params
-    )
+    return gis._tools.featureanalysis.summarize_center_and_dispersion(**params)
 
 
 # --------------------------------------------------------------------------
