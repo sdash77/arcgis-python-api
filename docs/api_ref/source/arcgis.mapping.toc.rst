@@ -32,7 +32,7 @@ PackagingJob
     :show-inheritance:
 
 Working with 3D Maps
--------------------
+--------------------
 WebScene
 ^^^^^^^^
 .. autoclass:: arcgis.mapping.WebScene
