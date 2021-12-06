@@ -52,10 +52,7 @@ class MyFasterRCNN:
         These two arguments comes from dataset which you have prepared from prepare_data method above.
 
         """
-        (
-            self.fasterrcnn_kwargs,
-            kwargs,
-        ) = self.fastai.core.split_kwargs_by_func(
+        (self.fasterrcnn_kwargs, kwargs,) = self.fastai.core.split_kwargs_by_func(
             kwargs, self.torchvision.models.detection.FasterRCNN.__init__
         )
         if backbone is None:
@@ -65,22 +62,18 @@ class MyFasterRCNN:
             if hasattr(self.torchvision.models, backbone):
                 backbone = getattr(self.torchvision.models, backbone)
             elif hasattr(self.torchvision.models.detection, backbone):
-                backbone = getattr(
-                    self.torchvision.models.detection, backbone
-                )
+                backbone = getattr(self.torchvision.models.detection, backbone)
         else:
             backbone = backbone
         pretrained_backbone = kwargs.get("pretrained_backbone", True)
         assert type(pretrained_backbone) == bool
         if backbone.__name__ == "resnet50":
-            model = (
-                self.torchvision.models.detection.fasterrcnn_resnet50_fpn(
-                    pretrained=pretrained_backbone,
-                    pretrained_backbone=False,
-                    min_size=1.5 * data.chip_size,
-                    max_size=2 * data.chip_size,
-                    **self.fasterrcnn_kwargs,
-                )
+            model = self.torchvision.models.detection.fasterrcnn_resnet50_fpn(
+                pretrained=pretrained_backbone,
+                pretrained_backbone=False,
+                min_size=1.5 * data.chip_size,
+                max_size=2 * data.chip_size,
+                **self.fasterrcnn_kwargs,
             )
         elif backbone.__name__ in ["resnet18", "resnet34"]:
             backbone_small = self.fastai.vision.learner.create_body(
@@ -95,8 +88,10 @@ class MyFasterRCNN:
                 **self.fasterrcnn_kwargs,
             )
         else:
-            backbone_fpn = self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(
-                backbone.__name__, pretrained=pretrained_backbone
+            backbone_fpn = (
+                self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(
+                    backbone.__name__, pretrained=pretrained_backbone
+                )
             )
             model = self.torchvision.models.detection.FasterRCNN(
                 backbone_fpn,
@@ -124,9 +119,7 @@ class MyFasterRCNN:
 
         return model
 
-    def on_batch_begin(
-        self, learn, model_input_batch, model_target_batch, **kwargs
-    ):
+    def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
         """
         This fuction is dedicated to put the inputs and outputs of the model before training. This is equivalent to fastai
         on_batch_begin function. In this function you will get the inputs and targets with applied transormations. You should
@@ -168,12 +161,12 @@ class MyFasterRCNN:
         # denormalize from imagenet_stats
         if not learn.data._is_multispectral:
             imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
-            mean = self.torch.tensor(
-                imagenet_stats[0], dtype=self.torch.float32
-            ).to(model_input_batch.device)
-            std = self.torch.tensor(
-                imagenet_stats[1], dtype=self.torch.float32
-            ).to(model_input_batch.device)
+            mean = self.torch.tensor(imagenet_stats[0], dtype=self.torch.float32).to(
+                model_input_batch.device
+            )
+            std = self.torch.tensor(imagenet_stats[1], dtype=self.torch.float32).to(
+                model_input_batch.device
+            )
             model_input_batch = (
                 model_input_batch.permute(0, 2, 3, 1) * std + mean
             ).permute(0, 3, 1, 2)
@@ -189,12 +182,8 @@ class MyFasterRCNN:
                 {}
             )  # FasterRCNN require target of each image in the formate of dictionary.
             # If image comes without any bboxes.
-            if (
-                self.tvisver[0] == 0 and self.tvisver[1] < 6
-            ) and bbox.nelement() == 0:
-                bbox = self.torch.tensor([[0.0, 0.0, 0.0, 0.0]]).to(
-                    learn.data.device
-                )
+            if (self.tvisver[0] == 0 and self.tvisver[1] < 6) and bbox.nelement() == 0:
+                bbox = self.torch.tensor([[0.0, 0.0, 0.0, 0.0]]).to(learn.data.device)
                 label = self.torch.tensor([0]).to(learn.data.device)
             # FasterRCNN require the formate of bboxes [x1,y1,x2,y2].
             bbox = self.torch.index_select(
@@ -217,9 +206,7 @@ class MyFasterRCNN:
         # return model_input and model_target
         return model_input, model_target
 
-    def transform_input(
-        self, xb, thresh=0.5, nms_overlap=0.1
-    ):  # transform_input
+    def transform_input(self, xb, thresh=0.5, nms_overlap=0.1):  # transform_input
         """
         function for feding the input to the model in validation/infrencing mode.
 
@@ -235,12 +222,12 @@ class MyFasterRCNN:
 
         # denormalize from imagenet_stats
         imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
-        mean = self.torch.tensor(
-            imagenet_stats[0], dtype=self.torch.float32
-        ).to(xb.device)
-        std = self.torch.tensor(
-            imagenet_stats[1], dtype=self.torch.float32
-        ).to(xb.device)
+        mean = self.torch.tensor(imagenet_stats[0], dtype=self.torch.float32).to(
+            xb.device
+        )
+        std = self.torch.tensor(imagenet_stats[1], dtype=self.torch.float32).to(
+            xb.device
+        )
 
         xb = (xb.permute(0, 2, 3, 1) * std + mean).permute(0, 3, 1, 2)
 
@@ -334,9 +321,7 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
             assert (
                 t["boxes"].dtype in floating_point_types
             ), "target boxes must of float type"
-            assert (
-                t["labels"].dtype == torch.int64
-            ), "target labels must of int64 type"
+            assert t["labels"].dtype == torch.int64, "target labels must of int64 type"
 
     if self.training:
         (
@@ -514,22 +499,16 @@ class FasterRCNN(ModelExtension):
     :return: ``FasterRCNN`` Object
     """
 
-    def __init__(
-        self, data, backbone="resnet50", pretrained_path=None, **kwargs
-    ):
+    def __init__(self, data, backbone="resnet50", pretrained_path=None, **kwargs):
 
         self._check_dataset_support(data)
-        backbone_name = (
-            backbone if type(backbone) is str else backbone.__name__
-        )
+        backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
             raise Exception(
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        super().__init__(
-            data, MyFasterRCNN, backbone, pretrained_path, **kwargs
-        )
+        super().__init__(data, MyFasterRCNN, backbone, pretrained_path, **kwargs)
 
         idx = 27
         if self._backbone.__name__ in ["resnet18", "resnet34"]:
@@ -628,12 +607,8 @@ class FasterRCNN(ModelExtension):
             class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
             color_mapping = {i["Value"]: i["Color"] for i in emd["Classes"]}
         except KeyError:
-            class_mapping = {
-                i["ClassValue"]: i["ClassName"] for i in emd["Classes"]
-            }
-            color_mapping = {
-                i["ClassValue"]: i["Color"] for i in emd["Classes"]
-            }
+            class_mapping = {i["ClassValue"]: i["ClassName"] for i in emd["Classes"]}
+            color_mapping = {i["ClassValue"]: i["Color"] for i in emd["Classes"]}
 
         data_passed = True
         if data is None:
@@ -644,9 +619,7 @@ class FasterRCNN(ModelExtension):
             ds_tfms = (train_tfms, val_tfms)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
-                sd = ImageList(
-                    [], path=emd_path.parent.parent.parent
-                ).split_by_idx([])
+                sd = ImageList([], path=emd_path.parent.parent.parent).split_by_idx([])
                 data = (
                     sd.label_const(
                         0,
@@ -670,9 +643,7 @@ class FasterRCNN(ModelExtension):
             data.dataset_type = dataset_type
 
         data.resize_to = resize_to
-        frcnn = cls(
-            data, backbone, pretrained_path=str(model_file), **kwargs
-        )
+        frcnn = cls(data, backbone, pretrained_path=str(model_file), **kwargs)
 
         if not data_passed:
             frcnn.learn.data.single_ds.classes = frcnn._data.classes

@@ -201,7 +201,7 @@ class GIS(object):
                         {
                             "http" : "http://10.343.10.22:111",
                             "https" : "https://127.343.13.22:6443"
-                        }                       
+                        }
     ----------------    ---------------------------------------------------------------
     expiration          Optional Integer.  The default is 60 minutes.  The expiration
                         time for a given token.  This is used for user provided tokens
@@ -273,6 +273,7 @@ class GIS(object):
 
     """
 
+    _toolgp = None
     _server_list = None
     _is_hosted_nb_home = False
     _product_version = None
@@ -324,7 +325,6 @@ class GIS(object):
         custom_auth = kwargs.pop("custom_auth", None)
         custom_adapter = kwargs.pop("adapter", None)
         self._expiration = kwargs.pop("expiration", None)
-        from arcgis._impl.tools import _Tools
 
         if profile is not None and len(profile) == 0:
             raise ValueError("A `profile` name must not be an empty string.")
@@ -667,14 +667,25 @@ class GIS(object):
                 )
             except:
                 pass
-        self._tools = _Tools(self)
+        # self._tools = _Tools(self)
         if set_active:
-            arcgis_env.active_gis = self
+            from arcgis import env
+
+            env.active_gis = self
         if self._product_version is None:
             self._is_agol = self._portal.is_arcgisonline
             self._product_version = [
                 int(i) for i in self._portal.get_version().split(".")
             ]
+
+    # ----------------------------------------------------------------------
+    @property
+    def _tools(self):
+        if self._toolgp is None:
+            from arcgis._impl.tools import _Tools
+
+            self._toolgp = _Tools(self)
+        return self._toolgp
 
     # ----------------------------------------------------------------------
     @_lazy_property
