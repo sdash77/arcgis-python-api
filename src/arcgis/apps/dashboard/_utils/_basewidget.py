@@ -201,7 +201,11 @@ class Legend(object):
 class NoDataProperties(object):
     @classmethod
     def _nodata_init(
-        cls, text="No Data", alignment="middle", show_title=True, show_description=True
+        cls,
+        text="No Data",
+        alignment="middle",
+        show_title=True,
+        show_description=True,
     ):
 
         nodata = NoDataProperties()
@@ -289,7 +293,9 @@ def _auto_calculate_width(elements):
 
     for el in elements:
         element_width = getattr(el, "width", 1)
-        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+        if isinstance(el, dict) and not isinstance(
+            el, arcgis.mapping.WebMap
+        ):
             element_width = el.get("width", 1)
 
         if element_width != 1:
@@ -300,7 +306,9 @@ def _auto_calculate_width(elements):
         available_width = float(available_width / remaining_elements)
 
     for el in elements:
-        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+        if isinstance(el, dict) and not isinstance(
+            el, arcgis.mapping.WebMap
+        ):
             if el.get("width", 1) == 1:
                 el["width"] = available_width
         elif getattr(el, "width", 1) == 1:
@@ -317,7 +325,9 @@ def _auto_calculate_height(elements):
 
     for el in elements:
         element_height = getattr(el, "height", 1)
-        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+        if isinstance(el, dict) and not isinstance(
+            el, arcgis.mapping.WebMap
+        ):
             element_height = el.get("height", 1)
 
         if element_height != 1:
@@ -328,7 +338,9 @@ def _auto_calculate_height(elements):
         available_height = float(available_height / remaining_elements)
 
     for el in elements:
-        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+        if isinstance(el, dict) and not isinstance(
+            el, arcgis.mapping.WebMap
+        ):
             if el.get("height", 1) == 1:
                 el["height"] = available_height
         elif getattr(el, "height", 1) == 1:
@@ -344,8 +356,8 @@ def add_row(elements, height=1):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    elements                    Required List. Widgets that have to be part
-                                of the row.
+    elements                    Required List. Widgets that will be added
+                                to the row in the dashboard layout.
     -------------------------   -------------------------------------------
     height                      Optional int. Height of the row.
     =========================   ===========================================
@@ -387,8 +399,8 @@ def add_column(elements, width=1):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    elements                    Required List. Widgets that have to be part
-                                of the row.
+    elements                    Required List. Widgets that will be added to
+                                the column in the dashboard layout.
     -------------------------   -------------------------------------------
     width                       Optional int. Width of the Column.
     =========================   ===========================================
