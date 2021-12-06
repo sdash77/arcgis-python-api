@@ -102,6 +102,10 @@ class AutoML(object):
                             accuracy.
                             For mutliclass classification - logloss (default), f1, accuracy
                             For regression - rmse (default), mse, mae, r2, mape, spearman, pearson
+    ---------------------   -------------------------------------------
+    n_jobs                  Optional. Int.
+                            Number of CPU cores to be used. By default, it is set to -1 which uses
+                            all processes.
 
     =====================   ===========================================
 
@@ -115,6 +119,7 @@ class AutoML(object):
         mode="Explain",
         algorithms=None,
         eval_metric="auto",
+        n_jobs = -1,
     ):
         try:
             from supervised.automl import AutoML as base_AutoML
@@ -169,10 +174,10 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            # if mode == "Explain":
-            #    explain_level = 2
-            # else:
-            explain_level = 2
+            if mode == "Explain":
+                explain_level = 2
+            else:
+                explain_level = 0  # Setting explain level to 0 in case of Perform and Compete as EDA seems to be creating memory issues
             self._model = base_AutoML(
                 mode=mode,
                 algorithms=algorithms,
@@ -180,6 +185,8 @@ class AutoML(object):
                 golden_features=False,
                 explain_level=explain_level,
                 eval_metric=eval_metric,
+                n_jobs=n_jobs,
+                kmeans_features = False
             )
         else:
             result_path = self._data.path
