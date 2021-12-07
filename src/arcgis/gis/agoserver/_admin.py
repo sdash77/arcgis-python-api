@@ -244,3 +244,12 @@ class AGOLServersManager:
             AGOLServerManager(url, gis=self._gis)
             for url in self._urls(self._gis)["feature"]
         ]
+
+    @lru_cache(maxsize=254)
+    def list(self) -> List[AGOLServerManager]:
+        """
+        Returns a list of all server managers
+
+        :returns: List[AGOLServerManager]
+        """
+        return self.tile_server + self.feature_server
