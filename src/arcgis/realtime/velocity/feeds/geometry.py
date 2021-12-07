@@ -99,28 +99,28 @@ class _HasGeometry:
         :return: true if the operation is a success
         """
         if isinstance(geometry, XYZGeometry):
-            self.data_format._x_field = geometry.x_field
-            self.data_format._y_field = geometry.y_field
+            self.data_format.x_field = geometry.x_field
+            self.data_format.y_field = geometry.y_field
             if geometry.z_field is not None:
-                self.data_format._has_z_field = True
-                self.data_format._z_field = geometry.z_field
+                self.data_format.has_z_field = True
+                self.data_format.z_field = geometry.z_field
                 if geometry.z_unit:
                     _Unit._validate_distance(geometry.z_unit)
                     z_unit_code = _Unit._distance.get(geometry.z_unit)
-                    self.data_format._z_unit = z_unit_code
-            self.data_format._build_geometry_from_fields = True
+                    self.data_format.z_unit = z_unit_code
+            self.data_format.build_geometry_from_fields = True
 
             self._fields["geometry"] = {
                 "geometryType": "esriGeometryPoint",
                 "spatialReference": {"wkid": geometry.wkid},
-                "hasZ": self.data_format._has_z_field,
+                "hasZ": self.data_format.has_z_field,
             }
 
             return True
         elif isinstance(geometry, SingleFieldGeometry):
-            self.data_format._geometry_field = geometry.geometry_field
-            self.data_format._geometry_field_format = geometry.geometry_format
-            self.data_format._build_geometry_from_fields = False
+            self.data_format.geometry_field = geometry.geometry_field
+            self.data_format.geometry_field_format = geometry.geometry_format
+            self.data_format.build_geometry_from_fields = False
 
             self._fields["geometry"] = {
                 "geometryType": geometry.geometry_type,

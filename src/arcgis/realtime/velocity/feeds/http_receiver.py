@@ -1,26 +1,33 @@
-from ._feed_template import _FeedTemplate
-from .run_interval import RunInterval
-from .time import _HasTime, TimeInterval, TimeInstant
-from .geometry import _HasGeometry, XYZGeometry, SingleFieldGeometry
-from ..feeds_manager import FeedsManager
-from ..velocity import Velocity
-from ..http_authentication_type import (
-    _HttpAuthenticationType,
-    BasicAuth,
-    NoAuth,
-    CertificateAuth,
-)
-from ..input.format import RssFormat, GeoRssFormat, _format_from_config
-
 from typing import Union, Dict, Any, Optional, ClassVar
 from dataclasses import field, dataclass
 
+from arcgis.realtime import Velocity
+from arcgis.realtime.velocity.feeds._feed_template import _FeedTemplate
+from arcgis.realtime.velocity.feeds.geometry import (
+    _HasGeometry,
+    SingleFieldGeometry,
+    XYZGeometry,
+)
+from arcgis.realtime.velocity.feeds.run_interval import RunInterval
+from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInterval
+from arcgis.realtime.velocity.http_authentication_type import (
+    NoAuth,
+    BasicAuth,
+    CertificateAuth,
+)
+from arcgis.realtime.velocity.input.format import (
+    EsriJsonFormat,
+    GeoJsonFormat,
+    JsonFormat,
+    DelimitedFormat,
+    XMLFormat,
+    _format_from_config,
+)
+
 
 @dataclass
-class RSS(_FeedTemplate, _HasTime, _HasGeometry):
+class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    Creates an RSS feed configuration data that can be used to create a Feed in Velocity.
-
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -28,18 +35,16 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     description            str. Feed description.
     ------------------     --------------------------------------------------------------------
-    rss_url                str. Address of the HTTP endpoint providing data.
+    authentication_type    str. Either "none" or "arcgis"
     ------------------     --------------------------------------------------------------------
-    http_auth_type         Union[NoAuth, BasicAuth, CertificateAuth]. An instance that contains the
-                           Authentication info for this feed instance.
+    sample_message         str. Some sample content to auto-detect data format from.
+                           example - name,age\nsam,23
     ------------------     --------------------------------------------------------------------
-    http_headers           Dict[str, str]. A Name-Value dictionary that contains HTTP headers
-                           for connecting to the RSS feed.
 
-    ==================     ====================================================================
     **Optional Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    data_format            Union[RssFormat, GeoRssFormat]. An instance that contains the data-format
+    data_format            Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
+                           An instance that contains the data-format
                            configuration for this feed. Configure only allowed formats.
                            If this is not set right during initialization, a format will be
                            auto-detected and set from a sample of the incoming data. This sample
@@ -53,37 +58,27 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
                            will be used to create time info from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    run_interval           RunInterval. An instance of scheduler configuration.
-
-                           default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     ==================     ====================================================================
-
     """
 
     # fields that the user sets during init
-    # RSS specific properties
-    rss_url: str
-    http_auth_type: Union[NoAuth, BasicAuth, CertificateAuth]
-    http_headers: Dict[str, str] = field(default_factory=dict)
+    # HTTP Poller specific properties
+    authentication_type: str
+    sample_message: str
 
     # user can define these properties even after initialization
-    data_format: Optional[Union[RssFormat, GeoRssFormat]] = None
+    data_format: Optional[
+        Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat]
+    ] = None
     # FeedTemplate properties
     track_id_field: Optional[str] = None
     # HasGeometry properties
     geometry: Optional[Union[XYZGeometry, SingleFieldGeometry]] = None
     # HasTime properties
     time: Optional[Union[TimeInstant, TimeInterval]] = None
-    # scheduler
-    run_interval: RunInterval = field(
-        default=RunInterval(
-            cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
-        )
-    )
 
     # FeedTemplate properties
-    _name: ClassVar[str] = "rss-feed"
+    _name: ClassVar[str] = "http-receiver"
 
     def __post_init__(self):
         if Velocity is None:
@@ -95,40 +90,26 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
             raise ValueError(
                 "Label should only contain alpha numeric, _ and space only"
             )
+        if self.authentication_type not in ("none", "arcgis"):
+            raise ValueError("authentication_type must be either 'none' or 'arcgis'")
+        elif not self.sample_message:
+            raise ValueError("sample_message must not be empty")
 
         # generate dictionary of this feed object's properties that will be used to query test-connection and
         # sample-messages Rest endpoint
         feed_properties = self._generate_feed_properties()
 
-        test_connection = self._util.test_connection(
-            input_type="feed", payload=feed_properties
-        )
-        # Test connection to make sure rss can fetch schema
-        if test_connection is True:
-            # test connection succeeded. Now try getting sample messages
-            sample_payload = {
-                "properties": {
-                    "maxSamplesToCollect": 5,
-                    "timeoutInMillis": 5000,
-                }
-            }
-            self._dict_deep_merge(sample_payload, feed_properties)
-            # Sample messages to fetch schema/fields
-            sample_messages = self._util.sample_messages(
-                input_type="feed", payload=sample_payload
-            )
-
-            if sample_messages["featureSchema"] is not None:
-                # sample messages succeeded. Get Feature Schema from it
-                self._set_fields(sample_messages["featureSchema"])
+        derived_schema = self._util.derive(sample_data=self.sample_message)
+        if "schema" in derived_schema and derived_schema["schema"] is not None:
+            self._set_fields(derived_schema["schema"])
 
             # if Format was not specified by user, use the auto-detected format from the sample messages response as this feed object's format.
             if self.data_format is None:
-                self.data_format = _format_from_config(sample_messages)
+                self.data_format = _format_from_config(derived_schema)
 
             print(
                 "Feature Schema retrieved from the Feed:",
-                sample_messages["featureSchema"],
+                derived_schema["schema"],
             )
 
             # initiate actions for each of the following properties if it was set at init
@@ -138,11 +119,16 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
                 self.set_geometry_config(self.geometry)
             if self.time is not None:
                 self.set_time_config(self.time)
-
-        else:
-            raise AssertionError(
-                "Test connection failed. Please make sure the feed has valid url"
+        elif ("status", "error") in derived_schema.items():
+            english_messages = map(
+                lambda message: message["englishMessage"], derived_schema["messages"]
             )
+            errors = "\n".join(english_messages)
+            print(
+                f"Could not derive schema from sample_message because of the following reasons:\n{errors}"
+            )
+        else:
+            print("Unknown error detecting the format from sample_message")
 
     def _build(self) -> dict:
         feed_configuration = {
@@ -150,7 +136,6 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
             "label": self.label,
             "description": self.description,
             "feed": {**self._generate_schema_transformation()},
-            **self.run_interval._build(),
             "properties": {"executable": True},
         }
 
@@ -160,21 +145,10 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
         return feed_configuration
 
     def _generate_feed_properties(self) -> dict:
-        # http headers
-        if bool(self.http_headers):
-            http_headers_properties = {f"{self._name}.headers": self.http_headers}
-        else:
-            http_headers_properties = {}
-
-        # http authentication type
-        auth_properties = self.http_auth_type._build(self._name)
-
         feed_properties = {
             "name": self._name,
             "properties": {
-                f"{self._name}.url": self.rss_url,
-                **auth_properties,
-                **http_headers_properties,
+                f"{self._name}.httpAuthenticationType": self.authentication_type
             },
         }
 

@@ -1,26 +1,33 @@
-from ._feed_template import _FeedTemplate
-from .run_interval import RunInterval
-from .time import _HasTime, TimeInterval, TimeInstant
-from .geometry import _HasGeometry, XYZGeometry, SingleFieldGeometry
-from ..feeds_manager import FeedsManager
-from ..velocity import Velocity
-from ..http_authentication_type import (
-    _HttpAuthenticationType,
-    BasicAuth,
-    NoAuth,
-    CertificateAuth,
-)
-from ..input.format import RssFormat, GeoRssFormat, _format_from_config
-
 from typing import Union, Dict, Any, Optional, ClassVar
 from dataclasses import field, dataclass
 
+from arcgis.realtime import Velocity
+from arcgis.realtime.velocity.feeds._feed_template import _FeedTemplate
+from arcgis.realtime.velocity.feeds.geometry import (
+    _HasGeometry,
+    SingleFieldGeometry,
+    XYZGeometry,
+)
+from arcgis.realtime.velocity.feeds.run_interval import RunInterval
+from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInterval
+from arcgis.realtime.velocity.http_authentication_type import (
+    NoAuth,
+    BasicAuth,
+    CertificateAuth,
+)
+from arcgis.realtime.velocity.input.format import (
+    EsriJsonFormat,
+    GeoJsonFormat,
+    JsonFormat,
+    DelimitedFormat,
+    XMLFormat,
+    _format_from_config,
+)
+
 
 @dataclass
-class RSS(_FeedTemplate, _HasTime, _HasGeometry):
+class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    Creates an RSS feed configuration data that can be used to create a Feed in Velocity.
-
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -28,18 +35,27 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     description            str. Feed description.
     ------------------     --------------------------------------------------------------------
-    rss_url                str. Address of the HTTP endpoint providing data.
+    url                    str. Address of the HTTP endpoint providing data.
+    ------------------     --------------------------------------------------------------------
+    http_http_method       str. Either "GET" or "POST"
     ------------------     --------------------------------------------------------------------
     http_auth_type         Union[NoAuth, BasicAuth, CertificateAuth]. An instance that contains the
                            Authentication info for this feed instance.
     ------------------     --------------------------------------------------------------------
+    url_params             Dict[str, str]. A dictionary of url param/value pairs that contains
+                           http params used accessing the HTTP resource.
+    ------------------     --------------------------------------------------------------------
     http_headers           Dict[str, str]. A Name-Value dictionary that contains HTTP headers
-                           for connecting to the RSS feed.
+                           for connecting to the HTTP resource.
+    ------------------     --------------------------------------------------------------------
+    enable_long_polling    bool.
+                           default value - False
+    ------------------     --------------------------------------------------------------------
 
-    ==================     ====================================================================
     **Optional Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    data_format            Union[RssFormat, GeoRssFormat]. An instance that contains the data-format
+    data_format            Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
+                           An instance that contains the data-format
                            configuration for this feed. Configure only allowed formats.
                            If this is not set right during initialization, a format will be
                            auto-detected and set from a sample of the incoming data. This sample
@@ -58,17 +74,21 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
 
                            default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     ==================     ====================================================================
-
     """
 
     # fields that the user sets during init
-    # RSS specific properties
-    rss_url: str
+    # HTTP Poller specific properties
+    url: str
+    http_method: str
     http_auth_type: Union[NoAuth, BasicAuth, CertificateAuth]
+    url_params: Dict[str, str] = field(default_factory=dict)
     http_headers: Dict[str, str] = field(default_factory=dict)
+    enable_long_polling: bool = field(default=False)
 
     # user can define these properties even after initialization
-    data_format: Optional[Union[RssFormat, GeoRssFormat]] = None
+    data_format: Optional[
+        Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat]
+    ] = None
     # FeedTemplate properties
     track_id_field: Optional[str] = None
     # HasGeometry properties
@@ -83,7 +103,7 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
     )
 
     # FeedTemplate properties
-    _name: ClassVar[str] = "rss-feed"
+    _name: ClassVar[str] = "http-poller"
 
     def __post_init__(self):
         if Velocity is None:
@@ -95,6 +115,8 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
             raise ValueError(
                 "Label should only contain alpha numeric, _ and space only"
             )
+        elif self.http_method not in ("POST", "GET"):
+            raise ValueError("http_post str can either be 'POST' or 'GET'.")
 
         # generate dictionary of this feed object's properties that will be used to query test-connection and
         # sample-messages Rest endpoint
@@ -103,7 +125,7 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
         test_connection = self._util.test_connection(
             input_type="feed", payload=feed_properties
         )
-        # Test connection to make sure rss can fetch schema
+        # Test connection to make sure feed can fetch schema
         if test_connection is True:
             # test connection succeeded. Now try getting sample messages
             sample_payload = {
@@ -139,11 +161,6 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
             if self.time is not None:
                 self.set_time_config(self.time)
 
-        else:
-            raise AssertionError(
-                "Test connection failed. Please make sure the feed has valid url"
-            )
-
     def _build(self) -> dict:
         feed_configuration = {
             "id": "",
@@ -165,6 +182,11 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
             http_headers_properties = {f"{self._name}.headers": self.http_headers}
         else:
             http_headers_properties = {}
+        # url params
+        if bool(self.url_params):
+            url_params_properties = {f"{self._name}.urlParameters": self.url_params}
+        else:
+            url_params_properties = {}
 
         # http authentication type
         auth_properties = self.http_auth_type._build(self._name)
@@ -172,9 +194,12 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
         feed_properties = {
             "name": self._name,
             "properties": {
-                f"{self._name}.url": self.rss_url,
+                f"{self._name}.url": self.url,
+                f"{self._name}.httpMethod": self.http_method,
+                f"{self._name}.isLongPolling": self.enable_long_polling,
                 **auth_properties,
                 **http_headers_properties,
+                **url_params_properties,
             },
         }
 

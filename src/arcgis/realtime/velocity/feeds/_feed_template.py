@@ -6,7 +6,7 @@ _TRACK_ID_TAG: str = "TRACK_ID"
 
 
 @dataclass
-class FeedTemplate:
+class _FeedTemplate:
     """
     Base Class for Feeds
     """

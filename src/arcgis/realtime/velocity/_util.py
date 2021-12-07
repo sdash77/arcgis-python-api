@@ -240,6 +240,22 @@ class _Util:
         )
         return self._validate_response(_response)
 
+    def derive(self, sample_data: str, format_name: str = "Unknown"):
+        if not sample_data:
+            raise AttributeError("sample_data should not be empty")
+
+        post_body = {
+            "content": sample_data,
+            "formatName": format_name,
+            "properties": {}
+        }
+        response = self._post_request(
+            task_type="schema/derive",
+            id=None,
+            payload=post_body,
+            raise_error=False
+        )
+        return response
     # ----------------------------------------------------------------------
     def is_valid(self, label):
         pattern = "^[A-Za-z0-9_ ]*$"

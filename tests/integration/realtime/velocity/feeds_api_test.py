@@ -2,16 +2,8 @@ import unittest
 
 from arcgis.gis import GIS
 from arcgis.realtime.velocity.feeds_manager import Feed
-from arcgis.realtime.velocity.feeds import RSS
-from arcgis.realtime.velocity.http_authentication_type import (
-    NoAuth,
-    BasicAuth,
-    CertificateAuth,
-)
-from arcgis.realtime.velocity.input.format import GeoRssFormat
-from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
-from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
-from arcgis.realtime.velocity.feeds.run_interval import RunInterval
+from arcgis.realtime.velocity.feeds import RSS, HttpReceiver
+from arcgis.realtime.velocity.http_authentication_type import (NoAuth, BasicAuth, CertificateAuth)
 
 
 try:
@@ -32,52 +24,31 @@ class TestFeedsApiMethods(unittest.TestCase):
     velocity = gis.velocity
     feeds = velocity.feeds
 
-    # RSS Properties
-    name = "rss_feed_1"
-    description = "some description about the rss feed"
-    url = "https://web.a4iot.com/RSS/usgs_non_georss_float.xml"
-    http_auth = NoAuth()
-    # http_auth = BasicAuth(username="user1", password="123")
-    # http_auth = CertificateAuth(pfx_file_http_location="https://some.where", password="123")
+    # HTTP Receiver Properties
+    name = "http_receiver_feed_1"
+    description = "some description about the HTTP Receiver feed"
+    sample_data = """name,age
+    dan,23"""
 
-    http_headers = {}
-    # http_headers = {
-    #     "Content-Type": "application/json"
-    # }
-
-    # data_format = GeoRssFormat()
-
-    rss = RSS(
+    http_receiver = HttpReceiver(
         label=name,
         description=description,
-        rss_url=url,
-        http_auth_type=http_auth,
-        http_headers=http_headers,
-        data_format=None,
+        authentication_type="none",
+        sample_message=sample_data,
+        data_format=None
     )
 
-    rss.rename_field("title", "updated_field")
-    rss.remove_field("description")
-    rss.set_track_id("link")
-    # time interval
-    time = TimeInterval(interval_start_field="pubDate", interval_end_field="updated")
-    rss.set_time_config(time=time)
-    geometry = XYZGeometry(
-        x_field="category_longitude",
-        y_field="category_latitude",
-        wkid=4326,
-        z_field="category_altitude",
-        z_unit="Meters",
-    )
-    rss.set_geometry_config(geometry=geometry)
-    rss.run_interval = RunInterval(
-        cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
-    )
+    http_receiver.rename_field("name", "name1")
 
-    print(feeds.create(feed=rss))
 
+
+    # set track id for an existing field
+    http_receiver.set_track_id("name")
+
+
+
+    feeds.create(http_receiver)
     feeds.items
-
 
 
     # rss_feed = feeds._sample_message(input_type="feed")
