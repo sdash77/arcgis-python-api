@@ -6,6 +6,7 @@ from __future__ import absolute_import
 import os
 import json
 import time
+import logging
 import tempfile
 import collections
 from typing import Tuple
@@ -14,9 +15,11 @@ from arcgis.gis import _GISResource
 import concurrent.futures as _cf
 from typing import Optional, Dict, List, Any
 
+_log = logging.getLogger()
+
 # pylint: disable=protected-access
 
-
+###########################################################################
 class AttachmentManager(object):
     """
     Manager class for manipulating feature layer attachments. This class is not created by users directly.
@@ -535,6 +538,7 @@ class AttachmentManager(object):
         return self._layer._update_attachment(oid, attachment_id, file_path)
 
 
+###########################################################################
 class SyncManager(object):
     """
     Manager class for manipulating replicas for syncing disconnected editing of :class:`~arcgis.features.FeatureLayer`s.
@@ -1450,38 +1454,56 @@ class FeatureLayerCollectionManager(_GISResource):
     Users call methods on this 'manager' object to manage the feature layer collection.
     """
 
+    _layers = None
+    _tables = None
+
     def __init__(self, url, gis=None, fs=None):
         super(FeatureLayerCollectionManager, self).__init__(url, gis)
         self._fs = fs
-        self._populate_layers()
         self._wh = None
         self._tp = _cf.ThreadPoolExecutor(5)
+
+    @property
+    def layers(self) -> list:
+        """
+        Returns a list of FeatureLayerManagers to work with FeatureLayers
+
+        :returns: List[FeatureLayerManagers]
+        """
+        self._layers = []
+        for table in self.properties.layers:
+            try:
+
+                self._layers.append(
+                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
+                )
+            except Exception as e:
+                _log.error(str(e))
+
+        return self._layers
+
+    @property
+    def tables(self) -> list:
+        """
+        Returns a list of FeatureLayerManagers to work with tables
+
+        :returns: List[FeatureLayerManagers]
+        """
+        self._tables = []
+        for table in self.properties.tables:
+            try:
+
+                self._tables.append(
+                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
+                )
+            except Exception as e:
+                _log.error(str(e))
 
     def _populate_layers(self):
         """
         populates layers and tables in the managed feature service
         """
-        layers = []
-        tables = []
-
-        try:
-            for layer in self.properties.layers:
-                layers.append(
-                    FeatureLayerManager(self.url + "/" + str(layer["id"]), self._gis)
-                )
-        except:
-            pass
-
-        try:
-            for table in self.properties.tables:
-                tables.append(
-                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
-                )
-        except:
-            pass
-
-        self.layers = layers
-        self.tables = tables
+        return
 
     @property
     def webhook_manager(self) -> WebHookServiceManager:
@@ -2453,6 +2475,7 @@ class FeatureLayerCollectionManager(_GISResource):
         return (publish_parameters, params)
 
 
+###########################################################################
 class FeatureLayerManager(_GISResource):
     """
     Allows updating the definition (if access permits) of a :class:`~arcgis.features.FeatureLayer`.

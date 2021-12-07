@@ -330,30 +330,32 @@ class Connection(object):
             cert = self._cert_file
         else:
             cert = None
-        s = requests.Session()
-        s.cert = cert
-        s.verify = self._verify_cert
-        s.trust_env = True
-        if self._custom_adapter:
-            for k, v in self._custom_adapter.items():
-                s.mount(k, v)
-        if self._custom_auth:
-            s.auth = self._custom_auth
-        parsed = self._parsed(url)
-        root = fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
-        params = {"f": "json"}
-        results = []
-        for pt in ["/info", "/rest/info", "/sharing/rest/info", "/rest/services"]:
-            try:
+        with requests.Session() as s:
+            s.cert = cert
+            s.verify = self._verify_cert
+            s.trust_env = True
+            if self._custom_adapter:
+                for k, v in self._custom_adapter.items():
+                    s.mount(k, v)
+            if self._custom_auth:
+                s.auth = self._custom_auth
+            parsed = self._parsed(url)
+            root = (
+                fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+            )
+            params = {"f": "json"}
+            results = []
+            for pt in ["/info", "/rest/info", "/sharing/rest/info", "/rest/services"]:
+                try:
 
-                www_auth = s.get(
-                    root + pt,
-                    params=params,
-                    verify=self._verify_cert,
-                ).headers.get("www-authenticate", "")
-                results.append(www_auth)
-            except:
-                results.append("")
+                    www_auth = s.get(
+                        root + pt,
+                        params=params,
+                        verify=self._verify_cert,
+                    ).headers.get("www-authenticate", "")
+                    results.append(www_auth)
+                except:
+                    results.append("")
         return list(set(results))
 
     # ----------------------------------------------------------------------

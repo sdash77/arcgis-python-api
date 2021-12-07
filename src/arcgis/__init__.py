@@ -3,7 +3,7 @@ __version__ = "2.0.0"
 from arcgis.auth.tools import LazyLoader
 
 os = LazyLoader("os")
-env = LazyLoader("arcgis.env")
+from arcgis import env
 from arcgis import features
 
 geoanalytics = LazyLoader("arcgis.geoanalytics")
@@ -21,7 +21,39 @@ if not os.environ.get("DISABLE_ARCGIS_LEARN", None) == "1":
     learn = LazyLoader("arcgis.learn")
 
 from arcgis.gis import GIS
-from .features.analysis import *
+from arcgis.features.analysis import (
+    calculate_density,
+    find_hot_spots,
+    find_outliers,
+    find_point_clusters,
+    interpolate_points,
+    summarize_center_and_dispersion,
+    connect_origins_to_destinations,
+    create_buffers,
+    create_drive_time_areas,
+    find_nearest,
+    plan_routes,
+    enrich_layer,
+    choose_best_facilities,
+    create_viewshed,
+    create_watersheds,
+    derive_new_locations,
+    find_centroids,
+    find_existing_locations,
+    find_similar_locations,
+    trace_downstream,
+    create_route_layers,
+    dissolve_boundaries,
+    extract_data,
+    generate_tessellation,
+    merge_layers,
+    overlay_layers,
+    aggregate_points,
+    join_features,
+    summarize_center_and_dispersion,
+    summarize_nearby,
+    summarize_within,
+)
 from .geocoding import geocode
 
 
