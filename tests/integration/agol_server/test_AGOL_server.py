@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7467\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7557\src")
 from arcgis.auth.tools import LazyLoader
 
 logging = LazyLoader("logging")
@@ -17,6 +17,11 @@ class TestAgolServer(unittest.TestCase):
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False)
             assert isinstance(gis.hosting_servers, list)
+
+    def test_list_servers(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False)
+            assert isinstance(gis.admin.servers.list(), list)
 
     def test_server_is_AGOServicesDirectory(self):
         """tests that the right classes are returned"""
