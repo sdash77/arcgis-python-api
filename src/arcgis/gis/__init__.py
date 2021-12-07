@@ -5146,6 +5146,7 @@ class ContentManager(object):
             >>>                                        } , owner = "User1234")
         """
         import os
+        import arcgis
 
         filetype = None
         if not isinstance(item_properties, dict):
