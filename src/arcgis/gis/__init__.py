@@ -10,7 +10,6 @@ from __future__ import absolute_import
 import base64
 import json
 import locale
-import sys
 import os
 import re
 import tempfile
@@ -21,9 +20,8 @@ import functools
 
 from datetime import datetime
 import logging
-from typing import Tuple, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from urllib.error import HTTPError
-from urllib.parse import urlparse
 import concurrent.futures
 
 from cachetools import cached, TTLCache
@@ -31,6 +29,8 @@ from cachetools import cached, TTLCache
 from arcgis.auth.tools import LazyLoader
 
 arcgis_env = LazyLoader("arcgis.env")
+arcgis = LazyLoader("arcgis")
+_agoserver = LazyLoader("arcgis.gis.agoserver._api")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
 _common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
@@ -1132,7 +1132,6 @@ class GIS(object):
         :returns: list
         """
         if self._portal.is_arcgisonline:
-            from arcgis.gis.agoserver._api import AGOLServicesDirectory
 
             info = self._registered_servers()
             tile_urls = set(info["urls"].get("tiles", {}).get("https", []))
@@ -1141,13 +1140,13 @@ class GIS(object):
             tile_urls = [url for url in tile_urls if url not in feature_urls]
             pid = self.properties.id
             feature_urls = [
-                AGOLServicesDirectory(
+                _agoserver.AGOLServicesDirectory(
                     f"https://{url}/{pid}/arcgis/rest/services", gis=self
                 )
                 for url in feature_urls
             ]
             tile_urls = [
-                AGOLServicesDirectory(
+                _agoserver.AGOLServicesDirectory(
                     f"https://{url}/tiles/{pid}/arcgis/rest/services", gis=self
                 )
                 for url in tile_urls
@@ -5246,8 +5245,6 @@ class ContentManager(object):
             multipart = False
             item_properties.pop("multipart", None)
         if multipart and is_file:
-            import copy
-
             item_properties["multipart"] = True
             params = {}
             params.update(item_properties)
@@ -7235,8 +7232,6 @@ class CategorySchemaManager(object):
         """Constructor"""
         self._url = base_url
         if gis is None:
-            import arcgis
-
             gis = arcgis_env.active_gis
         self._gis = gis
 
