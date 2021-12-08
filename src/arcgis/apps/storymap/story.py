@@ -878,7 +878,10 @@ class StoryMap(object):
                 "smversionpublished:21.43.0",
                 "smpublisheddate:" + str(int(time.time())),
             ]
-            p = {"typeKeywords": typeKeywords, "text": json.dumps(self._properties)}
+            p = {
+                "typeKeywords": list(set(typeKeywords + new_typeKeywords)),
+                "text": json.dumps(self._properties),
+            }
             if title:
                 p["title"] = title
             if tags:
@@ -911,6 +914,9 @@ class StoryMap(object):
                     "smversionpublished:21.43.0",
                     "smpublisheddate:" + str(int(time.time())),
                 ]
+                if "smstatuspublished" in typeKeywords:
+                    idx = typeKeywords.index("smstatuspublished")
+                    del typeKeywords[idx]
             if previously_published is False:
                 # still in draft mode
                 new_typeKeywords = [
