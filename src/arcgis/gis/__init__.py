@@ -9726,7 +9726,7 @@ class User(dict):
     @property
     def landing_page(self) -> str:
         """
-        Returns the User's login page
+        Gets or sets the User's login page,
 
         ================  ==========================================================
         **Argument**      **Description**
@@ -9736,6 +9736,15 @@ class User(dict):
         ================  ==========================================================
 
         :return: str
+        
+        .. code-block:: python
+        
+           # Usage example: Setting login page
+           
+           >>> user1 = gis.users.get("org_data_viewer")
+           
+           >>> user1.landing_page = "map"
+           
         """
         value = self.user_settings.get("landingPage", {}).get("url", "")
         lu = {
