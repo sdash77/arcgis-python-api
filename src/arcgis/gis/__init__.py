@@ -9723,6 +9723,124 @@ class User(dict):
             self._hydrate()
         return ret["success"]
 
+    @property
+    def landing_page(self) -> str:
+        """
+        Gets or sets the User's login page,
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        value             Required string. The values are `home`, `gallery`, `map`,
+                          `scene`, `groups`, `content`, or `organization`
+        ================  ==========================================================
+
+        :return: str
+
+        .. code-block:: python
+
+           # Usage example: Setting login page
+
+           >>> user1 = gis.users.get("org_data_viewer")
+
+           >>> user1.landing_page = "map"
+
+        """
+        value = self.user_settings.get("landingPage", {}).get("url", "")
+        lu = {
+            "index.html": "home",
+            "gallery.html": "gallery",
+            "webmap/viewer.html": "map",
+            "webscene/viewer.html": "scene",
+            "groups.html": "groups",
+            "content.html": "content",
+            "organization.html": "organization",
+        }
+
+        if value == "":
+            return None
+        return lu[value.lower()]
+
+    @landing_page.setter
+    def landing_page(self, value: str):
+        """
+        Returns the User's login page
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        value             Required string. The values are `home`, `gallery`, `map`,
+                          `scene`, `groups`, `content`, or `organization`
+        ================  ==========================================================
+
+        :return: str
+        """
+        value = value.lower()
+        landing_pages_lu = {
+            "home": "index.html",
+            "gallery": "gallery.html",
+            "map": "webmap/viewer.html",
+            "scene": "webscene/viewer.html",
+            "groups": "groups.html",
+            "content": "content.html",
+            "organization": "organization.html",
+        }
+        if value in landing_pages_lu:
+            value = landing_pages_lu[value]
+            us = self.user_settings
+            us["landingPage"] = {"url": f"{value}"}
+            url = "%s/sharing/rest/community/users/%s/setProperties" % (
+                self._gis._url,
+                self.username,
+            )
+            params = {"f": "json", "properties": us}
+            res = self._gis._con.post(url, params)
+
+        else:
+            raise ValueError("The ")
+
+    # ----------------------------------------------------------------------
+    @property
+    def user_settings(self) -> dict:
+        """
+        Get/set the current user's settings that are defined in the user profile.
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        value             Required dict. The `landingPage` and `appLauncher` settings.
+        ================  ==========================================================
+
+        :return: dict
+        """
+        url = "%s/sharing/rest/community/users/%s/properties" % (
+            self._gis._url,
+            self.username,
+        )
+        params = {"f": "json"}
+        return self._gis._con.get(url, params).get("properties", {})
+
+    # ----------------------------------------------------------------------
+    @user_settings.setter
+    def user_settings(self, value: dict):
+        """
+        Get/set the current user's settings that are defined in the user profile.
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        value             Required dict. The `landingPage` and `appLauncher` settings.
+        ================  ==========================================================
+
+        :return: dict
+        """
+        url = "%s/sharing/rest/community/users/%s/setProperties" % (
+            self._gis._url,
+            self.username,
+        )
+        params = {"f": "json", "properties": value}
+        self._gis._con.post(url, params)
+
     # ----------------------------------------------------------------------
     def disable(self):
         """
