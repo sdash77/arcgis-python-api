@@ -2964,11 +2964,10 @@ class TestWorkflowManager(unittest.TestCase):
 
     # region Automated Creations
 
-    def test_create_automation_creation_successfully_returns(self):
+    def test_update_automation_creation_successfully_returns(self):
         # Arrange
         template_id = self.create_job_template()
-        props = {
-            "adds": [
+        adds = [
                 {
                     "automationName": "test_one",
                     "automationType": "Scheduled",
@@ -2982,14 +2981,11 @@ class TestWorkflowManager(unittest.TestCase):
                     "details": '{"timeType":"DayOfWeek","dayOfWeek":2,"hour":8,"minutes":0,'
                     '"endDate":1921305600000} ',
                 },
-            ],
-            "updates": [],
-            "deletes": [],
-        }
+            ]
 
         # Act
         template = self.connection.workflow_manager.job_template(template_id)
-        actual = template.create_automated_creation(props)
+        actual = template.update_automated_creation(adds)
         creations = template.automated_creations
 
         # Assert
@@ -2997,21 +2993,18 @@ class TestWorkflowManager(unittest.TestCase):
 
         id_one = creations[0]["automationId"]
         id_two = creations[1]["automationId"]
-
-        props_two = {
-            "adds": [
+        adds = [
                 {
                     "automationName": "test_three",
                     "automationType": "Scheduled",
                     "enabled": True,
                     "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
                 }
-            ],
-            "updates": [{"automationId": id_two, "automationName": "test_two_updated"}],
-            "deletes": [id_one],
-        }
+            ]
+        updates = [{"automationId": id_two, "automationName": "test_two_updated"}]
+        deletes = [id_one]
 
-        template.create_automated_creation(props_two)
+        template.update_automated_creation(adds, updates, deletes)
         creations_two = template.automated_creations
 
         for c in creations_two:
@@ -3024,8 +3017,7 @@ class TestWorkflowManager(unittest.TestCase):
     def test_get_automation_creation_successfully_returns(self):
         # Arrange
         template_id = self.create_job_template()
-        props = {
-            "adds": [
+        adds = [
                 {
                     "automationName": "test_one",
                     "automationType": "Scheduled",
@@ -3039,14 +3031,11 @@ class TestWorkflowManager(unittest.TestCase):
                     "details": '{"timeType":"DayOfWeek","dayOfWeek":2,"hour":8,"minutes":0,'
                     '"endDate":1921305600000} ',
                 },
-            ],
-            "updates": [],
-            "deletes": [],
-        }
+            ]
 
         # Act
         template = self.connection.workflow_manager.job_template(template_id)
-        template.create_automated_creation(props)
+        template.update_automated_creation(adds, [], [])
         creations = template.automated_creations
 
         # Assert
@@ -3055,8 +3044,7 @@ class TestWorkflowManager(unittest.TestCase):
     def test_get_specific_automation_creation_returns_successfully(self):
         # Arrange
         template_id = self.create_job_template()
-        props = {
-            "adds": [
+        adds = [
                 {
                     "automationName": "test_one",
                     "automationType": "Scheduled",
@@ -3070,14 +3058,11 @@ class TestWorkflowManager(unittest.TestCase):
                     "details": '{"timeType":"DayOfWeek","dayOfWeek":2,"hour":8,"minutes":0,'
                     '"endDate":1921305600000} ',
                 },
-            ],
-            "updates": [],
-            "deletes": [],
-        }
+            ]
 
         # Act
         template = self.connection.workflow_manager.job_template(template_id)
-        template.create_automated_creation(props)
+        template.update_automated_creation(adds, [], [])
         creations = template.automated_creations
 
         id_one = creations[0]["automationId"]

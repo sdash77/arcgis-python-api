@@ -2886,7 +2886,7 @@ class JobTemplate(object):
     @property
     def automated_creations(self):
         """
-        Returns an active job with the given ID
+        Retrieve the list of created automations for a job template, including scheduled job creation and webhook.
 
         :return:
             list of automatedCreations associated with the JobTemplate
@@ -2938,14 +2938,18 @@ class JobTemplate(object):
         except:
             self._handle_error(sys.exc_info())
 
-    def create_automated_creation(self, props):
+    def update_automated_creation(self, adds=[], updates=[], deletes=[]):
         """
         Creates an automated creation
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        props               Required object. The automation objects to create, update or delete
+        adds                Optional List. The list of automated creations to create.
+        ---------------     --------------------------------------------------------------------
+        updates             Optional List. The list of automated creations to update
+        ---------------     --------------------------------------------------------------------
+        deletes             Optional List. The list of automated creation ids to delete
         ===============     ====================================================================
 
         :return:
@@ -2959,28 +2963,25 @@ class JobTemplate(object):
             wm = WorkflowManager(wf_item)
 
             # create the props object with the required automation properties
-            props = {
-                  "adds": [{
+            adds = [{
                         "automationName": "auto_mation",
                         "automationType": "Scheduled",
                         "enabled": True,
                         "details": "{\"timeType\":\"NumberOfDays\",\"dayOfMonth\":1,\"hour\":8,\"minutes\":0}"
-                    }],
-                  "updates": [
+                    }]
+            updates = [
                     {
                       "automationId": "abc123",
                       "automationName": "automation_updated"
                     }
-                  ],
-                  "deletes": [
-                    "def456"
                   ]
-                }
+            deletes =  ["def456"]
 
-            wm.automated_creation("template_id", props)
+            wm.update_automated_creation(adds, updates, deletes)
             >> True  # returns true if created successfully
 
         """
+        props = {"adds": adds, "updates": updates, "deletes": deletes}
         url = "{base}/automatedCreation?token={token}".format(
             base=self._url,
             jobTemplateId=self.job_template_id,
