@@ -2968,20 +2968,20 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         template_id = self.create_job_template()
         adds = [
-                {
-                    "automationName": "test_one",
-                    "automationType": "Scheduled",
-                    "enabled": True,
-                    "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
-                },
-                {
-                    "automationName": "test_two",
-                    "automationType": "Scheduled",
-                    "enabled": True,
-                    "details": '{"timeType":"DayOfWeek","dayOfWeek":2,"hour":8,"minutes":0,'
-                    '"endDate":1921305600000} ',
-                },
-            ]
+            {
+                "automationName": "test_one",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
+            },
+            {
+                "automationName": "test_two",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"DayOfWeek","dayOfWeek":2,"hour":8,"minutes":0,'
+                '"endDate":1921305600000} ',
+            },
+        ]
 
         # Act
         template = self.connection.workflow_manager.job_template(template_id)
@@ -2994,13 +2994,13 @@ class TestWorkflowManager(unittest.TestCase):
         id_one = creations[0]["automationId"]
         id_two = creations[1]["automationId"]
         adds = [
-                {
-                    "automationName": "test_three",
-                    "automationType": "Scheduled",
-                    "enabled": True,
-                    "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
-                }
-            ]
+            {
+                "automationName": "test_three",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
+            }
+        ]
         updates = [{"automationId": id_two, "automationName": "test_two_updated"}]
         deletes = [id_one]
 
@@ -3018,20 +3018,20 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         template_id = self.create_job_template()
         adds = [
-                {
-                    "automationName": "test_one",
-                    "automationType": "Scheduled",
-                    "enabled": True,
-                    "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
-                },
-                {
-                    "automationName": "test_two",
-                    "automationType": "Scheduled",
-                    "enabled": True,
-                    "details": '{"timeType":"DayOfWeek","dayOfWeek":2,"hour":8,"minutes":0,'
-                    '"endDate":1921305600000} ',
-                },
-            ]
+            {
+                "automationName": "test_one",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
+            },
+            {
+                "automationName": "test_two",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"DayOfWeek","dayOfWeek":2,"hour":8,"minutes":0,'
+                '"endDate":1921305600000} ',
+            },
+        ]
 
         # Act
         template = self.connection.workflow_manager.job_template(template_id)
@@ -3045,20 +3045,20 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         template_id = self.create_job_template()
         adds = [
-                {
-                    "automationName": "test_one",
-                    "automationType": "Scheduled",
-                    "enabled": True,
-                    "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
-                },
-                {
-                    "automationName": "test_two",
-                    "automationType": "Scheduled",
-                    "enabled": True,
-                    "details": '{"timeType":"DayOfWeek","dayOfWeek":2,"hour":8,"minutes":0,'
-                    '"endDate":1921305600000} ',
-                },
-            ]
+            {
+                "automationName": "test_one",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
+            },
+            {
+                "automationName": "test_two",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"DayOfWeek","dayOfWeek":2,"hour":8,"minutes":0,'
+                '"endDate":1921305600000} ',
+            },
+        ]
 
         # Act
         template = self.connection.workflow_manager.job_template(template_id)
