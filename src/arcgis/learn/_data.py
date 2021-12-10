@@ -2000,19 +2000,25 @@ def prepare_data(
         #
         #
         image_files = [*data.train.items, *data.valid.items]
-        argslist = [{
-            "imagefile": im,
-            "class_mapping" : class_mapping,
-            "height_width" : height_width,
-            "dataset_type" : dataset_type,
-        } for im in image_files]
+        argslist = [
+            {
+                "imagefile": im,
+                "class_mapping": class_mapping,
+                "height_width": height_width,
+                "dataset_type": dataset_type,
+            }
+            for im in image_files
+        ]
         label_store = {}
         from . import _utils
+
         temp_folder = os.path.dirname(_utils.__file__)
         from multiprocessing import Pool, cpu_count
+
         sys.path.append(temp_folder)
         from pascal_voc_rectangles_reader import _get_bbox_lbls_helper
-        pool = Pool(cpu_count(), initargs={'PYTHONPATH': temp_folder})
+
+        pool = Pool(cpu_count(), initargs={"PYTHONPATH": temp_folder})
         res = pool.imap(_get_bbox_lbls_helper, argslist)
         for i, y in enumerate(res):
             label_store[image_files[i]] = y
@@ -2023,9 +2029,16 @@ def prepare_data(
         data = data.label_from_func(label_store.get)
         #
         _bboxes = []
-        for x in label_store.values(): _bboxes.extend(x[0])
+        for x in label_store.values():
+            _bboxes.extend(x[0])
         _bboxes = np.array(_bboxes, dtype=np.float32)
-        height_width = np.stack([(_bboxes[:, 3] - _bboxes[:, 1]) * 1.25, (_bboxes[:, 2] - _bboxes[:, 0]) * 1.25], -1).tolist()
+        height_width = np.stack(
+            [
+                (_bboxes[:, 3] - _bboxes[:, 1]) * 1.25,
+                (_bboxes[:, 2] - _bboxes[:, 0]) * 1.25,
+            ],
+            -1,
+        ).tolist()
         #
         _show_batch_multispectral = show_batch_pascal_voc_rectangles
 

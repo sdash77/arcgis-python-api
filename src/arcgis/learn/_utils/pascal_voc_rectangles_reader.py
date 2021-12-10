@@ -125,8 +125,10 @@ def _get_bbox_lbls(imagefile, class_mapping, height_width, **kwargs):
         label_file, class_mapping, height_width, dataset_type=dataset_type
     )
 
+
 def _get_bbox_lbls_helper(args):
     return _get_bbox_lbls(**args)
+
 
 def _get_lbls(imagefile, class_mapping):
     xmlfile = (
@@ -193,4 +195,3 @@ def _get_class_mapping(path, **kwargs):
                 class_mapping[tag_obj.find("name").text] = tag_obj.find("name").text
 
     return class_mapping
-
