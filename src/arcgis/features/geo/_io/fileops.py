@@ -1293,6 +1293,7 @@ def _sanitize_column_names(
     else:
         # return a new dataframe
         df = geo._data.copy()
+        df.spatial.name
         df.columns = new_col_names
         return df
     return True
