@@ -1283,12 +1283,17 @@ def _sanitize_column_names(
                     )  # if a column with the suffix exists, increment suffix
                 new_col_names[ind] = new_name
 
+    for idx, name in enumerate(new_col_names):
+        if name.startswith("_"):
+            new_col_names[idx] = name[1:]
+
     # if inplace
     if inplace:
         geo._data.columns = new_col_names
     else:
         # return a new dataframe
         df = geo._data.copy()
+        df.spatial.name
         df.columns = new_col_names
         return df
     return True
