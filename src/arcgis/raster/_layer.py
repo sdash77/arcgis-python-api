@@ -4566,7 +4566,7 @@ class ImageryLayer(Layer):
                     "extent": "{},{},{},{}".format(
                         ext["xmin"], ext["ymin"], ext["xmax"], ext["ymax"]
                     ),
-                    "spatialReference": self.properties.spatialReference.wkid,
+                    "spatialReference": str(self.properties.spatialReference.wkid),
                     "text": json.dumps(text_data),
                 }
 
