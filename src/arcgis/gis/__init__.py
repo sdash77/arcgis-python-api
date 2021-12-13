@@ -10616,7 +10616,17 @@ class Item(dict):
             params = {"f": "json"}
 
             if self.type == "Image Service":  # service that is itself a layer
-                layers.append(ImageryLayer(self.url, self._gis))
+                lyr = ImageryLayer(self.url, self._gis)
+                try:
+                    item_data = self.get_data()
+                    if "renderingRule" in item_data:
+                        lyr._fn = item_data["renderingRule"]
+                        lyr._fnra = item_data["renderingRule"]
+                    if "mosaicRule" in item_data:
+                        lyr._mosaic_rule = item_data["mosaicRule"]
+                except:
+                    pass
+                layers.append(lyr)
 
             elif self.type == "Feature Collection":
                 lyrs = self.get_data()["layers"]
