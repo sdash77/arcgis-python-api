@@ -4566,7 +4566,9 @@ class ImageryLayer(Layer):
                     "extent": "{},{},{},{}".format(
                         ext["xmin"], ext["ymin"], ext["xmax"], ext["ymax"]
                     ),
-                    "spatialReference": json.dumps(dict(self.properties.spatialReference)),
+                    "spatialReference": json.dumps(
+                        dict(self.properties.spatialReference)
+                    ),
                     "text": json.dumps(text_data),
                 }
 
