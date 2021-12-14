@@ -862,6 +862,9 @@ class StoryMap(object):
             )
             # Set the typekeywords
             typeKeywords = self._item.typeKeywords
+            if "smstatusunpublishedchanges" in typeKeywords:
+                idx = typeKeywords.index("smstatusunpublishedchanges")
+                del typeKeywords[idx]
             for keyword in typeKeywords:
                 if "smdraftresourceid" in keyword:
                     typeKeywords.remove(keyword)
@@ -872,6 +875,7 @@ class StoryMap(object):
                     or "smstatusdraft" in keyword
                 ):
                     typeKeywords.remove(keyword)
+
             new_typeKeywords = [
                 "smstatuspublished",
                 "smversiondraft:21.43.0",
