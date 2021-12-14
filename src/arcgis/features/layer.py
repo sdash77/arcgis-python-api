@@ -514,7 +514,9 @@ class FeatureLayer(Layer):
         :return: A JSON Dictionary indicating 'success' or 'error'
 
         """
-        if (os.path.getsize(file_path) >> 20) <= 9:
+        if (
+            os.path.getsize(file_path) < 10e6
+        ):  # (os.path.getsize(file_path) >> 20) <= 9:
             params = {"f": "json"}
             if self._gis.version > [7, 3] and keywords:
                 params["keywords"] = keywords
@@ -4975,7 +4977,7 @@ class FeatureLayerCollection(_GISResource):
         :return: A tuple of (Boolean, dict)
 
         """
-        if (os.path.getsize(path) >> 20) <= 9:
+        if os.path.getsize(path) < 10e6:
             url = self._url + "/uploads/upload"
             params = {
                 "f": "json",
