@@ -207,7 +207,7 @@ class VersionManager(object):
 
                             Values:
 
-                                - edit - starts editting mode
+                                - edit - starts editing mode
                                 - read - starts reading mode
                                 - None - no mode is started.  This is default.
         ===============     ====================================================================
@@ -368,6 +368,12 @@ class Version(object):
     def layers(self):
         """returns the layers in the FeatureLayerCollection"""
         return self._flc.layers
+
+    # ----------------------------------------------------------------------
+    @property
+    def tables(self):
+        """returns the tables in the FeatureLayerCollection"""
+        return self._flc.tables
 
     # ----------------------------------------------------------------------
     @property
@@ -761,7 +767,14 @@ class Version(object):
         return False
 
     # ----------------------------------------------------------------------
-    def differences(self, result_type="objectIds", moment=None):
+    def differences(
+        self,
+        result_type="objectIds",
+        moment=None,
+        from_moment=None,
+        layers=None,
+        future=False,
+    ):
         """
         The ```differences``` operation allows you to view differences between
         the current version and the default version. The two versions can
@@ -782,7 +795,20 @@ class Version(object):
 
                             Values : `objectIds` or `features`
         ---------------     --------------------------------------------------------------------
-        moment              Required String. Moment used to compare current version with default.
+        moment              Required String. Moment used to compare current version with
+                            default.
+        ---------------     --------------------------------------------------------------------
+        from_moment         Optional string. Time epoch value in milliseconds specifying the
+                            time from which to obtain the differences between this value
+                            and the specific `moment` argument.
+        ---------------     --------------------------------------------------------------------
+        layers              Optional list. The layer id values for which differences should
+                            be returned. If not specified, the differences for all layers will
+                            be returned.
+        ---------------     --------------------------------------------------------------------
+        future              Optional boolean. If `True`, the method runs as an asynchronous
+                            job returning a _URL_ value to inspect the status of the job. The
+                            default value is `False`.
         ===============     ====================================================================
 
 
@@ -790,9 +816,47 @@ class Version(object):
 
         """
         url = "%s/differences" % self._url
-        params = {"f": "json", "sessionID": self._guid, "resultType": result_type}
-        return self._con.post(url, params)
-
+        if from_moment:
+            if not "DEFAULT" in self.properties.versionName:
+                raise (
+                    "The from_moment parameter is only available for the DEFAULT version."
+                )
+        import json
+        params = {
+            "f": "json",
+            "sessionID": self._guid,
+            "resultType": result_type,
+            "fromMoment": json.dumps(from_moment),
+            "moment": json.dumps(moment),
+            "layers": layers,
+            "async": future,
+        }        
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            n=1
+            if "statusUrl" in res:
+                time.sleep(1)
+                surl = res["statusUrl"]
+                sres = self._con.get(path=surl, params={"f": "json"})
+                while sres["status"].lower() != "completed":
+                    sres = self._con.get(path=surl, params={"f": "json"})
+                    if sres["status"].lower() in "failed":
+                        if return_messages:
+                             return (False, sres)
+                        return False
+                    if n >= 40:
+                        n = 40
+                    time.sleep(0.5 * n)
+                    n += 1
+                if return_messages:
+                    return (True, sres)
+            return res
+        else:
+            res = self._con.post(url, params)
+            if "success" in res:
+                return res
+            return res            
+                        
     # ----------------------------------------------------------------------
     def conflicts(self):
         """
