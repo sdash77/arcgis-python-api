@@ -37,7 +37,7 @@ class StoryMap(object):
     your stories.
 
     Create a Story Map object to make edits to a story. Can be created from an item of type 'Story Map',
-    an item id for that type of item, or if nothing is passed, a new story is created from a generic draft.
+    an item id for that type of item, or if .nothing is passed, a new story is created from a generic draft.
 
     If an Item or item_id is passed in, only published changes or new drafts are taken from the Story Map.
     If you have a story with unpublished changes, they will not appear when you construct your story with the API.
@@ -851,11 +851,14 @@ class StoryMap(object):
         if publish is True:
             # Remove old publish item
             for resource in self._resources:
-                if "publish_data" in resource["resource"]:
+                if (
+                    "publish_data" in resource["resource"]
+                    or "publish" in resource["resource"]
+                ):
                     self._remove_resource(file=resource["resource"])
             # Add new publish
             self._add_resource(
-                resource_name="publish_data.json", text=json.dumps(self._properties)
+                resource_name="publish.json", text=json.dumps(self._properties)
             )
             # Set the typekeywords
             typeKeywords = self._item.typeKeywords
