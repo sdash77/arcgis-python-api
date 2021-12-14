@@ -853,12 +853,13 @@ class StoryMap(object):
             for resource in self._resources:
                 if (
                     "publish_data" in resource["resource"]
+                    or "published_data" in resource["resource"]
                     or "publish" in resource["resource"]
                 ):
                     self._remove_resource(file=resource["resource"])
             # Add new publish
             self._add_resource(
-                resource_name="publish.json", text=json.dumps(self._properties)
+                resource_name="published_data.json", text=json.dumps(self._properties)
             )
             # Set the typekeywords
             typeKeywords = self._item.typeKeywords
