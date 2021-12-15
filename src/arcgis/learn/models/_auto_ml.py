@@ -142,7 +142,7 @@ class AutoML(object):
             raise Exception(
                 "Auto ML feature is currently only available for Supervised learning."
             )
-        if data:
+        if getattr(self._data, "_is_not_empty", False):
             if (len(data._training_indexes) < 20) & (
                 eval_metric in ["r2", "rmse", "mse", "mape", "spearman", "pearson"]
             ):

@@ -388,7 +388,6 @@ def postprocess_transform(self, result, image_shapes, original_image_sizes):
 
 if HAS_FASTAI:
 
-    @torch.jit.unused
     def eager_outputs_modified(self, losses, detections):
 
         train_val = getattr(self, "train_val", False)
