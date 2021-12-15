@@ -87,7 +87,7 @@ class GPTask:
         elif gis is None and env.active_gis:
             gis = env.active_gis
         self._gis = gis
-        name = self.properties['name']
+        name = self.properties["name"]
         uses_map_as_result = self._parent.properties.resultMapServerName != ""
 
         (
@@ -107,12 +107,12 @@ class GPTask:
             param_db[param_name] = (param_type.__name__, gp_param_name)
         return_values2 = []
         for retval in return_values:
-            param_db[retval['name']] = (retval['type'].__name__, retval['display_name'])
+            param_db[retval["name"]] = (retval["type"].__name__, retval["display_name"])
             return_values2.append(
                 {
-                    "name": retval['name'],
-                    "display_name": retval['display_name'],
-                    "type": retval['type'].__name__,
+                    "name": retval["name"],
+                    "display_name": retval["display_name"],
+                    "type": retval["type"].__name__,
                 }
             )
         self._return_values = return_values2
@@ -131,7 +131,7 @@ class GPTask:
         param_db = self._param_db
         return_values = self._return_values
         run_async = (
-            self._parent.properties['executionType'] != 'esriExecutionTypeSynchronous'
+            self._parent.properties["executionType"] != "esriExecutionTypeSynchronous"
         )
         return _execute_gp_tool(
             self._gis,
@@ -154,7 +154,7 @@ class GPTask:
         """
         if self._properties is None:
 
-            params = {'f': 'json'}
+            params = {"f": "json"}
             self._properties = self._gis._con.get(self._url, params)
         return _mixins.PropertyMap(self._properties)
 
@@ -209,7 +209,7 @@ class GPService:
         """
         if self._properties is None:
 
-            params = {'f': 'json'}
+            params = {"f": "json"}
             self._properties = _mixins.PropertyMap(
                 self._gis._con.get(self._url, params)
             )
@@ -226,7 +226,7 @@ class GPService:
                     gis=self._gis,
                     parent=self,
                 )
-                for task in self.properties['tasks']
+                for task in self.properties["tasks"]
             ]
         return self._tasks
 

@@ -213,7 +213,9 @@ def per_class_metrics(self, ignore_classes=[], **kwargs):
     for batch in self._data.valid_dl if dl is None else dl:
         x, y = batch
         y = y.to("cpu")
-        observed_val_data_classes = observed_val_data_classes.union(np.unique(y).tolist())
+        observed_val_data_classes = observed_val_data_classes.union(
+            np.unique(y).tolist()
+        )
         with torch.no_grad():
             if getattr(self, "_is_model_extension", False):
                 if self._is_multispectral:
