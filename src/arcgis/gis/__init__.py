@@ -5161,7 +5161,13 @@ class ContentManager(object):
                 "layers": [data.spatial.to_feature_collection()._lyr_dict]
             }
             data = None
-        if data is not None:
+        import io
+
+        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            assert "type" in item_properties
+            assert "title" in item_properties
+
+        elif data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
 
@@ -5234,6 +5240,11 @@ class ContentManager(object):
 
             is_file = os.path.isfile(data)
             if is_file and bytesto(os.stat(data).st_size) < 7:
+                multipart = False
+                item_properties.pop("multipart", None)
+            elif (
+                is_file == False and hasattr(data, "tell") and bytesto(data.tell()) < 7
+            ):
                 multipart = False
                 item_properties.pop("multipart", None)
             else:
