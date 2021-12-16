@@ -755,7 +755,8 @@ def show_results(self, rows):
     for r in range(rows):
         if self._data._is_multispectral:
             display_row(
-                axs[r], (ArcGISMSImage(x_A_B[r]), ArcGISMSImage(activ_A_B[r])),
+                axs[r],
+                (ArcGISMSImage(x_A_B[r]), ArcGISMSImage(activ_A_B[r])),
             )
         else:
             display_row(axs[r], (image2np(x_A_B[r]), image2np(activ_A_B[r])))
