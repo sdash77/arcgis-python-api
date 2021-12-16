@@ -1433,7 +1433,11 @@ class ArcGISImageTranslation:
         #configuration['inputMask'] = True
         return configuration
     def updateRasterInfo(self, **kwargs):
-        kwargs['output_info']['bandCount'] = int(self.json_info['n_channel'])
+        direction = getattr(self.child_image_classifier, "direction", "None")
+        if direction == "BtoA":
+            kwargs["output_info"]["bandCount"] = int(self.json_info["n_channel_rev"])
+        else:
+            kwargs["output_info"]["bandCount"] = int(self.json_info["n_channel"])
         kwargs['output_info']['pixelType'] = 'f4'
         return kwargs
     def updatePixels(self, tlc, shape, props, **pixelBlocks):
