@@ -39,6 +39,28 @@ class TestGPService(unittest.TestCase):
         assert gp._tasks is None
 
 
+class TestGPServiceInfo(unittest.TestCase):
+    def test_info(self):
+        """tests that the `tasks` returns a collection of GPTask objects"""
+        gp = GPService(ASYNC_URL, GIS())
+        assert gp.info
+
+    def test_item_info(self):
+        """tests that the `tasks` returns a collection of GPTask objects"""
+        gp = GPService(ASYNC_URL, GIS())
+        assert gp.info.item_info
+
+    def test_info_metadata(self):
+        """tests that the `tasks` returns a collection of GPTask objects"""
+        gp = GPService(ASYNC_URL, GIS())
+        assert gp.info.metadata
+
+    def test_info_thumbnail(self):
+        """tests that the `tasks` returns a collection of GPTask objects"""
+        gp = GPService(ASYNC_URL, GIS())
+        assert gp.info.thumbnail
+
+
 class TestGPTask(unittest.TestCase):
     """
     Tests a single Geoprocessing Service Task.

@@ -66,6 +66,37 @@ def _build_lambda(self, input_strings, param_inputs):
 
 
 ###########################################################################
+class GPInfo:
+    """
+    Provides access to additional information about the GP Service.
+    """
+
+    def __init__(self, url: str, gis: GIS):
+        self._url = url
+        self._gis = gis
+
+    @property
+    def item_info(self) -> dict:
+        """ """
+        url = f"{self._url}/iteminfo"
+        params = {"f": "json"}
+        return self._gis._con.get(url, params)
+
+    @property
+    def metadata(self) -> str:
+        """returns the service's metadata"""
+        url = f"{self._url}/metadata"
+
+        return self._gis._con.get(url, {}, try_json=False)
+
+    @property
+    def thumbnail(self) -> str:
+        """returns the service's thumbnail"""
+        url = f"{self._url}/thumbnail"
+        return self._gis._con.get(url, {}, try_json=False)
+
+
+###########################################################################
 class GPTask:
     """
     The GP Task resource represents a single task in a geoprocessing
@@ -253,6 +284,7 @@ class GPService:
 
     _gis = None
     _url = None
+    _info = None
     _tasks = None
     _properties = None
     # ----------------------------------------------------------------------
@@ -310,3 +342,11 @@ class GPService:
         """
         self._tasks = None
         self._properties = None
+
+    # ----------------------------------------------------------------------
+    @property
+    def info(self) -> GPInfo:
+        if self._info is None:
+            url = f"{self._url}/info"
+            self._info = GPInfo(url, self._gis)
+        return self._info
