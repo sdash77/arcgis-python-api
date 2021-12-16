@@ -2316,7 +2316,7 @@ def prepare_data(
     elif dataset_type == "CycleGAN":
         if _is_multispectral:
             data = prepare_data_ms_cyclegan(
-                path, norm_pct, val_split_pct, seed, databunch_kwargs
+                path, _is_multispectral, norm_pct, val_split_pct, seed, databunch_kwargs
             )
             data.show_batch = types.MethodType(show_batch_img2img, data)
             data.n_channel = data.x[0].data[0].shape[0]
@@ -2335,10 +2335,8 @@ def prepare_data(
                 data.path = Path(os.path.abspath(working_dir))
             data._temp_folder = _prepare_working_dir(data.path)
             return data
-        data = (
-            ImageTupleList.from_folders(path, path_a, path_b)
-            .split_by_rand_pct(val_split_pct, seed=seed)
-            .label_empty()
+        data, batch_stats_a, batch_stats_b = prepare_data_ms_cyclegan(
+            path, _is_multispectral, norm_pct, val_split_pct, seed, databunch_kwargs
         )
         img_size = data.x[0].shape[-1]
         if resize_to is None:
@@ -2576,6 +2574,26 @@ def prepare_data(
         data = data.transform(get_transforms(), **kwargs_transforms).databunch(
             **databunch_kwargs
         )
+        data._band_min_values = batch_stats_a["band_min_values"]
+        data._band_max_values = batch_stats_a["band_max_values"]
+        data._band_mean_values = batch_stats_a["band_mean_values"]
+        data._band_std_values = batch_stats_a["band_std_values"]
+        data._scaled_min_values = batch_stats_a["scaled_min_values"]
+        data._scaled_max_values = batch_stats_a["scaled_max_values"]
+        data._scaled_mean_values = batch_stats_a["scaled_mean_values"]
+        data._scaled_std_values = batch_stats_a["scaled_std_values"]
+
+        data._band_min_values_b = batch_stats_b["band_min_values"]
+        data._band_max_values_b = batch_stats_b["band_max_values"]
+        data._band_mean_values_b = batch_stats_b["band_mean_values"]
+        data._band_std_values_b = batch_stats_b["band_std_values"]
+        data._scaled_min_values_b = batch_stats_b["scaled_min_values"]
+        data._scaled_max_values_b = batch_stats_b["scaled_max_values"]
+        data._scaled_mean_values_b = batch_stats_b["scaled_mean_values"]
+        data._scaled_std_values_b = batch_stats_b["scaled_std_values"]
+
+        data._dataset_type = "CycleGAN"
+        data._extract_bands = None
         data.n_channel = data.x[0].data[0].shape[0]
         data._imagery_type_a = imagery_type_a
         data._imagery_type_b = imagery_type_b
