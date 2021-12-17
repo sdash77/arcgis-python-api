@@ -836,6 +836,9 @@ class ArcGISImageClassifier:
         if self.json_info['ModelName'] == 'MultiTaskRoadExtractor':
             xx = self.child_image_classifier.detectRoads(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)   
             pixelBlocks['output_pixels'] = xx
+        elif hasattr(self.child_image_classifier, 'updatePixelsTTA'):
+            xx = self.child_image_classifier.updatePixelsTTA(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)   
+            pixelBlocks['output_pixels'] = xx
         else:
             xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)   
             tytx = getattr(self.child_image_classifier, 'tytx', self.json_info['ImageHeight'])
@@ -1433,7 +1436,11 @@ class ArcGISImageTranslation:
         #configuration['inputMask'] = True
         return configuration
     def updateRasterInfo(self, **kwargs):
-        kwargs['output_info']['bandCount'] = int(self.json_info['n_channel'])
+        direction = getattr(self.child_image_classifier, "direction", "None")
+        if direction == "BtoA":
+            kwargs["output_info"]["bandCount"] = int(self.json_info["n_channel_rev"])
+        else:
+            kwargs["output_info"]["bandCount"] = int(self.json_info["n_channel"])
         kwargs['output_info']['pixelType'] = 'f4'
         return kwargs
     def updatePixels(self, tlc, shape, props, **pixelBlocks):
