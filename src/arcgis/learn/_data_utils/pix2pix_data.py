@@ -741,7 +741,8 @@ def show_results(self, rows):
             )
         else:
             display_row(
-                axs[r], (image2np(x_A[r]), image2np(x_B[r]), image2np(activations[r])),
+                axs[r],
+                (image2np(x_A[r]), image2np(x_B[r]), image2np(activations[r])),
             )
 
 

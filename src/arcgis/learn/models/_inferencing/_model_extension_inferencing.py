@@ -650,7 +650,8 @@ def classify_image(
             torch.tensor(images).to(device).float()
         )
 
-    pred_batch = model(batch_input)
+    with torch.no_grad():
+        pred_batch = model(batch_input)
 
     if thinning == None:
         preds = model_configuration.post_process(pred_batch)

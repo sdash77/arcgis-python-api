@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from torch import tensor
+import torch.nn as nn
 import torch
 import math
 from .._unet_utils import is_contiguous as is_cont
@@ -563,3 +564,176 @@ def pixel_classify_pix2pix_hd_image(model, tiles, device, model_info):
         pix2pix_predictions = pix2pix_image(model, img_normed, device, label_nc)
         pix2pix_predictions = pix2pix_predictions / 2 + 0.5
         return pix2pix_predictions
+
+
+# functions for test time augmentation and smooth blending for pixel classification
+
+
+def dihedral_transform(x, k):  # expects [C, H, W]
+    flips = []
+    if k & 1:
+        flips.append(1)
+    if k & 2:
+        flips.append(2)
+    if flips:
+        x = torch.flip(x, flips)
+    if k & 4:
+        x = x.transpose(1, 2)
+    return x.contiguous()
+
+
+def create_interpolation_mask(side, border, device, window_fn="bartlett"):
+    if window_fn == "bartlett":
+        window = torch.bartlett_window(side, device=device).unsqueeze(0)
+        interpolation_mask = window * window.T
+    elif window_fn == "hann":
+        window = torch.hann_window(side, device=device).unsqueeze(0)
+        interpolation_mask = window * window.T
+    else:
+        linear_mask = torch.linspace(0, 1, border, device=device).repeat(side, 1)
+        remainder_tile = torch.ones((side, side - border), device=device)
+        interp_tile = torch.cat([linear_mask, remainder_tile], dim=1)
+
+        interpolation_mask = torch.ones((side, side), device=device)
+        for i in range(4):
+            interpolation_mask = interpolation_mask * interp_tile.rot90(i)
+    return interpolation_mask
+
+
+def unfold_tensor(tensor, tile_size, stride):  # expects tensor  [1, C, H, W]
+    mask = torch.ones_like(tensor[0][0].unsqueeze(0).unsqueeze(0))
+
+    unfold = nn.Unfold(kernel_size=(tile_size, tile_size), stride=stride)
+    # Apply to mask and original image
+    mask_p = unfold(mask)
+    patches = unfold(tensor)
+
+    patches = patches.reshape(tensor.size(1), tile_size, tile_size, -1).permute(
+        3, 0, 1, 2
+    )
+    masks = mask_p.reshape(1, tile_size, tile_size, -1).permute(3, 0, 1, 2)
+    return masks, (tensor.size(2), tensor.size(3)), patches
+
+
+def fold_tensor(input_tensor, masks, t_size, tile_size, stride):
+    input_tensor_permuted = (
+        input_tensor.permute(1, 2, 3, 0).reshape(-1, input_tensor.size(0)).unsqueeze(0)
+    )
+    mask_tt = masks.permute(1, 2, 3, 0).reshape(-1, masks.size(0)).unsqueeze(0)
+
+    fold = nn.Fold(
+        output_size=(t_size[0], t_size[1]),
+        kernel_size=(tile_size, tile_size),
+        stride=stride,
+    )
+    output_tensor = fold(input_tensor_permuted) / fold(mask_tt)
+    return output_tensor
+
+
+def split_predict_interpolate(child_image_classifier, normalized_image_tensor):
+    kernel_size = child_image_classifier.tytx
+    stride = kernel_size - (2 * child_image_classifier.padding)
+
+    # Split image into overlapping tiles
+    masks, t_size, patches = unfold_tensor(normalized_image_tensor, kernel_size, stride)
+
+    with torch.no_grad():
+        output = child_image_classifier.model(patches)
+
+    interpolation_mask = create_interpolation_mask(
+        kernel_size, 0, child_image_classifier.device, "hann"
+    )
+    output = output * interpolation_mask
+    masks = masks * interpolation_mask
+
+    # merge predictions from overlapping chips
+    int_surface = fold_tensor(output, masks, t_size, kernel_size, stride)
+
+    return int_surface
+
+
+def tta_predict(child_image_classifier, normalized_image_tensor, test_time_aug=True):
+    all_activations = []
+
+    transforms = [0]
+    if test_time_aug:
+        if child_image_classifier.json_info["ImageSpaceUsed"] == "MAP_SPACE":
+            transforms = list(range(8))
+        else:
+            transforms = [
+                0,
+                2,
+            ]  # no vertical flips for pixel space (oriented imagery)
+
+    for k in transforms:
+        flipped_image_tensor = dihedral_transform(normalized_image_tensor[0], k)
+        int_surface = split_predict_interpolate(
+            child_image_classifier, flipped_image_tensor.unsqueeze(0)
+        )
+        corrected_activation = dihedral_transform(int_surface[0], k)
+
+        if k in [5, 6]:
+            corrected_activation = dihedral_transform(int_surface[0], k).rot90(
+                2, [1, 2]
+            )
+
+        all_activations.append(corrected_activation)
+
+    all_activations = torch.stack(all_activations)
+
+    return all_activations
+
+
+def update_pixels_tta(
+    child_image_classifier, tlc, shape, props, **pixelBlocks
+):  # 8 x 224 x 224 x 3
+    model_info = child_image_classifier.json_info
+
+    class_values = [clas["Value"] for clas in model_info["Classes"]]
+    is_contiguous = is_cont([0] + class_values)
+
+    if not is_contiguous:
+        pixel_mapping = [0] + class_values
+        idx2pixel = {i: d for i, d in enumerate(pixel_mapping)}
+
+    input_image = pixelBlocks["raster_pixels"].astype(np.float32)
+    input_image_tensor = (
+        torch.tensor(input_image).to(child_image_classifier.device).float()
+    )
+
+    if "NormalizationStats" in model_info:
+        normalized_image_tensor = normalize_batch(input_image_tensor.cpu(), model_info)
+        normalized_image_tensor = normalized_image_tensor.float().to(
+            input_image_tensor.device
+        )
+    else:
+        from torchvision import transforms
+
+        normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        normalized_image_tensor = normalize(input_image_tensor / 255.0).unsqueeze(0)
+
+    all_activations = tta_predict(
+        child_image_classifier,
+        normalized_image_tensor,
+        test_time_aug=child_image_classifier.use_tta,
+    )
+    # probability of each class in 2nd dimension
+    all_activations = all_activations.mean(dim=0, keepdim=True)
+    softmax_surface = all_activations.softmax(dim=1)
+
+    ignore_mapped_class = model_info.get("ignore_mapped_class", [])
+
+    for k in ignore_mapped_class:
+        softmax_surface[:, k] = -1
+
+    if not child_image_classifier.predict_background:
+        softmax_surface[:, 0] = -1
+
+    result = softmax_surface.max(dim=1)[1]
+
+    if not is_contiguous:
+        result = remap(result, idx2pixel)
+
+    pad = child_image_classifier.padding
+
+    return result.cpu().numpy().astype("i4")[:, pad : -pad or None, pad : -pad or None]

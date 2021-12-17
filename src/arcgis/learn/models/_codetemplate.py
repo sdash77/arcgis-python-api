@@ -836,6 +836,9 @@ class ArcGISImageClassifier:
         if self.json_info['ModelName'] == 'MultiTaskRoadExtractor':
             xx = self.child_image_classifier.detectRoads(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)   
             pixelBlocks['output_pixels'] = xx
+        elif hasattr(self.child_image_classifier, 'updatePixelsTTA'):
+            xx = self.child_image_classifier.updatePixelsTTA(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)   
+            pixelBlocks['output_pixels'] = xx
         else:
             xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)   
             tytx = getattr(self.child_image_classifier, 'tytx', self.json_info['ImageHeight'])
