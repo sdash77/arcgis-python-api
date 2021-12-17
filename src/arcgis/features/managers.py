@@ -204,8 +204,13 @@ class AttachmentManager(object):
                     attachments = self.get_list(oid=i)
                     for att in attachments:
                         if not token is None:
-                            att_path = "{}/{}/attachments/{}?token={}".format(
-                                self._layer.url, i, att["id"], self._layer._con.token
+                            att_path = (
+                                "{}/{}/attachments/{}?token={}".format(
+                                    self._layer.url,
+                                    i,
+                                    att["id"],
+                                    self._layer._con.token,
+                                )
                             )
                         else:
                             att_path = "{}/{}/attachments/{}".format(
@@ -214,7 +219,9 @@ class AttachmentManager(object):
                         preview = None
                         if att["contentType"].find("image") > -1:
                             preview = (
-                                '<img src="' + att_path + '" width=150 height=150 />'
+                                '<img src="'
+                                + att_path
+                                + '" width=150 height=150 />'
                             )
 
                         row = {
@@ -231,21 +238,24 @@ class AttachmentManager(object):
                             row["GLOBALID"] = att["globalId"]
                         if as_df and show_images:
                             row["DOWNLOAD_URL"] = (
-                                '<a href="%s" target="_blank">DATA</a>' % att_path
+                                '<a href="%s" target="_blank">DATA</a>'
+                                % att_path
                             )
                         else:
                             row["DOWNLOAD_URL"] = "%s" % att_path
                         rows.append(row)
 
                 if (
-                    attachment_types is not None and len(attachment_types) > 0
+                    attachment_types is not None
+                    and len(attachment_types) > 0
                 ):  # performs contenttype search
                     if isinstance(attachment_types, str):
                         attachment_types = attachment_types.split(",")
                     rows = [
                         row
                         for row in rows
-                        if os.path.splitext(row["NAME"])[1][1:] in attachment_types
+                        if os.path.splitext(row["NAME"])[1][1:]
+                        in attachment_types
                         or row["CONTENTTYPE"] in attachment_types
                     ]
         else:
@@ -265,7 +275,10 @@ class AttachmentManager(object):
             }
             iterparams = copy.copy(params)
             for k, v in iterparams.items():
-                if k in ["objectIds", "globalIds", "attachmentTypes"] and v == "":
+                if (
+                    k in ["objectIds", "globalIds", "attachmentTypes"]
+                    and v == ""
+                ):
                     del params[k]
                 elif k == "size" and v is None:
                     del params[k]
@@ -286,11 +299,17 @@ class AttachmentManager(object):
                         )
                     else:
                         att_path = "{}/{}/attachments/{}".format(
-                            self._layer.url, result["parentObjectId"], data["id"]
+                            self._layer.url,
+                            result["parentObjectId"],
+                            data["id"],
                         )
                     preview = None
                     if data["contentType"].find("image") > -1:
-                        preview = '<img src="' + att_path + '" width=150 height=150 />'
+                        preview = (
+                            '<img src="'
+                            + att_path
+                            + '" width=150 height=150 />'
+                        )
 
                     row = {
                         "PARENTOBJECTID": result["parentObjectId"],
@@ -306,7 +325,8 @@ class AttachmentManager(object):
                         row["GLOBALID"] = data["globalId"]
                     if as_df and show_images:
                         row["DOWNLOAD_URL"] = (
-                            '<a href="%s" target="_blank">DATA</a>' % att_path
+                            '<a href="%s" target="_blank">DATA</a>'
+                            % att_path
                         )
                     else:
                         row["DOWNLOAD_URL"] = "%s" % att_path
@@ -320,15 +340,21 @@ class AttachmentManager(object):
                 from IPython.display import HTML
 
                 pd.set_option("display.max_colwidth", -1)
-                return HTML(pd.DataFrame.from_dict(rows).to_html(escape=False))
+                return HTML(
+                    pd.DataFrame.from_dict(rows).to_html(escape=False)
+                )
             else:
                 df = pd.DataFrame.from_dict(rows)
-                df.drop(["DOWNLOAD_URL", "IMAGE_PREVIEW"], axis=1, inplace=True)
+                df.drop(
+                    ["DOWNLOAD_URL", "IMAGE_PREVIEW"], axis=1, inplace=True
+                )
                 return df
         else:
             return rows
 
-    def _download_all(self, object_ids=None, save_folder=None, attachment_types=None):
+    def _download_all(
+        self, object_ids=None, save_folder=None, attachment_types=None
+    ):
         """
         Downloads all attachments to a specific folder
 
@@ -350,15 +376,21 @@ class AttachmentManager(object):
         """
         results = []
         if save_folder is None:
-            save_folder = os.path.join(tempfile.gettempdir(), "attachment_download")
+            save_folder = os.path.join(
+                tempfile.gettempdir(), "attachment_download"
+            )
         if not os.path.isdir(save_folder):
             os.makedirs(save_folder)
         attachments = self.search(
-            object_ids=object_ids, attachment_types=attachment_types, as_df=True
+            object_ids=object_ids,
+            attachment_types=attachment_types,
+            as_df=True,
         )
         for row in attachments.to_dict(orient="records"):
             dlpath = os.path.join(
-                save_folder, "%s" % int(row["PARENTOBJECTID"]), "%s" % int(row["ID"])
+                save_folder,
+                "%s" % int(row["PARENTOBJECTID"]),
+                "%s" % int(row["ID"]),
             )
             if os.path.isdir(dlpath) == False:
                 os.makedirs(dlpath)
@@ -452,11 +484,15 @@ class AttachmentManager(object):
             oid = oid[0]
             paths = []
             for att in attachment_id:
-                att_path = "{}/{}/attachments/{}".format(self._layer.url, oid, att)
+                att_path = "{}/{}/attachments/{}".format(
+                    self._layer.url, oid, att
+                )
                 att_list = self.get_list(int(oid))
 
                 # get attachment file name
-                desired_att = [att2 for att2 in att_list if att2["id"] == int(att)]
+                desired_att = [
+                    att2 for att2 in att_list if att2["id"] == int(att)
+                ]
                 if len(desired_att) == 0:  # bad attachment id
                     raise RuntimeError
                 else:
@@ -956,7 +992,12 @@ class SyncManager(object):
                 del extent["spatialReference"]
         extents_str = ",".join(
             format(x, "10.3f")
-            for x in [extent["xmin"], extent["ymin"], extent["xmax"], extent["ymax"]]
+            for x in [
+                extent["xmin"],
+                extent["ymin"],
+                extent["xmax"],
+                extent["ymax"],
+            ]
         )
         geom_filter = {"geometryType": "esriGeometryEnvelope"}
         geom_filter.update({"geometry": extents_str})
@@ -1042,8 +1083,12 @@ class SyncManager(object):
             if child_replica_id and parent_replica_id:
                 import tempfile, os
 
-                child_replica = child_replicas.get(replica_id=child_replica_id)
-                parent_replica = parent_replicas.get(replica_id=parent_replica_id)
+                child_replica = child_replicas.get(
+                    replica_id=child_replica_id
+                )
+                parent_replica = parent_replicas.get(
+                    replica_id=parent_replica_id
+                )
                 delta = parent_fs._synchronize_replica(
                     replica_id=parent_replica_id,
                     transport_type="esriTransportTypeUrl",
@@ -1069,9 +1114,9 @@ class SyncManager(object):
                     syncLayers_child = child_replica["layerServerGens"]
                     syncLayers_parent = parent_replica["layerServerGens"]
                     for i in range(len(syncLayers_parent)):
-                        syncLayers_child[i]["serverSibGen"] = syncLayers_parent[i][
-                            "serverGen"
-                        ]
+                        syncLayers_child[i][
+                            "serverSibGen"
+                        ] = syncLayers_parent[i]["serverGen"]
                         syncLayers_child[i]["syncDirection"] = "upload"
                     child_fs._synchronize_replica(
                         replica_id=child_replica_id,
@@ -1089,7 +1134,8 @@ class SyncManager(object):
                     return False
             else:
                 raise ValueError(
-                    "Could not find replica name %s in both services" % replica_name
+                    "Could not find replica name %s in both services"
+                    % replica_name
                 )
         else:
             return False
@@ -1296,7 +1342,8 @@ class WebHookServiceManager(object):
         """
         resp = self._gis._con.post(self._url, {"f": "json"})
         ret = [
-            WebHook(url=self._url + f"/{d['globalId']}", gis=self._gis) for d in resp
+            WebHook(url=self._url + f"/{d['globalId']}", gis=self._gis)
+            for d in resp
         ]
         return ret
 
@@ -1417,7 +1464,10 @@ class WebHookServiceManager(object):
         """
         url = f"{self._url}/activateAll"
         params = {"f": "json"}
-        return self._gis._con.post(url, params).get("status", "failed") == "success"
+        return (
+            self._gis._con.post(url, params).get("status", "failed")
+            == "success"
+        )
 
     # ----------------------------------------------------------------------
     def disable_hooks(self) -> bool:
@@ -1429,7 +1479,10 @@ class WebHookServiceManager(object):
         """
         url = f"{self._url}/deactivateAll"
         params = {"f": "json"}
-        return self._gis._con.post(url, params).get("status", "failed") == "success"
+        return (
+            self._gis._con.post(url, params).get("status", "failed")
+            == "success"
+        )
 
     # ----------------------------------------------------------------------
     def delete_all_hooks(self) -> bool:
@@ -1441,7 +1494,10 @@ class WebHookServiceManager(object):
         """
         url = f"{self._url}/deleteAll"
         params = {"f": "json"}
-        return self._gis._con.post(url, params).get("status", "failed") == "success"
+        return (
+            self._gis._con.post(url, params).get("status", "failed")
+            == "success"
+        )
 
 
 ###########################################################################
@@ -1475,7 +1531,9 @@ class FeatureLayerCollectionManager(_GISResource):
             try:
 
                 self._layers.append(
-                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
+                    FeatureLayerManager(
+                        self.url + "/" + str(table["id"]), self._gis
+                    )
                 )
             except Exception as e:
                 _log.error(str(e))
@@ -1494,7 +1552,9 @@ class FeatureLayerCollectionManager(_GISResource):
             try:
 
                 self._tables.append(
-                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
+                    FeatureLayerManager(
+                        self.url + "/" + str(table["id"]), self._gis
+                    )
                 )
             except Exception as e:
                 _log.error(str(e))
@@ -1696,8 +1756,10 @@ class FeatureLayerCollectionManager(_GISResource):
                     "sourceSchemaChangesAllowed": allow_schema_changes,
                     "isUpdatableView": updateable,
                     "spatialReference": spatial_reference,
-                    "initialExtent": extent or fs.properties["initialExtent"],
-                    "capabilities": capabilities or fs.properties["capabilties"],
+                    "initialExtent": extent
+                    or fs.properties["initialExtent"],
+                    "capabilities": capabilities
+                    or fs.properties["capabilties"],
                 }
             ),
             "outputType": "featureService",
@@ -1745,7 +1807,9 @@ class FeatureLayerCollectionManager(_GISResource):
                                 "sourceServiceName": os.path.basename(
                                     os.path.dirname(fs.url)
                                 ),
-                                "sourceLayerId": lyr.manager.properties["id"],
+                                "sourceLayerId": lyr.manager.properties[
+                                    "id"
+                                ],
                                 "sourceLayerFields": "*",
                             },
                         },
@@ -1760,7 +1824,9 @@ class FeatureLayerCollectionManager(_GISResource):
                                 "sourceServiceName": os.path.basename(
                                     os.path.dirname(fs.url)
                                 ),
-                                "sourceLayerId": tbl.manager.properties["id"],
+                                "sourceLayerId": tbl.manager.properties[
+                                    "id"
+                                ],
                                 "sourceLayerFields": "*",
                             }
                         },
@@ -1780,14 +1846,18 @@ class FeatureLayerCollectionManager(_GISResource):
                         add_def["layers"].append(
                             {
                                 "adminLayerInfo": {
-                                    "popupInfo": data["layers"][0]["popupInfo"]
+                                    "popupInfo": data["layers"][0][
+                                        "popupInfo"
+                                    ]
                                     if "layers" in data
                                     else None,
                                     "viewLayerDefinition": {
                                         "sourceServiceName": os.path.basename(
                                             os.path.dirname(fs.url)
                                         ),
-                                        "sourceLayerId": lyr.manager.properties["id"],
+                                        "sourceLayerId": lyr.manager.properties[
+                                            "id"
+                                        ],
                                         "sourceLayerFields": "*",
                                     },
                                 },
@@ -1819,11 +1889,15 @@ class FeatureLayerCollectionManager(_GISResource):
                                         "sourceLayerFields": "*",
                                     }
                                 },
-                                "name": view_layers.manager.properties["name"],
+                                "name": view_layers.manager.properties[
+                                    "name"
+                                ],
                             }
                         )
                     else:
-                        _log.error("Unable to parse the view_layers parameter")
+                        _log.error(
+                            "Unable to parse the view_layers parameter"
+                        )
 
             # when view_tables is specified
             if view_tables:
@@ -1836,7 +1910,9 @@ class FeatureLayerCollectionManager(_GISResource):
                                         "sourceServiceName": os.path.basename(
                                             os.path.dirname(fs.url)
                                         ),
-                                        "sourceLayerId": tbl.manager.properties["id"],
+                                        "sourceLayerId": tbl.manager.properties[
+                                            "id"
+                                        ],
                                         "sourceLayerFields": "*",
                                     }
                                 },
@@ -1871,11 +1947,15 @@ class FeatureLayerCollectionManager(_GISResource):
                                         "sourceLayerFields": "*",
                                     }
                                 },
-                                "name": view_tables.manager.properties["name"],
+                                "name": view_tables.manager.properties[
+                                    "name"
+                                ],
                             }
                         )
                     else:
-                        _log.error("Unable to parse the view_tables parameter")
+                        _log.error(
+                            "Unable to parse the view_tables parameter"
+                        )
 
         fs_view.manager.add_to_definition(add_def)
         if extent and fs_view.layers:
@@ -1939,7 +2019,9 @@ class FeatureLayerCollectionManager(_GISResource):
         con = self._gis._con
         job_response = con.post(url, params)
         if "status" in job_response:
-            while "status" in job_response and not job_response.get("status") in [
+            while "status" in job_response and not job_response.get(
+                "status"
+            ) in [
                 "completed",
                 "Completed",
             ]:
@@ -2068,11 +2150,18 @@ class FeatureLayerCollectionManager(_GISResource):
                 if "capabilities" in json_dict:
                     definition["capabilities"] = json_dict["capabilities"]
                 if "editorTrackingInfo" in json_dict:
-                    definition["editorTrackingInfo"] = collections.OrderedDict()
-                    if "enableEditorTracking" in json_dict["editorTrackingInfo"]:
+                    definition[
+                        "editorTrackingInfo"
+                    ] = collections.OrderedDict()
+                    if (
+                        "enableEditorTracking"
+                        in json_dict["editorTrackingInfo"]
+                    ):
                         definition["editorTrackingInfo"][
                             "enableEditorTracking"
-                        ] = json_dict["editorTrackingInfo"]["enableEditorTracking"]
+                        ] = json_dict["editorTrackingInfo"][
+                            "enableEditorTracking"
+                        ]
 
                     if (
                         "enableOwnershipAccessControl"
@@ -2084,22 +2173,39 @@ class FeatureLayerCollectionManager(_GISResource):
                             "enableOwnershipAccessControl"
                         ]
 
-                    if "allowOthersToUpdate" in json_dict["editorTrackingInfo"]:
+                    if (
+                        "allowOthersToUpdate"
+                        in json_dict["editorTrackingInfo"]
+                    ):
                         definition["editorTrackingInfo"][
                             "allowOthersToUpdate"
-                        ] = json_dict["editorTrackingInfo"]["allowOthersToUpdate"]
+                        ] = json_dict["editorTrackingInfo"][
+                            "allowOthersToUpdate"
+                        ]
 
-                    if "allowOthersToDelete" in json_dict["editorTrackingInfo"]:
+                    if (
+                        "allowOthersToDelete"
+                        in json_dict["editorTrackingInfo"]
+                    ):
                         definition["editorTrackingInfo"][
                             "allowOthersToDelete"
-                        ] = json_dict["editorTrackingInfo"]["allowOthersToDelete"]
+                        ] = json_dict["editorTrackingInfo"][
+                            "allowOthersToDelete"
+                        ]
 
-                    if "allowOthersToQuery" in json_dict["editorTrackingInfo"]:
+                    if (
+                        "allowOthersToQuery"
+                        in json_dict["editorTrackingInfo"]
+                    ):
                         definition["editorTrackingInfo"][
                             "allowOthersToQuery"
-                        ] = json_dict["editorTrackingInfo"]["allowOthersToQuery"]
+                        ] = json_dict["editorTrackingInfo"][
+                            "allowOthersToQuery"
+                        ]
                     if isinstance(json_dict["editorTrackingInfo"], dict):
-                        for key, val in json_dict["editorTrackingInfo"].items():
+                        for key, val in json_dict[
+                            "editorTrackingInfo"
+                        ].items():
                             if key not in definition["editorTrackingInfo"]:
                                 definition["editorTrackingInfo"][key] = val
                 if isinstance(json_dict, dict):
@@ -2109,7 +2215,9 @@ class FeatureLayerCollectionManager(_GISResource):
 
         params = {
             "f": "json",
-            "updateDefinition": json.dumps(obj=definition, separators=(",", ":")),
+            "updateDefinition": json.dumps(
+                obj=definition, separators=(",", ":")
+            ),
             "async": json.dumps(future),
         }
         u_url = self._url + "/updateDefinition"
@@ -2198,20 +2306,28 @@ class FeatureLayerCollectionManager(_GISResource):
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
         # check for outstanding replicas
-        if hasattr(self._fs, "replicas") and bool(self._fs.replicas.get_list()):
+        if hasattr(self._fs, "replicas") and bool(
+            self._fs.replicas.get_list()
+        ):
             raise Exception(
                 "Service cannot be overwritten if Sync is enabled and replicas exist."
             )
 
         # region Get Item associated with the service
         if "serviceItemId" in self.properties.keys():
-            feature_layer_item = self._gis.content.get(self.properties["serviceItemId"])
+            feature_layer_item = self._gis.content.get(
+                self.properties["serviceItemId"]
+            )
         else:
-            return {"error": "Can only overwrite a hosted feature layer collection"}
+            return {
+                "error": "Can only overwrite a hosted feature layer collection"
+            }
         # endregion
 
         # region find data item related to this hosted feature layer
-        related_data_items = feature_layer_item.related_items("Service2Data", "forward")
+        related_data_items = feature_layer_item.related_items(
+            "Service2Data", "forward"
+        )
         if len(related_data_items) > 0:
             related_data_item = related_data_items[0]
         else:
@@ -2312,7 +2428,9 @@ class FeatureLayerCollectionManager(_GISResource):
             feature_service_def["tables"] = tables_dict
             from pathlib import Path
 
-            service_name = Path(self.url).parts[-2]  # get service name from url
+            service_name = Path(self.url).parts[
+                -2
+            ]  # get service name from url
             feature_service_def["name"] = service_name
 
             # combine both old publish params and full feature service definition
@@ -2336,7 +2454,9 @@ class FeatureLayerCollectionManager(_GISResource):
                     "error": "Unable to overwrite the hosted feature layer collection"
                 }
         else:
-            return {"error": "Unable to update related data item with new data"}
+            return {
+                "error": "Unable to update related data item with new data"
+            }
 
     # ----------------------------------------------------------------------
 
@@ -2352,13 +2472,19 @@ class FeatureLayerCollectionManager(_GISResource):
 
         # region Get Item associated with the service
         if "serviceItemId" in self.properties.keys():
-            feature_layer_item = self._gis.content.get(self.properties["serviceItemId"])
+            feature_layer_item = self._gis.content.get(
+                self.properties["serviceItemId"]
+            )
         else:
-            return {"error": "Can only overwrite a hosted feature layer collection"}
+            return {
+                "error": "Can only overwrite a hosted feature layer collection"
+            }
         # endregion
 
         # region find data item related to this hosted feature layer
-        related_data_items = feature_layer_item.related_items("Service2Data", "forward")
+        related_data_items = feature_layer_item.related_items(
+            "Service2Data", "forward"
+        )
         if len(related_data_items) > 0:
             related_data_item = related_data_items[0]
         else:
@@ -2461,7 +2587,9 @@ class FeatureLayerCollectionManager(_GISResource):
             feature_service_def["tables"] = tables_dict
             from pathlib import Path
 
-            service_name = Path(self.url).parts[-2]  # get service name from url
+            service_name = Path(self.url).parts[
+                -2
+            ]  # get service name from url
             feature_service_def["name"] = service_name
 
             # combine both old publish params and full feature service definition
@@ -2511,7 +2639,9 @@ class FeatureLayerManager(_GISResource):
 
         """
         if item.type != "Feature Service":
-            raise TypeError("item must be a of type Feature Service, not " + item.type)
+            raise TypeError(
+                "item must be a of type Feature Service, not " + item.type
+            )
         from arcgis.features import FeatureLayer
 
         return FeatureLayer.fromitem(item, layer_id).manager
@@ -2676,8 +2806,20 @@ class FeatureLayerManager(_GISResource):
         The truncate operation supports deleting all features or attachments
         in a hosted feature service layer. The result of this operation is a
         response indicating success or failure with error code and description.
-        See: https://developers.arcgis.com/rest/services-reference/truncate-feature-layer-.htm # noqa
-        for additional information on this function.
+        See `Truncate (Feature Layer) <https://developers.arcgis.com/rest/services-reference/online/truncate-feature-layer-.htm>`_
+        for additional information on this method.
+
+        .. note::
+            The `truncate` method is restricted to
+            :class:`layers <arcgis.features.FeatureLayer>` that:
+
+              - do not serve as the origin in a relationship with other
+                layers
+              - do not reference the same underlying database tables that are
+                referenced by other layers (for example, if the layer was
+                published from a layer with a definition query and a
+                separate layer has also been published from that source)
+              - do not have `sync` enabled
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2694,10 +2836,14 @@ class FeatureLayerManager(_GISResource):
         ===============     ====================================================================
 
         :return:
-           JSON Message as dictionary indicatiing 'success' or 'error'
+           JSON Message as dictionary indicating `success` or `error`
 
         """
-        params = {"f": "json", "attachmentOnly": attachment_only, "async": asynchronous}
+        params = {
+            "f": "json",
+            "attachmentOnly": attachment_only,
+            "async": asynchronous,
+        }
         u_url = self._url + "/truncate"
 
         if asynchronous:
@@ -2746,7 +2892,9 @@ class FeatureLayerManager(_GISResource):
         con = self._gis._con
         job_response = con.post(url, params)
         if "status" in job_response:
-            while "status" in job_response and not job_response.get("status") in [
+            while "status" in job_response and not job_response.get(
+                "status"
+            ) in [
                 "completed",
                 "Completed",
             ]:
