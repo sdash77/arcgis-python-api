@@ -1,4 +1,4 @@
-from typing import Union, Dict, Any, Optional, ClassVar
+from typing import Union, Optional, ClassVar
 from dataclasses import field, dataclass
 
 from arcgis.realtime import Velocity
@@ -9,17 +9,8 @@ from arcgis.realtime.velocity.feeds.geometry import (
     XYZGeometry,
 )
 from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInterval
-from arcgis.realtime.velocity.http_authentication_type import (
-    NoAuth,
-    BasicAuth,
-    CertificateAuth,
-)
 from arcgis.realtime.velocity.input.format import (
-    EsriJsonFormat,
-    GeoJsonFormat,
-    JsonFormat,
     DelimitedFormat,
-    XMLFormat,
     _format_from_config,
 )
 
@@ -184,5 +175,3 @@ class HttpSimulator(_FeedTemplate, _HasTime, _HasGeometry):
             self._dict_deep_merge(feed_properties, format_dict)
 
         return feed_properties
-
-

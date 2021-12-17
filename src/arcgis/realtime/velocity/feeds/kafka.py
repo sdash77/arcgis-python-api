@@ -1,20 +1,15 @@
-from typing import Union, Dict, Optional, ClassVar
-from dataclasses import field, dataclass
+from typing import Union, Optional, ClassVar
+from dataclasses import dataclass
 
 from arcgis.realtime import Velocity
+from arcgis.realtime.velocity.feeds.kafka_authentication_type import NoAuth, SASLPlain
 from arcgis.realtime.velocity.feeds._feed_template import _FeedTemplate
 from arcgis.realtime.velocity.feeds.geometry import (
     _HasGeometry,
     SingleFieldGeometry,
     XYZGeometry,
 )
-from arcgis.realtime.velocity.feeds.run_interval import RunInterval
 from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInterval
-from arcgis.realtime.velocity.http_authentication_type import (
-    NoAuth,
-    BasicAuth,
-    CertificateAuth,
-)
 from arcgis.realtime.velocity.input.format import (
     EsriJsonFormat,
     GeoJsonFormat,
@@ -26,7 +21,7 @@ from arcgis.realtime.velocity.input.format import (
 
 
 @dataclass
-class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
+class Kafka(_FeedTemplate, _HasTime, _HasGeometry):
     """
     ==================     ====================================================================
     **Argument**           **Description**
@@ -35,26 +30,22 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     description            str. Feed description.
     ------------------     --------------------------------------------------------------------
-    url                    str. Address of the HTTP endpoint providing data.
+    brokers                str. Comma-separated list of Kafka brokers, including the port, such as
+                           host1.domain.com:9092,host2.domain.com:9092
+
+                           example - "kafkaServer1.hostname.com:9092,kafkaServer2.hostname.com:9092"
     ------------------     --------------------------------------------------------------------
-    http_http_method       str. Either "GET" or "POST"
+    topics                 str. Topic to which the output will send messages.
     ------------------     --------------------------------------------------------------------
-    http_auth_type         Union[NoAuth, BasicAuth, CertificateAuth]. An instance that contains the
-                           Authentication info for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    url_params             Dict[str, str]. A dictionary of url param/value pairs that contains
-                           http params used accessing the HTTP resource.
-    ------------------     --------------------------------------------------------------------
-    http_headers           Dict[str, str]. A Name-Value dictionary that contains HTTP headers
-                           for connecting to the HTTP resource.
-    ------------------     --------------------------------------------------------------------
-    enable_long_polling    bool.
-                           default value - False
+    authentication         Union[NoAuth, SASLPlain]. Kafka authentication type.
     ------------------     --------------------------------------------------------------------
 
     **Optional Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    data_format            Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
+    consumer_group_id      str. A unique string that identifies the consumer group that this feed
+                           belongs to as a consumer.
+    ------------------     --------------------------------------------------------------------
+    data_format            Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
                            An instance that contains the data-format
                            configuration for this feed. Configure only allowed formats.
                            If this is not set right during initialization, a format will be
@@ -69,25 +60,19 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
                            will be used to create time info from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    run_interval           RunInterval. An instance of scheduler configuration.
-
-                           default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     ==================     ====================================================================
     """
 
     # fields that the user sets during init
-    # HTTP Poller specific properties
-    url: str
-    http_method: str
-    http_auth_type: Union[NoAuth, BasicAuth, CertificateAuth]
-    url_params: Dict[str, str] = field(default_factory=dict)
-    http_headers: Dict[str, str] = field(default_factory=dict)
-    enable_long_polling: bool = field(default=False)
+    # Kafka specific properties
+    brokers: str
+    topics: str
+    authentication: Union[NoAuth, SASLPlain]
+    consumer_group_id: Optional[str] = None
 
     # user can define these properties even after initialization
     data_format: Optional[
-        Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat]
+        Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat]
     ] = None
     # FeedTemplate properties
     track_id_field: Optional[str] = None
@@ -95,15 +80,9 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     geometry: Optional[Union[XYZGeometry, SingleFieldGeometry]] = None
     # HasTime properties
     time: Optional[Union[TimeInstant, TimeInterval]] = None
-    # scheduler
-    run_interval: RunInterval = field(
-        default=RunInterval(
-            cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
-        )
-    )
 
     # FeedTemplate properties
-    _name: ClassVar[str] = "http-poller"
+    _name: ClassVar[str] = "kafka"
 
     def __post_init__(self):
         if Velocity is None:
@@ -115,8 +94,6 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
             raise ValueError(
                 "Label should only contain alpha numeric, _ and space only"
             )
-        elif self.http_method not in ("POST", "GET"):
-            raise ValueError("http_post str can either be 'POST' or 'GET'.")
 
         # generate dictionary of this feed object's properties that will be used to query test-connection and
         # sample-messages Rest endpoint
@@ -167,7 +144,6 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
             "label": self.label,
             "description": self.description,
             "feed": {**self._generate_schema_transformation()},
-            **self.run_interval._build(),
             "properties": {"executable": True},
         }
 
@@ -177,29 +153,23 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
         return feed_configuration
 
     def _generate_feed_properties(self) -> dict:
-        # http headers
-        if bool(self.http_headers):
-            http_headers_properties = {f"{self._name}.headers": self.http_headers}
+        if self.consumer_group_id:
+            consumer_group_id_prop = {
+                f"{self._name}.consumerGroupId": self.consumer_group_id
+            }
         else:
-            http_headers_properties = {}
-        # url params
-        if bool(self.url_params):
-            url_params_properties = {f"{self._name}.urlParameters": self.url_params}
-        else:
-            url_params_properties = {}
+            consumer_group_id_prop = {}
 
-        # http authentication type
-        auth_properties = self.http_auth_type._build(self._name)
+        # kafka authentication type
+        auth_properties = self.authentication._build(self._name)
 
         feed_properties = {
             "name": self._name,
             "properties": {
-                f"{self._name}.url": self.url,
-                f"{self._name}.httpMethod": self.http_method,
-                f"{self._name}.isLongPolling": self.enable_long_polling,
+                f"{self._name}.brokers": self.brokers,
+                f"{self._name}.topics": self.topics,
+                **consumer_group_id_prop,
                 **auth_properties,
-                **http_headers_properties,
-                **url_params_properties,
             },
         }
 

@@ -1,4 +1,4 @@
-from typing import Union, Dict, Optional, ClassVar
+from typing import Union, Optional, ClassVar
 from dataclasses import field, dataclass
 
 from arcgis.realtime import Velocity
@@ -10,23 +10,11 @@ from arcgis.realtime.velocity.feeds.geometry import (
 )
 from arcgis.realtime.velocity.feeds.run_interval import RunInterval
 from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInterval
-from arcgis.realtime.velocity.http_authentication_type import (
-    NoAuth,
-    BasicAuth,
-    CertificateAuth,
-)
-from arcgis.realtime.velocity.input.format import (
-    EsriJsonFormat,
-    GeoJsonFormat,
-    JsonFormat,
-    DelimitedFormat,
-    XMLFormat,
-    _format_from_config,
-)
+from arcgis.realtime.velocity.input.format import JsonFormat, _format_from_config
 
 
 @dataclass
-class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
+class Geotab(_FeedTemplate, _HasTime, _HasGeometry):
     """
     ==================     ====================================================================
     **Argument**           **Description**
@@ -37,24 +25,19 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     url                    str. Address of the HTTP endpoint providing data.
     ------------------     --------------------------------------------------------------------
-    http_http_method       str. Either "GET" or "POST"
+    database               str. Either "GET" or "POST"
     ------------------     --------------------------------------------------------------------
-    http_auth_type         Union[NoAuth, BasicAuth, CertificateAuth]. An instance that contains the
-                           Authentication info for this feed instance.
+    username               str. Either "GET" or "POST"
     ------------------     --------------------------------------------------------------------
-    url_params             Dict[str, str]. A dictionary of url param/value pairs that contains
-                           http params used accessing the HTTP resource.
+    password               str. Either "GET" or "POST"
     ------------------     --------------------------------------------------------------------
-    http_headers           Dict[str, str]. A Name-Value dictionary that contains HTTP headers
-                           for connecting to the HTTP resource.
-    ------------------     --------------------------------------------------------------------
-    enable_long_polling    bool.
-                           default value - False
-    ------------------     --------------------------------------------------------------------
-
     **Optional Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    data_format            Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
+    groups                 str. Either "GET" or "POST"
+    ------------------     --------------------------------------------------------------------
+    diagnostics_ids        str. Either "GET" or "POST"
+    ------------------     --------------------------------------------------------------------
+    data_format            JsonFormat.
                            An instance that contains the data-format
                            configuration for this feed. Configure only allowed formats.
                            If this is not set right during initialization, a format will be
@@ -77,18 +60,16 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     """
 
     # fields that the user sets during init
-    # HTTP Poller specific properties
+    # Geotab specific properties
     url: str
-    http_method: str
-    http_auth_type: Union[NoAuth, BasicAuth, CertificateAuth]
-    url_params: Dict[str, str] = field(default_factory=dict)
-    http_headers: Dict[str, str] = field(default_factory=dict)
-    enable_long_polling: bool = field(default=False)
+    database: str
+    username: str
+    password: str
+    groups: Optional[str] = None
+    diagnostics_ids: Optional[str] = None
 
     # user can define these properties even after initialization
-    data_format: Optional[
-        Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat]
-    ] = None
+    data_format: Optional[JsonFormat] = None
     # FeedTemplate properties
     track_id_field: Optional[str] = None
     # HasGeometry properties
@@ -103,7 +84,7 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     )
 
     # FeedTemplate properties
-    _name: ClassVar[str] = "http-poller"
+    _name: ClassVar[str] = "geotab"
 
     def __post_init__(self):
         if Velocity is None:
@@ -115,8 +96,6 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
             raise ValueError(
                 "Label should only contain alpha numeric, _ and space only"
             )
-        elif self.http_method not in ("POST", "GET"):
-            raise ValueError("http_post str can either be 'POST' or 'GET'.")
 
         # generate dictionary of this feed object's properties that will be used to query test-connection and
         # sample-messages Rest endpoint
@@ -177,29 +156,25 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
         return feed_configuration
 
     def _generate_feed_properties(self) -> dict:
-        # http headers
-        if bool(self.http_headers):
-            http_headers_properties = {f"{self._name}.headers": self.http_headers}
+        if self.groups:
+            groups_prop = {f"{self._name}.groupNames": self.groups}
         else:
-            http_headers_properties = {}
+            groups_prop = {}
         # url params
-        if bool(self.url_params):
-            url_params_properties = {f"{self._name}.urlParameters": self.url_params}
+        if self.diagnostics_ids:
+            diagnostics_ids_prop = {f"{self._name}.diagnosticIds": self.diagnostics_ids}
         else:
-            url_params_properties = {}
-
-        # http authentication type
-        auth_properties = self.http_auth_type._build(self._name)
+            diagnostics_ids_prop = {}
 
         feed_properties = {
             "name": self._name,
             "properties": {
                 f"{self._name}.url": self.url,
-                f"{self._name}.httpMethod": self.http_method,
-                f"{self._name}.isLongPolling": self.enable_long_polling,
-                **auth_properties,
-                **http_headers_properties,
-                **url_params_properties,
+                f"{self._name}.databaseName": self.database,
+                f"{self._name}.userName": self.username,
+                f"{self._name}.password": self.password,
+                **groups_prop,
+                **diagnostics_ids_prop,
             },
         }
 

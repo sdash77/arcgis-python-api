@@ -71,7 +71,9 @@ class _HasTime:
                     f"invalid interval_start_field: '{time.interval_start_field}'"
                 )
             elif not is_success_2:
-                raise ValueError(f"invalid interval_end_field: '{time.interval_end_field}'")
+                raise ValueError(
+                    f"invalid interval_end_field: '{time.interval_end_field}'"
+                )
             else:
                 self._fields["time"] = {"timeType": "Interval"}
 

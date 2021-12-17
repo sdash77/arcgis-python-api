@@ -1,5 +1,5 @@
-from typing import Union, Dict, Any, Optional, ClassVar
-from dataclasses import field, dataclass
+from typing import Union, Optional, ClassVar
+from dataclasses import dataclass
 
 from arcgis.realtime import Velocity
 from arcgis.realtime.velocity.feeds._feed_template import _FeedTemplate
@@ -8,13 +8,7 @@ from arcgis.realtime.velocity.feeds.geometry import (
     SingleFieldGeometry,
     XYZGeometry,
 )
-from arcgis.realtime.velocity.feeds.run_interval import RunInterval
 from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInterval
-from arcgis.realtime.velocity.http_authentication_type import (
-    NoAuth,
-    BasicAuth,
-    CertificateAuth,
-)
 from arcgis.realtime.velocity.input.format import (
     EsriJsonFormat,
     GeoJsonFormat,

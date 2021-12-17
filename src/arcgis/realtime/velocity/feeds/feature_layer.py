@@ -8,6 +8,7 @@ from arcgis.realtime.velocity.feeds.geometry import (
     SingleFieldGeometry,
     XYZGeometry,
 )
+from arcgis.realtime.velocity.feeds.run_interval import RunInterval
 from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInterval
 from arcgis.realtime.velocity.http_authentication_type import (
     NoAuth,
@@ -34,12 +35,6 @@ class FeatureLayer(_FeedTemplate, _HasTime):
     ------------------              --------------------------------------------------------------------
     description                     str. Feed description.
     ------------------              --------------------------------------------------------------------
-    url                             str. Address of the HTTP endpoint providing data.
-                                    Note: either portal_item_id or url is required
-    ------------------              --------------------------------------------------------------------
-    portal_item_id                  str. Portal item id of the feature layer
-                                    Note: either portal_item_id or url is required
-    ------------------              --------------------------------------------------------------------
     query                           str. Feature layer query parameters
                                     default value - "1=1"
     ------------------              --------------------------------------------------------------------
@@ -48,6 +43,15 @@ class FeatureLayer(_FeedTemplate, _HasTime):
     ------------------              --------------------------------------------------------------------
     outSR                           int. Requested output Spatial Reference
                                     default value - 4326
+    ------------------              --------------------------------------------------------------------
+
+    **Optional Argument**           **Description**
+    ------------------              --------------------------------------------------------------------
+    url                             str. Address of the HTTP endpoint providing data.
+                                    Note: either portal_item_id or url is required
+    ------------------              --------------------------------------------------------------------
+    portal_item_id                  str. Portal item id of the feature layer
+                                    Note: either portal_item_id or url is required
     ------------------              --------------------------------------------------------------------
     extent                          Dict[str, Any]. A Geometry object that defines the spatial extent for
                                     the feature layer
@@ -62,9 +66,6 @@ class FeatureLayer(_FeedTemplate, _HasTime):
                                                         "xmax": -11451317.846255329,
                                                         "ymax": 6852675.132049575
                                                     }
-    ------------------              --------------------------------------------------------------------
-
-    **Optional Argument**           **Description**
     ------------------              --------------------------------------------------------------------
     data_format                     Union[DelimitedFormat].
                                     An instance that contains the data-format
@@ -81,16 +82,20 @@ class FeatureLayer(_FeedTemplate, _HasTime):
     ------------------              --------------------------------------------------------------------
     time                            Union[TimeInstant, TimeInterval]. An instance of time configuration that
                                     will be used to create time info from the incoming data.
+    ------------------              --------------------------------------------------------------------
+    run_interval                    RunInterval. An instance of scheduler configuration.
+
+                                    default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     ==================              ====================================================================
     """
 
     # fields that the user sets during init
     # Feature Layer specific properties
-    url: Optional[str] = None
-    portal_item_id: Optional[str] = None
     query: str = field(default="1=1")
     fields: str = field(default="*")
     outSR: int = field(default=4326)
+    url: Optional[str] = None
+    portal_item_id: Optional[str] = None
     extent: Optional[Dict[str, Any]] = None
 
     # user can define these properties even after initialization
@@ -101,7 +106,12 @@ class FeatureLayer(_FeedTemplate, _HasTime):
     geometry: Optional[Union[XYZGeometry, SingleFieldGeometry]] = None
     # HasTime properties
     time: Optional[Union[TimeInstant, TimeInterval]] = None
-
+    # scheduler
+    run_interval: RunInterval = field(
+        default=RunInterval(
+            cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
+        )
+    )
     # FeedTemplate properties
     _name: ClassVar[str] = "feature-layer"
 
@@ -167,6 +177,7 @@ class FeatureLayer(_FeedTemplate, _HasTime):
             "label": self.label,
             "description": self.description,
             "feed": {**self._generate_schema_transformation()},
+            **self.run_interval._build(),
             "properties": {"executable": True},
         }
 
@@ -178,20 +189,20 @@ class FeatureLayer(_FeedTemplate, _HasTime):
     def _generate_feed_properties(self) -> dict:
         if self.url:
             url_or_portal_item_id = {f"{self._name}.url": self.url}
-        elif self.portal_item_id:
+        else:
             url_or_portal_item_id = {f"{self._name}.portalItemId": self.portal_item_id}
 
-        if bool(self.extent):
+        if self.extent:
             extent_properties = {f"{self._name}.extent": self.extent}
         else:
             extent_properties = {}
+
         feed_properties = {
             "name": self._name,
             "properties": {
-                f"{self._name}.fieldSeparator": self.portal_item_id,
-                f"{self._name}.featuresPerTime": self.query,
-                f"{self._name}.repeat": self.fields,
-                f"{self._name}.intervalInMillis": self.outSR,
+                f"{self._name}.query": self.query,
+                f"{self._name}.fields": self.fields,
+                f"{self._name}.outSR": self.outSR,
                 **url_or_portal_item_id,
                 **extent_properties,
             },

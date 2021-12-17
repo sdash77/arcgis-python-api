@@ -1,4 +1,4 @@
-from typing import Union, Dict, Optional, ClassVar
+from typing import Union, Optional, ClassVar
 from dataclasses import field, dataclass
 
 from arcgis.realtime import Velocity
@@ -8,13 +8,7 @@ from arcgis.realtime.velocity.feeds.geometry import (
     SingleFieldGeometry,
     XYZGeometry,
 )
-from arcgis.realtime.velocity.feeds.run_interval import RunInterval
 from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInterval
-from arcgis.realtime.velocity.http_authentication_type import (
-    NoAuth,
-    BasicAuth,
-    CertificateAuth,
-)
 from arcgis.realtime.velocity.input.format import (
     EsriJsonFormat,
     GeoJsonFormat,
@@ -26,7 +20,7 @@ from arcgis.realtime.velocity.input.format import (
 
 
 @dataclass
-class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
+class AWSIoT(_FeedTemplate, _HasTime, _HasGeometry):
     """
     ==================     ====================================================================
     **Argument**           **Description**
@@ -35,26 +29,28 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     description            str. Feed description.
     ------------------     --------------------------------------------------------------------
-    url                    str. Address of the HTTP endpoint providing data.
+    endpoint               str. Endpoint for the AWS IoT broker.
     ------------------     --------------------------------------------------------------------
-    http_http_method       str. Either "GET" or "POST"
+    topic                  str. Topic over which event messages stream.
     ------------------     --------------------------------------------------------------------
-    http_auth_type         Union[NoAuth, BasicAuth, CertificateAuth]. An instance that contains the
-                           Authentication info for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    url_params             Dict[str, str]. A dictionary of url param/value pairs that contains
-                           http params used accessing the HTTP resource.
-    ------------------     --------------------------------------------------------------------
-    http_headers           Dict[str, str]. A Name-Value dictionary that contains HTTP headers
-                           for connecting to the HTTP resource.
-    ------------------     --------------------------------------------------------------------
-    enable_long_polling    bool.
-                           default value - False
+    qos_level              int. The Quality of Service (QoS) level defines the guarantee of delivery for a specific
+                           message. A QoS of 0 means a message is delivered zero or more times. It offers better
+                           performance, but no guaranteed delivery. A QoS of 1 means a message is delivered at least
+                           once, therby offering gaurenteed delivery. With both levels messages may be delivered
+                           multiple times.
+
+                           default value - 0
     ------------------     --------------------------------------------------------------------
 
     **Optional Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    data_format            Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
+    access_key_id          str. Access key ID for the AWS IoT credentials.
+    ------------------     --------------------------------------------------------------------
+    secret_access_key      str. Secret access key for the AWS IoT credentials.
+    ------------------     --------------------------------------------------------------------
+    session_token          str. Session token for the AWS IoT broker.
+    ------------------     --------------------------------------------------------------------
+    data_format            Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
                            An instance that contains the data-format
                            configuration for this feed. Configure only allowed formats.
                            If this is not set right during initialization, a format will be
@@ -69,25 +65,21 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
                            will be used to create time info from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    run_interval           RunInterval. An instance of scheduler configuration.
-
-                           default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     ==================     ====================================================================
     """
 
     # fields that the user sets during init
-    # HTTP Poller specific properties
-    url: str
-    http_method: str
-    http_auth_type: Union[NoAuth, BasicAuth, CertificateAuth]
-    url_params: Dict[str, str] = field(default_factory=dict)
-    http_headers: Dict[str, str] = field(default_factory=dict)
-    enable_long_polling: bool = field(default=False)
+    # AWS IoT specific properties
+    endpoint: str
+    topic: str
+    qos_level: int = field(default=0)
+    access_key_id: Optional[str] = None
+    secret_access_key: Optional[str] = None
+    session_token: Optional[str] = None
 
     # user can define these properties even after initialization
     data_format: Optional[
-        Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat]
+        Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat]
     ] = None
     # FeedTemplate properties
     track_id_field: Optional[str] = None
@@ -95,15 +87,9 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     geometry: Optional[Union[XYZGeometry, SingleFieldGeometry]] = None
     # HasTime properties
     time: Optional[Union[TimeInstant, TimeInterval]] = None
-    # scheduler
-    run_interval: RunInterval = field(
-        default=RunInterval(
-            cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
-        )
-    )
 
     # FeedTemplate properties
-    _name: ClassVar[str] = "http-poller"
+    _name: ClassVar[str] = "awsiot"
 
     def __post_init__(self):
         if Velocity is None:
@@ -115,8 +101,6 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
             raise ValueError(
                 "Label should only contain alpha numeric, _ and space only"
             )
-        elif self.http_method not in ("POST", "GET"):
-            raise ValueError("http_post str can either be 'POST' or 'GET'.")
 
         # generate dictionary of this feed object's properties that will be used to query test-connection and
         # sample-messages Rest endpoint
@@ -167,7 +151,6 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
             "label": self.label,
             "description": self.description,
             "feed": {**self._generate_schema_transformation()},
-            **self.run_interval._build(),
             "properties": {"executable": True},
         }
 
@@ -177,29 +160,32 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
         return feed_configuration
 
     def _generate_feed_properties(self) -> dict:
-        # http headers
-        if bool(self.http_headers):
-            http_headers_properties = {f"{self._name}.headers": self.http_headers}
+        if self.access_key_id:
+            access_key_id_prop = {f"{self._name}.accessKeyId": self.access_key_id}
         else:
-            http_headers_properties = {}
-        # url params
-        if bool(self.url_params):
-            url_params_properties = {f"{self._name}.urlParameters": self.url_params}
-        else:
-            url_params_properties = {}
+            access_key_id_prop = {}
 
-        # http authentication type
-        auth_properties = self.http_auth_type._build(self._name)
+        if self.secret_access_key:
+            secret_access_key_prop = {
+                f"{self._name}.secretAccessKey": self.secret_access_key
+            }
+        else:
+            secret_access_key_prop = {}
+
+        if self.session_token:
+            session_token_prop = {f"{self._name}.sessionToken": self.session_token}
+        else:
+            session_token_prop = {}
 
         feed_properties = {
             "name": self._name,
             "properties": {
-                f"{self._name}.url": self.url,
-                f"{self._name}.httpMethod": self.http_method,
-                f"{self._name}.isLongPolling": self.enable_long_polling,
-                **auth_properties,
-                **http_headers_properties,
-                **url_params_properties,
+                f"{self._name}.endpoint": self.endpoint,
+                f"{self._name}.topic": self.topic,
+                f"{self._name}.qos": self.qos_level,
+                **access_key_id_prop,
+                **secret_access_key_prop,
+                **session_token_prop,
             },
         }
 

@@ -1,4 +1,4 @@
-from typing import Union, Dict, Optional, ClassVar
+from typing import Union, Optional, ClassVar
 from dataclasses import field, dataclass
 
 from arcgis.realtime import Velocity
@@ -8,13 +8,7 @@ from arcgis.realtime.velocity.feeds.geometry import (
     SingleFieldGeometry,
     XYZGeometry,
 )
-from arcgis.realtime.velocity.feeds.run_interval import RunInterval
 from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInterval
-from arcgis.realtime.velocity.http_authentication_type import (
-    NoAuth,
-    BasicAuth,
-    CertificateAuth,
-)
 from arcgis.realtime.velocity.input.format import (
     EsriJsonFormat,
     GeoJsonFormat,
@@ -26,7 +20,7 @@ from arcgis.realtime.velocity.input.format import (
 
 
 @dataclass
-class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
+class RabbitMQ(_FeedTemplate, _HasTime, _HasGeometry):
     """
     ==================     ====================================================================
     **Argument**           **Description**
@@ -35,26 +29,37 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     description            str. Feed description.
     ------------------     --------------------------------------------------------------------
-    url                    str. Address of the HTTP endpoint providing data.
+    host                   str. Host address of the RabbitMQ Server.
+
+                           example - rabbitmqbroker.centralus.cloudapp.azure.com
     ------------------     --------------------------------------------------------------------
-    http_http_method       str. Either "GET" or "POST"
+    port                   int. Port on which the RabbitMQ Server is accessible.
+
+                           default value - 5672
     ------------------     --------------------------------------------------------------------
-    http_auth_type         Union[NoAuth, BasicAuth, CertificateAuth]. An instance that contains the
-                           Authentication info for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    url_params             Dict[str, str]. A dictionary of url param/value pairs that contains
-                           http params used accessing the HTTP resource.
-    ------------------     --------------------------------------------------------------------
-    http_headers           Dict[str, str]. A Name-Value dictionary that contains HTTP headers
-                           for connecting to the HTTP resource.
-    ------------------     --------------------------------------------------------------------
-    enable_long_polling    bool.
+    use_ssl                bool. Whether or not to use SSL in the connection.
+
                            default value - False
+    ------------------     --------------------------------------------------------------------
+    prefetch_count         int. Prefetch count is used to specify the number of messages RabbitMQ sends. This limits how
+                           many messages are received before acknowledging a message.
+
+                           default value - 0
     ------------------     --------------------------------------------------------------------
 
     **Optional Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    data_format            Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
+    virtual_host           str. Virtual host of the RabbitMQ Server.
+
+                           example - virtualhost1
+    ------------------     --------------------------------------------------------------------
+    username               str. Username for server authentication.
+    ------------------     --------------------------------------------------------------------
+    password               str. password for server authentication.
+    ------------------     --------------------------------------------------------------------
+    queue_name             str. Name of the queue over which messages will be received.
+    ------------------     --------------------------------------------------------------------
+    data_format            Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
                            An instance that contains the data-format
                            configuration for this feed. Configure only allowed formats.
                            If this is not set right during initialization, a format will be
@@ -69,25 +74,23 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
                            will be used to create time info from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    run_interval           RunInterval. An instance of scheduler configuration.
-
-                           default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     ==================     ====================================================================
     """
 
     # fields that the user sets during init
-    # HTTP Poller specific properties
-    url: str
-    http_method: str
-    http_auth_type: Union[NoAuth, BasicAuth, CertificateAuth]
-    url_params: Dict[str, str] = field(default_factory=dict)
-    http_headers: Dict[str, str] = field(default_factory=dict)
-    enable_long_polling: bool = field(default=False)
+    # RabbitMQ specific properties
+    host: str
+    port: int = field(default=5672)
+    use_ssl: bool = field(default=False)
+    prefetch_count: int = field(default=0)
+    virtual_host: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    queue_name: Optional[str] = None
 
     # user can define these properties even after initialization
     data_format: Optional[
-        Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat]
+        Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat]
     ] = None
     # FeedTemplate properties
     track_id_field: Optional[str] = None
@@ -95,15 +98,9 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     geometry: Optional[Union[XYZGeometry, SingleFieldGeometry]] = None
     # HasTime properties
     time: Optional[Union[TimeInstant, TimeInterval]] = None
-    # scheduler
-    run_interval: RunInterval = field(
-        default=RunInterval(
-            cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
-        )
-    )
 
     # FeedTemplate properties
-    _name: ClassVar[str] = "http-poller"
+    _name: ClassVar[str] = "rabbitmq"
 
     def __post_init__(self):
         if Velocity is None:
@@ -115,8 +112,6 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
             raise ValueError(
                 "Label should only contain alpha numeric, _ and space only"
             )
-        elif self.http_method not in ("POST", "GET"):
-            raise ValueError("http_post str can either be 'POST' or 'GET'.")
 
         # generate dictionary of this feed object's properties that will be used to query test-connection and
         # sample-messages Rest endpoint
@@ -167,7 +162,6 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
             "label": self.label,
             "description": self.description,
             "feed": {**self._generate_schema_transformation()},
-            **self.run_interval._build(),
             "properties": {"executable": True},
         }
 
@@ -177,29 +171,37 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
         return feed_configuration
 
     def _generate_feed_properties(self) -> dict:
-        # http headers
-        if bool(self.http_headers):
-            http_headers_properties = {f"{self._name}.headers": self.http_headers}
+        if self.virtual_host:
+            virtual_host_prop = {f"{self._name}.virtualHost": self.virtual_host}
         else:
-            http_headers_properties = {}
-        # url params
-        if bool(self.url_params):
-            url_params_properties = {f"{self._name}.urlParameters": self.url_params}
-        else:
-            url_params_properties = {}
+            virtual_host_prop = {}
 
-        # http authentication type
-        auth_properties = self.http_auth_type._build(self._name)
+        if self.username:
+            username_prop = {f"{self._name}.username": self.username}
+        else:
+            username_prop = {}
+
+        if self.password:
+            password_prop = {f"{self._name}.password": self.password}
+        else:
+            password_prop = {}
+
+        if self.queue_name:
+            queue_name_prop = {f"{self._name}.queueName": self.queue_name}
+        else:
+            queue_name_prop = {}
 
         feed_properties = {
             "name": self._name,
             "properties": {
-                f"{self._name}.url": self.url,
-                f"{self._name}.httpMethod": self.http_method,
-                f"{self._name}.isLongPolling": self.enable_long_polling,
-                **auth_properties,
-                **http_headers_properties,
-                **url_params_properties,
+                f"{self._name}.host": self.host,
+                f"{self._name}.port": self.port,
+                f"{self._name}.useSSL": self.use_ssl,
+                f"{self._name}.prefetchCount": self.prefetch_count,
+                **virtual_host_prop,
+                **username_prop,
+                **password_prop,
+                **queue_name_prop,
             },
         }
 
