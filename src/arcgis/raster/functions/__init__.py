@@ -11510,6 +11510,69 @@ def contour(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
+def mosaic_rasters(rasters, mosaic_type="BLEND"):
+    """
+    The mosaic_rasters function creates a single mosaicked image using multiple images.
+    When there is overlap between the images, you can choose from several methods to
+    determine the priority with which images are displayed.
+
+    The arguments for the function are as follows:
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects.
+    --------------------------------     --------------------------------------------------------------------
+    mosaic_type                          Optional string. Resolve any conflict when you have parts of two or
+                                         more images that overlap. The options include the following:
+
+                                         - "FIRST" - Display the pixels from the first image in the list of images overlapping a given area.
+
+                                         - "LAST" - Display the pixels from the last image in the list of images overlapping a given area.
+
+                                         - "MIN" - Display the lowest valued pixel of all the overlapping layers. With this option, you have
+                                           no guarantee of displaying the pixels of just one image in the overlapping area but rather a
+                                           combination of all potential layers.
+
+                                         - "MAX" - Display the highest valued pixel of all the overlapping layers. With this option, you have
+                                           no guarantee of displaying the pixels of just one image in the overlapping area but rather a
+                                           combination of all potential layers.
+
+                                         - "MEAN" - Calculate and display an average of the overlapping pixels.
+
+                                         - "BLEND" - Calculate and display an average of the overlapping pixels by giving more weight to
+                                           pixels that are closer to neighboring images so the output is a smoother image.
+                                           This is the default.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: mosaic two rasters and display the pixels form the first raster in the list of rasters overlapping a given area.
+
+        mosaiced_op = mosaic_rasters([ras1, ras2], mosaic_type="FIRST")
+    """
+    raster = rasters
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    mosaic_types = {"FIRST": 1, "LAST": 2, "MIN": 3, "MAX": 4, "MEAN": 5, "BLEND": 6}
+
+    in_mosaic_type = mosaic_types[mosaic_type.upper()]
+
+    template_dict = {
+        "rasterFunction": "MosaicRasters",
+        "rasterFunctionArguments": {"Rasters": raster},
+        "variableName": "Rasters",
+    }
+
+    if mosaic_type is not None:
+        template_dict["rasterFunctionArguments"]["MosaicType"] = in_mosaic_type
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
+
 class RFT:
     def __init__(self, raster_function_template, gis=None):
         try:
