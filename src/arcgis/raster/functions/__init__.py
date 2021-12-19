@@ -11510,6 +11510,314 @@ def contour(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
+def ccdc_analysis(
+    raster,
+    bands_for_detecting_change=[],
+    bands_for_temporal_masking=[],
+    chi_squared_threshold=0.99,
+    min_anomaly_observations=6,
+    update_frequency=1,
+):
+
+    """
+    Function evaluates changes in pixel values over time using the CCDC algorithm,
+    and generates a multidimensional raster containing the model results.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    raster                                   Required Raster/ImageryLayer object. The input multidimensional raster.
+
+                                             The input multidimensional raster must have at least 12 slices, spanning at least 1 year.
+    ------------------------------------     --------------------------------------------------------------------
+    bands_for_detecting_change               Optional List. The band IDs to use for change detection.
+                                             If no band IDs are provided, all the bands from the input raster dataset will be used.
+                                             Each element in the list should be within the range 1 to n where n is the
+                                             number of bands of the input raster.
+
+                                             Example:
+                                                  [1,2,3,4,6]
+    ------------------------------------     --------------------------------------------------------------------
+    bands_for_temporal_masking               Optional List. The band IDs of the green band and the SWIR band, to be used to
+                                             mask for cloud, cloud shadow and snow. If band IDs are not provided, no
+                                             masking will occur.
+                                             Each element in the list should be within the range 1 to n where n is
+                                             the number of bands of the input raster.
+
+                                             Example:
+                                                [1,2]
+    ------------------------------------     --------------------------------------------------------------------
+    chi_squared_threshold                    Optional Float. The chi-square change probability threshold. If an
+                                             observation has a calculated change probability that is above this
+                                             threshold, it is flagged as an anomaly, which is a potential change
+                                             event. The default value is 0.99.
+
+                                             Example:
+                                                0.99
+    ------------------------------------     --------------------------------------------------------------------
+    min_anomaly_observations                 Optional Integer. The minimum number of consecutive anomaly observations
+                                             that must occur before an event is considered a change. A pixel must
+                                             be flagged as an anomaly for the specified number of consecutive
+                                             time slices before it is considered a true change. The default value is 6.
+    ------------------------------------     --------------------------------------------------------------------
+    update_frequency                         Optional Float. The value that represents the update frequency.
+                                             The default value is 1.
+    ====================================     ====================================================================
+
+    :return: Imagery layer item
+
+    .. code-block:: python
+
+            # Usage Example 1: This example performs continuous change detection where only one band is used in the change detection
+            # and the chi-squared probability threshold is 0.90.
+            analyze_changes_using_ccdc_op = ccdc_analysis(raster=input_multidimensional_raster,
+                                                          bands_for_detecting_change=[1],
+                                                          bands_for_temporal_masking=[],
+                                                          chi_squared_threshold=0.90,
+                                                          min_anomaly_observations=6,
+                                                          update_frequency=1
+                                                            )
+
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "CCDC",
+        "rasterFunctionArguments": {"Raster": raster},
+    }
+
+    if bands_for_detecting_change is not None:
+        template_dict["rasterFunctionArguments"]["BandIDs"] = bands_for_detecting_change
+
+    if bands_for_temporal_masking is not None:
+        template_dict["rasterFunctionArguments"][
+            "TmaskBandIDs"
+        ] = bands_for_temporal_masking
+
+    if chi_squared_threshold is not None:
+        template_dict["rasterFunctionArguments"][
+            "ChiSquareProb"
+        ] = chi_squared_threshold
+
+    if min_anomaly_observations is not None:
+        template_dict["rasterFunctionArguments"][
+            "MinNumberAnomaly"
+        ] = min_anomaly_observations
+
+    if update_frequency is not None:
+        template_dict["rasterFunctionArguments"]["UpdatingFrequency"] = update_frequency
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def landtrendr_analysis(
+    raster,
+    processing_band=None,
+    snapping_date="06-30",
+    max_num_segments=5,
+    vertex_count_overshoot=2,
+    spike_threshold=0.9,
+    recovery_threshold=0.25,
+    prevent_one_year_recovery=True,
+    increasing_recovery_trend=True,
+    min_num_observations=6,
+    best_model_proportion=1.25,
+    pvalue_threshold=0.01,
+    output_other_bands=False,
+):
+
+    """
+    Function evaluates changes in pixel values over time using the Landsat-based detection of trends
+    in disturbance and recovery (LandTrendr) method and generates a change analysis raster containing the model results.
+
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    raster                                   Required Raster/ImageryLayer object. The input multidimensional raster.
+    ------------------------------------     --------------------------------------------------------------------
+    processing_band                          Optional string. The band to use for segmenting the pixel value
+                                             trajectories over time. Choose the band that will best capture the
+                                             changes in the feature you want to observe.
+
+                                             If no band value is specified and the input is multiband imagery,
+                                             the first band in the multiband image will be used.
+
+                                             Example:
+                                                  "Band_1"
+    ------------------------------------     --------------------------------------------------------------------
+    snapping_date                            Optional string. The date used to select a slice for each year in the
+                                             input multidimensional dataset. The slice with the date closest to
+                                             the snapping date will be selected. This parameter is required if
+                                             the input dataset contains sub-yearly data.
+
+                                             The default is "06-30" (or June 30), approximately midway through a calendar year.
+
+                                             Example:
+                                                "06-30"
+    ------------------------------------     --------------------------------------------------------------------
+    max_num_segments                         Optional int. The maximum number of segments to be fitted to the
+                                             time series for each pixel. The default is 5.
+
+                                             Example:
+                                                5
+    ------------------------------------     --------------------------------------------------------------------
+    vertex_count_overshoot                   Optional int. The number of additional vertices beyond
+                                             max_num_segments + 1 that can be used to fit the model during
+                                             the initial stage of identifying vertices. Later in the modeling
+                                             process, the number of additional vertices will be reduced to
+                                             max_num_segments + 1. The default is 2.
+
+                                             Example:
+                                                2
+    ------------------------------------     --------------------------------------------------------------------
+    spike_threshold                          Optional float. The threshold to use for dampening spikes or anomalies
+                                             in the pixel value trajectory. The value must range between 0 and 1,
+                                             where 1 means no dampening. The default is 0.9.
+
+                                             Example:
+                                                0.9
+    ------------------------------------     --------------------------------------------------------------------
+    recovery_threshold                       Optional float. The recovery threshold value, in years. If a segment
+                                             has a recovery rate that is faster than 1/recovery threshold, the segment
+                                             is discarded and not included in the time series model. The value must
+                                             range between 0 and 1. The default is 0.25.
+
+                                             Example:
+                                                0.25
+    ------------------------------------     --------------------------------------------------------------------
+    prevent_one_year_recovery                Optional boolean. Specifies whether segments that exhibit a one year
+                                             recovery will be excluded.
+
+                                                - True - Segments that exhibit a one year recovery will be excluded. This is the default.
+
+                                                - False - Segments that exhibit a one year recovery will not be excluded.
+
+                                             Example:
+                                                True
+    ------------------------------------     --------------------------------------------------------------------
+    increasing_recovery_trend                Optional boolean. Specifies whether the recovery has an increasing (positive) trend.
+
+                                                - True - The recovery has an increasing trend. This is the default.
+
+                                                - False - The recovery has a decreasing trend.
+
+                                             Example:
+                                                True
+    ------------------------------------     --------------------------------------------------------------------
+    min_num_observations                     Optional int. The minimum number of valid observations required to
+                                             perform fitting. The number of years in the input multidimensional
+                                             dataset must be equal to or greater than this value. The default is 6.
+
+                                             Example:
+                                                6
+    ------------------------------------     --------------------------------------------------------------------
+    best_model_proportion                    Optional float. The best model proportion value. During the model
+                                             selection process, the tool will calculate the p-value for each
+                                             model and select a model that has the most vertices while
+                                             maintaining the smallest (most significant) p-value based on this
+                                             proportion value. A value of 1 means the model has the lowest
+                                             p-value but may not have a high number of vertices.
+                                             The default is 1.25.
+
+                                             Example:
+                                                1.25
+    ------------------------------------     --------------------------------------------------------------------
+    pvalue_threshold                         Optional float. The p-value threshold for a model to be selected.
+                                             After the vertices are detected in the initial stage of the model
+                                             fitting, the tool will fit each segment and calculate the p-value
+                                             to determine the significance of the model. On the next iteration,
+                                             the model will decrease the number of segments by one and
+                                             recalculate the p-value. This will continue and, if the p-value
+                                             is smaller than the value specified in this parameter, the model
+                                             will be selected and the tool will stop searching for a better model.
+                                             If no such model is selected, the tool will select a model with a
+                                             p-value smaller than the lowest p-value × best model proportion value.
+                                             The default is 0.01.
+
+                                             Example:
+                                                0.01
+    ------------------------------------     --------------------------------------------------------------------
+    output_other_bands                       Optional boolean. Specifies whether other bands will be included in the
+                                             segmentation process.
+
+                                                - True - Other bands will be included. The segmentation and vertices information from the initial segmentation band specified in the processing_band parameter will also be fitted to the remaining bands in the multiband images. The model results will include the segmentation band first, then the remaining bands.
+
+                                                - False - Other bands will not be included. This is the default.
+
+                                             Example:
+                                                True
+    ====================================     ====================================================================
+
+    :return: Imagery layer item
+
+    .. code-block:: python
+
+            # Usage Example 1:
+            analyze_changes_using_landtrendr_op = landtrendr_analysis(raster=input_multidimensional_raster,
+                                                                      processing_band="Band_1")
+
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "LandTrendr",
+        "rasterFunctionArguments": {"Raster": raster},
+    }
+
+    if processing_band is not None:
+        template_dict["rasterFunctionArguments"]["ProcessingBand"] = processing_band
+
+    if snapping_date is not None:
+        template_dict["rasterFunctionArguments"]["SnappingDate"] = snapping_date
+
+    if max_num_segments is not None:
+        template_dict["rasterFunctionArguments"]["MaxSegments"] = max_num_segments
+
+    if vertex_count_overshoot is not None:
+        template_dict["rasterFunctionArguments"][
+            "VertexCountOvershoot"
+        ] = vertex_count_overshoot
+
+    if spike_threshold is not None:
+        template_dict["rasterFunctionArguments"]["SpikeThreshold"] = spike_threshold
+
+    if recovery_threshold is not None:
+        template_dict["rasterFunctionArguments"][
+            "RecoveryThreshold"
+        ] = recovery_threshold
+
+    if min_num_observations is not None:
+        template_dict["rasterFunctionArguments"]["MinObs"] = min_num_observations
+
+    if pvalue_threshold is not None:
+        template_dict["rasterFunctionArguments"]["PValueThreshold"] = pvalue_threshold
+
+    if best_model_proportion is not None:
+        template_dict["rasterFunctionArguments"][
+            "BestModelProportion"
+        ] = best_model_proportion
+
+    if prevent_one_year_recovery is not None:
+        template_dict["rasterFunctionArguments"][
+            "PreventOneYearRecovery"
+        ] = prevent_one_year_recovery
+
+    if increasing_recovery_trend is not None:
+        template_dict["rasterFunctionArguments"][
+            "RecoveryIncreaseTrend"
+        ] = increasing_recovery_trend
+
+    if output_other_bands is not None:
+        template_dict["rasterFunctionArguments"][
+            "OutputOtherBands"
+        ] = output_other_bands
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
 class RFT:
     def __init__(self, raster_function_template, gis=None):
         try:
