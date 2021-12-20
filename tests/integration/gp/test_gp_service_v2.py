@@ -41,22 +41,22 @@ class TestGPService(unittest.TestCase):
 
 class TestGPServiceInfo(unittest.TestCase):
     def test_info(self):
-        """tests that the `tasks` returns a collection of GPTask objects"""
+        """tests that the `info`"""
         gp = GPService(ASYNC_URL, GIS())
         assert gp.info
 
     def test_item_info(self):
-        """tests that the `tasks` returns a collection of GPTask objects"""
+        """tests that the `item_info`"""
         gp = GPService(ASYNC_URL, GIS())
         assert gp.info.item_info
 
     def test_info_metadata(self):
-        """tests that the `tasks` returns a collection of GPTask objects"""
+        """tests that the `metadata`"""
         gp = GPService(ASYNC_URL, GIS())
         assert gp.info.metadata
 
     def test_info_thumbnail(self):
-        """tests that the `tasks` returns a collection of GPTask objects"""
+        """tests that the `thumbnail`"""
         gp = GPService(ASYNC_URL, GIS())
         assert gp.info.thumbnail
 
