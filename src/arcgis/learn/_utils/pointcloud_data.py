@@ -2090,7 +2090,7 @@ def get_predictions(
     seg_probs = probs.numpy()
 
     probs_2d = np.reshape(seg_probs, (sample_num * batch_size, -1))  ## Complete probs
-    predictions = [(-1, 0.0)] * point_num  ## predictions
+    predictions = [(-1, 0.0, None)] * point_num  ## predictions
 
     ## Assigning the confidences and labels to the appropriate index.
     for idx in range(sample_num * batch_size):
@@ -2099,7 +2099,7 @@ def get_predictions(
         confidence = np.amax(probs)
         label = np.argmax(probs)
         if confidence > predictions[point_idx][1]:
-            predictions[point_idx] = [label, confidence]
+            predictions[point_idx] = [label, confidence, probs]
 
     return predictions
 
@@ -2204,10 +2204,10 @@ def inference_las(
                     point_num,
                 )
                 labels_pred[batch_idx, 0:point_num] = np.array(
-                    [label for label, _ in predictions]
+                    [label for label, _, _ in predictions]
                 )
                 confidences_pred[batch_idx, 0:point_num] = np.array(
-                    [confidence for _, confidence in predictions]
+                    [confidence for _, confidence, _ in predictions]
                 )
 
             ## Saving h5 predictions file
@@ -2896,7 +2896,7 @@ class Transform3d(object):
         return self(inp)[:, :, [0, 2, 1]]
 
 
-def save_h5(filename, labels_pred, confidences_pred):
+def save_h5(filename, labels_pred, confidences_pred, class_confidence):
     try_import("h5py")
     import h5py
 
@@ -2906,6 +2906,7 @@ def save_h5(filename, labels_pred, confidences_pred):
 
     filename_pred = filename.parent / (filename.stem + "_pred.h5")
     with h5py.File(filename_pred, "w") as file:
+        file.create_dataset("per_class_confidence", data=class_confidence)
         file.create_dataset("label_seg", data=labels_pred)
         file.create_dataset("confidence", data=confidences_pred)
 
@@ -2993,11 +2994,14 @@ def predict_h5(self, path, output_path, **kwargs):
                     / point_cloud_dataset.relative_files[int(tile[0] - 1)].decode(),
                     labels_pred,
                     confidences_pred,
+                    class_confidence,
                 )
             current_file_name = fname
             batch_num, _ = h5_file["xyz"].shape
             labels_pred = np.full(batch_num, -1, dtype=np.int8)
             confidences_pred = np.zeros(batch_num, dtype=np.float32)
+            class_confidence = np.zeros((batch_num+1, self._data.c), dtype=np.float32)
+            class_confidence[0] = np.array(self._data.classes) 
 
         (
             (normalized_data, point_num),
@@ -3029,10 +3033,13 @@ def predict_h5(self, path, output_path, **kwargs):
         )
         high = low + point_num
         labels_pred[low:high] = np.array(
-            [self._data.idx2class[label] for label, _ in predictions]
+            [self._data.idx2class[label] for label, _, _ in predictions]
         )
         confidences_pred[low:high] = np.array(
-            [confidence for _, confidence in predictions]
+            [confidence for _, confidence, _ in predictions]
+        )
+        class_confidence[low+1:high+1] = np.array(
+            [cls_score for _, _, cls_score in predictions]
         )
         low = high
 
@@ -3041,6 +3048,7 @@ def predict_h5(self, path, output_path, **kwargs):
                 output_path / point_cloud_dataset.relative_files[tile[0]].decode(),
                 labels_pred,
                 confidences_pred,
+                class_confidence,
             )
 
         if progressor is not None:
