@@ -3000,8 +3000,8 @@ def predict_h5(self, path, output_path, **kwargs):
             batch_num, _ = h5_file["xyz"].shape
             labels_pred = np.full(batch_num, -1, dtype=np.int8)
             confidences_pred = np.zeros(batch_num, dtype=np.float32)
-            class_confidence = np.zeros((batch_num+1, self._data.c), dtype=np.float32)
-            class_confidence[0] = np.array(self._data.classes) 
+            class_confidence = np.zeros((batch_num + 1, self._data.c), dtype=np.float32)
+            class_confidence[0] = np.array(self._data.classes)
 
         (
             (normalized_data, point_num),
@@ -3038,7 +3038,7 @@ def predict_h5(self, path, output_path, **kwargs):
         confidences_pred[low:high] = np.array(
             [confidence for _, confidence, _ in predictions]
         )
-        class_confidence[low+1:high+1] = np.array(
+        class_confidence[low + 1 : high + 1] = np.array(
             [cls_score for _, _, cls_score in predictions]
         )
         low = high
