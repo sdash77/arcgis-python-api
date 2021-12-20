@@ -191,13 +191,17 @@ data_files = [
 ]
 data_files += (
     []
-    if ("win" in sys.platform or "darwin" in sys.platform)
+    if ("darwin" in sys.platform)
     else [
         (
             _get_rel_site_packages_dir() + "arcgis/gis/_impl",
             [
-                "arcgis/gis/_impl/_decrypt_nbauth.cpython-36m-x86_64-linux-gnu.so",
+                "arcgis/gis/_impl/_decrypt_nbauth.cp37-win_amd64.pyd",
+                "arcgis/gis/_impl/_decrypt_nbauth.cp38-win_amd64.pyd",
+                "arcgis/gis/_impl/_decrypt_nbauth.cp39-win_amd64.pyd",
                 "arcgis/gis/_impl/_decrypt_nbauth.cpython-37m-x86_64-linux-gnu.so",
+                "arcgis/gis/_impl/_decrypt_nbauth.cpython-38-x86_64-linux-gnu.so",
+                "arcgis/gis/_impl/_decrypt_nbauth.cpython-39-x86_64-linux-gnu.so",
             ],
         )
     ]
