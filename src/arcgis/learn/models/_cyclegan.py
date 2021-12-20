@@ -2,7 +2,7 @@ from ._codetemplate import image_translation_prf
 import json
 import traceback
 from .._data import _raise_fastai_import_error
-from ._arcgis_model import ArcGISModel
+from ._arcgis_model import ArcGISModel, _EmptyData
 import logging
 
 logger = logging.getLogger()
@@ -131,42 +131,23 @@ class CycleGAN(ArcGISModel):
         model_params = emd["ModelParameters"]
         resize_to = emd.get("resize_to")
         chip_size = emd["ImageHeight"]
+        is_multispec = emd.get("IsMultispectral")
         if data is None:
-            if emd.get("IsMultispectral", False):
-                data = (
-                    ImageTupleListMS.from_folders(
-                        emd_path.parent,
-                        emd_path.parent,
-                        emd_path.parent,
-                        batch_stats_a=None,
-                        batch_stats_b=None,
+            data = _EmptyData(
+                path=emd_path.parent, loss_func=None, c=2, chip_size=resize_to
+            )
+            data = get_multispectral_data_params_from_emd(data, emd)
+            normalization_stats_b = dict(emd.get("NormalizationStats_b"))
+            for _stat in normalization_stats_b:
+                if normalization_stats_b[_stat] is not None:
+                    normalization_stats_b[_stat] = torch.tensor(
+                        normalization_stats_b[_stat]
                     )
-                    .split_none()
-                    .label_empty()
-                    .databunch(bs=2, no_check=True)
-                )
-                data = get_multispectral_data_params_from_emd(data, emd)
-                data._is_multispectral = emd.get("IsMultispectral", False)
-                normalization_stats_b = dict(emd.get("NormalizationStats_b"))
-                for _stat in normalization_stats_b:
-                    if normalization_stats_b[_stat] is not None:
-                        normalization_stats_b[_stat] = torch.tensor(
-                            normalization_stats_b[_stat]
-                        )
-                    setattr(data, ("_" + _stat), normalization_stats_b[_stat])
+                setattr(data, ("_" + _stat), normalization_stats_b[_stat])
 
-            else:
-                data = (
-                    ImageTupleList.from_folders(
-                        emd_path.parent, emd_path.parent, emd_path.parent
-                    )
-                    .split_none()
-                    .label_empty()
-                    .transform(size=(resize_to, resize_to))
-                    .databunch(bs=2, no_check=True)
-                )
-
-            data.n_channel = emd["n_channel"]
+            data.n_channel = emd.get("n_intput_channel", None)
+            if data.n_channel == None:
+                data.n_channel = emd.get("n_channel", None)
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
@@ -190,24 +171,27 @@ class CycleGAN(ArcGISModel):
                 "InferenceFunction"
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
         _emd_template["ModelType"] = "CycleGAN"
-        _emd_template["n_channel"] = self._data.n_channel
+        _emd_template["n_intput_channel"] = self._data.n_channel
         _emd_template["SupportsVariableTileSize"] = True
-        if self._data._is_multispectral:
-            _emd_template["NormalizationStats_b"] = {
-                "band_min_values": self._data._band_min_values_b,
-                "band_max_values": self._data._band_max_values_b,
-                "band_mean_values": self._data._band_mean_values_b,
-                "band_std_values": self._data._band_std_values_b,
-                "scaled_min_values": self._data._scaled_min_values_b,
-                "scaled_max_values": self._data._scaled_max_values_b,
-                "scaled_mean_values": self._data._scaled_mean_values_b,
-                "scaled_std_values": self._data._scaled_std_values_b,
-            }
-            for _stat in _emd_template["NormalizationStats_b"]:
-                if _emd_template["NormalizationStats_b"][_stat] is not None:
-                    _emd_template["NormalizationStats_b"][_stat] = _emd_template[
-                        "NormalizationStats_b"
-                    ][_stat].tolist()
+        # if self._data._is_multispectral:
+        _emd_template["NormalizationStats_b"] = {
+            "band_min_values": self._data._band_min_values_b,
+            "band_max_values": self._data._band_max_values_b,
+            "band_mean_values": self._data._band_mean_values_b,
+            "band_std_values": self._data._band_std_values_b,
+            "scaled_min_values": self._data._scaled_min_values_b,
+            "scaled_max_values": self._data._scaled_max_values_b,
+            "scaled_mean_values": self._data._scaled_mean_values_b,
+            "scaled_std_values": self._data._scaled_std_values_b,
+        }
+        for _stat in _emd_template["NormalizationStats_b"]:
+            if _emd_template["NormalizationStats_b"][_stat] is not None:
+                _emd_template["NormalizationStats_b"][_stat] = _emd_template[
+                    "NormalizationStats_b"
+                ][_stat].tolist()
+        _emd_template["n_channel"] = len(
+            _emd_template["NormalizationStats_b"]["band_min_values"]
+        )
         return _emd_template
 
     def show_results(self, rows=5, **kwargs):

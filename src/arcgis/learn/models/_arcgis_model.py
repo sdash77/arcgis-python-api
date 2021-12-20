@@ -1142,6 +1142,30 @@ class ArcGISModel(object):
                         "NormalizationStats"
                     ][_stat].tolist()
             _emd_template["DoNormalize"] = self._data._do_normalize
+        if (
+            getattr(self._data, "_dataset_type", None) == "Pix2Pix"
+            or getattr(self._data, "_dataset_type", None) == "CycleGAN"
+        ):
+            _emd_template["ExtractBands"] = self._data._extract_bands
+            _emd_template["NormalizationStats"] = {
+                "band_min_values": self._data._band_min_values,
+                "band_max_values": self._data._band_max_values,
+                "band_mean_values": self._data._band_mean_values,
+                "band_std_values": self._data._band_std_values,
+                "scaled_min_values": self._data._scaled_min_values,
+                "scaled_max_values": self._data._scaled_max_values,
+                "scaled_mean_values": self._data._scaled_mean_values,
+                "scaled_std_values": self._data._scaled_std_values,
+            }
+            for _stat in _emd_template["NormalizationStats"]:
+                if _emd_template["NormalizationStats"][_stat] is not None:
+                    _emd_template["NormalizationStats"][_stat] = _emd_template[
+                        "NormalizationStats"
+                    ][_stat].tolist()
+            if getattr(self._data, "_dataset_type", None) == "CycleGAN":
+                _emd_template["n_channel_rev"] = len(
+                    _emd_template["NormalizationStats"]["band_min_values"]
+                )
         if getattr(self._data, "_dataset_type", None) == "Classified_Tiles":
             if not getattr(self, "_is_edge_detection", False):
                 if not getattr(self, "_orient_data", False):
