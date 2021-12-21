@@ -5002,7 +5002,7 @@ class FeatureLayerCollection(_GISResource):
                 upload_size = 1e6
             file_path = path
             item_id = self._register_upload(file_path)
-            self._upload_by_parts(item_id, file_path)
+            self._upload_by_parts(item_id, file_path, size=upload_size)
             return self._commit_upload(item_id)
 
     # ----------------------------------------------------------------------
