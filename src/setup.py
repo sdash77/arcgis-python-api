@@ -189,7 +189,7 @@ data_files = [
         ],
     ),
 ]
-if not 'darwin' in sys.platform:
+if not "darwin" in sys.platform:
     _get_rel_site_packages_dir() + "arcgis/gis/_impl"
     data_files += [
         "arcgis/gis/_impl/_decrypt_nbauth.cp37-win_amd64.pyd",
