@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import base64
 import json
 import locale
+import io
 import os
 import re
 import tempfile
@@ -5145,7 +5146,6 @@ class ContentManager(object):
             >>>                                         "commentsEnabled" : False
             >>>                                        } , owner = "User1234")
         """
-        import os
 
         filetype = None
         if not isinstance(item_properties, dict):
@@ -5162,7 +5162,6 @@ class ContentManager(object):
                 "layers": [data.spatial.to_feature_collection()._lyr_dict]
             }
             data = None
-        import io
 
         if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
             assert "type" in item_properties
@@ -12108,7 +12107,8 @@ class Item(dict):
          ---------------     --------------------------------------------------------------------
          item_properties     Required dictionary. See table below for the keys and values.
          ---------------     --------------------------------------------------------------------
-         data                Optional string. Either a path or URL to the data.
+         data                Optional string, io.StringIO, or io.BytesIO. Either a path or URL to
+                             the data or an instance of `StringIO` or `BytesIO` objects.
          ---------------     --------------------------------------------------------------------
          thumbnail           Optional string. Either a path or URL to a thumbnail image.
          ---------------     --------------------------------------------------------------------
@@ -12192,6 +12192,15 @@ class Item(dict):
             if "tags" in item_properties:
                 if type(item_properties["tags"]) is list:
                     item_properties["tags"] = ",".join(item_properties["tags"])
+
+        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            if item_properties is None:
+                item_properties = {}
+            if not "type" in item_properties:
+                item_properties["type"] = self.type
+            if not "fileName" in item_properties:
+                fileName = self.name
+                item_properties["fileName"] = fileName
 
         ret = self._portal.update_item(
             self.itemid,

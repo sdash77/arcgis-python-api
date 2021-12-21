@@ -19,6 +19,10 @@ URL = (
 )
 PROFILE = "your_online_profile"
 
+kubernetes_url = "https://rqa06ptlt-rqa06ptlt.apps.openshift46release.esri.com/gis"
+kube_username = "creator2"
+kube_password = "portalaccount1"
+
 
 class TestAddUsingIO(unittest.TestCase):
     def test_add_by_string_io(self):
@@ -30,6 +34,68 @@ class TestAddUsingIO(unittest.TestCase):
         item = gis.content.add(item_properties, data=output)
         assert item
         assert item.delete()
+
+    def test_update_by_string_io(self):
+        """adds the CSV file using stringIO object"""
+        data = pd.read_csv(URL)
+        output = io.StringIO()
+        data.to_csv(output, index=False)
+        gis = GIS(profile=PROFILE, verify_cert=False, trust_env=True)
+        item = gis.content.add(item_properties, data=output)
+        assert item
+        try:
+            assert item.update(data=output)
+        except Exception as e:
+            raise e
+        finally:
+            if item:
+                assert item.delete()
+
+
+class TestAddUpdateKubeUsingIO(unittest.TestCase):
+    def test_add_by_string_io(self):
+        """adds the CSV file using stringIO object"""
+        data = pd.read_csv(URL)
+        output = io.StringIO()
+        data.to_csv(output, index=False)
+        gis = GIS(
+            url=kubernetes_url,
+            username=kube_username,
+            password=kube_password,
+            verify_cert=False,
+            trust_env=True,
+        )
+        item = None
+        try:
+            item = gis.content.add(item_properties, data=output)
+            assert item
+        except Exception as e:
+            raise e
+        finally:
+            if item:
+                item.delete()
+
+    def test_update_by_string_io(self):
+        """adds the CSV file using stringIO object"""
+        data = pd.read_csv(URL)
+        output = io.StringIO()
+        data.to_csv(output, index=False)
+        gis = GIS(
+            url=kubernetes_url,
+            username=kube_username,
+            password=kube_password,
+            verify_cert=False,
+            trust_env=True,
+        )
+        item = gis.content.add(item_properties, data=output)
+        assert item
+        try:
+            assert item.update(data=output)
+        except Exception as e:
+            raise e
+        finally:
+            if item:
+                assert item.delete()
 
 
 if __name__ == "__main__":
