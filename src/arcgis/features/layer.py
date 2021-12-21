@@ -4958,7 +4958,7 @@ class FeatureLayerCollection(_GISResource):
             return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def upload(self, path, description=None):
+    def upload(self, path, description=None, upload_size=None):
         """
         The ``uploads`` method uploads a new item to the server.
 
@@ -4972,6 +4972,9 @@ class FeatureLayerCollection(_GISResource):
         path                Optional string. Filepath of the file to upload.
         ---------------     --------------------------------------------------------------------
         description         Optional string. Descriptive text for the uploaded item.
+        ---------------     --------------------------------------------------------------------
+        upload_size         Optional Integer. For large uploads, a user can specify the upload
+                            size of each part.  The default is 1mb.
         ===============     ====================================================================
 
         :return: A tuple of (Boolean, dict)
@@ -4995,6 +4998,8 @@ class FeatureLayerCollection(_GISResource):
                 return res["success"], res
             return False, res
         else:
+            if upload_size is None:
+                upload_size = 1e6
             file_path = path
             item_id = self._register_upload(file_path)
             self._upload_by_parts(item_id, file_path)
@@ -5004,14 +5009,14 @@ class FeatureLayerCollection(_GISResource):
     def _register_upload(self, file_path):
         """returns the itemid for the upload by parts logic"""
         r_url = "%s/uploads/register" % self._url
-        params = {"f": "json", "itemName": os.path.basename(file_path).replace(".", "")}
+        params = {"f": "json", "itemName": os.path.basename(file_path)}
         reg_res = self._con.post(r_url, params)
         if "item" in reg_res and "itemID" in reg_res["item"]:
             return reg_res["item"]["itemID"]
         return None
 
     # ----------------------------------------------------------------------
-    def _upload_by_parts(self, item_id, file_path):
+    def _upload_by_parts(self, item_id, file_path, size=1e6):
         """loads a file for attachmens by parts"""
         import mmap, tempfile
 
@@ -5020,7 +5025,7 @@ class FeatureLayerCollection(_GISResource):
         params = {"f": "json"}
         with open(file_path, "rb") as f:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-            size = 1000000
+
             steps = int(os.fstat(f.fileno()).st_size / size)
             if os.fstat(f.fileno()).st_size % size > 0:
                 steps += 1
