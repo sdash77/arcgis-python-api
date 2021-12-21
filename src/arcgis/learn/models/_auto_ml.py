@@ -100,9 +100,18 @@ class AutoML(object):
                             Possible values are:
                             For binary classification - logloss (default), auc, f1, average_precision,
                             accuracy.
-                            For mutliclass classification - logloss (default), f1, accuracy
+                            For multiclass classification - logloss (default), f1, accuracy
                             For regression - rmse (default), mse, mae, r2, mape, spearman, pearson
 
+                            Note - If there are only 2 unique values in the target, then
+                            binary classification is performed,
+                            If number of unique values in the target is between 2 and 20 (included), then
+                            multiclass classification is performed,
+                            In all other cases, regression is performed on the dataset.
+    ---------------------   -------------------------------------------
+    n_jobs                  Optional. Int.
+                            Number of CPU cores to be used. By default, it is set to -1 which uses
+                            all processes.
     =====================   ===========================================
 
     :return: `AutoML` Object
@@ -115,6 +124,7 @@ class AutoML(object):
         mode="Explain",
         algorithms=None,
         eval_metric="auto",
+        n_jobs=-1,
     ):
         try:
             from supervised.automl import AutoML as base_AutoML
@@ -132,6 +142,14 @@ class AutoML(object):
             raise Exception(
                 "Auto ML feature is currently only available for Supervised learning."
             )
+        if getattr(self._data, "_is_not_empty", False):
+            if (len(data._training_indexes) < 20) & (
+                eval_metric in ["r2", "rmse", "mse", "mape", "spearman", "pearson"]
+            ):
+                warnings.warn(
+                    "The eval metric you have passed, is not valid for a classification usecase. If the use case is regression, then ensure that your dataset has atleast 22 records"
+                )
+                return
 
         if algorithms:
             algorithms = algorithms
@@ -169,10 +187,10 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            # if mode == "Explain":
-            #    explain_level = 2
-            # else:
-            explain_level = 2
+            if mode == "Explain":
+                explain_level = 2
+            else:
+                explain_level = 0  # Setting explain level to 0 in case of Perform and Compete as EDA seems to be creating memory issues
             self._model = base_AutoML(
                 mode=mode,
                 algorithms=algorithms,
@@ -180,6 +198,8 @@ class AutoML(object):
                 golden_features=False,
                 explain_level=explain_level,
                 eval_metric=eval_metric,
+                n_jobs=n_jobs,
+                kmeans_features=False,
             )
         else:
             result_path = self._data.path

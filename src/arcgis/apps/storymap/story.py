@@ -37,7 +37,7 @@ class StoryMap(object):
     your stories.
 
     Create a Story Map object to make edits to a story. Can be created from an item of type 'Story Map',
-    an item id for that type of item, or if nothing is passed, a new story is created from a generic draft.
+    an item id for that type of item, or if .nothing is passed, a new story is created from a generic draft.
 
     If an Item or item_id is passed in, only published changes or new drafts are taken from the Story Map.
     If you have a story with unpublished changes, they will not appear when you construct your story with the API.
@@ -809,6 +809,11 @@ class StoryMap(object):
             issue checker. It is recommended to publish through the Story Maps builder if you
             want your story to go through the issue checker.
 
+        .. warning::
+            Changes to the published story may not be visible for up to one hour. You can open
+            the story in the story builder to force changes to appear immediately and perform
+            other optimizations, such as updating the story's social/SEO metadata.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -846,14 +851,21 @@ class StoryMap(object):
         if publish is True:
             # Remove old publish item
             for resource in self._resources:
-                if "publish_data" in resource["resource"]:
+                if (
+                    "publish_data" in resource["resource"]
+                    or "published_data" in resource["resource"]
+                    or "publish" in resource["resource"]
+                ):
                     self._remove_resource(file=resource["resource"])
             # Add new publish
             self._add_resource(
-                resource_name="publish_data.json", text=json.dumps(self._properties)
+                resource_name="published_data.json", text=json.dumps(self._properties)
             )
             # Set the typekeywords
             typeKeywords = self._item.typeKeywords
+            if "smstatusunpublishedchanges" in typeKeywords:
+                idx = typeKeywords.index("smstatusunpublishedchanges")
+                del typeKeywords[idx]
             for keyword in typeKeywords:
                 if "smdraftresourceid" in keyword:
                     typeKeywords.remove(keyword)
@@ -864,6 +876,7 @@ class StoryMap(object):
                     or "smstatusdraft" in keyword
                 ):
                     typeKeywords.remove(keyword)
+
             new_typeKeywords = [
                 "smstatuspublished",
                 "smversiondraft:21.43.0",
@@ -873,7 +886,10 @@ class StoryMap(object):
                 "smversionpublished:21.43.0",
                 "smpublisheddate:" + str(int(time.time())),
             ]
-            p = {"typeKeywords": typeKeywords, "text": json.dumps(self._properties)}
+            p = {
+                "typeKeywords": list(set(typeKeywords + new_typeKeywords)),
+                "text": json.dumps(self._properties),
+            }
             if title:
                 p["title"] = title
             if tags:
@@ -906,6 +922,9 @@ class StoryMap(object):
                     "smversionpublished:21.43.0",
                     "smpublisheddate:" + str(int(time.time())),
                 ]
+                if "smstatuspublished" in typeKeywords:
+                    idx = typeKeywords.index("smstatuspublished")
+                    del typeKeywords[idx]
             if previously_published is False:
                 # still in draft mode
                 new_typeKeywords = [

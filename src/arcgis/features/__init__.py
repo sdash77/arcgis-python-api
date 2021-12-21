@@ -46,6 +46,9 @@ __all__ = [
     "FeatureLayer",
     "Table",
     "FeatureLayerCollection",
+    "UtilityNetworkManager",
+    "ValidationManager",
+    "ParcelFabricManager",
 ]
 try:
     from .geo import GeoAccessor, GeoSeriesAccessor
