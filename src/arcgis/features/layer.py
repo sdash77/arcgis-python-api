@@ -5020,6 +5020,7 @@ class FeatureLayerCollection(_GISResource):
         """loads a file for attachmens by parts"""
         import mmap, tempfile
 
+        size = int(size)
         b_url = "%s/uploads/%s" % (self._url, item_id)
         upload_part_url = "%s/uploadPart" % b_url
         params = {"f": "json"}
@@ -5035,7 +5036,7 @@ class FeatureLayerCollection(_GISResource):
                 if os.path.isfile(tempFile):
                     os.remove(tempFile)
                 with open(tempFile, "wb") as writer:
-                    writer.write(mm.read(size))
+                    writer.write(mm.read(int(size)))
                     writer.flush()
                     writer.close()
                 del writer
