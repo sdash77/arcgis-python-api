@@ -4517,6 +4517,13 @@ class ImageryLayer(Layer):
         future                                   Optional boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
+        folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
+                                                 not exist, with the given folder name and persists the output in this folder.
+                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                                 Example:
+                                                    {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+        ------------------------------------     --------------------------------------------------------------------
         tiles_only                               In ArcGIS Online, the default output image service for this function
                                                  would be a Tiled Imagery Layer.
 
@@ -4536,6 +4543,7 @@ class ImageryLayer(Layer):
             img_lyr.save(output_name="saved_imagery_layer",
                          process_as_multidimensional=True,
                          build_transpose=True,
+                         folder="my_imagery_layers",
                          gis=gis)
         """
         g = _arcgis.env.active_gis if gis is None else gis
@@ -8259,6 +8267,15 @@ class Raster:
 
                                                  (Available only when image_server engine is used)
         ------------------------------------     --------------------------------------------------------------------
+        folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
+                                                 not exist, with the given folder name and persists the output in this folder.
+                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                                 (Available only when image_server engine is used)
+
+                                                 Example:
+                                                    {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+        ------------------------------------     --------------------------------------------------------------------
         tiles_only                               In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
                                                  To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
@@ -8280,6 +8297,7 @@ class Raster:
             # Usage Example 2: Saves the raster to the active GIS as an Imagery Layer Item (usecase for image_server engine rasters)
 
             raster2.save(output_name="output_imagery_layer_name",
+                         folder="my_rasters",
                          gis=gis)
 
         """
