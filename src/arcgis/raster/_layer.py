@@ -11408,12 +11408,7 @@ class RasterCollection:
         else:
             self._context = context
 
-        if (
-            (engine is not None)
-            and engine != _ArcpyRasterCollection
-            and engine != _ImageServerRasterCollection
-            and engine != _LocalRasterCollection
-        ):
+        if engine is not None:
             self._ras_coll_engine = engine
             self._ras_coll_engine_obj = engine(
                 rasters=rasters,
@@ -11464,6 +11459,8 @@ class RasterCollection:
                             or "/vsi" in ele
                         ):
                             continue
+                        else:
+                            local_class = False
                     else:
                         local_class = False
 
@@ -13589,6 +13586,8 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         if not isinstance(calendar_field, str):
             raise TypeError("calender_field must be string type")
 
+        calendar_field = calendar_field.upper()
+
         if calendar_field not in calendar_field_types:
             raise ValueError(
                 "invalid calender_field, must be one of "
@@ -14346,6 +14345,27 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         filtered_rasters = []
         attribute_dict = defaultdict(list)
 
+        calendar_field_types = [
+            "YEAR",
+            "MONTH",
+            "QUARTER",
+            "WEEK_OF_YEAR",
+            "DAY_OF_YEAR",
+            "DAY_OF_MONTH",
+            "DAY_OF_WEEK",
+            "HOUR",
+        ]
+        if not isinstance(calendar_field, str):
+            raise TypeError("calender_field must be string type")
+
+        calendar_field = calendar_field.upper()
+
+        if calendar_field not in calendar_field_types:
+            raise ValueError(
+                "invalid calender_field, must be one of "
+                + ", ".join(calendar_field_types)
+            )
+
         for item in iter(self):
             raster = self._get_raster_from_item(item)
 
@@ -14359,6 +14379,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 )
 
             selected = False
+
             if calendar_field == "YEAR":
                 if start <= date_time.year <= end:
                     selected = True
@@ -14530,6 +14551,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
 
             field_value = item[field_name]
 
+            operator = operator.lower()
             selected = False
             if operator == "equals":
                 selected = field_value == field_values
