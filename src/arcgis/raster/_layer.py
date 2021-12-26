@@ -14691,9 +14691,9 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         return min(self._rasters_list, ignore_nodata=ignore_nodata)
 
     def median(self, ignore_nodata=True):
-        from arcgis.raster.functions import median
+        from arcgis.raster.functions import med
 
-        return median(self._rasters_list, ignore_nodata=ignore_nodata)
+        return med(self._rasters_list, ignore_nodata=ignore_nodata)
 
     def mean(self, ignore_nodata=True):
         from arcgis.raster.functions import mean
