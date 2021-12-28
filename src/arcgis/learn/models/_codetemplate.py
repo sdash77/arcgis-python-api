@@ -1445,17 +1445,33 @@ class ArcGISImageTranslation:
         return kwargs
     def updatePixels(self, tlc, shape, props, **pixelBlocks):
         # set pixel values in invalid areas to 0
-           
-        #raster_mask = pixelBlocks['raster_mask']
-        raster_pixels = pixelBlocks['raster_pixels']
-        #raster_pixels[np.where(raster_mask == 0)] = 0
-        pixelBlocks['raster_pixels'] = raster_pixels
-        xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)        
-        tytx = getattr(self.child_image_classifier, 'tytx', self.json_info['ImageHeight'])
-        chunks, num_rows, num_cols =  chunk_it(xx.transpose(1, 2, 0), tytx)# self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
-        xx = patch_chips(crop_flatten(chunks, self.child_image_classifier.padding), num_rows, num_cols)
-        xx = xx.transpose(2, 0, 1)
-        pixelBlocks['output_pixels'] = xx
+
+        # raster_mask = pixelBlocks['raster_mask']
+        raster_pixels = pixelBlocks["raster_pixels"]
+        # raster_pixels[np.where(raster_mask == 0)] = 0
+        pixelBlocks["raster_pixels"] = raster_pixels
+        if hasattr(self.child_image_classifier, "updatePixelsSmooth"):
+            xx = self.child_image_classifier.updatePixelsSmooth(
+                tlc, shape, props, **pixelBlocks
+            ).astype(props["pixelType"], copy=False)
+            pixelBlocks["output_pixels"] = xx
+        else:
+            xx = self.child_image_classifier.updatePixels(
+                tlc, shape, props, **pixelBlocks
+            ).astype(props["pixelType"], copy=False)
+            tytx = getattr(
+                self.child_image_classifier, "tytx", self.json_info["ImageHeight"]
+            )
+            chunks, num_rows, num_cols = chunk_it(
+                xx.transpose(1, 2, 0), tytx
+            )  # self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
+            xx = patch_chips(
+                crop_flatten(chunks, self.child_image_classifier.padding),
+                num_rows,
+                num_cols,
+            )
+            xx = xx.transpose(2, 0, 1)
+            pixelBlocks["output_pixels"] = xx
         return pixelBlocks
 """
 
