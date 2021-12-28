@@ -1148,11 +1148,24 @@ class Connection(object):
                         )
             elif isinstance(files, (list, tuple)):
                 for key, filePath, fileName in files:
-                    if isinstance(fileName, str):
+                    import io
+
+                    if (
+                        isinstance(fileName, str)
+                        and isinstance(filePath, (io.StringIO, io.BytesIO)) == False
+                    ):
                         fields[key] = (
                             fileName,
                             open(filePath, "rb"),
                             mimetypes.guess_type(filePath)[0],
+                        )
+                    elif isinstance(fileName, str) and isinstance(
+                        filePath, (io.StringIO, io.BytesIO)
+                    ):
+                        fields[key] = (
+                            fileName,
+                            filePath,
+                            None,
                         )
                     else:
                         fields[key] = v

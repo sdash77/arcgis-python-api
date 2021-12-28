@@ -1758,6 +1758,19 @@ def prepare_data(
                     )
             else:
                 # MultiFolder Training
+                def _get_labels(x, ext=right):
+                    path = x.parent.parent
+                    label_dir = [
+                        os.path.join(path / "labels", lbl)
+                        for lbl in label_dirs
+                        if os.path.isdir(os.path.join(path / "labels", lbl))
+                    ]
+                    label_path = []
+                    for lbl in label_dir:
+                        if os.path.exists(Path(lbl) / (x.stem + ".{}".format(ext))):
+                            label_path.append(Path(lbl) / (x.stem + ".{}".format(ext)))
+                    return label_path
+                get_y_func = _get_labels
                 imageslist = []
                 for data_folder in data_folders:
                     imageslist.append(
