@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import base64
 import json
 import locale
+import io
 import os
 import re
 import tempfile
@@ -5048,7 +5049,8 @@ class ContentManager(object):
         ---------------     --------------------------------------------------------------------
         item_properties     Required dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
-        data                Optional string. Either a path or URL to the data.
+        data                Optional string, io.StringIO, or io.BytesIO. Either a path or URL to
+                            the data or an instance of `StringIO` or `BytesIO` objects.
         ---------------     --------------------------------------------------------------------
         thumbnail           Optional string. Either a path or URL to a thumbnail image.
         ---------------     --------------------------------------------------------------------
@@ -5144,7 +5146,6 @@ class ContentManager(object):
             >>>                                         "commentsEnabled" : False
             >>>                                        } , owner = "User1234")
         """
-        import os
 
         filetype = None
         if not isinstance(item_properties, dict):
@@ -5161,7 +5162,12 @@ class ContentManager(object):
                 "layers": [data.spatial.to_feature_collection()._lyr_dict]
             }
             data = None
-        if data is not None:
+
+        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            assert "type" in item_properties
+            assert "title" in item_properties
+
+        elif data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
 
@@ -5234,6 +5240,11 @@ class ContentManager(object):
 
             is_file = os.path.isfile(data)
             if is_file and bytesto(os.stat(data).st_size) < 7:
+                multipart = False
+                item_properties.pop("multipart", None)
+            elif (
+                is_file == False and hasattr(data, "tell") and bytesto(data.tell()) < 7
+            ):
                 multipart = False
                 item_properties.pop("multipart", None)
             else:
@@ -12096,7 +12107,8 @@ class Item(dict):
          ---------------     --------------------------------------------------------------------
          item_properties     Required dictionary. See table below for the keys and values.
          ---------------     --------------------------------------------------------------------
-         data                Optional string. Either a path or URL to the data.
+         data                Optional string, io.StringIO, or io.BytesIO. Either a path or URL to
+                             the data or an instance of `StringIO` or `BytesIO` objects.
          ---------------     --------------------------------------------------------------------
          thumbnail           Optional string. Either a path or URL to a thumbnail image.
          ---------------     --------------------------------------------------------------------
@@ -12180,6 +12192,15 @@ class Item(dict):
             if "tags" in item_properties:
                 if type(item_properties["tags"]) is list:
                     item_properties["tags"] = ",".join(item_properties["tags"])
+
+        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            if item_properties is None:
+                item_properties = {}
+            if not "type" in item_properties:
+                item_properties["type"] = self.type
+            if not "fileName" in item_properties:
+                fileName = self.name
+                item_properties["fileName"] = fileName
 
         ret = self._portal.update_item(
             self.itemid,

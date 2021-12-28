@@ -1,12 +1,18 @@
 try:
-    import os, sys, json, importlib
+    import os, json
     import numpy as np
     import torch
-    import torch.nn as nn
     from fastai.core import split_kwargs_by_func
     import math
     from . import util
-    from .util import normalize_batch
+    from .util import (
+        variable_tile_size_check,
+        normalize_batch,
+        fold_tensor,
+        unfold_tensor,
+        dihedral_transform,
+        create_interpolation_mask,
+    )
     from pathlib import Path
 
     HAS_TORCH = True
@@ -483,6 +489,16 @@ class ChildImageClassifier:
                     "displayName": "Batch Size",
                     "description": "Batch Size",
                 },
+                {
+                    "name": "test_time_augmentation",
+                    "dataType": "string",
+                    "required": False,
+                    "value": "True"
+                    if "test_time_augmentation" not in self.json_info
+                    else str(self.json_info["test_time_augmentation"]),
+                    "displayName": "Perform test time augmentation while predicting",
+                    "description": "If True, will merge predictions from flipped and rotated images.",
+                },
             ]
         )
         if self.json_info["IsEdgeDetection"]:
@@ -495,7 +511,15 @@ class ChildImageClassifier:
                         "required": False,
                         "displayName": "thinning",
                         "description": "If True, edges will be thined to one pixel wide",
-                    }
+                    },
+                    {
+                        "name": "merge_policy",
+                        "dataType": "string",
+                        "required": False,
+                        "value": "mean",
+                        "displayName": "Policy for merging augmented predictions",
+                        "description": "Policy for merging predictions('mean', 'max' or 'min'). Applicable when test_time_augmentation is True.",
+                    },
                 ]
             )
             if (
@@ -535,12 +559,15 @@ class ChildImageClassifier:
                     }
                 ]
             )
-
+        required_parameters = variable_tile_size_check(
+            self.json_info, required_parameters
+        )
         return required_parameters
 
     def getConfiguration(self, **scalars):
+        self.tytx = int(scalars.get("tile_size", self.json_info["ImageHeight"]))
         self.padding = int(
-            scalars.get("padding", self.json_info["ImageHeight"] // 4)
+            scalars.get("padding", self.tytx // 4)
         )  ## Default padding Imageheight//4.
         self.batch_size = (
             int(math.sqrt(int(scalars.get("batch_size", 4)))) ** 2
@@ -553,7 +580,7 @@ class ChildImageClassifier:
             "yes",
         ]  ## Default value True
         if self.json_info["IsEdgeDetection"]:
-            self.thinning = scalars.get("thinning", "true").lower() in [
+            self.thinning = scalars.get("thinning", "false").lower() in [
                 "true",
                 "1",
                 "t",
@@ -564,22 +591,33 @@ class ChildImageClassifier:
             self.probability_raster = scalars.get(
                 "return_probability_raster", "false"
             ).lower() in ["true", "1", "t", "y", "yes"]
+
+            self.merge_policy = scalars.get("merge_policy", "mean").lower()
         else:
             self.thinning = None
             self.thres = None
             self.probability_raster = None
+            self.merge_policy = "mean"
 
         (
             self.rectangle_height,
             self.rectangle_width,
         ) = calculate_rectangle_size_from_batch_size(self.batch_size)
         ty, tx = get_tile_size(
-            self.json_info["ImageHeight"],
-            self.json_info["ImageWidth"],
+            self.tytx,
+            self.tytx,
             self.padding,
             self.rectangle_height,
             self.rectangle_width,
         )
+
+        self.use_tta = scalars.get("test_time_augmentation", "false").lower() in [
+            "true",
+            "1",
+            "t",
+            "y",
+            "yes",
+        ]  # Default value True
 
         return {
             "extractBands": tuple(self.json_info["ExtractBands"]),
@@ -589,14 +627,16 @@ class ChildImageClassifier:
             "threshold": self.thres,
             "return_probability_raster": self.probability_raster,
             "fixedTileSize": 1,
+            "test_time_augmentation": self.use_tta,
+            "merge_policy": self.merge_policy,
         }
 
     def updatePixels(self, tlc, shape, props, **pixelBlocks):  # 8 x 224 x 224 x 3
         input_image = pixelBlocks["raster_pixels"].astype(np.float32)
         batch, batch_height, batch_width = tile_to_batch(
             input_image,
-            self.json_info["ImageHeight"],
-            self.json_info["ImageWidth"],
+            self.tytx,
+            self.tytx,
             self.padding,
             fixed_tile_size=True,
             batch_height=self.rectangle_height,
@@ -628,6 +668,144 @@ class ChildImageClassifier:
         )
         return semantic_predictions
 
+    def split_predict_interpolate(self, normalized_image_tensor):
+        kernel_size = self.tytx
+        stride = kernel_size - (2 * self.padding)
+
+        # Split image into overlapping tiles
+        masks, t_size, patches = unfold_tensor(
+            normalized_image_tensor, kernel_size, stride
+        )
+
+        if (
+            self.json_info.get("ArcGISLearnVersion", "1.9.1") < "2.0.0"
+        ):  # handle old models
+            if "NormalizationStats" in self.json_info:
+                batch_input = self.model_extension._model_conf.transform_input_multispectral(
+                    patches
+                )
+            else:
+                batch_input = self.model_extension._model_conf.transform_input(patches)
+
+            with torch.no_grad():
+                pred_batch = self.model(batch_input)
+
+            if self.json_info["ModelName"] in ["HEDEdgeDetector", "BDCNEdgeDetector"]:
+                output = pred_batch[-1]
+            else:  # including MMSegmentation
+                output = pred_batch
+
+        else:
+            output = classify_image(
+                self.model_extension._model_conf,
+                self.model,
+                patches,
+                self.device,
+                self.predict_background,
+                self.json_info,
+                self.json_emd_file,
+                thinning=False,
+                threshold=self.thres,
+                prob_raster=True,
+            )
+
+        interpolation_mask = create_interpolation_mask(
+            kernel_size, 0, self.device, "hann"
+        )
+
+        output = output * interpolation_mask
+        masks = masks * interpolation_mask
+
+        # merge predictions from overlapping chips
+        int_surface = fold_tensor(output, masks, t_size, kernel_size, stride)
+
+        return int_surface
+
+    def tta_predict(self, normalized_image_tensor, test_time_aug=True):
+        all_activations = []
+
+        transforms = [0]
+        if test_time_aug:
+            if self.json_info["ImageSpaceUsed"] == "MAP_SPACE":
+                transforms = list(range(8))
+            else:
+                transforms = [
+                    0,
+                    2,
+                ]  # no vertical flips for pixel space (oriented imagery)
+
+        for k in transforms:
+            flipped_image_tensor = dihedral_transform(normalized_image_tensor[0], k)
+            int_surface = self.split_predict_interpolate(
+                flipped_image_tensor.unsqueeze(0)
+            )
+            corrected_activation = dihedral_transform(int_surface[0], k)
+
+            if k in [5, 6]:
+                corrected_activation = dihedral_transform(int_surface[0], k).rot90(
+                    2, [1, 2]
+                )
+
+            all_activations.append(corrected_activation)
+
+        all_activations = torch.stack(all_activations)
+
+        return all_activations
+
+    def updatePixelsTTA(self, tlc, shape, props, **pixelBlocks):  # 8 x 224 x 224 x 3
+
+        model_info = self.json_info
+
+        input_image = pixelBlocks["raster_pixels"].astype(np.float32)
+        input_image_tensor = torch.tensor(input_image).to(self.device).float()
+
+        if "NormalizationStats" in model_info:
+            normalized_image_tensor = normalize_batch(
+                input_image_tensor.cpu(), model_info
+            )
+            normalized_image_tensor = normalized_image_tensor.float().to(
+                input_image_tensor.device
+            )
+        else:
+            from torchvision import transforms
+
+            normalize = transforms.Normalize(
+                [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+            )
+            normalized_image_tensor = normalize(input_image_tensor / 255.0).unsqueeze(0)
+
+        all_activations = self.tta_predict(
+            normalized_image_tensor, test_time_aug=self.use_tta,
+        )
+
+        if self.merge_policy == "max":
+            activations = all_activations.max(dim=0)[0]
+        elif self.merge_policy == "min":
+            activations = all_activations.min(dim=0)[0]
+        else:
+            activations = all_activations.mean(dim=0)
+
+        if self.probability_raster:
+            predictions = activations.unsqueeze(0)
+        else:
+            if (
+                self.json_info.get("ArcGISLearnVersion", "1.9.1") < "2.0.0"
+                and not self.thinning
+                and (
+                    self.json_info["ModelName"]
+                    in ["HEDEdgeDetector", "BDCNEdgeDetector"]
+                )
+            ):  # handle old edge detection models that use preds[-1]
+                predictions = (activations.unsqueeze(0) > self.thres).byte()
+            else:
+                predictions = self.model_extension._model_conf.post_process(
+                    activations.unsqueeze(0), thres=self.thres, thinning=self.thinning
+                )
+
+        pad = self.padding
+
+        return predictions[0].cpu().numpy()[:, pad : -pad or None, pad : -pad or None]
+
 
 def classify_image(
     model_configuration,
@@ -639,16 +817,15 @@ def classify_image(
     emd_path,
     thinning,
     threshold,
-    prob_raster,
+    prob_raster=False,
 ):
+    if not isinstance(images, torch.Tensor):
+        images = torch.tensor(images).to(device).float()
+
     if "NormalizationStats" in model_info:
-        batch_input = model_configuration.transform_input_multispectral(
-            torch.tensor(images).to(device).float()
-        )
+        batch_input = model_configuration.transform_input_multispectral(images)
     else:
-        batch_input = model_configuration.transform_input(
-            torch.tensor(images).to(device).float()
-        )
+        batch_input = model_configuration.transform_input(images)
 
     with torch.no_grad():
         pred_batch = model(batch_input)
@@ -659,11 +836,16 @@ def classify_image(
             return torch.stack(preds)
         return preds
     else:
-        if prob_raster:
-            preds = pred_batch[-1].detach()
+        if model_info.get("ArcGISLearnVersion", "1.9.1") < "2.0.0":  # handle old models
+            if prob_raster:
+                preds = pred_batch[-1].detach()
+            else:
+                preds = model_configuration.post_process(
+                    pred_batch, thres=threshold, thinning=thinning
+                )
         else:
             preds = model_configuration.post_process(
-                pred_batch, thres=threshold, thinning=thinning
+                pred_batch, thres=threshold, thinning=thinning, prob_raster=prob_raster
             )
         if thinning:
             return torch.stack(preds)

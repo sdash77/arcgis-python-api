@@ -737,3 +737,42 @@ def update_pixels_tta(
     pad = child_image_classifier.padding
 
     return result.cpu().numpy().astype("i4")[:, pad : -pad or None, pad : -pad or None]
+
+
+def update_pixels_img_trans(self, tlc, shape, props, **pixelBlocks):
+    kernel_size = self.json_info["ImageHeight"]
+    stride = kernel_size - (2 * self.padding)
+
+    model_name = self.json_info.get("ModelName")
+
+    pixelblock = pixelBlocks["raster_pixels"].astype(np.float32)
+    pixelblock_image_tensor = tensor(pixelblock).float().unsqueeze(0).cpu()
+
+    masks, t_size, patches = unfold_tensor(pixelblock_image_tensor, kernel_size, stride)
+
+    if model_name == "Pix2PixHD":
+        prediction = pixel_classify_pix2pix_hd_image(
+            self.model, patches, self.device, model_info=self.json_info
+        )
+    if model_name == "CycleGAN":
+        prediction = pixel_classify_cyclegan_image(
+            self.model, patches, self.device, self.direction, model_info=self.json_info
+        )
+    if model_name == "Pix2Pix":
+        prediction = pixel_classify_pix2pix_image(
+            self.model, patches, self.device, model_info=self.json_info
+        )
+
+    interpolation_mask = create_interpolation_mask(kernel_size, 0, self.device, "hann")
+
+    output = (tensor(prediction).to(self.device)) * interpolation_mask
+    masks_inp = (tensor(masks).to(self.device)) * interpolation_mask
+
+    merged_preds = fold_tensor(output, masks_inp, t_size, kernel_size, stride)
+
+    return merged_preds.cpu().numpy()[
+        0,
+        :,
+        self.padding : -self.padding or None,
+        self.padding : -self.padding or None,
+    ]
