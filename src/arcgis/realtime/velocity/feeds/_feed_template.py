@@ -178,7 +178,8 @@ class _FeedTemplate:
             if field["name"] == field_name:
                 field["tags"] = [_TRACK_ID_TAG]
                 is_success = True
-                break
+            elif _TRACK_ID_TAG in field["tags"]:
+                field["tags"] = []
 
         if is_success:
             if self.track_id_field is None:
