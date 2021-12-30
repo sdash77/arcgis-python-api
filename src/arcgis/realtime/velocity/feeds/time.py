@@ -4,6 +4,22 @@ from typing import Dict, Union, Optional, Any, ClassVar
 
 @dataclass(frozen=True)
 class TimeInstant:
+    """
+    Data class that holds the Instant Time configuration
+
+    ==================      ====================================================================
+    **Argument**            **Description**
+    ------------------      --------------------------------------------------------------------
+    time_field              str. Time field name
+    ------------------      --------------------------------------------------------------------
+
+    **Optional Argument**   **Description**
+    ------------------      --------------------------------------------------------------------
+    date_format             str. If the field does not contain epoch value a date format can be
+                            defined for the time field
+    ==================      ====================================================================
+    """
+
     time_field: str
     date_format: str = None
 
@@ -30,12 +46,18 @@ class _HasTime:
     def set_time_config(self, time: Union[TimeInstant, TimeInterval]) -> bool:
         """
         Configures the time property for a feed
-        :param time: time object used to configure the feed
-        :return: true if the operation is a success
-        """
 
+        ==============          ====================================================================
+        **Argument**            **Description**
+        ---------------         --------------------------------------------------------------------
+        time                    Union[TimeInstant, TimeInterval].
+                                Time object used to configure the feed
+        ===============         ====================================================================
+
+        :return: True if the operation is a success
+        """
         if isinstance(time, TimeInstant):
-            if time.date_format is not None:
+            if time.date_format is not None and self.data_format is not None:
                 self.data_format.date_format = time.date_format
 
             is_success = False
@@ -53,7 +75,7 @@ class _HasTime:
                 return True
 
         elif isinstance(time, TimeInterval):
-            if time.date_format is not None:
+            if time.date_format is not None and self.data_format is not None:
                 self.data_format.date_format = time.date_format
 
             is_success_1 = False

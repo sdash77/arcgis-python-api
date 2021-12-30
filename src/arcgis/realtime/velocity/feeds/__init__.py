@@ -7,6 +7,7 @@ from .azure_event_hub import AzureEventHub
 from .azure_service_bus import AzureServiceBus
 from .cisco_edge_intelligence import CiscoEdgeIntelligence
 from .feature_layer import FeatureLayer
+from .stream_layer import StreamLayer
 from .geotab import Geotab
 from .kafka import Kafka
 from .mqtt import MQTT
