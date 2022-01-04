@@ -97,8 +97,6 @@ class _FeedTemplate:
 
         # validate feature_schema
         if self._fields is None or not self._fields["attributes"]:
-            # TODO - this is checking if fields is not empty and fields["attributes"] exists. is there a better way to check this???
-            #           this is happening at many places; fix them too.
             raise ValueError("Invalid feed schema. Cannot proceed")
 
         for field in self._fields["attributes"]:
@@ -201,7 +199,6 @@ class _FeedTemplate:
         ==================     ====================================================================
         """
         is_success = False
-        # TODO: this can be single sourced for track_id and _time.set_time_instant, _time.set_time_interval
         for field in self._fields["attributes"]:
             if field["name"] == field_name:
                 field["tags"] = [_TRACK_ID_TAG]

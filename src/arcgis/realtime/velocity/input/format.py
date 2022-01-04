@@ -60,7 +60,6 @@ class RssFormat(_FormatBase):
     T = TypeVar("RssFormat")
     name: ClassVar[str] = "rss-format"
 
-    # TODO: move all the Geometry fields to a base class so that it is common for all formats.
     # format keys
     _BUILD_GEOMETRY_FROM_FIELDS_KEY: str = field(
         init=False, default=f"{name}.buildGeometryFromFields"

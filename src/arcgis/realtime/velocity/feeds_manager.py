@@ -72,7 +72,6 @@ class FeedsManager:
         return Feed(self._gis, self._util, feed_item)
 
     # ----------------------------------------------------------------------
-    # TODO: need to decide what return type we want here Boolean or simple label and id of newly created feed
     def create(self, feed=None):
         """
         Creates a new feed configuration
