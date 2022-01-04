@@ -18,6 +18,15 @@ class TimeInstant:
     date_format             str. If the field does not contain epoch value a date format can be
                             defined for the time field
     ==================      ====================================================================
+
+    :return: boolean `True` if the operation is a success
+
+    .. code-block:: python
+
+        # Usage Example
+
+            time = TimeInstant(time_field="time_field")
+
     """
 
     time_field: str
@@ -26,6 +35,36 @@ class TimeInstant:
 
 @dataclass(frozen=True)
 class TimeInterval:
+    """
+    Data class that holds the Interval Time configuration
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    interval_start_field   str. Start-time field name for the time interval
+    ------------------     --------------------------------------------------------------------
+    interval_end_field     str. End-time field name for the time interval
+    ------------------     --------------------------------------------------------------------
+
+    **Optional Argument**  **Description**
+    ------------------     --------------------------------------------------------------------
+    date_format            str. If the field does not contain epoch value a date format can be
+                           defined for the time field
+    ==================     ====================================================================
+
+    :return: boolean `True` if the operation is a success
+
+    .. code-block:: python
+
+        # Usage Example
+
+            time = TimeInterval(
+                interval_start_field="start_field",
+                interval_end_field="end_field"
+            )
+
+    """
+
     interval_start_field: str
     interval_end_field: str
     date_format: str = None
@@ -54,8 +93,16 @@ class _HasTime:
                                 Time object used to configure the feed
         ===============         ====================================================================
 
-        :return: True if the operation is a success
+        :return: boolean `True` if the operation is a success
+
+        .. code-block:: python
+
+        # Usage Example
+
+            feed.set_time_config(time=time)
+
         """
+
         if isinstance(time, TimeInstant):
             if time.date_format is not None and self.data_format is not None:
                 self.data_format.date_format = time.date_format

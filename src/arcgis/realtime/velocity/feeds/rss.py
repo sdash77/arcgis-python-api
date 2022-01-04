@@ -19,7 +19,8 @@ from dataclasses import field, dataclass
 @dataclass
 class RSS(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    Creates an RSS feed configuration data that can be used to create a Feed in Velocity.
+    Poll an HTTP endpoint for RSS events. This data class can be used to define the feed configuration and use it to
+    create the feed.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -58,6 +59,83 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
 
                            default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     ==================     ====================================================================
+
+    :return: A data class with RSS feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import RSS
+        from arcgis.realtime.velocity.http_authentication_type import (
+            NoAuth,
+            BasicAuth,
+            CertificateAuth,
+        )
+
+        from arcgis.realtime.velocity.input.format import GeoRssFormat
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+        from arcgis.realtime.velocity.feeds.run_interval import RunInterval
+
+        name = "rss feed name"
+        description = "rss feed description"
+        url = "rss feed url"
+        http_auth = NoAuth()
+        # http_auth = BasicAuth(username="username", password="password")
+        # http_auth = CertificateAuth(pfx_file_http_location="https://link", password="password")
+
+        http_headers = {
+            "Content-Type": "application/json"
+        }
+
+        # all properties can also be defined in the constructor as follows
+
+        # Set data format
+        data_format = GeoRssFormat()
+
+        # Set geometry field
+        geometry = XYZGeometry(
+            x_field="category_longitude",
+            y_field="category_latitude",
+            wkid=4326,
+            z_field="category_altitude",
+            z_unit="Meters"
+        )
+
+        # Set time field
+        time = TimeInterval(
+            interval_start_field="start_field",
+            interval_end_field="end_field"
+        )
+
+        # Set recurrence
+        run_interval = RunInterval(
+            cron_expression="0 * * ? * * *",
+            timezone="America/Los_Angeles"
+        )
+
+        # Configure the RSS Feed
+        rss = RSS(
+            label="feed_name",
+            description="feed_description",
+            rss_url=url,
+            http_auth_type=http_auth,
+            http_headers=http_headers,
+            track_id_field="track_id",
+            data_format=data_format,
+            geometry=geometry,
+            time=time,
+            run_interval=run_interval
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        RSS_feed = feeds.create(rss)
+        RSS_feed.start()
+        feeds.items
 
     """
 

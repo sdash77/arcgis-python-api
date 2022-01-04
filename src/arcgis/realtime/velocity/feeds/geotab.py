@@ -16,6 +16,8 @@ from arcgis.realtime.velocity.input.format import JsonFormat, _format_from_confi
 @dataclass
 class Geotab(_FeedTemplate, _HasTime, _HasGeometry):
     """
+    Poll Geotab for events. This data class can be used to define the feed configuration and use it to create the feed.
+
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -23,19 +25,19 @@ class Geotab(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     description            str. Feed description.
     ------------------     --------------------------------------------------------------------
-    url                    str. Address of the HTTP endpoint providing data.
+    url                    str. The URL to authenticate Geotab.
     ------------------     --------------------------------------------------------------------
-    database               str. Either "GET" or "POST"
+    database               str. The name of the Geotab database providing data
     ------------------     --------------------------------------------------------------------
-    username               str. Either "GET" or "POST"
+    username               str. Specify the username to authenticate Geotab
     ------------------     --------------------------------------------------------------------
-    password               str. Either "GET" or "POST"
+    password               str. Specify the password to authenticate Geotab
     ------------------     --------------------------------------------------------------------
     **Optional Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    groups                 str. Either "GET" or "POST"
+    groups                 str. List of groups to include in the feature schema. Separate multiple values with a semi-colon.
     ------------------     --------------------------------------------------------------------
-    diagnostics_ids        str. Either "GET" or "POST"
+    diagnostics_ids        str. List of diagnostic IDs to include in the feature schema. Separate multiple values with a semi-colon.
     ------------------     --------------------------------------------------------------------
     data_format            JsonFormat.
                            An instance that contains the data-format
@@ -57,6 +59,35 @@ class Geotab(_FeedTemplate, _HasTime, _HasGeometry):
 
                            default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     ==================     ====================================================================
+
+    :return: A data class with Geotab feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import Geotab
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+
+        geotab = Geotab(
+            label="feed_name",
+            description="feed_description",
+            url="Geotab_url",
+            database="Geotab_database",
+            username="Geotab_user_name",
+            password="Geotab_password",
+            data_format=None
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        geotab_feed = feeds.create(geotab)
+        geotab_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

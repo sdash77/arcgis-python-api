@@ -10,9 +10,11 @@ from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInter
 @dataclass
 class FeatureLayer(_FeedTemplate, _HasTime):
     """
-    Poll a feature layer for features at a fixed schedule
+    Poll a feature layer for features at a fixed schedule. This data class can be used to define the feed configuration
+    and use it to create the feed.
 
     Data format is Esri Layer. Velocity will automatically handle the location for you.
+
     ==================              ====================================================================
     **Argument**                    **Description**
     ------------------              --------------------------------------------------------------------
@@ -79,6 +81,64 @@ class FeatureLayer(_FeedTemplate, _HasTime):
 
                                     default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     ==================              ====================================================================
+
+    :return: A data class with feature layer feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import FeatureLayer
+        from arcgis.realtime.velocity.http_authentication_type import (
+            NoAuth,
+            BasicAuth,
+            CertificateAuth,
+        )
+
+        from arcgis.realtime.velocity.input.format import DelimitedFormat
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+        from arcgis.realtime.velocity.feeds.run_interval import RunInterval
+
+        extent = {
+            "spatialReference": {
+                "latestWkid": 3857,
+                "wkid": 102100
+            },
+            "xmin": "xmin",
+            "ymin": "ymin",
+            "xmax": "xmax",
+            "ymax": "ymax"
+        }
+
+        # Feature Layer Properties
+
+        feature_layer_config = FeatureLayer(
+            label="feed_name",
+            description="feed_description",
+            query="1=1",
+            fields="*",
+            outSR=4326,
+            url="feed_sample_server_link",
+            extent=extent,
+            time_stamp_field="date_field"
+        )
+
+        feature_layer_config
+
+        # Set recurrence
+        feature_layer_config.run_interval = RunInterval(
+            cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        feature_layer_feed = feeds.create(feature_layer_config)
+        feature_layer_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

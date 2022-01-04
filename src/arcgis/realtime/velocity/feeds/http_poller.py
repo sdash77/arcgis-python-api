@@ -28,6 +28,9 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     """
+    Poll an HTTP endpoint for events. This data class can be used to define the feed configuration and use it to create
+    the feed.
+
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -39,7 +42,7 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     http_http_method       str. Either "GET" or "POST"
     ------------------     --------------------------------------------------------------------
-    http_auth_type         Union[NoAuth, BasicAuth, CertificateAuth]. An instance that contains the
+    http_auth_type         Union[NoAuth, BasicAuth, CertificateAuth, OAuth]. An instance that contains the
                            Authentication info for this feed instance.
     ------------------     --------------------------------------------------------------------
     url_params             Dict[str, str]. A dictionary of url param/value pairs that contains
@@ -74,6 +77,74 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
 
                            default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     ==================     ====================================================================
+
+    :return: A dataclass with Http poller feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import HttpPoller
+        from arcgis.realtime.velocity.http_authentication_type import (
+            NoAuth,
+            BasicAuth,
+            CertificateAuth,
+        )
+        arcgis.realtime.velocity.input.format import DelimitedFormat
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+        from arcgis.realtime.velocity.feeds.run_interval import RunInterval
+
+        name = "http_poller_feed_name"
+        description = "http_poller_description_feed"
+        url = "http_poller_url"
+        http_auth = NoAuth()
+        # http_auth = BasicAuth(username="username", password="password")
+        # http_auth = CertificateAuth(pfx_file_http_location="http_auth_link", password="password")
+
+        http_headers = {"Content-Type": "application/json"}
+        url_params = {"f": "json"}
+
+        http_poller = HttpPoller(
+            label=name,
+            description=description,
+            url=url,
+            http_method="GET",
+            http_auth_type=http_auth,
+            url_params=url_params,
+            http_headers=http_headers,
+            enable_long_polling=False,
+            data_format=None
+        )
+
+        # Set track id field
+        http_poller.set_track_id("track_id")
+
+        # Set time field
+        time = TimeInstant(time_field="time_field")
+        http_poller.set_time_config(time=time)
+
+        # Set geometry field
+        geometry = XYZGeometry(
+            x_field="x",
+            y_field="y",
+            wkid=4326
+        )
+        http_poller.set_geometry_config(geometry=geometry)
+
+        # Set recurrence
+        http_poller.run_interval = RunInterval(
+            cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        http_poller_feed = feeds.create(http_poller)
+        http_poller_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

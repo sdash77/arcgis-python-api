@@ -22,6 +22,9 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class AzureServiceBus(_FeedTemplate, _HasTime, _HasGeometry):
     """
+    Receives events from an Azure Service Bus. This data class can be used to define the feed configuration and use it
+    to create the feed.
+
     ==================          ====================================================================
     **Argument**                **Description**
     ------------------          --------------------------------------------------------------------
@@ -59,6 +62,36 @@ class AzureServiceBus(_FeedTemplate, _HasTime, _HasGeometry):
     time                        Union[TimeInstant, TimeInterval]. An instance of time configuration that
                                 will be used to create time info from the incoming data.
     ==================          ====================================================================
+
+    :return: A data class with azure service bus feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import AzureServiceBus
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+
+        azure_service_bus_config = AzureServiceBus(
+            label="feed_name",
+            description="feed_description",
+            topic_name="azure_service_bus_topic_name",
+            subscription_name="azure_service_bus_subscription_name",
+            shared_access_key_name="azure_service_bus_shared_access_key_name",
+            shared_access_key="azure_service_bus_shared_access_key",
+            endpoint="azure_service_bus_endpoint",
+            data_format=None
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        azure_service_bus_feed = feeds.create(azure_service_bus_config)
+        azure_service_bus_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

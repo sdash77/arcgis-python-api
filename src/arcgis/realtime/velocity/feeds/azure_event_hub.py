@@ -22,6 +22,9 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class AzureEventHub(_FeedTemplate, _HasTime, _HasGeometry):
     """
+    Receives events from an Azure Event Hub. This data class can be used to define the feed configuration and use it
+    to create the feed.
+
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -59,6 +62,35 @@ class AzureEventHub(_FeedTemplate, _HasTime, _HasGeometry):
     time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
                            will be used to create time info from the incoming data.
     ==================     ====================================================================
+
+    :return: A data class with azure event hub feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import AzureEventHub
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+
+        azure_event_hub_config = AzureEventHub(
+            label="feed_name",
+            description="feed_description",
+            shared_access_key_name="azure_event_hub_shared_key_name",
+            shared_access_key="azure_event_hub_shared_key",
+            event_hub_endpoint="azure_event_hub_endpoint",
+            event_hub_entity_path="azure_event_hub_entity_path",
+            consumer_group="azure_consumer_group",
+            data_format=None
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        azure_event_hub_feed = feeds.create(azure_event_hub_config)
+        azure_event_hub_feed.start()
+        feeds.items
     """
 
     # fields that the user sets during init

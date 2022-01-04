@@ -22,6 +22,9 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class AWSIoT(_FeedTemplate, _HasTime, _HasGeometry):
     """
+    Receives events from an AWS Iot broker. This data class can be used to define the feed configuration and use it
+    to create the feed.
+
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -36,7 +39,7 @@ class AWSIoT(_FeedTemplate, _HasTime, _HasGeometry):
     qos_level              int. The Quality of Service (QoS) level defines the guarantee of delivery for a specific
                            message. A QoS of 0 means a message is delivered zero or more times. It offers better
                            performance, but no guaranteed delivery. A QoS of 1 means a message is delivered at least
-                           once, therby offering gaurenteed delivery. With both levels messages may be delivered
+                           once, thereby offering guaranteed delivery. With both levels messages may be delivered
                            multiple times.
 
                            default value - 0
@@ -66,6 +69,36 @@ class AWSIoT(_FeedTemplate, _HasTime, _HasGeometry):
     time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
                            will be used to create time info from the incoming data.
     ==================     ====================================================================
+
+    :return: A data class with AWS Iot feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import AWSIoT
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+
+        aws_config = AWSIoT(
+            label="feed_name",
+            description="feed_description",
+            endpoint="aws_iot feed endpoint",
+            topic="aws_iot_topic",
+            qos_level=0,
+            access_key_id="aws_iot_access_key_id",
+            secret_access_key="aws_iot_secret_access_key",
+            data_format=None
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        aws_feed = feeds.create(aws_config)
+        aws_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

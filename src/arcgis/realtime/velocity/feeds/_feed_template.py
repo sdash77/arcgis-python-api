@@ -42,6 +42,7 @@ class _FeedTemplate:
         """
         Builds part of the dictionary object that is pertinent to feed and format properties from the current state of this object.
         To be implemented by concrete classes.
+
         :return: Dictionary object that contains feed and format properties which can be used to POST request to velocity.
         """
         raise NotImplemented
@@ -50,6 +51,7 @@ class _FeedTemplate:
         """
         Builds the final Schema-transformation dictionary object from the current state of _fields object in the format that can be used
         to create POST request to velocity.
+
         :return: Dictionary object that contains the schema-transformation properties.
         """
         # validate feature_schema
@@ -84,14 +86,18 @@ class _FeedTemplate:
     def _set_fields(self, feature_schema):
         """
         Reads the feature schema config from the sample_messages response json/dict into self._fields object property.
-        :param feature_schema: the sample_messages_response["featureSchema"] json/dict object
-        :return:
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        feature_schema         dict. the sample_messages_response["featureSchema"] json/dict object.
+        ==================     ====================================================================
         """
         self._fields = feature_schema
 
         # validate feature_schema
         if self._fields is None or not self._fields["attributes"]:
-            # FIXME - this is checking if fields is not empty and fields["attributes"] exists. is there a better way to check this???
+            # TODO - this is checking if fields is not empty and fields["attributes"] exists. is there a better way to check this???
             #           this is happening at many places; fix them too.
             raise ValueError("Invalid feed schema. Cannot proceed")
 
@@ -102,8 +108,15 @@ class _FeedTemplate:
     def rename_field(self, current_name: str, new_name: str) -> bool:
         """
         Rename a schema field
-        :param current_name: Current field name
-        :param new_name: New field name
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        current_name           str. Current field name.
+        ------------------     --------------------------------------------------------------------
+        new_name               str. New field name.
+        ==================     ====================================================================
+
         :return: Field collection after transformation
         """
         if not new_name.strip():
@@ -126,12 +139,17 @@ class _FeedTemplate:
     def change_field_data_type(self, name, new_data_type) -> bool:
         """
         Used to specify the expected data-type of a field
-        :param name: field name
-        :param dataType: new data type for the field
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        name                   str. field name.
+        ------------------     --------------------------------------------------------------------
+        new_data_type          str. new data type for the field.
+        ==================     ====================================================================
+
         :return: Boolean - True if data type change was successful
         """
-        # TODO: check if the new_data_type is valid
-
         is_success = False
         if self._fields is not None and self._fields["attributes"]:
             fields = self._fields["attributes"]
@@ -150,7 +168,13 @@ class _FeedTemplate:
     def remove_field(self, name: str) -> bool:
         """
         Remove a field from the Schema
-        :param field_name: Field to be removed from schema
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        name                   str. Field to be removed from schema.
+        ==================     ====================================================================
+
         :return: Boolean - True if a field is removed, False otherwise
         """
         is_success = False
@@ -169,8 +193,12 @@ class _FeedTemplate:
     def set_track_id(self, field_name: str):
         """
          Set track id field for the feed
-        :param track_id: Track id of the Schema
-        :return:
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        field_name             str. Name of the track-id field.
+        ==================     ====================================================================
         """
         is_success = False
         # TODO: this can be single sourced for track_id and _time.set_time_instant, _time.set_time_interval
@@ -186,20 +214,24 @@ class _FeedTemplate:
                 self.track_id_field = field_name
             return True
         else:
-            # FIXME: what if the user is trying to set a field that they renamed. Do we need to do a lookup in the field mappings to find the correct field name
             raise ValueError(f"invalid field_name: '{field_name}'")
 
-    # FIXME: move this to a util? Use https://anaconda.org/conda-forge/deepmerge package in the March 2022 release
     def _dict_deep_merge(self, dct, merge_dct):
         """Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
         updating only top-level keys, dict_merge recurses down into dicts nested
         to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
         ``dct``.
 
-        :param dct: dict onto which the merge is executed
-        :param merge_dct: dct merged into dct
-        :return: None
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        dct                    str. Dict onto which the merge is executed.
+        ------------------     --------------------------------------------------------------------
+        merge_dct               str. This dict will be into dct.
+        ==================     ====================================================================
         """
+        # Future enhancement - Move this to a util?
+        # Or use https://anaconda.org/conda-forge/deepmerge package instead
         for k, v in merge_dct.items():
             if (
                 k in dct

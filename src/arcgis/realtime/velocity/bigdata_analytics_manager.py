@@ -7,18 +7,14 @@ _LOGGER = logging.getLogger(__name__)
 
 class BigDataAnalyticsManager:
     """
-    Used to manage Big Data Analytics
+    Use to get big data analytics item
+
     """
 
     _gis = None
     _util = None
 
     def __init__(self, url, gis):
-        """
-        Initializer
-        :param url: Base url of Velocity.
-        :param gis: An authenticated arcigs.gis.GIS object.
-        """
         self._gis = gis
 
         self._util = _Util(gis, url)
@@ -27,8 +23,16 @@ class BigDataAnalyticsManager:
     @property
     def items(self):
         """
-        Get all Big Data Analytics items
+        Get all big data analytics items
+        
         :return: returns a collection of all configured Big Data Analytics items
+
+        .. code-block:: python
+
+            # Get all big data analytics
+
+            >>> all_bigdata_analytics = bigdata_analytics.items
+            >>> all_bigdata_analytics
         """
         all_bigdata_analytics_response = self._util._get_request("analytics/bigdata")
         if (
@@ -51,9 +55,23 @@ class BigDataAnalyticsManager:
     # ----------------------------------------------------------------------
     def get(self, id):
         """
-        Get Big Data Analytics by id
-         :param id:  unique id of a big data task
-        :return: endpoint response of Big Data Analytics for the given id
+        Get big data analytics by id
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+          id                  Unique id of a big data task
+        ===============     ====================================================================
+
+        :return: endpoint response of Big Data Analytics for the given id and label
+
+        .. code-block:: python
+
+            # Get big data analytics by id
+            # Method: <item>.get(id)
+
+            >>> sample_bigdata_task = bigdata_analytics.get("id")
+            
         """
         bigdata_analytics_item = self._util._get("analytics/bigdata", id)
         return BigDataAnalytics(self._gis, self._util, bigdata_analytics_item)

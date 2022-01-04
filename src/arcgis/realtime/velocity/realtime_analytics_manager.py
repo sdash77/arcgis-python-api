@@ -7,17 +7,14 @@ _LOGGER = logging.getLogger(__name__)
 
 class RealTimeAnalyticsManager:
     """
-    Used to manage Real-Time Analytics
+    Use to get real-time analytics item
+    
     """
 
     _gis = None
     _util = None
 
     def __init__(self, url, gis):
-        """
-        :param url: Base url of Velocity.
-        :param gis: An authenticated arcigs.gis.GIS object.
-        """
         self._gis = gis
 
         self._util = _Util(gis, url)
@@ -26,8 +23,15 @@ class RealTimeAnalyticsManager:
     @property
     def items(self):
         """
-        Get all Real-Time Analytics items
-        :return: returns a collection of all configured Real-Time Analytics items
+        Get all real-time analytics items.
+
+        :return: returns a collection of all real-time analytics items with id and label.
+
+        .. code-block:: python
+            # Get all real-time analytics items
+
+            >>> all_realtime_analytics = realtime_analytics.items
+            >>> all_realtime_analytics
         """
         all_realtime_analytics_response = self._util._get_request("analytics/realtime")
         if (
@@ -50,9 +54,22 @@ class RealTimeAnalyticsManager:
     # ----------------------------------------------------------------------
     def get(self, id):
         """
-        Get Real-Time Analytics by id
-        :param id: unique id of a big data task
-        :return: endpoint response of Real-Time Analytics for the given id
+        Get real-time analytics by id
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+          id                     unique id of a real-time analytics
+        ==================     ====================================================================
+
+        :return: endpoint response of real-time analytics for the given id and label
+
+        .. code-block:: python
+
+            # Get real-time analytics by id
+            # Method: <item>.get(id)
+
+            >>> sample_realtime_task = realtime_analytics.get("id")
+
         """
         realtime_analytics_item = self._util._get("analytics/realtime", id)
         return RealTimeAnalytics(self._gis, self._util, realtime_analytics_item)

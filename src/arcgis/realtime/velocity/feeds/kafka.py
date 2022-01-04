@@ -23,6 +23,9 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class Kafka(_FeedTemplate, _HasTime, _HasGeometry):
     """
+    Receive events from a Kafka broker. This data class can be used to define the feed configuration and use it to
+    create the feed.
+
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -61,6 +64,35 @@ class Kafka(_FeedTemplate, _HasTime, _HasGeometry):
     time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
                            will be used to create time info from the incoming data.
     ==================     ====================================================================
+
+    :return: A data class with Kafka feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import Kafka
+        from arcgis.realtime.velocity.feeds.kafka_authentication_type import NoAuth, SASLPlain
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+
+        kafka_config = Kafka(
+            label="feed_name",
+            description="feed_description",
+            brokers="kafka.a4iot.com:9092",
+            topics="topicName",
+            authentication=NoAuth(),
+            data_format=None
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        kafka_feed = feeds.create(kafka_config)
+        kafka_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

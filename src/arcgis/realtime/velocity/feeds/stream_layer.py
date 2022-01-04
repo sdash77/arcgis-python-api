@@ -9,9 +9,11 @@ from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInter
 @dataclass
 class StreamLayer(_FeedTemplate, _HasTime):
     """
-    Receive features from a Stream Layer
+    Receive features from a Stream Layer. This data class can be used to define the feed configuration and use it to
+    create the feed.
 
     Data format is Esri Layer. Velocity will automatically handle the location for you.
+
     ==================              ====================================================================
     **Argument**                    **Description**
     ------------------              --------------------------------------------------------------------
@@ -32,11 +34,18 @@ class StreamLayer(_FeedTemplate, _HasTime):
                                     Additional information on Projected and Geographic Coordinate system at:
                                     https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm
     ------------------              --------------------------------------------------------------------
-
+    data_format                     str. Specify the overall format of your incoming data
+    ==================     ====================================================================
     **Optional Argument**           **Description**
     ------------------              --------------------------------------------------------------------
-    extent                          Dict[str, Any]. A Geometry object that defines the spatial extent for
-                                    the Stream layer
+    WHERE clause                    str. Query to retrieve a subset of features
+    ------------------              --------------------------------------------------------------------
+    Out fields                      str. Comma-separated list of fields to use for processing
+    ------------------              --------------------------------------------------------------------
+    Output spatial reference        str. Spatial reference in which queried features should return
+    ------------------              --------------------------------------------------------------------
+    extent                          Dict[str, Any]. JSON representing an Envelope as defined by the ArcGIS
+                                    REST API's JSON geometry schema
                                     sample value -
                                                     {
                                                         "spatialReference": {
@@ -55,6 +64,45 @@ class StreamLayer(_FeedTemplate, _HasTime):
     time                            Union[TimeInstant, TimeInterval]. An instance of time configuration that
                                     will be used to create time info from the incoming data.
     ==================              ====================================================================
+
+    :return: A data class with stream layer feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import StreamLayer
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+
+        extent = {
+            "spatialReference": {
+                "latestWkid": 3857,
+                "wkid": 102100
+            },
+            "xmin": "xmin",
+            "ymin": "ymin",
+            "xmax": "xmax",
+            "ymax": "ymax"
+        }
+
+        stream_layer_config = StreamLayer(
+            label="feed_name",
+            description="feed_description",
+            portal_item_id="portal_id",
+            query="1=1",
+            fields="*",
+            outSR=4326,
+            extent=extent
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        stream_layer_feed = feeds.create(stream_layer_config)
+        stream_layer_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

@@ -10,6 +10,7 @@ class _HttpAuthenticationType():
 
 @dataclass
 class NoAuth(_HttpAuthenticationType):
+    """This dataclass is used to specify the no HTTP authentication scenario."""
     _auth_type: ClassVar[str] = "noauth"
 
     def _build(self, feed_or_source_name: str) -> Dict[str, str]:
@@ -19,6 +20,17 @@ class NoAuth(_HttpAuthenticationType):
 
 @dataclass
 class BasicAuth(_HttpAuthenticationType):
+    """
+    This dataclass is used to specify a Basic HTTP Authentication scenario using username and password
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    username               str. Username for basic authentication
+    ------------------     --------------------------------------------------------------------
+    password               str. Password for basic authentication
+    ==================     ====================================================================
+    """
     _auth_type: ClassVar[str] = "basicauth"
 
     username: str
@@ -34,6 +46,18 @@ class BasicAuth(_HttpAuthenticationType):
 
 @dataclass
 class CertificateAuth(_HttpAuthenticationType):
+    """
+    This dataclass is used to specify a Basic HTTP Authentication scenario using username and password
+
+    ==================          ====================================================================
+    **Argument**                **Description**
+    ------------------          --------------------------------------------------------------------
+    pfx_file_http_location      str. HTTP path of the PFX file
+    ------------------          --------------------------------------------------------------------
+    password                    str. Password for Certificate authentication
+    ==================          ====================================================================
+    """
+
     _auth_type: ClassVar[str] = "certificateauth"
 
     pfx_file_http_location: str

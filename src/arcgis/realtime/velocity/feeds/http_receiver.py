@@ -1,4 +1,4 @@
-from typing import Union, Optional, ClassVar
+from typing import AsyncGenerator, Union, Optional, ClassVar
 from dataclasses import dataclass
 
 from arcgis.realtime import Velocity
@@ -22,6 +22,9 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
     """
+    Receive events via a dedicated HTTP endpoint. This data class can be used to define the feed configuration and use
+    it to create the feed.
+
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -53,6 +56,39 @@ class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
     time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
                            will be used to create time info from the incoming data.
     ==================     ====================================================================
+
+    :return: A data class with Http receiver feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import HttpReceiver
+        from arcgis.realtime.velocity.http_authentication_type import (
+            NoAuth,
+            BasicAuth,
+            CertificateAuth,
+        )
+
+        sample_message="name,age\n
+        dan,23"
+
+        http_receiver = HttpReceiver(
+            label="feed_name",
+            description="feed_description",
+            authentication_type="none",
+            sample_message=sample_message,
+            data_format=None
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        http_receiver_feed = feeds.create(http_receiver)
+        http_receiver_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

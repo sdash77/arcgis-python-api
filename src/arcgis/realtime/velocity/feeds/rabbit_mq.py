@@ -22,6 +22,9 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class RabbitMQ(_FeedTemplate, _HasTime, _HasGeometry):
     """
+    Receive events from a RabbitMQ broker. This data class can be used to define the feed configuration and use it
+    to create the feed.
+
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -75,6 +78,36 @@ class RabbitMQ(_FeedTemplate, _HasTime, _HasGeometry):
     time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
                            will be used to create time info from the incoming data.
     ==================     ====================================================================
+
+    :return: A data class with RabbitMQ feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import RabbitMQ
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+
+        rabbitmq_config = RabbitMQ(
+            label="feed_name",
+            description="feed_description",
+            host="RabbitMQ host",
+            username="RabbitMQ_username",
+            password="RabbitMQ password",
+            prefetch_count=0,
+            queue_name="RabbitMQ_queue_name",
+            data_format=None
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        rabbitmq_feed = feeds.create(rabbitmq_config)
+        rabbitmq_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

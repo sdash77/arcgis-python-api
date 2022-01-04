@@ -29,11 +29,35 @@ class _Unit:
 @dataclass(frozen=True)
 class SingleFieldGeometry:
     """
-    :param geometry_field:
-    :param geometry_type: esriGeometryPoint, esriGeometryPolyline, esriGeometryPolygon, esriGeometryMulti
-    :param geometry_format: coordinates, esrijson, geojson, wkt
-    :param wkid: default
-    :return:
+    Dataclass that holds the Single Field Geometry configuration
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    geometry_field      str. Geometry field name esriGeometryPoint, esriGeometryPolyline,
+                        esriGeometryPolygon, esriGeometryMulti
+    ---------------     --------------------------------------------------------------------
+    geometry_type       str. Options - esriGeometryPoint, esriGeometryPolyline,
+                        esriGeometryPolygon, esriGeometryMulti
+    ---------------     --------------------------------------------------------------------
+    geometry_format     str. Options - coordinates, esrijson, geojson, wkt
+    ---------------     --------------------------------------------------------------------
+    wkid                int. WKID of the geometry
+    ===============     ====================================================================
+
+    :return: `True` if the operation is a success
+
+    .. code-block:: python
+
+        # Useage Example
+
+            geometry = SingleFieldFeometry(
+                geometry_field="geometry_field"
+                geometry_type="esriGeometryPoint",
+                geometry_format="esrijson",
+                wkid=4326
+            )
+
     """
 
     geometry_field: str
@@ -63,12 +87,38 @@ class SingleFieldGeometry:
 @dataclass(frozen=True)
 class XYZGeometry:
     """
-    :param x_field:
-    :param y_field:
-    :param wkid:
-    :param z_field:
-    :param z_unit: allowed values - Kilometers, Meters, Centimeters, Millimeters, Fathoms, Miles, NauticalMiles, Yards, Feet, Inches
-    :return:
+    Dataclass that holds the XYZ Geometry configuration.
+
+    ====================    ====================================================================
+    **Argument**                    **Description**
+    ---------------------  --------------------------------------------------------------------
+    x_field                 str. Latitude field name
+    ---------------------  --------------------------------------------------------------------
+    y_field                 str. Longitude field name
+    ---------------------  --------------------------------------------------------------------
+    wkid                    int. Options - coordinates, esrijson, geojson, wkt
+    ---------------------  --------------------------------------------------------------------
+
+    **Optional Argument**           **Description**
+    ---------------------   --------------------------------------------------------------------
+    z_field                 str. Z field name
+    ---------------------   --------------------------------------------------------------------
+    z_unit                  str. Options - Kilometers, Meters, Centimeters, Millimeters, Fathoms,
+                            Miles, NauticalMiles, Yards, Feet, Inches
+    =====================   ====================================================================
+
+    :return: `True` if the operation is a success
+
+    .. code-block:: python
+
+        # Usage Example
+
+            geometry = XYZGeometry(
+                x_field = "x",
+                y_field = "y",
+                wkid = 4326
+            )
+
     """
 
     x_field: str
@@ -95,8 +145,22 @@ class _HasGeometry:
     ) -> bool:
         """
         Configures the geometry for a feed
-        :param geometry: geometry object used to configure the feed
-        :return: true if the operation is a success
+
+        ==============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        geometry            Union[XYZGeometry, SingleFieldGeometry].
+                            Geometry object used to configure the feed
+        ===============     ====================================================================
+
+        :return: `True` if the operation is a success
+
+        .. code-block:: python
+
+        # Useage Example
+
+        feed.set_geometry_config(geometry=geometry)
+
         """
         if isinstance(geometry, XYZGeometry):
             self.data_format.x_field = geometry.x_field
