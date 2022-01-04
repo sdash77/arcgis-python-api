@@ -5,6 +5,7 @@ try:
     from fastai.core import split_kwargs_by_func
     import math
     from . import util
+    from .._unet_utils import is_contiguous as is_cont
     from .util import (
         variable_tile_size_check,
         normalize_batch,
@@ -12,6 +13,7 @@ try:
         unfold_tensor,
         dihedral_transform,
         create_interpolation_mask,
+        remap,
     )
     from pathlib import Path
 
@@ -643,6 +645,13 @@ class ChildImageClassifier:
             batch_width=self.rectangle_width,
         )
 
+        class_values = [clas["Value"] for clas in self.json_info["Classes"]]
+        is_contiguous = is_cont([0] + class_values)
+
+        if not is_contiguous:
+            pixel_mapping = [0] + class_values
+            idx2pixel = {i: d for i, d in enumerate(pixel_mapping)}
+
         if "NormalizationStats" in self.json_info:
             img_normed = normalize_batch(batch, self.json_info)
         else:
@@ -662,6 +671,9 @@ class ChildImageClassifier:
             threshold=self.thres,
             prob_raster=self.probability_raster,
         )
+
+        if not is_contiguous and not self.probability_raster:
+            semantic_predictions = remap(semantic_predictions, idx2pixel)
 
         semantic_predictions = batch_to_tile(
             semantic_predictions.cpu().numpy(), batch_height, batch_width
@@ -754,6 +766,13 @@ class ChildImageClassifier:
 
     def updatePixelsTTA(self, tlc, shape, props, **pixelBlocks):  # 8 x 224 x 224 x 3
 
+        class_values = [clas["Value"] for clas in self.json_info["Classes"]]
+        is_contiguous = is_cont([0] + class_values)
+
+        if not is_contiguous:
+            pixel_mapping = [0] + class_values
+            idx2pixel = {i: d for i, d in enumerate(pixel_mapping)}
+
         model_info = self.json_info
 
         input_image = pixelBlocks["raster_pixels"].astype(np.float32)
@@ -801,6 +820,9 @@ class ChildImageClassifier:
                 predictions = self.model_extension._model_conf.post_process(
                     activations.unsqueeze(0), thres=self.thres, thinning=self.thinning
                 )
+
+            if not is_contiguous:
+                predictions = remap(predictions, idx2pixel)
 
         pad = self.padding
 
