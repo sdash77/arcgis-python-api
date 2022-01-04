@@ -20,20 +20,20 @@ class Velocity:
 
         # Connect to a Velocity instance:
 
-        >>> gis = GIS(url="url",username="username",password="password",)
+        gis = GIS(url="url",username="username",password="password",)
 
-        >>> velocity = gis.velocity
-        >>> velocity
+        velocity = gis.velocity
+        velocity
 
     .. code-block:: python
 
         # UsageExample:
 
-        >>> from arcgis.gis import GIS
-        >>> gis = GIS(url="url",username="username",password="password",)
+        from arcgis.gis import GIS
+        gis = GIS(url="url",username="username",password="password",)
 
-        >>> velocity = gis.velocity
-        >>> velocity
+        velocity = gis.velocity
+        velocity
 
     """
     _gis = None
@@ -68,8 +68,8 @@ class Velocity:
 
             # Get instance of feeds from `velocity`:
 
-            >>> feeds = velocity.feeds
-            >>> feeds
+            feeds = velocity.feeds
+            feeds
 
         """
         if self._feeds is None:
@@ -86,8 +86,8 @@ class Velocity:
         .. code-block:: python
             # Get instance of realtime_analytics from `velocity`:
 
-            >>> realtime_analytics = velocity.realtime_analytics
-            >>> realtime_analytics
+            realtime_analytics = velocity.realtime_analytics
+            realtime_analytics
         """
         if self._realtime_analytics is None:
             self._realtime_analytics = RealTimeAnalyticsManager(
@@ -107,8 +107,8 @@ class Velocity:
          .. code-block:: python
             # Get instance of bigdata_analytics from `velocity`:
 
-            >>> bigdata_analytics = velocity.bigdata_analytics
-            >>> bigdata_analytics
+            bigdata_analytics = velocity.bigdata_analytics
+            bigdata_analytics
 
         """
         if self._bigdata_analytics is None:

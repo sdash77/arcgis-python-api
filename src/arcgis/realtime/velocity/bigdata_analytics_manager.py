@@ -31,8 +31,8 @@ class BigDataAnalyticsManager:
 
             # Get all big data analytics
 
-            >>> all_bigdata_analytics = bigdata_analytics.items
-            >>> all_bigdata_analytics
+            all_bigdata_analytics = bigdata_analytics.items
+            all_bigdata_analytics
         """
         all_bigdata_analytics_response = self._util._get_request("analytics/bigdata")
         if (
@@ -70,7 +70,7 @@ class BigDataAnalyticsManager:
             # Get big data analytics by id
             # Method: <item>.get(id)
 
-            >>> sample_bigdata_task = bigdata_analytics.get("id")
+            sample_bigdata_task = bigdata_analytics.get("id")
             
         """
         bigdata_analytics_item = self._util._get("analytics/bigdata", id)

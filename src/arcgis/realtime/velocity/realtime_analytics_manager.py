@@ -30,8 +30,8 @@ class RealTimeAnalyticsManager:
         .. code-block:: python
             # Get all real-time analytics items
 
-            >>> all_realtime_analytics = realtime_analytics.items
-            >>> all_realtime_analytics
+            all_realtime_analytics = realtime_analytics.items
+            all_realtime_analytics
         """
         all_realtime_analytics_response = self._util._get_request("analytics/realtime")
         if (
@@ -68,7 +68,7 @@ class RealTimeAnalyticsManager:
             # Get real-time analytics by id
             # Method: <item>.get(id)
 
-            >>> sample_realtime_task = realtime_analytics.get("id")
+            sample_realtime_task = realtime_analytics.get("id")
 
         """
         realtime_analytics_item = self._util._get("analytics/realtime", id)

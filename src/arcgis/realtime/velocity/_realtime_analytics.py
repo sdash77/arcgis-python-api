@@ -41,7 +41,7 @@ class RealTimeAnalytics(Task):
 
             # Method: <item>.start()
             
-            >>> sample_realtime_task.start()
+            sample_realtime_task.start()
         """
         return self._util._start("analytics/realtime", self._id)
 
@@ -59,7 +59,7 @@ class RealTimeAnalytics(Task):
 
             # Method: <item>.stop()
             
-            >>> sample_realtime_task.stop()
+            sample_realtime_task.stop()
         """
         return self._util._stop("analytics/realtime", self._id)
 
@@ -77,8 +77,8 @@ class RealTimeAnalytics(Task):
 
             # Property: <item>.status()
             
-            >>> status = sample_realtime_task.status
-            >>> status
+            status = sample_realtime_task.status
+            status
         """
         return self._util._status("analytics/realtime", self._id)
 
@@ -96,8 +96,8 @@ class RealTimeAnalytics(Task):
 
             # Property: <item>.metrics()
             
-            >>> metrics = sample_realtime_task.metrics
-            >>> metrics
+            metrics = sample_realtime_task.metrics
+            metrics
         """
         return self._util._metrics("analytics/realtime/metrics", self._id)
 
@@ -115,7 +115,7 @@ class RealTimeAnalytics(Task):
 
             # Method: <item>.delete()
             
-            >>> sample_realtime_task.delete
+            sample_realtime_task.delete
 
         """
         return self._util._delete("analytics/realtime", self._id)

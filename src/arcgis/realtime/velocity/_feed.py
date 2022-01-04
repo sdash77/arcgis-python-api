@@ -38,7 +38,7 @@ class Feed(Task):
             
             # Method: <item>.start
 
-                >>> sample_feed.start()
+            sample_feed.start()
 
         """
         return self._util._start("feed", self._id)
@@ -57,7 +57,7 @@ class Feed(Task):
 
             # Method: <item>.stop
 
-                >>> sample_feed.stop()
+            sample_feed.stop()
 
         """
         return self._util._stop("feed", self._id)
@@ -75,9 +75,9 @@ class Feed(Task):
 
             # Method: <item>.status
 
-                >>> Sample_feed = feeds.get("id")
-                >>> status = sample_feed.status
-                >>> status
+            Sample_feed = feeds.get("id")
+            status = sample_feed.status
+            status
         """
         return self._util._status("feed", self._id)
 
@@ -95,8 +95,8 @@ class Feed(Task):
             
             # Retrieve metrics of sample_feed
             
-                >>> metrics = sample_feed.metrics
-                >>> metrics
+            metrics = sample_feed.metrics
+            metrics
         """
         return self._util._metrics("feed/metrics", self._id)
 
@@ -114,6 +114,6 @@ class Feed(Task):
             
             # Method: <item>.delete()
                 
-                >>> sample_feed.delete()
+            sample_feed.delete()
         """
         return self._util._delete("feed", self._id)

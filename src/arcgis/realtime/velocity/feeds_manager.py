@@ -29,8 +29,8 @@ class FeedsManager:
 
             # Get all feeds item
 
-            >>> all_feeds = feeds.items
-            >>> all_feeds
+            all_feeds = feeds.items
+            all_feeds
 
         """
         all_feeds_response = self._util._get_request("feeds")
@@ -65,7 +65,7 @@ class FeedsManager:
             # Get feed by id
             # Method: <item>.get(id)
             
-            >>> sample_feed = feeds.get("id")
+            sample_feed = feeds.get("id")
 
         """
         feed_item = self._util._get("feed", id)
@@ -90,73 +90,73 @@ class FeedsManager:
 
             # Connect to a Velocity instance
 
-            >>> from arcgis import GIS
-            >>> from arcgis.realtime.velocity.feeds_manager import Feed
+            from arcgis import GIS
+            from arcgis.realtime.velocity.feeds_manager import Feed
 
-            >>> gis = GIS(
-                >>> url="https://url.link", 
-                >>> username="user_name",
-                >>> password="user_password",
-            >>> )
+            gis = GIS(
+                url="https://url.link", 
+                username="user_name",
+                password="user_password",
+            )
 
-            >>> velocity = gis.velocity
-            >>> feeds = gis.velocity.feeds
-            >>> feeds
+            velocity = gis.velocity
+            feeds = gis.velocity.feeds
+            feeds
 
             # Configure the Feature Layer Feed
 
-            >>> from arcgis.realtime.velocity.feeds import FeatureLayer
-            >>> from arcgis.realtime.velocity.http_authentication_type import (
-                >>> NoAuth,
-                >>> BasicAuth,
-                >>> CertificateAuth,
-            >>> )
+            from arcgis.realtime.velocity.feeds import FeatureLayer
+            from arcgis.realtime.velocity.http_authentication_type import (
+                NoAuth,
+                BasicAuth,
+                CertificateAuth,
+            )
 
-            >>> from arcgis.realtime.velocity.input.format import DelimitedFormat
-            >>> from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
-            >>> from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
-            >>> from arcgis.realtime.velocity.feeds.run_interval import RunInterval
+            from arcgis.realtime.velocity.input.format import DelimitedFormat
+            from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+            from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+            from arcgis.realtime.velocity.feeds.run_interval import RunInterval
 
             # feature layer properties
 
-            >>> name = "feature_layer_name"
-            >>> description = "feature_layer_description"
-            >>> url = "feature_layer_url"
-            >>> extent = {
-                >>> "spatialReference": {
-                    >>> "latestWkid": 3857,
-                    >>> "wkid": 102100 
-                >>> },
-                >>> "xmin": "xmin",
-                >>> "ymin": "ymin",
-                >>> "xmax": "xmax",
-                >>> "ymax": "ymax"
-            >>> }
+            name = "feature_layer_name"
+            description = "feature_layer_description"
+            url = "feature_layer_url"
+            extent = {
+                "spatialReference": {
+                    "latestWkid": 3857,
+                    "wkid": 102100 
+                },
+                "xmin": "xmin",
+                "ymin": "ymin",
+                "xmax": "xmax",
+                "ymax": "ymax"
+            }
 
             # Set time field
 
-            >>> time = TimeInterval(
-                >>> interval_start_field="start_field",
-                >>> interval_end_field="end_field"
+            time = TimeInterval(
+                interval_start_field="start_field",
+                interval_end_field="end_field"
                 # time instant
                 # time = TimeInstant(time_field="pubDate")
                 # feature_layer_config.set_time_config(time=time)
-            >>> )
+            )
 
             # Set recurrence
 
-            >>> run_interval = RunInterval(
-                >>> cron_expression="0 * * ? * * *",
-                >>> timezone="America/Los_Angeles"
-            >>> )
+            run_interval = RunInterval(
+                cron_expression="0 * * ? * * *",
+                timezone="America/Los_Angeles"
+            )
 
             # Set geometry field - configuring X,Y and Z fields
 
-            >>> geometry = XYZGeometry(
-                >>> x_field = "x",
-                >>> y_field = "y",
-                >>> wkid = 4326
-            >>> )
+            geometry = XYZGeometry(
+                x_field = "x",
+                y_field = "y",
+                wkid = 4326
+            )
 
             # a single field geometry could also be configured
             # geometry = SingleFieldFeometry(
@@ -167,36 +167,36 @@ class FeedsManager:
             # )
             # feature_layer.set_geometry_config(geometry=geometry)
 
-            >>> feature_layer_config = FeatureLayer(
-                >>> label=name,
-                >>> description=description,
-                >>> query="1=1",
-                >>> fields="*",
-                >>> outSR=4326,
-                >>> url=url,
-                >>> extent=extent,
-                >>> time_stamp_field=time
-            >>> )
+            feature_layer_config = FeatureLayer(
+                label=name,
+                description=description,
+                query="1=1",
+                fields="*",
+                outSR=4326,
+                url=url,
+                extent=extent,
+                time_stamp_field=time
+            )
 
             # Manipulate the schema - rename or remove fields, change field data-type
 
-            >>> feature_layer_config.rename_field("org_field_name", "new_field_name")
-            >>> feature_layer_config.remove_field("description")
+            feature_layer_config.rename_field("org_field_name", "new_field_name")
+            feature_layer_config.remove_field("description")
 
             # Set track id
 
-            >>> feature_layer_config.set_track_id("track_id")
+            feature_layer_config.set_track_id("track_id")
 
             # Set recurrence
 
-            >>> feature_layer_config.run_interval = RunInterval(
-                >>> cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
-            >>> )
+            feature_layer_config.run_interval = RunInterval(
+                cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
+            )
 
             # Create the feed and start it
-            >>> feature_layer_feed = feeds.create(feature_layer_config)
-            >>> feature_layer_feed.start()
-            >>> feeds.items
+            feature_layer_feed = feeds.create(feature_layer_config)
+            feature_layer_feed.start()
+            feeds.items
 
         """
         if feed is None:

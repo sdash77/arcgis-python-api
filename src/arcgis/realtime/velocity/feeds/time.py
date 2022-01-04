@@ -25,7 +25,7 @@ class TimeInstant:
 
         # Usage Example
 
-            time = TimeInstant(time_field="time_field")
+        time = TimeInstant(time_field="time_field")
 
     """
 
@@ -58,10 +58,10 @@ class TimeInterval:
 
         # Usage Example
 
-            time = TimeInterval(
-                interval_start_field="start_field",
-                interval_end_field="end_field"
-            )
+        time = TimeInterval(
+            interval_start_field="start_field",
+            interval_end_field="end_field"
+        )
 
     """
 
@@ -97,7 +97,7 @@ class _HasTime:
 
         .. code-block:: python
 
-        # Usage Example
+            # Usage Example
 
             feed.set_time_config(time=time)
 

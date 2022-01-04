@@ -49,14 +49,14 @@ class SingleFieldGeometry:
 
     .. code-block:: python
 
-        # Useage Example
+        # Usage Example
 
-            geometry = SingleFieldFeometry(
-                geometry_field="geometry_field"
-                geometry_type="esriGeometryPoint",
-                geometry_format="esrijson",
-                wkid=4326
-            )
+        geometry = SingleFieldFeometry(
+            geometry_field="geometry_field"
+            geometry_type="esriGeometryPoint",
+            geometry_format="esrijson",
+            wkid=4326
+        )
 
     """
 
@@ -113,11 +113,11 @@ class XYZGeometry:
 
         # Usage Example
 
-            geometry = XYZGeometry(
-                x_field = "x",
-                y_field = "y",
-                wkid = 4326
-            )
+        geometry = XYZGeometry(
+            x_field = "x",
+            y_field = "y",
+            wkid = 4326
+        )
 
     """
 
@@ -157,7 +157,7 @@ class _HasGeometry:
 
         .. code-block:: python
 
-        # Useage Example
+        # Usage Example
 
         feed.set_geometry_config(geometry=geometry)
 

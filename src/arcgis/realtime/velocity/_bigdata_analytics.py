@@ -41,7 +41,7 @@ class BigDataAnalytics(Task):
 
             # Method: <item>.start()
             
-            >>> sample_bigdata_task.start()
+            sample_bigdata_task.start()
         """
         return self._util._start("analytics/bigdata", self._id)
 
@@ -59,7 +59,7 @@ class BigDataAnalytics(Task):
 
             # Method: <item>.stop()
             
-            >>> sample_bigdata_task.stop()
+            sample_bigdata_task.stop()
         """
         return self._util._stop("analytics/bigdata", self._id)
 
@@ -77,8 +77,8 @@ class BigDataAnalytics(Task):
 
             # Property: <item>.status()
             
-            >>> status = sample_bigdata_task.status
-            >>> status
+            status = sample_bigdata_task.status
+            status
         """
         return self._util._status("analytics/bigdata", self._id)
 
@@ -96,8 +96,8 @@ class BigDataAnalytics(Task):
 
             # Property: <item>.metrics()
             
-            >>> metrics = sample_bigdata_task.metrics
-            >>> metrics
+            metrics = sample_bigdata_task.metrics
+            metrics
         """
         return self._util._metrics("analytics/bigdata/metrics", self._id)
 
@@ -115,6 +115,6 @@ class BigDataAnalytics(Task):
 
             # Method: <item>.delete()
             
-            >>> sample_bigdata_task.delete
+            sample_bigdata_task.delete
         """
         return self._util._delete("analytics/bigdata", self._id)
