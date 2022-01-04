@@ -2146,7 +2146,7 @@ def prepare_data(
                 if kwargs.get("stratify") != False:
                     src = (
                         ArcGISImageList(np.concatenate(imageslist))
-                        .label_list_from_func(get_y_func)
+                        .label_list_from_func(get_y_func, val_split_pct)
                         .stratified_split_by_pct(val_split_pct, seed=seed)
                         .label_from_func(get_y_func)
                     )
