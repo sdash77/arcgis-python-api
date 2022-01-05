@@ -1,7 +1,6 @@
 code = """
 import json
 import sys, os, importlib
-sys.path.append(os.path.dirname(__file__))
 
 import numpy as np
 import math
@@ -134,7 +133,6 @@ class ArcGISObjectDetector:
             except json.decoder.JSONDecodeError:
                 raise Exception("Invalid model argument")
 
-        sys.path.append(os.path.dirname(__file__))
         framework = self.json_info['Framework']
         if 'ModelConfiguration' in self.json_info:
             if isinstance(self.json_info['ModelConfiguration'], str):
@@ -274,7 +272,6 @@ import json
 import os
 import sys
 import arcpy
-sys.path.append(os.path.dirname(__file__))
 import numpy as np
 
 
@@ -385,8 +382,6 @@ class ArcGISObjectClassifier:
                 model_as_file = False
             except json.decoder.JSONDecodeError:
                 raise Exception("Invalid model argument")
-
-        sys.path.append(os.path.dirname(__file__))
 
         framework = self.json_info['Framework']
         if 'ModelConfiguration' in self.json_info:
@@ -605,7 +600,6 @@ import json
 import sys, os, importlib
 import math
 
-sys.path.append(os.path.dirname(__file__))
 
 def get_available_device(max_memory=0.8):
     '''
@@ -729,7 +723,6 @@ class ArcGISImageClassifier:
             except json.decoder.JSONDecodeError:
                 raise Exception("Invalid model argument")
 
-        sys.path.append(os.path.dirname(__file__))
         framework = self.json_info['Framework']
         if 'ModelConfiguration' in self.json_info:
             if isinstance(self.json_info['ModelConfiguration'], str):
@@ -853,7 +846,6 @@ class ArcGISImageClassifier:
 instance_detector_prf = """
 import json
 import sys, os, importlib
-sys.path.append(os.path.dirname(__file__))
 
 import numpy as np
 import math
@@ -989,7 +981,6 @@ class ArcGISInstanceDetector:
             except json.decoder.JSONDecodeError:
                 raise Exception("Invalid model argument")
 
-        sys.path.append(os.path.dirname(__file__))
         framework = self.json_info['Framework']
         if 'ModelConfiguration' in self.json_info:
             if isinstance(self.json_info['ModelConfiguration'], str):
@@ -1131,7 +1122,6 @@ import json
 import sys, os, importlib
 import math
 
-sys.path.append(os.path.dirname(__file__))
 
 def get_available_device(max_memory=0.8):
     '''
@@ -1209,7 +1199,6 @@ class ArcGISSuperResolution:
             except json.decoder.JSONDecodeError:
                 raise Exception("Invalid model argument")
 
-        sys.path.append(os.path.dirname(__file__))
         framework = self.json_info['Framework']
         if 'ModelConfiguration' in self.json_info:
             if isinstance(self.json_info['ModelConfiguration'], str):
@@ -1306,7 +1295,7 @@ import numpy as np
 import json
 import sys, os, importlib
 import math
-sys.path.append(os.path.dirname(__file__))
+
 def get_available_device(max_memory=0.8):
     '''
     select available device based on the memory utilization status of the device
@@ -1373,7 +1362,7 @@ class ArcGISImageTranslation:
                 model_as_file = False
             except json.decoder.JSONDecodeError:
                 raise Exception("Invalid model argument")
-        sys.path.append(os.path.dirname(__file__))
+
         framework = self.json_info['Framework']
         if 'ModelConfiguration' in self.json_info:
             if isinstance(self.json_info['ModelConfiguration'], str):
@@ -1445,17 +1434,33 @@ class ArcGISImageTranslation:
         return kwargs
     def updatePixels(self, tlc, shape, props, **pixelBlocks):
         # set pixel values in invalid areas to 0
-           
-        #raster_mask = pixelBlocks['raster_mask']
-        raster_pixels = pixelBlocks['raster_pixels']
-        #raster_pixels[np.where(raster_mask == 0)] = 0
-        pixelBlocks['raster_pixels'] = raster_pixels
-        xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)        
-        tytx = getattr(self.child_image_classifier, 'tytx', self.json_info['ImageHeight'])
-        chunks, num_rows, num_cols =  chunk_it(xx.transpose(1, 2, 0), tytx)# self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
-        xx = patch_chips(crop_flatten(chunks, self.child_image_classifier.padding), num_rows, num_cols)
-        xx = xx.transpose(2, 0, 1)
-        pixelBlocks['output_pixels'] = xx
+
+        # raster_mask = pixelBlocks['raster_mask']
+        raster_pixels = pixelBlocks["raster_pixels"]
+        # raster_pixels[np.where(raster_mask == 0)] = 0
+        pixelBlocks["raster_pixels"] = raster_pixels
+        if hasattr(self.child_image_classifier, "updatePixelsSmooth"):
+            xx = self.child_image_classifier.updatePixelsSmooth(
+                tlc, shape, props, **pixelBlocks
+            ).astype(props["pixelType"], copy=False)
+            pixelBlocks["output_pixels"] = xx
+        else:
+            xx = self.child_image_classifier.updatePixels(
+                tlc, shape, props, **pixelBlocks
+            ).astype(props["pixelType"], copy=False)
+            tytx = getattr(
+                self.child_image_classifier, "tytx", self.json_info["ImageHeight"]
+            )
+            chunks, num_rows, num_cols = chunk_it(
+                xx.transpose(1, 2, 0), tytx
+            )  # self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
+            xx = patch_chips(
+                crop_flatten(chunks, self.child_image_classifier.padding),
+                num_rows,
+                num_cols,
+            )
+            xx = xx.transpose(2, 0, 1)
+            pixelBlocks["output_pixels"] = xx
         return pixelBlocks
 """
 
@@ -1465,7 +1470,7 @@ from importlib import reload, import_module
 import json
 import os
 import sys
-sys.path.append(os.path.dirname(__file__))
+
 import numpy as np
 import arcpy
 
@@ -1556,7 +1561,6 @@ class ArcGISImageCaptioner:
             except json.decoder.JSONDecodeError:
                 raise Exception("Invalid model argument")
 
-        sys.path.append(os.path.dirname(__file__))
 
         framework = self.json_info['Framework']
         if 'ModelConfiguration' in self.json_info:
