@@ -2172,7 +2172,8 @@ class SavedSearchesManager:
         url = "{base}/searches/{searchId}/shareWith?token={token}".format(
             base=self._url, searchId=search_id, token=self._gis._con.token
         )
-        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+
+        return_obj = self._gis._con.get(url)
 
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
@@ -2875,7 +2876,7 @@ class JobTemplate(object):
         url = "{base}/shareWith?token={token}".format(
             base=self._url, templateId=self.job_template_id, token=self._gis._con.token
         )
-        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+        return_obj = self._gis._con.get(url)
 
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
@@ -2893,16 +2894,12 @@ class JobTemplate(object):
 
         """
         try:
-            return_obj = json.loads(
-                json.dumps(
-                    self._gis._con.get(
+            return_obj = self._gis._con.get(
                         "{base}/automatedCreation".format(
                             base=self._url, jobTemplateId=self.job_template_id
                         ),
                         params={"token": self._gis._con.token},
                     )
-                )
-            )
             return return_obj["automations"]
         except:
             self._handle_error(sys.exc_info())
