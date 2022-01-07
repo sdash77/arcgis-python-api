@@ -2895,11 +2895,11 @@ class JobTemplate(object):
         """
         try:
             return_obj = self._gis._con.get(
-                        "{base}/automatedCreation".format(
-                            base=self._url, jobTemplateId=self.job_template_id
-                        ),
-                        params={"token": self._gis._con.token},
-                    )
+                "{base}/automatedCreation".format(
+                    base=self._url, jobTemplateId=self.job_template_id
+                ),
+                params={"token": self._gis._con.token},
+            )
             return return_obj["automations"]
         except:
             self._handle_error(sys.exc_info())
