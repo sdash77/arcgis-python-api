@@ -53,3 +53,24 @@ BigDataAnalytics
     :members:
     :undoc-members:
     :exclude-members:
+
+BasicAuth
+-------------------------
+.. autoclass:: arcgis.realtime.velocity.BasicAuth
+    :members:
+    :undoc-members:
+    :exclude-members:
+
+CertificateAuth
+-------------------------
+.. autoclass:: arcgis.realtime.velocity.CertificateAuth
+    :members:
+    :undoc-members:
+    :exclude-members:
+
+NoAuth
+-------------------------
+.. autoclass:: arcgis.realtime.velocity.NoAuth
+    :members:
+    :undoc-members:
+    :exclude-members:

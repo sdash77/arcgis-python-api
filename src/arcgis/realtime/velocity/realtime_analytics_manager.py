@@ -8,7 +8,15 @@ _LOGGER = logging.getLogger(__name__)
 class RealTimeAnalyticsManager:
     """
     Use to get real-time analytics item
-    
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+      url                    velocity org URL
+    ------------------     --------------------------------------------------------------------
+      gis                    an authenticated :class:`arcigs.gis.GIS` object.
+    ==================     ====================================================================
+
     """
 
     _gis = None
@@ -34,6 +42,7 @@ class RealTimeAnalyticsManager:
             all_realtime_analytics
         """
         all_realtime_analytics_response = self._util._get_request("analytics/realtime")
+
         if (
             all_realtime_analytics_response is not None
             and type(all_realtime_analytics_response) is list
@@ -55,6 +64,7 @@ class RealTimeAnalyticsManager:
     def get(self, id):
         """
         Get real-time analytics by id
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
