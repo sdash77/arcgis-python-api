@@ -693,8 +693,10 @@ class ChildImageClassifier:
             self.json_info.get("ArcGISLearnVersion", "1.9.1") < "2.0.0"
         ):  # handle old models
             if "NormalizationStats" in self.json_info:
-                batch_input = self.model_extension._model_conf.transform_input_multispectral(
-                    patches
+                batch_input = (
+                    self.model_extension._model_conf.transform_input_multispectral(
+                        patches
+                    )
                 )
             else:
                 batch_input = self.model_extension._model_conf.transform_input(patches)
@@ -794,7 +796,8 @@ class ChildImageClassifier:
             normalized_image_tensor = normalize(input_image_tensor / 255.0).unsqueeze(0)
 
         all_activations = self.tta_predict(
-            normalized_image_tensor, test_time_aug=self.use_tta,
+            normalized_image_tensor,
+            test_time_aug=self.use_tta,
         )
 
         if self.merge_policy == "max":
