@@ -1758,6 +1758,20 @@ def prepare_data(
                     )
             else:
                 # MultiFolder Training
+                def _get_labels(x, ext=right):
+                    path = x.parent.parent
+                    label_dir = [
+                        os.path.join(path / "labels", lbl)
+                        for lbl in label_dirs
+                        if os.path.isdir(os.path.join(path / "labels", lbl))
+                    ]
+                    label_path = []
+                    for lbl in label_dir:
+                        if os.path.exists(Path(lbl) / (x.stem + ".{}".format(ext))):
+                            label_path.append(Path(lbl) / (x.stem + ".{}".format(ext)))
+                    return label_path
+
+                get_y_func = _get_labels
                 imageslist = []
                 for data_folder in data_folders:
                     imageslist.append(
@@ -1976,15 +1990,12 @@ def prepare_data(
                 ObjectDetectionItemList.from_folder(path / "images")
                 .filter_by_func(remove_image_without_label)
                 .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(get_y_func)
             )
         else:
             if images_df is not None:
                 src = ObjectDetectionItemList.from_df(images_df, "images")
                 src.items = images_df[images_df.columns[0]].values
-                src = src.split_by_rand_pct(val_split_pct, seed=seed).label_from_func(
-                    get_y_func
-                )
+                src = src.split_by_rand_pct(val_split_pct, seed=seed)
             else:
                 # MultiFolder Training
                 imageslist = []
@@ -1998,9 +2009,50 @@ def prepare_data(
                     ObjectDetectionItemList(np.concatenate(imageslist))
                     .filter_by_func(remove_image_without_label)
                     .split_by_rand_pct(val_split_pct, seed=seed)
-                    .label_from_func(get_y_func)
                 )
             data = src
+        #
+        #
+        image_files = [*data.train.items, *data.valid.items]
+        argslist = [
+            {
+                "imagefile": im,
+                "class_mapping": class_mapping,
+                "height_width": height_width,
+                "dataset_type": dataset_type,
+            }
+            for im in image_files
+        ]
+        label_store = {}
+        from . import _utils
+
+        temp_folder = os.path.dirname(_utils.__file__)
+        from multiprocessing import Pool, cpu_count
+
+        sys.path.append(temp_folder)
+        from pascal_voc_rectangles_reader import _get_bbox_lbls_helper
+
+        pool = Pool(cpu_count(), initargs={"PYTHONPATH": temp_folder})
+        res = pool.imap(_get_bbox_lbls_helper, argslist)
+        for i, y in enumerate(res):
+            label_store[image_files[i]] = y
+        pool.close()
+        pool.join()
+        del pool
+        sys.path.remove(temp_folder)
+        data = data.label_from_func(label_store.get)
+        #
+        _bboxes = []
+        for x in label_store.values():
+            _bboxes.extend(x[0])
+        _bboxes = np.array(_bboxes, dtype=np.float32)
+        height_width = np.stack(
+            [
+                (_bboxes[:, 3] - _bboxes[:, 1]) * 1.25,
+                (_bboxes[:, 2] - _bboxes[:, 0]) * 1.25,
+            ],
+            -1,
+        ).tolist()
         #
         _show_batch_multispectral = show_batch_pascal_voc_rectangles
 
@@ -2095,7 +2147,7 @@ def prepare_data(
                 if kwargs.get("stratify") != False:
                     src = (
                         ArcGISImageList(np.concatenate(imageslist))
-                        .label_list_from_func(get_y_func)
+                        .label_list_from_func(get_y_func, val_split_pct)
                         .stratified_split_by_pct(val_split_pct, seed=seed)
                         .label_from_func(get_y_func)
                     )
@@ -2278,7 +2330,7 @@ def prepare_data(
     elif dataset_type == "CycleGAN":
         if _is_multispectral:
             data = prepare_data_ms_cyclegan(
-                path, norm_pct, val_split_pct, seed, databunch_kwargs
+                path, _is_multispectral, norm_pct, val_split_pct, seed, databunch_kwargs
             )
             data.show_batch = types.MethodType(show_batch_img2img, data)
             data.n_channel = data.x[0].data[0].shape[0]
@@ -2297,10 +2349,8 @@ def prepare_data(
                 data.path = Path(os.path.abspath(working_dir))
             data._temp_folder = _prepare_working_dir(data.path)
             return data
-        data = (
-            ImageTupleList.from_folders(path, path_a, path_b)
-            .split_by_rand_pct(val_split_pct, seed=seed)
-            .label_empty()
+        data, batch_stats_a, batch_stats_b = prepare_data_ms_cyclegan(
+            path, _is_multispectral, norm_pct, val_split_pct, seed, databunch_kwargs
         )
         img_size = data.x[0].shape[-1]
         if resize_to is None:
@@ -2538,6 +2588,26 @@ def prepare_data(
         data = data.transform(get_transforms(), **kwargs_transforms).databunch(
             **databunch_kwargs
         )
+        data._band_min_values = batch_stats_a["band_min_values"]
+        data._band_max_values = batch_stats_a["band_max_values"]
+        data._band_mean_values = batch_stats_a["band_mean_values"]
+        data._band_std_values = batch_stats_a["band_std_values"]
+        data._scaled_min_values = batch_stats_a["scaled_min_values"]
+        data._scaled_max_values = batch_stats_a["scaled_max_values"]
+        data._scaled_mean_values = batch_stats_a["scaled_mean_values"]
+        data._scaled_std_values = batch_stats_a["scaled_std_values"]
+
+        data._band_min_values_b = batch_stats_b["band_min_values"]
+        data._band_max_values_b = batch_stats_b["band_max_values"]
+        data._band_mean_values_b = batch_stats_b["band_mean_values"]
+        data._band_std_values_b = batch_stats_b["band_std_values"]
+        data._scaled_min_values_b = batch_stats_b["scaled_min_values"]
+        data._scaled_max_values_b = batch_stats_b["scaled_max_values"]
+        data._scaled_mean_values_b = batch_stats_b["scaled_mean_values"]
+        data._scaled_std_values_b = batch_stats_b["scaled_std_values"]
+
+        data._dataset_type = "CycleGAN"
+        data._extract_bands = None
         data.n_channel = data.x[0].data[0].shape[0]
         data._imagery_type_a = imagery_type_a
         data._imagery_type_b = imagery_type_b

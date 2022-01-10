@@ -498,6 +498,7 @@ class DeepLab(ArcGISModel):
         _emd_template["ModelParameters"]["keep_dilation"] = self.keep_dilation
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
+        _emd_template["SupportsVariableTileSize"] = True
         _emd_template["Classes"] = []
         class_data = {}
         for i, class_name in enumerate(
