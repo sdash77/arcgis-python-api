@@ -74,3 +74,11 @@ NoAuth
     :members:
     :undoc-members:
     :exclude-members:
+
+Submodules
+--------------
+.. toctree::
+   :maxdepth: 3
+
+   arcgis.realtime.velocity.feeds
+   arcgis.geometry.velocity.input
