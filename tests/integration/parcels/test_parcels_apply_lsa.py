@@ -4,7 +4,7 @@ import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayerCollection
 import arcgis.features
-
+import parcel_fabric_utils as pfutils
 
 class TestAnalyzeLSA(unittest.TestCase):
     """Apply LSA on a small fabric.  Test sync and async"""
@@ -17,11 +17,11 @@ class TestAnalyzeLSA(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Create Python API GIS object and prepare REST service URL strings
-        cls.base_server_url = "https://rqawinbi01sv.ags.esri.com/gis/rest/services/parcels/ParcelFabric_Analyze_LSA/"
+        cls.base_server_url = "https://krennic.esri.com/server/rest/services/ParcelFabric_LSA/"
         cls.gis = GIS(
-            "https://rqawinbi01pt.ags.esri.com/gis",
-            "gisproadv1",
-            "portalaccount1",
+            "https://krennic.esri.com/portal",
+            "admin",
+            "esri.agp",
             verify_cert=False,
         )
         cls.services = [
@@ -37,7 +37,7 @@ class TestAnalyzeLSA(unittest.TestCase):
 
     def test_apply_lsa_xy_uncertainty_async(self):
         """Apply LSA.  Check min and max XYUncertainty values. Runs asynchronously"""
-        fq_version_name = self.create_version()
+        fq_version_name = pfutils.create_version(self.vms)
         with self.vms.get(fq_version_name, "read") as version:
             # Get the Parcel Fabric.
             self.parcelFabric = arcgis.features._parcel.ParcelFabricManager(
@@ -65,7 +65,7 @@ class TestAnalyzeLSA(unittest.TestCase):
                 self.fail("An error occurred in Apply LSA async")
 
             fl = arcgis.features.FeatureLayer(
-                f"{self.service_urls['FeatureServer']}/6", self.gis
+                f"{self.service_urls['FeatureServer']}/10", self.gis
             )
             lsa_result = fl.query(
                 where="XYUncertainty IS NOT NULL",
@@ -88,7 +88,7 @@ class TestAnalyzeLSA(unittest.TestCase):
 
     def test_apply_lsa_xy_uncertainty_sync(self):
         """Apply LSA.  Check min and max XYUncertainty values.  Runs synchronously"""
-        fq_version_name = self.create_version()
+        fq_version_name = pfutils.create_version(self.vms)
 
         with self.vms.get(fq_version_name, "read") as version:
             # Get the Parcel Fabric.
@@ -115,25 +115,8 @@ class TestAnalyzeLSA(unittest.TestCase):
                     )
 
     @classmethod
-    def create_version(cls):
-        # VersionManagementServer - Create a new version
-        _version_name_txt = "api-{}".format(int(time.time()))
-        cls.vms.create(_version_name_txt)
-
-        # get the fully qualified version name string as 'owner.versionName'
-        _version = [
-            x
-            for x in cls.vms.all
-            if x.properties.versionName == "gisproadv1." + _version_name_txt
-        ]
-        fq_version_name = _version[0].properties.versionName
-        return fq_version_name
-
-    @classmethod
     def tearDownClass(cls):
-        for version in cls.vms.all:
-            if version.properties.versionName.startswith("gisproadv1.api-"):
-                cls.assertTrue(version.delete(), "Failed to delete branch version.")
+        pfutils.clean_up_versions(cls.vms)
 
 
 if __name__ == "__main__":
