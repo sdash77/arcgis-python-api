@@ -27,6 +27,7 @@ class KubernetesAdmin(_BaseKube):
     _mode = None
     _catalog = None
     _idp = None
+    _whm = None
     _security = None
     _services = None
     _license = None
@@ -315,3 +316,14 @@ class KubernetesAdmin(_BaseKube):
             url = self._url + "/security"
             self._security = KubeSecurity(url=url, gis=self._gis)
         return self._security
+
+    # ----------------------------------------------------------------------
+    @property
+    def webhooks(self):
+        """Provides access to Portal's WebHook Manager"""
+        if self._whm is None and self._gis.version >= [6, 4]:
+            from arcgis.gis.admin._wh import WebhookManager
+
+            url = self._gis._portal.resturl + "portals/self/webhooks"
+            self._whm = WebhookManager(url=url, gis=self._gis)
+        return self._whm
