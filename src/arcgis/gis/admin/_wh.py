@@ -248,7 +248,7 @@ class WebhookManager(object):
             }
         }
         if properties:
-            config['properties'] = properties
+            config["properties"] = properties
         params = {
             "f": "json",
             "name": name,
