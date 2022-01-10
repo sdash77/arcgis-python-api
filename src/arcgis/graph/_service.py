@@ -53,20 +53,27 @@ class KnowledgeGraph:
         data = {}
         keys = [key for key in dir(obj) if key.find("__") == -1 or key.find("_") == -1]
         common_dtypes = (str, int, _dt.datetime, float)  # dict, list, tuple
+        if (
+            isinstance(obj, (_kgparser.esriFieldType,),)
+            or obj.__name__.lower().find("esriFieldType") > -1
+        ):
+            keys = ['name', 'value']
         for key in keys:
             d = getattr(obj, key)
             if isinstance(d, common_dtypes) and callable(d) == False:
                 data[key] = getattr(obj, key)
             elif isinstance(d, (list, tuple, set)):
-                data[key] = d  # issue here
-                # res = []
-                # for o in d:
-                #    res.append(self._obj_2_dict(o))
+                # data[key] = d  # issue here
+                res = []
+                for o in d:
+                    res.append(self._obj_2_dict(o))
+                data[key] = res
             elif isinstance(d, dict):
                 d[key] = {}
                 for k, v in d.items():
                     d[key][k] = self._obj_2_dict(v)
-            elif callable(obj) == False and isinstance(d, common_dtypes) == False:
+
+            elif callable(d) == False and isinstance(d, common_dtypes) == False:
                 data[key] = self._obj_2_dict(d)
         return data
 
@@ -88,3 +95,15 @@ class KnowledgeGraph:
         result = self._obj_2_dict(dm)
 
         return result
+
+
+if __name__ == "__main__":
+    gis = _gis.GIS('https://dev0018783.esri.com/portal/', 'admin', 'esri.agp')
+    print("Logged in as: " + gis.properties.user.username)
+
+    token = gis._con.token
+
+    url = r'https://dev0018783.esri.com/server/rest/services/Hosted/KGS_PanamaPapers/KnowledgeGraphServer'
+    kg = KnowledgeGraph(url, gis=gis)
+    print(kg.datamodel)
+    print('stop')
