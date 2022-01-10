@@ -32,18 +32,21 @@ class KnowledgeGraph:
             self._properties = _isd.InsensitiveDict(resp)
         return self._properties
 
-    def query(
-        self, query: str, *, geometry: "Geometry" = None, stream: bool = False
-    ) -> dict:
+    def query(self, query: str) -> dict:
         """
         Queries the Knowledge Graph
         """
         self._validate_import()
         url = f"{self._url}'/graph/query"
+        params = {
+            'f': 'pbf',
+            'token': self._gis._con.token,
+            'openCypherQuery': query,
+        }
         if stream:
-            print("DO POST/STREAM")
+            return self._gis._con.post(url, params)
         else:
-            print("DO GET")
+            return self._gis._con.get(url, params)
         return
 
     def _obj_2_dict(self, obj) -> dict:
@@ -54,7 +57,10 @@ class KnowledgeGraph:
         keys = [key for key in dir(obj) if key.find("__") == -1 or key.find("_") == -1]
         common_dtypes = (str, int, _dt.datetime, float)  # dict, list, tuple
         if (
-            isinstance(obj, (_kgparser.esriFieldType,),)
+            isinstance(
+                obj,
+                (_kgparser.esriFieldType,),
+            )
             or obj.__name__.lower().find("esriFieldType") > -1
         ):
             keys = ['name', 'value']
