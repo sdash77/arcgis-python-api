@@ -6,6 +6,7 @@ from arcgis.features.layer import FeatureLayerCollection
 import arcgis.features
 import parcel_fabric_utils as pfutils
 
+
 class TestAnalyzeLSA(unittest.TestCase):
     """Apply LSA on a small fabric.  Test sync and async"""
 
@@ -17,7 +18,9 @@ class TestAnalyzeLSA(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Create Python API GIS object and prepare REST service URL strings
-        cls.base_server_url = "https://krennic.esri.com/server/rest/services/ParcelFabric_LSA/"
+        cls.base_server_url = (
+            "https://krennic.esri.com/server/rest/services/ParcelFabric_LSA/"
+        )
         cls.gis = GIS(
             "https://krennic.esri.com/portal",
             "admin",

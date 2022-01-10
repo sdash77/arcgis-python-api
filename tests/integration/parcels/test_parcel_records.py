@@ -5,7 +5,7 @@ import parcel_fabric_utils as pfutils
 
 
 class TestParcelFabricRecords(unittest.TestCase):
-    """ Apply LSA on a small fabric.  Test sync and async"""
+    """Apply LSA on a small fabric.  Test sync and async"""
 
     vms = None
     gis = None

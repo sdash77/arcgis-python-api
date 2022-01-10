@@ -6,6 +6,7 @@ from arcgis.features.layer import FeatureLayerCollection
 import arcgis.features
 import parcel_fabric_utils as pfutils
 
+
 class TestAnalyzeLSA(unittest.TestCase):
     """Analyze LSA with and without parcelFeatures param on a small fabric.  Test sync and async"""
 
@@ -17,7 +18,9 @@ class TestAnalyzeLSA(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Create Python API GIS object and prepare REST service URL strings
-        cls.base_server_url = "https://krennic.esri.com/server/rest/services/ParcelFabric_LSA/"
+        cls.base_server_url = (
+            "https://krennic.esri.com/server/rest/services/ParcelFabric_LSA/"
+        )
         cls.gis = GIS(
             "https://krennic.esri.com/portal",
             "admin",
@@ -393,18 +396,20 @@ class TestAnalyzeLSA(unittest.TestCase):
 
     @classmethod
     def generate_parcel_features(cls):
-        return [{"id": "{0CAA7157-2BD3-43E7-AC5B-4ADA176F504F}", "layerId": 14},
-                {"id": "{D469B37D-BC4F-4479-8249-EEC4B61CE257}", "layerId": 14},
-                {"id": "{18C76BC1-290B-4B95-B3C7-2ACF7AAF3F4D}", "layerId": 14},
-                {"id": "{D8F48375-72E5-4E6C-9424-B61E13C6F421}", "layerId": 14},
-                {"id": "{31C49C49-9AAD-45BE-BFEF-A1DB9E6283BD}", "layerId": 14},
-                {"id": "{DD488A83-CF66-4403-83F3-BA4D5D1633B0}", "layerId": 14},
-                {"id": "{BE87EBF0-05CB-48EA-A65F-00B9DD302CCA}", "layerId": 14},
-                {"id": "{0DF60010-0A72-4BEB-82A4-F4F20A3566F1}", "layerId": 14},
-                {"id": "{73D07072-EBFE-4CD3-A01F-E0BBFA2B1A1F}", "layerId": 14},
-                {"id": "{4F3EA6CE-68D0-428B-A88F-2378E840D132}", "layerId": 14},
-                {"id": "{3E28D656-07EF-4A94-BDE7-B834A2CB6E0D}", "layerId": 14},
-                {"id": "{91185D29-A94A-42B9-AB8C-61225E87005A}", "layerId": 14}]
+        return [
+            {"id": "{0CAA7157-2BD3-43E7-AC5B-4ADA176F504F}", "layerId": 14},
+            {"id": "{D469B37D-BC4F-4479-8249-EEC4B61CE257}", "layerId": 14},
+            {"id": "{18C76BC1-290B-4B95-B3C7-2ACF7AAF3F4D}", "layerId": 14},
+            {"id": "{D8F48375-72E5-4E6C-9424-B61E13C6F421}", "layerId": 14},
+            {"id": "{31C49C49-9AAD-45BE-BFEF-A1DB9E6283BD}", "layerId": 14},
+            {"id": "{DD488A83-CF66-4403-83F3-BA4D5D1633B0}", "layerId": 14},
+            {"id": "{BE87EBF0-05CB-48EA-A65F-00B9DD302CCA}", "layerId": 14},
+            {"id": "{0DF60010-0A72-4BEB-82A4-F4F20A3566F1}", "layerId": 14},
+            {"id": "{73D07072-EBFE-4CD3-A01F-E0BBFA2B1A1F}", "layerId": 14},
+            {"id": "{4F3EA6CE-68D0-428B-A88F-2378E840D132}", "layerId": 14},
+            {"id": "{3E28D656-07EF-4A94-BDE7-B834A2CB6E0D}", "layerId": 14},
+            {"id": "{91185D29-A94A-42B9-AB8C-61225E87005A}", "layerId": 14},
+        ]
 
     @classmethod
     def tearDownClass(cls):

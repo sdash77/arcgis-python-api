@@ -7,7 +7,7 @@ import parcel_fabric_utils as pfutils
 
 
 class TestDivideParcels(unittest.TestCase):
-    """ Tests the Divide function from the parcel fabric SOE"""
+    """Tests the Divide function from the parcel fabric SOE"""
 
     gis = None
     vms = None

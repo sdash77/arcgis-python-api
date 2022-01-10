@@ -6,7 +6,8 @@ import parcel_fabric_utils as pfutils
 
 
 class TestReassignToRecord(unittest.TestCase):
-    """ Reassign parcels to a different record """
+    """Reassign parcels to a different record"""
+
     vms = None
     gis = None
     services = None
