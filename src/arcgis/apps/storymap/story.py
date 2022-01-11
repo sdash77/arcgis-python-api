@@ -220,7 +220,7 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @cover_date.setter
-    def cover_date(self, date):
+    def cover_date(self, date_type):
         """
         Get/Set the date shown on the story cover.
 
@@ -228,7 +228,7 @@ class StoryMap(object):
         """
         # cover date is found in story node (i.e. root node id)
         root = self._properties["root"]
-        self._properties["nodes"][root]["config"]["coverDate"] = date
+        self._properties["nodes"][root]["config"]["coverDate"] = date_type
         return self.cover_date
 
     # ----------------------------------------------------------------------
