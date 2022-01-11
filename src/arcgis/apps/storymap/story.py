@@ -91,16 +91,32 @@ class StoryMap(object):
                 and self._properties["unpublished"] is True
             ):
                 # If story is a draft, get properties from resource file.
+                # Can have multiple drafts so need to account for this.
+                # Draft file will be of form: draft_{13 digit timestamp}.json
+                saved_drafts = []
                 for resource in self._resources:
                     for key, val in resource.items():
                         if (
                             key == "resource" and
                             re.match("draft_\d{13}.json", val)
                         ):
-                            # Open JSON draft file for properties
-                            data = self._item.resources.get(val, try_json=True)
-                            self._properties = data
-                            return
+                            saved_drafts.append(val)
+                    if len(saved_drafts) == 1:
+                        # Open JSON draft file for properties
+                        data = self._item.resources.get(saved_drafts[0], try_json=True)
+                        self._properties = data
+                    else:
+                        # multiple drafts saved so find most recent.
+                        start = saved_drafts[0][6:19]
+                        use_draft = saved_drafts[0]
+                        for draft in saved_drafts:
+                            compare = draft[6:19]
+                            if start < compare:
+                                start = compare
+                                use_draft = draft
+                        # Open most recent JSON draft file for properties
+                        data = self._item.resources.get(use_draft, try_json=True)
+                        self._properties = data
         elif (
             item
             and isinstance(item, arcgis.gis.Item)
