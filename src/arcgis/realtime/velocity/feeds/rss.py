@@ -22,45 +22,45 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
     Poll an HTTP endpoint for RSS events. This data class can be used to define the feed configuration and use it to
     create the feed.
 
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    label                  str. Unique label for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    description            str. Feed description.
-    ------------------     --------------------------------------------------------------------
-    rss_url                str. Address of the HTTP endpoint providing data.
-    ------------------     --------------------------------------------------------------------
-    http_auth_type         Union[NoAuth, BasicAuth, CertificateAuth]. An instance that contains the
-                           Authentication info for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    http_headers           Dict[str, str]. A Name-Value dictionary that contains HTTP headers
-                           for connecting to the RSS feed.
-    ===================      ====================================================================
+    ==================          ====================================================================
+    **Argument**                **Description**
+    ------------------          --------------------------------------------------------------------
+    label                       str. Unique label for this feed instance.
+    ------------------          --------------------------------------------------------------------
+    description                 str. Feed description.
+    ------------------          --------------------------------------------------------------------
+    rss_url                     str. Address of the HTTP endpoint providing data.
+    ------------------          --------------------------------------------------------------------
+    http_auth_type              Union[NoAuth, BasicAuth, CertificateAuth]. An instance that contains the
+                                Authentication info for this feed instance.
+    ------------------          --------------------------------------------------------------------
+    http_headers                Dict[str, str]. A Name-Value dictionary that contains HTTP headers
+                                for connecting to the RSS feed.
+    ===================         ====================================================================
 
-    =====================     ====================================================================
+    =====================       ====================================================================
 
     **Optional Argument**           **Description**
-    =====================     ====================================================================
-    data_format            Union[RssFormat, GeoRssFormat]. An instance that contains the data-format
-                           configuration for this feed. Configure only allowed formats.
-                           If this is not set right during initialization, a format will be
-                           auto-detected and set from a sample of the incoming data. This sample
-                           will be fetched from the configuration provided so far in the init.
-    ------------------     --------------------------------------------------------------------
-    track_id_field         str. name of the field from the incoming data that should be set as
-                           track_id.
-    ------------------     --------------------------------------------------------------------
-    geometry               Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
-                           that will be used to create geometry objects from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                           will be used to create time info from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    run_interval           RunInterval. An instance of scheduler configuration.
-
-                           default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
-    ==================     ====================================================================
+    =====================       ====================================================================
+    data_format                 Union[RssFormat, GeoRssFormat]. An instance that contains the data-format
+                                configuration for this feed. Configure only allowed formats.
+                                If this is not set right during initialization, a format will be
+                                auto-detected and set from a sample of the incoming data. This sample
+                                will be fetched from the configuration provided so far in the init.
+    ------------------          --------------------------------------------------------------------
+    track_id_field              str. name of the field from the incoming data that should be set as
+                                track_id.
+    ------------------          --------------------------------------------------------------------
+    geometry                    Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+                                that will be used to create geometry objects from the incoming data.
+    ------------------          --------------------------------------------------------------------
+    time                        Union[TimeInstant, TimeInterval]. An instance of time configuration that
+                                will be used to create time info from the incoming data.
+    ------------------          --------------------------------------------------------------------
+    run_interval                RunInterval. An instance of scheduler configuration.
+        
+                                default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
+    ==================          ====================================================================
 
     :return: A data class with RSS feed configuration.
 

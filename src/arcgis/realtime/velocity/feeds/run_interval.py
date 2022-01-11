@@ -8,7 +8,7 @@ class RunInterval:
     """
     Set the run interval for the feed.
 
-    ==============     ====================================================================
+    ==============      ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
     cron_expression     str. Default value - if nothing is specified following expression will be used to configure the

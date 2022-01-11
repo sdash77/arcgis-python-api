@@ -41,11 +41,11 @@ class AzureServiceBus(_FeedTemplate, _HasTime, _HasGeometry):
     shared_access_key           str. Shared access key for the Azure Service Bus.
     ------------------          --------------------------------------------------------------------
     endpoint                    str. Endpoint of the Azure Service Bus.
-    ===================      ====================================================================
+    ===================         ====================================================================
 
-    =====================     ====================================================================
+    =====================       ====================================================================
     **Optional Argument**                **Description**
-    =====================     ====================================================================
+    =====================       ====================================================================
     data_format                 Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
                                 An instance that contains the data-format
                                 configuration for this feed. Configure only allowed formats.

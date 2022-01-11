@@ -25,36 +25,36 @@ class WebSocket(_FeedTemplate, _HasTime, _HasGeometry):
     Receives events from a web socket. This data class can be used to define the feed configuration and use it
     to create the feed.
 
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    label                  str. Unique label for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    description            str. Feed description.
-    ------------------     --------------------------------------------------------------------
-    url                    str. Web Socket URL over which messages are received.
-    ===================      ====================================================================
+    ==================          ====================================================================
+    **Argument**                **Description**
+    ------------------          --------------------------------------------------------------------
+    label                       str. Unique label for this feed instance.
+    ------------------          --------------------------------------------------------------------
+    description                 str. Feed description.
+    ------------------          --------------------------------------------------------------------
+    url                         str. Web Socket URL over which messages are received.
+    ===================         ====================================================================
 
-    =====================     ====================================================================
+    =====================       ====================================================================
 
     **Optional Argument**           **Description**
-    =====================     ====================================================================
-    data_format            Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
-                           An instance that contains the data-format
-                           configuration for this feed. Configure only allowed formats.
-                           If this is not set right during initialization, a format will be
-                           auto-detected and set from a sample of the incoming data. This sample
-                           will be fetched from the configuration provided so far in the init.
-    ------------------     --------------------------------------------------------------------
-    track_id_field         str. name of the field from the incoming data that should be set as
-                           track_id.
-    ------------------     --------------------------------------------------------------------
-    geometry               Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
-                           that will be used to create geometry objects from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                           will be used to create time info from the incoming data.
-    ==================     ====================================================================
+    =====================       ====================================================================
+    data_format                 Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
+                                An instance that contains the data-format
+                                configuration for this feed. Configure only allowed formats.
+                                If this is not set right during initialization, a format will be
+                                auto-detected and set from a sample of the incoming data. This sample
+                                will be fetched from the configuration provided so far in the init.
+    ------------------          --------------------------------------------------------------------
+    track_id_field              str. name of the field from the incoming data that should be set as
+                                track_id.
+    ------------------          --------------------------------------------------------------------
+    geometry                    Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+                                that will be used to create geometry objects from the incoming data.
+    ------------------          --------------------------------------------------------------------
+    time                        Union[TimeInstant, TimeInterval]. An instance of time configuration that
+                                will be used to create time info from the incoming data.
+    ==================          ====================================================================
 
     :return: A data class with Web Socket feed configuration configuration.
 
