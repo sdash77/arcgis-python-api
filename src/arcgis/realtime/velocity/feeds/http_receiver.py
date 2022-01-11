@@ -25,29 +25,29 @@ class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
     Receive events via a dedicated HTTP endpoint. This data class can be used to define the feed configuration and use
     it to create the feed.
 
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    label                  str. Unique label for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    description            str. Feed description.
-    ------------------     --------------------------------------------------------------------
-    authentication_type    str. Either "none" or "arcgis"
-    ------------------     --------------------------------------------------------------------
-    sample_message         str. Some sample content to auto-detect data format from.
-                           example - name,age\nsam,23
-    ===================      ====================================================================
-
+    ====================      ======================================================================
+    **Argument**            **Description**
+    --------------------      ----------------------------------------------------------------------
+    label                   str. Unique label for this feed instance.
+    --------------------      ----------------------------------------------------------------------
+    description             str. Feed description.
+    --------------------      --------------------------------------------------------------------
+    authentication_type     str. Either "none" or "arcgis"
+    ---------------------      --------------------------------------------------------------------
+    sample_message          str. Some sample content to auto-detect data format from.
+                            example - name,age\nsam,23
     =====================     ====================================================================
+
+    =====================   ====================================================================
 
     **Optional Argument**           **Description**
     =====================     ====================================================================
-    data_format            Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
-                           An instance that contains the data-format
-                           configuration for this feed. Configure only allowed formats.
-                           If this is not set right during initialization, a format will be
-                           auto-detected and set from a sample of the incoming data. This sample
-                           will be fetched from the configuration provided so far in the init.
+    data_format                 Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
+                                An instance that contains the data-format
+                                configuration for this feed. Configure only allowed formats.
+                                If this is not set right during initialization, a format will be
+                                auto-detected and set from a sample of the incoming data. This sample
+                                will be fetched from the configuration provided so far in the init.
     ------------------     --------------------------------------------------------------------
     track_id_field         str. name of the field from the incoming data that should be set as
                            track_id.

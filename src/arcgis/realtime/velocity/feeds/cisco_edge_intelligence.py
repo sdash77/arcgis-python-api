@@ -21,22 +21,22 @@ class CiscoEdgeIntelligence(MQTT):
     ------------------          --------------------------------------------------------------------
     topic                       str. Topic over which event messages stream.
     ------------------          --------------------------------------------------------------------
-    Quality of Service          int. Quality of Service (QoS) level defines the guarantee of
+    qos_level                   int. Quality of Service (QoS) level defines the guarantee of
                                 delivery for a specific message. In MQTT 3.1.1, a QoS of 0 means a
                                 message is delivered at most once, a QoS of 1 at least once, and a Qos
                                 of 2 exactly once.
 
                                 default value - 0
-    ===================      ====================================================================
+    ===================         ====================================================================
 
-    =====================     ====================================================================
+    =====================       ====================================================================
     **Optional Argument**                **Description**
-    =====================     ====================================================================
-    Username                    Usename for basic authentication
+    =====================       ====================================================================
+    username                    Username for basic authentication
     ------------------          --------------------------------------------------------------------
-    Password                    Password for basic authentication
+    password                    Password for basic authentication
     ------------------          --------------------------------------------------------------------
-    Client ID                   Client ID ArcGIS Velocity will use to connect to the Edge
+    client_id                   Client ID ArcGIS Velocity will use to connect to the Edge
                                 Intelligence broker
     ------------------          --------------------------------------------------------------------
     data_format                 Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
