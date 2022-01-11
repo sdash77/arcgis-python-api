@@ -148,7 +148,7 @@ class StoryMap(object):
                 "Web Application",
                 "smstatusdraft",
                 "smversiondraft:21.43.0",
-                "smdraftversion:python-api-" + arcgis.__version__,
+                "smapiversion:python-api-" + arcgis.__version__,
                 "smdraftresourceid:draft_" + str(int(time.time() * 1000)) + ".json",
             ]
         )
@@ -921,7 +921,7 @@ class StoryMap(object):
                 "smstatuspublished",
                 "smversiondraft:21.43.0",
                 "smversionpublished:21.43.0",
-                "smdraftversion:python-api-" + arcgis.__version__,
+                "smapiversion:python-api-" + arcgis.__version__,
                 "smdraftresourceid:" + draft,
                 "smversionpublished:21.43.0",
                 "smpublisheddate:" + str(int(time.time() * 1000)),
@@ -957,7 +957,7 @@ class StoryMap(object):
                 new_typeKeywords = [
                     "smstatusunpublishedchanges",
                     "smversiondraft:21.43.0",
-                    "smdraftversion:python-api-" + arcgis.__version__,
+                    "smapiversion:python-api-" + arcgis.__version__,
                     "smdraftresourceid:" + draft,
                     "smversionpublished:21.43.0",
                     "smpublisheddate:" + str(int(time.time() * 1000)),
@@ -970,7 +970,7 @@ class StoryMap(object):
                 new_typeKeywords = [
                     "smstatusdraft",
                     "smversiondraft:21.43.0",
-                    "smdraftversion:python-api-" + arcgis.__version__,
+                    "smapiversion:python-api-" + arcgis.__version__,
                     "smdraftresourceid:" + draft,
                 ]
             for keyword in new_typeKeywords:
