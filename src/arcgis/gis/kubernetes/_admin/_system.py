@@ -177,6 +177,44 @@ class Indexer(_BaseKube):
         return res
 
 
+class Container:
+    """
+    A single representation of a registered container.
+    """
+
+    _properties = None
+    _url = None
+    _con = None
+    _gis = None
+
+    def __init__(self, url: str, gis: "GIS"):
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+
+    def properties(self):
+        """returns the properties of the endpoint"""
+        return self._con.get(self._url, {"f": "json"})
+
+    def edit(self, value: dict) -> dict:
+        """
+        Allows certain container registry properties to be updated after your organization has been configured.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required dict. A dictionary of registry properties.
+        ===============     ====================================================================
+
+
+
+        :returns: bool
+        """
+        url = f"{self._url}/edit"
+        params = {"f": "json", "containerRegistryJson": value}
+        return self._con.post(url, params).get("status", "failed") == "success"
+
+
 class SystemManager(_BaseKube):
     """
     This resource is an umbrella for a collection of system-wide resources
@@ -210,6 +248,21 @@ class SystemManager(_BaseKube):
         self._con = gis._con
         if initialize:
             self._init(gis._con)
+
+    # ----------------------------------------------------------------------
+    @property
+    def containers(self) -> list:
+        """
+        Returns the registered containers.
+
+        :returns: list
+        """
+        url = f"{self._url}/containerregistries"
+        params = {"f": "json"}
+        return [
+            Container(url=f"{url}/{container['id']}", gis=self._gis)
+            for continer in self._con.get(url, params).get("containerRegistries", [])
+        ]
 
     # ----------------------------------------------------------------------
     @property
