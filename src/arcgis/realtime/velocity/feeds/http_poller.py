@@ -9,7 +9,11 @@ from arcgis.realtime.velocity.feeds.geometry import (
     XYZGeometry,
 )
 from arcgis.realtime.velocity.feeds.run_interval import RunInterval
-from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInterval
+from arcgis.realtime.velocity.feeds.time import (
+    _HasTime,
+    TimeInstant,
+    TimeInterval,
+)
 from arcgis.realtime.velocity.http_authentication_type import (
     NoAuth,
     BasicAuth,
@@ -31,52 +35,53 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     Poll an HTTP endpoint for events. This data class can be used to define the feed configuration and use it to create
     the feed.
 
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    label                  str. Unique label for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    description            str. Feed description.
-    ------------------     --------------------------------------------------------------------
-    url                    str. Address of the HTTP endpoint providing data.
-    ------------------     --------------------------------------------------------------------
-    http_http_method       str. Either "GET" or "POST"
-    ------------------     --------------------------------------------------------------------
-    http_auth_type         Union[NoAuth, BasicAuth, CertificateAuth, OAuth]. An instance that contains the
-                           Authentication info for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    url_params             Dict[str, str]. A dictionary of url param/value pairs that contains
-                           http params used accessing the HTTP resource.
-    ------------------     --------------------------------------------------------------------
-    http_headers           Dict[str, str]. A Name-Value dictionary that contains HTTP headers
-                           for connecting to the HTTP resource.
-    ------------------     --------------------------------------------------------------------
-    enable_long_polling    bool.
-                           default value - False
-    ------------------     --------------------------------------------------------------------
+    ===================      ====================================================================
+    **Argument**             **Description**
+    -------------------      --------------------------------------------------------------------
+    label                    str. Unique label for this feed instance.
+    -------------------      --------------------------------------------------------------------
+    description              str. Feed description.
+    -------------------      --------------------------------------------------------------------
+    url                      str. Address of the HTTP endpoint providing data.
+    -------------------      --------------------------------------------------------------------
+    http_http_method         str. Either "GET" or "POST"
+    -------------------      --------------------------------------------------------------------
+    http_auth_type           Union[NoAuth, BasicAuth, CertificateAuth, OAuth]. An instance that contains the
+                             Authentication info for this feed instance.
+    -------------------      --------------------------------------------------------------------
+    url_params               Dict[str, str]. A dictionary of url param/value pairs that contains
+                             http params used accessing the HTTP resource.
+    -------------------      --------------------------------------------------------------------
+    http_headers             Dict[str, str]. A Name-Value dictionary that contains HTTP headers
+                             for connecting to the HTTP resource.
+    -------------------      --------------------------------------------------------------------
+    enable_long_polling      bool.
+                             default value - False
+    ===================      ====================================================================
 
-    **Optional Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    data_format            Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
-                           An instance that contains the data-format
-                           configuration for this feed. Configure only allowed formats.
-                           If this is not set right during initialization, a format will be
-                           auto-detected and set from a sample of the incoming data. This sample
-                           will be fetched from the configuration provided so far in the init.
-    ------------------     --------------------------------------------------------------------
-    track_id_field         str. name of the field from the incoming data that should be set as
-                           track_id.
-    ------------------     --------------------------------------------------------------------
-    geometry               Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
-                           that will be used to create geometry objects from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                           will be used to create time info from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    run_interval           RunInterval. An instance of scheduler configuration.
+    =====================     ====================================================================
+    **Optional Argument**     **Description**
+    =====================     ====================================================================
+    data_format               Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
+                              An instance that contains the data-format
+                              configuration for this feed. Configure only allowed formats.
+                              If this is not set right during initialization, a format will be
+                              auto-detected and set from a sample of the incoming data. This sample
+                              will be fetched from the configuration provided so far in the init.
+    ---------------------     --------------------------------------------------------------------
+    track_id_field            str. name of the field from the incoming data that should be set as
+                              track_id.
+    ---------------------     --------------------------------------------------------------------
+    geometry                  Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+                              that will be used to create geometry objects from the incoming data.
+    ---------------------     --------------------------------------------------------------------
+    time                      Union[TimeInstant, TimeInterval]. An instance of time configuration that
+                              will be used to create time info from the incoming data.
+    ---------------------     --------------------------------------------------------------------
+    run_interval              RunInterval. An instance of scheduler configuration.
 
-                           default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
-    ==================     ====================================================================
+                              default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
+    =====================     ====================================================================
 
     :return: A dataclass with Http poller feed configuration.
 
@@ -158,7 +163,13 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
 
     # user can define these properties even after initialization
     data_format: Optional[
-        Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat]
+        Union[
+            EsriJsonFormat,
+            GeoJsonFormat,
+            JsonFormat,
+            DelimitedFormat,
+            XMLFormat,
+        ]
     ] = None
     # FeedTemplate properties
     track_id_field: Optional[str] = None
@@ -250,12 +261,16 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     def _generate_feed_properties(self) -> dict:
         # http headers
         if bool(self.http_headers):
-            http_headers_properties = {f"{self._name}.headers": self.http_headers}
+            http_headers_properties = {
+                f"{self._name}.headers": self.http_headers
+            }
         else:
             http_headers_properties = {}
         # url params
         if bool(self.url_params):
-            url_params_properties = {f"{self._name}.urlParameters": self.url_params}
+            url_params_properties = {
+                f"{self._name}.urlParameters": self.url_params
+            }
         else:
             url_params_properties = {}
 

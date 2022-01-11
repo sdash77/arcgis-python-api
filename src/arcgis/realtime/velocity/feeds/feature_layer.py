@@ -32,11 +32,11 @@ class FeatureLayer(_FeedTemplate, _HasTime):
                                     default value - 4326
                                     Additional information on Projected and Geographic Coordinate system at:
                                     https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm
-    ------------------              --------------------------------------------------------------------
+    =====================     ====================================================================
 
+    =====================     ====================================================================
     **Optional Argument**           **Description**
-    ------------------              --------------------------------------------------------------------
-    url                             str. Address of the HTTP endpoint providing data.
+    =====================     ====================================================================
                                     Note: either portal_item_id or url is required
     ------------------              --------------------------------------------------------------------
     portal_item_id                  str. Portal item id of the feature layer

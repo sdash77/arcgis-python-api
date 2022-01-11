@@ -35,10 +35,11 @@ class VerizonConnectReveal(_FeedTemplate, _HasTime, _HasGeometry):
     username               str. Specify a new username.
     ------------------     --------------------------------------------------------------------
     password               str. Specify a new password.
-    ------------------     --------------------------------------------------------------------
+    ===================      ====================================================================
 
+    =====================     ====================================================================
     **Optional Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
+    =====================     ====================================================================
     data_format            Union[JsonFormat].
                            An instance that contains the data-format
                            configuration for this feed. Configure only allowed formats.

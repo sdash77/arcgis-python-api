@@ -36,10 +36,12 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     http_headers           Dict[str, str]. A Name-Value dictionary that contains HTTP headers
                            for connecting to the RSS feed.
+    ===================      ====================================================================
 
-    ==================     ====================================================================
+    =====================     ====================================================================
+
     **Optional Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
+    =====================     ====================================================================
     data_format            Union[RssFormat, GeoRssFormat]. An instance that contains the data-format
                            configuration for this feed. Configure only allowed formats.
                            If this is not set right during initialization, a format will be

@@ -35,9 +35,11 @@ class StreamLayer(_FeedTemplate, _HasTime):
                                     https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm
     ------------------              --------------------------------------------------------------------
     data_format                     str. Specify the overall format of your incoming data
-    ==================     ====================================================================
+    ===================      ====================================================================
+
+    =====================     ====================================================================
     **Optional Argument**           **Description**
-    ------------------              --------------------------------------------------------------------
+    =====================     ====================================================================
     WHERE clause                    str. Query to retrieve a subset of features
     ------------------              --------------------------------------------------------------------
     Out fields                      str. Comma-separated list of fields to use for processing

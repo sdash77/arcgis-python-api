@@ -36,10 +36,12 @@ class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------     --------------------------------------------------------------------
     sample_message         str. Some sample content to auto-detect data format from.
                            example - name,age\nsam,23
-    ------------------     --------------------------------------------------------------------
+    ===================      ====================================================================
+
+    =====================     ====================================================================
 
     **Optional Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
+    =====================     ====================================================================
     data_format            Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
                            An instance that contains the data-format
                            configuration for this feed. Configure only allowed formats.

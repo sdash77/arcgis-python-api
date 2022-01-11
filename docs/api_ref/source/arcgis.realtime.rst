@@ -81,4 +81,4 @@ Submodules
    :maxdepth: 3
 
    arcgis.realtime.velocity.feeds
-   arcgis.geometry.velocity.input
+   arcgis.realtime.velocity.input

@@ -47,10 +47,12 @@ class HttpSimulator(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------              --------------------------------------------------------------------
     convert_to_current_time         boolean. Whether to convert the time values in the dataset to current time as the data is simulated.
                                     default value - True
-    ------------------              --------------------------------------------------------------------
+    ===================      ====================================================================
+
+    =====================     ====================================================================
 
     **Optional Argument**           **Description**
-    ------------------              --------------------------------------------------------------------
+    =====================     ====================================================================
     data_format                     Union[DelimitedFormat].
                                     An instance that contains the data-format
                                     configuration for this feed. Configure only allowed formats.

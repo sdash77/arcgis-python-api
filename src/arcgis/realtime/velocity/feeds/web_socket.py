@@ -33,10 +33,12 @@ class WebSocket(_FeedTemplate, _HasTime, _HasGeometry):
     description            str. Feed description.
     ------------------     --------------------------------------------------------------------
     url                    str. Web Socket URL over which messages are received.
-    ------------------     --------------------------------------------------------------------
+    ===================      ====================================================================
+
+    =====================     ====================================================================
 
     **Optional Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
+    =====================     ====================================================================
     data_format            Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
                            An instance that contains the data-format
                            configuration for this feed. Configure only allowed formats.
