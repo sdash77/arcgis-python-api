@@ -96,27 +96,24 @@ class StoryMap(object):
                 saved_drafts = []
                 for resource in self._resources:
                     for key, val in resource.items():
-                        if (
-                            key == "resource" and
-                            re.match("draft_\d{13}.json", val)
-                        ):
+                        if key == "resource" and re.match("draft_\d{13}.json", val):
                             saved_drafts.append(val)
-                    if len(saved_drafts) == 1:
-                        # Open JSON draft file for properties
-                        data = self._item.resources.get(saved_drafts[0], try_json=True)
-                        self._properties = data
-                    else:
-                        # multiple drafts saved so find most recent.
-                        start = saved_drafts[0][6:19]
-                        use_draft = saved_drafts[0]
-                        for draft in saved_drafts:
-                            compare = draft[6:19]
-                            if start < compare:
-                                start = compare
-                                use_draft = draft
-                        # Open most recent JSON draft file for properties
-                        data = self._item.resources.get(use_draft, try_json=True)
-                        self._properties = data
+                if len(saved_drafts) == 1:
+                    # Open JSON draft file for properties
+                    data = self._item.resources.get(saved_drafts[0], try_json=True)
+                    self._properties = data
+                else:
+                    # multiple drafts saved so find most recent.
+                    start = saved_drafts[0][6:19]
+                    use_draft = saved_drafts[0]
+                    for draft in saved_drafts:
+                        compare = draft[6:19]
+                        if start < compare:
+                            start = compare
+                            use_draft = draft
+                    # Open most recent JSON draft file for properties
+                    data = self._item.resources.get(use_draft, try_json=True)
+                    self._properties = data
         elif (
             item
             and isinstance(item, arcgis.gis.Item)
@@ -149,7 +146,7 @@ class StoryMap(object):
                 "smstatusdraft",
                 "smversiondraft:21.43.0",
                 "smdraftversion:python-api-" + arcgis.__version__,
-                "smdraftresourceid:draft_" + str(int(time.time()*1000)) + ".json",
+                "smdraftresourceid:draft_" + str(int(time.time() * 1000)) + ".json",
             ]
         )
         # set the item properties dict
@@ -881,7 +878,7 @@ class StoryMap(object):
                 self._remove_resource(file=resource["resource"])
 
         # Add new draft with time in milliseconds
-        draft = "draft_" + str(int(time.time()*1000)) + ".json"
+        draft = "draft_" + str(int(time.time() * 1000)) + ".json"
         self._add_resource(
             resource_name=draft,
             text=json.dumps(self._properties),
@@ -924,7 +921,7 @@ class StoryMap(object):
                 "smdraftversion:python-api-" + arcgis.__version__,
                 "smdraftresourceid:" + draft,
                 "smversionpublished:21.43.0",
-                "smpublisheddate:" + str(int(time.time()*1000)),
+                "smpublisheddate:" + str(int(time.time() * 1000)),
             ]
             p = {
                 "typeKeywords": list(set(typeKeywords + new_typeKeywords)),
@@ -960,7 +957,7 @@ class StoryMap(object):
                     "smdraftversion:python-api-" + arcgis.__version__,
                     "smdraftresourceid:" + draft,
                     "smversionpublished:21.43.0",
-                    "smpublisheddate:" + str(int(time.time()*1000)),
+                    "smpublisheddate:" + str(int(time.time() * 1000)),
                 ]
                 if "smstatuspublished" in typeKeywords:
                     idx = typeKeywords.index("smstatuspublished")
@@ -1100,7 +1097,7 @@ class StoryMap(object):
         properties = {
             "editInfo": {
                 "editor": self._gis._username,
-                "modified": str(int(time.time()*1000)),
+                "modified": str(int(time.time() * 1000)),
                 "id": uuid.uuid4().hex[0:21],
                 "app": "python-api",
             }
@@ -1109,7 +1106,11 @@ class StoryMap(object):
         # Access is private, remove access parameter to change to inherit automatically
         if is_present is False:
             resp = resource_manager.add(
-                file=file, file_name=resource_name, text=text, access="private", properties=properties
+                file=file,
+                file_name=resource_name,
+                text=text,
+                access="private",
+                properties=properties,
             )
         self._resources = self._item.resources.list()
         return resp
