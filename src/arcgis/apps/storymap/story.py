@@ -131,6 +131,9 @@ class StoryMap(object):
         template = arcgis.apps.storymap._ref.storymap_2
         # add correct by-line
         template["nodes"]["n-aTn8ak"]["data"]["byline"] = self._gis._username
+        template["nodes"]["n-4xkUEe"]["config"]["storyLocale"] = (
+            self._gis.users.me.culture if self._gis.users.me.culture else "en-US"
+        )
         # set properties
         self._properties = template
         # assign text for resource call
