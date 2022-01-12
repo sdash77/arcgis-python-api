@@ -20,16 +20,22 @@ class WebAdaptorManager(_BaseKube):
         self._con = gis._con
 
     # ---------------------------------------------------------------------
-    def web_adaptor(self, adaptor_id):
+    def web_adaptor(self, adaptor_id: str):
         """
         This resource returns the properties of an individual web adaptor, such as the HTTP and HTTPS ports.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        adaptor_id             Required string. The specific web adaptor to get.
+        ==================     ====================================================================
         """
         url = f"{self._url}/{adaptor_id}"
         params = {"f": "json"}
         return self._con.get(url, params)
 
     # ---------------------------------------------------------------------
-    def unregister_adaptor(self, adaptor_id):
+    def unregister_adaptor(self, adaptor_id: str):
         """
         This operation unregisters an ArcGIS Enterprise on Kubernetes Web Adaptor
         from your deployment. Once a web adaptor has been unregistered, the
@@ -37,6 +43,12 @@ class WebAdaptorManager(_BaseKube):
         accepted. This operation is typically used when you want to register
         a new ArcGIS Enterprise on Kubernetes Web Adaptor or when the previous
         one needs to be updated.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        adaptor_id             Required string. The web adaptor to unregister.
+        ==================     ====================================================================
         """
         url = f"{self._url}/{adaptor_id}/unregister"
         params = {"f": "json"}
@@ -58,13 +70,19 @@ class WebAdaptorManager(_BaseKube):
 
     # ---------------------------------------------------------------------
     @configuration.setter
-    def configuration(self, adaptors_config: dict):
+    def configuration(self, configs: dict):
         """
         This operation is used to change the common properties and configurations
         for the ArcGIS Enterprise on Kubernetes Web Adaptor configured with your
         deployment. The properties are stored in a JSON object. Therefore,
         every update must include all necessary properties.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        configs                Required dictionary. The new configs for the web adaptors
+        ==================     ====================================================================
         """
         url = f"{self._url}/config/update"
-        params = {"f": "json", "webAdaptorsConfig": adaptors_config}
+        params = {"f": "json", "webAdaptorsConfig": configs}
         return self._con.post(url, params)

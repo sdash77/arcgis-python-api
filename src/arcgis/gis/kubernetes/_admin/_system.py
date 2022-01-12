@@ -303,7 +303,7 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def web_adaptors(self):
+    def web_adaptors(self) -> WebAdaptorManager:
         """
         The webadaptors resource lists the ArcGIS Enterprise on Kubernetes Web Adaptor configured your deployment. The web adaptor can be configured using the config operation.
         """
@@ -336,7 +336,7 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def tasks(self):
+    def tasks(self) -> TaskManager:
         """
         This resource returns a list of tasks (CleanGPJobs, BackupRetentionCleaner, CreateBackup) that exist within your deployment.
         """
@@ -395,7 +395,7 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def servers(self):
+    def servers(self) -> ServerManager:
         """Returns a manager to work with ArcGIS Servers registerd with Kubernetes"""
         if self._sm is None:
             self._sm = ServerManager(url=f"{self._url}/servers", gis=self._gis)
