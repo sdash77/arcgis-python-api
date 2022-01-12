@@ -1811,12 +1811,12 @@ class WorkflowManager:
 
 class LookUpTable(object):
     """
-    Represents a Workflow Manager Look Up object with accompanying GET, POST, and DELETE methods
+    Represents a Workflow Manager Look Up object with accompanying GET, POST, and DELETE methods.
 
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
-    init_data           data object representing relevant parameters for GET or POST calls
+    init_data           data object containing the relevant properties for a LookUpTable to complete REST calls
     ===============     ====================================================================
     """
 
