@@ -321,6 +321,7 @@ kwargs = {
             "learn/_mmdetection_config/**/**/*.py",
             "learn/_mmseg_config/*.py",
             "gis/_impl/*.pyd",
+            "graph/*.pyd",
             "gis/_impl/*.so",
         ],
     },
