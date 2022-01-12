@@ -6749,6 +6749,16 @@ def segment_mean_shift(
     ================================     ====================================================================
 
     :return: The output raster.
+
+    .. code-block:: python
+
+        # Usage Example: Apply the segment_mean_shift function on a raster.
+
+        segmented_raster_op = segment_mean_shift(raster=raster_obj,
+                                                 spectral_detail=15.5,
+                                                 spatial_detail=15,
+                                                 min_num_pixels_per_segment=20
+                                                )
     """
 
     layer, raster, raster_ra = _raster_input(raster)
