@@ -1714,14 +1714,14 @@ class WorkflowManager:
 
         return return_obj["tableDefinitions"]
 
-    def lookups(self, type):
+    def lookups(self, lookupType):
         """
         Returns LookUp Tables by given type
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        type                Required string.
+        lookupType          Required string.
         ===============     ====================================================================
 
         :return:
@@ -1737,14 +1737,14 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def delete_lookup(self, type):
+    def delete_lookup(self, lookupType):
         """
         Deletes a job template with the given ID
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        type                Required string.
+        lookupType          Required string.
         ===============     ====================================================================
 
         :return:
@@ -1765,14 +1765,14 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def create_lookup(self, type, lookups):
+    def create_lookup(self, lookupType, lookups):
         """
         Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        type                Required string. Lookup type
+        lookupType          Required string. Lookup type
         ---------------     --------------------------------------------------------------------
         lookups             Required list. List of lookups to be created / updated
         ===============     ====================================================================
