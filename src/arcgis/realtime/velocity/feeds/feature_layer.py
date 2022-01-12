@@ -15,47 +15,51 @@ class FeatureLayer(_FeedTemplate, _HasTime):
 
     Data format is Esri Layer. Velocity will automatically handle the location for you.
 
-    ==================              ====================================================================
+    =====================           ====================================================================
     **Argument**                    **Description**
-    ------------------              --------------------------------------------------------------------
+    ---------------------           --------------------------------------------------------------------
     label                           str. Unique label for this feed instance.
-    ------------------              --------------------------------------------------------------------
+    ---------------------           --------------------------------------------------------------------
     description                     str. Feed description.
-    ------------------              --------------------------------------------------------------------
+    ---------------------           --------------------------------------------------------------------
     query                           str. Feature layer query parameters
                                     default value - "1=1"
-    ------------------              --------------------------------------------------------------------
+    ---------------------           --------------------------------------------------------------------
     fields                          str. Requested feature layer output fields. Example - "field1,field2"
                                     default value - "*"
-    ------------------              --------------------------------------------------------------------
+    ---------------------           --------------------------------------------------------------------
     outSR                           int. Requested output Spatial Reference
                                     default value - 4326
                                     Additional information on Projected and Geographic Coordinate system at:
                                     https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm
-    =====================     ====================================================================
+    =====================           ====================================================================
 
-    =====================     ====================================================================
+    =====================           ====================================================================
     **Optional Argument**           **Description**
-    =====================     ====================================================================
+    =====================           ====================================================================
                                     Note: either portal_item_id or url is required
-    ------------------              --------------------------------------------------------------------
+    ---------------------           --------------------------------------------------------------------
     portal_item_id                  str. Portal item id of the feature layer
                                     Note: either portal_item_id or url is required
-    ------------------              --------------------------------------------------------------------
+    ---------------------           --------------------------------------------------------------------
     extent                          Dict[str, Any]. A Geometry object that defines the spatial extent for
                                     the feature layer
-                                    sample value -
-                                                    {
-                                                        "spatialReference": {
-                                                            "latestWkid": 3857,
-                                                            "wkid": 102100
-                                                        },
-                                                        "xmin": -14784278.027601289,
-                                                        "ymin": 2604610.848073723,
-                                                        "xmax": -11451317.846255329,
-                                                        "ymax": 6852675.132049575
-                                                    }
-    ------------------              --------------------------------------------------------------------
+
+                                    .. code-block:: python
+
+                                        # Sample Value
+                                        {
+                                            "spatialReference": {
+                                                "latestWkid": 3857,
+                                                "wkid": 102100
+                                            },
+                                            "xmin": -14784278.027601289,
+                                            "ymin": 2604610.848073723,
+                                            "xmax": -11451317.846255329,
+                                            "ymax": 6852675.132049575
+                                        }
+
+    ---------------------           --------------------------------------------------------------------
     time_stamp_field                str.
                                     An optional Date field for latest features
                                     Optionally, specify a date field to be used to retrieve only the latest
@@ -70,17 +74,17 @@ class FeatureLayer(_FeedTemplate, _HasTime):
                                     WHERE clause. Each subsequent poll, only features with a timestamp field value
                                     between the last polling time and the current polling time that also meet the
                                     criteria of the WHERE clause will be loaded.
-    ------------------              --------------------------------------------------------------------
+    ---------------------           --------------------------------------------------------------------
     track_id_field                  str. Name of the field from the incoming data that should be set as
                                     track_id.
-    ------------------              --------------------------------------------------------------------
+    ---------------------           --------------------------------------------------------------------
     time                            Union[TimeInstant, TimeInterval]. An instance of time configuration that
                                     will be used to create time info from the incoming data.
-    ------------------              --------------------------------------------------------------------
+    ---------------------           --------------------------------------------------------------------
     run_interval                    RunInterval. An instance of scheduler configuration.
 
                                     default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
-    ==================              ====================================================================
+    =====================           ====================================================================
 
     :return: A data class with feature layer feed configuration.
 

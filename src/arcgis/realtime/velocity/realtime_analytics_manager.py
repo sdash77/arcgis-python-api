@@ -36,10 +36,12 @@ class RealTimeAnalyticsManager:
         :return: returns a collection of all real-time analytics items with id and label.
 
         .. code-block:: python
+
             # Get all real-time analytics items
 
             all_realtime_analytics = realtime_analytics.items
             all_realtime_analytics
+
         """
         all_realtime_analytics_response = self._util._get_request("analytics/realtime")
 

@@ -31,15 +31,14 @@ class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
     label                     str. Unique label for this feed instance.
     --------------------      ----------------------------------------------------------------------
     description               str. Feed description.
-    --------------------      --------------------------------------------------------------------
+    --------------------      ----------------------------------------------------------------------
     authentication_type       str. Either "none" or "arcgis"
-    ---------------------     --------------------------------------------------------------------
+    --------------------      ----------------------------------------------------------------------
     sample_message            str. Some sample content to auto-detect data format from.
-                              example - name,age\nsam,23
-    =====================     ====================================================================
+                              example - "name,age\\nsam,23"
+    ====================      ======================================================================
 
     =====================     ====================================================================
-
     **Optional Argument**           **Description**
     =====================     ====================================================================
     data_format               Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
@@ -48,16 +47,16 @@ class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
                               If this is not set right during initialization, a format will be
                               auto-detected and set from a sample of the incoming data. This sample
                               will be fetched from the configuration provided so far in the init.
-    ------------------        --------------------------------------------------------------------
+    ---------------------     --------------------------------------------------------------------
     track_id_field            str. name of the field from the incoming data that should be set as
                               track_id.
-    ------------------        --------------------------------------------------------------------
-    geometry                  Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
-                              that will be used to create geometry objects from the incoming data.
-    ------------------        --------------------------------------------------------------------
+    ---------------------     --------------------------------------------------------------------
+    geometry                  Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry
+                              configuration that will be used to create geometry objects from the incoming data.
+    ---------------------     --------------------------------------------------------------------
     time                      Union[TimeInstant, TimeInterval]. An instance of time configuration that
                               will be used to create time info from the incoming data.
-    ==================        ====================================================================
+    =====================     ====================================================================
 
     :return: A data class with Http receiver feed configuration.
 

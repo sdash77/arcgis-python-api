@@ -11,9 +11,9 @@ class Velocity:
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-      url                    velocity org URL
+    url                    velocity org URL
     ------------------     --------------------------------------------------------------------
-      gis                    an authenticated :class:`arcigs.gis.GIS` object.
+    gis                    an authenticated :class:`arcigs.gis.GIS` object.
     ==================     ====================================================================
 
     .. code-block:: python
@@ -84,6 +84,7 @@ class Velocity:
         :return: :class:`~arcgis.realtime.velocity.RealTimeAnalyticsManager`
 
         .. code-block:: python
+
             # Get instance of realtime_analytics from `velocity`:
 
             realtime_analytics = velocity.realtime_analytics
@@ -105,6 +106,7 @@ class Velocity:
          :return: :class:`~arcgis.realtime.velocity.BigDataAnalyticsManager`
 
          .. code-block:: python
+
             # Get instance of bigdata_analytics from `velocity`:
 
             bigdata_analytics = velocity.bigdata_analytics

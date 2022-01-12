@@ -80,7 +80,8 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     ---------------------     --------------------------------------------------------------------
     run_interval              RunInterval. An instance of scheduler configuration.
 
-                              default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
+                              default value -
+                              RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     =====================     ====================================================================
 
     :return: A dataclass with Http poller feed configuration.
@@ -261,16 +262,12 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     def _generate_feed_properties(self) -> dict:
         # http headers
         if bool(self.http_headers):
-            http_headers_properties = {
-                f"{self._name}.headers": self.http_headers
-            }
+            http_headers_properties = {f"{self._name}.headers": self.http_headers}
         else:
             http_headers_properties = {}
         # url params
         if bool(self.url_params):
-            url_params_properties = {
-                f"{self._name}.urlParameters": self.url_params
-            }
+            url_params_properties = {f"{self._name}.urlParameters": self.url_params}
         else:
             url_params_properties = {}
 

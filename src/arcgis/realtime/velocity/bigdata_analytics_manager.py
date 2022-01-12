@@ -12,9 +12,9 @@ class BigDataAnalyticsManager:
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-      url                    velocity org URL
+    url                    velocity org URL
     ------------------     --------------------------------------------------------------------
-      gis                    an authenticated :class:`arcigs.gis.GIS` object.
+    gis                    an authenticated :class:`arcigs.gis.GIS` object.
     ==================     ====================================================================
 
     """
@@ -68,7 +68,7 @@ class BigDataAnalyticsManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-          id                  Unique id of a big data task
+        id                  Unique id of a big data task
         ===============     ====================================================================
 
         :return: endpoint response of Big Data Analytics for the given id and label

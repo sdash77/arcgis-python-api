@@ -42,6 +42,7 @@ class RealTimeAnalytics(Task):
             # Method: <item>.start()
             
             sample_realtime_task.start()
+
         """
         return self._util._start("analytics/realtime", self._id)
 
@@ -60,6 +61,7 @@ class RealTimeAnalytics(Task):
             # Method: <item>.stop()
             
             sample_realtime_task.stop()
+
         """
         return self._util._stop("analytics/realtime", self._id)
 
@@ -79,6 +81,7 @@ class RealTimeAnalytics(Task):
             
             status = sample_realtime_task.status
             status
+
         """
         return self._util._status("analytics/realtime", self._id)
 
@@ -98,6 +101,7 @@ class RealTimeAnalytics(Task):
             
             metrics = sample_realtime_task.metrics
             metrics
+
         """
         return self._util._metrics("analytics/realtime/metrics", self._id)
 
@@ -106,8 +110,7 @@ class RealTimeAnalytics(Task):
         """
         Deletes an existing Real-Time Analytics task instance
 
-        :return: A boolean containing True (for success) or
-         False (for failure) a dictionary with details is returned.
+        :return: A boolean containing True (for success) or False (for failure) a dictionary with details is returned.
 
         .. code-block:: python
 

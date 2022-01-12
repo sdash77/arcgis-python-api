@@ -21,54 +21,57 @@ class HttpSimulator(_FeedTemplate, _HasTime, _HasGeometry):
     Simulate events from a text file. This data class can be used to define the feed configuration and use it to create
     the feed.
 
-    ==================              ====================================================================
+    ============================    ====================================================================
     **Argument**                    **Description**
-    ------------------              --------------------------------------------------------------------
+    ----------------------------    --------------------------------------------------------------------
     label                           str. Unique label for this feed instance.
-    ------------------              --------------------------------------------------------------------
+    ----------------------------    --------------------------------------------------------------------
     description                     str. Feed description.
-    ------------------              --------------------------------------------------------------------
+    ----------------------------    --------------------------------------------------------------------
     url                             str. The full URL to the externally accessible simulation file.
-    ------------------              --------------------------------------------------------------------
-    field_separator                 str. The character, or delimiter, which separates field values in the simulation file.
+    ----------------------------    --------------------------------------------------------------------
+    field_separator                 str. The character, or delimiter, which separates field values in
+                                    the simulation file.
                                     default value - ","
-    ------------------              --------------------------------------------------------------------
+    ----------------------------    --------------------------------------------------------------------
     features_per_execution          int. The number of records (features) to simulate at a time.
                                     default value - 1
-    ------------------              --------------------------------------------------------------------
+    ----------------------------    --------------------------------------------------------------------
     interval_for_sending_events     int. The interval between sending the number of features per execution
                                     default value - 1000
-    ------------------              --------------------------------------------------------------------
-    repeat_simulation               boolean. Whether to automatically restart from the beginning when the end of the file is reached.
+    ----------------------------    --------------------------------------------------------------------
+    repeat_simulation               boolean. Whether to automatically restart from the beginning when
+                                    the end of the file is reached.
                                     default value - True
-    ------------------              --------------------------------------------------------------------
-    time_field_index                int. The numerical index of the date field in the dataset, where the index starts at 0.
+    ----------------------------    --------------------------------------------------------------------
+    time_field_index                int. The numerical index of the date field in the dataset, where the
+                                    index starts at 0.
                                     default value - 0
-    ------------------              --------------------------------------------------------------------
-    convert_to_current_time         boolean. Whether to convert the time values in the dataset to current time as the data is simulated.
+    ----------------------------    --------------------------------------------------------------------
+    convert_to_current_time         boolean. Whether to convert the time values in the dataset to
+                                    current time as the data is simulated.
                                     default value - True
-    ===================      ====================================================================
+    ============================    ====================================================================
 
-    =====================     ====================================================================
-
+    ============================    ====================================================================
     **Optional Argument**           **Description**
-    =====================     ====================================================================
+    ============================    ====================================================================
     data_format                     Union[DelimitedFormat].
                                     An instance that contains the data-format
                                     configuration for this feed. Configure only allowed formats.
                                     If this is not set right during initialization, a format will be
                                     auto-detected and set from a sample of the incoming data. This sample
                                     will be fetched from the configuration provided so far in the init.
-    ------------------              --------------------------------------------------------------------
+    ----------------------------    --------------------------------------------------------------------
     track_id_field                  str. name of the field from the incoming data that should be set as
                                     track_id.
-    ------------------              --------------------------------------------------------------------
+    ----------------------------    --------------------------------------------------------------------
     geometry                        Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
                                     that will be used to create geometry objects from the incoming data.
-    ------------------              --------------------------------------------------------------------
+    ----------------------------    --------------------------------------------------------------------
     time                            Union[TimeInstant, TimeInterval]. An instance of time configuration that
                                     will be used to create time info from the incoming data.
-    ==================              ====================================================================
+    ============================    ====================================================================
 
     :return: A data class with Http simulator feed configuration.
 

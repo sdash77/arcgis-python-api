@@ -8,20 +8,20 @@ class RunInterval:
     """
     Set the run interval for the feed.
 
-    ==============      ====================================================================
+    ===============     ================================================================================================
     **Argument**        **Description**
-    ---------------     --------------------------------------------------------------------
+    ---------------     ------------------------------------------------------------------------------------------------
     cron_expression     str. Default value - if nothing is specified following expression will be used to configure the
                         feed:
-                        "0 * * ? * * *" - Runs every minute
+                        example - "0 * * ? * * *" - Runs every minute
 
                         Cron Expression that specifies the run interval. Please use the
                         following link to generate the cron expression:
-    ---------------     --------------------------------------------------------------------
+    ---------------     ------------------------------------------------------------------------------------------------
     timezone            str. Default value - "America/Los_Angeles"
                         Run interval timezone to use.
                         refer: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for strings
-    ===============     ====================================================================
+    ===============     ================================================================================================
 
     :return: `True` if the operation is a success
 

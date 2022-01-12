@@ -35,36 +35,36 @@ class Kafka(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------      --------------------------------------------------------------------
     brokers                 str. Comma-separated list of Kafka brokers, including the port, such as
                             host1.domain.com:9092,host2.domain.com:9092
-    
+
                             example - "kafkaServer1.hostname.com:9092,kafkaServer2.hostname.com:9092"
     ------------------      --------------------------------------------------------------------
     topics                  str. Topic to which the output will send messages.
     ------------------      --------------------------------------------------------------------
     authentication          Union[NoAuth, SASLPlain]. Kafka authentication type.
-    ===================     ====================================================================
+    ==================      ====================================================================
 
-    =====================   ====================================================================
-    **Optional Argument**            **Description**
-    =====================   ====================================================================
+    =====================   ============================================================================================
+    **Optional Argument**   **Description**
+    =====================   ============================================================================================
     consumer_group_id       str. A unique string that identifies the consumer group that this feed
                             belongs to as a consumer.
-    ------------------      --------------------------------------------------------------------
+    ---------------------   --------------------------------------------------------------------------------------------
     data_format             Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
                             An instance that contains the data-format
                             configuration for this feed. Configure only allowed formats.
                             If this is not set right during initialization, a format will be
                             auto-detected and set from a sample of the incoming data. This sample
                             will be fetched from the configuration provided so far in the init.
-    ------------------      --------------------------------------------------------------------
+    ---------------------   --------------------------------------------------------------------------------------------
     track_id_field          str. name of the field from the incoming data that should be set as
                             track_id.
-    ------------------      --------------------------------------------------------------------
+    ---------------------   --------------------------------------------------------------------------------------------
     geometry                Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
                             that will be used to create geometry objects from the incoming data.
-    ------------------      --------------------------------------------------------------------
+    ---------------------   --------------------------------------------------------------------------------------------
     time                    Union[TimeInstant, TimeInterval]. An instance of time configuration that
                             will be used to create time info from the incoming data.
-    ==================      ====================================================================
+    =====================   ============================================================================================
 
     :return: A data class with Kafka feed configuration.
 

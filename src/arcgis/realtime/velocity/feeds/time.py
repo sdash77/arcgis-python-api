@@ -7,17 +7,18 @@ class TimeInstant:
     """
     Data class that holds the Instant Time configuration
 
-    ==================      ====================================================================
-    **Argument**            **Description**
-    ------------------      --------------------------------------------------------------------
-    time_field              str. Time field name
-    ------------------      --------------------------------------------------------------------
+    =====================      ====================================================================
+    **Argument**               **Description**
+    ---------------------      --------------------------------------------------------------------
+    time_field                 str. Time field name
+    =====================      ====================================================================
 
-    **Optional Argument**   **Description**
-    ------------------      --------------------------------------------------------------------
-    date_format             str. If the field does not contain epoch value a date format can be
-                            defined for the time field
-    ==================      ====================================================================
+    =====================      ====================================================================
+    **Optional Argument**      **Description**
+    ---------------------      --------------------------------------------------------------------
+    date_format                str. If the field does not contain epoch value a date format can be
+                               defined for the time field
+    =====================      ====================================================================
 
     :return: boolean `True` if the operation is a success
 
@@ -38,19 +39,20 @@ class TimeInterval:
     """
     Data class that holds the Interval Time configuration
 
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    interval_start_field   str. Start-time field name for the time interval
-    ------------------     --------------------------------------------------------------------
-    interval_end_field     str. End-time field name for the time interval
-    ------------------     --------------------------------------------------------------------
+    =====================     ====================================================================
+    **Argument**              **Description**
+    ---------------------     --------------------------------------------------------------------
+    interval_start_field      str. Start-time field name for the time interval
+    ---------------------     --------------------------------------------------------------------
+    interval_end_field        str. End-time field name for the time interval
+    =====================     ====================================================================
 
-    **Optional Argument**  **Description**
-    ------------------     --------------------------------------------------------------------
-    date_format            str. If the field does not contain epoch value a date format can be
-                           defined for the time field
-    ==================     ====================================================================
+    =====================     ====================================================================
+    **Optional Argument**     **Description**
+    ---------------------     --------------------------------------------------------------------
+    date_format               str. If the field does not contain epoch value a date format can be
+                              defined for the time field
+    =====================     ====================================================================
 
     :return: boolean `True` if the operation is a success
 
