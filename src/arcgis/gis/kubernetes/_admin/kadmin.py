@@ -141,9 +141,9 @@ class KubernetesAdmin(_BaseKube):
     @property
     def jobs(self) -> JobManager:
         """
-        This resource is a collection of the jobs (asynchronous operations) 
-        created in your deployment. When operations that support asynchronous 
-        executions are run with the async option enabled, a new job entry is 
+        This resource is a collection of the jobs (asynchronous operations)
+        created in your deployment. When operations that support asynchronous
+        executions are run with the async option enabled, a new job entry is
         created that can be queried for its current status and messages.
 
         """

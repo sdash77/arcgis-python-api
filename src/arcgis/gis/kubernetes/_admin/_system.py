@@ -347,7 +347,7 @@ class SystemManager(_BaseKube):
     @property
     def architecture_profiles(self) -> ArchitectureManager:
         """
-        This resource returns the architecture profile that is set when an organization is configured and provides access to all three architecture 
+        This resource returns the architecture profile that is set when an organization is configured and provides access to all three architecture
         profile resources: development, standard-availability, and enhanced-availability.
         """
         url = f"{self._url}/architectureprofiles"

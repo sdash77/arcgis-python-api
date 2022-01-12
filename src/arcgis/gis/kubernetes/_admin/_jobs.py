@@ -7,6 +7,7 @@ class JobManager(_BaseKube):
     Provides access to the jobs resources defined on the ArcGIS
     Enterprise.
     """
+
     _gis = None
     _con = None
     _properties = None
@@ -21,7 +22,7 @@ class JobManager(_BaseKube):
     # ---------------------------------------------------------------------
     def job(self, job_id):
         """
-        This resource returns the progress and status messages of an asynchronous 
+        This resource returns the progress and status messages of an asynchronous
         job. Updated progress information can be acquired by periodically querying this operation.
         """
         url = f"{self._url}/{job_id}"
