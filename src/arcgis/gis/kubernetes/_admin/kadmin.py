@@ -7,6 +7,7 @@ from ._overview import Overview
 from ._usage import UsageStatistics
 from ._mode import Mode
 from ._system import SystemManager
+from ._jobs import JobManager
 from arcgis.gis.admin._license import LicenseManager
 from arcgis.gis import Item, User
 from arcgis.apps.tracker._location_tracking import LocationTrackingManager
@@ -135,6 +136,21 @@ class KubernetesAdmin(_BaseKube):
             url = self._url + "/system"
             self._sm = SystemManager(url=url, gis=self._gis)
         return self._sm
+
+    # ----------------------------------------------------------------------
+    @property
+    def jobs(self) -> SystemManager:
+        """
+        This resource is a collection of the jobs (asynchronous operations) 
+        created in your deployment. When operations that support asynchronous 
+        executions are run with the async option enabled, a new job entry is 
+        created that can be queried for its current status and messages.
+
+        """
+        if self._jobs is None:
+            url = self._url + "/jobs"
+            self._jobs = JobManager(url=url, gis=self._gis)
+        return self._jobs
 
     # ----------------------------------------------------------------------
     @property

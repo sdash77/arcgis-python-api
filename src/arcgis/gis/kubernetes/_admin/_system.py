@@ -5,6 +5,9 @@ from ._upgrades import UpgradeManager
 from ._recovery import RecoveryManager
 from ._content import LanguageManager
 from ._architecture import ArchitectureManager
+from ._tasks import TaskManager
+from ._adaptors import WebAdaptorManager
+from ._license import LicenseManager
 from typing import List, Dict, Any, Tuple, Optional
 
 
@@ -300,20 +303,23 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def _adaptors(self):
-        """ """
-        # web adaptor
-        raise NotImplemented("Not Implemented in 1.9.0")
+    def web_adaptors(self):
+        """
+        The webadaptors resource lists the ArcGIS Enterprise on Kubernetes Web Adaptor configured your deployment. The web adaptor can be configured using the config operation.
+        """
+        url = f"{self._url}/webadaptors"
+        return WebAdaptorManager(url=url, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
-    def _licenses(self) -> List[Dict[str, Any]]:
+    def licenses(self) -> List[Dict[str, Any]]:
         """
         The licenses resource lists the current license level of ArcGIS Server and all authorized extensions.
 
         :return: List[Dict[str, Any]]
         """
-        raise NotImplemented("Not Implemented in 1.9.0")
+        url = f"{self._url}/licenses"
+        return LicenseManager(url=url, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
@@ -330,16 +336,22 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def _tasks(self):
-        """ """
-        raise NotImplemented("Not Implemented in 1.9.0")
+    def tasks(self):
+        """
+        This resource returns a list of tasks (CleanGPJobs, BackupRetentionCleaner, CreateBackup) that exist within your deployment.
+        """
+        url = f"{self._url}/tasks"
+        return TaskManager(url=url, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
-    def _architecture_profiles(self) -> ArchitectureManager:
-        """Not Implemented in 1.9.0"""
-        # architecture profiles
-        raise NotImplemented("Not Implemented in 1.9.0")
+    def architecture_profiles(self) -> ArchitectureManager:
+        """
+        This resource returns the architecture profile that is set when an organization is configured and provides access to all three architecture 
+        profile resources: development, standard-availability, and enhanced-availability.
+        """
+        url = f"{self._url}/architectureprofiles"
+        return ArchitectureManager(url=url, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property

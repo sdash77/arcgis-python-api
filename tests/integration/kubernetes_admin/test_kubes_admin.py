@@ -42,6 +42,8 @@ class TestKubernetesAdmin(unittest.TestCase):
         assert admin.uploads
         assert admin.usage
 
+        assert admin.jobs
+        
     def test_scheduled_task(self):
         admin = self._gis.admin
         assert isinstance(admin, KubernetesAdmin)
@@ -75,6 +77,9 @@ class TestKubernetesAdmin(unittest.TestCase):
         assert sm.servers
         assert sm.indexer
         assert sm.url
+        assert sm.web_adaptors
+        assert sm.architecture_profiles
+        assert sm.licenses
 
     def test_overview(self):
         admin = self._gis.admin
@@ -91,7 +96,7 @@ class TestKubernetesAdmin(unittest.TestCase):
         assert self._gis.admin.mode.properties
 
     def test_license(self):
-        assert admin.license.properties
+        assert self._gis.admin.license.properties
 
     def test_datastores(self):
         assert self._gis.admin.datastores
