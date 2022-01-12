@@ -139,7 +139,7 @@ class KubernetesAdmin(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def jobs(self) -> SystemManager:
+    def jobs(self) -> JobManager:
         """
         This resource is a collection of the jobs (asynchronous operations) 
         created in your deployment. When operations that support asynchronous 
