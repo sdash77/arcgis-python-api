@@ -35,6 +35,7 @@ class AGOLAdminManager(object):
     _usage = None
     _category_schema = None
     _certificates = None
+    _servers = None
     # ----------------------------------------------------------------------
     def __init__(self, gis, ux=None, metadata=None, collaborations=None):
         """initializer"""
@@ -449,3 +450,15 @@ class AGOLAdminManager(object):
 
             self._certificates = CertificateManager(gis=self._gis)
         return self._certificates
+
+    # ----------------------------------------------------------------------
+    @property
+    def servers(self):
+        """
+        Provides access to managing the services hosted on ArcGIS Online
+        """
+        if self._servers is None:
+            from arcgis.gis.agoserver import AGOLServersManager
+
+            self._servers = AGOLServersManager(gis=self._gis)
+        return self._servers

@@ -103,7 +103,7 @@ class Geocoder(_GISResource):
         ====================     ====================================================
         **Argument**             **Description**
         --------------------     ----------------------------------------------------
-        address                  required list of strings or dictionaries.
+        address                  Required list of strings or dictionaries.
                                  Specifies the location to be geocoded. This can be
                                  a string containing the street address, place name,
                                  postal code, or POI.
@@ -123,39 +123,39 @@ class Geocoder(_GISResource):
                                     Zone: "99027"
                                  }
         --------------------     ----------------------------------------------------
-        search_extent            optional string, A set of bounding box coordinates
+        search_extent            Optional string. A set of bounding box coordinates
                                  that limit the search area to a specific region.
                                  This is especially useful for applications in which
                                  a user will search for places and addresses only
                                  within the current map extent.
         --------------------     ----------------------------------------------------
-        location                 optional [x,y], Defines an origin point location that
+        location                 Optional [x,y]. Defines an origin point location that
                                  is used with the distance parameter to sort
                                  geocoding candidates based upon their proximity to
                                  the location.
         --------------------     ----------------------------------------------------
-        distance                 optional float, Specifies the radius of an area
+        distance                 Optional float. Specifies the radius of an area
                                  around a point location which is used to boost the
                                  rank of geocoding candidates so that candidates
                                  closest to the location are returned first. The
                                  distance value is in meters.
         --------------------     ----------------------------------------------------
-        out_sr                   optional dictionary, The spatial reference of the
+        out_sr                   Optional dictionary. The spatial reference of the
                                  x/y coordinates returned by a geocode request. This
                                  is useful for applications using a map with a spatial
                                  reference different than that of the geocode service.
         --------------------     ----------------------------------------------------
-        category                 optional string, A place or address type which can
+        category                 Optional string. A place or address type which can
                                  be used to filter find results. The parameter
                                  supports input of single category values or multiple
                                  comma-separated values. The category parameter can be
                                  passed in a request with or without the text
                                  parameter.
         --------------------     ----------------------------------------------------
-        out_fields               optional string, name of all the fields to inlcude.
+        out_fields               Optional string. Name of all the fields to inlcude.
                                  The default is "*" which means all fields.
         --------------------     ----------------------------------------------------
-        max_location             optional integer, The number of locations to be
+        max_locations            Optional integer. The number of locations to be
                                  returned from the service. The default is 20.
         --------------------     ----------------------------------------------------
         magic_key                The find operation retrieves results quicker when
@@ -172,7 +172,7 @@ class Geocoder(_GISResource):
         geocoder                 Optional, the geocoder to be used. If not specified,
                                  the active GIS's first geocoder is used.
         --------------------     ----------------------------------------------------
-        as_featureset            optional boolean, if True, the result set will be a
+        as_featureset            Optional boolean. If True, the result set will be a
                                  FeatureSet instead of a dictionary. False is default
         --------------------     ----------------------------------------------------
         match_out_of_range       Optional Boolean. Provides better spatial accuracy
@@ -1490,7 +1490,7 @@ def batch_geocode(
     =========================     ================================================================
     **Argument**                  **Description**
     -------------------------     ----------------------------------------------------------------
-    addresses                     required list of strings or dictionaries.
+    addresses                     Required list of strings or dictionaries.
                                   A list of addresses to be geocoded.
                                   For passing in the location name as a single line of text -
                                   single field batch geocoding - use a string.
@@ -1519,13 +1519,14 @@ def batch_geocode(
                                        "Region": "CA",
                                        "Postal": "92373"
                                    },{
+                                       "OBJECTID": 2,
                                        "Address": "1 World Way",
                                        "City": "Los Angeles",
                                        "Region": "CA",
                                        "Postal": "90045"
                                    }]
     -------------------------     ----------------------------------------------------------------
-    source_country                optional string, The ``source_country`` parameter is
+    source_country                Optional string, The ``source_country`` parameter is
                                   only supported by geocoders published using StreetMap
                                   Premium locators.
 
@@ -1534,19 +1535,19 @@ def batch_geocode(
                                     with ArcGIS 10.3 for Server and later versions.
 
     -------------------------     ----------------------------------------------------------------
-    category                      The ``category`` parameter is only supported by geocode
+    category                      Optional String. The ``category`` parameter is only supported by geocode
                                   services published using StreetMap Premium locators.
     -------------------------     ----------------------------------------------------------------
-    out_sr                        optional dictionary, The spatial reference of the
+    out_sr                        Optional dictionary, The spatial reference of the
                                   x/y coordinates returned by a geocode request. This
                                   is useful for applications using a map with a spatial
                                   reference different than that of the geocode service.
     -------------------------     ----------------------------------------------------------------
-    as_featureset                 optional boolean, if True, the result set is
+    as_featureset                 Optional boolean, if True, the result set is
                                   returned as a FeatureSet object, else it is a
                                   dictionary.
     -------------------------     ----------------------------------------------------------------
-    geocoder                      optional :class:`~arcgis.geocoding.Geocoder`,
+    geocoder                      Optional :class:`~arcgis.geocoding.Geocoder`,
                                   the geocoder to be used.
 
                                   .. note::

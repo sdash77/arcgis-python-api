@@ -29,6 +29,7 @@ class NotebookServer(object):
     _machine = None
     _notebook = None
     _security = None
+    _services = None
     _version = None
     _sitemanager = None
     # ----------------------------------------------------------------------
@@ -218,3 +219,16 @@ class NotebookServer(object):
     def url(self):
         """The URL of the notebook server."""
         return self._url
+
+    def services(self):
+        """
+        Provices access to managing notebook created geoprocessing tools
+
+        :return: :class:`~arcgis.gis.nb._serivces.NBServicesManager`
+        """
+        if self._services is None:
+            from arcgis.gis.nb._services import NBServicesManager
+
+            url = self._url + "/services"
+            self._services = NBServicesManager(url, self._gis)
+        return self._services
