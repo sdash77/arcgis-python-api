@@ -1714,14 +1714,14 @@ class WorkflowManager:
 
         return return_obj["tableDefinitions"]
 
-    def lookups(self, lookupType):
+    def lookups(self, lookup_type):
         """
         Returns LookUp Tables by given type
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        lookupType          Required string.
+        lookup_type         Required string. The type of lookup table stored in the workflow item.
         ===============     ====================================================================
 
         :return:
@@ -1731,20 +1731,22 @@ class WorkflowManager:
         try:
             return LookUpTable.get(
                 self._gis,
-                "{base}/lookups/{lookupType}".format(base=self._url, lookupType=type),
+                "{base}/lookups/{lookupType}".format(
+                    base=self._url, lookupType=lookup_type
+                ),
                 {"token": self._gis._con.token},
             )
         except:
             self._handle_error(sys.exc_info())
 
-    def delete_lookup(self, lookupType):
+    def delete_lookup(self, lookup_type):
         """
         Deletes a job template with the given ID
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        lookupType          Required string.
+        lookup_type         Required string. The type of lookup table stored in the workflow item.
         ===============     ====================================================================
 
         :return:
@@ -1756,7 +1758,7 @@ class WorkflowManager:
                 self._gis,
                 "{base}/lookups/{lookupType}?token={token}".format(
                     base=self._url,
-                    lookupType=type,
+                    lookupType=lookup_type,
                     item=self._item.id,
                     token=self._gis._con.token,
                 ),
@@ -1765,14 +1767,14 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def create_lookup(self, lookupType, lookups):
+    def create_lookup(self, lookup_type, lookups):
         """
         Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        lookupType          Required string. Lookup type
+        lookup_type         Required string. The type of lookup table stored in the workflow item.
         ---------------     --------------------------------------------------------------------
         lookups             Required list. List of lookups to be created / updated
         ===============     ====================================================================
@@ -1799,7 +1801,7 @@ class WorkflowManager:
         """
         try:
             url = "{base}/lookups/{lookupType}?token={token}".format(
-                base=self._url, lookupType=type, token=self._gis._con.token
+                base=self._url, lookupType=lookup_type, token=self._gis._con.token
             )
 
             post_lookup = LookUpTable({"lookups": lookups})
@@ -2935,7 +2937,7 @@ class JobTemplate(object):
         except:
             self._handle_error(sys.exc_info())
 
-    def update_automated_creation(self, adds=[], updates=[], deletes=[]):
+    def update_automated_creation(self, adds=None, updates=None, deletes=None):
         """
         Creates an automated creation
 
@@ -2978,6 +2980,13 @@ class JobTemplate(object):
             >> True  # returns true if created successfully
 
         """
+        if adds is None:
+            adds = []
+        if deletes is None:
+            deletes = []
+        if updates is None:
+            updates = []
+
         props = {"adds": adds, "updates": updates, "deletes": deletes}
         url = "{base}/automatedCreation?token={token}".format(
             base=self._url,
