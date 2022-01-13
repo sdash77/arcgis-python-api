@@ -96,7 +96,10 @@ class StoryMap(object):
                 saved_drafts = []
                 for resource in self._resources:
                     for key, val in resource.items():
-                        if key == "resource" and (re.match("draft_\d{13}.json", val) or re.match("draft.json", val)):
+                        if key == "resource" and (
+                            re.match("draft_\d{13}.json", val)
+                            or re.match("draft.json", val)
+                        ):
                             saved_drafts.append(val)
                 if len(saved_drafts) == 1:
                     # Only one draft saved
@@ -108,9 +111,9 @@ class StoryMap(object):
                     # remove draft.json because oldest one
                     if "draft.json" in saved_drafts:
                         idx = saved_drafts.index("draft.json")
-                        del saved_drafts[idx]  
+                        del saved_drafts[idx]
                     # check remaining to find most recent
-                    start = saved_drafts[0][6:19] #get only timestamp
+                    start = saved_drafts[0][6:19]  # get only timestamp
                     current = saved_drafts[0]
                     for draft in saved_drafts:
                         compare = draft[6:19]
@@ -157,7 +160,7 @@ class StoryMap(object):
                 "smstatusdraft",
                 "smversiondraft:21.43.0",
                 "smeditorapp:python-api-" + arcgis.__version__,
-                "smdraftresourceid:"+ draft,
+                "smdraftresourceid:" + draft,
             ]
         )
         # set the item properties dict to add new item to active gis
@@ -208,7 +211,7 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         height              Optional integer. The desired height to show the preview.
         ===============     ====================================================================
-           
+
         :return:
             An Iframe display of the story map if possible, else the item url is returned to be
             clicked on.
@@ -238,7 +241,7 @@ class StoryMap(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         date_type           Optional String. Set the desired date type for the story cover.
-                            
+
                             ``Values: "first-published" | "last-published" | "none"``
         ===============     ====================================================================
 
@@ -909,20 +912,22 @@ class StoryMap(object):
         """
         # Remove old draft item
         for resource in self._resources:
-            if re.match("draft_\d{13}.json", resource["resource"]) or re.match("draft.json", resource["resource"]):
+            if re.match("draft_\d{13}.json", resource["resource"]) or re.match(
+                "draft.json", resource["resource"]
+            ):
                 self._remove_resource(file=resource["resource"])
 
         # Add new draft with time in milliseconds
         draft = "draft_" + str(int(time.time() * 1000)) + ".json"
         self._add_resource(
-            resource_name=draft,
-            text=json.dumps(self._properties),
-            access="private"
+            resource_name=draft, text=json.dumps(self._properties), access="private"
         )
 
         if publish is True and (access != "private" or access != "org"):
             publish = False
-            warnings.warn("The Python API can only publish privately or to org at this time. Your story is being saved and you can publish publicly through the Story Map builder.")
+            warnings.warn(
+                "The Python API can only publish privately or to org at this time. Your story is being saved and you can publish publicly through the Story Map builder."
+            )
         # Find type keywords to use based on whether to publish or not
         if publish is True:
             # Publish mode
@@ -947,10 +952,14 @@ class StoryMap(object):
                 del keywords[idx]
             if "smstatusdraft" in keywords:
                 idx = keywords.index("smstatusdraft")
-                del keywords[idx] 
+                del keywords[idx]
             for keyword in keywords:
                 # iterate through since only know part of keyword we want to remove
-                if "smdraftresourceid" in keyword or "smpublisheddate" in keyword  or "smstatusdraft" in keyword:
+                if (
+                    "smdraftresourceid" in keyword
+                    or "smpublisheddate" in keyword
+                    or "smstatusdraft" in keyword
+                ):
                     keywords.remove(keyword)
 
             new_keywords = [
@@ -969,7 +978,7 @@ class StoryMap(object):
                 p["title"] = title
             if tags:
                 p["tags"] = tags
-            
+
             # find and set access
             sharing = access if access is not None else self._item.access
             p["access"] = sharing
@@ -1048,9 +1057,9 @@ class StoryMap(object):
     def duplicate(self, title: Optional[str] = None):
         """
         Duplicate the story. All items will be duplicated as they are. This allows you to create
-        a story template and duplicate it when you want to work with it. 
-        
-        It is highly recommended that once the duplicate is created, open it in Story Maps 
+        a story template and duplicate it when you want to work with it.
+
+        It is highly recommended that once the duplicate is created, open it in Story Maps
         builder to ensure the issue checker finds any issues before editing.
 
         ===============     ====================================================================
