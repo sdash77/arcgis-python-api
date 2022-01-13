@@ -37,6 +37,8 @@ class KubernetesAdmin(_BaseKube):
     _properties = None
     _organizations = None
     _category_schema = None
+    _jobs = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """class initializer"""
