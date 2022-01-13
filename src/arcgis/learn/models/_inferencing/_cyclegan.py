@@ -236,3 +236,6 @@ class ChildImageClassifier:
         )
 
         return cyclegan_prediction
+
+    def updatePixelsSmooth(self, tlc, shape, props, **pixelBlocks):
+        return util.update_pixels_img_trans(self, tlc, shape, props, **pixelBlocks)

@@ -24,9 +24,13 @@ try:
         from fastai.vision import Image, imagenet_stats, pil2tensor
         import PIL
     elif _LAMBDA_TEXT_CLASSIFICATION:
-        missing_classes = ["Image", "ImageList"]
-        for missing_class in missing_classes:
-            exec(f"{missing_class} = object")
+
+        class Image:
+            pass
+
+        class ImageList:
+            pass
+
     from fastai.data_block import get_files
     import torch
     import numpy as np
@@ -35,7 +39,12 @@ try:
     HAS_FASTAI = True
 except Exception:
     import_exception = traceback.format_exc()
-    pass
+
+    class Image:
+        pass
+
+    class ImageList:
+        pass
 
 
 def read_image(path, resize_to: int = None, keep_raw=False):

@@ -358,8 +358,8 @@ def trace_proximity_events(
 
 def create_buffers(
     input_layer,
-    distance=1,
-    distance_unit="Miles",
+    distance=None,
+    distance_unit=None,
     field=None,
     method="Planar",
     dissolve_option="None",
@@ -393,13 +393,13 @@ def create_buffers(
                                                         You can only enter a single distance value. The units of the
                                                         distance value are supplied by the ``distance_unit`` parameter.
 
-                                                        The default value is 1.
+                                                        The default value is 1 when `field` is None.
     ------------------------------------------------    ---------------------------------------------------------
     distance_unit (Required if distance is used)        Optional string. The linear unit to be used with the value specified in distance.
 
                                                         Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
 
-                                                        The default value is "Miles"
+                                                        The default value is "Miles" when `field` is None.
     ------------------------------------------------    ---------------------------------------------------------
     field (Required if distance not provided)           Optional string. A field on the ``input_layer`` containing a buffer distance or a field expression.
                                                         A buffer expression must begin with an equal sign (=). To learn more about buffer expressions
@@ -488,6 +488,14 @@ def create_buffers(
                                     dissolve_option='All',
                                     dissolve_fields='Date')
     """
+    if field and distance:
+        raise ValueError(
+            "Both a distance and a field cannot be specified.  Choose one and resubmit."
+        )
+    if field is None and distance is None:
+        distance = 1
+    if distance and distance_unit is None:
+        distance_unit = "Miles"
 
     input_layer = _prevent_bds_item(input_layer)
 

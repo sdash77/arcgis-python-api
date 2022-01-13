@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from torch import tensor
+import torch.nn as nn
 import torch
 import math
 from .._unet_utils import is_contiguous as is_cont
@@ -35,12 +36,22 @@ def scale_batch(
             model_info["ExtractBands"][:n_bands]
         ].reshape(1, -1, 1, 1)
     else:
-        band_min_values = np.array(normalization_stats["band_min_values"])[
-            model_info["ExtractBands"]
-        ].reshape(1, -1, 1, 1)
-        band_max_values = np.array(normalization_stats["band_max_values"])[
-            model_info["ExtractBands"]
-        ].reshape(1, -1, 1, 1)
+        if normalization_stats is None:
+            modtype = model_info.get("InferenceFunction", None)
+            if modtype == "ArcGISImageTranslation.py":
+                band_min_values = np.full((image_batch.shape[1],), 0).reshape(
+                    1, -1, 1, 1
+                )
+                band_max_values = np.full((image_batch.shape[1],), 255).reshape(
+                    1, -1, 1, 1
+                )
+        else:
+            band_min_values = np.array(normalization_stats["band_min_values"])[
+                model_info["ExtractBands"]
+            ].reshape(1, -1, 1, 1)
+            band_max_values = np.array(normalization_stats["band_max_values"])[
+                model_info["ExtractBands"]
+            ].reshape(1, -1, 1, 1)
     img_scaled = (image_batch - band_min_values) / (band_max_values - band_min_values)
     return img_scaled
 
@@ -57,6 +68,36 @@ def normalize_batch(image_batch, model_info=None, normalization_stats=None):
     img_scaled = scale_batch(image_batch, model_info)
     img_normed = (img_scaled - scaled_mean_values) / scaled_std_values
     return img_normed
+
+
+def rescale_batch(
+    image_batch, model_info, normalization_stats=None, break_extract_bands=False
+):
+    if normalization_stats is None:
+        modtype = model_info.get("InferenceFunction", None)
+        if modtype == "ArcGISImageTranslation.py":
+            min_values = np.full((image_batch.shape[1],), 0).reshape(1, -1, 1, 1)
+            max_values = np.full((image_batch.shape[1],), 255).reshape(1, -1, 1, 1)
+    else:
+        min_values = np.array(normalization_stats["band_min_values"])
+        max_values = np.array(normalization_stats["band_max_values"])
+
+        x = image_batch
+        if x.shape[1] > min_values.shape[0]:
+            res = x.shape[1] - min_values.shape[0]
+            last_val = torch.tensor([min_values[min_values.shape[0] - 1]])
+            for i in range(res):
+                min_values = np.concatenate((min_values, last_val), axis=0)
+        if x.shape[1] > max_values.shape[0]:
+            res = x.shape[1] - max_values.shape[0]
+            last_val = torch.tensor([max_values[max_values.shape[0] - 1]])
+            for i in range(res):
+                max_values = np.concatenate((max_values, last_val), axis=0)
+
+        min_values = min_values.reshape(1, -1, 1, 1)
+        max_values = max_values.reshape(1, -1, 1, 1)
+    img_rescaled = (((image_batch + 1) / 2) * (max_values - min_values)) + min_values
+    return img_rescaled
 
 
 def pred2dict(bb_np, score, cat_str, c):
@@ -347,62 +388,84 @@ def pixel_classify_superres_image(model, tiles, device):
 
 def pixel_classify_cyclegan_image(model, tiles, device, direction, model_info):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
-    num_channel = model_info.get("n_channel", None)
-    if model_info.get("IsMultispectral", False):
-        if direction == "BtoA":
-            norm_stats = model_info.get("NormalizationStats_b", None)
-        else:
-            norm_stats = model_info.get("NormalizationStats", None)
-        img_scaled = scale_batch(tiles, model_info, norm_stats)
-        img_normed = -1 + 2 * img_scaled
-        if img_normed.shape[1] < num_channel:
-            cont = []
-            for j in range(img_normed.shape[0]):
-                tile = img_normed[j, :, :, :]
-                last_tile = np.expand_dims(tile[tile.shape[0] - 1, :, :], 0)
-                res = abs(num_channel - tile.shape[0])
-                for i in range(res):
-                    tile = np.concatenate((tile, last_tile), axis=0)
-                cont.append(tile)
-            img_normed = np.stack(cont, axis=0)
+    num_channel = model_info.get("n_intput_channel", None)
+    if num_channel == None:
+        num_channel = model_info.get("n_channel", None)
+    num_channel_tar = model_info.get("n_channel", None)
+    if direction == "BtoA":
+        norm_stats_a = model_info.get("NormalizationStats_b", None)
     else:
-        img_normed = -1 + 2 * tiles
+        norm_stats_a = model_info.get("NormalizationStats", None)
+    img_scaled = scale_batch(tiles, model_info, norm_stats_a)
+    img_normed = -1 + 2 * img_scaled
+    if img_normed.shape[1] < num_channel:
+        cont = []
+        for j in range(img_normed.shape[0]):
+            tile = img_normed[j, :, :, :]
+            last_tile = np.expand_dims(tile[tile.shape[0] - 1, :, :], 0)
+            res = abs(num_channel - tile.shape[0])
+            for i in range(res):
+                tile = np.concatenate((tile, last_tile), axis=0)
+            cont.append(tile)
+        img_normed = np.stack(cont, axis=0)
+
     cyclegan_predictions = cyclegan_image(model, img_normed, device, direction)
-    cyclegan_predictions = cyclegan_predictions / 2 + 0.5
+    if direction == "BtoA":
+        norm_stats_b = model_info.get("NormalizationStats", None)
+    else:
+        norm_stats_b = model_info.get("NormalizationStats_b", None)
+    cyclegan_predictions = cyclegan_predictions.detach().cpu().numpy()
+    if num_channel_tar == None:
+        cyclegan_predictions = torch.tensor(
+            rescale_batch(cyclegan_predictions, model_info, norm_stats_b)
+        )
+    else:
+        if direction == "BtoA":
+            num_channel_tar_rev = model_info.get("n_channel_rev", None)
+            cyclegan_predictions = torch.tensor(
+                rescale_batch(cyclegan_predictions, model_info, norm_stats_b)
+            )[:, :num_channel_tar_rev, :, :]
+        else:
+            cyclegan_predictions = torch.tensor(
+                rescale_batch(cyclegan_predictions, model_info, norm_stats_b)
+            )[:, :num_channel_tar, :, :]
     return cyclegan_predictions
 
 
 def pixel_classify_pix2pix_image(model, tiles, device, model_info):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
 
-    num_chanel = model_info.get("n_channel", None)
+    num_channel = model_info.get("n_intput_channel", None)
+    if num_channel == None:
+        num_channel = model_info.get("n_channel", None)
+    num_channel_tar = model_info.get("n_channel", None)
 
-    if model_info.get("IsMultispectral", False):
-        norm_stats = model_info.get("NormalizationStats", None)
-        img_scaled = scale_batch(tiles, model_info, norm_stats)
-        img_normed = -1 + 2 * img_scaled
-        if img_normed.shape[1] < num_chanel:
-            cont = []
-            for j in range(img_normed.shape[0]):
-                tile = img_normed[j, :, :, :]
-                last_tile = np.expand_dims(tile[tile.shape[0] - 1, :, :], 0)
-                res = abs(num_chanel - tile.shape[0])
-                for i in range(res):
-                    tile = np.concatenate((tile, last_tile), axis=0)
-                cont.append(tile)
-            img_normed = np.stack(cont, axis=0)
-    else:
-        img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+    norm_stats_a = model_info.get("NormalizationStats", None)
+    img_scaled = scale_batch(tiles, model_info, norm_stats_a)
+    img_normed = -1 + 2 * img_scaled
+
+    if img_normed.shape[1] < num_channel:
+        cont = []
+        for j in range(img_normed.shape[0]):
+            tile = img_normed[j, :, :, :]
+            last_tile = np.expand_dims(tile[tile.shape[0] - 1, :, :], 0)
+            res = abs(num_channel - tile.shape[0])
+            for i in range(res):
+                tile = np.concatenate((tile, last_tile), axis=0)
+            cont.append(tile)
+        img_normed = np.stack(cont, axis=0)
 
     pix2pix_predictions = pix2pix_image(model, img_normed, device)
-    if model_info.get("IsMultispectral", False):
-        pix2pix_predictions = pix2pix_predictions / 2 + 0.5
+    norm_stats_b = model_info.get("NormalizationStats_b", None)
+    pix2pix_predictions = pix2pix_predictions.detach().cpu().numpy()
+    if num_channel_tar == None:
+        pix2pix_predictions = torch.tensor(
+            rescale_batch(pix2pix_predictions, model_info, norm_stats_b)
+        )
     else:
-        pix2pix_predictions = (
-            pix2pix_predictions
-            * torch.tensor(imagenet_stats[1]).view(1, -1, 1, 1).to(pix2pix_predictions)
-        ) + torch.tensor(imagenet_stats[0]).view(1, -1, 1, 1).to(pix2pix_predictions)
-        pix2pix_predictions = pix2pix_predictions.clamp(0, 1)
+        pix2pix_predictions = torch.tensor(
+            rescale_batch(pix2pix_predictions, model_info, norm_stats_b)
+        )[:, :num_channel_tar, :, :]
 
     return pix2pix_predictions
 
@@ -460,30 +523,256 @@ def detect_change(model, batch, device, model_info):
 
 def pixel_classify_pix2pix_hd_image(model, tiles, device, model_info):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
-    num_chanel = model_info.get("n_channel", None)
+    num_channel = model_info.get("n_intput_channel", None)
+    if num_channel == None:
+        num_channel = model_info.get("n_channel", None)
+    num_channel_tar = model_info.get("n_channel", None)
     label_nc = model_info.get("label_nc", 0)
-    if model_info.get("IsMultispectral", False):
+    if label_nc == 0:
         norm_stats = model_info.get("NormalizationStats", None)
         img_scaled = scale_batch(tiles, model_info, norm_stats)
         img_normed = -1 + 2 * img_scaled
-        if img_normed.shape[1] < num_chanel:
+        if img_normed.shape[1] < num_channel:
             cont = []
             for j in range(img_normed.shape[0]):
                 tile = img_normed[j, :, :, :]
                 last_tile = np.expand_dims(tile[tile.shape[0] - 1, :, :], 0)
-                res = abs(num_chanel - tile.shape[0])
+                res = abs(num_channel - tile.shape[0])
                 for i in range(res):
                     tile = np.concatenate((tile, last_tile), axis=0)
                 cont.append(tile)
             img_normed = np.stack(cont, axis=0)
-    elif label_nc == 0:
-        img_normed = -1 + 2 * tiles
+
+        pix2pix_predictions = pix2pix_image(model, img_normed, device, label_nc)
+        norm_stats_b = model_info.get("NormalizationStats_b", None)
+        pix2pix_predictions = pix2pix_predictions.detach().cpu().numpy()
+        if num_channel_tar == None:
+            pix2pix_predictions = torch.tensor(
+                rescale_batch(pix2pix_predictions, model_info, norm_stats_b)
+            )
+        else:
+            pix2pix_predictions = torch.tensor(
+                rescale_batch(pix2pix_predictions, model_info, norm_stats_b)
+            )[:, :num_channel_tar, :, :]
+        return pix2pix_predictions
     else:
         mask_map = model_info.get("mask_map", None)
         for i, j in enumerate(mask_map):
             tiles[tiles == j] = i
         img_normed = tiles
 
-    pix2pix_predictions = pix2pix_image(model, img_normed, device, label_nc)
-    pix2pix_predictions = pix2pix_predictions / 2 + 0.5
-    return pix2pix_predictions
+        pix2pix_predictions = pix2pix_image(model, img_normed, device, label_nc)
+        pix2pix_predictions = pix2pix_predictions / 2 + 0.5
+        return pix2pix_predictions
+
+
+# functions for test time augmentation and smooth blending for pixel classification
+
+
+def dihedral_transform(x, k):  # expects [C, H, W]
+    flips = []
+    if k & 1:
+        flips.append(1)
+    if k & 2:
+        flips.append(2)
+    if flips:
+        x = torch.flip(x, flips)
+    if k & 4:
+        x = x.transpose(1, 2)
+    return x.contiguous()
+
+
+def create_interpolation_mask(side, border, device, window_fn="bartlett"):
+    if window_fn == "bartlett":
+        window = torch.bartlett_window(side, device=device).unsqueeze(0)
+        interpolation_mask = window * window.T
+    elif window_fn == "hann":
+        window = torch.hann_window(side, device=device).unsqueeze(0)
+        interpolation_mask = window * window.T
+    else:
+        linear_mask = torch.linspace(0, 1, border, device=device).repeat(side, 1)
+        remainder_tile = torch.ones((side, side - border), device=device)
+        interp_tile = torch.cat([linear_mask, remainder_tile], dim=1)
+
+        interpolation_mask = torch.ones((side, side), device=device)
+        for i in range(4):
+            interpolation_mask = interpolation_mask * interp_tile.rot90(i)
+    return interpolation_mask
+
+
+def unfold_tensor(tensor, tile_size, stride):  # expects tensor  [1, C, H, W]
+    mask = torch.ones_like(tensor[0][0].unsqueeze(0).unsqueeze(0))
+
+    unfold = nn.Unfold(kernel_size=(tile_size, tile_size), stride=stride)
+    # Apply to mask and original image
+    mask_p = unfold(mask)
+    patches = unfold(tensor)
+
+    patches = patches.reshape(tensor.size(1), tile_size, tile_size, -1).permute(
+        3, 0, 1, 2
+    )
+    masks = mask_p.reshape(1, tile_size, tile_size, -1).permute(3, 0, 1, 2)
+    return masks, (tensor.size(2), tensor.size(3)), patches
+
+
+def fold_tensor(input_tensor, masks, t_size, tile_size, stride):
+    input_tensor_permuted = (
+        input_tensor.permute(1, 2, 3, 0).reshape(-1, input_tensor.size(0)).unsqueeze(0)
+    )
+    mask_tt = masks.permute(1, 2, 3, 0).reshape(-1, masks.size(0)).unsqueeze(0)
+
+    fold = nn.Fold(
+        output_size=(t_size[0], t_size[1]),
+        kernel_size=(tile_size, tile_size),
+        stride=stride,
+    )
+    output_tensor = fold(input_tensor_permuted) / fold(mask_tt)
+    return output_tensor
+
+
+def split_predict_interpolate(child_image_classifier, normalized_image_tensor):
+    kernel_size = child_image_classifier.tytx
+    stride = kernel_size - (2 * child_image_classifier.padding)
+
+    # Split image into overlapping tiles
+    masks, t_size, patches = unfold_tensor(normalized_image_tensor, kernel_size, stride)
+
+    with torch.no_grad():
+        output = child_image_classifier.model(patches)
+
+    interpolation_mask = create_interpolation_mask(
+        kernel_size, 0, child_image_classifier.device, "hann"
+    )
+    output = output * interpolation_mask
+    masks = masks * interpolation_mask
+
+    # merge predictions from overlapping chips
+    int_surface = fold_tensor(output, masks, t_size, kernel_size, stride)
+
+    return int_surface
+
+
+def tta_predict(child_image_classifier, normalized_image_tensor, test_time_aug=True):
+    all_activations = []
+
+    transforms = [0]
+    if test_time_aug:
+        if child_image_classifier.json_info["ImageSpaceUsed"] == "MAP_SPACE":
+            transforms = list(range(8))
+        else:
+            transforms = [
+                0,
+                2,
+            ]  # no vertical flips for pixel space (oriented imagery)
+
+    for k in transforms:
+        flipped_image_tensor = dihedral_transform(normalized_image_tensor[0], k)
+        int_surface = split_predict_interpolate(
+            child_image_classifier, flipped_image_tensor.unsqueeze(0)
+        )
+        corrected_activation = dihedral_transform(int_surface[0], k)
+
+        if k in [5, 6]:
+            corrected_activation = dihedral_transform(int_surface[0], k).rot90(
+                2, [1, 2]
+            )
+
+        all_activations.append(corrected_activation)
+
+    all_activations = torch.stack(all_activations)
+
+    return all_activations
+
+
+def update_pixels_tta(
+    child_image_classifier, tlc, shape, props, **pixelBlocks
+):  # 8 x 224 x 224 x 3
+    model_info = child_image_classifier.json_info
+
+    class_values = [clas["Value"] for clas in model_info["Classes"]]
+    is_contiguous = is_cont([0] + class_values)
+
+    if not is_contiguous:
+        pixel_mapping = [0] + class_values
+        idx2pixel = {i: d for i, d in enumerate(pixel_mapping)}
+
+    input_image = pixelBlocks["raster_pixels"].astype(np.float32)
+    input_image_tensor = (
+        torch.tensor(input_image).to(child_image_classifier.device).float()
+    )
+
+    if "NormalizationStats" in model_info:
+        normalized_image_tensor = normalize_batch(input_image_tensor.cpu(), model_info)
+        normalized_image_tensor = normalized_image_tensor.float().to(
+            input_image_tensor.device
+        )
+    else:
+        from torchvision import transforms
+
+        normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        normalized_image_tensor = normalize(input_image_tensor / 255.0).unsqueeze(0)
+
+    all_activations = tta_predict(
+        child_image_classifier,
+        normalized_image_tensor,
+        test_time_aug=child_image_classifier.use_tta,
+    )
+    # probability of each class in 2nd dimension
+    all_activations = all_activations.mean(dim=0, keepdim=True)
+    softmax_surface = all_activations.softmax(dim=1)
+
+    ignore_mapped_class = model_info.get("ignore_mapped_class", [])
+
+    for k in ignore_mapped_class:
+        softmax_surface[:, k] = -1
+
+    if not child_image_classifier.predict_background:
+        softmax_surface[:, 0] = -1
+
+    result = softmax_surface.max(dim=1)[1]
+
+    if not is_contiguous:
+        result = remap(result, idx2pixel)
+
+    pad = child_image_classifier.padding
+
+    return result.cpu().numpy().astype("i4")[:, pad : -pad or None, pad : -pad or None]
+
+
+def update_pixels_img_trans(self, tlc, shape, props, **pixelBlocks):
+    kernel_size = self.json_info["ImageHeight"]
+    stride = kernel_size - (2 * self.padding)
+
+    model_name = self.json_info.get("ModelName")
+
+    pixelblock = pixelBlocks["raster_pixels"].astype(np.float32)
+    pixelblock_image_tensor = tensor(pixelblock).float().unsqueeze(0).cpu()
+
+    masks, t_size, patches = unfold_tensor(pixelblock_image_tensor, kernel_size, stride)
+
+    if model_name == "Pix2PixHD":
+        prediction = pixel_classify_pix2pix_hd_image(
+            self.model, patches, self.device, model_info=self.json_info
+        )
+    if model_name == "CycleGAN":
+        prediction = pixel_classify_cyclegan_image(
+            self.model, patches, self.device, self.direction, model_info=self.json_info
+        )
+    if model_name == "Pix2Pix":
+        prediction = pixel_classify_pix2pix_image(
+            self.model, patches, self.device, model_info=self.json_info
+        )
+
+    interpolation_mask = create_interpolation_mask(kernel_size, 0, self.device, "hann")
+
+    output = (tensor(prediction).to(self.device)) * interpolation_mask
+    masks_inp = (tensor(masks).to(self.device)) * interpolation_mask
+
+    merged_preds = fold_tensor(output, masks_inp, t_size, kernel_size, stride)
+
+    return merged_preds.cpu().numpy()[
+        0,
+        :,
+        self.padding : -self.padding or None,
+        self.padding : -self.padding or None,
+    ]

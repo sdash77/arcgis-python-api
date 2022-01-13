@@ -146,7 +146,9 @@ class Pix2Pix(ArcGISModel):
                     path=emd_path.parent, loss_func=None, c=2, chip_size=resize_to
                 )
 
-            data.n_channel = emd["n_channel"]
+            data.n_channel = emd.get("n_intput_channel", None)
+            if data.n_channel == None:
+                data.n_channel = emd.get("n_channel", None)
             data.emd_path = emd_path
             data.emd = emd
             data._is_empty = True
@@ -174,23 +176,26 @@ class Pix2Pix(ArcGISModel):
                 "InferenceFunction"
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
         _emd_template["ModelType"] = "Pix2Pix"
-        _emd_template["n_channel"] = self._data.n_channel
-        if self._data._is_multispectral:
-            _emd_template["NormalizationStats_b"] = {
-                "band_min_values": self._data._band_min_values_b,
-                "band_max_values": self._data._band_max_values_b,
-                "band_mean_values": self._data._band_mean_values_b,
-                "band_std_values": self._data._band_std_values_b,
-                "scaled_min_values": self._data._scaled_min_values_b,
-                "scaled_max_values": self._data._scaled_max_values_b,
-                "scaled_mean_values": self._data._scaled_mean_values_b,
-                "scaled_std_values": self._data._scaled_std_values_b,
-            }
-            for _stat in _emd_template["NormalizationStats_b"]:
-                if _emd_template["NormalizationStats_b"][_stat] is not None:
-                    _emd_template["NormalizationStats_b"][_stat] = _emd_template[
-                        "NormalizationStats_b"
-                    ][_stat].tolist()
+        _emd_template["n_intput_channel"] = self._data.n_channel
+        # if self._data._is_multispectral:
+        _emd_template["NormalizationStats_b"] = {
+            "band_min_values": self._data._band_min_values_b,
+            "band_max_values": self._data._band_max_values_b,
+            "band_mean_values": self._data._band_mean_values_b,
+            "band_std_values": self._data._band_std_values_b,
+            "scaled_min_values": self._data._scaled_min_values_b,
+            "scaled_max_values": self._data._scaled_max_values_b,
+            "scaled_mean_values": self._data._scaled_mean_values_b,
+            "scaled_std_values": self._data._scaled_std_values_b,
+        }
+        for _stat in _emd_template["NormalizationStats_b"]:
+            if _emd_template["NormalizationStats_b"][_stat] is not None:
+                _emd_template["NormalizationStats_b"][_stat] = _emd_template[
+                    "NormalizationStats_b"
+                ][_stat].tolist()
+        _emd_template["n_channel"] = len(
+            _emd_template["NormalizationStats_b"]["band_min_values"]
+        )
         return _emd_template
 
     def show_results(self, rows=2, **kwargs):
