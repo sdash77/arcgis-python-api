@@ -85,13 +85,14 @@ def setuposenviron():
 data = {
     "ssd": {
         "model_name": "ssd",
-        "datapath": "ssd_retina_data",
+        "datapath": "100_cracks_data",
         "datapath_ms": "ssd_retina_yolo_fasterrcnn_data",
         "model": SingleShotDetector,
         "model_test": "ssd_test",
         "prepare_data": {
-            "path": os.path.join(data_folder, "ssd_retina_data"),
+            "path": os.path.join(data_folder, "100_cracks_data"),
             "batch_size": 2,
+            "dataset_type":"PASCAL_VOC_rectangles",
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
@@ -325,11 +326,12 @@ data = {
     },
     "fc": {
         "model_name": "featureclassifier",
-        "datapath": "fc_data",
+        "datapath": "featureClassifier",
         "datapath_ms": "fc_data",
         "model": FeatureClassifier,
         "model_test": "fc_test",
-        "prepare_data": {"path": os.path.join(data_folder, "fc_data"), "batch_size": 2},
+        "prepare_data": {"path": os.path.join(data_folder, "featureClassifier"),
+         "batch_size": 2, "dataset_type":"Imagenet"},
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "fc_data"),
             "batch_size": 2,

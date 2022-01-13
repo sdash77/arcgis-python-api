@@ -1002,9 +1002,11 @@ class ParcelFabricManager(object):
         self, source_record, target_record, delete_source_record
     ):
         """
-        Assigns the specified parcel features to the specified record. If
-        parcel polygons are assigned, the record polygon will be updated to
-        match the cumulative geometry of all the parcels associated to it.
+        Reassigns all parcel features in the specified source record to the specified target record.
+        The source record will become empty and will be associated to no parcel features. The record
+        polygon of the target record will be updated to match the cumulative geometry of all the
+        parcels associated to it.
+
         The Created By Record or Retired By Record attribute field of the
         parcel features is updated with the global ID of the assigned
         record.
@@ -1012,21 +1014,22 @@ class ParcelFabricManager(object):
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
-        source_record            Required List. The parcel features to assign to the specified record.
-                                    Can be parcels, parcel polygons, parcel points, and parcel lines.
+        source_record            Required String. GlobalID representing the record containing the
+                                 parcel features to be reassigned.
 
 
-                                    :Syntax: ``parcelFeatures=[{"id":"<guid>","layerId":"<layerID>"},{...}]``
+                                    :Syntax: ``source_record=<guid>``
 
         --------------------     --------------------------------------------------------------------
-        target_record            Required String. The record that will be assigned to the specified
-                                    parcel features.
-        --------------------     --------------------------------------------------------------------
-        delete_source_record     Required String. Represents the record field to update on the parcel
-                                    features. Either the Created By Record or Retired By Record field is
-                                    to be updated with the global ID of the assigned record.
+        target_record            Required String. GlobalID representing the target record to which
+                                 the parcel features will be reassigned.
 
-                                    Allowed Values: `CreatedByRecord` or `RetiredByRecord`
+
+                                    :Syntax: ``source_record=<guid>``
+
+        --------------------     --------------------------------------------------------------------
+        delete_source_record     Required Bool. Parameter indicating whether to delete the original
+                                 source record.
         ====================     ====================================================================
 
         :returns: Boolean

@@ -5,13 +5,13 @@ import sys
 import math
 import os
 from pathlib import Path
+import traceback
 
 
 import arcgis
 from arcgis.features import FeatureLayer
 
-HAS_FASTAI = True
-HAS_SHAP = True
+
 try:
     from fastai.tabular import TabularList
     from fastai.tabular import TabularDataBunch
@@ -21,14 +21,14 @@ try:
     from .._utils.TSData import TimeSeriesList, To3dTensor
     from fastai.data_block import DatasetType
     import torch
+    import pandas as pd
+
+    HAS_FASTAI = True
+
 except Exception as e:
+    import_trace = traceback.format_exc()
     HAS_FASTAI = False
 
-try:
-    import shap
-    import pandas as pd
-except:
-    HAS_SHAP = False
 
 HAS_NUMPY = True
 try:
@@ -1062,16 +1062,19 @@ class TabularDataObject(object):
                     else:
                         continuous_variables.append(field[1])
 
-        return dataframe, {
-            "dependent_variable": dependent_variable,
-            "categorical_variables": categorical_variables
-            if categorical_variables
-            else [],
-            "continuous_variables": continuous_variables
-            if continuous_variables
-            else [],
-            "index_data": index_data,
-        }
+        return (
+            dataframe,
+            {
+                "dependent_variable": dependent_variable,
+                "categorical_variables": categorical_variables
+                if categorical_variables
+                else [],
+                "continuous_variables": continuous_variables
+                if continuous_variables
+                else [],
+                "index_data": index_data,
+            },
+        )
 
     @staticmethod
     def _process_layer(
@@ -1161,9 +1164,10 @@ class TabularDataObject(object):
                             value = raster_value[0][0]
                         elif isinstance(shape, arcgis.geometry._types.Polygon):
                             xmin, ymin, xmax, ymax = shape.extent
-                            start_x, start_y = xmin + (
-                                raster.mean_cell_width / 2
-                            ), ymin + (raster.mean_cell_height / 2)
+                            start_x, start_y = (
+                                xmin + (raster.mean_cell_width / 2),
+                                ymin + (raster.mean_cell_height / 2),
+                            )
                             values = []
                             while start_y < ymax:
                                 while start_x < xmax:
@@ -1534,6 +1538,10 @@ def explain_prediction(
 def show_local_interpretation(
     model, processed_df, index=0, random_index=False, method="Tree"
 ):
+    try:
+        import shap
+    except:
+        raise Exception(traceback.format_exc())
     feature_variables = (
         model._data._categorical_variables + model._data._continuous_variables
     )
@@ -1694,6 +1702,11 @@ def show_local_interpretation(
 
 
 def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
+
+    try:
+        import shap
+    except:
+        raise Exception(traceback.format_exc())
 
     # explainer = shap.TreeExplainer(model._model)
     if hasattr(model._data, "_training_indexes"):

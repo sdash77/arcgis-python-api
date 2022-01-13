@@ -139,10 +139,12 @@ class Connection(object):
         trust_env = T/F if to ignore netrc files
         legacy boolean. If True the token will be appended to the URL for GET and in the FORM POST.
         timeout:int=600
+        use_gen_token = boolean - Uses the GenTokenAuth over EsriBuiltInAuth
 
         """
         from arcgis.gis import GIS
 
+        self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
         self._proxy = kwargs.pop("proxy", None)
         self._timeout = kwargs.pop("timeout", 600)
@@ -328,30 +330,32 @@ class Connection(object):
             cert = self._cert_file
         else:
             cert = None
-        s = requests.Session()
-        s.cert = cert
-        s.verify = self._verify_cert
-        s.trust_env = True
-        if self._custom_adapter:
-            for k, v in self._custom_adapter.items():
-                s.mount(k, v)
-        if self._custom_auth:
-            s.auth = self._custom_auth
-        parsed = self._parsed(url)
-        root = fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
-        params = {"f": "json"}
-        results = []
-        for pt in ["/info", "/rest/info", "/sharing/rest/info", "/rest/services"]:
-            try:
+        with requests.Session() as s:
+            s.cert = cert
+            s.verify = self._verify_cert
+            s.trust_env = True
+            if self._custom_adapter:
+                for k, v in self._custom_adapter.items():
+                    s.mount(k, v)
+            if self._custom_auth:
+                s.auth = self._custom_auth
+            parsed = self._parsed(url)
+            root = (
+                fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+            )
+            params = {"f": "json"}
+            results = []
+            for pt in ["/info", "/rest/info", "/sharing/rest/info", "/rest/services"]:
+                try:
 
-                www_auth = s.get(
-                    root + pt,
-                    params=params,
-                    verify=self._verify_cert,
-                ).headers.get("www-authenticate", "")
-                results.append(www_auth)
-            except:
-                results.append("")
+                    www_auth = s.get(
+                        root + pt,
+                        params=params,
+                        verify=self._verify_cert,
+                    ).headers.get("www-authenticate", "")
+                    results.append(www_auth)
+                except:
+                    results.append("")
         return list(set(results))
 
     # ----------------------------------------------------------------------
@@ -502,16 +506,27 @@ class Connection(object):
                     legacy=self.legacy,
                 )
             else:
-
-                self._session.auth = EsriBuiltInAuth(
-                    url=self._baseurl,
-                    username=self._username,
-                    password=self._password,
-                    expiration=self._timeout,
-                    legacy=False,
-                    verify_cert=self._verify_cert,
-                    referer=self._referer,
-                )
+                if self._use_gen_token:
+                    self._session.auth = EsriGenTokenAuth(
+                        token_url=self._token_url,
+                        referer=self._referer,
+                        username=self._username,
+                        password=self._password,
+                        portal_auth=None,
+                        time_out=1440,
+                        verify_cert=self._verify_cert,
+                        legacy=self.legacy,
+                    )
+                else:
+                    self._session.auth = EsriBuiltInAuth(
+                        url=self._baseurl,
+                        username=self._username,
+                        password=self._password,
+                        expiration=self._timeout,
+                        legacy=False,
+                        verify_cert=self._verify_cert,
+                        referer=self._referer,
+                    )
         elif self._auth.lower() == "user_token":
             self._session.auth = EsriUserTokenAuth(
                 token=self._token, referer=self._referer, verify_cert=self._verify_cert
@@ -636,6 +651,7 @@ class Connection(object):
                 cert = (self._cert_file, self._key_file)
             else:
                 cert = None
+
             resp = self._session.get(
                 url=url, params=params, cert=cert, verify=self._verify_cert
             )
@@ -1132,11 +1148,24 @@ class Connection(object):
                         )
             elif isinstance(files, (list, tuple)):
                 for key, filePath, fileName in files:
-                    if isinstance(fileName, str):
+                    import io
+
+                    if (
+                        isinstance(fileName, str)
+                        and isinstance(filePath, (io.StringIO, io.BytesIO)) == False
+                    ):
                         fields[key] = (
                             fileName,
                             open(filePath, "rb"),
                             mimetypes.guess_type(filePath)[0],
+                        )
+                    elif isinstance(fileName, str) and isinstance(
+                        filePath, (io.StringIO, io.BytesIO)
+                    ):
+                        fields[key] = (
+                            fileName,
+                            filePath,
+                            None,
                         )
                     else:
                         fields[key] = v
