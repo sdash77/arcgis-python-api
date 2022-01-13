@@ -2142,14 +2142,18 @@ class Sidecar(object):
         sidecar_tree = [self.node]
         for slide in self._slides:
             narrative_panel = self._story._properties["nodes"][slide]["children"][0]
-            text = self._story._properties["nodes"][narrative_panel]["children"]
+            text = (
+                self._story._properties["nodes"][narrative_panel]["children"][0]
+                if "children" in self._story._properties["nodes"][narrative_panel]
+                else ""
+            )
             media_item = self._story._properties["nodes"][slide]["children"][1]
             sidecar_tree.append(
                 {
                     "Slide: "
                     + slide: [
                         "Narrative Panel: " + narrative_panel,
-                        "Text: " + text[0],
+                        "Text: " + text,
                         "Media Item: " + media_item,
                     ]
                 }
@@ -2247,7 +2251,7 @@ class Sidecar(object):
             if media_item:
                 self._story._delete(media_item)
                 self._story._properties["nodes"][slide]["children"].pop(1)
-            self._story._properties["nodes"][slide].insert(1, content.node)
+            self._story._properties["nodes"][slide]["children"].insert(1, content.node)
 
     # ----------------------------------------------------------------------
     def remove_slide(self, slide: str):
