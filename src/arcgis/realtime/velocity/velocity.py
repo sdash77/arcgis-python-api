@@ -1,3 +1,5 @@
+from arcgis import GIS
+
 from .bigdata_analytics_manager import BigDataAnalyticsManager
 from .feeds_manager import FeedsManager
 from .realtime_analytics_manager import RealTimeAnalyticsManager
@@ -36,6 +38,7 @@ class Velocity:
         velocity
 
     """
+
     _gis = None
     _url = None
     _subinfo = None
@@ -47,7 +50,7 @@ class Velocity:
     _velocity = None
     _util = None
 
-    def __init__(self, url, gis):
+    def __init__(self, url: str, gis: GIS):
         self._gis = gis
         self._url = url
         # Optional may set gis and _url to Velocity if we need to access these
@@ -58,7 +61,7 @@ class Velocity:
         Velocity._util = _Util(gis, url)
 
     @property
-    def feeds(self):
+    def feeds(self) -> FeedsManager:
         """
         Provides access to the resource manager for managing configured Feeds with ArcGIS Velocity.
 
@@ -77,7 +80,7 @@ class Velocity:
         return self._feeds
 
     @property
-    def realtime_analytics(self):
+    def realtime_analytics(self) -> RealTimeAnalyticsManager:
         """
          Provides access to  the resource manager for managing configured Real-time analytics tasks with ArcGIS Velocity.
 
@@ -96,16 +99,14 @@ class Velocity:
             )
         return self._realtime_analytics
 
-        
-
     @property
-    def bigdata_analytics(self):
+    def bigdata_analytics(self) -> BigDataAnalyticsManager:
         """
-         Provides access to the resource manager for managing configured Big data analytics tasks with ArcGIS Velocity.
+        Provides access to the resource manager for managing configured Big data analytics tasks with ArcGIS Velocity.
 
-         :return: :class:`~arcgis.realtime.velocity.BigDataAnalyticsManager`
+        :return: :class:`~arcgis.realtime.velocity.BigDataAnalyticsManager`
 
-         .. code-block:: python
+        .. code-block:: python
 
             # Get instance of bigdata_analytics from `velocity`:
 
@@ -118,5 +119,3 @@ class Velocity:
                 url=self._url, gis=self._gis
             )
         return self._bigdata_analytics
-
-        

@@ -1,3 +1,7 @@
+from typing import Optional, Dict, Union, List
+
+from arcgis import GIS
+
 from ._bigdata_analytics import BigDataAnalytics
 from ._util import _Util
 import logging
@@ -22,17 +26,16 @@ class BigDataAnalyticsManager:
     _gis = None
     _util = None
 
-    def __init__(self, url, gis):
+    def __init__(self, url: str, gis: GIS):
         self._gis = gis
 
         self._util = _Util(gis, url)
 
-    # ----------------------------------------------------------------------
     @property
-    def items(self):
+    def items(self) -> List[BigDataAnalytics]:
         """
         Get all big data analytics items
-        
+
         :return: returns a collection of all configured Big Data Analytics items
 
         .. code-block:: python
@@ -60,8 +63,7 @@ class BigDataAnalyticsManager:
                 f"Error retrieving Big-data Analytic items. Velocity response: ${all_bigdata_analytics_response}"
             )
 
-    # ----------------------------------------------------------------------
-    def get(self, id):
+    def get(self, id) -> BigDataAnalytics:
         """
         Get big data analytics by id
 
@@ -79,7 +81,7 @@ class BigDataAnalyticsManager:
             # Method: <item>.get(id)
 
             sample_bigdata_task = bigdata_analytics.get("id")
-            
+
         """
         bigdata_analytics_item = self._util._get("analytics/bigdata", id)
         return BigDataAnalytics(self._gis, self._util, bigdata_analytics_item)

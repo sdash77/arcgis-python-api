@@ -1,3 +1,6 @@
+from arcgis import GIS
+from typing import Optional, Dict, Union, List
+
 from ._realtime_analytics import RealTimeAnalytics
 from ._util import _Util
 import logging
@@ -22,14 +25,13 @@ class RealTimeAnalyticsManager:
     _gis = None
     _util = None
 
-    def __init__(self, url, gis):
+    def __init__(self, url: str, gis: GIS):
         self._gis = gis
 
         self._util = _Util(gis, url)
 
-    # ----------------------------------------------------------------------
     @property
-    def items(self):
+    def items(self) -> List[RealTimeAnalytics]:
         """
         Get all real-time analytics items.
 
@@ -62,8 +64,7 @@ class RealTimeAnalyticsManager:
                 f"Error retrieving Real-time analytic items. Velocity response: ${all_realtime_analytics_response}"
             )
 
-    # ----------------------------------------------------------------------
-    def get(self, id):
+    def get(self, id) -> RealTimeAnalytics:
         """
         Get real-time analytics by id
 

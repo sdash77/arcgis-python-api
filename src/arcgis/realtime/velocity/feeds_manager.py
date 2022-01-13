@@ -1,3 +1,7 @@
+from typing import Optional, Dict, Union, List
+
+from arcgis import GIS
+
 from ._feed import Feed
 from ._util import _Util
 import logging
@@ -16,18 +20,18 @@ class FeedsManager:
     ------------------     --------------------------------------------------------------------
     gis                    an authenticated :class:`arcigs.gis.GIS` object.
     ==================     ====================================================================
-    
+
     """
+
     _gis = None
     _util = None
 
-    def __init__(self, url, gis):
+    def __init__(self, url: str, gis: GIS):
         self._gis = gis
         self._util = _Util(gis, url)
 
-    # ----------------------------------------------------------------------
     @property
-    def items(self):
+    def items(self) -> List[Feed]:
         """
         Get all Feeds
 
@@ -55,8 +59,7 @@ class FeedsManager:
                 f"Error retrieving Feed items. Velocity response: ${all_feeds_response}"
             )
 
-    # ----------------------------------------------------------------------
-    def get(self, id):
+    def get(self, id) -> Feed:
         """
         Get Feed by id
 
@@ -69,18 +72,17 @@ class FeedsManager:
         :return: endpoint response of feed for the given id and label.
 
         .. code-block:: python
-        
+
             # Get feed by id
             # Method: <item>.get(id)
-            
+
             sample_feed = feeds.get("id")
 
         """
         feed_item = self._util._get("feed", id)
         return Feed(self._gis, self._util, feed_item)
 
-    # ----------------------------------------------------------------------
-    def create(self, feed=None):
+    def create(self, feed=None) -> Feed:
         """
         Creates a new feed configuration
 
@@ -102,7 +104,7 @@ class FeedsManager:
             from arcgis.realtime.velocity.feeds_manager import Feed
 
             gis = GIS(
-                url="https://url.link", 
+                url="https://url.link",
                 username="user_name",
                 password="user_password",
             )
@@ -133,7 +135,7 @@ class FeedsManager:
             extent = {
                 "spatialReference": {
                     "latestWkid": 3857,
-                    "wkid": 102100 
+                    "wkid": 102100
                 },
                 "xmin": "xmin",
                 "ymin": "ymin",

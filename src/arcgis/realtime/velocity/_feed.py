@@ -1,5 +1,7 @@
+from arcgis import GIS
+from typing import Optional, Dict, Union, List
 from ._task import Task
-
+from ._util import _Util
 
 class Feed(Task):
     """
@@ -11,7 +13,7 @@ class Feed(Task):
     _util = None
     _item = None
 
-    def __init__(self, gis, util, item=None):
+    def __init__(self, gis: GIS, util: _Util, item: Optional[Dict] = None):
         self._gis = gis
         self._util = util
         self._item = item
@@ -26,7 +28,7 @@ class Feed(Task):
         )
 
     # ----------------------------------------------------------------------
-    def start(self):
+    def start(self) -> Dict:
         """
         Start the Feed for the given id
 
@@ -44,7 +46,7 @@ class Feed(Task):
         return self._util._start("feed", self._id)
 
     # ----------------------------------------------------------------------
-    def stop(self):
+    def stop(self) -> Dict:
         """
         Stop the Feed for the given id
         Return True if the Feed was successfully stopped.
@@ -64,7 +66,7 @@ class Feed(Task):
 
     # ----------------------------------------------------------------------
     @property
-    def status(self):
+    def status(self) -> Dict:
         """
         Get the status of the running Feed for the given id
         :return: response of Feed status
@@ -83,7 +85,7 @@ class Feed(Task):
 
     # ----------------------------------------------------------------------
     @property
-    def metrics(self):
+    def metrics(self) -> Dict:
         """
         Get the metrics of the running Feed for the given id
 
@@ -101,7 +103,7 @@ class Feed(Task):
         return self._util._metrics("feed/metrics", self._id)
 
     # ----------------------------------------------------------------------
-    def delete(self):
+    def delete(self) -> bool:
         """
         Deletes an existing feed instance
 

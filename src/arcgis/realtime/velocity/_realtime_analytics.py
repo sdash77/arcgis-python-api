@@ -1,5 +1,7 @@
+from arcgis import GIS
+from typing import Optional, Dict, Union, List
 from ._task import Task
-
+from ._util import _Util
 
 class RealTimeAnalytics(Task):
     """
@@ -12,7 +14,7 @@ class RealTimeAnalytics(Task):
     _util = None
     _item = None
 
-    def __init__(self, gis, util, item=None):
+    def __init__(self, gis: GIS, util: _Util, item: Optional[Dict] = None):
         self._gis = gis
         self._util = util
 
@@ -29,7 +31,7 @@ class RealTimeAnalytics(Task):
         )
 
     # ----------------------------------------------------------------------
-    def start(self):
+    def start(self) -> Dict:
         """
         Start the Real-Time Analytics for the given id
 
@@ -47,7 +49,7 @@ class RealTimeAnalytics(Task):
         return self._util._start("analytics/realtime", self._id)
 
     # ----------------------------------------------------------------------
-    def stop(self):
+    def stop(self) -> Dict:
         """
         Stop the Real-Time Analytics for the given id
         Return True if the the Real-Time Analytics was successfully stopped.
@@ -67,7 +69,7 @@ class RealTimeAnalytics(Task):
 
     # ----------------------------------------------------------------------
     @property
-    def status(self):
+    def status(self) -> Dict:
         """
         Get the status of the running Real-Time Analytics for the given id
 
@@ -87,7 +89,7 @@ class RealTimeAnalytics(Task):
 
     # ----------------------------------------------------------------------
     @property
-    def metrics(self):
+    def metrics(self) -> Dict:
         """
         Get the metrics of the running Real-Time Analytics for the given id
 
@@ -106,7 +108,7 @@ class RealTimeAnalytics(Task):
         return self._util._metrics("analytics/realtime/metrics", self._id)
 
     # ----------------------------------------------------------------------
-    def delete(self):
+    def delete(self) -> bool:
         """
         Deletes an existing Real-Time Analytics task instance
 
