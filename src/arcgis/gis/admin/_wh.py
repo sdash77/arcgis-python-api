@@ -120,6 +120,7 @@ class WebhookManager(object):
         number_of_failures: int = 5,
         days_in_past: int = 5,
         secret: Optional[str] = None,
+        properties: Optional[dict] = None,
     ):
         """
         Creates a WebHook to monitor REST endpoints and report activities
@@ -215,6 +216,8 @@ class WebhookManager(object):
         ---------------------------------  -------------------------------------------------------------------------------
         secret                             Optional String. Add a Secret to your payload that can be used to authenticate
                                            the message on your receiver.
+        ---------------------------------  -------------------------------------------------------------------------------
+        properties                         Optional Dict. At 10.9.1+ users can provide additional configuration properties.
         =================================  ===============================================================================
 
         :returns a :class:`WebHook<arcgis.gis.admin.Webhook>` instance
@@ -239,15 +242,20 @@ class WebhookManager(object):
         if secret is None:
             secret = ""
         purl = "%s/createWebhook" % self._url
+        config = {
+            "deactivationPolicy": {
+                "numberOfFailures": number_of_failures,
+                "daysInPast": days_in_past,
+            }
+        }
+        if properties:
+            config["properties"] = properties
         params = {
             "f": "json",
             "name": name,
             "url": url,
             "secret": secret,
-            "configuration": {
-                "numberOfFailures": number_of_failures,
-                "daysInPast": days_in_past,
-            },
+            "config": config,
         }
         if str(events).lower() == "all":
             params["changes"] = "allChanges"

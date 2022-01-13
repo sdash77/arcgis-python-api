@@ -482,7 +482,7 @@ def _determine_current_os():
 def _apply_build_number_to_meta_yaml(build_number: int):
     meta_yaml = {}
     with open(META_YAML_FILE_PATH, "r") as f:
-        meta_yaml = yaml.load(f)
+        meta_yaml = yaml.load(f, Loader=yaml.FullLoader)
         meta_yaml["build"]["number"] = str(build_number)
     with open(META_YAML_FILE_PATH, "w") as f:
         yaml.dump(meta_yaml, f, default_flow_style=False, explicit_start=True)

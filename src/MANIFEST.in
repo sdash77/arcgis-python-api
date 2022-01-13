@@ -3,3 +3,5 @@ prune arcgis/widgets/js
 include arcgis/widgets/js/dist/arcgis-map-ipywidget.js
 include arcgis/widgets/js/dist/arcgis-map-ipywidget.js.map
 include arcgis/widgets/js/dist/extension.js
+recursive-include module *.pyd
+recursive-include module *.so

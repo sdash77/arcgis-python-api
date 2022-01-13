@@ -2,6 +2,7 @@
 This contains an API to work with and manage the Kubernetes Sharing API
 """
 from __future__ import annotations
+import io
 import os
 import copy
 import json
@@ -1426,12 +1427,27 @@ class KbertnetesPy(object):
         # Build the files list (tuples)
         files = []
         if data:
-            if _is_http_url(data):
+            if isinstance(data, (io.BytesIO, io.StringIO)) == False and _is_http_url(
+                data
+            ):
                 data = request.urlretrieve(data)[0]
-            else:
+            elif isinstance(data, (io.BytesIO, io.StringIO)) == False:
                 if not os.path.isfile(os.path.abspath(data)):
                     raise RuntimeError("File(" + data + ") not found.")
-            files.append(("file", data, os.path.basename(data)))
+            if isinstance(data, (io.BytesIO, io.StringIO)):
+
+                fn = item_properties.get("fileName", None)
+                if fn is None:
+                    raise ValueError(
+                        (
+                            "When using BytesIO or StringIO, a file name must be given in "
+                            "the item_properties as item_properties['fileName'] = 'mydata.<extension>'"
+                        )
+                    )
+                data.seek(0)
+                files.append(("file", data, fn))
+            else:
+                files.append(("file", data, os.path.basename(data)))
         if metadata:
             if _is_http_url(metadata):
                 metadata = request.urlretrieve(metadata)[0]
@@ -1919,8 +1935,11 @@ class KbertnetesPy(object):
         if data:
             if isinstance(data, dict):
                 postdata["text"] = data  # json.dumps(data)
+            elif isinstance(data, (io.BytesIO, io.StringIO)):
+                files.append(("file", data, item_properties.get("fileName", None)))
             elif _is_http_url(data):
                 data = request.urlretrieve(data)[0]
+
             elif isinstance(data, str) and (len(data) < 32767) and os.path.isfile(data):
                 files.append(("file", data, os.path.basename(data)))
             else:
