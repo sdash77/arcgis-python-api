@@ -42,7 +42,12 @@ import warnings
 logger = logging.getLogger()
 
 try:
-    from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
+    from torch.utils.data import (
+        DataLoader,
+        Dataset,
+        SubsetRandomSampler,
+        SequentialSampler,
+    )
     import torch.nn.functional as F
     import torch
     import numpy as np
@@ -539,6 +544,7 @@ class PointCloudDataset(Dataset):
 
     def __getitem__(self, i, return_scaled=False, add_centers=False):
 
+        tile_index = i
         tile = self.tiles[i]
         read_file = self.h5files[tile[0]]
 
@@ -588,6 +594,27 @@ class PointCloudDataset(Dataset):
                     torch.tensor(rescaled_xyz).float(), self.max_point, to_float=True
                 )[0]
             ]
+
+        if getattr(self, "_get_metainfo_h5", False):
+
+            if self._api_model_h5:
+
+                point_feature, point_num = pad_tensor(
+                    torch.tensor(rescaled_xyz).float(), self.max_point, to_float=True
+                )
+
+                xmin, ymin, zmin = point_feature[:point_num].min(dim=0)[0]
+                xmax, ymax, _ = point_feature[:point_num].max(dim=0)[0]
+                point_feature = point_feature - torch.tensor(
+                    [(xmin + xmax) / 2, (ymin + ymax) / 2, zmin]
+                )
+                # z in center
+                point_feature[:, :3] = point_feature[:, [0, 2, 1]]
+                point_feature = torch.cat((point_feature, retval[0][0][:, 3:]), axis=1)
+
+                retval[0] = (point_feature, point_num)
+
+            retval[1] = tile_index
 
         return retval
 
@@ -2934,6 +2961,133 @@ def convert_extra_features(attributes, features_to_keep):
     return attributes_dict, features_to_keep
 
 
+def model_predictions(model, data):
+
+    model.learn.model.eval()
+    with torch.no_grad():
+        probs = model.learn.model(data.to(model._device).float()).softmax(dim=-1).cpu()
+
+    return probs.numpy()
+
+
+def get_batch_predictions(model, data, point_nums, point_batch_size):
+
+    if model._data.max_point == model.sample_point_num:
+        return model_predictions(model, data)
+
+    # handle case if max point in the block is greter than model.sample_point_num
+    indices = []
+    model_input = []
+    for batch_idx, p_num in enumerate(point_nums):
+        ## Getting sampling indices
+        tile_num = math.ceil((model.sample_point_num * point_batch_size) / p_num)
+        indices_shuffle = np.tile(np.arange(p_num), tile_num)[
+            0 : model.sample_point_num * point_batch_size
+        ]
+        np.random.shuffle(indices_shuffle)
+        indices_batch_shuffle = np.reshape(
+            indices_shuffle, (point_batch_size, model.sample_point_num, 1)
+        )
+
+        input_point = torch.cat(
+            [data[batch_idx, s[:, 0]][None] for s in indices_batch_shuffle],
+            dim=0,
+        )
+
+        indices.append(indices_shuffle)
+        model_input.append(input_point)
+
+    model_input = torch.cat(model_input, dim=0)
+    seg_probs = model_predictions(model, model_input)
+
+    # for each point of batch
+    model_output = []
+    for i in range(data.shape[0]):
+        low = i * point_batch_size
+        pred = seg_probs[low : low + point_batch_size]
+        probs_2d = np.reshape(pred, (model.sample_point_num * point_batch_size, -1))
+        predictions = np.ones((data.shape[1], probs_2d.shape[1]))
+        for idx in range(model.sample_point_num * point_batch_size):
+            point_idx = indices[i][idx]
+            probs = probs_2d[idx, :]
+            predictions[point_idx] = probs
+        model_output.append(predictions[None])
+
+    return np.concatenate(model_output, axis=0)
+
+
+def split_prediction(model, predictions, point_nums):
+
+    label = []
+    confidance = []
+    per_cls_conf = []
+    for i, point_num in enumerate(point_nums):
+        lbl = np.argmax(predictions[i][:point_num], axis=1)
+        conf = np.amax(predictions[i][:point_num], axis=1)
+        per_cls_conf.extend(predictions[i][:point_num])
+        confidance.extend(conf)
+        label.extend(np.array(list(model._data.idx2class.values()))[lbl])
+
+    return np.array(per_cls_conf), np.array(confidance), np.array(label)
+
+
+def predict_batch_h5(self, dl, output_path, progressor):
+
+    current_file_name = ""
+    point_batch_size = 1 * math.ceil(self._data.max_point / self.sample_point_num)
+
+    for (data, point_num), tile_index in progress_bar(dl):
+
+        pred = get_batch_predictions(self, data, point_num, point_batch_size)
+
+        tile = dl.dataset.tiles[tile_index]
+        if len(tile.shape) < 2:
+            tile = tile[None]
+
+        fname = np.array(dl.dataset.filenames)[tile[:, 0]]
+        fname, unique_index = np.unique(fname, return_index=True)
+        # add batch_size for spliting prediction till last batch number
+        unique_index = list(unique_index) + [dl.batch_size]
+        for i, ufname in enumerate(fname):
+
+            if ufname != current_file_name:
+                current_file_name = ufname
+                h5_file = dl.dataset.h5files[tile[unique_index[i]][0]]
+                batch_num, _ = h5_file["xyz"].shape
+                labels_pred = np.full(batch_num, -1, dtype=np.int8)
+                confidences_pred = np.zeros(batch_num, dtype=np.float32)
+                class_confidence = np.zeros(
+                    (batch_num + 1, self._data.c), dtype=np.float32
+                )
+                class_confidence[0] = np.array(self._data.classes)
+                low = high = 0
+
+            predictions = split_prediction(
+                self,
+                pred[unique_index[i] : unique_index[i + 1]],
+                point_num[unique_index[i] : unique_index[i + 1]],
+            )
+
+            high = low + predictions[0].shape[0]
+            labels_pred[low:high] = predictions[2]
+            confidences_pred[low:high] = predictions[1]
+            class_confidence[low + 1 : high + 1] = predictions[0]
+            if high == batch_num:
+                save_h5(
+                    output_path
+                    / dl.dataset.relative_files[
+                        int(tile[unique_index[i]][0])
+                    ].decode(),  # need to see tile number for -1
+                    labels_pred,
+                    confidences_pred,
+                    class_confidence,
+                )
+            low = high
+
+        if progressor is not None:
+            progressor.current_block(tile_index[0].item())
+
+
 def predict_h5(self, path, output_path, **kwargs):
     """
     self: PointCNN object
@@ -2946,6 +3100,7 @@ def predict_h5(self, path, output_path, **kwargs):
         output_path = Path(output_path)
 
     progressor = kwargs.get("progressor", None)
+    batch_size = kwargs.get("batch_size", 1)
 
     data = self._data
     # features to keep will be present always except for older models.
@@ -2975,84 +3130,14 @@ def predict_h5(self, path, output_path, **kwargs):
     )
     if progressor is not None:
         progressor.set_total_blocks(len(point_cloud_dataset))
-    batch_size = 1 * math.ceil(data.max_point / self.sample_point_num)
-    max_point_num = data.max_point
 
     output_path.mkdir(parents=True, exist_ok=True)
 
-    current_file_name = ""
-    for i in progress_bar(range(len(point_cloud_dataset))):
-        tile = point_cloud_dataset.tiles[i]
-        h5_file = point_cloud_dataset.h5files[tile[0]]
-        fname = point_cloud_dataset.filenames[tile[0]]
-
-        if fname != current_file_name:
-            low = 0
-            if i != 0:
-                save_h5(
-                    output_path
-                    / point_cloud_dataset.relative_files[int(tile[0] - 1)].decode(),
-                    labels_pred,
-                    confidences_pred,
-                    class_confidence,
-                )
-            current_file_name = fname
-            batch_num, _ = h5_file["xyz"].shape
-            labels_pred = np.full(batch_num, -1, dtype=np.int8)
-            confidences_pred = np.zeros(batch_num, dtype=np.float32)
-            class_confidence = np.zeros((batch_num + 1, self._data.c), dtype=np.float32)
-            class_confidence[0] = np.array(self._data.classes)
-
-        (
-            (normalized_data, point_num),
-            classification,
-            data,
-        ) = point_cloud_dataset.__getitem__(i, return_scaled=True)
-
-        if api_model:
-            # only the values thats why its indexed with zero.
-            xmin, ymin, zmin = data[:point_num].min(dim=0)[0]
-            xmax, ymax, _ = data[:point_num].max(dim=0)[0]
-            data = data - torch.tensor([(xmin + xmax) / 2, (ymin + ymax) / 2, zmin])
-            # z in center
-            data[:, :3] = data[:, [0, 2, 1]]
-            data = torch.cat((data, normalized_data[:, 3:]), axis=1)
-        else:
-            data = normalized_data
-
-        data = data[None]
-        points_batch = data[[0] * batch_size]
-        predictions = get_predictions(
-            self,
-            data,
-            0,
-            points_batch,
-            self.sample_point_num,
-            batch_size,
-            point_num.cpu().item(),
-        )
-        high = low + point_num
-        labels_pred[low:high] = np.array(
-            [self._data.idx2class[label] for label, _, _ in predictions]
-        )
-        confidences_pred[low:high] = np.array(
-            [confidence for _, confidence, _ in predictions]
-        )
-        class_confidence[low + 1 : high + 1] = np.array(
-            [cls_score for _, _, cls_score in predictions]
-        )
-        low = high
-
-        if i == (len(point_cloud_dataset) - 1):
-            save_h5(
-                output_path / point_cloud_dataset.relative_files[tile[0]].decode(),
-                labels_pred,
-                confidences_pred,
-                class_confidence,
-            )
-
-        if progressor is not None:
-            progressor.current_block(i)
+    point_cloud_dataset._get_metainfo_h5 = True
+    point_cloud_dataset._api_model_h5 = api_model
+    sampler = SequentialSampler(point_cloud_dataset)
+    dataloader = DataLoader(point_cloud_dataset, batch_size=batch_size, sampler=sampler)
+    predict_batch_h5(self, dataloader, output_path, progressor)
 
     return output_path
 

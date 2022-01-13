@@ -1770,6 +1770,7 @@ def prepare_data(
                         if os.path.exists(Path(lbl) / (x.stem + ".{}".format(ext))):
                             label_path.append(Path(lbl) / (x.stem + ".{}".format(ext)))
                     return label_path
+
                 get_y_func = _get_labels
                 imageslist = []
                 for data_folder in data_folders:
