@@ -96,9 +96,10 @@ class StoryMap(object):
                 saved_drafts = []
                 for resource in self._resources:
                     for key, val in resource.items():
-                        if key == "resource" and re.match("draft_\d{13}.json", val):
+                        if key == "resource" and (re.match("draft_\d{13}.json", val) or re.match("draft.json", val)):
                             saved_drafts.append(val)
                 if len(saved_drafts) == 1:
+                    # Only one draft saved
                     # Open JSON draft file for properties
                     data = self._item.resources.get(saved_drafts[0], try_json=True)
                     self._properties = data
@@ -140,6 +141,7 @@ class StoryMap(object):
         text = json.dumps(template)
         # create a temporary title
         title = "StoryMap via Python %s" % uuid.uuid4().hex[:10]
+        draft = "draft_" + str(int(time.time() * 1000)) + ".json"
         # will be posted as a draft using these keywords, time needs to include milliseconds
         typeKeywords = ",".join(
             [
@@ -149,7 +151,7 @@ class StoryMap(object):
                 "smstatusdraft",
                 "smversiondraft:21.43.0",
                 "smeditorapp:python-api-" + arcgis.__version__,
-                "smdraftresourceid:draft_" + str(int(time.time() * 1000)) + ".json",
+                "smdraftresourceid:"+ draft,
             ]
         )
         # set the item properties dict
@@ -163,7 +165,7 @@ class StoryMap(object):
         self._item = item
         self._itemid = item.itemid
         # make a resource call with the template to create json draft needed
-        self._add_resource(resource_name="draft.json", text=text)
+        self._add_resource(resource_name=draft, text=text)
         # assign resources to item
         self._resources = self._item.resources.list()
 
@@ -865,7 +867,7 @@ class StoryMap(object):
                             current access type is kept. This is used when `publish` parameter is set
                             to True.
 
-                            ``Values: "private" | "public" | "shared" | "org"
+                            ``Values: "private" | "public" | "org"``
         ---------------     --------------------------------------------------------------------
         publish             Optional boolean. If True, the story is saved and also published.
                             Default is false so story is saved with unpublished changes.
@@ -877,7 +879,7 @@ class StoryMap(object):
         """
         # Remove old draft item
         for resource in self._resources:
-            if re.match("draft_\d{13}.json", resource["resource"]):
+            if re.match("draft_\d{13}.json", resource["resource"]) or re.match("draft.json", resource["resource"]):
                 self._remove_resource(file=resource["resource"])
 
         # Add new draft with time in milliseconds
@@ -889,6 +891,7 @@ class StoryMap(object):
 
         # Find type keywords to use based on whether to publish or not
         if publish is True:
+            # Publish mode
             # Remove old publish item
             for resource in self._resources:
                 if (
@@ -934,9 +937,21 @@ class StoryMap(object):
                 p["title"] = title
             if tags:
                 p["tags"] = tags
-            p["access"] = access if access is not None else self._item.access
+            
+            # find and set access
+            sharing = access if access is not None else self._item.access
+            p["access"] = sharing
 
+            # Update the item and invoke share to have correct access
             self._item.update(item_properties=p)
+
+            if sharing == "private":
+                self._item.share(everyone=False, org=False, groups=None)
+            elif sharing == "public":
+                self._item.share(everyone=True)
+            elif sharing == "org":
+                self._item.share(org=True)
+
         else:
             # Set the type keywords
             typeKeywords = self._item.typeKeywords
@@ -953,7 +968,7 @@ class StoryMap(object):
                     # Set correct status
                     typeKeywords.remove(keyword)
             if previously_published is True:
-                # unpublished changes mode, time includes milliseconds
+                # Unpublished changes mode
                 new_typeKeywords = [
                     "smstatusunpublishedchanges",
                     "smversiondraft:21.43.0",
@@ -966,7 +981,7 @@ class StoryMap(object):
                     idx = typeKeywords.index("smstatuspublished")
                     del typeKeywords[idx]
             if previously_published is False:
-                # still in draft mode
+                # Draft mode
                 new_typeKeywords = [
                     "smstatusdraft",
                     "smversiondraft:21.43.0",
@@ -1106,15 +1121,15 @@ class StoryMap(object):
             }
         }
 
-        # Access is private, remove access parameter to change to inherit automatically
+        # access is inherited from item upon add
         if is_present is False:
             resp = resource_manager.add(
                 file=file,
                 file_name=resource_name,
                 text=text,
-                access="private",
                 properties=properties,
             )
+
         self._resources = self._item.resources.list()
         return resp
 
