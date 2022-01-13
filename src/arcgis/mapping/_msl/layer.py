@@ -642,7 +642,7 @@ class MapFeatureLayer(Layer):
                                                 Specified as ``datetime.date``, ``datetime.datetime`` or
                                                 ``timestamp`` in milliseconds
         -------------------------------     --------------------------------------------------------------------
-        geometry_filter                     Optional :class:`filter ~arcgis.geometry.filters` object. Allows for
+        geometry_filter                     Optional :class:`filter <arcgis.geometry.filters>` object. Allows for
                                             the information to be filtered on spatial relationship with another
                                             geometry.
         -------------------------------     --------------------------------------------------------------------
@@ -1877,40 +1877,54 @@ class MapTable(MapFeatureLayer):
                                                 >>> time_filter=[<startTime>, <endTime>]
 
                                             Specified as ``datetime.date``, ``datetime.datetime`` or
-                                            ``timestamp`` in milliseconds
+                                            ``timestamp`` in milliseconds.
+
+                                            .. code-block:: python
+
+                                                >>> import datetime as dt
+
+                                                >>> time_filter = [dt.datetime(2022, 1, 1), dt.dateime(2022, 1, 12)]
+
         -------------------------------     --------------------------------------------------------------------
         gdb_version                         Optional string. The geodatabase version to query. This parameter
-                                            applies only if the isDataVersioned property of the layer is true.
-                                            If this is not specified, the query will apply to the published
-                                            map's version.
+                                            applies only if the `isDataVersioned` property of the layer is
+                                            `true`. If this is not specified, the query will apply to the
+                                            published map's version.
         -------------------------------     --------------------------------------------------------------------
-        return_geometry                     Optional boolean. If true, geometry is returned with the query.
-                                            Default is true.
+        return_geometry                     Optional boolean. If `True`, geometry is returned with the query.
+                                            Default is `True`.
         -------------------------------     --------------------------------------------------------------------
-        return_distinct_values              Optional boolean.  If true, it returns distinct values based on the
-                                            fields specified in out_fields. This parameter applies only if the
-                                            supportsAdvancedQueries property of the layer is true.
+        return_distinct_values              Optional boolean.  If `True`, it returns distinct values based on
+                                            the fields specified in `out_fields`. This parameter applies only if
+                                            the `supportsAdvancedQueries` property of the layer is `true`.
         -------------------------------     --------------------------------------------------------------------
-        return_ids_only                     Optional boolean. Default is False.  If true, the response only
+        return_ids_only                     Optional boolean. Default is False.  If `True`, the response only
                                             includes an array of object IDs. Otherwise, the response is a
-                                            feature set.
+                                            :class:`~arcgis.features.FeatureSet`.
         -------------------------------     --------------------------------------------------------------------
-        return_count_only                   Optional boolean. If true, the response only includes the count
+        return_count_only                   Optional boolean. If `True`, the response only includes the count
                                             (number of features/records) that would be returned by a query.
-                                            Otherwise, the response is a feature set. The default is false. This
-                                            option supersedes the returnIdsOnly parameter. If
-                                            returnCountOnly = true, the response will return both the count and
-                                            the extent.
+                                            Otherwise, the response is a :class:`~arcgis.features.FeatureSet`.
+                                            The default is `False`. This option supersedes the
+                                            `return_ids_only` parameter. If `return_count_only = True`, the
+                                            response will return both the count and the extent.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names on which the
-                                            features/records need to be ordered. Use ASC or DESC for ascending
-                                            or descending, respectively, following every field to control the
-                                            ordering.
-                                            example: STATE_NAME ASC, RACE DESC, GENDER
+         order_by_fields                    Optional string. One or more field names by which to order the
+                                            results. Use ``ASC`` or ``DESC`` for ascending
+                                            or descending, respectively, following every field to be ordered:
+
+                                            .. code-block:: python
+
+                                                >>> order_by_fields = "STATE_NAME ASC, RACE DESC, GENDER ASC"
+
         -------------------------------     --------------------------------------------------------------------
-        group_by_fields_for_statistics      Optional string. One or more field names on which the values need to
-                                            be grouped for calculating the statistics.
-                                            example: STATE_NAME, GENDER
+        group_by_fields_for_statistics      Optional string. One or more field names on which to group results
+                                            for calculating the statistics.
+
+                                            .. code-block:: python
+
+                                                >>> group_by_fields_for_statiscits = "STATE_NAME, GENDER"
+
         -------------------------------     --------------------------------------------------------------------
         out_statistics                      Optional string. The definitions for one or more field-based
                                             statistics to be calculated.
@@ -1933,17 +1947,17 @@ class MapTable(MapFeatureLayer):
         -------------------------------     --------------------------------------------------------------------
         result_offset                       Optional integer. This option can be used for fetching query results
                                             by skipping the specified number of records and starting from the
-                                            next record (that is, resultOffset + 1th). This option is ignored
+                                            next record (that is, `result_offset + ith`). This option is ignored
                                             if `return_all_records` is `True` (i.e. by default).
         -------------------------------     --------------------------------------------------------------------
         result_record_count                 Optional integer. This option can be used for fetching query results
-                                            up to the result_record_count specified. When result_offset is
+                                            up to the `result_record_count` specified. When `result_offset` is
                                             specified but this parameter is not, the map service defaults it to
-                                            max_record_count. The maximum value for this parameter is the value
-                                            of the layer's max_record_count property. This option is ignored if
-                                            return_all_records is True (i.e. by default).
+                                            `max_record_count`. The maximum value for this parameter is the value
+                                            of the layer's `maxRecordCount` property. This option is ignored if
+                                            `return_all_records` is `True` (i.e. by default).
         -------------------------------     --------------------------------------------------------------------
-        return_all_records                  Optional boolean. When True, the query operation will call the
+        return_all_records                  Optional boolean. When `True`, the query operation will call the
                                             service until all records that satisfy the `where_clause` are
                                             returned. Note: `result_offset` and `result_record_count` will be
                                             ignored if `return_all_records` is True. Also, if
@@ -1954,6 +1968,11 @@ class MapTable(MapFeatureLayer):
                                             applies only if the layer is archiving enabled and the
                                             `supportsQueryWithHistoricMoment` property is set to `true`. This
                                             property is provided in the layer resource.
+
+                                            .. note::
+                                                See `Query (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer-.htm>`_
+                                                for full explanation of layer properties. Use :attr:`~arcgis.features.FeatureLayer.properties`
+                                                to examine layer properties.
 
                                             If `historic_moment` is not specified, the query will apply to the
                                             current features.
@@ -1968,14 +1987,14 @@ class MapTable(MapFeatureLayer):
                                             When set to `true`, features are returned even when the results
                                             include the `exceededTransferLimit: true` property.
 
-                                            When set to false and querying with `resultType = tile`, features
+                                            When set to false and querying with `resultType = 'tile'`, features
                                             are not returned when the results include
                                             `exceededTransferLimit: True`. This allows a client to find the
                                             resolution in which the transfer limit is no longer exceeded without
                                             making multiple calls.
         -------------------------------     --------------------------------------------------------------------
-        as_df                               Optional boolean.  If `True`, the results are returned as a DataFrame
-                                            instead of a FeatureSet.
+        as_df                               Optional boolean.  If `True`, the results are returned as a
+                                            `DataFrame` instead of a :class:`~arcgis.features.FeatureSet`.
         -------------------------------     --------------------------------------------------------------------
         range_values                        Optional List. Allows you to filter features from the layer that are
                                             within the specified range instant or extent.
@@ -2019,10 +2038,13 @@ class MapTable(MapFeatureLayer):
                                             the default value, that is assigned during authoring time, gets used
                                             instead.
 
-                                            When a parameterInfo allows multiple values, you must pass them in an array.
+                                            When `parameterInfo` allows multiple values, you must pass them in
+                                            an array.
 
-                                            Note: Check parameterInfos at the layer resources for the available
-                                            parameterized filters, their default values and expected data type.
+                                            Note: Check `parameterInfos` at the layer
+                                            :attr:`properties <arcgis.features.FeatureLayer.properties>` for
+                                            the available parameterized filters, their default values and
+                                            expected data type.
         -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
