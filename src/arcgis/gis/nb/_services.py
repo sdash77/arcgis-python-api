@@ -30,9 +30,9 @@ class NBService:
         :returns: bool
         """
         url = f"{self._url}/delete"
-        params = {'f': 'json'}
+        params = {"f": "json"}
         res = self._gis._con.post(url, params)
-        return res.get("status", "failed") == 'success'
+        return res.get("status", "failed") == "success"
 
 
 class NBServicesManager:
@@ -70,7 +70,7 @@ class NBServicesManager:
         :returns: dict
         """
         url = f"{self._url}/types"
-        params = {'f': 'json'}
+        params = {"f": "json"}
         return self._gis._con.get(url, params)
 
     @property
@@ -82,7 +82,7 @@ class NBServicesManager:
 
         """
         service_list = []
-        for service in self.properties['services']:
+        for service in self.properties["services"]:
             url = f"{self._url}/{service['id']}.{service['type']}"
             service_list.append(NBService(url=url, gis=self._gis))
         return tuple(service_list)
@@ -130,7 +130,7 @@ class NBServicesManager:
                 "tasks": [{"type": "notebook", "name": f"{item.title}"}],
             },
         }
-        params = {'serviceProperties': params}
+        params = {"serviceProperties": params}
         url = f"{self._url}/createService"
         res = self._gis._con.post(url, params)
         item_id = res.get("itemId", None)
