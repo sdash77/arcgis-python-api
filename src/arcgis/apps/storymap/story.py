@@ -745,13 +745,13 @@ class StoryMap(object):
         display             Optional String. How the item will be displayed in the story map.
 
                                 For Image, Video, Audio, or Map object.
-                                    Values: "small" | "wide" | "full" | "float"
+                                Values: "small" | "wide" | "full" | "float"
 
                                 For Gallery:
-                                    Values: "jigsaw" | "square-dynamic"
+                                Values: "jigsaw" | "square-dynamic"
 
                                 For Embed:
-                                    Values: "card" | "inline"
+                                Values: "card" | "inline"
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the content will be
                             added. To see all node positions use the ``node`` property.
