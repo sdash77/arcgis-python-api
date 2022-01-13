@@ -6,6 +6,83 @@ from .. import GIS
 from ._base import BasePortalAdmin
 from ..._impl.common._mixins import PropertyMap
 
+###########################################################################
+class Indexer(BasePortalAdmin):
+    """
+    This resource contains connection information to the default indexing service.
+    """
+
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis=None, **kwargs):
+        """Constructor"""
+        super(Indexer, self).__init__(url=url, gis=gis, **kwargs)
+        initialize = kwargs.pop("initialize", False)
+        if isinstance(gis, Connection):
+            self._con = gis
+        elif isinstance(gis, GIS):
+            self._gis = gis
+            self._con = gis._con
+        else:
+            raise ValueError("connection must be of type GIS or Connection")
+        if initialize:
+            self._init(self._gis)
+
+    @property
+    def status(self):
+        """
+        `status` allows you to view the status of the indexing service. You
+        can view the number of users, groups, and search items in both the
+        database (store) and the index. If the database and index do not
+        match, indexing is either in progress or there is a problem with
+        the index. It is recommended that you reindex to correct any
+        issues. If indexing is in progress, you can monitor the status by
+        refreshing the page.
+
+        :return: dict
+
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/status"
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    def reindex(self, mode, includes=None):
+        """
+        The operation allows you to generate or update the indexes for content, such as users, groups, and items stored in the database store.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        mode                Required String. The mode in which the indexer should run.
+                            Values: USER_MODE, GROUP_MODE, SEARCH_MODE, or FULL_MODE
+        ---------------     --------------------------------------------------------------------
+        includes            Optional String. A comma separated list of elements to include in
+                            the index. This is useful if you want to only index certain items
+                            or user accounts.
+        ===============     ====================================================================
+
+        :return: Boolean
+
+        """
+        url = f"{self._url}/reindex"
+        params = {"f": "json", "mode": mode, "includes": includes}
+        res = self._con.post(url, params)
+        if "status" in res:
+            return res["status"] in ["success", "suceess"]
+        return res
+
+    # ----------------------------------------------------------------------
+    def reconfigure(self) -> bool:
+        """
+        This operation recreates the index service metadata, schema, and data in the event it becomes corrupted.
+        :returns: Boolean
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/reconfigure"
+        res = self._con.post(url, params)
+        return res.get("status", "failed") == "success"
+
+
 ########################################################################
 class EmailManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
@@ -163,6 +240,8 @@ class System(BasePortalAdmin):
     _con = None
     _url = None
     _email = None
+    _indexer = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -526,6 +605,20 @@ class System(BasePortalAdmin):
         url = "%s/content/configuration/update" % self._url
         params = {"f": "json", "externalContentEnabled": json.dumps(value)}
         res = self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def indexer(self):
+        """
+        Allows user to manage the site's indexer
+
+        :return: `Indexer`
+        """
+        if self._indexer is None:
+
+            url = f"{self._url}/indexer"
+            self._indexer = Indexer(url=url, gis=self._gis)
+        return self._indexer
 
 
 ########################################################################

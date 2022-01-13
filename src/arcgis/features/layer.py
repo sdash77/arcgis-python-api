@@ -521,7 +521,9 @@ class FeatureLayer(Layer):
         :return: A JSON Dictionary indicating 'success' or 'error'
 
         """
-        if (os.path.getsize(file_path) >> 20) <= 9:
+        if (
+            os.path.getsize(file_path) < 10e6
+        ):  # (os.path.getsize(file_path) >> 20) <= 9:
             params = {"f": "json"}
             if self._gis.version > [7, 3] and keywords:
                 params["keywords"] = keywords
@@ -2203,7 +2205,7 @@ class FeatureLayer(Layer):
         ------------------------   --------------------------------------------------------------------
         upsert                     Optional boolean. Optional parameter specifying whether the edits
                                    needs to be applied as updates if the feature already exists.
-                                   Default is true.
+                                   Default is false.
         ------------------------   --------------------------------------------------------------------
         skip_updates               Optional boolean. Parameter is used only when upsert is true.
         ------------------------   --------------------------------------------------------------------
@@ -4960,13 +4962,12 @@ class FeatureLayerCollection(_GISResource):
             return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def upload(self, path: str, description: Optional[str] = None):
+    def upload(self, path:Optional[str], description:Optional[str]=None, upload_size:Optional[int]=None):
         """
-        The ``uploads`` method uploads a new item to the server.
+        The ``upload`` method uploads a new item to the server.
 
         .. note::
-            Once the operation is completed successfully, the following is returned as a 2 element tuple:
-            the success Boolean, and the JSON structure of the uploaded item
+            Once the operation is completed successfully, item id of the uploaded item is returned.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -4974,12 +4975,15 @@ class FeatureLayerCollection(_GISResource):
         path                Optional string. Filepath of the file to upload.
         ---------------     --------------------------------------------------------------------
         description         Optional string. Descriptive text for the uploaded item.
+        ---------------     --------------------------------------------------------------------
+        upload_size         Optional Integer. For large uploads, a user can specify the upload
+                            size of each part.  The default is 1mb.
         ===============     ====================================================================
 
-        :return: A tuple of (Boolean, dict)
+        :return: Item id of uploaded item
 
         """
-        if (os.path.getsize(path) >> 20) <= 9:
+        if os.path.getsize(path) < 10e6:
             url = self._url + "/uploads/upload"
             params = {
                 "f": "json",
@@ -4991,38 +4995,40 @@ class FeatureLayerCollection(_GISResource):
             if description:
                 params["description"] = description
             res = self._con.post(path=url, postdata=params, files=files)
-            if "status" in res and res["status"] == "success":
-                return True, res
-            elif "success" in res:
-                return res["success"], res
-            return False, res
+            if "error" in res:
+                raise Exception(res)
+            else:
+                return res["item"]["itemID"]
         else:
+            if upload_size is None:
+                upload_size = 1e6
             file_path = path
             item_id = self._register_upload(file_path)
-            self._upload_by_parts(item_id, file_path)
+            self._upload_by_parts(item_id, file_path, size=upload_size)
             return self._commit_upload(item_id)
 
     # ----------------------------------------------------------------------
     def _register_upload(self, file_path):
         """returns the itemid for the upload by parts logic"""
         r_url = "%s/uploads/register" % self._url
-        params = {"f": "json", "itemName": os.path.basename(file_path).replace(".", "")}
+        params = {"f": "json", "itemName": os.path.basename(file_path)}
         reg_res = self._con.post(r_url, params)
         if "item" in reg_res and "itemID" in reg_res["item"]:
             return reg_res["item"]["itemID"]
         return None
 
     # ----------------------------------------------------------------------
-    def _upload_by_parts(self, item_id, file_path):
+    def _upload_by_parts(self, item_id, file_path, size=1e6):
         """loads a file for attachmens by parts"""
         import mmap, tempfile
 
+        size = int(size)
         b_url = "%s/uploads/%s" % (self._url, item_id)
         upload_part_url = "%s/uploadPart" % b_url
         params = {"f": "json"}
         with open(file_path, "rb") as f:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-            size = 1000000
+
             steps = int(os.fstat(f.fileno()).st_size / size)
             if os.fstat(f.fileno()).st_size % size > 0:
                 steps += 1
@@ -5032,7 +5038,7 @@ class FeatureLayerCollection(_GISResource):
                 if os.path.isfile(tempFile):
                     os.remove(tempFile)
                 with open(tempFile, "wb") as writer:
-                    writer.write(mm.read(size))
+                    writer.write(mm.read(int(size)))
                     writer.flush()
                     writer.close()
                 del writer

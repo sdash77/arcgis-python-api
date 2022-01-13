@@ -95,19 +95,19 @@ def connect_origins_to_destinations(
     You provide starting and ending points, and the tool returns a layer containing route lines, including measurements, between the
     paired origins and destinations.
 
-    ===================================     =========================================================
+    ===================================     ===============================================================
     **Argument**                            **Description**
-    -----------------------------------     ---------------------------------------------------------
-    origins_layer                           Required layer. The starting point or points of the routes to be generated. See :ref:`Feature Input<FeatureInput>`.
-    -----------------------------------     ---------------------------------------------------------
-    destinations_layer                      Required layer. The routes end at points in the destinations layer. See :ref:`Feature Input<FeatureInput>`.
-    -----------------------------------     ---------------------------------------------------------
+    -----------------------------------     ---------------------------------------------------------------
+    origins_layer                           Required layer. The starting point or points of the
+                                            routes to be generated. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------------------     ---------------------------------------------------------------
+    destinations_layer                      Required layer. The routes end at points in the
+                                            destinations layer. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------------------     ---------------------------------------------------------------
     measurement_type                        Required string. The origins and destinations can be connected by measuring straight-line distance,
-                                            or by measuring travel time or travel distance along a street network using various modes of transportation
-                                            known as travel modes.
+                                            or by measuring travel time or travel distance along a street network using various modes of transportation known as travel modes.
 
-                                            Valid values are a string, StraightLine, which indicates Euclidean distance to be used as distance measure or
-                                            a Python dictionary representing settings for a travel mode.
+                                            Valid values are a string, StraightLine, which indicates Euclidean distance to be used as distance measure or a Python dictionary representing settings for a travel mode.
 
                                             When using a travel mode for the measurement_type, you need to specify a dictionary
                                             containing the settings for a travel mode supported by your organization. The code in the example section below generates
@@ -115,32 +115,37 @@ def connect_origins_to_destinations(
 
                                             Supported travel modes: ['Driving Distance', 'Driving Time', 'Rural Driving Distance', 'Rural Driving Time',
                                             'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+    -----------------------------------     ---------------------------------------------------------------
+    origins_layer_route_id_field            Optional string. Specify the field in the origins layer
+                                            containing the IDs that pair origins with destinations.
 
-    -----------------------------------    ---------------------------------------------------------
-    origins_layer_route_id_field            Optional string. Specify the field in the origins layer containing the IDs that pair origins with destinations.
+                                            * The ID values must uniquely identify points in the origins layer
 
-                                            * The ID values must uniquely identify points in the origins layer.
+                                            * Each ID value must also correspond with exactly one route ID value in the destinations layer.
+                                              Route IDs that match across the layers create origin-destination pairs, which the tool connects
+                                              together.
 
-                                            * Each ID value must also correspond with exactly one route ID value in the destinations layer. Route IDs that match
-                                                across the layers create origin-destination pairs, which the tool connects together.
+                                            * Specifying origins_layer_route_id_field is optional when there is exactly one point feature in
+                                              the origins or destinations layer. The tool will connect all origins to the one destination or the
+                                              one origin to all destinations, depending on which layer contains one point.
 
-                                            *  Specifying origins_layer_route_id_field is optional when there is exactly one point feature in the origins or
-                                                destinations layer. The tool will connect all origins to the one destination or the one origin to all destinations,
-                                                depending on which layer contains one point.
-    -----------------------------------     ---------------------------------------------------------
-    destinations_layer_route_id_field       Optional string. Specify the field in the destinations layer containing the IDs that pair origins with destinations.
+    -----------------------------------     ---------------------------------------------------------------
+    destinations_layer_route_id_field       Optional string. Specify the field in the destinations layer containing the IDs that pair origins
+                                            with destinations.
 
                                             * The ID values must uniquely identify points in the destinations layer.
 
-                                            * Each ID value must also correspond with exactly one route ID value in the origins layer. Route IDs that match across the
-                                                layers create origin-destination pairs, which the tool connects together.
+                                            * Each ID value must also correspond with exactly one route ID value in the origins layer. Route
+                                              IDs that match across the layers create origin-destination pairs, which the tool connects together.
 
-                                            * Specifying destinations_layer_route_id_field is optional when there is exactly one point feature in the origins or
-                                                destinations layer. The tool will connect all origins to the one destination or the one origin to all destinations,
-                                                depending on which layer contains one point.
-    -----------------------------------     ---------------------------------------------------------
-    time_of_day                             Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use traffic in the analysis,
-                                            set measurement_type to a travel mode object whose impedance_attribute_name property is set to travel_time and assign a value
+                                            * Specifying destinations_layer_route_id_field is optional when there is exactly one point
+                                              feature in the origins or destinations layer. The tool will connect all origins to the one
+                                              destination or the one origin to all destinations, depending on which layer contains one point.
+    -----------------------------------     ---------------------------------------------------------------
+    time_of_day                             Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use
+                                            traffic in the analysis,
+                                            set measurement_type to a travel mode object whose impedance_attribute_name property is set to
+                                            travel_time and assign a value
                                             to time_of_day. (A travel mode with other impedance_attribute_name values don't support traffic.) The time_of_day value represents
                                             the time at which travel begins, or departs, from the origin points. The time is specified as datetime.datetime.
 
@@ -178,21 +183,25 @@ def connect_origins_to_destinations(
                                             # Examples:
                                             from datetime import datetime
 
-                                            * "time_of_day": datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
-                                            * "time_of_day": datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
-                                            * "time_of_day": datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014,
-                                             live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
-                                            * "time_of_day": datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015,
-                                             live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
-
-    -----------------------------------     ---------------------------------------------------------
+                                            * "time_of_day": datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on
+                                              Thursdays at 1:03 p.m.
+                                            * "time_of_day": datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at
+                                              5:00 p.m.
+                                            * "time_of_day": datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is
+                                              between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014,
+                                              live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are
+                                              referenced.
+                                            * "time_of_day": datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is
+                                              between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015, live traffic speeds are
+                                              referenced in the analysis; otherwise, typical traffic speeds are referenced.
+    -----------------------------------     ---------------------------------------------------------------
     time_zone_for_time_of_day               Optional string. Specify the time zone or zones of the timeOfDay parameter.
                                             Choice list: ['GeoLocal', 'UTC']
 
                                             GeoLocal-refers to the time zone in which the originsLayer points are located.
 
                                             UTC-refers to Coordinated Universal Time.
-    -----------------------------------     ---------------------------------------------------------
+    -----------------------------------     ---------------------------------------------------------------
     include_route_layers                    Optional Boolean. When include_route_layers is set to True,
                                             each route from the result is also saved as a route layer item.
                                             A route layer includes all the information for a particular route
@@ -200,7 +209,8 @@ def connect_origins_to_destinations(
                                             Creating route layers is useful if you want to share individual
                                             routes with other members in your organization.
                                             The route layers use the output feature service name provided in the ```output_name```
-                                            parameter as a prefix and the route name generated as part of the analysis is added to create a unique name for each route layer.
+                                            parameter as a prefix and the route name generated as part of the analysis is added to create a
+                                            unique name for each route layer.
 
                                             Caution: Route layers cannot be created when the output is a feature collection.
                                             The task will raise an error if output_name is not specified
@@ -209,19 +219,22 @@ def connect_origins_to_destinations(
                                             The maximum number of route layers that can be created is 1,000.
                                             If the result contains more than 1,000 routes and include_route_layers is True,
                                             the task will only create the output feature service.
-    -----------------------------------     ---------------------------------------------------------
+    -----------------------------------     ---------------------------------------------------------------
     output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
                                             feature layer will cause the new layer to be appended to the Feature Service.
                                             If overwrite is True in context, new layer will overwrite existing layer.
                                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
-    -------------------------------------   ---------------------------------------------------------
+    -----------------------------------     ---------------------------------------------------------------
     context                                 Optional dict. Additional settings such as processing extent
                                             and output spatial reference.
                                             For connect_origins_to_destinations, there are three settings.
 
-                                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the
+                                              input_layer that intersect the bounding box will be analyzed.
+                                            - ``outSR`` - the output features will be projected into the output spatial reference referred to
+                                              by the `wkid`.
+                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new
+                                              feature layer.
 
                                                 .. code-block:: python
 
@@ -233,13 +246,13 @@ def connect_origins_to_destinations(
                                                                         "spatialReference":{"wkid":102100,"latestWkid":3857}},
                                                                 "outSR": {"wkid": 3857},
                                                                 "overwrite": True}
-    -----------------------------------     ---------------------------------------------------------
+    -----------------------------------     ---------------------------------------------------------------
     gis                                     Optional, the GIS on which this tool runs. If not specified,
                                             the active GIS is used.
-    -----------------------------------     ---------------------------------------------------------
+    -----------------------------------     ---------------------------------------------------------------
     estimate                                Optional Boolean. Is True, the number of credits needed
                                             to run the operation will be returned as a float.
-    -----------------------------------     ---------------------------------------------------------
+    -----------------------------------     ---------------------------------------------------------------
     point_barrier_layer                     Optional layer. Specify one or more point features that
                                             act as temporary restrictions (in other words, barriers) when
                                             traveling on the underlying streets.
@@ -248,7 +261,7 @@ def connect_origins_to_destinations(
                                             electrical line, or anything that completely blocks traffic at
                                             a specific position along the street. Travel is permitted on the
                                             street but not through the barrier. See :ref:`Feature Input<FeatureInput>`.
-    -----------------------------------     ---------------------------------------------------------
+    -----------------------------------     ---------------------------------------------------------------
     line_barrier_layer                      Optional layer. Specify one or more line features that prohibit
                                             travel anywhere the lines intersect the streets.
 
@@ -257,7 +270,7 @@ def connect_origins_to_destinations(
                                             several street
                                             segments can be modeled with a line barrier.
                                             See :ref:`Feature Input<FeatureInput>`.
-    -----------------------------------     ---------------------------------------------------------
+    -----------------------------------     ---------------------------------------------------------------
     polygon_barrier_layer                   Optional string. Specify one or more polygon features
                                             that completely restrict travel on the streets intersected
                                             by the polygons.
@@ -265,10 +278,10 @@ def connect_origins_to_destinations(
                                             One use of this type of barrier is to model floods covering
                                             areas of the street network and making road travel there impossible.
                                             See :ref:`Feature Input<FeatureInput>`.
-    -----------------------------------     ---------------------------------------------------------
+    -----------------------------------     ---------------------------------------------------------------
     future                                  Optional boolean. If True, the result will be a GPJob object
                                             and results will be returned asynchronously.
-    -----------------------------------     ---------------------------------------------------------
+    -----------------------------------     ---------------------------------------------------------------
     route_shape                             Optional String. Specify the shape of the route that connects
                                             each origin to it's destination when using a travel mode.
 
@@ -287,7 +300,7 @@ def connect_origins_to_destinations(
                                                 a travel mode.
 
                                             The best route between an origin and it's matched destination is always calculated based on the travel mode, regardless of which route shape is chosen.
-    ===================================     =========================================================
+    ===================================     ===============================================================
 
 
     :return: A dictionary with the following keys:
@@ -332,7 +345,8 @@ def connect_origins_to_destinations(
         "include_route_layers": include_route_layers,
     }
     params = inspect_function_inputs(
-        fn=gis._tools.featureanalysis._tbx.connect_origins_to_destinations, **kwargs
+        fn=gis._tools.featureanalysis._tbx.connect_origins_to_destinations,
+        **kwargs,
     )
     try:
 

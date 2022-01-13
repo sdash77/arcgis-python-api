@@ -41,6 +41,14 @@ class Indicator(_BaseWidget):
         self._novalue = NoDataProperties._nodata_init()
 
         self._data = IndicatorData._create_data()
+        if not self._data._value_field in [
+            fld["name"] for fld in item.layers[layer].properties.fields
+        ]:
+            self._data._value_field = [
+                i["fields"]
+                for i in item.layers[layer].properties.indexes
+                if i["isUnique"]
+            ][0]
         self._reference = ReferenceData._create_data()
 
         self._max_display_features = 50
@@ -105,10 +113,10 @@ class Indicator(_BaseWidget):
     def _convert_to_json(self):
 
         self._reference_statistic = []
-        self._statistic_defintion = []
+        self._statistic_definition = []
 
         if self._data.value_type == "statistic":
-            self._statistic_defintion.append(
+            self._statistic_definition.append(
                 {
                     "onStatisticField": self.data.value_field,
                     "outStatisticFieldName": "value",
@@ -125,7 +133,7 @@ class Indicator(_BaseWidget):
             self._datasource = {
                 "type": "featureServiceDataSource",
                 "itemId": self.item.itemid,
-                "layerId": 0,
+                "layerId": self.layer,
                 "table": True,
             }
 
@@ -136,7 +144,7 @@ class Indicator(_BaseWidget):
                 "outFields": ["*"],
                 "groupByFields": [],
                 "orderByFields": [],
-                "statisticDefinitions": self._statistic_defintion,
+                "statisticDefinitions": self._statistic_definition,
                 "querySpatialRelationship": "esriSpatialRelIntersects",
                 "returnGeometry": False,
                 "clientSideStatistics": False,
@@ -223,6 +231,13 @@ class Indicator(_BaseWidget):
         if self._background_color:
             json_data["defaultSettings"]["backgroundColor"] = self._background_color
 
+        if self.title:
+            json_data["defaultSettings"] = {
+                "topSection": {"fontSize": 80, "textInfo": {"text": self.title}},
+                "middleSection": {"fontSize": 160, "textInfo": {"text": "{value}"}},
+                "bottomSection": {"fontSize": 80, "textInfo": {}},
+            }
+
         return json_data
 
 
@@ -233,7 +248,7 @@ class IndicatorData(object):
 
         data._value_type = "statistic"
         data._statistic = "count"
-        data._value_field = "FID"
+        data._value_field = ""
         data._factor = 1
         data._offset = 0
         data._filters = []
@@ -342,9 +357,22 @@ class IndicatorData(object):
             self._filter_join = join
         else:
             raise Exception("Please select from 'AND', 'OR'")
+        if condition in ["between", "not between"]:
+            if not kwargs["start"] and kwargs["end"]:
+                raise Exception("Please provide 'start' and 'end' values as parameters")
+            else:
+                self._val1 = kwargs.get("start")
+                self, _val2 = kwargs.get("end")
+                self._filters.append(
+                    {
+                        "filtertype": self._filter_join,
+                        "field": self._filter_field,
+                        "operator": self._filter_condition,
+                        "start": self._val1,
+                        "end": self._val2,
+                    }
+                )
         if condition in [
-            "between",
-            "not between",
             "equal",
             "not equal",
             "greater than",
@@ -353,26 +381,11 @@ class IndicatorData(object):
             "less than or equal",
             "is null",
             "is not null",
+            "contains",
         ]:
             self._filter_condition = condition
         else:
             raise Exception("Please select the right condition")
-
-        if condition in ["between", "not between"]:
-            self._val1 = kwargs.get("start")
-            self, _val2 = kwargs.get("end")
-            self._filters.append(
-                {
-                    "filtertype": self._filter_join,
-                    "field": self._filter_field,
-                    "operator": self._filter_condition,
-                    "start": self._val1,
-                    "end": self._val2,
-                }
-            )
-        else:
-            raise Exception("Please provide 'start' and 'end' values as parameters")
-
         if condition in [
             "equal",
             "not equal",
