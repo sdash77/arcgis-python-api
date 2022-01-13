@@ -652,10 +652,10 @@ class Version(object):
     # ----------------------------------------------------------------------
     def reconcile(
         self,
-        end_with_conflict:bool=False,
-        with_post:bool=False,
-        conflict_detection:str="byObject",
-        future:bool=False,
+        end_with_conflict: bool = False,
+        with_post: bool = False,
+        conflict_detection: str = "byObject",
+        future: bool = False,
     ):
         """
         Reconcile a version against the DEFAULT version. The reconcile

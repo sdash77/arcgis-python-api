@@ -4962,7 +4962,12 @@ class FeatureLayerCollection(_GISResource):
             return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def upload(self, path:Optional[str], description:Optional[str]=None, upload_size:Optional[int]=None):
+    def upload(
+        self,
+        path: Optional[str],
+        description: Optional[str] = None,
+        upload_size: Optional[int] = None,
+    ):
         """
         The ``upload`` method uploads a new item to the server.
 
