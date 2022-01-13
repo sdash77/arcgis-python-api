@@ -1524,25 +1524,7 @@ class Text(object):
     @property
     def properties(self):
         """
-        Get/Set the properties for the text.
-
-        ==================  ==================================================
-        **Argument**        **Description**
-        ------------------  --------------------------------------------------
-        text                Dictionary. Holds new values for the text
-                            node.
-
-                            .. code-block:: python
-
-                                Must resemble this structure:
-                                {
-                                    "type": "text",
-                                    "data": {
-                                        "type": <value of TextStyles Class>,
-                                        "text": <text>,
-                                        "customTextColors": <Optional colors as an array>
-                                }  }
-        ==================  ==================================================
+        Get the properties for the text.
 
         :return:
             The Text dictionary for the node.
@@ -1554,12 +1536,30 @@ class Text(object):
             }
 
     # ----------------------------------------------------------------------
-    @properties.setter
-    def properties(self, text):
-        # Set with new dictionary
+    @property
+    def text(self):
+        """
+        Get/Set the text itself for the text node.
+
+        ==================  ==================================================
+        **Argument**        **Description**
+        ------------------  --------------------------------------------------
+        text                Optional String. The new text to be displayed.
+        ==================  ==================================================
+
+        :return:
+            The text for the node.
+            If nothing is returned, make sure the content is part of the story.
+        """
         if self._check_node() is True:
-            self._story._properties["nodes"][self.node] = text
-            return self.properties
+            return self._story._properties["nodes"][self.node]["data"]["text"]
+
+    # ----------------------------------------------------------------------
+    @text.setter
+    def text(self, text):
+        if self._check_node() is True:
+            self._story._properties["nodes"][self.node]["data"]["text"] = text
+            return self.text
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -1632,23 +1632,7 @@ class Button(object):
     @property
     def properties(self):
         """
-        Get/Set the properties for the button.
-
-        ==================  ==================================================
-        **Argument**        **Description**
-        ------------------  --------------------------------------------------
-        button              Dictionary. Holds new values for the button node.
-
-                            .. code-block:: python
-
-                                Must resemble this structure:
-                                {
-                                    "type": "button",
-                                    "data": {
-                                        "text": <button text>,
-                                        "link": <button link>
-                                }   }
-        ==================  ==================================================
+        Get the properties for the button.
 
         :return:
             The Button dictionary for the node.
@@ -1658,12 +1642,56 @@ class Button(object):
             return {"node_dict": self._story._properties["nodes"][self.node]}
 
     # ----------------------------------------------------------------------
-    @properties.setter
-    def properties(self, button):
-        # Add new button dictionary
+    @property
+    def text(self):
+        """
+        Get/Set the text for the button.
+
+        ==================  ==================================================
+        **Argument**        **Description**
+        ------------------  --------------------------------------------------
+        text                Optional String. The new text to be displayed.
+        ==================  ==================================================
+
+        :return:
+            The text for the node.
+            If nothing is returned, make sure the content is part of the story.
+        """
         if self._check_node() is True:
-            self._story._properties["nodes"][self.node] = button
-            return self.properties
+            return self._story._properties["nodes"][self.node]["data"]["text"]
+
+    # ----------------------------------------------------------------------
+    @text.setter
+    def text(self, text):
+        if self._check_node() is True:
+            self._story._properties["nodes"][self.node]["data"]["text"] = text
+            return self.text
+
+    # ----------------------------------------------------------------------
+    @property
+    def link(self):
+        """
+        Get/Set the link for the button.
+
+        ==================  ==================================================
+        **Argument**        **Description**
+        ------------------  --------------------------------------------------
+        link                Optional String. The new path for the button.
+        ==================  ==================================================
+
+        :return:
+            The link being used.
+            If nothing is returned, make sure the content is part of the story.
+        """
+        if self._check_node() is True:
+            return self._story._properties["nodes"][self.node]["data"]["link"]
+
+    # ----------------------------------------------------------------------
+    @link.setter
+    def link(self, link):
+        if self._check_node() is True:
+            self._story._properties["nodes"][self.node]["data"]["link"] = link
+            return self.link
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -1706,7 +1734,7 @@ class Gallery(object):
         >>> image2 = Image(<url or path>)
         >>> image3 = Image(<url or path>)
 
-        # Create a gallery and add
+        # Create a gallery and add to story before adding images to it.
         >>> gallery = Gallery()
         >>> my_story.add(gallery)
         >>> gallery.add([image1, image2, image3])
