@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional, Union
 import uuid
 from enum import Enum
+import warnings
 from arcgis.auth.tools import LazyLoader
 import re
 
@@ -876,7 +877,9 @@ class StoryMap(object):
         .. warning::
             Publishing your story through the Python API means it will not go through the Story Map
             issue checker. It is recommended to publish through the Story Maps builder if you
-            want your story to go through the issue checker.
+            want your story to go through the issue checker. In addition, only private or org publishing
+            can be done at this time. To publish publicly, save the story and then navigate to the
+            Story Map builder to complete the publishing.
 
         .. warning::
             Changes to the published story may not be visible for up to one hour. You can open
@@ -892,9 +895,9 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         access              Optional string. The access of the StoryMap. If none is specified, the
                             current access type is kept. This is used when `publish` parameter is set
-                            to True.
+                            to True. To publish publicly, save the story and publish through the builder.
 
-                            ``Values: "private" | "public" | "org"``
+                            ``Values: "private" | "org"``
         ---------------     --------------------------------------------------------------------
         publish             Optional boolean. If True, the story is saved and also published.
                             Default is false so story is saved with unpublished changes.
@@ -917,6 +920,9 @@ class StoryMap(object):
             access="private"
         )
 
+        if publish is True and (access != "private" or access != "org"):
+            publish = False
+            warnings.warn("The Python API can only publish privately or to org at this time. Your story is being saved and you can publish publicly through the Story Map builder.")
         # Find type keywords to use based on whether to publish or not
         if publish is True:
             # Publish mode
@@ -973,8 +979,6 @@ class StoryMap(object):
 
             if sharing == "private":
                 self._item.share(everyone=False, org=False, groups=None)
-            elif sharing == "public":
-                self._item.share(everyone=True)
             elif sharing == "org":
                 self._item.share(org=True)
 
