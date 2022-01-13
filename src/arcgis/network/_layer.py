@@ -254,42 +254,48 @@ class RouteLayer(NetworkLayer):
         self,
         stops: Union[list[Point], list[FeatureSet], FeatureSet],
         barriers: Optional[Union[Point, FeatureSet, dict[str, Any]]] = None,
-        polyline_barriers: Optional[Union[Polyline, FeatureSet, dict[str, Any]]] = None,
-        polygon_barriers: Optional[Union[Polygon, FeatureSet, dict[str, Any]]] = None,
-        travel_mode: Optional[str] = None,
-        attribute_parameter_values: Optional[Union[str, list[str]]] = None,
-        return_directions: bool = True,
-        return_routes: bool = True,
-        return_stops: bool = False,
-        return_barriers: bool = False,
-        return_polyline_barriers: bool = True,
-        return_polygon_barriers: bool = True,
-        out_sr: Optional[int] = None,
-        ignore_invalid_locations: bool = True,
-        output_lines: Optional[str] = None,
-        find_best_sequence: bool = False,
-        preserve_first_stop: bool = True,
-        preserve_last_stop: bool = True,
-        use_time_windows: bool = False,
-        start_time: Optional[str] = None,
-        start_time_is_utc: bool = False,
-        accumulate_attribute_names: Optional[str] = None,
-        impedance_attribute_name: Optional[str] = None,
-        restriction_attribute_names: Optional[str] = None,
-        restrict_u_turns: Optional[bool] = None,
-        use_hierarchy: bool = True,
-        directions_language: Optional[str] = None,
-        directions_output_type: Optional[str] = None,
-        directions_style_name: Optional[str] = None,
-        directions_length_units: Optional[str] = None,
-        directions_time_attribute_name: Optional[str] = None,
-        output_geometry_precision: Optional[float] = None,
-        output_geometry_precision_units: Optional[str] = None,
-        return_z: bool = False,
-        overrides: Optional[dict[str, Any]] = None,
-        preserve_objectid: bool = False,
-        future: bool = False,
-        time_windows_are_utc: bool = False,
+        polyline_barriers: Optional[Union[Polyline, FeatureSet, dict[str, Any]]] =None,
+        polygon_barriers: Optional[Union[Polygon, FeatureSet, dict[str, Any]]]=None,
+        travel_mode: Optional[str]=None,
+        attribute_parameter_values: Optional[Union[str, list[str]]]=None,
+        return_directions: bool =True,
+        return_routes: bool=True,
+        return_stops: bool =False,
+        return_barriers: bool =False,
+        return_polyline_barriers: bool =True,
+        return_polygon_barriers: bool =True,
+        out_sr: Optional[int]=None,
+        ignore_invalid_locations: bool =True,
+        output_lines: Optional[str]=None,
+        find_best_sequence: bool=False,
+        preserve_first_stop: bool=True,
+        preserve_last_stop: bool=True,
+        use_time_windows: bool=False,
+        start_time: Optional[str]=None,
+        start_time_is_utc:bool=False,
+        accumulate_attribute_names: Optional[str]=None,
+        impedance_attribute_name: Optional[str]=None,
+        restriction_attribute_names: Optional[str]=None,
+        restrict_u_turns: Optional[bool]=None,
+        use_hierarchy:bool=True,
+        directions_language: Optional[str]=None,
+        directions_output_type: Optional[str]=None,
+        directions_style_name: Optional[str]=None,
+        directions_length_units: Optional[str]=None,
+        directions_time_attribute_name: Optional[str]=None,
+        output_geometry_precision: Optional[float]=None,
+        output_geometry_precision_units: Optional[str]=None,
+        return_z:bool=False,
+        overrides: Optional[dict[str, Any]]=None,
+        preserve_objectid:bool=False,
+        future:bool=False,
+        time_windows_are_utc:bool=False,
+        return_traversed_edges:Optional[bool]=None,
+        return_traversed_junctions:Optional[bool]=None,
+        return_traversed_turns:Optional[bool]=None,
+        geometry_precision:Optional[int]=None,
+        geometry_precision_z:Optional[int]=None,
+        geometry_precision_m:Optional[int]=None,
     ):
         """
         The solve operation is performed on a network layer resource.
@@ -462,6 +468,18 @@ class RouteLayer(NetworkLayer):
         time_windows_are_utc                    Optional boolean. Specify whether the TimeWindowStart and TimeWindowEnd
                                                 attribute values on stops are specified in coordinated universal time (UTC)
                                                 or geographically local time.
+        -----------------------------------     --------------------------------------------------------------------
+        return_traversed_edges                  Optional boolean. Specify whether traversed edges will be returned by the service.
+        -----------------------------------     --------------------------------------------------------------------
+        return_traversed_junctions              Optional boolean. Specify whether traversed junctions will be returned by the service.
+        -----------------------------------     --------------------------------------------------------------------
+        return_traversed_turns                  Optional boolean. Specify whether traversed turns will be returned by the service.
+        -----------------------------------     --------------------------------------------------------------------
+        geometry_precision                      Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to x/y values only (not m- or z-values).
+        -----------------------------------     --------------------------------------------------------------------
+        geometry_precision_z                    Optional Integer. Use this parameter specify the number of decimal places in the response geometries returned by solve operation. This applies to z-value only.
+        -----------------------------------     --------------------------------------------------------------------
+        geometry_precision_m                    Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to m-value only.
         ===================================     ====================================================================
 
 
@@ -592,10 +610,23 @@ class RouteLayer(NetworkLayer):
             params["overrides"] = overrides
         if not preserve_objectid is None:
             params["preserveObjectID"] = preserve_objectid
+        if not geometry_precision is None:
+            params["geometryPrecision"] = geometry_precision
+        if not geometry_precision_z is None:
+            params["geometryPrecisionZ"] = geometry_precision_z
+        if not geometry_precision_m is None:
+            params["geometryPrecisionM"] = geometry_precision_m
+        if not return_traversed_edges is None:
+            params["returnTraversedEdges"] = return_traversed_edges
+        if not return_traversed_junctions is None:
+            params["returnTraversedJunctions"] = return_traversed_junctions
+        if not return_traversed_turns is None:
+            params["returnTraversedTurns"] = return_traversed_turns
+
         if future:
             f = self._run_async(
                 self._con.post,
-                **{"path": url, "postdata": params, "token": self._gis._con.token},
+                **{"path": url, "postdata": params},
             )
             return NAJob(future=f, task="RouteLayer Solve")
         return self._con.post(path=url, postdata=params)  # ,
@@ -649,6 +680,9 @@ class ServiceAreaLayer(NetworkLayer):
         preserve_objectid: bool = False,
         future: bool = False,
         ignore_invalid_locations: bool = True,
+        geometry_precision:Optional[int]=None,
+        geometry_precision_z:Optional[int]=None,
+        geometry_precision_m:Optional[int]=None,
     ):
         """The solve service area operation is performed on a network layer
         resource of type service area (layerType is esriNAServerServiceArea).
@@ -840,6 +874,18 @@ class ServiceAreaLayer(NetworkLayer):
         ignore_invalid_locations                If true, the solver will ignore invalid
                                                 locations. Otherwise, it will raise an error.
                                                 Default is true.
+        -----------------------------------     --------------------------------------------------------------------
+        geometry_precision                      Optional Integer. Use this parameter to specify the number of decimal 
+                                                places in the response geometries returned by solve operation. 
+                                                This applies to x/y values only (not m- or z-values).
+        -----------------------------------     --------------------------------------------------------------------
+        geometry_precision_z                    Optional Integer. Use this parameter to specify the number of 
+                                                decimal places in the response geometries returned by solve operation. 
+                                                This applies to z values only.
+        -----------------------------------     --------------------------------------------------------------------
+        geometry_precision_m                    Optional Integer. Use this parameter to specify the number of 
+                                                decimal places in the response geometries returned by solve operation. 
+                                                This applies to m values only.
         ===================================     ====================================================================
 
 
@@ -942,10 +988,16 @@ class ServiceAreaLayer(NetworkLayer):
             params["overrides"] = overrides
         if not preserve_objectid is None:
             params["preserveObjectID"] = preserve_objectid
+        if not geometry_precision is None:
+            params["geometryPrecision"] = geometry_precision
+        if not geometry_precision_z is None:
+            params["geometryPrecisionZ"] = geometry_precision_z
+        if not geometry_precision_m is None:
+            params["geometryPrecisionM"] = geometry_precision_m
         if future:
             f = self._run_async(
                 self._con.post,
-                **{"path": url, "postdata": params, "token": self._gis._con.token},
+                **{"path": url, "postdata": params},
             )
             return NAJob(future=f, task="Solve Service Area")
         return self._con.post(path=url, postdata=params)
@@ -1000,6 +1052,12 @@ class ClosestFacilityLayer(NetworkLayer):
         future: bool = False,
         ignore_invalid_locations: bool = True,
         directions_output_type: Optional[str] = None,
+        return_traversed_edges: Optional[bool]=None,
+        return_traversed_junctions: Optional[bool]=None,
+        return_traversed_turns: Optional[bool]=None,
+        geometry_precision: Optional[int]=None,
+        geometry_precision_z: Optional[int]=None,
+        geometry_precision_m: Optional[int]=None,
     ):
         """The solve operation is performed on a network layer resource of
         type closest facility (layerType is esriNAServerClosestFacilityLayer).
@@ -1202,6 +1260,27 @@ class ClosestFacilityLayer(NetworkLayer):
         ignore_invalid_locations                If true, the solver will ignore invalid
                                                 locations. Otherwise, it will raise an error.
                                                 Default is true.
+        -----------------------------------     --------------------------------------------------------------------
+        return_traversed_edges                  Optional boolean. Specify whether traversed edges will be returned 
+                                                by the service.
+        -----------------------------------     --------------------------------------------------------------------
+        return_traversed_junctions              Optional boolean. Specify whether traversed junctions will be 
+                                                returned by the service.
+        -----------------------------------     --------------------------------------------------------------------
+        return_traversed_turns                  Optional boolean. Specify whether traversed turns will be returned 
+                                                by the service.
+        -----------------------------------     --------------------------------------------------------------------
+        geometry_precision                      Optional Integer. Use this parameter to specify the number 
+                                                of decimal places in the response geometries returned by solve operation. 
+                                                This applies to x/y values only (not m- or z-values).
+        -----------------------------------     --------------------------------------------------------------------
+        geometry_precision_z                    Optional Integer. Use this parameter specify the number of decimal 
+                                                places in the response geometries returned by solve operation. 
+                                                This applies to z-value only.
+        -----------------------------------     --------------------------------------------------------------------
+        geometry_precision_m                    Optional Integer. Use this parameter to specify the number of decimal 
+                                                places in the response geometries returned by solve operation. 
+                                                This applies to m-value only.
         ===================================     ====================================================================
 
 
@@ -1309,6 +1388,18 @@ class ClosestFacilityLayer(NetworkLayer):
             params["overrides"] = overrides
         if not preserve_objectid is None:
             params["preserveObjectID"] = preserve_objectid
+        if not geometry_precision is None:
+            params["geometryPrecision"] = geometry_precision
+        if not geometry_precision_z is None:
+            params["geometryPrecisionZ"] = geometry_precision_z
+        if not geometry_precision_m is None:
+            params["geometryPrecisionM"] = geometry_precision_m
+        if not return_traversed_edges is None:
+            params["returnTraversedEdges"] = return_traversed_edges
+        if not return_traversed_junctions is None:
+            params["returnTraversedJunctions"] = return_traversed_junctions
+        if not return_traversed_turns is None:
+            params["returnTraversedTurns"] = return_traversed_turns
         if future:
             f = self._run_async(self._con.post, **{"path": url, "postdata": params})
             return NAJob(future=f, task="Solve Closest Facility")
@@ -1332,9 +1423,9 @@ class ODCostMatrixLayer(NetworkLayer):
         output_type: str = "Sparse Matrix",
         time_of_day: Optional[datetime.datetime] = None,
         time_of_day_is_utc: Optional[str] = None,
-        barriers=None,
-        polyline_barriers=None,
-        polygon_barriers=None,
+        barriers: Optional[Union[Point, FeatureSet, dict[str, Any]]]=None,
+        polyline_barriers: Optional[Union[Polyline, FeatureSet, dict[str, Any]]]=None,
+        polygon_barriers: Optional[Union[Polygon, FeatureSet, dict[str, Any]]]=None,
         impedance_attribute_name: Optional[str] = None,
         accumulate_attribute_names: Optional[str] = None,
         restriction_attribute_names: Optional[str] = None,
@@ -1351,6 +1442,8 @@ class ODCostMatrixLayer(NetworkLayer):
         return_z: bool = False,
         overrides: Optional[dict[str, Any]] = None,
         future: bool = False,
+        geometry_precision:Optional[int]=None,
+        geometry_precision_z:Optional[int]=None,
     ):
         """
 
@@ -1380,9 +1473,11 @@ class ODCostMatrixLayer(NetworkLayer):
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        origins                                  Required FeatureLayer/SeDF/FeatureSet. Specifies the starting points from which to travel to the destinations.
+        origins                                  Required FeatureLayer/SeDF/FeatureSet. 
+                                                 Specifies the starting points from which to travel to the destinations.
         ------------------------------------     --------------------------------------------------------------------
-        destinations                             Required FeatureLayer/SeDF/FeatureSet. Specifies the ending point locations to travel to from the origins.
+        destinations                             Required FeatureLayer/SeDF/FeatureSet. 
+                                                 Specifies the ending point locations to travel to from the origins.
         ------------------------------------     --------------------------------------------------------------------
         default_cutoff                           Optional Float. Specify the travel time or travel distance value at
                                                  which to stop searching for destinations. The default value is
@@ -1460,6 +1555,10 @@ class ODCostMatrixLayer(NetworkLayer):
         overrides                                Optional Dict. Specify additional settings that can influence the behavior of the solver.
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, the result will be a `SolveJob` object and results will be returned asynchronously.
+        ------------------------------------     --------------------------------------------------------------------
+        geometry_precision                       Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to x/y values only (not m- or z-values).
+        ------------------------------------     --------------------------------------------------------------------
+        geometry_precision_z                     Optional Integer. Use this parameter specify the number of decimal places in the response geometries returned by solve operation. This applies to z-value only.
         ====================================     ====================================================================
 
         :return: Dictionary or `NAJob` when `future=True`
@@ -1549,6 +1648,11 @@ class ODCostMatrixLayer(NetworkLayer):
             params["returnZ"] = return_z
         if not overrides is None:
             params["overrides"] = overrides
+        if not geometry_precision is None:
+            params["geometryPrecision"] = geometry_precision
+        if not geometry_precision_z is None:
+            params["geometryPrecisionZ"] = geometry_precision_z
+
         if future:
             f = self._run_async(self._con.post, **{"path": url, "postdata": params})
             return NAJob(future=f, task="Solve OD Cost Matrix")

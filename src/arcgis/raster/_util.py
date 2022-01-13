@@ -353,7 +353,9 @@ def _check_if_iso_format(timestamp):
             return False
 
 
-def _local_function_template(operation_number=None):
+def _local_function_template(
+    operation_number=None, percentile_value=None, percentile_interpolation_type=None
+):
     template_dict = {
         "name": "max_rft",
         "description": "A raster function template.",
@@ -422,6 +424,22 @@ def _local_function_template(operation_number=None):
                 "type": "RasterFunctionVariable",
                 "_object_id": 9,
             },
+            "PercentileValue": {
+                "name": "PercentileValue",
+                "value": 90,
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 5,
+            },
+            "PercentileInterpolationType": {
+                "name": "PercentileInterpolationType",
+                "value": 1,
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 6,
+            },
             "type": "LocalFunctionArguments",
             "_object_id": 10,
         },
@@ -430,53 +448,59 @@ def _local_function_template(operation_number=None):
     }
     if operation_number is not None:
         template_dict["arguments"]["Operation"]["value"] = operation_number
-    return template_dict
-
-
-def _percentile_function_template(
-    ignore_nodata=False, percentile=90, percentile_interpolation_type=False
-):
-    template_dict = {
-        "name": "Raster Function Template",
-        "description": "A raster function template.",
-        "function": {
-            "pixelType": "UNKNOWN",
-            "name": "Percentile Function",
-            "description": "Compute percentile value across the input rasters.",
-            "type": "PercentileFunction",
-            "_object_id": 1,
-        },
-        "arguments": {
-            "Rasters": {
-                "name": "Rasters",
-                "isDataset": False,
-                "isPublic": False,
-                "type": "RasterFunctionVariable",
-                "_object_id": 2,
-            },
-            "IgnoreNoData": True,
-            "Percentile": 90,
-            "InterpolatePercentile": False,
-            "type": "PercentileFunctionArguments",
-            "_object_id": 3,
-        },
-        "functionType": 0,
-        "type": "RasterFunctionTemplate",
-        "_object_id": 4,
-    }
-
-    if ignore_nodata is not None:
-        template_dict["arguments"]["IgnoreNoData"] = ignore_nodata
-
-    if percentile is not None:
-        template_dict["arguments"]["Percentile"] = percentile
-
+    if percentile_value is not None:
+        template_dict["arguments"]["PercentileValue"]["value"] = percentile_value
     if percentile_interpolation_type is not None:
-        template_dict["arguments"][
-            "InterpolatePercentile"
+        template_dict["arguments"]["PercentileInterpolationType"][
+            "value"
         ] = percentile_interpolation_type
-
     return template_dict
+
+
+# def _percentile_function_template(
+#    ignore_nodata=False, percentile=90, percentile_interpolation_type=False
+# ):
+#    template_dict = {
+#        "name": "Raster Function Template",
+#        "description": "A raster function template.",
+#        "function": {
+#            "pixelType": "UNKNOWN",
+#            "name": "Percentile Function",
+#            "description": "Compute percentile value across the input rasters.",
+#            "type": "PercentileFunction",
+#            "_object_id": 1,
+#        },
+#        "arguments": {
+#            "Rasters": {
+#                "name": "Rasters",
+#                "isDataset": False,
+#                "isPublic": False,
+#                "type": "RasterFunctionVariable",
+#                "_object_id": 2,
+#            },
+#            "IgnoreNoData": True,
+#            "Percentile": 90,
+#            "InterpolatePercentile": False,
+#            "type": "PercentileFunctionArguments",
+#            "_object_id": 3,
+#        },
+#        "functionType": 0,
+#        "type": "RasterFunctionTemplate",
+#        "_object_id": 4,
+#    }
+
+#    if ignore_nodata is not None:
+#        template_dict["arguments"]["IgnoreNoData"] = ignore_nodata
+
+#    if percentile is not None:
+#        template_dict["arguments"]["Percentile"] = percentile
+
+#    if percentile_interpolation_type is not None:
+#        template_dict["arguments"][
+#            "InterpolatePercentile"
+#        ] = percentile_interpolation_type
+
+#    return template_dict
 
 
 def _get_geometry(data):
@@ -1096,9 +1120,10 @@ def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
 
 def _upload(path, description=None, gis=None):
     """
-    Uploads a new item to the server. Once the operation is completed
-    successfully, the following is returned as a 2 element tuple:
-    the success Boolean, and the JSON structure of the uploaded item
+    The ``upload`` method uploads a new item to the server.
+
+    .. note::
+        Once the operation is completed successfully, item id of the uploaded item is returned.
 
     ===============     ====================================================================
     **Argument**        **Description**
@@ -1108,7 +1133,7 @@ def _upload(path, description=None, gis=None):
     description         Optional string. Descriptive text for the uploaded item.
     ===============     ====================================================================
 
-    :return: A tuple of (Boolean, dict)
+    :return: Item id of uploaded item
 
     """
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]

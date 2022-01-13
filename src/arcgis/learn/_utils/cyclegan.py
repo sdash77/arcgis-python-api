@@ -190,12 +190,25 @@ class ImageTupleListMS(ArcGISImageList):
 
     @classmethod
     def from_folders(
-        cls, path, folderA, folderB, batch_stats_a, batch_stats_b, **kwargs
+        cls,
+        path,
+        is_multispectral,
+        folderA,
+        folderB,
+        batch_stats_a,
+        batch_stats_b,
+        **kwargs,
     ):
         itemsB = ImageList.from_folder(folderB).items
         res = super().from_folder(folderA, itemsB=itemsB, **kwargs)
         # The path below (i.e. 'path') is the working dir for saving the model
-        res.path = path
+        if is_multispectral:
+            res.path = path
+        else:
+            if is_old_format_cyclegan(path):
+                res.path = path / "Images"
+            else:
+                res.path = path / "A"
         global _batch_stats_a
         global _batch_stats_b
         _batch_stats_a = batch_stats_a
@@ -496,14 +509,71 @@ def _batch_stats_json(
         with open(normstats_json_path) as f:
             normstats = json.load(f)
 
+    emd_path = Path(os.path.abspath(path / ".." / "esri_model_definition.emd"))
+
+    if os.path.exists(emd_path):
+        with open(emd_path) as f:
+            emd_stats = json.load(f)
+        domain_stats = emd_stats.get("AllTilesStats")
+        mini, maxi, mean, std = [], [], [], []
+        for i in domain_stats:
+            mini.append(i.get("Min"))
+            maxi.append(i.get("Max"))
+            mean.append(i.get("Mean"))
+            std.append(i.get("StdDev"))
+
+        data_stats = [mini, maxi, mean, std]
+        data_stats_tensors = [
+            torch.tensor(mini),
+            torch.tensor(maxi),
+            torch.tensor(mean),
+            torch.tensor(std),
+        ]
+    else:
+        emd_stats = None
+
     norm_pct_search = f"batch_stats_for_norm_pct_{round(norm_pct*100)}"
     if norm_pct_search in normstats:
         batch_stats = normstats[norm_pct_search]
-        for s in batch_stats:
-            if batch_stats[s] is not None:
-                batch_stats[s] = torch.tensor(batch_stats[s])
+        if emd_stats is not None:
+            for l, s in enumerate(batch_stats):
+                if l == len(data_stats):
+                    break
+                batch_stats[s] = data_stats[l]
+
+            for s in batch_stats:
+                if batch_stats[s] is not None:
+                    batch_stats[s] = torch.tensor(batch_stats[s])
+        else:
+            for s in batch_stats:
+                if batch_stats[s] is not None:
+                    batch_stats[s] = torch.tensor(batch_stats[s])
+
     else:
-        batch_stats = _get_batch_stats(img_list, norm_pct)
+        if emd_stats is not None:
+            batch_stats = {
+                "band_min_values": None,
+                "band_max_values": None,
+                "band_mean_values": None,
+                "band_std_values": None,
+                "scaled_min_values": None,
+                "scaled_max_values": None,
+                "scaled_mean_values": None,
+                "scaled_std_values": None,
+            }
+            for l, s in enumerate(batch_stats):
+                if l == len(data_stats):
+                    break
+                batch_stats[s] = data_stats[l]
+
+            for s in batch_stats:
+                if batch_stats[s] is not None:
+                    batch_stats[s] = torch.Tensor(batch_stats[s])
+        else:
+            batch_stats = _get_batch_stats(img_list, norm_pct)
+            for s in batch_stats:
+                if batch_stats[s] is not None:
+                    batch_stats[s] = torch.Tensor(batch_stats[s])
         normstats[norm_pct_search] = dict(batch_stats)
         for s in normstats[norm_pct_search]:
             if normstats[norm_pct_search][s] is not None:
@@ -514,7 +584,9 @@ def _batch_stats_json(
     return batch_stats
 
 
-def prepare_data_ms_cyclegan(path, norm_pct, val_split_pct, seed, databunch_kwargs):
+def prepare_data_ms_cyclegan(
+    path, is_multispectral, norm_pct, val_split_pct, seed, databunch_kwargs
+):
     path_a, path_b = cyclegan_paths(path)
 
     img_list_a = ArcGISImageList.from_folder(path_a)
@@ -526,38 +598,48 @@ def prepare_data_ms_cyclegan(path, norm_pct, val_split_pct, seed, databunch_kwar
     batch_stats_b = _batch_stats_json(
         path_b, img_list_b, norm_pct, stats_file_name="esri_normalization_stats_b.json"
     )
-
-    data = (
-        ImageTupleListMS.from_folders(
-            path, path_a, path_b, batch_stats_a, batch_stats_b
+    if is_multispectral:
+        data = (
+            ImageTupleListMS.from_folders(
+                path, is_multispectral, path_a, path_b, batch_stats_a, batch_stats_b
+            )
+            .split_by_rand_pct(val_split_pct, seed=seed)
+            .label_empty()
+            .databunch(**databunch_kwargs)
         )
-        .split_by_rand_pct(val_split_pct, seed=seed)
-        .label_empty()
-        .databunch(**databunch_kwargs)
-    )
 
-    data._band_min_values = batch_stats_a["band_min_values"]
-    data._band_max_values = batch_stats_a["band_max_values"]
-    data._band_mean_values = batch_stats_a["band_mean_values"]
-    data._band_std_values = batch_stats_a["band_std_values"]
-    data._scaled_min_values = batch_stats_a["scaled_min_values"]
-    data._scaled_max_values = batch_stats_a["scaled_max_values"]
-    data._scaled_mean_values = batch_stats_a["scaled_mean_values"]
-    data._scaled_std_values = batch_stats_a["scaled_std_values"]
+        data._band_min_values = batch_stats_a["band_min_values"]
+        data._band_max_values = batch_stats_a["band_max_values"]
+        data._band_mean_values = batch_stats_a["band_mean_values"]
+        data._band_std_values = batch_stats_a["band_std_values"]
+        data._scaled_min_values = batch_stats_a["scaled_min_values"]
+        data._scaled_max_values = batch_stats_a["scaled_max_values"]
+        data._scaled_mean_values = batch_stats_a["scaled_mean_values"]
+        data._scaled_std_values = batch_stats_a["scaled_std_values"]
 
-    data._band_min_values_b = batch_stats_b["band_min_values"]
-    data._band_max_values_b = batch_stats_b["band_max_values"]
-    data._band_mean_values_b = batch_stats_b["band_mean_values"]
-    data._band_std_values_b = batch_stats_b["band_std_values"]
-    data._scaled_min_values_b = batch_stats_b["scaled_min_values"]
-    data._scaled_max_values_b = batch_stats_b["scaled_max_values"]
-    data._scaled_mean_values_b = batch_stats_b["scaled_mean_values"]
-    data._scaled_std_values_b = batch_stats_b["scaled_std_values"]
+        data._band_min_values_b = batch_stats_b["band_min_values"]
+        data._band_max_values_b = batch_stats_b["band_max_values"]
+        data._band_mean_values_b = batch_stats_b["band_mean_values"]
+        data._band_std_values_b = batch_stats_b["band_std_values"]
+        data._scaled_min_values_b = batch_stats_b["scaled_min_values"]
+        data._scaled_max_values_b = batch_stats_b["scaled_max_values"]
+        data._scaled_mean_values_b = batch_stats_b["scaled_mean_values"]
+        data._scaled_std_values_b = batch_stats_b["scaled_std_values"]
 
-    # add dataset_type
-    data._dataset_type = "CycleGAN"
+        # add dataset_type
+        data._dataset_type = "CycleGAN"
 
-    return data
+        return data
+    else:
+        data = (
+            ImageTupleListMS.from_folders(
+                path, is_multispectral, path_a, path_b, batch_stats_a, batch_stats_b
+            )
+            .split_by_rand_pct(val_split_pct, seed=seed)
+            .label_empty()
+        )
+
+        return data, batch_stats_a, batch_stats_b
 
 
 def get_files(*args, **kwargs):

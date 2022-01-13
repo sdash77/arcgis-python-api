@@ -30,7 +30,7 @@ class MissionServer(BaseMissionServer):
         if url.lower().find("/admin") == -1:
             if url.endswith("/"):
                 url = url[:-1]
-            url += "/admin/"
+            url += "/admin"
         self._url = url
         super().__init__(url, gis)
         if gis is None:
