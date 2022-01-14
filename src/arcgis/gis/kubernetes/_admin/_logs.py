@@ -1,7 +1,7 @@
 import csv
 from datetime import datetime
 from arcgis.gis.kubernetes._admin._base import _BaseKube
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 
 ########################################################################
 class LogManager(_BaseKube):
@@ -129,6 +129,73 @@ class LogManager(_BaseKube):
             return self._con.get(url, params)
         except:
             return ""
+
+    # ----------------------------------------------------------------------
+    def search(
+        self,
+        query: str,
+        sort_by: str = "bestMatch",
+        sort_order: str = "desc",
+        show_stack: bool = False,
+        return_count: bool = False,
+    ) -> Union[int, List[Dict[str, Any]]]:
+        """
+        Allows after to search your organization's logs for specific log records.
+
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        query                  Required String. The search terms used to query your organization's
+                               logs. This parameter supports keywords (for example, completed) and
+                               phrases (for example, completed successfully).
+        ------------------     --------------------------------------------------------------------
+        sort_by                Optional String. Specifies the way in which search results are
+                               sorted. Sorting by `bestMatch` returns the results that best match
+                               the `query` values. Sorting by `time` sorts the search results by
+                               the time information recorded in the log's time stamp, the order
+                               of which is determined by the `sort_order` parameter.
+
+                               Values: `bestMatch` or `time`
+        ------------------     --------------------------------------------------------------------
+        sort_order             Optional String. The sort order for the results, either descending
+                               or ascending. This parameter is ignored if sort_by is set to
+                               `bestMatch`.
+
+                               Values: `desc` or `asc`
+        ------------------     --------------------------------------------------------------------
+        show_stack             Optional Boolean. Specifies whether stack traces are included in the
+                               search results. The default is false.
+        ------------------     --------------------------------------------------------------------
+        return_count           Optional Boolean.  If true, only returns a count of the logs that
+                               would be returned by the search operation. If false, the response
+                               includes the search results in full. The default is false.
+        ==================     ====================================================================
+
+
+        :return: If return_count==False, the messages as a list are returned, else an Integer
+
+        """
+        messages = []
+        params = {
+            "searchQuery": query,
+            "sortBy": sort_by,
+            "sortOrder": sort_order,
+            "showStackTraces": show_stack,
+            "countOnly": return_count,
+            "num": 1000,
+            "f": "json",
+        }
+        url = f"{self._url}/search"
+        res = self._con.get(url, params)
+        if return_count:
+            return res.get("total", 0)
+        messages.extend(res["messages"])
+        while res["nextStart"] > -1:
+            params["start"] = res["nextStart"]
+            res = self._con.get(url, params)
+            messages.extend(res["messages"])
+        return messages
 
     # ----------------------------------------------------------------------
     def edit(self, level="WARNING"):

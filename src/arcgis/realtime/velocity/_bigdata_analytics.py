@@ -1,4 +1,7 @@
+from arcgis import GIS
+from typing import Optional, Dict, Union, List
 from ._task import Task
+from ._util import _Util
 
 
 class BigDataAnalytics(Task):
@@ -12,7 +15,7 @@ class BigDataAnalytics(Task):
     _util = None
     _item = None
 
-    def __init__(self, gis, util, item=None):
+    def __init__(self, gis: GIS, util: _Util, item: Optional[Dict] = None):
         self._gis = gis
         self._util = util
 
@@ -29,45 +32,92 @@ class BigDataAnalytics(Task):
         )
 
     # ----------------------------------------------------------------------
-    def start(self):
+    def start(self) -> Dict:
         """
         Start the Big Data Analytics for the given id
+
         :return: response of bigdata_analytics start
+
+        .. code-block:: python
+
+            # Start big data analytics
+
+            # Method: <item>.start()
+            
+            sample_bigdata_task.start()
         """
         return self._util._start("analytics/bigdata", self._id)
 
     # ----------------------------------------------------------------------
-    def stop(self):
+    def stop(self) -> Dict:
         """
         Stop the Big Data Analytics for the given id
         Return True if the Big Data Analytics was successfully stopped.
+
         :return: boolean
+
+        .. code-block:: python
+
+            # Stop big data analytics
+
+            # Method: <item>.stop()
+            
+            sample_bigdata_task.stop()
         """
         return self._util._stop("analytics/bigdata", self._id)
 
     # ----------------------------------------------------------------------
     @property
-    def status(self):
+    def status(self) -> Dict:
         """
         Get the status of the running Big Data Analytics for the given id
+
         :return: response of Big Data Analytics status
+
+        .. code-block:: python
+
+            # Retrieve status of big data analytics task
+
+            # Property: <item>.status()
+            
+            status = sample_bigdata_task.status
+            status
         """
         return self._util._status("analytics/bigdata", self._id)
 
     # ----------------------------------------------------------------------
     @property
-    def metrics(self):
+    def metrics(self) -> Dict:
         """
         Get the metrics of the running Big Data Analytics for the given id
+
         :return: response of Big Data Analytics metrics
+
+        .. code-block:: python
+
+            # Retrieve metrics of big data analytics task
+
+            # Property: <item>.metrics()
+            
+            metrics = sample_bigdata_task.metrics
+            metrics
         """
         return self._util._metrics("analytics/bigdata/metrics", self._id)
 
     # ----------------------------------------------------------------------
-    def delete(self):
+    def delete(self) -> bool:
         """
         Deletes an existing Big Data Analytics instance
+
         :return: A boolean containing True (for success) or
          False (for failure) a dictionary with details is returned.
+
+        .. code-block:: python
+
+            # Delete a big data analytics 
+
+            # Method: <item>.delete()
+            
+            sample_bigdata_task.delete
         """
         return self._util._delete("analytics/bigdata", self._id)

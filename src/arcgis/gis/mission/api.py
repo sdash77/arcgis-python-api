@@ -217,6 +217,7 @@ class MissionCatalog:
     _con = None
     _gis = None
     _url = None
+    _admin = None
     _properties = None
     # ---------------------------------------------------------------------
     def __init__(self, gis: "GIS") -> "MissionCatalog":
@@ -234,12 +235,7 @@ class MissionCatalog:
         self._url = url
         self._gis = gis
         self._con = gis._con
-        try:
-            from arcgis.gis.mission import MissionServer
-
-            self.admin = MissionServer(url=urls["admin"], gis=gis)
-        except:
-            pass
+        self._urls = urls
 
     # ---------------------------------------------------------------------
     def __str__(self):
@@ -258,6 +254,14 @@ class MissionCatalog:
             except:
                 self._properties = PropertyMap(self._con.post(self._url, {"f": "json"}))
         return self._properties
+
+    def admin(self):
+        """provides a connection to the administrative API of Mission Server Produce"""
+        if self._admin is None:
+            from arcgis.gis.mission import MissionServer
+
+            self._admin = MissionServer(url=self._urls["admin"], gis=self._gis)
+        return self._admin
 
     # ---------------------------------------------------------------------
     def create_mission(

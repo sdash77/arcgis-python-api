@@ -1,6 +1,7 @@
+from __future__ import annotations
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from arcgis.gis import GIS
-from typing import Dict, Any, Optional, List
+from typing import Any, Optional
 
 ###########################################################################
 class ArchitectureManager(_BaseKube):
@@ -22,7 +23,7 @@ class ArchitectureManager(_BaseKube):
 
     # ---------------------------------------------------------------------
     @property
-    def development(self) -> Dict[str, Any]:
+    def development(self) -> dict[str, Any]:
         """
         The development architecture profile is designed for use in
         nonproduction environments, including those for testing and
@@ -39,7 +40,7 @@ class ArchitectureManager(_BaseKube):
 
     # ---------------------------------------------------------------------
     @property
-    def standard(self) -> Dict[str, Any]:
+    def standard(self) -> dict[str, Any]:
         """
         The standard-availability architecture profile is designed for use
         in production environments and those wanting to minimize unplanned
@@ -57,7 +58,7 @@ class ArchitectureManager(_BaseKube):
 
     # ---------------------------------------------------------------------
     @property
-    def enhanced(self) -> Dict[str, Any]:
+    def enhanced(self) -> dict[str, Any]:
         """
         The enhanced-availability architecture profile is designed for use
         in business or mission-critical production environments. This

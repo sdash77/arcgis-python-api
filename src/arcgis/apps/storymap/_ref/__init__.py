@@ -27,3 +27,37 @@ reference = {
         }
     }
 }
+
+storymap_2 = {
+    "root": "n-4xkUEe",
+    "nodes": {
+        "n-4xkUEe": {
+            "type": "story",
+            "data": {"storyTheme": "r-vlc4Kp"},
+            "config": {"coverDate": "first-published"},
+            "children": ["n-aTn8ak", "n-1AItUD", "n-cOeTah"],
+        },
+        "n-aTn8ak": {
+            "type": "storycover",
+            "data": {
+                "type": "minimal",
+                "title": "",
+                "summary": "",
+                "byline": "",
+                "titlePanelPosition": "start",
+            },
+        },
+        "n-1AItUD": {
+            "type": "navigation",
+            "data": {"links": []},
+            "config": {"isHidden": True},
+        },
+        "n-cOeTah": {"type": "credits"},
+    },
+    "resources": {
+        "r-vlc4Kp": {
+            "type": "story-theme",
+            "data": {"themeId": "summit", "themeBaseVariableOverrides": {}},
+        }
+    },
+}

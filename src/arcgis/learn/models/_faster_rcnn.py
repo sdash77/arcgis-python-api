@@ -10,7 +10,10 @@ try:
     import torch
     from fastai.torch_core import split_model_idx
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList
-    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from .._utils.common import (
+        get_multispectral_data_params_from_emd,
+        _get_emd_path,
+    )
     from ._arcgis_model import _resnet_family, _get_device
     from ._ssd_utils import AveragePrecision
     import types
@@ -49,7 +52,7 @@ class MyFasterRCNN:
         These two arguments comes from dataset which you have prepared from prepare_data method above.
 
         """
-        self.fasterrcnn_kwargs, kwargs = self.fastai.core.split_kwargs_by_func(
+        (self.fasterrcnn_kwargs, kwargs,) = self.fastai.core.split_kwargs_by_func(
             kwargs, self.torchvision.models.detection.FasterRCNN.__init__
         )
         if backbone is None:
@@ -184,7 +187,9 @@ class MyFasterRCNN:
                 label = self.torch.tensor([0]).to(learn.data.device)
             # FasterRCNN require the formate of bboxes [x1,y1,x2,y2].
             bbox = self.torch.index_select(
-                bbox, 1, self.torch.tensor([1, 0, 3, 2]).to(learn.data.device)
+                bbox,
+                1,
+                self.torch.tensor([1, 0, 3, 2]).to(learn.data.device),
             )
             target["boxes"] = bbox
             target["labels"] = label
@@ -341,7 +346,10 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
         loss_classifier, loss_box_reg = fastrcnn_loss(
             class_logits, box_regression, labels, regression_targets
         )
-        losses = {"loss_classifier": loss_classifier, "loss_box_reg": loss_box_reg}
+        losses = {
+            "loss_classifier": loss_classifier,
+            "loss_box_reg": loss_box_reg,
+        }
     if not self.training or train_val:
 
         boxes, scores, labels = self.postprocess_detections(
@@ -380,7 +388,6 @@ def postprocess_transform(self, result, image_shapes, original_image_sizes):
 
 if HAS_FASTAI:
 
-    @torch.jit.unused
     def eager_outputs_modified(self, losses, detections):
 
         train_val = getattr(self, "train_val", False)
@@ -793,7 +800,11 @@ class FasterRCNN(ModelExtension):
         """
 
     def average_precision_score(
-        self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True
+        self,
+        detect_thresh=0.2,
+        iou_thresh=0.1,
+        mean=False,
+        show_progress=True,
     ):
 
         """
