@@ -707,7 +707,7 @@ class MapView(widgets.DOMWidget):
     _portal_url = Unicode("").tag(sync=True)
     _portal_sharing_rest_url = Unicode("").tag(sync=True)
     _username = Unicode("").tag(sync=True)
-    _trigger_interactive_draw_mode_for = Unicode("").tag(sync=True)
+    _trigger_interactive_draw_mode_for = Dict({}).tag(sync=True)
     _trigger_new_jlab_window_with_args = Dict({}).tag(sync=True)
     hide_mode_switch = Bool(False).tag(sync=True)
     """When ``hide_mode_switch`` is set to ``True`` the 2D/3D switch button will be hidden from the widget.
@@ -2288,8 +2288,12 @@ class MapView(widgets.DOMWidget):
             self.webmap.add_layer(fset, wm_options)
 
         else:  # User passed in a string for interactive draw mode
-            self._trigger_interactive_draw_mode_for = ""
-            self._trigger_interactive_draw_mode_for = shape
+            if symbol:
+                draw_options = {"shape": shape, "symbol": symbol}
+            else:
+                draw_options = {"shape": shape}
+            self._trigger_interactive_draw_mode_for = {}
+            self._trigger_interactive_draw_mode_for = draw_options
 
     def _draw_featureset(self, fset, popup, symbol):
         # FeatureSet needs special case
