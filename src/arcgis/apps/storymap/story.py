@@ -159,6 +159,7 @@ class StoryMap(object):
                 "Web Application",
                 "smstatusdraft",
                 "smversiondraft:21.43.0",
+                "python-api",
                 "smeditorapp:python-api-" + arcgis.__version__,
                 "smdraftresourceid:" + draft,
             ]
@@ -949,20 +950,23 @@ class StoryMap(object):
             for keyword in keywords:
                 # iterate through since only know part of keyword we want to remove
                 if (
-                    "smdraftresourceid" in keyword
-                    or "smpublisheddate" in keyword
-                    or "smstatusdraft" in keyword
-                ):
+                    "smdraftresourceid"
+                    or "smpublisheddate"
+                    or "smstatusdraft"
+                    or "smpublisherapp"
+                ) in keyword:
                     keywords.remove(keyword)
 
             new_keywords = [
                 "smstatuspublished",
                 "smversiondraft:21.43.0",
                 "smversionpublished:21.43.0",
-                "smeditorapp:python-api-" + arcgis.__version__,
+                "python-api",
+                "smpublisherapp:python-api-" + arcgis.__version__,
                 "smdraftresourceid:" + draft,
                 "smpublisheddate:" + str(int(time.time() * 1000)),
             ]
+            # Setting the keywords in a set will remove duplicates
             p = {
                 "keywords": list(set(keywords + new_keywords)),
                 "text": json.dumps(self._properties),
@@ -991,42 +995,40 @@ class StoryMap(object):
             keywords = self._item.typeKeywords
             previously_published = False
             for keyword in keywords:
-                if "smdraftresourceid" in keyword:
-                    # Update the draft
-                    keywords.remove(keyword)
                 if "smpublisheddate" in keyword:
-                    # Update the date
+                    # Update the date in new keywords
                     previously_published = True
                     keywords.remove(keyword)
-                if "smstatuspublished" in keyword or "smstatusdraft" in keyword:
-                    # Set correct status
+                elif (
+                    "smstatuspublished"
+                    or "smstatusdraft"
+                    or "smdraftresourceid"
+                    or "smeditorapp"
+                ) in keyword:
+                    # Remove old keywords and will be replaced in new keywords
                     keywords.remove(keyword)
             if previously_published is True:
                 # Unpublished changes mode
                 new_keywords = [
                     "smstatusunpublishedchanges",
                     "smversiondraft:21.43.0",
+                    "python-api",
                     "smeditorapp:python-api-" + arcgis.__version__,
                     "smdraftresourceid:" + draft,
                     "smversionpublished:21.43.0",
                     "smpublisheddate:" + str(int(time.time() * 1000)),
                 ]
-                if "smstatuspublished" in keywords:
-                    idx = keywords.index("smstatuspublished")
-                    del keywords[idx]
             if previously_published is False:
                 # Draft mode
                 new_keywords = [
                     "smstatusdraft",
                     "smversiondraft:21.43.0",
+                    "python-api",
                     "smeditorapp:python-api-" + arcgis.__version__,
                     "smdraftresourceid:" + draft,
                 ]
-            for keyword in new_keywords:
-                keywords.append(keyword)
-            keywords = list(set(keywords))
-            keywords = ",".join(keywords)
-            p = {"keywords": keywords}
+            # Pass through set first to remove duplicates
+            p = {"keywords": list(set(keywords + new_keywords))}
             if title:
                 p["title"] = title
             if tags:
