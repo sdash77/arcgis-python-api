@@ -1835,9 +1835,7 @@ class LookUpTable(object):
         gis = object.__getattribute__(self, "_gis")
         url = object.__getattribute__(self, "_url")
         id = object.__getattribute__(self, "job_template_id")
-        full_object = json.loads(
-            json.dumps(gis._con.get(url, {"token": gis._con.token}))
-        )
+        full_object = gis._con.get(url, {"token": gis._con.token})
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
@@ -2921,17 +2919,13 @@ class JobTemplate(object):
 
         """
         try:
-            return_obj = json.loads(
-                json.dumps(
-                    self._gis._con.get(
-                        "{base}/automatedCreation/{automationId}".format(
-                            base=self._url,
-                            jobTemplateId=self.job_template_id,
-                            automationId=automation_id,
-                        ),
-                        params={"token": self._gis._con.token},
-                    )
-                )
+            return_obj = self._gis._con.get(
+                "{base}/automatedCreation/{automationId}".format(
+                    base=self._url,
+                    jobTemplateId=self.job_template_id,
+                    automationId=automation_id,
+                ),
+                params={"token": self._gis._con.token},
             )
             return return_obj
         except:
@@ -3030,7 +3024,7 @@ class Group(object):
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
     def get(gis, url, params):
-        group_dict = json.loads(json.dumps(gis._con.get(url, params)))
+        group_dict = gis._con.get(url, params)
         return Group(group_dict)
 
 
