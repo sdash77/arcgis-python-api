@@ -11,16 +11,18 @@ gis = GIS("pro")
 def test_get_countries_local():
     res = get_countries(gis)
     assert isinstance(res, list)
+    assert len(res) < 25
 
 
 def test_get_countries_local_df():
     res = get_countries(gis, as_df=True)
     assert isinstance(res, pd.DataFrame)
+    assert len(res.index) < 25
 
 
 def test_enrich_iterable_str_address_local():
     with pytest.raises(NotImplementedError):
-        enrich_iterable_str_addresses_test()
+        enrich_iterable_str_addresses_test(gis)
 
 
 # def test_enrich_iterable_str_points_of_interest_local():
@@ -33,22 +35,22 @@ def test_enrich_iterable_str_address_local():
 
 def test_enrich_iterable_dict_address_local():
     with pytest.raises(NotImplementedError):
-        enrich_iterable_dict_addresses_test()
+        enrich_iterable_dict_addresses_test(gis)
 
 
 def test_enrich_iterable_geometry_local():
     with pytest.raises(NotImplementedError):
-        enrich_iterable_geometry_test()
+        enrich_iterable_geometry_test(gis)
 
 
 def test_enrich_sedf_local():
     with pytest.raises(NotImplementedError):
-        enrich_sedf_test()
+        enrich_sedf_test(gis)
 
 
 def test_enrich_iterable_buffer_study_areas_local():
     with pytest.raises(NotImplementedError):
-        enrich_iterable_buffer_study_areas_test()
+        enrich_iterable_buffer_study_areas_test(gis)
 
 
 # def test_enrich_iterable_named_areas_local():

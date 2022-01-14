@@ -18,6 +18,7 @@ from ._business_analyst._utils import (
     local_vs_gis,
     local_business_analyst_avail,
     local_ba_data_avail,
+    avail_arcpy
 )
 from ._ge import _GeoEnrichment
 
@@ -68,6 +69,14 @@ def _call_method_by_source(fn) -> callable:
                     break
 
         # TODO: Swap the precedence of these once all methods are implemented
+        # if the source is a GIS instance and was created using the "pro" keyword, set as local
+        if isinstance(src, GIS):
+            if src._con._auth == "PRO" or (src._con._auth == "ANON" and avail_arcpy):
+                assert local_business_analyst_avail() and local_ba_data_avail(), ("If using ArcGIS Pro, you must have "
+                                                                                  "Business Analyst with at least one "
+                                                                                  "local data pack installed.")
+                src = "local"
+
         # check if active gis is in session
         src = _check_active_gis(src)
 
@@ -76,10 +85,8 @@ def _call_method_by_source(fn) -> callable:
             src = "local"
 
         # make sure a source was located or bingo out
-        assert src is not None, (
-            "The gis parameter needs to be populated with a valid GIS instance since there is not "
-            "an active GIS object in the session."
-        )
+        assert src is not None, ("The gis parameter needs to be populated with a valid GIS instance since there is "
+                                 "not an active GIS object in the session.")
 
         # build function name to call
         fn_nm_to_call = (
@@ -332,8 +339,10 @@ class Country(object):
         **kwargs,
     ) -> None:
 
-        # prioritize active_gis and handle the caveat of using a GIS('Pro') input
-        gis = _check_gis_source(gis)
+        # handle the caveat of using a GIS('Pro') input
+        if isinstance(gis, GIS):
+            if gis._con._auth == "PRO":
+                gis = "local"
 
         # instantiate a BA object instance and save for future
         ba = _business_analyst.BusinessAnalyst(gis)
@@ -689,8 +698,10 @@ def get_countries(gis: GIS = None, as_df: bool = False):
         Available countries as a list of :class:`~arcgis.geoenrichment.Country` objects, or a
         Pandas DataFrame of available countries.
     """
-    # preprocess the gis object to determine if a local (ArcGIS Pro) gis source and prioritize the active gis
-    gis = _check_gis_source(gis)
+    # preprocess the gis object to determine if a local (ArcGIS Pro) gis source
+    if isinstance(gis, GIS):
+        if gis._con._auth == "PRO":
+            gis = "local"
 
     # prioritize active_gis
     gis = _check_active_gis(gis)

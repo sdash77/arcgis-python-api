@@ -20,8 +20,11 @@ from .geoenrich_data import (
 )
 
 
-def get_countries_test(gis: GIS = None) -> None:
-    cntrs = get_countries(gis)
+def get_countries_test(gis: GIS = None, as_df=None) -> None:
+    if as_df is not None:
+        cntrs = get_countries(gis, as_df=as_df)
+    else:
+        cntrs = get_countries(gis)
     assert cntrs
 
 
