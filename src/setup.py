@@ -189,19 +189,16 @@ data_files = [
         ],
     ),
 ]
-data_files += (
-    []
-    if ("win" in sys.platform or "darwin" in sys.platform)
-    else [
-        (
-            _get_rel_site_packages_dir() + "arcgis/gis/_impl",
-            [
-                "arcgis/gis/_impl/_decrypt_nbauth.cpython-36m-x86_64-linux-gnu.so",
-                "arcgis/gis/_impl/_decrypt_nbauth.cpython-37m-x86_64-linux-gnu.so",
-            ],
-        )
+if not "darwin" in sys.platform:
+    _get_rel_site_packages_dir() + "arcgis/gis/_impl"
+    data_files += [
+        "arcgis/gis/_impl/_decrypt_nbauth.cp37-win_amd64.pyd",
+        "arcgis/gis/_impl/_decrypt_nbauth.cp38-win_amd64.pyd",
+        "arcgis/gis/_impl/_decrypt_nbauth.cp39-win_amd64.pyd",
+        "arcgis/gis/_impl/_decrypt_nbauth.cpython-37m-x86_64-linux-gnu.so",
+        "arcgis/gis/_impl/_decrypt_nbauth.cpython-38-x86_64-linux-gnu.so",
+        "arcgis/gis/_impl/_decrypt_nbauth.cpython-39-x86_64-linux-gnu.so",
     ]
-)
 
 
 def get_version():
@@ -261,10 +258,9 @@ kwargs = {
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
-        # "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.9",
     ],
     # What does your project relate to?
     "keywords": "gis arcgis geographic spatial spatial-data "
@@ -320,6 +316,12 @@ kwargs = {
             "learn/*.so",
             "learn/_tracking/*.pyd",
             "learn/_tracking/*.dll",
+            "learn/_mmdetection_config/*.py",
+            "learn/_mmdetection_config/**/*.py",
+            "learn/_mmdetection_config/**/**/*.py",
+            "learn/_mmseg_config/*.py",
+            "gis/_impl/*.pyd",
+            "gis/_impl/*.so",
         ],
     },
     # Although 'package_data' is the preferred approach, in some case you may
