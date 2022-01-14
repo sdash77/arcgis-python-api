@@ -2285,9 +2285,9 @@ class MapView(widgets.DOMWidget):
 
         else:  # User passed in a string for interactive draw mode
             if symbol:
-                draw_options = {"shape":shape, "symbol":symbol}
+                draw_options = {"shape": shape, "symbol": symbol}
             else:
-                draw_options = {"shape":shape}
+                draw_options = {"shape": shape}
             self._trigger_interactive_draw_mode_for = {}
             self._trigger_interactive_draw_mode_for = draw_options
 
