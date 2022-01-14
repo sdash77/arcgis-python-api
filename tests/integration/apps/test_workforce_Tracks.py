@@ -122,6 +122,10 @@ class Test_Workforce_Tracks(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        try:
+            cls.project.delete()
+        except Exception as e:
+            print("Failed to delete project successfully!")
         print("\n==================================================================")
 
     def test_search_tracks(self):
