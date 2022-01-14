@@ -359,7 +359,10 @@ class Assignment(FeatureModel):
     @property
     def assignment_type_code(self):
         if self.project._is_v2_project and self._assignment_type is not None:
-            return self._feature.attributes.get(self._schema.assignment_type).upper()
+            value = self._feature.attributes.get(self._schema.assignment_type)
+            if value:
+                return value.upper()
+            return None
         else:
             return self._feature.attributes.get(self._schema.assignment_type)
 
@@ -433,7 +436,10 @@ class Assignment(FeatureModel):
     def dispatcher_id(self):
         """Gets the dispatcher id of the assignment"""
         if self.project._is_v2_project and self.dispatcher is not None:
-            return self._feature.attributes.get(self._schema.dispatcher_id).upper()
+            value = self._feature.attributes.get(self._schema.dispatcher_id)
+            if value:
+                return value.upper()
+            return None
         else:
             return self._feature.attributes.get(self._schema.dispatcher_id)
 
@@ -633,7 +639,9 @@ class Assignment(FeatureModel):
     def worker_id(self):
         """Gets the worker id of the assignment"""
         if self.project._is_v2_project and self.worker is not None:
-            return self._feature.attributes.get(self._schema.worker_id).upper()
+            value = self._feature.attributes.get(self._schema.worker_id)
+            if value:
+                return value.upper()
         else:
             return self._feature.attributes.get(self._schema.worker_id)
 
@@ -730,7 +738,7 @@ class Assignment(FeatureModel):
     def _validate_worker_on_server(self):
         errors = []
         if self.worker is not None:
-            worker = self.project._cached_workers.get(self.worker_id, None)
+            worker = self.project._cached_workers.get(self.worker_id)
             if not worker:
                 errors.append(ValidationError("Unrecognized worker object_id", self))
         return errors
@@ -746,7 +754,7 @@ class Assignment(FeatureModel):
     def _validate_dispatcher_on_server(self):
         errors = []
         if self.dispatcher is not None:
-            dispatcher = self.project._cached_dispatchers.get(self.dispatcher_id, None)
+            dispatcher = self.project._cached_dispatchers.get(self.dispatcher_id)
             if not dispatcher:
                 errors.append(
                     ValidationError("Unrecognized dispatcher object_id", self)
