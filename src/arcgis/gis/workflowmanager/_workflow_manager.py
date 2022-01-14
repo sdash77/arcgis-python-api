@@ -190,7 +190,7 @@ class WorkflowManagerAdmin:
             base=self._url, token=self._gis._con.token
         )
 
-        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+        return_obj = self._gis._con.get(url)
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -508,13 +508,9 @@ class JobManager:
         """
         try:
             url = f"{self._url}/jobs/{id}"
-            job_dict = json.loads(
-                json.dumps(
-                    self._gis._con.get(
+            job_dict = self._gis._con.get(
                         url, {"token": self._gis._con.token, "extProps": get_ext_props}
                     )
-                )
-            )
             return Job(job_dict, self._gis, self._url)
         except:
             self._handle_error(sys.exc_info())
@@ -885,14 +881,10 @@ class WorkflowManager:
         :return: list
         """
         try:
-            role_array = json.loads(
-                json.dumps(
-                    self._gis._con.get(
+            role_array = self._gis._con.get(
                         "{base}/community/roles".format(base=self._url),
                         params={"token": self._gis._con.token},
                     )["roles"]
-                )
-            )
             return_array = [WMRole(r) for r in role_array]
             return return_array
         except:
@@ -906,14 +898,10 @@ class WorkflowManager:
         :return: List of :attr:`~arcgis.gis.workflowmanager.WorkflowManager.user` profiles
         """
         try:
-            user_array = json.loads(
-                json.dumps(
-                    self._gis._con.get(
+            user_array = self._gis._con.get(
                         "{base}/community/users".format(base=self._url),
                         params={"token": self._gis._con.token},
                     )["users"]
-                )
-            )
             return_array = [self.user(u["username"]) for u in user_array]
             return return_array
         except:
@@ -929,14 +917,10 @@ class WorkflowManager:
 
         """
         try:
-            user_array = json.loads(
-                json.dumps(
-                    self._gis._con.get(
+            user_array = self._gis._con.get(
                         "{base}/community/users".format(base=self._url),
                         params={"token": self._gis._con.token},
                     )["users"]
-                )
-            )
             return_array = [
                 self.user(u["username"]) for u in user_array if u["isAssignable"]
             ]
@@ -956,14 +940,10 @@ class WorkflowManager:
 
         """
         try:
-            group_array = json.loads(
-                json.dumps(
-                    self._gis._con.get(
+            group_array = self._gis._con.get(
                         "{base}/community/groups".format(base=self._url),
                         params={"token": self._gis._con.token},
                     )["groups"]
-                )
-            )
             return_array = [
                 self.group(g["id"]) for g in group_array if g["isAssignable"]
             ]
@@ -981,14 +961,10 @@ class WorkflowManager:
 
         """
         try:
-            return json.loads(
-                json.dumps(
-                    self._gis._con.get(
+            return self._gis._con.get(
                         "{base}/settings".format(base=self._url),
                         params={"token": self._gis._con.token},
                     )["settings"]
-                )
-            )
         except:
             self._handle_error(sys.exc_info())
 
@@ -1003,14 +979,10 @@ class WorkflowManager:
 
         """
         try:
-            group_array = json.loads(
-                json.dumps(
-                    self._gis._con.get(
+            group_array = self._gis._con.get(
                         "{base}/community/groups".format(base=self._url),
                         params={"token": self._gis._con.token},
                     )["groups"]
-                )
-            )
             return_array = [self.group(g["id"]) for g in group_array]
             return return_array
         except:
@@ -1037,13 +1009,9 @@ class WorkflowManager:
             params["searchType"] = search_type
 
         try:
-            return json.loads(
-                json.dumps(
-                    self._gis._con.get(
+            return self._gis._con.get(
                         "{base}/searches".format(base=self._url), params=params
                     )["searches"]
-                )
-            )
         except:
             self._handle_error(sys.exc_info())
 
@@ -1059,14 +1027,10 @@ class WorkflowManager:
 
         """
         try:
-            template_array = json.loads(
-                json.dumps(
-                    self._gis._con.get(
+            template_array = self._gis._con.get(
                         "{base}/jobTemplates".format(base=self._url),
                         params={"token": self._gis._con.token},
                     )["jobTemplates"]
-                )
-            )
             return_array = [
                 JobTemplate(t, self._gis, self._url) for t in template_array
             ]
@@ -1085,14 +1049,10 @@ class WorkflowManager:
 
         """
         try:
-            diagram_array = json.loads(
-                json.dumps(
-                    self._gis._con.get(
+            diagram_array = self._gis._con.get(
                         "{base}/diagrams".format(base=self._url),
                         params={"token": self._gis._con.token},
                     )["diagrams"]
-                )
-            )
             return_array = [JobDiagram(d, self._gis, self._url) for d in diagram_array]
             return return_array
         except:
@@ -1706,7 +1666,7 @@ class WorkflowManager:
             base=self._url, token=self._gis._con.token
         )
 
-        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+        return_obj = self._gis._con.get(url)
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -1843,7 +1803,7 @@ class LookUpTable(object):
             raise KeyError(f'The attribute "{item}" is invalid for LookUpTables')
 
     def get(gis, url, params):
-        lookup_dict = json.loads(json.dumps(gis._con.get(url, params)))
+        lookup_dict = gis._con.get(url, params)
         return LookUpTable(lookup_dict, gis, url)
 
     def put(self, gis, url):
@@ -2538,7 +2498,7 @@ class Job(object):
         url = "{base}/jobs/{jobId}/attachments?token={token}".format(
             base=self._url, jobId=self.job_id, token=self._gis._con.token
         )
-        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+        return_obj = self._gis._con.get(url)
         return return_obj["attachments"]
 
     @property
@@ -2554,7 +2514,7 @@ class Job(object):
         url = "{base}/jobs/{jobId}/history?token={token}".format(
             base=self._url, jobId=self.job_id, token=self._gis._con.token
         )
-        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+        return_obj = self._gis._con.get(url)
         if "success" in return_obj:
             return return_obj["success"]
         return_obj = {
@@ -2651,7 +2611,7 @@ class Job(object):
         url = "{base}/jobs/{jobId}/comments?token={token}".format(
             base=self._url, jobId=self.job_id, token=self._gis._con.token
         )
-        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+        return_obj = self._gis._con.get(url)
         return return_obj["jobComments"]
 
 
@@ -2675,7 +2635,7 @@ class WMRole(object):
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
     def get(gis, url, params):
-        role_dict = json.loads(json.dumps(gis._con.get(url, params)))
+        role_dict = gis._con.get(url, params)
         return WMRole(role_dict)
 
     def post(self, gis, url):
@@ -2745,8 +2705,7 @@ class JobTemplate(object):
         gis = object.__getattribute__(self, "_gis")
         url = object.__getattribute__(self, "_url")
         id = object.__getattribute__(self, "job_template_id")
-        full_object = json.loads(
-            json.dumps(gis._con.get(url, {"token": gis._con.token}))
+        full_object = gis._con.get(url, {"token": gis._con.token}
         )
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
@@ -2759,7 +2718,7 @@ class JobTemplate(object):
                 raise KeyError(f'The attribute "{item}" is invalid for Job Templates')
 
     def get(gis, url, params):
-        job_template_dict = json.loads(json.dumps(gis._con.get(url, params)))
+        job_template_dict = gis._con.get(url, params)
         return JobTemplate(job_template_dict, gis, url)
 
     def put(self, gis, url):
@@ -3064,9 +3023,7 @@ class JobDiagram(object):
         gis = object.__getattribute__(self, "_gis")
         url = object.__getattribute__(self, "_url")
         id = object.__getattribute__(self, "diagram_id")
-        full_object = json.loads(
-            json.dumps(gis._con.get(url, {"token": gis._con.token}))
-        )
+        full_object = gis._con.get(url, {"token": gis._con.token})
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
@@ -3078,7 +3035,7 @@ class JobDiagram(object):
                 raise KeyError(f'The attribute "{item}" is invalid for Diagrams')
 
     def get(gis, url, params):
-        job_diagram_dict = json.loads(json.dumps(gis._con.get(url, params)))
+        job_diagram_dict = gis._con.get(url, params)
         return JobDiagram(job_diagram_dict, gis, url)
 
     def post(self, gis, url):
@@ -3169,5 +3126,5 @@ class JobLocation(object):
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
     def get(gis, url, params):
-        job_location_dict = json.loads(json.dumps(gis._con.get(url, params)))
+        job_location_dict = gis._con.get(url, params)
         return JobLocation(job_location_dict)
