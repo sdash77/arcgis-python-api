@@ -11521,7 +11521,8 @@ def dimensional_moving_statistics(
     circular_wrap_value=360,
 ):
     """
-    The sum function calculates statistics over a moving window on multidimensional data along a specified dimension.
+    The dimensional_moving_statistics function calculates statistics over a moving window
+    on multidimensional data along a specified dimension.
 
 
     The arguments for this function are as follows:
@@ -11529,8 +11530,7 @@ def dimensional_moving_statistics(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
-                                         operation, the scalar can be a float.
+    raster                               Required multidimensional Raster/ImageryLayer object.
     --------------------------------     --------------------------------------------------------------------
     dimension                            Optional string. The name of the dimension along which the window will move.
 
@@ -11549,10 +11549,15 @@ def dimensional_moving_statistics(
 
                                          The unit of this parameter is slice.
     --------------------------------     --------------------------------------------------------------------
-    statistics_type                      Optional string. Statistic type to be calculated. Default is MEAN
+    statistics_type                      Optional string. Statistic type to be calculated.
 
                                             - MEAN - The mean (average value) of the cells in the defined \
                                             window will be calculated. This is the default.
+
+                                            - CIRCULAR_MEAN - The circular mean (average value) of the cells \
+                                            in the window will be calculated. When this statistics type is \
+                                            selected, use the ``circular_wrap_value`` parameter to designate \
+                                            a wrap value to use.
 
                                             - MAJORITY - The majority (value that occurs most often) of the \
                                             cells in the defined window will be identified.
@@ -11560,26 +11565,28 @@ def dimensional_moving_statistics(
                                             - MAXIMUM - The maximum (largest value) of the cells in the \
                                             defined window will be identified.
 
-                                            - MEDIAN - The median of the cells in the neighborhood will be \
+                                            - MEDIAN - The median of the cells in the defined window will be \
                                             identified.
 
                                             - MINIMUM - The minimum (smallest value) of the cells in the \
-                                            neighborhood will be identified..
+                                            defined window will be identified.
 
-                                            - PERCENTILE - A percentile of the cells in the neighborhood \ 
-                                            will be calculated. When this statistics type is selected, the \ 
-                                            Percentile Value and Percentile Interpolation Type parameters \ 
-                                            become available. Use these new parameters to designate the \ 
-                                            percentile to calculate and choose the interpolation type to \ 
+                                            - PERCENTILE - A percentile of the cells in the defined window \
+                                            will be calculated. When this statistics_type is selected, the \
+                                            ``percentile_value`` and ``percentile_interpolation_type`` parameters \
+                                            become available. Use these new parameters to designate the \
+                                            percentile to calculate and choose the interpolation type to \
                                             use, respectively.
     --------------------------------     --------------------------------------------------------------------
-    percentile_value                     Optional float. The percentile that will be calculated when PERCENTILE
-                                         is selected as the statistics type. The default is 90, for the 90th percentile.
+    percentile_value                     Optional float. The percentile value that will be calculated.
+                                         The default is 90, for the 90th percentile.
 
-                                         The values can range from 0 through 100. The 0th percentile is essentially 
-                                         equivalent to the minimum statistic, and the 100th percentile is equivalent 
-                                         to the maximum statistic, with the exception that the result will be floating 
-                                         point. A value of 50 will produce the same result as the median statistic.
+                                         The value can range from 0 to 100. The 0th percentile is essentially equivalent
+                                         to the minimum statistic, and the 100th percentile is equivalent to the maximum
+                                         statistic. A value of 50 will produce essentially the same result as the median
+                                         statistic.
+
+                                         This parameter is only supported if the ``statistics_type`` parameter is set to PERCENTILE.                                  
     --------------------------------     --------------------------------------------------------------------
     percentile_interpolation_type        Optional string. Specifies the method of interpolation to be used when the 
                                          specified percentile value lies between two input cell values.
@@ -11593,11 +11600,17 @@ def dimensional_moving_statistics(
 
                                             - LINEAR - Weighted average of two surrounding values from the desired \
                                             percentile. In this case, the output pixel type is floating point.
+
+                                         This parameter is only supported if the ``statistics_type`` parameter is
+                                         set to MEDIAN or PERCENTILE.
     --------------------------------     --------------------------------------------------------------------
     circular_wrap_value                  Optional float. The value that will be used to round a linear value to 
                                          the range of a given circular mean.
 
                                          Its value must be positive. The default value is 360 degrees.
+
+                                         This parameter is only supported if the ``statistics_type`` parameter is
+                                         set to CIRCULAR_MEAN.
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
