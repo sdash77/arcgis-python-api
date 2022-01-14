@@ -873,8 +873,6 @@ class StoryMap(object):
         This method will save your Story Map to your active GIS. The story will be saved
         with unpublished changes unless `publish` parameter is specified to True.
 
-        The story is by default published as private.
-
         The title only needs to be specified if a change is wanted, otherwise exisiting title
         is used.
 
