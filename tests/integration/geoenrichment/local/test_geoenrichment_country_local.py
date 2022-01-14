@@ -13,7 +13,8 @@ def usa():
 
 
 def test_usa_local() -> None:
-    usa_test(gis)
+    usa = usa_test(gis)
+    assert usa._gis == 'local'
 
 
 def test_get_usa_local() -> None:

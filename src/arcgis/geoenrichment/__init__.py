@@ -1,23 +1,35 @@
 """
-The arcgis.geoenrichment module  enables you to answer questions about locations that you can't answer with maps alone.
+The ``arcgis.geoenrichment`` module enables data driven Human Geography workflows through access to Esri’s rich
+demographic data, standard geographies and reporting capabilities. Access to thousands of demographic variables
+available for most countries worldwide enables data driven exploration of questions about how people interact with
+their surroundings. While these questions frequently involve commercial applications, increasingly they are starting to
+include public policy questions as well.
 
-GeoEnrichment provides the ability to get facts about a location or area. Using GeoEnrichment, you can get information
-about the people, places, and businesses in a specific area or within a certain distance or drive time from a location.
-It enables you to query and use information from a large collection of data sets including population, income, housing,
-consumer behavior, and the natural environment.
+Commercial questions commonly include site selection and store forecasting. When selecting a new site for a retail
+store or even a distribution center, it is necessary to understand who lives in the surrounding area. If a retail
+store, knowing who lives in the area surrounding the store, especially knowing detailed quantitative demographic
+details, enables forecasting the revenue the potential location will generate. This enables much more informed decision
+making to select the best locations for a new store.
 
-For example: What kind of people live here? What do people like to do in this area? What are their habits and
-lifestyles? What kind of businesses are in this area?
+If the site selection is for a new distribution center, just as important as who the location will serve is knowing
+who is available to work in the distribution center. If the area already has a large population of skilled workers,
+finding labor to work in the distribution center will be significantly easier.
 
-The ``enrich`` method to can be used retrieve demographics and other relevant characteristics associated with the area
-surrounding the requested places. You can also use the ``arcgis.geoenrichment`` module to obtain additional geographic
-context (for example, the ZIP Code of a location) and geographic boundaries (for example, the geometry for a drive-time
-service area).
+Similarly, once stores are in place, knowing detailed information about the people in the surrounding area enables
+forecasting revenue for these existing store locations. This is especially important as markets evolve due to
+demographic shifts and competitive pressures.
 
-Site analysis is a popular application of this type of data enrichment. For example, GeoEnrichment can be leveraged to
-study the population affected by the development of a new community center within their neighborhood.
-With the ``enrich`` method, the proposed site can be submitted, and the demographics and other relevant characteristics
-associated with the area around the site will be returned.
+Far from being the only applications, site selection and forecasting are two very common examples of how the
+``arcgis.geoenrichment`` module is used. Since such a powerful Human Geography tool, increasingly this module is being
+used to answer public policy questions such as understanding social equity.
+
+Understanding how areas where people are similar enables understanding where people are different. The
+``arcgis.geoenrichment`` module, by providing access to rich demographic data, enables data driven workflows to group
+people based on their demographic characteristics (clustering). Defining characteristics for each area can then be
+identified (feature selection) to better understand the challenges people are facing and meet the needs of a community.
+While far from the only application, this is just one example of how ``arcgis.geoenrichent`` can be used to understand
+and answer Human Geography public policy questions.
+
 """
 
 __all__ = [

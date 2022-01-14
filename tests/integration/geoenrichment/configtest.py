@@ -1,0 +1,153 @@
+from contextlib import contextmanager
+import os
+from pathlib import Path
+from warnings import warn
+
+from arcgis.features import GeoAccessor
+from arcgis.geoenrichment import Country
+from arcgis.geoenrichment._business_analyst._utils import (
+    local_business_analyst_avail,
+    local_ba_data_avail,
+    module_avail,
+)
+from arcgis.gis import GIS
+import pandas as pd
+import pytest
+
+__all__ = ['usa_local', 'usa_local_enrich_vars', 'usa_agol', 'usa_agol_enrich_vars',
+           'polygon_df', 'line_df', 'point_df', 'stdgeo_srs']
+
+# get the path to the geoenrich data path
+_dir_data = Path(__file__).parent.parent / "geoenrich_data"
+
+# load up the dotenv file
+if module_avail("dotenv"):
+    from dotenv import find_dotenv, load_dotenv
+
+    load_dotenv(find_dotenv())
+
+
+def _get_filtered_enrich_variables(usa: Country) -> pd.DataFrame:
+    # get the available enrichment variables
+    ev = usa.enrich_variables
+
+    # create filter for all race, ethnicity, industry and occupation variables
+    race_variable_names = ev[
+        (ev.data_collection == 'raceandhispanicorigin')
+        | (ev.data_collection == 'Age_by_Sex_by_Race_Profile_rep')
+        | (ev.data_collection == 'agebyracebysex')
+        | (ev.data_collection == 'occupation')
+        | (ev.data_collection == 'industry')
+        ].name
+
+    # filter to just variables we are interested in
+    sel_vars = ev[
+        (ev.name.str.endswith('CY'))  # retrieve all current year variables
+        & (~ev.name.isin(race_variable_names))  # exclude all race and ethnicity variables
+        & (~ev.alias.str.contains('\${0,1}\d*K{0,1}-\${0,1}\d+'))  # exclude income range count variables
+        & (~ev.alias.str.contains('\d{1,2}-\d{1,2}'))  # exclude five year age ranges
+        & (~ev.alias.str.contains('Age <{0,1}\d{1,2}'))  # exclude exact year age counts
+        & (~ev.alias.str.contains('[6|7|8]5\+$'))  # exclude all the senior dependent grouped age variables
+        & (~ev.alias.str.contains('\(Esri|ESRI\S\)'))  # exclude yr over yr variables (captured in summary stats)
+        ].drop_duplicates('name').reset_index(drop=True)
+
+    return sel_vars
+
+
+# if the local environment is configured with arcpy (Pro), Business Analyst and local data
+if local_business_analyst_avail() and local_ba_data_avail():
+    local_ba_avail = True
+else:
+    local_ba_avail = False
+    warn(
+        "Cannot test the Business Analyst using local resources since ArcGIS Pro with the Business Analyst "
+        "extension with at least one country's data is not installed."
+    )
+
+# see if credentials are available for ArcGIS Online and flag if cannot connect for any reason
+_agol_url, _agol_user, _agol_pass = (
+    os.getenv("AGOL_URL"),
+    os.getenv("AGOL_USERNAME"),
+    os.getenv("AGOL_PASSWORD"),
+)
+if _agol_url and _agol_user and _agol_pass:
+    try:
+        _ = GIS(
+            os.getenv("AGOL_URL"),
+            username=os.getenv("AGOL_USERNAME"),
+            password=os.getenv("AGOL_PASSWORD"),
+        )
+        agol_avail = True
+    except Exception as e:
+        agol_avail = False
+        warn(e)
+else:
+    agol_avail = False
+    warn(
+        "Cannot test ArcGIS Online because AGOL_URL, AGOL_USERNAME, and AGOL_PASSWORD are not in the environment "
+        "variables."
+    )
+
+# way to flag tests in an environment without ArcGIS Pro
+skip_if_no_local = pytest.mark.skipif(local_ba_avail is not True, reason='ArcGIS Pro (arcpy) is not available.')
+
+# way to flag tests if ArcGIS Online connection not available
+skip_if_no_agol = pytest.mark.skipif(agol_avail is False, reason='A connection to ArcGIS Online is not available.')
+
+
+# REFERENCE: https://docs.pytest.org/en/6.2.x/example/parametrize.html#parametrizing-conditional-raising
+@contextmanager
+def does_not_raise():
+    yield
+
+
+@pytest.fixture
+def usa_local():
+    return Country('usa', gis=GIS('pro'))
+
+
+@pytest.fixture
+def usa_local_enrich_vars(usa_local):
+    return _get_filtered_enrich_variables(usa_local)
+
+
+@pytest.fixture(scope='session')
+def usa_agol():
+    gis = GIS(os.getenv("AGOL_URL"), username=os.getenv("AGOL_USERNAME"), password=os.getenv("AGOL_PASSWORD"))
+    return Country('usa', gis=gis)
+
+
+@pytest.fixture
+def usa_agol_enrich_vars(usa_agol):
+    return _get_filtered_enrich_variables(usa_agol)
+
+
+# get path to testing data directory
+_dir_data = Path(__file__).parent / 'geoenrich_data'
+
+
+@pytest.fixture
+def polygon_df():
+    df = pd.read_pickle(_dir_data / 'block_group_df.pkl')
+    df.spatial.set_geometry('SHAPE')
+    return df
+
+
+@pytest.fixture
+def stdgeo_srs(polygon_df):
+    bg_id_lst = polygon_df['ID']
+    return bg_id_lst
+
+
+@pytest.fixture
+def line_df():
+    df = pd.read_pickle(_dir_data / 'lines_df.pkl')
+    df.spatial.set_geometry('SHAPE')
+    return df
+
+
+@pytest.fixture
+def point_df():
+    df = pd.read_pickle(_dir_data / 'points_df.pkl')
+    df.spatial.set_geometry('SHAPE')
+    return df

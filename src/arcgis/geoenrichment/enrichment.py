@@ -1,12 +1,13 @@
 import collections
 from functools import wraps
+from pathlib import Path
 import re
-from typing import Any, Union
+from typing import Any, Union, Iterable
 
 from arcgis import __version__
 from arcgis import env
 from arcgis.features import FeatureSet, GeoAccessor, GeoSeriesAccessor
-from arcgis.geometry import Geometry
+from arcgis.geometry import Geometry, SpatialReference
 from arcgis.gis import GIS
 from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import _lazy_property
@@ -26,7 +27,15 @@ def _check_active_gis(gis=None):
     # prioritize active_gis
     if gis is None and env.active_gis is not None:
         gis = env.active_gis
+    return gis
 
+
+def _check_gis_source(gis=None):
+    """Helper function handling using GIS('pro') as local source."""
+    if isinstance(gis, GIS):
+        if gis._con._auth == "PRO":
+            gis = "local"
+    gis = _check_active_gis(gis)
     return gis
 
 
@@ -67,11 +76,10 @@ def _call_method_by_source(fn) -> callable:
             src = "local"
 
         # make sure a source was located or bingo out
-        src_msg = (
-            "The gis parameter needs to be populated with a valid GIS instance since there is not an active GIS "
-            "object in the session."
+        assert src is not None, (
+            "The gis parameter needs to be populated with a valid GIS instance since there is not "
+            "an active GIS object in the session."
         )
-        assert src is not None, src_msg
 
         # build function name to call
         fn_nm_to_call = (
@@ -324,15 +332,10 @@ class Country(object):
         **kwargs,
     ) -> None:
 
-        # handle the caveat of using a GIS('Pro') input
-        if isinstance(gis, GIS):
-            if gis._con._auth == "PRO":
-                gis = "local"
+        # prioritize active_gis and handle the caveat of using a GIS('Pro') input
+        gis = _check_gis_source(gis)
 
-        # prioritize active_gis
-        gis = _check_active_gis(gis)
-
-        # instantiate a BA object instance
+        # instantiate a BA object instance and save for future
         ba = _business_analyst.BusinessAnalyst(gis)
 
         # pull the source out of the ba object since it takes care of all defaults and validation
@@ -420,12 +423,11 @@ class Country(object):
         return res["geographyLevels"][0]["datasets"]
 
     @property
-    @local_vs_gis
-    def levels(self):
+    def levels(self) -> pd.DataFrame:
         """
         Returns levels of geography in this country, for the current dataset
         """
-        pass
+        return self._ba_cntry.geography_levels
 
     def _levels_gis(self):
         """GIS levels implementation."""
@@ -530,6 +532,33 @@ class Country(object):
         """
         return self._ba_cntry.enrich_variables
 
+    def enrich(
+        self,
+        geographies: Union[pd.DataFrame, Iterable, Path],
+        enrich_variables: Union[pd.DataFrame, Iterable],
+        return_geometry: bool = True,
+        standard_geography_level: Union[int, str] = None,
+        standard_geography_id_column: str = None,
+        proximity_type: str = None,
+        proximity_value: Union[float, int] = None,
+        proximity_metric: str = None,
+        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+    ):
+        """TODO: Write docs"""
+        # invoke enrich on the business analyst object
+        enrich_res = self._ba_cntry.enrich(
+            geographies,
+            enrich_variables,
+            return_geometry,
+            standard_geography_level,
+            standard_geography_id_column,
+            proximity_type,
+            proximity_value,
+            proximity_metric,
+            output_spatial_reference,
+        )
+        return enrich_res
+
     @_lazy_property
     @local_vs_gis
     def subgeographies(self):
@@ -625,6 +654,11 @@ class Country(object):
         )
         return df
 
+    @_lazy_property
+    def travel_modes(self):
+        """DataFrame of available travel modes for the country."""
+        return self._ba_cntry.travel_modes
+
 
 def get_countries(gis: GIS = None, as_df: bool = False):
     """
@@ -655,10 +689,8 @@ def get_countries(gis: GIS = None, as_df: bool = False):
         Available countries as a list of :class:`~arcgis.geoenrichment.Country` objects, or a
         Pandas DataFrame of available countries.
     """
-    # preprocess the gis object to determine if a local (ArcGIS Pro) gis source
-    if isinstance(gis, GIS):
-        if gis._con._auth == "PRO":
-            gis = "local"
+    # preprocess the gis object to determine if a local (ArcGIS Pro) gis source and prioritize the active gis
+    gis = _check_gis_source(gis)
 
     # prioritize active_gis
     gis = _check_active_gis(gis)
@@ -972,7 +1004,6 @@ def _service_limits_gis(gis=None):
     return ge.limits
 
 
-@_call_method_by_source
 def enrich(
     study_areas,
     data_collections=None,
@@ -982,20 +1013,37 @@ def enrich(
     intersecting_geographies=None,
     return_geometry=True,
     gis=None,
+    proximity_type=None,
+    proximity_value=None,
+    proximity_metric=None,
 ):
     """
     Returns demographic and other requested information for the specified study areas.
-    Study areas define the location of the point or area that you want to enrich
-    with additional information or create reports about. If one or many points are input as
-    a study area, the method will create a 1-mile ring buffer around
-    the point to collect and append enrichment data. You can optionally
-    change the ring buffer size or create drive-time service areas
-    around the point.
+    Study areas define the location of the point or area you want to enrich
+    with additional information or create reports about.
 
-    You can create a buffer ring or drive-time service
-    area around the points to aggregate data for the study areas. You
-    can also return enrichment data for buffers around input line
-    features.
+    The areas you are interested in retrieving demographic information about are defined
+    in the ``study_areas`` parameter. These locations are most commonly defined by providing
+    a geographic locations, typically as polygons in a Spatially Enabled Data Frame. These
+    locations can also be specified using point and line geometries as well.
+
+    ``study_areas``, while the most common input is a Spatialy Enabled DataFrame, can also be
+    a list of ``arcgis.geometry.Geometry`` objects, or a list of standard geography identifers.
+    An example of standard geography identifiers, is FIPS or ZIP (postal) codes in the United
+    States.
+
+    When point or line geometries are provided, the an area around these geometries must be
+    defined to get the enrichment variables requested. This area is how the enrich method
+    allocates the demographic variables.
+
+    The default is to create a one kilometer straight line buffered distance. Other methods
+    and distances, such as driving time and driving distance can be specified for points
+    using the ``proximity_type`, ``proximity_value`` and ``proximity_metric`` parameters.
+
+    Available travel modes are determined by the network solver associated with the
+    Business Analyst source being used. If the
+
+    If the geometries are lines, the only valid ``proximity_type`` is ``straight_line``.
 
     =========================     ====================================================================
     **Argument**                  **Description**
@@ -1057,213 +1105,92 @@ def enrich(
     gis                           Optional GIS.  If None, the GIS object will be used from the
                                   arcgis.env.active_gis.  This GIS object must be authenticated and
                                   have the ability to consume credits
+    -------------------------     --------------------------------------------------------------------
+    proximity_type                If the input geographies are points, retrieving enriched
+                                  variables requires delineating a zone around each point to use
+                                  for apportioning demographic factors to each input geography.
+                                  Default is ``straight_line``, and if the input geometry is lines,
+                                  ``straight_line`` is the only valid input.
+    -------------------------     --------------------------------------------------------------------
+    proximity_value:              If the input geographies are points or lines, this is the value used
+                                  to create a zone around the points for apportioning demographic
+                                  factors. For instance, if specifying five miles, this parameter
+                                  value will be ``5``. Default is ``1``.
+    -------------------------     --------------------------------------------------------------------
+    proximity_metric:             If the input geographies are point or lines, this is the metric
+                                  defining the proximity value. For instance, if specifying one
+                                  kilometer, this value will be ``kilometers``. Default is
+                                  ``kilometers``.
     =========================     ====================================================================
 
     Refer to https://developers.arcgis.com/rest/geoenrichment/api-reference/street-address-locations.htm for
     the format of intersection_geographies parameter.
 
-    Performance Tip: If you wish to speed up the operation and don't care about the geometries, set
+    .. note: Performance Tip: If you wish to speed up the operation and don't care about the geometries, set
     return_geometry=False
 
-    :return: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
+    :return: Spatial DataFrame or Panda's DataFrame with the requested variables for the study areas.
     """
-    pass
+    # handle the caveat of using a GIS('Pro') input
+    if isinstance(gis, GIS):
+        if gis._con._auth == "PRO":
+            gis = "local"
 
+    # prioritize active_gis
+    gis = _check_active_gis(gis)
 
-def _enrich_gis(
-    study_areas,
-    data_collections=None,
-    analysis_variables=None,
-    comparison_levels=None,
-    add_derivative_variables=None,
-    intersecting_geographies=None,
-    return_geometry=True,
-    gis=None,
-):
-    """GIS implementation of enrich."""
+    # create the business analyst object
+    ba = _business_analyst.BusinessAnalyst(gis)
 
-    def _chunks(l, n):
-        """yield successive n-sized chunks from l."""
-        for i in range(0, len(l), n):
-            yield l[i : i + n]
+    # get all possible requested enrich variables
+    enrich_vars = _preproces_data_colletions_and_analysis_variables(
+        ba, data_collections, analysis_variables
+    )
 
-    if gis is None:
-        gis = env.active_gis
-    ge = _GeoEnrichment(gis=gis)
-
-    areas = study_areas
-    if isinstance(study_areas, FeatureSet):
-        areas = FeatureSet.sdf
-    elif isinstance(
-        study_areas, dict
-    ):  # could be dict of NamedAreas, eg usa.subgeographies.states['California'].counties
-        areas = list(study_areas.values())
-        study_areas = areas
-
-    # convert to dict
-    # add comparison levels if any
-    # add buffer info - network, ring
-    if isinstance(areas, list):
-        areas = []
-        for area in study_areas:
-            area_dict = area
-            if isinstance(
-                area, str
-            ):  # street address - {"address":{"text":"380 New York St Redlands CA 92373"}}
-                area_dict = {"address": {"text": area}}
-            elif isinstance(area, Geometry):  # geometry, polygons, points
-                area_dict = {"geometry": dict(area)}
-            elif isinstance(area, BufferStudyArea):
-                # namedtuple('BufferStudyArea', 'area radii units overlap travel_mode')
-                g = area.area
-                if isinstance(g, str):
-                    area_dict = {"address": {"text": g}}
-                elif isinstance(g, Geometry):  # geometry, polygons, points
-                    area_dict = {"geometry": dict(g)}
-                elif isinstance(g, dict):
-                    area_dict = g
-                else:
-                    raise ValueError(
-                        "BufferStudyArea is only supported for Point geometry and addresses"
-                    )
-
-                area_type = "RingBuffer"
-                if area.travel_mode is None:
-                    if not area.overlap:
-                        area_type = "RingBufferBands"
-                else:
-                    area_type = "NetworkServiceArea"
-
-                area_dict["areaType"] = area_type
-                area_dict["bufferUnits"] = area.units
-                area_dict["bufferRadii"] = area.radii
-                if area.travel_mode is not None:
-                    area_dict["travel_mode"] = area.travel_mode
-
-            elif isinstance(area, NamedArea):  # named area
-                area_dict = area.__studyarea__
-
-            elif isinstance(
-                area, dict
-            ):  # pass through - user knows what they're sending
-                pass
-            elif isinstance(area, list):  # list of named areas, (union)
-                first_area = area[0]
-                ids = []
-                if isinstance(first_area, NamedArea):
-                    for namedarea in area:
-                        a = namedarea.__studyarea__
-                        if (
-                            a["layer"] != first_area["layer"]
-                            or a["sourceCountry"] != first_area["sourceCountry"]
-                        ):
-                            raise ValueError(
-                                "All NamedAreas in the list must have the same source country and level"
-                            )
-                        ids.append(a["ids"])
-                    area_dict = {
-                        "sourceCountry": first_area["sourceCountry"],
-                        "layer": first_area["layer"],
-                        "ids": [ids.join(",")],
-                    }
-                else:
-                    raise ValueError("Lists members must be NamedArea instances")
-            else:
-                raise ValueError(
-                    "Don't know how to handle study areas of type " + str(type(area))
-                )
-
-            if comparison_levels is not None:
-                # add "comparisonLevels":[{"layer": "Admin2"}, {"layer": "Admin3"}]}]
-                layers = []
-                for level in comparison_levels:
-                    layers.append({"layer": level})
-
-                area_dict["comparisonLevels"] = layers
-
-            areas.append(area_dict)
-
-    # chunking if len > 100
-    if isinstance(areas, (SpatialDataFrame, pd.DataFrame, list)) and len(areas) > 100:
-        import concurrent.futures
-
-        parts = []
-        concurrent_parts = {}  # []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
-            for idx, chunk in enumerate(_chunks(l=areas, n=100)):
-                f = executor.submit(
-                    fn=ge.enrich,
-                    **{
-                        "study_areas": chunk.copy(),
-                        "data_collections": data_collections,
-                        "analysis_variables": analysis_variables,
-                        "add_derivative_variables": add_derivative_variables,
-                        "intersecting_geographies": intersecting_geographies,
-                        "return_geometry": return_geometry,
-                        "out_sr": env.out_spatial_reference,
-                        "as_featureset": False,
-                    },
-                )
-
-                concurrent_parts[idx] = f  # .append(f)
-                del chunk
-        futures = concurrent.futures.wait(list(concurrent_parts.values()))
-        exceptions = [f.exception() is None for f in futures.done]
-        results = [result.result() for result in concurrent_parts.values()]
-        if all(exceptions) == False:
-            import json
-
-            exceptions = [
-                f.exception() for f in futures.done if not f.exception() is None
-            ]
-            raise Exception(json.dumps(exceptions))
-        if isinstance(areas, (SpatialDataFrame, pd.DataFrame)):
-            enrich_res = pd.concat(results)
-            if len(enrich_res) != len(study_areas):
-                if "OBJECTID" in enrich_res.columns:
-                    missing_q = study_areas.OBJECTID.isin(
-                        list(set(study_areas.OBJECTID) - set(enrich_res.OBJECTID))
-                    )
-
-                    enrich_res = pd.concat(
-                        [enrich_res, study_areas[missing_q]]
-                    ).set_index(
-                        keys=areas.index,
-                        drop=True,
-                        append=False,
-                        inplace=False,
-                        verify_integrity=False,
-                    )
-
-            elif len(enrich_res) == len(study_areas):
-                enrich_res = enrich_res.set_index(
-                    keys=areas.index,
-                    drop=True,
-                    append=False,
-                    inplace=False,
-                    verify_integrity=False,
-                )
-
-        else:
-            enrich_res = pd.concat(results)
-
-        # set the spatial column
-        if return_geometry:
-            enrich_res.spatial.set_geometry("SHAPE")
-
-    # no chunking, len < 100, or FeatureSet
-    else:
-        enrich_res = ge.enrich(
-            study_areas=areas,
-            data_collections=data_collections,
-            analysis_variables=analysis_variables,
-            add_derivative_variables=add_derivative_variables,
-            intersecting_geographies=intersecting_geographies,
-            return_geometry=return_geometry,
-            out_sr=env.out_spatial_reference,
-        )
+    # invoke enrich on the business analyst object
+    enrich_res = ba.enrich(
+        study_areas,
+        enrich_vars,
+        proximity_type,
+        proximity_value,
+        proximity_metric,
+        return_geometry,
+    )
 
     return enrich_res
+
+
+def _preproces_data_colletions_and_analysis_variables(
+    src: Union[_business_analyst.BusinessAnalyst, _business_analyst.Country],
+    data_cols: list,
+    enrich_vars: list,
+    **kwargs,
+) -> pd.DataFrame:
+    """helper function to"""
+    # since supporting data collections, get the variables
+    if data_cols is not None:
+        data_cols = data_cols if isinstance(data_cols, list) else [data_cols]
+        dc_vars = src.enrich_variables[
+            src.enrich_variables["data_collection"].isin(data_cols)
+        ]
+    else:
+        dc_vars = None
+
+    # if variables provided, prep as well
+    if enrich_vars is not None and not isinstance(enrich_vars, pd.DataFrame):
+        av_vars = src.get_enrich_variables_from_iterable(enrich_vars, **kwargs)
+    else:
+        av_vars = None
+
+    # if variables coming from both sources, combine
+    if av_vars is not None and dc_vars is not None:
+        enrich_vars = pd.concat([av_vars, dc_vars])
+    elif av_vars is not None:
+        enrich_vars = av_vars
+    else:
+        enrich_vars = dc_vars
+
+    return enrich_vars
 
 
 # ----------------------------------------------------------------------

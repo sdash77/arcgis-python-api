@@ -8,14 +8,16 @@ from arcgis.gis import GIS
 import pandas as pd
 
 
-def usa_test(gis: Union[str, GIS, None]) -> None:
+def usa_test(gis: Union[str, GIS, None]) -> Country:
     cntry = Country("USA", gis=gis)
     assert isinstance(cntry, Country)
+    return cntry
 
 
-def get_usa_test(gis: Union[str, GIS, None]) -> None:
+def get_usa_test(gis: Union[str, GIS, None]) -> Country:
     cntry = Country.get("USA", gis=gis)
     assert isinstance(cntry, Country)
+    return cntry
 
 
 def get_can_test(gis: Union[str, GIS, None]) -> None:
