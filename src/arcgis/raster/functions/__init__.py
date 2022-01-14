@@ -6671,7 +6671,7 @@ def segment_mean_shift(
     spatial_detail=None,
     spectral_radius=None,
     spatial_radius=None,
-    min_num_pixels_per_segment=None,
+    min_num_pixels_per_segment=20,
     astype=None,
     boundaries_only=False,
     max_num_pixels_per_segment=-1,
@@ -6731,7 +6731,7 @@ def segment_mean_shift(
                                             related to your minimum mapping unit, and will filter out smaller
                                             blocks of pixels. All segments that are smaller than the specified
                                             value will merge the smaller segments with their best fitting
-                                            neighbor segment.
+                                            neighbor segment. The default is 20.
     --------------------------------     --------------------------------------------------------------------
     boundaries_only                         Optional boolean. The segment boundaries draw as a black contour line
                                             around each segment. This is helpful so you can distinguish
@@ -6742,7 +6742,9 @@ def segment_mean_shift(
     --------------------------------     --------------------------------------------------------------------
     max_num_pixels_per_segment              Optional integer. The maximum size of a segment. Segments that are larger than
                                             the specified size will be divided. Use this parameter to prevent
-                                            artifacts in the output layer resulting from large segments. The default is -1.
+                                            artifacts in the output layer resulting from large segments. ``max_num_pixels_per_segment``
+                                            must be greater than ``min_num_pixels_per_segment`` when it is a positive integer.
+                                            The default is -1.
     --------------------------------     --------------------------------------------------------------------
     astype                                  Optional string. Specifies the output pixel type.
                                             Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
