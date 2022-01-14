@@ -9058,6 +9058,8 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def path(self):
+        if self._datastore_raster:
+            return self._uri.rsplit("/", 1)[0]
         return self._url.rsplit("/", 1)[0]
 
     @property
