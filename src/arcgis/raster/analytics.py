@@ -1300,7 +1300,7 @@ def copy_raster(
     context=None,
     raster_type_name=None,
     raster_type_params=None,
-    md_to_upload=None,
+    source_mosaic_dataset=None,
     *,
     gis=None,
     future=False,
@@ -1418,7 +1418,7 @@ def copy_raster(
                                          "Aerial", "ScannedAerial","ZY3-CRESDA"]
 
                                          If an existing mosaic dataset is being published as an 
-                                         imagery layer using the ``md_to_upload`` parameter, the
+                                         imagery layer using the ``source_mosaic_dataset`` parameter, the
                                          ``raster_type_name`` parameter can be set to None as it is not required.
 
                                          Example:
@@ -1459,7 +1459,7 @@ def copy_raster(
                                             "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
                                             "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
     --------------------------------     --------------------------------------------------------------------
-    md_to_upload                         Optional string. Path to the existing mosaic dataset to be published 
+    source_mosaic_dataset                         Optional string. Path to the existing mosaic dataset to be published 
                                          as an imagery layer.
 
                                          To publish an existing mosaic dataset, specify the path to the input 
@@ -1585,7 +1585,7 @@ def copy_raster(
         landsat_mosaic = copy_raster(input_raster=[r"C:\data\landsat_data_folder"],
                                      output_name="mosaic_datset_op",
                                      context={"upload_properties":{"displayProgress":True}},
-                                     md_to_upload=r"C:\data\md.gdb\landsat",
+                                     source_mosaic_dataset=r"C:\data\md.gdb\landsat",
                                      gis = gis)
 
     """
@@ -1609,7 +1609,7 @@ def copy_raster(
         future=future,
         raster_type_name=raster_type_name,
         raster_type_params=raster_type_params,
-        md_to_upload=md_to_upload,
+        md_to_upload=source_mosaic_dataset,
         **kwargs
     )
 
@@ -3142,7 +3142,7 @@ def create_image_collection(
     raster_type_params=None,
     out_sr=None,
     context=None,
-    md_to_upload=None,
+    source_mosaic_dataset=None,
     *,
     gis=None,
     future=False,
@@ -3204,7 +3204,7 @@ def create_image_collection(
                                          "ZY3-CRESDA"]         
 
                                          If an existing mosaic dataset is being published as a 
-                                         dynamic imagery layer using the ``md_to_upload`` parameter, the
+                                         dynamic imagery layer using the ``source_mosaic_dataset`` parameter, the
                                          ``raster_type_name`` parameter can be set to None as it is not required.
 
 
@@ -3318,7 +3318,7 @@ def create_image_collection(
                                             | {"fields": [{"name": "cloud_cover", "type": "Long"},
                                             | {"name": "cloud_shadow_count", "type": "Long"}]}
     ------------------                   --------------------------------------------------------------------
-    md_to_upload                         Optional string. Path to the existing mosaic dataset to be published 
+    source_mosaic_dataset                         Optional string. Path to the existing mosaic dataset to be published 
                                          as a hosted dynamic imagery layer.
 
                                          To publish an existing mosaic dataset, specify the path to the input 
@@ -3864,7 +3864,7 @@ def create_image_collection(
                                                   input_rasters=[r"C:\data\landsat_data_folder"],
                                                   raster_type_name=None,
                                                   context={"upload_properties":{"displayProgress":True}},
-                                                  md_to_upload=r"C:\data\md.gdb\landsat",
+                                                  source_mosaic_dataset=r"C:\data\md.gdb\landsat",
                                                   gis=gis)
 
     """
@@ -3879,7 +3879,7 @@ def create_image_collection(
         out_sr=out_sr,
         context=context,
         future=future,
-        md_to_upload=md_to_upload,
+        md_to_upload=source_mosaic_dataset,
         **kwargs
     )
 
