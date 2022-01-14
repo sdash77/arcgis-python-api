@@ -7061,6 +7061,16 @@ class Raster:
         return self._engine_obj.catalog_path
 
     @property
+    def catalog_paths(self):
+        """
+        The ``catalog_paths`` property represents the full paths and the names of the referenced raster.
+
+        :return:
+            A String
+        """
+        return self._engine_obj.catalog_paths
+
+    @property
     def path(self):
         """
         The ``path`` property represents the full path and name of the referenced raster.
@@ -7079,6 +7089,16 @@ class Raster:
             A String
         """
         return self._engine_obj.name
+
+    @property
+    def names(self):
+        """
+        The ``names`` property returns the names of the raster.
+
+        :return:
+            A String
+        """
+        return self._engine_obj.names
 
     @property
     def has_RAT(self):
@@ -9055,12 +9075,20 @@ class _ImageServerRaster(ImageryLayer, Raster):
         return self._url
 
     @property
+    def catalog_path(self):
+        return [self._url]
+
+    @property
     def path(self):
         return self._url.rsplit("/", 1)[0]
 
     @property
     def name(self):
         return super().properties.name
+
+    @property
+    def names(self):
+        return super().properties.names
 
     @property
     def has_RAT(self):
@@ -10284,12 +10312,20 @@ class _ArcpyRaster(Raster, ImageryLayer):
         return self._raster.catalogPath
 
     @property
+    def catalog_paths(self):
+        return self._raster.catalogPaths
+
+    @property
     def path(self):
         return self._raster.path
 
     @property
     def name(self):
         return self._raster.name
+
+    @property
+    def names(self):
+        return self._raster.names
 
     @property
     def has_RAT(self):
