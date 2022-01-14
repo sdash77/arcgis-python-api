@@ -7,7 +7,11 @@ from re import search
 import time
 import concurrent.futures
 from arcgis._impl.common import _utils
-from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
+from arcgis._impl.common._filters import (
+    StatisticFilter,
+    TimeFilter,
+    GeometryFilter,
+)
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
 
@@ -79,7 +83,9 @@ class MapFeatureLayer(Layer):
         lyr_dict = {"type": "FeatureLayer", "url": url}
 
         if self.filter is not None:
-            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+            lyr_dict["options"] = json.dumps(
+                {"definition_expression": self.filter}
+            )
         if self._time_filter is not None:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
@@ -106,20 +112,20 @@ class MapFeatureLayer(Layer):
     @property
     def time_filter(self):
         """
-        .. note::
-            Starting at Enterprise 10.7.1+, instead of querying time-enabled map
-        service layers or time-enabled feature service layers, a time filter
-        can be specified using the ``time_filter`` method. Time can be filtered as a single instant or by
-        separating the two ends of a time extent with a comma.
+        Starting at Enterprise 10.7.1+, instead of querying time-enabled
+        map service layers or time-enabled feature service layers, a
+        time filter can be set using the ``time_filter`` property.
+        Time can be filtered as Python `datetime <https://docs.python.org/3/library/datetime.html#datetime-objects>`_,
+        objects or strings representing Unix epoch values in milliseconds.
+        An extent can be specified by separating the start and stop values
+        comma.
 
-        ================     =================================================
-        **Input**            **Description**
-        ----------------     -------------------------------------------------
-        value                Required Datetime/List Datetime. This is a single
-                             or list of start/stop date.
-        ================     =================================================
+        .. code-block:: python
 
-        :return: String of datetime values as milliseconds from epoch
+            >>> import datetime as dt
+
+            >>> map_feature_lyr.time_filter = [dt.datetime(2021, 1, 1), dt.datetime(2022, 1, 10)]
+
         """
         return self._time_filter
 
@@ -133,7 +139,9 @@ class MapFeatureLayer(Layer):
 
         v = []
         if isinstance(value, _dt.datetime):
-            self._time_filter = f"{int(value.timestamp() * 1000)}"  # means single time
+            self._time_filter = (
+                f"{int(value.timestamp() * 1000)}"  # means single time
+            )
         elif isinstance(value, (tuple, list)):
             for idx, d in enumerate(value):
                 if idx > 1:
@@ -170,7 +178,9 @@ class MapFeatureLayer(Layer):
         from arcgis._impl.common._isd import InsensitiveDict
 
         if self._renderer is None and "drawingInfo" in self.properties:
-            self._renderer = InsensitiveDict(dict(self.properties.drawingInfo.renderer))
+            self._renderer = InsensitiveDict(
+                dict(self.properties.drawingInfo.renderer)
+            )
         return self._renderer
 
     # ----------------------------------------------------------------------
@@ -270,7 +280,9 @@ class MapFeatureLayer(Layer):
         import hashlib
 
         if not self.properties["hasAttachments"]:
-            raise Exception("Map Feature Layer doesn't have any attachments.")
+            raise Exception(
+                "Map Feature Layer doesn't have any attachments."
+            )
 
         if not os.path.exists(output_folder):
             raise Exception("Invalid output folder path.")
@@ -305,7 +317,10 @@ class MapFeatureLayer(Layer):
 
             if token is not None:
                 url = "{}/{}/attachments/{}?token={}".format(
-                    self.url, row[1][object_id_field], row[1]["ID"], self._con.token
+                    self.url,
+                    row[1][object_id_field],
+                    row[1]["ID"],
+                    self._con.token,
                 )
             else:
                 url = "{}/{}/attachments/{}".format(
@@ -321,7 +336,9 @@ class MapFeatureLayer(Layer):
             attachment_path = os.path.join(path, f"{md5_hash}.jpg")
 
             object_attachments_mapping[row[1][object_id_field]].append(
-                os.path.join("images", os.path.join(folder, f"{md5_hash}.jpg"))
+                os.path.join(
+                    "images", os.path.join(folder, f"{md5_hash}.jpg")
+                )
             )
 
             if os.path.exists(attachment_path):
@@ -395,13 +412,18 @@ class MapFeatureLayer(Layer):
         if (os.path.getsize(file_path) >> 20) <= 9:
             params = {"f": "json"}
             if self._dynamic_layer:
-                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+                attach_url = (
+                    self._url.split("?")[0] + "/%s/addAttachment" % oid
+                )
                 params["layer"] = self._dynamic_layer
             else:
                 attach_url = self._url + "/%s/addAttachment" % oid
             files = {"attachment": file_path}
             res = self._con.post(
-                path=attach_url, postdata=params, files=files, token=self._token
+                path=attach_url,
+                postdata=params,
+                files=files,
+                token=self._token,
             )
             return res
         else:
@@ -409,7 +431,9 @@ class MapFeatureLayer(Layer):
             container = self.container
             itemid = container.upload(file_path)
             if self._dynamic_layer:
-                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+                attach_url = (
+                    self._url.split("?")[0] + "/%s/addAttachment" % oid
+                )
                 params["layer"] = self._dynamic_layer
             else:
                 attach_url = self._url + "/%s/addAttachment" % oid
@@ -467,7 +491,9 @@ class MapFeatureLayer(Layer):
             params["layer"] = self._dynamic_layer
         else:
             url = self._url + f"/{oid}/updateAttachment"
-        res = self._con.post(path=url, postdata=params, files=files, token=self._token)
+        res = self._con.post(
+            path=url, postdata=params, files=files, token=self._token
+        )
         return res
 
     # ----------------------------------------------------------------------
@@ -597,26 +623,34 @@ class MapFeatureLayer(Layer):
                                             unit is not specified, the unit is derived from the geometry spatial
                                             reference. If the geometry spatial reference is not specified, the
                                             unit is derived from the feature service data spatial reference.
-                                            This parameter only applies if supportsQueryWithDistance is true.
-                                            Values: esriSRUnit_Meter | esriSRUnit_StatuteMile |
-                                                    esriSRUnit_Foot | esriSRUnit_Kilometer |
-                                                    esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile
+                                            This parameter only applies if `supportsQueryWithDistance` is
+                                            `true`.
+
+                                            Value options:
+                                                    ``esriSRUnit_Meter`` | ``esriSRUnit_StatuteMile`` |
+                                                    ``esriSRUnit_Foot`` | ``esriSRUnit_Kilometer`` |
+                                                    ``esriSRUnit_NauticalMile`` | ``esriSRUnit_USNauticalMile``
         -------------------------------     --------------------------------------------------------------------
-        time_filter                         Optional list. The format is of [<startTime>, <endTime>] using
-                                            datetime.date, datetime.datetime or timestamp in milliseconds.
-                                            Syntax: time_filter=[<startTime>, <endTime>] ; specified as
-                                                    datetime.date, datetime.datetime or timestamp in
-                                                    milliseconds
+        time_filter                         Optional list of `startTime` and `endTime` values.
+                                            :Syntax:
+
+                                            .. code-block:: python
+
+                                                >>> time_filter=[<startTime>, <endTime>]
+
+                                            .. note::
+                                                Specified as ``datetime.date``, ``datetime.datetime`` or
+                                                ``timestamp`` in milliseconds
         -------------------------------     --------------------------------------------------------------------
-        geometry_filter                     Optional from arcgis.geometry.filter. Allows for the information to
-                                            be filtered on spatial relationship with another geometry.
+        geometry_filter                     Optional :class:`filter <arcgis.geometry.filters>` object. Allows for
+                                            the information to be filtered on spatial relationship with another
+                                            geometry.
         -------------------------------     --------------------------------------------------------------------
         max_allowable_offset                Optional float. This option can be used to specify the
-                                            max_allowable_offset to be used for generalizing geometries returned
-                                            by the query operation.
-                                            The max_allowable_offset is in the units of out_sr. If out_sr is not
-                                            specified, max_allowable_offset is assumed to be in the unit of the
-                                            spatial reference of the layer.
+                                            `max_allowable_offset` to be used for generalizing geometries
+                                            returned by the query operation in the units of `out_sr`. If
+                                            `out_sr`  is not specified, the value is in units of the spatial
+                                            reference of the layer.
         -------------------------------     --------------------------------------------------------------------
         out_sr                              Optional Integer. The WKID for the spatial reference of the returned
                                             geometry.
@@ -627,133 +661,146 @@ class MapFeatureLayer(Layer):
                                             This applies to X and Y values only (not m or z-values).
         -------------------------------     --------------------------------------------------------------------
         gdb_version                         Optional string. The geodatabase version to query. This parameter
-                                            applies only if the isDataVersioned property of the layer is true.
-                                            If this is not specified, the query will apply to the published
-                                            map's version.
+                                            applies only if the `isDataVersioned` property of the layer is true.
+                                            If not specified, the query will apply to the published map's
+                                            version.
         -------------------------------     --------------------------------------------------------------------
-        return_geometry                     Optional boolean. If true, geometry is returned with the query.
-                                            Default is true.
+        return_geometry                     Optional boolean. If `true`, geometry is returned with the query.
+                                            Default is `true`.
         -------------------------------     --------------------------------------------------------------------
-        return_distinct_values              Optional boolean.  If true, it returns distinct values based on the
-                                            fields specified in out_fields. This parameter applies only if the
-                                            supportsAdvancedQueries property of the layer is true.
+        return_distinct_values              Optional boolean.  If `True`, it returns distinct values based on
+                                            fields specified in `out_fields`. This parameter applies only if the
+                                            `supportsAdvancedQueries` property of the layer is true.
         -------------------------------     --------------------------------------------------------------------
-        return_ids_only                     Optional boolean. Default is False.  If true, the response only
+        return_ids_only                     Optional boolean. Default is `False`.  If `True`, the response only
                                             includes an array of object IDs. Otherwise, the response is a
-                                            feature set.
+                                            :class:`~arcgis.features.FeatureSet`.
         -------------------------------     --------------------------------------------------------------------
-        return_count_only                   Optional boolean. If true, the response only includes the count
-                                            (number of features/records) that would be returned by a query.
-                                            Otherwise, the response is a feature set. The default is false. This
-                                            option supersedes the returnIdsOnly parameter. If
-                                            returnCountOnly = true, the response will return both the count and
-                                            the extent.
+        return_count_only                   Optional boolean. If `True`, the response only includes the count
+                                            of features/records satisfying the query. Otherwise, the response is
+                                            a :class:`~arcgis.features.FeatureSet`. The default is `False`. This
+                                            option supersedes the `returns_ids_only` parameter. If
+                                            ``returnCountOnly = True`, the response will return both the count
+                                            and the extent.
         -------------------------------     --------------------------------------------------------------------
-        return_extent_only                  Optional boolean. If true, the response only includes the extent of
-                                            the features that would be returned by the query. If
-                                            returnCountOnly=true, the response will return both the count and
-                                            the extent.
-                                            The default is false. This parameter applies only if the
-                                            supportsReturningQueryExtent property of the layer is true.
+        return_extent_only                  Optional boolean. If `True`, the response only includes the extent
+                                            of the features satisying the query. If `returnCountOnly=true`, the
+                                            response will return both the count and the extent. The default is
+                                            `False`. This parameter applies only if the
+                                            `supportsReturningQueryExtent` property of the layer is `true`.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names on which the
-                                            features/records need to be ordered. Use ASC or DESC for ascending
-                                            or descending, respectively, following every field to control the
-                                            ordering.
-                                            example: STATE_NAME ASC, RACE DESC, GENDER
+        order_by_fields                     Optional string. One or more field names by which to order the
+                                            results. Use ``ASC`` or ``DESC`` for ascending
+                                            or descending, respectively, following every field to be ordered:
+
+                                            .. code-block:: python
+
+                                                >>> order_by_fields = "STATE_NAME ASC, RACE DESC, GENDER ASC"
+
         -------------------------------     --------------------------------------------------------------------
-        group_by_fields_for_statistics      Optional string. One or more field names on which the values need to
-                                            be grouped for calculating the statistics.
-                                            example: STATE_NAME, GENDER
+        group_by_fields_for_statistics      Optional string. One or more field names on which to group results
+                                            for calculating the statistics.
+
+                                            .. code-block:: python
+
+                                                >>> group_by_fields_for_statiscits = "STATE_NAME, GENDER"
         -------------------------------     --------------------------------------------------------------------
         out_statistics                      Optional List. The definitions for one or more field-based
                                             statistics to be calculated.
 
-                                            Syntax:
+                                            :Syntax:
 
-                                            [
-                                                {
-                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
-                                                  "onStatisticField": "Field1",
-                                                  "outStatisticFieldName": "Out_Field_Name1"
-                                                },
-                                                {
-                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
-                                                  "onStatisticField": "Field2",
-                                                  "outStatisticFieldName": "Out_Field_Name2"
-                                                }
-                                            ]
+                                            .. code-block:: python
+
+                                                >>> out_statistics = [
+                                                                        {
+                                                                          "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                                          "onStatisticField": "Field1",
+                                                                          "outStatisticFieldName": "Out_Field_Name1"
+                                                                        },
+                                                                        {
+                                                                          "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                                          "onStatisticField": "Field2",
+                                                                          "outStatisticFieldName": "Out_Field_Name2"
+                                                                        }
+                                                                     ]
         -------------------------------     --------------------------------------------------------------------
-        return_z                            Optional boolean. If true, Z values are included in the results if
+        return_z                            Optional boolean. If `True`, Z values are included in the results if
                                             the features have Z values. Otherwise, Z values are not returned.
-                                            The default is False.
+                                            The default is `False`.
         -------------------------------     --------------------------------------------------------------------
-        return_m                            Optional boolean. If true, M values are included in the results if
+        return_m                            Optional boolean. If `True`, M values are included in the results if
                                             the features have M values. Otherwise, M values are not returned.
-                                            The default is false.
+                                            The default is `False`.
         -------------------------------     --------------------------------------------------------------------
         multipatch_option                   Optional x/y footprint. This option dictates how the geometry of
                                             a multipatch feature will be returned.
         -------------------------------     --------------------------------------------------------------------
         result_offset                       Optional integer. This option can be used for fetching query results
                                             by skipping the specified number of records and starting from the
-                                            next record (that is, resultOffset + 1th). This option is ignored
-                                            if return_all_records is True (i.e. by default).
+                                            next record (that is, `resultOffset + ith` value). This option is
+                                            ignored if `return_all_records` is `True` (i.e. by default).
         -------------------------------     --------------------------------------------------------------------
         result_record_count                 Optional integer. This option can be used for fetching query results
-                                            up to the result_record_count specified. When result_offset is
+                                            up to the `result_record_count` specified. When `result_offset` is
                                             specified but this parameter is not, the map service defaults it to
-                                            max_record_count. The maximum value for this parameter is the value
-                                            of the layer's max_record_count property. This option is ignored if
-                                            return_all_records is True (i.e. by default).
+                                            `max_record_count`. The maximum value for this parameter is the value
+                                            of the layer's `maxRecordCount` property. This option is ignored if
+                                            `return_all_records` is True (i.e. by default).
         -------------------------------     --------------------------------------------------------------------
         quantization_parameters             Optional dict. Used to project the geometry onto a virtual grid,
                                             likely representing pixels on the screen.
         -------------------------------     --------------------------------------------------------------------
         return_centroid                     Optional boolean. Used to return the geometry centroid associated
-                                            with each feature returned. If true, the result includes the geometry
-                                            centroid. The default is false.
+                                            with each feature returned. If `True`, the result includes the
+                                            geometry centroid. The default is `False`.
         -------------------------------     --------------------------------------------------------------------
-        return_all_records                  Optional boolean. When True, the query operation will call the
-                                            service until all records that satisfy the where_clause are
-                                            returned. Note: result_offset and result_record_count will be
-                                            ignored if return_all_records is True. Also, if return_count_only,
-                                            return_ids_only, or return_extent_only are True, this parameter
-                                            will be ignored.
+        return_all_records                  Optional boolean. When `True`, the query operation will call the
+                                            service until all records that satisfy the `where_clause` are
+                                            returned.
+
+                                            .. note::
+                                                `result_offset` and `result_record_count` will be
+                                                ignored if set to `True`. If `return_count_only`, `return_ids_only`,
+                                                or `return_extent_only` are `True`, this parameter is ignored.
         -------------------------------     --------------------------------------------------------------------
-        result_type                         Optional string. The result_type parameter can be used to control
-                                            the number of features returned by the query operation.
-                                            Values: None | standard | tile
+        result_type                         Optional string. Controls the number of features returned by the
+                                            operation.
+                                            Options: ``None`` | ``standard`` | ``tile``
+
+                                            .. note::
+                                                See `Query (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer-.htm>`_
+                                                for full explanation.
         -------------------------------     --------------------------------------------------------------------
         historic_moment                     Optional integer. The historic moment to query. This parameter
                                             applies only if the layer is archiving enabled and the
-                                            supportsQueryWithHistoricMoment property is set to true. This
-                                            property is provided in the layer resource.
-
-                                            If historic_moment is not specified, the query will apply to the
-                                            current features.
+                                            `supportsQueryWithHistoricMoment` property is set to `true`. This
+                                            property is provided in the layer's
+                                            :attr:`~arcgis.features.FeatureLayer.properties` resource. If
+                                            not specified, the query will apply to the current features.
         -------------------------------     --------------------------------------------------------------------
-        sql_format                          Optional string.  The sql_format parameter can be either standard
-                                            SQL92 standard or it can use the native SQL of the underlying
-                                            datastore native. The default is none which means the sql_format
-                                            depends on useStandardizedQuery parameter.
-                                            Values: none | standard | native
+        sql_format                          Optional string.  The `sql_format` parameter can be either standard
+                                            SQL92 or it can use the native SQL of the underlying
+                                            datastore. The default is `None`, which means it depends on the
+                                            `useStandardizedQuery` layer property.
+                                            Values: ``None`` | ``standard`` | ``native``
         -------------------------------     --------------------------------------------------------------------
-        return_true_curves                  Optional boolean. When set to true, returns true curves in output
-                                            geometries. When set to false, curves are converted to densified
+        return_true_curves                  Optional boolean. When set to `True`, returns true curves in output
+                                            geometries. When set to `False`, curves are converted to densified
                                             polylines or polygons.
         -------------------------------     --------------------------------------------------------------------
         return_exceeded_limit_features      Optional boolean. Optional parameter which is true by default. When
                                             set to true, features are returned even when the results include
-                                            'exceededTransferLimit': True.
+                                            the `exceededTransferLimit: True` property.
 
-                                            When set to false and querying with resultType = tile features are
-                                            not returned when the results include 'exceededTransferLimit': True.
-                                            This allows a client to find the resolution in which the transfer
-                                            limit is no longer exceeded without making multiple calls.
+                                            When set to `False` and querying with `resultType = tile`, features
+                                            are not returned when the results include
+                                            `exceededTransferLimit: True`. This allows a client to find the
+                                            resolution in which the transfer limit is no longer exceeded without
+                                            making multiple calls.
         -------------------------------     --------------------------------------------------------------------
-        as_df                               Optional boolean.  If True, the results are returned as a DataFrame
-                                            instead of a FeatureSet.
+        as_df                               Optional boolean.  If `True`, the results are returned as a
+                                            `DataFrame` instead of a :class:`~arcgis.features.FeatureSet`.
         -------------------------------     --------------------------------------------------------------------
         datum_transformation                Optional Integer/Dictionary.  This parameter applies a datum transformation while
                                             projecting geometries in the results when out_sr is different than the layer's spatial
@@ -771,49 +818,88 @@ class MapFeatureLayer(Layer):
                                                 ===========     ===================================
                                                 Inputs          Description
                                                 -----------     -----------------------------------
-                                                WKID            Integer. Ex: datum_transformation=4326
+                                                WKID            Integer.
+                                                                .. code-block:: python
+
+                                                                    >>> datum_transformation=4326
+
                                                 -----------     -----------------------------------
-                                                WKT             Dict. Ex: datum_transformation={"wkt": "<WKT>"}
+                                                WKT             Dict.
+
+                                                                .. code-block:: python
+
+                                                                    >>> datum_transformation = {"wkt": "<WKT>"}
+
                                                 -----------     -----------------------------------
-                                                Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
+                                                Composite       Dict.
+
+                                                                .. code-block:: python
+
+                                                                    >>> datum_transformation = {"geoTransforms" : [
+                                                                                                                   {"wkid" : "<id>",
+                                                                                                                    "forward" : True | False},
+                                                                                                                   {"wkt" : "WKT",
+                                                                                                                    "forward" : True: False}
+                                                                                                                  ]
+                                                                                               }
+
                                                 ===========     ===================================
         -------------------------------     --------------------------------------------------------------------
         range_values                        Optional List. Allows you to filter features from the layer that are
                                             within the specified range instant or extent.
 
-                                            :Syntax:
+                                            ::
 
-                                            [
-                                                {
-                                                  "name": "range name",
-                                                  "value": <value> or [ <value1>, <value2> ]  # single value or a value-range
-                                                      # None is allowed in value-range case -- that means infinity
-                                                      # e.g. [None, 1500] means all features with values <= 1500
-                                                      # [1000, None] means all features with values >= 1000
-                                                  },
-                                                  {
-                                                    "name": "range name 2",
-                                                    "value": <value> or  [ <value3>, <value4> ]
-                                                  }
-                                                }
-                                            ]
+                                                >>> range_values = [
+                                                                    {
+                                                                     "name": "range name" ,
+                                                                     # single value or a value-range
+                                                                     "value": <value> or [ <value1>, <value2> ]
+
+                                                                    },
+                                                                    {
+                                                                     "name": "range name 2",
+                                                                     "value": <value> or  [ <value3>, <value4> ]
+                                                                    }
+                                                                   ]
+
+
+                                            .. note::
+
+                                                `None` is allowed in value-range case to indicate infinity
+
+                                                .. code-block:: python
+
+                                                    # all features with values <= 1500
+                                                    >>> range_values = [
+                                                                        {"name" : "range name",
+                                                                         "value" : [None, 1500]}
+                                                                       ]
+
+                                                    # all features with values >= 1000
+                                                    >>> range_values = [
+                                                                        {"name" : "range name",
+                                                                         "value" : [1000, None]}
+                                                                       ]
 
         -------------------------------     --------------------------------------------------------------------
-        parameter_values                    Optional Dict. Allows you to filter the features layers by specifying
+        parameter_values                    Optional Dict. Allows you to filter the layers by specifying
                                             value(s) to an array of pre-authored parameterized filters for those
                                             layers. When value is not specified for any parameter in a request,
                                             the default value, that is assigned during authoring time, gets used
                                             instead.
 
-                                            When a parameterInfo allows multiple values, you must pass them in an array.
+                                            When a `parameterInfo` allows multiple values, you must pass them in
+                                            an array.
 
-                                            Note: Check parameterInfos at the layer resources for the available
-                                            parameterized filters, their default values and expected data type.
+                                            .. note::
+                                                Check `parameterInfos` at the `layer resources <`Query (Feature Service/Layer) https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer-.htm>`_ for the available parameterized filters, their default values and
+                                                expected data type.
         -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
                                             explicitly implemented on the function. A complete list of functions
-                                            available is documented on the Query REST API.
+                                            available is documented  at `Query (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer-.htm>`_.
         ===============================     ====================================================================
 
         :return: A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another
@@ -881,7 +967,9 @@ class MapFeatureLayer(Layer):
         if return_true_curves is not None:
             params["returnTrueCurves"] = return_true_curves
         if return_exceeded_limit_features is not None:
-            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
+            params[
+                "returnExceededLimitFeatures"
+            ] = return_exceeded_limit_features
         params["where"] = where
         params["returnGeometry"] = return_geometry
         params["returnDistinctValues"] = return_distinct_values
@@ -929,8 +1017,12 @@ class MapFeatureLayer(Layer):
         if order_by_fields:
             params["orderByFields"] = order_by_fields
         if group_by_fields_for_statistics:
-            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
-        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
+            params[
+                "groupByFieldsForStatistics"
+            ] = group_by_fields_for_statistics
+        if statistic_filter and isinstance(
+            statistic_filter, StatisticFilter
+        ):
             params["outStatistics"] = statistic_filter.filter
         if out_statistics:
             params["outStatistics"] = out_statistics
@@ -977,7 +1069,12 @@ class MapFeatureLayer(Layer):
         if len(kwargs) > 0:
             for key, val in kwargs.items():
                 if (
-                    key in ("returnCountOnly", "returnExtentOnly", "returnIdsOnly")
+                    key
+                    in (
+                        "returnCountOnly",
+                        "returnExtentOnly",
+                        "returnIdsOnly",
+                    )
                     and val
                 ):
                     # If these keys are passed in as kwargs instead of parameters, set return_all_records
@@ -1000,8 +1097,11 @@ class MapFeatureLayer(Layer):
         supports_pagination = True
         if (
             "advancedQueryCapabilities" not in self.properties
-            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
-            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
+            or "supportsPagination"
+            not in self.properties["advancedQueryCapabilities"]
+            or not self.properties["advancedQueryCapabilities"][
+                "supportsPagination"
+            ]
         ):
             supports_pagination = False
 
@@ -1036,7 +1136,9 @@ class MapFeatureLayer(Layer):
                 and not self.properties.geometryType is None
             ):
                 columns["SHAPE"] = object
-            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
+            df = pd.DataFrame([], columns=columns.keys()).astype(
+                columns, True
+            )
             if "SHAPE" in df.columns:
                 df["SHAPE"] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
@@ -1063,7 +1165,9 @@ class MapFeatureLayer(Layer):
                     try:
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
-                                df[fld] / 1000, infer_datetime_format=True, unit="s"
+                                df[fld] / 1000,
+                                infer_datetime_format=True,
+                                unit="s",
                             )
                     except:
                         if fld in df.columns:
@@ -1085,7 +1189,10 @@ class MapFeatureLayer(Layer):
             params["returnIdsOnly"] = False
             for ids in chunks(oid_info["objectIds"], max_records):
                 ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))
+                sql = "%s in (%s)" % (
+                    oid_info["objectIdFieldName"],
+                    ",".join(ids),
+                )
                 params["where"] = sql
                 if not as_df:
                     records = self._query(url, params, raw=as_raw)
@@ -1146,11 +1253,15 @@ class MapFeatureLayer(Layer):
 
                     try:
                         df[fld] = pd.to_datetime(
-                            df[fld] / 1000, infer_datetime_format=True, unit="s"
+                            df[fld] / 1000,
+                            infer_datetime_format=True,
+                            unit="s",
                         )
                     except:
                         df[fld] = pd.to_datetime(
-                            df[fld], infer_datetime_format=True, errors="coerce"
+                            df[fld],
+                            infer_datetime_format=True,
+                            errors="coerce",
                         )
             return df
         return result
@@ -1288,7 +1399,9 @@ class MapFeatureLayer(Layer):
         else:
             qrr_url = "%s/queryRelatedRecords" % self._url.split("?")[0]
 
-        return self._con.post(path=qrr_url, postdata=params, token=self._token)
+        return self._con.post(
+            path=qrr_url, postdata=params, token=self._token
+        )
 
     # ----------------------------------------------------------------------
     def get_html_popup(self, oid):
@@ -1311,7 +1424,9 @@ class MapFeatureLayer(Layer):
             pop_url = self._url + "/%s/htmlPopup" % oid
             params = {"f": "json"}
 
-            return self._con.get(path=pop_url, params=params, token=self._token)
+            return self._con.get(
+                path=pop_url, params=params, token=self._token
+            )
         return ""
 
     # ----------------------------------------------------------------------
@@ -1334,7 +1449,10 @@ class MapFeatureLayer(Layer):
             "CompletedWithErrors",
         ]
         status = con.get(url, params)
-        while status["status"] in status_allowed and status["status"] != "Completed":
+        while (
+            status["status"] in status_allowed
+            and status["status"] != "Completed"
+        ):
             if status["status"] == "Completed":
                 return status
             elif status["status"] == "CompletedWithErrors":
@@ -1350,7 +1468,9 @@ class MapFeatureLayer(Layer):
     def _query(self, url, params, raw=False):
         """returns results of query"""
         try:
-            result = self._con.post(path=url, postdata=params, token=self._token)
+            result = self._con.post(
+                path=url, postdata=params, token=self._token
+            )
         except Exception as queryException:
             error_list = [
                 "Error performing query operation",
@@ -1363,7 +1483,11 @@ class MapFeatureLayer(Layer):
                     if "resultRecordCount" in params
                     else 1000
                 )
-                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
+                offset = (
+                    int(params["resultOffset"])
+                    if "resultOffset" in params
+                    else 0
+                )
                 # reduce this number to 125 if you still sees 500/504 error
                 if max_record < 250:
                     # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
@@ -1403,7 +1527,9 @@ class MapFeatureLayer(Layer):
 
         if "error" in result:
             raise ValueError(result)
-        if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
+        if "returnCountOnly" in params and is_true(
+            params["returnCountOnly"]
+        ):
             return result["count"]
         elif "returnIdsOnly" in params and is_true(params["returnIdsOnly"]):
             return result
@@ -1463,7 +1589,9 @@ class MapFeatureLayer(Layer):
             from arcgis.geometry import Geometry
 
             geom = feature["geometry"] if "geometry" in feature else None
-            attribs = feature["attributes"] if "attributes" in feature else {}
+            attribs = (
+                feature["attributes"] if "attributes" in feature else {}
+            )
             if "centroid" in feature:
                 if attribs is None:
                     attribs = {"centroid": feature["centroid"]}
@@ -1495,7 +1623,11 @@ class MapFeatureLayer(Layer):
                     if "resultRecordCount" in params
                     else 1000
                 )
-                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
+                offset = (
+                    int(params["resultOffset"])
+                    if "resultOffset" in params
+                    else 0
+                )
                 # reduce this number to 125 if you still sees 500/504 error
                 if max_record < 250:
                     # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
@@ -1515,7 +1647,9 @@ class MapFeatureLayer(Layer):
                             records = self._query(url, params, raw=True)
                             if featureset_dict is not None:
                                 for feature in records["features"]:
-                                    featureset_dict["features"].append(feature)
+                                    featureset_dict["features"].append(
+                                        feature
+                                    )
                             else:
                                 featureset_dict = records
                             i += 1
@@ -1536,7 +1670,9 @@ class MapFeatureLayer(Layer):
         geom = None
         names = None
         dfields = []
-        rows = [feature_to_row(row, sr) for row in featureset_dict["features"]]
+        rows = [
+            feature_to_row(row, sr) for row in featureset_dict["features"]
+        ]
         if len(rows) == 0:
             return None
         df = pd.DataFrame.from_records(data=rows)
@@ -1589,7 +1725,10 @@ class MapRasterLayer(MapFeatureLayer):
             url += "?token=" + self._token
 
         if "lods" in self.container.properties:
-            lyr_dict = {"type": "ArcGISTiledMapServiceLayer", "url": self.container.url}
+            lyr_dict = {
+                "type": "ArcGISTiledMapServiceLayer",
+                "url": self.container.url,
+            }
 
         else:
             lyr_dict = {
@@ -1598,7 +1737,9 @@ class MapRasterLayer(MapFeatureLayer):
             }
 
         if self.filter is not None:
-            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+            lyr_dict["options"] = json.dumps(
+                {"definition_expression": self.filter}
+            )
         if self._time_filter is not None:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
@@ -1680,7 +1821,9 @@ class MapTable(MapFeatureLayer):
         lyr_dict = {"type": "FeatureLayer", "url": url}
 
         if self.filter is not None:
-            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+            lyr_dict["options"] = json.dumps(
+                {"definition_expression": self.filter}
+            )
         if self._time_filter is not None:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
@@ -1728,125 +1871,165 @@ class MapTable(MapFeatureLayer):
         -------------------------------     --------------------------------------------------------------------
         time_filter                         Optional list. The format is of [<startTime>, <endTime>] using
                                             datetime.date, datetime.datetime or timestamp in milliseconds.
-                                            Syntax: time_filter=[<startTime>, <endTime>] ; specified as
-                                                    datetime.date, datetime.datetime or timestamp in
-                                                    milliseconds
+
+                                            .. code-block:: python
+
+                                                >>> time_filter=[<startTime>, <endTime>]
+
+                                            Specified as ``datetime.date``, ``datetime.datetime`` or
+                                            ``timestamp`` in milliseconds.
+
+                                            .. code-block:: python
+
+                                                >>> import datetime as dt
+
+                                                >>> time_filter = [dt.datetime(2022, 1, 1), dt.dateime(2022, 1, 12)]
+
         -------------------------------     --------------------------------------------------------------------
         gdb_version                         Optional string. The geodatabase version to query. This parameter
-                                            applies only if the isDataVersioned property of the layer is true.
-                                            If this is not specified, the query will apply to the published
-                                            map's version.
+                                            applies only if the `isDataVersioned` property of the layer is
+                                            `true`. If this is not specified, the query will apply to the
+                                            published map's version.
         -------------------------------     --------------------------------------------------------------------
-        return_geometry                     Optional boolean. If true, geometry is returned with the query.
-                                            Default is true.
+        return_geometry                     Optional boolean. If `True`, geometry is returned with the query.
+                                            Default is `True`.
         -------------------------------     --------------------------------------------------------------------
-        return_distinct_values              Optional boolean.  If true, it returns distinct values based on the
-                                            fields specified in out_fields. This parameter applies only if the
-                                            supportsAdvancedQueries property of the layer is true.
+        return_distinct_values              Optional boolean.  If `True`, it returns distinct values based on
+                                            the fields specified in `out_fields`. This parameter applies only if
+                                            the `supportsAdvancedQueries` property of the layer is `true`.
         -------------------------------     --------------------------------------------------------------------
-        return_ids_only                     Optional boolean. Default is False.  If true, the response only
+        return_ids_only                     Optional boolean. Default is False.  If `True`, the response only
                                             includes an array of object IDs. Otherwise, the response is a
-                                            feature set.
+                                            :class:`~arcgis.features.FeatureSet`.
         -------------------------------     --------------------------------------------------------------------
-        return_count_only                   Optional boolean. If true, the response only includes the count
+        return_count_only                   Optional boolean. If `True`, the response only includes the count
                                             (number of features/records) that would be returned by a query.
-                                            Otherwise, the response is a feature set. The default is false. This
-                                            option supersedes the returnIdsOnly parameter. If
-                                            returnCountOnly = true, the response will return both the count and
-                                            the extent.
+                                            Otherwise, the response is a :class:`~arcgis.features.FeatureSet`.
+                                            The default is `False`. This option supersedes the
+                                            `return_ids_only` parameter. If `return_count_only = True`, the
+                                            response will return both the count and the extent.
         -------------------------------     --------------------------------------------------------------------
-        order_by_fields                     Optional string. One or more field names on which the
-                                            features/records need to be ordered. Use ASC or DESC for ascending
-                                            or descending, respectively, following every field to control the
-                                            ordering.
-                                            example: STATE_NAME ASC, RACE DESC, GENDER
+         order_by_fields                    Optional string. One or more field names by which to order the
+                                            results. Use ``ASC`` or ``DESC`` for ascending
+                                            or descending, respectively, following every field to be ordered:
+
+                                            .. code-block:: python
+
+                                                >>> order_by_fields = "STATE_NAME ASC, RACE DESC, GENDER ASC"
+
         -------------------------------     --------------------------------------------------------------------
-        group_by_fields_for_statistics      Optional string. One or more field names on which the values need to
-                                            be grouped for calculating the statistics.
-                                            example: STATE_NAME, GENDER
+        group_by_fields_for_statistics      Optional string. One or more field names on which to group results
+                                            for calculating the statistics.
+
+                                            .. code-block:: python
+
+                                                >>> group_by_fields_for_statiscits = "STATE_NAME, GENDER"
+
         -------------------------------     --------------------------------------------------------------------
         out_statistics                      Optional string. The definitions for one or more field-based
                                             statistics to be calculated.
 
-                                            Syntax:
+                                            :Syntax:
 
-                                            [
-                                                {
-                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
-                                                  "onStatisticField": "Field1",
-                                                  "outStatisticFieldName": "Out_Field_Name1"
-                                                },
-                                                {
-                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
-                                                  "onStatisticField": "Field2",
-                                                  "outStatisticFieldName": "Out_Field_Name2"
-                                                }
-                                            ]
+                                            .. code-block:: python
+
+                                                >>> out_statistics = [
+                                                                        {
+                                                                          "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                                          "onStatisticField": "Field1",
+                                                                          "outStatisticFieldName": "Out_Field_Name1"
+                                                                        },{
+                                                                           "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                                           "onStatisticField": "Field2",
+                                                                           "outStatisticFieldName": "Out_Field_Name2"
+                                                                          }
+                                                                    ]
         -------------------------------     --------------------------------------------------------------------
         result_offset                       Optional integer. This option can be used for fetching query results
                                             by skipping the specified number of records and starting from the
-                                            next record (that is, resultOffset + 1th). This option is ignored
-                                            if return_all_records is True (i.e. by default).
+                                            next record (that is, `result_offset + ith`). This option is ignored
+                                            if `return_all_records` is `True` (i.e. by default).
         -------------------------------     --------------------------------------------------------------------
         result_record_count                 Optional integer. This option can be used for fetching query results
-                                            up to the result_record_count specified. When result_offset is
+                                            up to the `result_record_count` specified. When `result_offset` is
                                             specified but this parameter is not, the map service defaults it to
-                                            max_record_count. The maximum value for this parameter is the value
-                                            of the layer's max_record_count property. This option is ignored if
-                                            return_all_records is True (i.e. by default).
+                                            `max_record_count`. The maximum value for this parameter is the value
+                                            of the layer's `maxRecordCount` property. This option is ignored if
+                                            `return_all_records` is `True` (i.e. by default).
         -------------------------------     --------------------------------------------------------------------
-        return_all_records                  Optional boolean. When True, the query operation will call the
-                                            service until all records that satisfy the where_clause are
-                                            returned. Note: result_offset and result_record_count will be
-                                            ignored if return_all_records is True. Also, if return_count_only,
-                                            return_ids_only, or return_extent_only are True, this parameter
-                                            will be ignored.
+        return_all_records                  Optional boolean. When `True`, the query operation will call the
+                                            service until all records that satisfy the `where_clause` are
+                                            returned. Note: `result_offset` and `result_record_count` will be
+                                            ignored if `return_all_records` is True. Also, if
+                                            `return_count_only`, `return_ids_only`, or `return_extent_only` are
+                                            `True`, this parameter will be ignored.
         -------------------------------     --------------------------------------------------------------------
         historic_moment                     Optional integer. The historic moment to query. This parameter
                                             applies only if the layer is archiving enabled and the
-                                            supportsQueryWithHistoricMoment property is set to true. This
+                                            `supportsQueryWithHistoricMoment` property is set to `true`. This
                                             property is provided in the layer resource.
 
-                                            If historic_moment is not specified, the query will apply to the
+                                            .. note::
+                                                See `Query (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer-.htm>`_
+                                                for full explanation of layer properties. Use :attr:`~arcgis.features.FeatureLayer.properties`
+                                                to examine layer properties.
+
+                                            If `historic_moment` is not specified, the query will apply to the
                                             current features.
         -------------------------------     --------------------------------------------------------------------
-        sql_format                          Optional string.  The sql_format parameter can be either standard
-                                            SQL92 standard or it can use the native SQL of the underlying
-                                            datastore native. The default is none which means the sql_format
-                                            depends on useStandardizedQuery parameter.
-                                            Values: none | standard | native
+        sql_format                          Optional string.  The `sql_format` parameter can be either standard
+                                            SQL92 or it can use the native SQL of the underlying
+                                            datastore. The default is none which means the sql_format
+                                            depends on the `useStandardizedQuery` parameter.
+                                            Values: ``none`` | ``standard`` | ``native``
         -------------------------------     --------------------------------------------------------------------
-        return_exceeded_limit_features      Optional boolean. Optional parameter which is true by default. When
-                                            set to true, features are returned even when the results include
-                                            'exceededTransferLimit': True.
+        return_exceeded_limit_features      Optional boolean. Optional parameter which is `true` by default.
+                                            When set to `true`, features are returned even when the results
+                                            include the `exceededTransferLimit: true` property.
 
-                                            When set to false and querying with resultType = tile features are
-                                            not returned when the results include 'exceededTransferLimit': True.
-                                            This allows a client to find the resolution in which the transfer
-                                            limit is no longer exceeded without making multiple calls.
+                                            When set to false and querying with `resultType = 'tile'`, features
+                                            are not returned when the results include
+                                            `exceededTransferLimit: True`. This allows a client to find the
+                                            resolution in which the transfer limit is no longer exceeded without
+                                            making multiple calls.
         -------------------------------     --------------------------------------------------------------------
-        as_df                               Optional boolean.  If True, the results are returned as a DataFrame
-                                            instead of a FeatureSet.
+        as_df                               Optional boolean.  If `True`, the results are returned as a
+                                            `DataFrame` instead of a :class:`~arcgis.features.FeatureSet`.
         -------------------------------     --------------------------------------------------------------------
         range_values                        Optional List. Allows you to filter features from the layer that are
                                             within the specified range instant or extent.
 
                                             :Syntax:
 
-                                            [
-                                                {
-                                                  "name": "range name",
-                                                  "value": <value> or [ <value1>, <value2> ]  # single value or a value-range
-                                                      # None is allowed in value-range case -- that means infinity
-                                                      # e.g. [None, 1500] means all features with values <= 1500
-                                                      # [1000, None] means all features with values >= 1000
-                                                  },
-                                                  {
-                                                    "name": "range name 2",
-                                                    "value": <value> or  [ <value3>, <value4> ]
-                                                  }
-                                                }
-                                            ]
+                                            .. code-block:: python
+
+                                                >>> range_values =     [
+                                                                        {
+                                                                          "name": "range name",
+                                                                          "value": <value> or [ <value1>, <value2> ]
+                                                                          },
+                                                                          {
+                                                                            "name": "range name 2",
+                                                                            "value": <value> or  [ <value3>, <value4>]
+                                                                          }
+                                                                        }
+                                                                       ]
+
+                                            .. note::
+
+                                                None is allowed in value-range case -- that means infinity
+
+                                                .. code-block:: python
+
+                                                    # all features with values <= 1500
+
+                                                    >>> range_values = {"name" : "range name",
+                                                                         "value :[None, 1500]}
+
+                                                    # all features with values >= 1000
+
+                                                    >>> range_values = {"name" : "range name",
+                                                                        "value" : [1000, None]}
 
         -------------------------------     --------------------------------------------------------------------
         parameter_values                    Optional Dict. Allows you to filter the features layers by specifying
@@ -1855,15 +2038,18 @@ class MapTable(MapFeatureLayer):
                                             the default value, that is assigned during authoring time, gets used
                                             instead.
 
-                                            When a parameterInfo allows multiple values, you must pass them in an array.
+                                            When `parameterInfo` allows multiple values, you must pass them in
+                                            an array.
 
-                                            Note: Check parameterInfos at the layer resources for the available
-                                            parameterized filters, their default values and expected data type.
+                                            Note: Check `parameterInfos` at the layer
+                                            :attr:`properties <arcgis.features.FeatureLayer.properties>` for
+                                            the available parameterized filters, their default values and
+                                            expected data type.
         -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
-                                            explicitly implemented on the function. A complete list of functions
-                                            available is documented on the Query REST API.
+                                            explicitly implemented on the function. A complete list of possible
+                                            parameters is documented at `Query (Map Service/Layer) <https://developers.arcgis.com/rest/services-reference/enterprise/query-map-service-layer-.htm>`_
         ===============================     ====================================================================
 
         :return:
@@ -1928,7 +2114,9 @@ class MapTable(MapFeatureLayer):
         if sql_format is not None:
             params["sqlFormat"] = sql_format
         if return_exceeded_limit_features is not None:
-            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
+            params[
+                "returnExceededLimitFeatures"
+            ] = return_exceeded_limit_features
         params["where"] = where
         params["returnDistinctValues"] = return_distinct_values
         params["returnCountOnly"] = return_count_only
@@ -1961,8 +2149,12 @@ class MapTable(MapFeatureLayer):
         if order_by_fields:
             params["orderByFields"] = order_by_fields
         if group_by_fields_for_statistics:
-            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
-        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
+            params[
+                "groupByFieldsForStatistics"
+            ] = group_by_fields_for_statistics
+        if statistic_filter and isinstance(
+            statistic_filter, StatisticFilter
+        ):
             params["outStatistics"] = statistic_filter.filter
         if out_statistics:
             params["outStatistics"] = out_statistics
@@ -2011,8 +2203,11 @@ class MapTable(MapFeatureLayer):
         supports_pagination = True
         if (
             "advancedQueryCapabilities" not in self.properties
-            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
-            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
+            or "supportsPagination"
+            not in self.properties["advancedQueryCapabilities"]
+            or not self.properties["advancedQueryCapabilities"][
+                "supportsPagination"
+            ]
         ):
             supports_pagination = False
 
@@ -2047,7 +2242,9 @@ class MapTable(MapFeatureLayer):
                 and not self.properties.geometryType is None
             ):
                 columns["SHAPE"] = object
-            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
+            df = pd.DataFrame([], columns=columns.keys()).astype(
+                columns, True
+            )
             if "SHAPE" in df.columns:
                 df["SHAPE"] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
@@ -2074,7 +2271,9 @@ class MapTable(MapFeatureLayer):
                     try:
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
-                                df[fld] / 1000, infer_datetime_format=True, unit="s"
+                                df[fld] / 1000,
+                                infer_datetime_format=True,
+                                unit="s",
                             )
                     except:
                         if fld in df.columns:
@@ -2096,7 +2295,10 @@ class MapTable(MapFeatureLayer):
             params["returnIdsOnly"] = False
             for ids in chunks(oid_info["objectIds"], max_records):
                 ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))
+                sql = "%s in (%s)" % (
+                    oid_info["objectIdFieldName"],
+                    ",".join(ids),
+                )
                 params["where"] = sql
                 if not as_df:
                     records = self._query(url, params, raw=as_raw)
@@ -2158,7 +2360,9 @@ class MapTable(MapFeatureLayer):
                         df[fld] / 1000, infer_datetime_format=True, unit="s"
                     )
                 except:
-                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                    df[fld] = pd.to_datetime(
+                        df[fld], infer_datetime_format=True
+                    )
             return df
         return result
 
@@ -2196,15 +2400,24 @@ class _MSILayerFactory(type):
         props = lyr.properties
         if "type" in props and props.type.lower() == "table":
             return MapTable(
-                url=url, gis=gis, container=container, dynamic_layer=container
+                url=url,
+                gis=gis,
+                container=container,
+                dynamic_layer=container,
             )
         elif "type" in props and props.type.lower() == "raster layer":
             return MapRasterLayer(
-                url=url, gis=gis, container=container, dynamic_layer=container
+                url=url,
+                gis=gis,
+                container=container,
+                dynamic_layer=container,
             )
         elif "type" in props and props.type.lower() == "feature layer":
             return MapFeatureLayer(
-                url=url, gis=gis, container=container, dynamic_layer=container
+                url=url,
+                gis=gis,
+                container=container,
+                dynamic_layer=container,
             )
         return lyr
 
