@@ -1,11 +1,29 @@
 import torch
 import matplotlib.pyplot as plt
 import math
+import numpy as np
 from .common import get_nbatches, image_batch_stretcher
 from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
 
 def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in kwargs
+    """
+    This function randomly picks a few training chips and visualizes them.
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    rows                    Optional Integer.
+                            Number of rows to display.
+                            Default: 3.
+    ---------------------   -------------------------------------------
+    alpha                   Optional Float.
+                            Opacity of the lables for the corresponding
+                            images. Values range between 0 and 1, where
+                            1 means opaque.
+    -------------------------------------------------------------------
+
+    """
     nrows = rows
     ncols = kwargs.get("ncols", nrows)
     # start_index = kwargs.get('start_index', 0) # Does not work with dataloader
@@ -124,3 +142,84 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in 
             idx += 1
     if _IS_ARCGISPRONOTEBOOK:
         plt.show()
+
+
+# Function to plot hard examples for multilabel classification
+# This function has been taken from fastai and modified to work with multispectral and rgb (ArcGISMSImage).
+def plot_multi_top_losses_modified(
+    self, samples=3, figsize=(8, 8), save_misclassified=False
+):
+    "Show images in `top_losses` along with their prediction, actual, loss, and probability of predicted class in a multilabeled dataset."
+    if samples > 20:
+        print("Max 20 samples")
+        return
+    losses, idxs = self.top_losses(self.data.c)
+    l_dim = len(losses.size())
+    if l_dim == 1:
+        losses, idxs = self.top_losses()
+    (
+        infolist,
+        ordlosses_idxs,
+        mismatches_idxs,
+        mismatches,
+        losses_mismatches,
+        mismatchescontainer,
+    ) = ([], [], [], [], [], [])
+    truthlabels = np.asarray(self.y_true, dtype=int)
+    classes_ids = [k for k in enumerate(self.data.classes)]
+    predclass = np.asarray(self.pred_class)
+    for i, pred in enumerate(predclass):
+        where_truth = np.nonzero((truthlabels[i] > 0))[0]
+        mismatch = np.all(pred != where_truth)
+        if mismatch:
+            mismatches_idxs.append(i)
+            if l_dim > 1:
+                losses_mismatches.append((losses[i][pred], i))
+            else:
+                losses_mismatches.append((losses[i], i))
+        if l_dim > 1:
+            infotup = (
+                i,
+                pred,
+                where_truth,
+                losses[i][pred],
+                np.round(self.preds[i], decimals=3)[pred],
+                mismatch,
+            )
+        else:
+            infotup = (
+                i,
+                pred,
+                where_truth,
+                losses[i],
+                np.round(self.preds[i], decimals=3)[pred],
+                mismatch,
+            )
+        infolist.append(infotup)
+    ds = self.data.dl(self.ds_type).dataset
+    mismatches = ds[mismatches_idxs]
+    ordlosses = sorted(losses_mismatches, key=lambda x: x[0], reverse=True)
+    for w in ordlosses:
+        ordlosses_idxs.append(w[1])
+    mismatches_ordered_byloss = ds[ordlosses_idxs]
+    print(
+        f"{str(len(mismatches))} misclassified samples over {str(len(self.data.valid_ds))} samples in the validation set."
+    )
+    samples = min(samples, len(mismatches))
+    from arcgis.learn._utils.common import ArcGISMSImage
+
+    for ima in range(len(mismatches_ordered_byloss)):
+        mismatchescontainer.append(mismatches_ordered_byloss[ima][0])
+    for sampleN in range(samples):
+        actualclasses = ""
+        for clas in infolist[ordlosses_idxs[sampleN]][2]:
+            actualclasses = f"{actualclasses} -- {str(classes_ids[clas][1])}"
+        imag = mismatches_ordered_byloss[sampleN][0]
+        imag = ArcGISMSImage.show(imag, return_ax=True)
+        imag.set_title(
+            f"""Predicted: {classes_ids[infolist[ordlosses_idxs[sampleN]][1]][1]} \nActual: {actualclasses}\nLoss: {infolist[ordlosses_idxs[sampleN]][3]}\nProbability: {infolist[ordlosses_idxs[sampleN]][4]}""",
+            loc="left",
+        )
+        plt.show()
+        if save_misclassified:
+            return mismatchescontainer

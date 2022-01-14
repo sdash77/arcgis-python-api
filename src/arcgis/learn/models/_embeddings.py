@@ -165,7 +165,7 @@ class Embeddings:
                             model.
     =====================   ===========================================
 
-    :returns: `Embeddings` Object
+    :return: `Embeddings` Object
     """
 
     def __init__(self, dataset_type="image", backbone=None, **kwargs):
@@ -217,7 +217,7 @@ class Embeddings:
                                 is set to `image`
         =====================   ===========================================
 
-        :returns: a list containing the available models for the given `dataset-type`
+        :return: a list containing the available models for the given `dataset-type`
         """
         if dataset_type == "image":
             return cls._get_image_compatible_backbones()
@@ -383,7 +383,7 @@ class Embeddings:
                                 Default value is `mean`.
         =====================   ===========================================
 
-        :returns: The path of the H5 file where items & corresponding embeddings are saved.
+        :return: The path of the H5 file where items & corresponding embeddings are saved.
         """
         if not HAS_NUMPY:
             raise Exception("This module requires numpy.")
@@ -449,7 +449,7 @@ class Embeddings:
                                 Default is set to True.
         =====================   ===========================================
 
-        :returns: When `load_to_memory` param is `True` - A 2 item tuple containing
+        :return: When `load_to_memory` param is `True` - A 2 item tuple containing
                   the numpy arrays of extracted embeddings and items
                   When `load_to_memory` param is `False` - A 3 item tuple containing
                   the H5 file handler & 2 H5 dataset object of extracted embeddings

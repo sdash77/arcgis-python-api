@@ -307,13 +307,17 @@ class FormInfo:
 
     @property
     def expressions(self):
-        """Returns Arcade expressions used in the form to the user - a list of :class:`arcgis.mapping.forms.FormExpressionInfo`"""
+        """
+        Returns Arcade expressions used in the form to the user - a list of :class:`arcgis.mapping.forms.FormExpressionInfo`
+        """
         return self._expression_infos
 
     def update(self):
-        """Saves the form to the backend. If the form was derived from an Item, calling this function is required
-        to save the form into the item. If the form was derived from a WebMap, you can either call this
-        function or WebMap.update(). If form has been cleared, removes formInfo from webmap"""
+        """
+        Saves the form to the backend. If the form was derived from an :class:`~arcgis.gis.Item`, calling this function is required
+        to save the form into the item. If the form was derived from a :class:`~arcgis.mapping.WebMap`, you can either call this
+        function or :attr:`~arcgis.mapping.WebMap.update()`. If form has been cleared, removes formInfo from webmap
+        """
         if self.exists():
             self._validate_all_required_fields_in_form()
         if isinstance(self._parent, Item):
@@ -407,7 +411,7 @@ class FormInfo:
         input_type=None,
         required_expression=None,
         index=None,
-        **kwargs
+        **kwargs,
     ):
         """
         Adds a single field :class:`~arcgis.mapping.forms.FormElement` element to the end of the form.
@@ -454,6 +458,7 @@ class FormInfo:
                                    this function will add the new element to the end of the form.
         ======================     ====================================================================
 
+        :return: The element that was added - :class:`arcgis.mapping.forms.FormGroupElement`
         """
 
         element = FormFieldElement(
@@ -467,7 +472,7 @@ class FormInfo:
             hint=hint,
             input_type=input_type,
             required_expression=required_expression,
-            **kwargs
+            **kwargs,
         )
         return self.add(element, index=index)
 
@@ -478,7 +483,7 @@ class FormInfo:
         visibility_expression=None,
         initial_state=None,
         index=None,
-        **kwargs
+        **kwargs,
     ):
         """
         Adds a single :class:`~arcgis.mapping.forms.GroupElement` to the form
@@ -508,14 +513,14 @@ class FormInfo:
             description=description,
             visibility_expression=visibility_expression,
             initial_state=initial_state,
-            **kwargs
+            **kwargs,
         )
         return self.add(group_el, index=index)
 
     def delete(self, element=None, label=None):
         """
         Deletes element from the form. You can use either the element param
-        with a form element you get using `FormInfo.get()` or you can pass the label of the
+        with a form element you get using :attr:`~arcgis.mapping.FormInfo.get()` or you can pass the label of the
         form element you'd like to move into the label param.
 
         ==================     ====================================================================
@@ -545,7 +550,7 @@ class FormInfo:
     def move(self, element=None, label=None, destination=None, index=None):
         """
         Moves a form element in the form to a new location. You can use either the element param
-        with a form element you get using `FormInfo.get()` or you can pass the label of the
+        with a form element you get using :attr:`~arcgis.mapping.FormInfo.get()` or you can pass the label of the
         form element you'd like to move into the label param.
 
         ==================     ====================================================================
@@ -828,7 +833,7 @@ class FormElement:
         description=None,
         label=None,
         visibility_expression=None,
-        **kwargs
+        **kwargs,
     ):
         self._form = form
         self._element_type = element_type
@@ -857,7 +862,7 @@ class FormElement:
 
     @property
     def element_type(self):
-        """Gets the element type of the form element."""
+        """Get/Set the element type of the form element."""
         return self._element_type
 
     @element_type.setter
@@ -978,7 +983,7 @@ class FormFieldElement(FormElement):
         hint=None,
         input_type=None,
         required_expression=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             form=form,
@@ -986,7 +991,7 @@ class FormFieldElement(FormElement):
             description=description,
             label=label,
             visibility_expression=visibility_expression,
-            **kwargs
+            **kwargs,
         )
         self._domain = domain
         self._editable = editable
@@ -1050,7 +1055,19 @@ class FormFieldElement(FormElement):
 
     @property
     def input_type(self):
-        """Gets/sets the input type of the form element."""
+        """
+        Gets/sets the input type of the form element.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string.
+                            Values: "text-area" | "text-box" | "barcode-scanner" | "combo-box" |
+                                    "radio-buttons" | "datetime-picker"
+        ===============     ====================================================================
+
+        :return: String that represents the input type
+        """
         return self._input_type
 
     @input_type.setter
@@ -1162,7 +1179,7 @@ class FormGroupElement(FormElement):
         description=None,
         label=None,
         visibility_expression=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             form=form,
@@ -1170,7 +1187,7 @@ class FormGroupElement(FormElement):
             description=description,
             label=label,
             visibility_expression=visibility_expression,
-            **kwargs
+            **kwargs,
         )
         if elements is None:
             elements = []
@@ -1190,7 +1207,16 @@ class FormGroupElement(FormElement):
 
     @property
     def initial_state(self):
-        """Gets/sets the initial state of the form element."""
+        """
+        Gets/sets the initial state of the form element.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string.
+                            Values: "collapsed" | "expanded"
+        ===============     ====================================================================
+        """
         return self._initial_state
 
     @initial_state.setter
@@ -1240,7 +1266,7 @@ class FormGroupElement(FormElement):
         input_type=None,
         required_expression=None,
         index=None,
-        **kwargs
+        **kwargs,
     ):
         """
         Adds a single field :class:`~arcgis.mapping.forms.FormElement` element to the end of the group.
@@ -1299,7 +1325,7 @@ class FormGroupElement(FormElement):
             hint=hint,
             input_type=input_type,
             required_expression=required_expression,
-            **kwargs
+            **kwargs,
         )
         return self.add(element, index=index)
 

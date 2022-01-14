@@ -73,7 +73,7 @@ class WMTSLayer(BaseOGC):
         """
         Returns the properties of the Layer.
 
-        :returns: PropertyMap
+        :return: PropertyMap
         """
         if self._properties is None:
             from arcgis._impl.common._mixins import PropertyMap

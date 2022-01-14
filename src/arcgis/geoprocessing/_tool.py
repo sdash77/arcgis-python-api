@@ -16,7 +16,6 @@ from arcgis.features import (
     FeatureCollection,
     FeatureLayerCollection,
     FeatureSet,
-    SpatialDataFrame,
 )
 from arcgis.geoprocessing import LinearUnit, DataFile, RasterData
 
@@ -598,9 +597,7 @@ class _AsyncResource(_GISResource):
 
     def _refresh(self):
         params = {"f": "json"}
-        dictdata = self._con.get(
-            path=self.url, params=params, token=self._con.token
-        )  # token=self._token)
+        dictdata = self._con.get(path=self.url, params=params)  # token=self._token)
         self.properties = PropertyMap(dictdata)
 
     def _analysis_job(self, task, params):
@@ -619,7 +616,7 @@ class _AsyncResource(_GISResource):
 
         params["f"] = "json"
 
-        resp = self._con.post(submit_url, params, token=self._con.token)
+        resp = self._con.post(submit_url, params)
         # print(resp)
         return task_url, resp, resp["jobId"]
 
@@ -632,7 +629,7 @@ class _AsyncResource(_GISResource):
             job_id = job_info.get("jobId")
             job_url = "{}/jobs/{}".format(task_url, job_id)
             params = {"f": "json"}
-            job_response = self._con.post(job_url, params, token=self._con.token)
+            job_response = self._con.post(job_url, params)
 
             # Query and report the Analysis job status.
             #
@@ -642,9 +639,7 @@ class _AsyncResource(_GISResource):
                 while not job_response.get("jobStatus") == "esriJobSucceeded":
                     time.sleep(5)
 
-                    job_response = self._con.post(
-                        job_url, params, token=self._con.token
-                    )
+                    job_response = self._con.post(job_url, params)
                     # print(job_response)
                     messages = (
                         job_response["messages"] if "messages" in job_response else []
@@ -699,9 +694,7 @@ class _AsyncResource(_GISResource):
                     result_url = "{}/jobs/{}/{}".format(task_url, job_id, param_url)
 
                     params = {"f": "json"}
-                    param_result = self._con.post(
-                        result_url, params, token=self._con.token
-                    )
+                    param_result = self._con.post(result_url, params)
 
                     job_value = param_result.get("value")
                     result_values[key] = job_value
@@ -928,9 +921,7 @@ class Toolbox(_AsyncResource):
 
             self._taskurls[fnname] = taskurl + "/execute"
             try:
-                taskprops = self._con.post(
-                    taskurl, {"f": "json"}, token=self._con.token
-                )
+                taskprops = self._con.post(taskurl, {"f": "json"})
             except Exception as ex:
                 if str(ex).find("Token Required") > -1:
                     taskprops = self._con.post(taskurl, {"f": "json"})
@@ -1144,8 +1135,6 @@ class Toolbox(_AsyncResource):
                         params[key] = value.to_dict()
                     elif _is_geoenabled(value) or hasattr(value, "spatial"):
                         params[key] = value.spatial.__feature_set__
-                    elif type(value) in [SpatialDataFrame]:
-                        params[key] = value.__feature_set__
                     elif type(value) == str:
                         try:
                             klass = py_type  # type[value]
@@ -1183,7 +1172,7 @@ class Toolbox(_AsyncResource):
         resp = None
 
         if self.properties.executionType == "esriExecutionTypeSynchronous":
-            resp = self._con.post(url, gp_params, token=self._con.token)
+            resp = self._con.post(url, gp_params)
 
             output_dict = {}
 
@@ -1226,7 +1215,7 @@ class Toolbox(_AsyncResource):
         else:
             task_url = "{}/{}".format(self.url, task_name)
             submit_url = "{}/submitJob".format(task_url)
-            job_info = self._con.post(submit_url, gp_params, token=self._con.token)
+            job_info = self._con.post(submit_url, gp_params)
             job_id = job_info["jobId"]
             try:
                 isCan = False

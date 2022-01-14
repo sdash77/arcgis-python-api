@@ -112,17 +112,7 @@ class DataStoreManager(BaseServer):
         copy data to the site when publishing. Rather, the publisher is
         required to register data items through which the service being
         published can reference data. Values: true | false
-        """
 
-        """ jenn note -- need link or list of the possible data store configuration properties."""
-        params = {"f": "json"}
-        url = self._url + "/config"
-        return self._con.get(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    @config.setter
-    def config(self, config):
-        """
         This operation allows you to update the data store configuration
         You can use this to allow or block the automatic copying of data
         to the server at publish time
@@ -135,7 +125,18 @@ class DataStoreManager(BaseServer):
 
         :return:
            JSON dictionary of the set configuration properties.
+        """
 
+        """ jenn note -- need link or list of the possible data store configuration properties."""
+        params = {"f": "json"}
+        url = self._url + "/config"
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    @config.setter
+    def config(self, config):
+        """
+        See main ``config`` property docstring.
         """
         if config is None:
             config = {}
@@ -144,7 +145,7 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def federate_data_item(self):
+    def federate_data_item(self, path: str) -> bool:
         """
         This operation can be used to create a data store item in the portal
         for a data store that has been registered with one of the portal's
@@ -336,22 +337,24 @@ class DataStoreManager(BaseServer):
         USER=sde;VERSION=sde.DEFAULT;AUTHENTICATION_MODE=DBMS'
         """
         if str(sde).lower().endswith(".sde"):
-
+            base_url = os.path.dirname(self._url)
             from arcgis.gis.server.catalog import ServicesDirectory
             from arcgis.gis.server import Uploads
 
             up = Uploads(
-                url=self._con.baseurl.replace("rest/services", "admin/uploads"),
+                url=f"{base_url}/uploads",
                 gis=self._con,
             )
 
             if self._con._portal_connection:
+                sd_url = f"{os.path.dirname(base_url)}/rest/services"
                 d = ServicesDirectory(
-                    url=self._con.baseurl,
+                    url=sd_url,
                     portal_connection=self._con._portal_connection,
                 )
             elif isinstance(self._con, Connection):
-                d = ServicesDirectory(url=self._con.baseurl)
+                sd_url = f"{os.path.dirname(base_url)}/rest/services"
+                d = ServicesDirectory(url=sd_url)
                 d._con = self._con
 
             try:
@@ -901,15 +904,7 @@ class Datastore(BaseServer):
         """
         Gets the hints resource for a big data file share. Hints
         are advanced parameters to control the generation of a manifest.
-        """
-        params = {"download": True, "read": True}
-        url = self._url + "/hints"
-        return self._con.get(path=url, params=params)
 
-    # ---------------------------------------------------------------------
-    @hints.setter
-    def hints(self, hints):
-        """
         Sets the hints resource for a big data file share. Hints
         are advanced parameters to control the generation of a manifest.
 
@@ -929,7 +924,16 @@ class Datastore(BaseServer):
         ------------------     --------------------------------------------------------------------
         hints                  Required string. The hints file to be uploaded.
         ==================     ====================================================================
+        """
+        params = {"download": True, "read": True}
+        url = self._url + "/hints"
+        return self._con.get(path=url, params=params)
 
+    # ---------------------------------------------------------------------
+    @hints.setter
+    def hints(self, hints):
+        """
+        See main ``hints`` property docstring.
         """
         params = {"f": "json"}
         files = {"hints": hints}
@@ -1029,7 +1033,7 @@ class Datastore(BaseServer):
         regenerate a manifest if you have added new data or if you have
         uploaded a hints file using the edit resource.
 
-        :returns: Boolean. True = Success, False = Failure
+        :return: Boolean. True = Success, False = Failure
 
         """
         url = self._datastore._url + "/regenerate"

@@ -644,7 +644,7 @@ class _DeepCloner:
                             map_item_definition.add_child(group_item_definition)
 
                 # add integration as dependency
-                integrations_fl = FeatureLayer(url=item.url + "/4", gis=self.target)
+                integrations_fl = FeatureLayer(url=item.url + "/4", gis=item._gis)
                 integrations_df = integrations_fl.query("1=1", as_df=True)
                 for url_template in integrations_df.urltemplate.values:
                     parsed = urlparse(url_template)
@@ -1624,8 +1624,8 @@ class CloneNode:
     def add_child(self, node):
         """
         Adds a child node to this node
+
         :param node: <Node> The child node to add
-        :return:
         """
         if node is not None:
             self._children.add(node)
@@ -1635,8 +1635,8 @@ class CloneNode:
     def add_parent(self, node):
         """
         Adds a parent node to this node
+
         :param node: <Node> The parent node to add
-        :return:
         """
         self._parents.add(node)
         if self not in node.children:
@@ -1645,7 +1645,6 @@ class CloneNode:
     def clone(self):
         """
         The method that sub-classes can override to do whatever they need to do
-        :return:
         """
         self._resolved = True
 
@@ -2550,7 +2549,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             if "multiScaleGeometryInfo" in layers[layer_id].properties:
                 is_generalized = True
                 layers[layer_id].container.manager.layers[layer_id].update_definition(
-                    {"multiScaleGeometryInfo": None}
+                    {
+                        "multiScaleGeometryInfo": {"levels": []}
+                    }  # {"multiScaleGeometryInfo": None}
                 )
                 layers[layer_id]._refresh()
 
@@ -2667,34 +2668,25 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
         return name
 
-    def _swizzle_workforce_layers(self, wm_item_data, new_item):
+    def _swizzle_workforce_layers(self, wm_item_data, new_item, original_item_id):
         # replace old workforce layers with new cloned layers, leave non wf layers
         if (
             "operationalLayers" in wm_item_data
             and len(wm_item_data["operationalLayers"]) > 0
         ):
             for i, layer in enumerate(wm_item_data["operationalLayers"]):
-                if layer["id"] == "Assignments_0":
+                if layer.get("itemId", "") == original_item_id:
                     wm_item_data["operationalLayers"][i]["itemId"] = new_item.id
-                    wm_item_data["operationalLayers"][i]["url"] = new_item.url + "/0"
-                elif layer["id"] == "Workers_0":
-                    wm_item_data["operationalLayers"][i]["itemId"] = new_item.id
-                    wm_item_data["operationalLayers"][i]["url"] = new_item.url + "/1"
-                else:
-                    pass
+                    wm_item_data["operationalLayers"][i][
+                        "url"
+                    ] = f"{new_item.url}/{layer['url'].split('/')[-1]}"
         if "tables" in wm_item_data and len(wm_item_data["tables"]) > 0:
             for i, table in enumerate(wm_item_data["tables"]):
-                if table["id"] == "Dispatchers_0":
+                if table.get("itemId", "") == original_item_id:
                     wm_item_data["tables"][i]["itemId"] = new_item.id
-                    wm_item_data["tables"][i]["url"] = new_item.url + "/2"
-                elif table["id"] == "Assignment Types_0":
-                    wm_item_data["tables"][i]["itemId"] = new_item.id
-                    wm_item_data["tables"][i]["url"] = new_item.url + "/3"
-                elif table["id"] == "Assignment Integrations_0":
-                    wm_item_data["tables"][i]["itemId"] = new_item.id
-                    wm_item_data["tables"][i]["url"] = new_item.url + "/4"
-                else:
-                    pass
+                    wm_item_data["tables"][i][
+                        "url"
+                    ] = f"{new_item.url}/{table['url'].split('/')[-1]}"
         return wm_item_data
 
     def clone(self):
@@ -2747,6 +2739,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     ]
 
                 # Set the extent and spatial reference of the service
+                new_extent = None
                 if "spatialReference" in service_definition:
                     new_extent = _deep_get(service_definition, "initialExtent")
                     if new_extent is not None:
@@ -2912,7 +2905,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                         coded_value["code"] = float(code)
 
                     # Set the extent of the feature layer to the specified default extent
-                    if layer["type"] == "Feature Layer":
+                    if layer["type"] == "Feature Layer" and new_extent:
                         layer["extent"] = new_extent
 
                     # Remove hasViews property if exists
@@ -3608,7 +3601,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     )
                     wm_item_data = dispatcher_webmap_item.get_data()
                     wm_item_data = self._swizzle_workforce_layers(
-                        wm_item_data, new_item
+                        wm_item_data, new_item, original_item["id"]
                     )
                     dispatcher_webmap_item.update(
                         item_properties={
@@ -3632,7 +3625,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     worker_webmap_item = self.target.content.get(new_worker_webmap_id)
                     wm_item_data = worker_webmap_item.get_data()
                     wm_item_data = self._swizzle_workforce_layers(
-                        wm_item_data, new_item
+                        wm_item_data, new_item, original_item["id"]
                     )
                     worker_webmap_item.update(
                         item_properties={
@@ -3714,7 +3707,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     new_proj = arcgis.apps.workforce.Project(new_item)
                     if not self.copy_data:
                         at_fl = FeatureLayer(
-                            url=original_item["url"] + "/3", gis=self.target
+                            url=original_item["url"] + "/3", gis=self.portal_item._gis
                         )
                         at_features = at_fl.query("1=1")
                         new_proj.assignment_types_table.edit_features(
@@ -3723,7 +3716,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                     # use wf module to migrate integrations
                     integrations_fl = FeatureLayer(
-                        original_item["url"] + "/4", gis=self.target
+                        original_item["url"] + "/4", gis=self.portal_item._gis
                     )
                     integrations_features = integrations_fl.query("1=1")
                     if not self.copy_data:
@@ -4072,6 +4065,7 @@ class _OperationViewDefintion(_TextItemDefinition):
         """
         Injects the new item ids into the operation view json
         :param clone_mapping: The item id mapping dictionary
+
         :return: the updated json/dict
         """
         app_json = self.data
@@ -4105,6 +4099,7 @@ class _OperationViewDefintion(_TextItemDefinition):
         """
         Parses an operation view json/dict at version 1.2 to find all of the webmap ids
         :param data: The json/dict to parse
+
         :return: A list of webmap ids
         """
         webmap_ids = set()
@@ -4120,6 +4115,7 @@ class _OperationViewDefintion(_TextItemDefinition):
         """
         Parses an operation view json/dict at version 1.2 to find all of the webmap ids
         :param data: The json/dict to parse
+
         :return: A list of layer ids
         """
         layer_ids = set()
@@ -4303,6 +4299,7 @@ class _DashboardDefinition(_TextItemDefinition):
         """
         Parses a dashboard based on version to return the list of webmap ids
         :param data: The json/dict to parse
+
         :return: A list of webmap ids
         """
         if "version" in data:

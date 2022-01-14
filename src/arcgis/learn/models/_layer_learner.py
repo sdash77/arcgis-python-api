@@ -7,19 +7,7 @@ import warnings
 import math
 from pathlib import Path
 
-HAS_FASTAI = True
-HAS_SHAP = True
 import_exception = None
-
-try:
-    import shap
-except:
-    HAS_SHAP = False
-
-try:
-    import pandas as pd
-except:
-    pass
 
 import arcgis
 from arcgis.features import FeatureLayer
@@ -40,15 +28,19 @@ try:
     from fastai.torch_core import split_model_idx
     import torch
     from fastai.metrics import r2_score
+
+    HAS_FASTAI = True
+
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
     )
     HAS_FASTAI = False
 
-HAS_NUMPY = True
 try:
     import numpy as np
+
+    HAS_NUMPY = True
 except:
     HAS_NUMPY = False
 
@@ -103,7 +95,7 @@ class FullyConnectedNetwork(ArcGISModel):
                             If not specified, then calculated using fastai.
     =====================   ===========================================
 
-    :returns: `FullyConnectedNetwork` Object
+    :return: `FullyConnectedNetwork` Object
     """
 
     def __init__(self, data, layers=None, emb_szs=None, **kwargs):
@@ -155,7 +147,7 @@ class FullyConnectedNetwork(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `FullyConnectedNetwork` Object
+        :return: `FullyConnectedNetwork` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -407,12 +399,14 @@ class FullyConnectedNetwork(ArcGISModel):
 
         rasters = explanatory_rasters if explanatory_rasters else []
         if explain:
-            # if not HAS_SHAP:
-            #    warnings.warn(
-            #        "Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working."
-            #    )
-            #    explain = False
-            #    explain_index = None
+            # try:
+            #     import shap
+            # except:
+            #     warnings.warn(
+            #         "Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working."
+            #     )
+            #     explain = False
+            #     explain_index = None
             warnings.warn(
                 "Model explainability feature for Fully Connected Network is currently disabled due to package incompatibility and is under review"
             )
@@ -779,8 +773,12 @@ class FullyConnectedNetwork(ArcGISModel):
                                 Number of rows to print.
         =====================   ===========================================
 
-        :returns: dataframe
+        :return: dataframe
         """
+        try:
+            import pandas as pd
+        except:
+            raise Exception("This function requires pandas.")
         self._check_requisites()
         min_size = len(self._data._validation_indexes)
         if min_size > rows:

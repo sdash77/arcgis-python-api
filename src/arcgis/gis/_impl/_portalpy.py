@@ -2,6 +2,7 @@
 
 
 from __future__ import absolute_import
+import io
 import copy
 import json
 import imghdr
@@ -14,7 +15,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "1.9.1"
+__version__ = "2.0.0"
 
 _log = logging.getLogger(__name__)
 
@@ -99,9 +100,12 @@ class Portal(object):
         **kwargs,
     ):
         """The Portal constructor. Requires URL and optionally username/password."""
+        self._use_gen_token = kwargs.pop("use_gen_token", False)
         url = url.strip()  # be permissive in accepting home app urls
         homepos = url.find("/home")
         trust_env = kwargs.get("trust_env", None)
+        custom_adapter = kwargs.pop("custom_adapter", None)
+        is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
         if homepos != -1:
             url = url[:homepos]
 
@@ -115,7 +119,12 @@ class Portal(object):
                 url = arcpy.GetActivePortalURL() or "https://www.arcgis.com/"
                 self.url = url
             except ImportError:
-                raise ImportError("Could not import arcpy")
+                raise ImportError(
+                    (
+                        "The login failed because the arcpy library could not be found in your Python environment. "
+                        "Try logging in with a different set of credentials."
+                    )
+                )
             except:
                 raise ValueError("Could not use Pro authentication.")
         else:
@@ -178,6 +187,9 @@ class Portal(object):
                     trust_env=trust_env,
                     timeout=kwargs.get("timeout", 600),
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
+                    is_hosted_nb_home=is_hosted_nb_home,
+                    use_gen_token=self._use_gen_token,
                 )
             else:
                 self.con = Connection(
@@ -200,6 +212,9 @@ class Portal(object):
                     trust_env=trust_env,
                     timeout=kwargs.get("timeout", 600),
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
+                    is_hosted_nb_home=is_hosted_nb_home,
+                    use_gen_token=self._use_gen_token,
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -253,7 +268,7 @@ class Portal(object):
         group_id      required string, The group id to remove the thumbnail for.
         ============  ======================================
 
-        :returns: Boolean
+        :return: Boolean. True if successful else False
 
         """
         url = f"community/groups/{group_id}/deleteThumbnail"
@@ -288,21 +303,21 @@ class Portal(object):
             be provided.
 
 
-        ============     ====================================================
-        **Argument**     **Description**
-        ------------     ----------------------------------------------------
-        item_properties  required dictionary, see below for the keys and values
-        ------------     ----------------------------------------------------
-        data             optional string, either a path or URL to the data
-        ------------     ----------------------------------------------------
-        thumbnail        optional string, either a path or URL to an image
-        ------------     ----------------------------------------------------
-        metadata         optional string, either a path or URL to metadata.
-        ------------     ----------------------------------------------------
-        owner            optional string, defaults to logged in user.
-        ------------     ----------------------------------------------------
-        folder           optional string, content folder where placing item
-        ============     ====================================================
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        item_properties     Required dictionary, see below for the keys and values
+        ---------------     ----------------------------------------------------
+        data                Optional string, either a path or URL to the data
+        ---------------     ----------------------------------------------------
+        thumbnail           Optional string, either a path or URL to an image
+        ---------------     ----------------------------------------------------
+        metadata            Optional string, either a path or URL to metadata.
+        ---------------     ----------------------------------------------------
+        owner               Optional string, defaults to logged in user.
+        ---------------     ----------------------------------------------------
+        folder              Optional string, content folder where placing item
+        ===============     ====================================================
 
 
         ================  ============================================================================
@@ -355,12 +370,27 @@ class Portal(object):
         # Build the files list (tuples)
         files = []
         if data:
-            if _is_http_url(data):
+            if isinstance(data, (io.BytesIO, io.StringIO)) == False and _is_http_url(
+                data
+            ):
                 data = request.urlretrieve(data)[0]
-            else:
+            elif isinstance(data, (io.BytesIO, io.StringIO)) == False:
                 if not os.path.isfile(os.path.abspath(data)):
                     raise RuntimeError("File(" + data + ") not found.")
-            files.append(("file", data, os.path.basename(data)))
+            if isinstance(data, (io.BytesIO, io.StringIO)):
+
+                fn = item_properties.get("fileName", None)
+                if fn is None:
+                    raise ValueError(
+                        (
+                            "When using BytesIO or StringIO, a file name must be given in "
+                            "the item_properties as item_properties['fileName'] = 'mydata.<extension>'"
+                        )
+                    )
+                data.seek(0)
+                files.append(("file", data, fn))
+            else:
+                files.append(("file", data, os.path.basename(data)))
         if metadata:
             if _is_http_url(metadata):
                 metadata = request.urlretrieve(metadata)[0]
@@ -482,8 +512,11 @@ class Portal(object):
         tags=None,
         snippet=None,
     ):
-        """Creates service.
+        """
+        Creates service.
+
          #"Create,Delete,Query,Update,Editing",
+
         :return:
              The item id of the created service item if successful, None if unsuccessful.
         """
@@ -499,6 +532,9 @@ class Portal(object):
         path = "content/users/" + owner
         if folder and folder != "/":
             folder_id = self.get_folder_id(owner, folder)
+            if folder_id is None:
+                self.create_folder(owner, folder)
+                folder_id = self.get_folder_id(owner, folder)
             path += "/" + folder_id
         path += "/createService"
 
@@ -638,7 +674,7 @@ class Portal(object):
         ================  ========================================================
 
         :return:
-            a dict containing group properties
+            A dictionary containing group properties
         """
 
         return self.create_group_from_dict(
@@ -691,7 +727,7 @@ class Portal(object):
         ================  ========================================================
 
         :return:
-            a boolean, indicating success
+            A boolean. True indicating success
 
         """
         path = "content/users/" + owner
@@ -714,15 +750,15 @@ class Portal(object):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        item_id           required string, unique identifier for the item
+        item_id           Required string, unique identifier for the item
         ----------------  --------------------------------------------------------
-        owner             required string, owner of the item currently
+        owner             Required string, owner of the item currently
         ----------------  --------------------------------------------------------
-        folder            optional string, folder containing the item.  Defaults to the root folder.
+        folder            Optional string, folder containing the item.  Defaults to the root folder.
         ================  ========================================================
 
         :return:
-            a tuple containing a boolean and a dict with details
+            A tuple containing a boolean and a dict with details
         """
         path = "content/users/" + owner
         if folder:
@@ -742,18 +778,18 @@ class Portal(object):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        item_id           required string, unique identifier for the item
+        item_id           Required string, unique identifier for the item
         ----------------  --------------------------------------------------------
-        owner             required string, owner of the item currently
+        owner             Required string, owner of the item currently
         ----------------  --------------------------------------------------------
-        folder            optional string, folder containing the item.  Defaults to the root folder.
+        folder            Optional string, folder containing the item.  Defaults to the root folder.
         ----------------  --------------------------------------------------------
-        enable            optional boolean, True to enable delete protection, False to
+        enable            Optional boolean, True to enable delete protection, False to
                           to disable it
         ================  ========================================================
 
         :return:
-            dict with key "success" containing boolean whether process completed or not
+            A dictionary with key "success" containing boolean whether process completed or not
 
 
         """
@@ -774,16 +810,16 @@ class Portal(object):
     ):
         """Shares public item with the specified list of groups belonging to caller
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        item_id           required string, unique identifier for the item
-        ----------------  --------------------------------------------------------
-        groups            optional string,
-                          comma-separated list of group IDs with which the item will be shared.
-        ----------------  --------------------------------------------------------
-        allow_members_to_edit  optional boolean to allow item to be shared with groups that allow shared update
-        ================  ========================================================
+        =====================   ========================================================
+        **Argument**            **Description**
+        ---------------------   --------------------------------------------------------
+        item_id                 Required string, unique identifier for the item
+        ---------------------   --------------------------------------------------------
+        groups                  Optional string,
+                                comma-separated list of group IDs with which the item will be shared.
+        ---------------------   --------------------------------------------------------
+        allow_members_to_edit   Optional boolean to allow item to be shared with groups that allow shared update
+        =====================   ========================================================
 
         :return:
             dict with key "notSharedWith" containing array of groups with which the item could not be shared.
@@ -1375,15 +1411,56 @@ class Portal(object):
         # https://dev04875.esri.com/arcgis/sharing/rest/portals/0123456789ABCDEF/usage?f=json&startTime=1436984519000&endTime=1439576519000&period=1d&vars=num&etype=geocodecnt&stype=geocode&groupby=username%2Cstype%2Cetype
 
     def get_item_dependencies(self, itemid):
-        return self.con.post(
-            "content/items/" + itemid + "/dependencies", self._postdata()
+        postdata = self._postdata()
+        postdata["num"] = 100
+        data = self.con.post(
+            "content/items/" + itemid + "/dependencies",
+            postdata,
         )
 
+        # check if more dependents to get
+        while data["nextStart"] > 0:
+            postdata["start"] = data["nextStart"]
+            new_data = self.con.post(
+                "content/items/" + itemid + "/dependencies",
+                postdata,
+            )
+            # update list of data with new data list
+            data["list"].extend(new_data["list"])
+
+            # update data to inlcude correct nextStart and total num
+            data["nextStart"] = new_data["nextStart"]
+            data["num"] = data["num"] + new_data["num"]
+            if data["nextStart"] == -1:
+                break
+
+        return data
+
     def get_item_dependents_to(self, itemid):
-        return self.con.post(
+        postdata = self._postdata()
+        postdata["num"] = 100
+        data = self.con.post(
             "content/items/" + itemid + "/dependencies/listDependentsTo",
-            self._postdata(),
+            postdata,
         )
+
+        # check if more dependents to get
+        while data["nextStart"] > 0:
+            postdata["start"] = data["nextStart"]
+            new_data = self.con.post(
+                "content/items/" + itemid + "/dependencies/listDependentsTo",
+                postdata,
+            )
+
+            # update data to include new_data in list
+            data["list"].extend(new_data["list"])
+            # update data to inlcude correct nextStart and total num
+            data["nextStart"] = new_data["nextStart"]
+            data["num"] = data["num"] + new_data["num"]
+            if data["nextStart"] == -1:
+                break
+
+        return data
 
     def invite_group_users(
         self, user_names, group_id, role="group_member", expiration=10080
@@ -2430,8 +2507,11 @@ class Portal(object):
         if data:
             if isinstance(data, dict):
                 postdata["text"] = data  # json.dumps(data)
+            elif isinstance(data, (io.BytesIO, io.StringIO)):
+                files.append(("file", data, item_properties.get("fileName", None)))
             elif _is_http_url(data):
                 data = request.urlretrieve(data)[0]
+
             elif isinstance(data, str) and (len(data) < 32767) and os.path.isfile(data):
                 files.append(("file", data, os.path.basename(data)))
             else:

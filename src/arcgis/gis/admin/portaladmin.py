@@ -187,7 +187,7 @@ class PortalAdminManager(BasePortalAdmin):
         ================  ===============================================================================
 
 
-        :returns: List of Tasks
+        :return: List of Tasks
 
         """
         _tasks = []
@@ -321,7 +321,7 @@ class PortalAdminManager(BasePortalAdmin):
         if self._license is None:
             from ._license import LicenseManager
 
-            url = "%s/portaladmin/license" % self._gis._portal.url
+            url = f"{self._gis._portal.resturl}/portals/self/purchases"
             self._license = LicenseManager(url=url, gis=self._gis)
         return self._license
 
@@ -356,20 +356,6 @@ class PortalAdminManager(BasePortalAdmin):
         Gets/Set the mode of the ArcGIS Enterprise deployment.  When obtaining
         the mode, it returns information about the current state of the system.
 
-
-        :returns: dict
-        """
-        url = "%s/portaladmin/mode" % self._gis._portal.url
-        params = {"f": "json"}
-        return self._con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    @mode.setter
-    def mode(self, mode: dict):
-        """
-        Gets/Set the mode of the ArcGIS Enterprise deployment.  When obtaining
-        the mode, it returns information about the current state of the system.
-
         ================  ===============================================================================
         **Key**           **Description**
         ----------------  -------------------------------------------------------------------------------
@@ -382,11 +368,21 @@ class PortalAdminManager(BasePortalAdmin):
                           modify or update content or site settings is made through the API.
         ================  ===============================================================================
 
-        **Usage Example**
+        ..code-block:: python
+            **Usage Example**
 
-        gis.admin.mode({'read_only' : False})
-        assert gis.admin.mode['isReadOnly'] == False
+            gis.admin.mode({'read_only' : False})
+            assert gis.admin.mode['isReadOnly'] == False
+        """
+        url = "%s/portaladmin/mode" % self._gis._portal.url
+        params = {"f": "json"}
+        return self._con.get(url, params)
 
+    # ----------------------------------------------------------------------
+    @mode.setter
+    def mode(self, mode: dict):
+        """
+        See main ``mode`` property docstring.
         """
         url = "%s/portaladmin/mode/update" % self._gis._portal.url
         if mode is None:
@@ -395,7 +391,7 @@ class PortalAdminManager(BasePortalAdmin):
         if "message" in mode:
             params["description"] = mode.pop("message", "")
         res = self._con.post(url, params)
-        if "status" is res and res["status"] != "success":
+        if "status" in res and res["status"] != "success":
             raise RuntimeError(res)
 
     # ----------------------------------------------------------------------
@@ -413,7 +409,7 @@ class PortalAdminManager(BasePortalAdmin):
         save_folder       Optional String. The save location of the CSV file.
         ================  ===============================================================================
 
-        :returns: string
+        :return: string
 
         """
         if self._gis.properties.isPortal:

@@ -18,6 +18,7 @@ def _evaluate_spatial_input(input_points):
     Helper function to determine if the input is either a FeatureSet or Spatially Enabled DataFrame, and
     output to FeatureSet for subsequent processing.
     :param input_points: FeatureSet or Spatially Enabled DataFrame
+
     :return: FeatureSet
     """
     try:
@@ -109,7 +110,7 @@ def trace_downstream(
     future                 Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
     ==================     ====================================================================
 
-    :return: FeatureSet
+    :return: A new :class:`~arcgis.features.FeatureSet`
 
     .. code-block:: python
 

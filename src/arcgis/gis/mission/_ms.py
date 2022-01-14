@@ -30,7 +30,7 @@ class MissionServer(BaseMissionServer):
         if url.lower().find("/admin") == -1:
             if url.endswith("/"):
                 url = url[:-1]
-            url += "/admin/"
+            url += "/admin"
         self._url = url
         super().__init__(url, gis)
         if gis is None:
@@ -48,7 +48,7 @@ class MissionServer(BaseMissionServer):
         """
         Returns information about the server site itself
 
-        :returns: PropertyMap
+        :return: PropertyMap
 
         """
         url = self._url + "/info"
@@ -62,7 +62,7 @@ class MissionServer(BaseMissionServer):
         """
         Provides access to the Mission server's logging system
 
-        :returns: LogManager
+        :return: LogManager
 
         """
         if self._logs is None:
@@ -91,7 +91,7 @@ class MissionServer(BaseMissionServer):
         Provides access to managing the registered machines with ArcGIS
         Mission Server
 
-        :returns: MachineManager
+        :return: MachineManager
 
         """
         if self._machine is None:

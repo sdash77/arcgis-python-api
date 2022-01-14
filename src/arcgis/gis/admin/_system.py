@@ -6,6 +6,83 @@ from .. import GIS
 from ._base import BasePortalAdmin
 from ..._impl.common._mixins import PropertyMap
 
+###########################################################################
+class Indexer(BasePortalAdmin):
+    """
+    This resource contains connection information to the default indexing service.
+    """
+
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis=None, **kwargs):
+        """Constructor"""
+        super(Indexer, self).__init__(url=url, gis=gis, **kwargs)
+        initialize = kwargs.pop("initialize", False)
+        if isinstance(gis, Connection):
+            self._con = gis
+        elif isinstance(gis, GIS):
+            self._gis = gis
+            self._con = gis._con
+        else:
+            raise ValueError("connection must be of type GIS or Connection")
+        if initialize:
+            self._init(self._gis)
+
+    @property
+    def status(self):
+        """
+        `status` allows you to view the status of the indexing service. You
+        can view the number of users, groups, and search items in both the
+        database (store) and the index. If the database and index do not
+        match, indexing is either in progress or there is a problem with
+        the index. It is recommended that you reindex to correct any
+        issues. If indexing is in progress, you can monitor the status by
+        refreshing the page.
+
+        :return: dict
+
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/status"
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    def reindex(self, mode, includes=None):
+        """
+        The operation allows you to generate or update the indexes for content, such as users, groups, and items stored in the database store.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        mode                Required String. The mode in which the indexer should run.
+                            Values: USER_MODE, GROUP_MODE, SEARCH_MODE, or FULL_MODE
+        ---------------     --------------------------------------------------------------------
+        includes            Optional String. A comma separated list of elements to include in
+                            the index. This is useful if you want to only index certain items
+                            or user accounts.
+        ===============     ====================================================================
+
+        :return: Boolean
+
+        """
+        url = f"{self._url}/reindex"
+        params = {"f": "json", "mode": mode, "includes": includes}
+        res = self._con.post(url, params)
+        if "status" in res:
+            return res["status"] in ["success", "suceess"]
+        return res
+
+    # ----------------------------------------------------------------------
+    def reconfigure(self) -> bool:
+        """
+        This operation recreates the index service metadata, schema, and data in the event it becomes corrupted.
+        :returns: Boolean
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/reconfigure"
+        res = self._con.post(url, params)
+        return res.get("status", "failed") == "success"
+
+
 ########################################################################
 class EmailManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
@@ -52,7 +129,7 @@ class EmailManager(BasePortalAdmin):
         email                           Required String. The test email to send to.
         ===========================     ====================================================================
 
-        :returns: Bool
+        :return: Boolean. True if successful else False.
         """
         params = {"mailTo": email, "f": "json"}
         url = self._url + "/test"
@@ -99,7 +176,8 @@ class EmailManager(BasePortalAdmin):
         Password                        Optional String. The password to use to login to the smtp server.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: Boolean. True if successful else False.
+
         """
         allowed_encrypt = ["none", "tls", "ssl"]
         if email_label is None:
@@ -136,7 +214,7 @@ class EmailManager(BasePortalAdmin):
         """
         Deletes the current email configuration
 
-        :returns: Boolean
+        :return: Boolean. True if successful else False.
         """
         url = self._url + "/delete"
         params = {"f": "json"}
@@ -162,6 +240,8 @@ class System(BasePortalAdmin):
     _con = None
     _url = None
     _email = None
+    _indexer = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -183,7 +263,7 @@ class System(BasePortalAdmin):
         """
         Provides access to the email configuration setting on enterprise.
 
-        :returns: EmailManager
+        :return: :class:`~arcgis.gis.admin.EmailManager`
         """
         # if "supportsEmail" in self._gis.properties and self._properties.supportsEmail:
         if self._gis.version >= [7, 3] or "supportsEmail" in self._gis.properties:
@@ -202,7 +282,9 @@ class System(BasePortalAdmin):
     def properties(self):
         """
         Gets/Sets the system properties that have been modified to control
-        the portal's environment. The list of available properties are:
+        the portal's environment.
+
+        The list of available properties are:
          - privatePortalURL-Informs the portal that it has a front end
            load-balancer/proxy reachable at the URL. This property is
            typically used to set up a highly available portal configuration
@@ -246,46 +328,13 @@ class System(BasePortalAdmin):
     @properties.setter
     def properties(self, properties):
         """
-        Gets/Sets the system properties that have been modified to control
-        the portal's environment. The list of available properties are:
-         - privatePortalURL-Informs the portal that it has a front end
-           load-balancer/proxy reachable at the URL. This property is
-           typically used to set up a highly available portal configuration
-         - portalLocalhostName-Informs the portal back-end to advertise the
-           value of this property as the local portal machine. This is
-           typically used during federation and when the portal machine has
-           one or more public host names.
-         - httpProxyHost-Specifies the HTTP hostname of the proxy server
-         - httpProxyPort-Specifies the HTTP port number of the proxy server
-         - httpProxyUser-Specifies the HTTP proxy server username.
-         - httpProxyPassword-Specifies the HTTP proxy server password.
-         - isHttpProxyPasswordEncrypted-Set this property to false when you
-           are configuring the HTTP proxy server password in plain text.
-           After configuration, the password will be encrypted and this
-           property will be set to true
-         - httpsProxyHost-Specifies the HTTPS hostname of the proxy server
-         - httpsProxyPort-Specifies the HTTPS port number of the proxy
-           server
-         - httpsProxyUser-Specifies the HTTPS proxy server username
-         - httpsProxyPassword-Specifies the HTTPS proxy server password
-         - isHttpsProxyPasswordEncrypted-Set this property to false when
-           you are configuring the HTTPS proxy server password in plain
-           text. After configuration, the password will be encrypted and
-           this property will be set to true.
-         - nonProxyHosts-If you want to federate ArcGIS Server and the site
-           does not require use of the forward proxy, list the server
-           machine or site in the nonProxyHosts property. Machine and
-           domain items are separated using a pipe (|).
-         - WebContextURL-If you are using a reverse proxy, set this
-           property to reverse proxy URL.
-        - ldapCertificateValidation-Introduced at 10.7. When set to true,
-           any encrypted LDAP communication (LDAPS) made from the portal to
-           the user or group identity store will enforce certificate
-           validation. The default value is false.
+        See main ``properties`` property docstring
         """
         url = "%s/properties/update" % self._url
-        params = {"f": "json", "properties": properties}
+        params = {"f": "pjson", "properties": properties}
         self._con.post(path=url, params=params)
+        self._con._create_session()
+        self._con.token
 
     # ----------------------------------------------------------------------
     @property
@@ -371,11 +420,7 @@ class System(BasePortalAdmin):
     @database.setter
     def database(self, value):
         """
-        The database resource represents the database management system
-        (DBMS) that contains all of the portal's configuration and
-        relationship rules. This resource also returns the name and version
-        of the database server currently running in the portal.
-        You can use the properety to update database accounts
+        See main ``database`` property docstring
         """
         url = "%s/database" % self._url
         params = {"f": "json"}
@@ -390,7 +435,7 @@ class System(BasePortalAdmin):
         Gets/Sets the Incremental Backup for the Enterprise Configuration
 
 
-        :returns: dict
+        :return: dict
         """
         url = "%s/database/settings" % self._url
         params = {"f": "json"}
@@ -402,7 +447,7 @@ class System(BasePortalAdmin):
         """
         Gets/Sets the Incremental Backup for the Enterprise Configuration
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
         """
         url = "%s/database/settings/edit" % self._url
         params = {"incrementalBackupEnabled": value, "f": "json"}
@@ -420,7 +465,7 @@ class System(BasePortalAdmin):
         that you reindex to correct any issues. If indexing is in progress,
         you can monitor the status by refreshing the page.
 
-        :returns: dict
+        :return: dict
 
         .. code-block:: python
 
@@ -481,7 +526,7 @@ class System(BasePortalAdmin):
                                         certain items or user accounts.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/indexer/reindex" % self._url
@@ -541,7 +586,7 @@ class System(BasePortalAdmin):
                                disabled.
         ==================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         url = "%s/content/configuration" % self._url
@@ -553,30 +598,27 @@ class System(BasePortalAdmin):
     @content_discovery.setter
     def content_discovery(self, value):
         """
-        This resource allows an administrator to enable or disable external content discovery from the portal website.
-        Because some Esri-provided content requires external access to the internet, an administrator may choose to disable the content to prevent requests to ArcGIS Online resources. When disabling the content, a select group of items will be disabled:
-
-        - All basemaps owned by "esri_[lang]"
-        - All content owned by "esri_nav"
-        - All content owned by "esri"
-
-        This resource will not disable ArcGIS Online utility services or Living Atlas content. For steps to disable these items, refer to the Portal Administrator guide.
-
-        When external content is disabled, System Languages are also disabled.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  required Boolean. If true, external content is enabled, else it is
-                               disabled.
-        ==================     ====================================================================
-
+        See main ``content_discovery`` property docstring
         """
         import json
 
         url = "%s/content/configuration/update" % self._url
         params = {"f": "json", "externalContentEnabled": json.dumps(value)}
         res = self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def indexer(self):
+        """
+        Allows user to manage the site's indexer
+
+        :return: `Indexer`
+        """
+        if self._indexer is None:
+
+            url = f"{self._url}/indexer"
+            self._indexer = Indexer(url=url, gis=self._gis)
+        return self._indexer
 
 
 ########################################################################
@@ -655,6 +697,14 @@ class WebAdaptors(BasePortalAdmin):
         """
         Gets/Sets the common properties and configuration of the ArcGIS Web
         Adaptor configured with the portal.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        shared_key                      Required string. This property represents credentials that are shared
+                                        with the Web Adaptor. The Web Adaptor uses these credentials to
+                                        communicate with the portal
+        ===========================     ====================================================================
         """
         url = "%s/config" % self._url
         params = {"f": "json"}
@@ -664,18 +714,7 @@ class WebAdaptors(BasePortalAdmin):
     @configuration.setter
     def configuration(self, shared_key):
         """
-        Gets/Sets the common properties and configuration of the ArcGIS Web
-        Adaptor configured with the portal.
-
-        ===========================     ====================================================================
-        **Argument**                    **Description**
-        ---------------------------     --------------------------------------------------------------------
-        shared_key                      Required string. This property represents credentials that are shared
-                                        with the Web Adaptor. The Web Adaptor uses these credentials to
-                                        communicate with the portal
-        ===========================     ====================================================================
-
-
+        See main ``configuration`` property docstring
         """
         url = "%s/config/update" % self._url
         if isinstance(shared_key, str):
@@ -865,7 +904,7 @@ class PortalLicense(BasePortalAdmin):
         file                            Required String. The portal license file.
         ===========================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         file = {"file": file}
@@ -885,7 +924,7 @@ class PortalLicense(BasePortalAdmin):
         operation is only necessary as you create or upgrade your portal
         through the Portal Admin API.
 
-        :returns: boolean
+        :return: Boolean. True if successful else False.
 
         """
         params = {"f": "json"}
@@ -916,7 +955,7 @@ class PortalLicense(BasePortalAdmin):
         username	                Required String. The user name of the account.
         ===========================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean. True if successful else False.
 
 
         """
@@ -968,7 +1007,7 @@ class PortalLicense(BasePortalAdmin):
                                         connection information.
         ===========================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean. True if successful else False.
 
         **Sample Usage**
 
@@ -1008,7 +1047,7 @@ class PortalLicense(BasePortalAdmin):
                                         a portal.
         ===========================     ====================================================================
 
-        :returns: Dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         file = {"file": file}
@@ -1072,7 +1111,7 @@ class Licenses(BasePortalAdmin):
                                         navigator, or RoadwayReporter
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         allowed = [
@@ -1106,7 +1145,7 @@ class Licenses(BasePortalAdmin):
                                         navigator, or RoadwayReporter
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: dict
 
         """
         allowed = [
@@ -1152,7 +1191,7 @@ class Licenses(BasePortalAdmin):
                                         connection information.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         params = {"f": "json", "licenseManagerInfo": info}
@@ -1187,7 +1226,7 @@ class Licenses(BasePortalAdmin):
         application                     Required string. The application identifier to be imported
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/importEntitlements" % self._url
