@@ -880,9 +880,7 @@ class StoryMap(object):
         .. warning::
             Publishing your story through the Python API means it will not go through the Story Map
             issue checker. It is recommended to publish through the Story Maps builder if you
-            want your story to go through the issue checker. In addition, only private or org publishing
-            can be done at this time. To publish publicly, save the story and then navigate to the
-            Story Map builder to complete the publishing.
+            want your story to go through the issue checker.
 
         .. warning::
             Changes to the published story may not be visible for up to one hour. You can open
@@ -897,10 +895,10 @@ class StoryMap(object):
         tags                Optional string. The tags of the StoryMap.
         ---------------     --------------------------------------------------------------------
         access              Optional string. The access of the StoryMap. If none is specified, the
-                            current access type is kept. This is used when `publish` parameter is set
-                            to True. To publish publicly, save the story and publish through the builder.
+                            current access is kept. This is used when `publish` parameter is set
+                            to True.
 
-                            ``Values: "private" | "org"``
+                            ``Values: "private" | "org" | "public" ``
         ---------------     --------------------------------------------------------------------
         publish             Optional boolean. If True, the story is saved and also published.
                             Default is false so story is saved with unpublished changes.
@@ -923,11 +921,6 @@ class StoryMap(object):
             resource_name=draft, text=json.dumps(self._properties), access="private"
         )
 
-        if publish is True and (access != "private" or access != "org"):
-            publish = False
-            warnings.warn(
-                "The Python API can only publish privately or to org at this time. Your story is being saved and you can publish publicly through the Story Map builder."
-            )
         # Find type keywords to use based on whether to publish or not
         if publish is True:
             # Publish mode
@@ -990,6 +983,8 @@ class StoryMap(object):
                 self._item.share(everyone=False, org=False, groups=None)
             elif sharing == "org":
                 self._item.share(org=True)
+            elif sharing == "public":
+                self._item.share(everyone=True)
 
         else:
             # Set the type keywords
@@ -1144,7 +1139,7 @@ class StoryMap(object):
             self._properties["nodes"][root_id]["children"].insert(last, node_id)
 
     # ----------------------------------------------------------------------
-    def _add_resource(self, file=None, resource_name=None, text=None, access=None):
+    def _add_resource(self, file=None, resource_name=None, text=None, access="inherit"):
         """
         See :class:`~arcgis.gis.ResourceManager`
         """
