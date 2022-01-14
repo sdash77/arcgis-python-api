@@ -11666,6 +11666,7 @@ def dimensional_moving_statistics(
 
     return _clone_layer(layer, template_dict, raster_ra)
 
+
 class RFT:
     def __init__(self, raster_function_template, gis=None):
         try:
