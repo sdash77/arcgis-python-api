@@ -625,7 +625,7 @@ class MapView(widgets.DOMWidget):
             if _is_iterable(value) and len(value) == 0:
                 pass
             else:
-                log.warn(
+                log.warning(
                     "extent must be set to either a 2d list, spatially "
                     "enabled data frame full_extent, or dict. Values specified "
                     "must include xmin, ymin, xmax, ymax. Please see the API doc for "
@@ -675,7 +675,7 @@ class MapView(widgets.DOMWidget):
         if isinstance(value, dict):
             self._center = value
         elif len(value) != 2:
-            log.warn(
+            log.warning(
                 "If setting center to a list/tuple, the len() "
                 "must be exactly 2 entries long"
             )
@@ -1088,7 +1088,7 @@ class MapView(widgets.DOMWidget):
         """
         self._clear_embed_html_preview()
         if not self.ready:
-            log.warn(
+            log.warning(
                 "Cannot take screenshot if widget is not visible in "
                 "notebook: Please try again when widget is visible."
             )
@@ -1577,7 +1577,7 @@ class MapView(widgets.DOMWidget):
                         if wm_layer["id"] == hash_:
                             self.webmap.remove_layer(wm_layer)
             else:
-                log.warn("Could not find layer {} in layers".format(layer))
+                log.warning("Could not find layer {} in layers".format(layer))
                 output_bool = False
 
         # Layer is removed from python side: trigger removal from JS side
@@ -1879,7 +1879,7 @@ class MapView(widgets.DOMWidget):
                     elif "geometry" in graphic:
                         geom = Geometry(graphic["geometry"])
                     else:
-                        log.warn(
+                        log.warning(
                             "Graphic unsupported, not adding to webmap."
                             " {}".format(graphic)
                         )

@@ -5,6 +5,17 @@ from arcgis.features import FeatureSet
 from ... import workforce
 
 
+def _should_use_async_apply_edits(feature_layer):
+    return (
+        "advancedEditingCapabilities" in feature_layer.properties
+        and "supportsAsyncApplyEdits"
+        in feature_layer.properties["advancedEditingCapabilities"]
+        and feature_layer.properties["advancedEditingCapabilities"][
+            "supportsAsyncApplyEdits"
+        ]
+    )
+
+
 def add_features(feature_layer, features, use_global_ids=False):
     """Adds features to the feature_layer.  The input features will be updated upon successful
     adding on the server, such that they contain the server-assigned object_ids and global_ids.
@@ -17,9 +28,14 @@ def add_features(feature_layer, features, use_global_ids=False):
     if features:
         feature_set = FeatureSet(features)
         response = feature_layer.edit_features(
-            adds=feature_set, use_global_ids=use_global_ids
+            adds=feature_set,
+            use_global_ids=use_global_ids,
+            future=_should_use_async_apply_edits(feature_layer),
         )
-        add_results = response["addResults"]
+        if _should_use_async_apply_edits(feature_layer):
+            add_results = response.result()[0]["addResults"]
+        else:
+            add_results = response["addResults"]
         errors = [result["error"] for result in add_results if not result["success"]]
         if errors:
             raise workforce.ServerError(errors)
@@ -40,12 +56,15 @@ def update_features(feature_layer, features):
     :raises ServerError: Indicates that the server rejected the updates.
     """
     if features:
-        response = feature_layer.edit_features(updates=FeatureSet(features))
-        errors = [
-            result["error"]
-            for result in response["updateResults"]
-            if not result["success"]
-        ]
+        response = feature_layer.edit_features(
+            updates=FeatureSet(features),
+            future=_should_use_async_apply_edits(feature_layer),
+        )
+        if _should_use_async_apply_edits(feature_layer):
+            update_results = response.result()[0]["updateResults"]
+        else:
+            update_results = response["updateResults"]
+        errors = [result["error"] for result in update_results if not result["success"]]
         if errors:
             raise workforce.ServerError(errors)
     return features
@@ -62,12 +81,14 @@ def remove_features(feature_layer, features):
         object_ids = ",".join(
             [str(feature.attributes[object_id_attr]) for feature in features]
         )
-        response = feature_layer.edit_features(deletes=object_ids)
-        errors = [
-            result["error"]
-            for result in response["deleteResults"]
-            if not result["success"]
-        ]
+        response = feature_layer.edit_features(
+            deletes=object_ids, future=_should_use_async_apply_edits(feature_layer)
+        )
+        if _should_use_async_apply_edits(feature_layer):
+            delete_results = response.result()[0]["deleteResults"]
+        else:
+            delete_results = response["deleteResults"]
+        errors = [result["error"] for result in delete_results if not result["success"]]
         if errors:
             raise workforce.ServerError(errors)
 

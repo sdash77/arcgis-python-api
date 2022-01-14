@@ -57,6 +57,7 @@ def aggregate_points(
                                             * Min - Finds the smallest value of all the points in each polygon.
                                             * Max - Finds the largest value of all the points in each polygon.
                                             * Stddev - Finds the standard deviation of all the points in each polygon.
+
                                             Example [fieldName1 summaryType1,fieldName2 summaryType2].
     ------------------------------------    --------------------------------------------------------------------
     group_by_field                          Optional string. A field name in the point_layer. Points that have
@@ -561,7 +562,8 @@ def summarize_center_and_dispersion(
         "future": future,
     }
     params = inspect_function_inputs(
-        fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion, **kwargs
+        fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion,
+        **kwargs,
     )
     return gis._tools.featureanalysis.summarize_center_and_dispersion(**params)
 
