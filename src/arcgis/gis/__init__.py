@@ -12550,6 +12550,7 @@ class Item(dict):
             "APIKey2Item",
             "WebStyle2DesktopStyle",
             "Map2FeatureCollectionMobileApp2Code",
+            "Mission2Item",
         ]
     )
 
