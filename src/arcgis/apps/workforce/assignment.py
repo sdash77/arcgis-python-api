@@ -610,17 +610,15 @@ class Assignment(FeatureModel):
         """Returns a link to the assignment in the Workforce web app"""
         if self.project.gis.properties["isPortal"]:
             portal_url = self.project.gis.properties["portalHostname"]
+            # AGOL and Enterprise 10.9+ no longer use hash routing
+            if self.project.gis.version >= [8, 4]:
+                projects_route = "/apps/workforce/projects/"
+            else:
+                projects_route = "/apps/workforce/#/projects/"
             return (
                 "https://"
                 + portal_url
-                + "/apps/workforce/#/projects/"
-                + self.project.id
-                + "/dispatch/assignments/"
-                + str(self.object_id)
-            )
-        else:
-            return (
-                "https://workforce.arcgis.com/projects/"
+                + projects_route
                 + self.project.id
                 + "/dispatch/assignments/"
                 + str(self.object_id)
