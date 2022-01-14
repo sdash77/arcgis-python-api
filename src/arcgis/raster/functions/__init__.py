@@ -11523,7 +11523,7 @@ def ccdc_analysis(
     Function evaluates changes in pixel values over time using the Continuous Change Detection and Classification (CCDC) 
     method and generates a change analysis raster containing the model results.
 
-    note::
+    .. note::
         This raster function is only supported in conjunction with the detect_change_using_change_analysis_raster function. 
         To persist the output give the output of the ccdc_analysis function as input to the detect_change_using_change_analysis_raster() 
         and use the save() method on the resulting layer.
@@ -11632,7 +11632,7 @@ def landtrendr_analysis(
     Function evaluates changes in pixel values over time using the Landsat-based detection of trends
     in disturbance and recovery (LandTrendr) method and generates a change analysis raster containing the model results.
 
-    note::
+    .. note::
         This raster function is only supported in conjunction with the detect_change_using_change_analysis_raster function. 
         To persist the output give the output of the landtrendr_analysis function as input to the detect_change_using_change_analysis_raster() 
         and use the save() method on the resulting layer.
