@@ -11520,20 +11520,21 @@ def ccdc_analysis(
 ):
 
     """
-    Function evaluates changes in pixel values over time using the CCDC algorithm,
-    and generates a multidimensional raster containing the model results.
+    Function evaluates changes in pixel values over time using the Continuous Change Detection and Classification (CCDC) 
+    method and generates a change analysis raster containing the model results.
+
+    .. note::
+        This raster function is only supported in conjunction with the detect_change_using_change_analysis_raster function. 
+        To persist the output give the output of the ccdc_analysis function as input to the detect_change_using_change_analysis_raster() 
+        and use the save() method on the resulting layer.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     raster                                   Required Raster/ImageryLayer object. The input multidimensional raster.
-
-                                             The input multidimensional raster must have at least 12 slices, spanning at least 1 year.
     ------------------------------------     --------------------------------------------------------------------
     bands_for_detecting_change               Optional List. The band IDs to use for change detection.
                                              If no band IDs are provided, all the bands from the input raster dataset will be used.
-                                             Each element in the list should be within the range 1 to n where n is the
-                                             number of bands of the input raster.
 
                                              Example:
                                                   [1,2,3,4,6]
@@ -11570,13 +11571,13 @@ def ccdc_analysis(
 
             # Usage Example 1: This example performs continuous change detection where only one band is used in the change detection
             # and the chi-squared probability threshold is 0.90.
-            analyze_changes_using_ccdc_op = ccdc_analysis(raster=input_multidimensional_raster,
-                                                          bands_for_detecting_change=[1],
-                                                          bands_for_temporal_masking=[],
-                                                          chi_squared_threshold=0.90,
-                                                          min_anomaly_observations=6,
-                                                          update_frequency=1
-                                                            )
+            ccdc_analysis_op = ccdc_analysis(raster=input_multidimensional_raster,
+                                             bands_for_detecting_change=[1],
+                                             bands_for_temporal_masking=[],
+                                             chi_squared_threshold=0.90,
+                                             min_anomaly_observations=6,
+                                             update_frequency=1
+                                            )
 
     """
 
@@ -11631,6 +11632,10 @@ def landtrendr_analysis(
     Function evaluates changes in pixel values over time using the Landsat-based detection of trends
     in disturbance and recovery (LandTrendr) method and generates a change analysis raster containing the model results.
 
+    .. note::
+        This raster function is only supported in conjunction with the detect_change_using_change_analysis_raster function. 
+        To persist the output give the output of the landtrendr_analysis function as input to the detect_change_using_change_analysis_raster() 
+        and use the save() method on the resulting layer.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -11640,9 +11645,6 @@ def landtrendr_analysis(
     processing_band                          Optional string. The band to use for segmenting the pixel value
                                              trajectories over time. Choose the band that will best capture the
                                              changes in the feature you want to observe.
-
-                                             If no band value is specified and the input is multiband imagery,
-                                             the first band in the multiband image will be used.
 
                                              Example:
                                                   "Band_1"
@@ -11755,8 +11757,9 @@ def landtrendr_analysis(
     .. code-block:: python
 
             # Usage Example 1:
-            analyze_changes_using_landtrendr_op = landtrendr_analysis(raster=input_multidimensional_raster,
-                                                                      processing_band="Band_1")
+            landtrendr_analysis_op = landtrendr_analysis(raster=input_multidimensional_raster,
+                                                         processing_band="Band_1"
+                                                        )
 
     """
 
