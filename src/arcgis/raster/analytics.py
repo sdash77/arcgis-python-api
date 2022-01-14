@@ -1459,7 +1459,7 @@ def copy_raster(
                                             "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
                                             "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
     --------------------------------     --------------------------------------------------------------------
-    source_mosaic_dataset                         Optional string. Path to the existing mosaic dataset to be published 
+    source_mosaic_dataset                Optional string. Path to the existing mosaic dataset to be published 
                                          as an imagery layer.
 
                                          To publish an existing mosaic dataset, specify the path to the input 
@@ -3318,7 +3318,7 @@ def create_image_collection(
                                             | {"fields": [{"name": "cloud_cover", "type": "Long"},
                                             | {"name": "cloud_shadow_count", "type": "Long"}]}
     ------------------                   --------------------------------------------------------------------
-    source_mosaic_dataset                         Optional string. Path to the existing mosaic dataset to be published 
+    source_mosaic_dataset                Optional string. Path to the existing mosaic dataset to be published 
                                          as a hosted dynamic imagery layer.
 
                                          To publish an existing mosaic dataset, specify the path to the input 
