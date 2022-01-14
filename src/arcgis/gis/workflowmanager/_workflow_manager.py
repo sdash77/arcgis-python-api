@@ -209,7 +209,7 @@ class WorkflowManagerAdmin:
 
         url = "{base}/healthCheck".format(base=self._url)
 
-        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
+        return_obj = self._gis._con.get(url)
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
