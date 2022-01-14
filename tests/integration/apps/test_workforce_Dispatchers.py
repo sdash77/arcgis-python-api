@@ -179,7 +179,9 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
 
     def test_update_dispatcher(self):
         try:
-            dispatcher = self.project.dispatchers.get(user_id='ar_workforce_python_api2')
+            dispatcher = self.project.dispatchers.get(
+                user_id="ar_workforce_python_api2"
+            )
             self.assertEqual(
                 dispatcher.user_id, "ar_workforce_python_api2", "Incorrect user id"
             )
@@ -209,7 +211,9 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
 
     def test_batch_update_dispatcher(self):
         try:
-            dispatcher = self.project.dispatchers.get(user_id='ar_workforce_python_api2')
+            dispatcher = self.project.dispatchers.get(
+                user_id="ar_workforce_python_api2"
+            )
             self.assertEqual(
                 dispatcher.user_id, "ar_workforce_python_api2", "Incorrect user id"
             )

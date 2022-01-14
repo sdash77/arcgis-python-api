@@ -315,12 +315,8 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             self.add_completed_assignment()
 
             assignment = self.project.assignments.search()[-1]
-            self.assertEqual(
-                assignment.geometry["x"], 123, "Incorrect x"
-            )
-            self.assertEqual(
-                assignment.geometry["y"], 456, "Incorrect y"
-            )
+            self.assertEqual(assignment.geometry["x"], 123, "Incorrect x")
+            self.assertEqual(assignment.geometry["y"], 456, "Incorrect y")
             self.assertEqual(
                 assignment.assignment_type.name,
                 "Inspection",
@@ -380,12 +376,8 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             self.add_declined_assignment()
 
             assignment = self.project.assignments.search()[-1]
-            self.assertEqual(
-                assignment.geometry["x"], 123, "Incorrect x"
-            )
-            self.assertEqual(
-                assignment.geometry["y"], 456, "Incorrect y"
-            )
+            self.assertEqual(assignment.geometry["x"], 123, "Incorrect x")
+            self.assertEqual(assignment.geometry["y"], 456, "Incorrect y")
             self.assertEqual(
                 assignment.assignment_type.name,
                 "Inspection",
