@@ -74,7 +74,7 @@ class Run(BaseTask):
         """
         Removes the Task from the System.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = f"{self._url}/delete"
@@ -99,7 +99,7 @@ class Run(BaseTask):
                                current `Run`.
         ==================     ====================================================================
 
-        :returns: Bool
+        :return: Bool
 
         """
         params = {"f": "json"}
@@ -161,7 +161,7 @@ class Task(BaseTask):
         """
         Removes the Task from the System.
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         url = f"{self._url}/delete"
@@ -183,7 +183,7 @@ class Task(BaseTask):
                                If False, the task is set active to False.
         ==================     ====================================================================
 
-        :returns: Bool
+        :return: Bool
 
         """
         params = {"f": "json"}
@@ -203,7 +203,7 @@ class Task(BaseTask):
         """
         Starts a task if it is actively running.
 
-        :returns: Bool
+        :return: Bool
 
         """
         return self.update(is_active=True)
@@ -213,7 +213,7 @@ class Task(BaseTask):
         """
         Stops a task if it is actively running.
 
-        :returns: Bool
+        :return: Bool
 
         """
         return self.update(is_active=False)
@@ -259,7 +259,7 @@ class Task(BaseTask):
         is_active              Optional Bool. Determines if the tasks is currently running.
         ==================     ====================================================================
 
-        :returns: bool or Dict on error.
+        :return: bool or Dict on error.
 
         """
         SPECIALS = {
@@ -346,7 +346,7 @@ class Task(BaseTask):
         """
         Returns the Runs for the Task.  The maximum number of runs returned is 30
 
-        :returns: List
+        :return: List
         """
         runs = []
         url = f"{self._url}/runs"
@@ -412,7 +412,7 @@ class TaskManager(object):
                           `ExecuteNotebook`, or `UpdateInsightsWorkbook`.
         ================  ===============================================================================
 
-        :returns: List of Tasks
+        :return: List of Tasks
 
         """
         if item is None and active is None and types is None:
@@ -501,7 +501,7 @@ class TaskManager(object):
 
         ==================     ====================================================================
 
-        :returns: Task
+        :return: Task
 
         """
         SPECIALS = {
@@ -597,7 +597,7 @@ class TaskManager(object):
         """
         Returns the number of tasks a user has
 
-        :returns: Int
+        :return: Int
         """
         url = f"{self._gis._portal.resturl}community/users/{self._user.username}/tasks"
         params = {

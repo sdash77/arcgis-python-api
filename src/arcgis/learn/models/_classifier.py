@@ -138,7 +138,7 @@ class FeatureClassifier(ArcGISModel):
                             valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
 
-    :returns: `FeatureClassifier` Object
+    :return: `FeatureClassifier` Object
     """
 
     def __init__(
@@ -192,7 +192,22 @@ class FeatureClassifier(ArcGISModel):
             if getattr(data, "_dataset_type", "Labeled_Tiles") == "MultiLabeled_Tiles":
                 # ToDo: allow option to change `thresh` parameter by user
                 accuracy_multi.__name__ = "accuracy"
-                metrics = [accuracy_multi, MultiLabelFbeta()]
+
+                class MultLabelFbetaModified(MultiLabelFbeta):
+                    def fbeta_score(self, precision, recall):
+                        beta2 = self.beta ** 2
+                        fbeta = (
+                            (1 + beta2)
+                            * (precision * recall)
+                            / ((beta2 * precision + recall) + self.eps)
+                        )
+                        if isinstance(fbeta, torch.Tensor):
+                            if fbeta.is_cuda:
+                                fbeta = fbeta.cpu()
+                        return fbeta
+
+                MultLabelFbetaModified.__name__ = "MultiLabelFbeta"
+                metrics = [accuracy_multi, MultLabelFbetaModified()]
             else:
                 metrics = accuracy
 
@@ -260,6 +275,14 @@ class FeatureClassifier(ArcGISModel):
     def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
         """
         self._check_requisites()
         self.learn.show_results(rows=rows, **kwargs)
@@ -267,6 +290,17 @@ class FeatureClassifier(ArcGISModel):
             plt.show()
 
     def _show_results_multispectral(self, rows=5, **kwargs):
+        """
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
+        """
         from .._utils.image_classification import IC_show_results
 
         return_fig = kwargs.get("return_fig", False)
@@ -293,7 +327,7 @@ class FeatureClassifier(ArcGISModel):
                                 be set to True.
         =====================   ===========================================
 
-        :returns: prediction label and confidence
+        :return: prediction label and confidence
         """
         img = open_image(img_path)
         pred = self.learn.predict(img)
@@ -335,8 +369,13 @@ class FeatureClassifier(ArcGISModel):
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
         _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
-        _emd_template["CropSizeFixed"] = 1  # hardcoded
-        _emd_template["BlackenAroundFeature"] = 0  # hardcoded
+        _emd_template["CropSizeFixed"] = int(
+            getattr(self._data, "_emd", {}).get("CropTileMode", "Fixed_Size")
+            == "Fixed_Size"
+        )
+        _emd_template["BlackenAroundFeature"] = int(
+            getattr(self._data, "_emd", {}).get("BlackenAroundFeature", False)
+        )
         _emd_template["ImageSpaceUsed"] = "MAP_SPACE"
         _emd_template["Classes"] = []
         class_data = {}
@@ -378,7 +417,7 @@ class FeatureClassifier(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `FeatureClassifier` Object
+        :return: `FeatureClassifier` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -566,22 +605,36 @@ class FeatureClassifier(ArcGISModel):
         if num_examples == 1:
             num_examples = 2
         learn_temp = copy.copy(self.learn)
+        from arcgis.learn._utils.labeled_tiles import plot_multi_top_losses_modified
+
+        ClassificationInterpretation.plot_multi_top_losses = (
+            plot_multi_top_losses_modified
+        )
         interp = ClassificationInterpretation.from_learner(learn_temp)
         heatmap = True
         if self._backend == "tensorflow":
             heatmap = False
         if self._data._dataset_type == "MultiLabeled_Tiles":
             try:
-                interp.plot_multi_top_losses(num_examples, figsize=(5, 5))
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    # Add plt.show to avoid issues from previous plots from other method
+                    try:
+                        plt.show()
+                    except:
+                        pass
+                    interp.plot_multi_top_losses(num_examples, figsize=(5, 5))
             except IndexError:
                 from IPython.display import clear_output
 
                 clear_output(wait=True)
                 print("No mismatches found.")
             return
-        fig = interp.plot_top_losses(
-            num_examples, figsize=(15, 15), heatmap=heatmap, return_fig=True
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            fig = interp.plot_top_losses(
+                num_examples, figsize=(15, 15), heatmap=heatmap, return_fig=True
+            )
         # fastai way of calculating num nrows and ncols
         cols = math.ceil(math.sqrt(num_examples))
         rows = math.ceil(num_examples / cols)
@@ -641,7 +694,7 @@ class FeatureClassifier(ArcGISModel):
         confidence_field        Optional String. The field name to use to add confidence.
         =====================   ===========================================
 
-        :returns: `FeatureCollection` Object
+        :return: `FeatureCollection` Object
         """
         return self._create_feature_layer(
             self._extract_images_geo_data(folder),
@@ -923,6 +976,7 @@ class FeatureClassifier(ArcGISModel):
         """
         Classifies the exported images and updates the feature layer with the prediction results in the ``output_label_field``.
         Works with RGB images only.
+        Deprecated since version 1.9.1: Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -1502,7 +1556,7 @@ class FeatureClassifier(ArcGISModel):
     ):
         if isinstance(cl, fastai.core.MultiCategory):
             cat = cl.raw  # Handles MuliCategory types
-            cat1 = cat[1]
+            cat1 = cat[0]
         else:
             cat1 = int(cl)
         m = self.learn.model.eval()
@@ -1510,10 +1564,12 @@ class FeatureClassifier(ArcGISModel):
         xb, _ = self._data.one_item(
             im, detach=False, denorm=False
         )  # put into a minibatch of batch size = 1
-        with hook_output(m[0]) as hook_a:
-            with hook_output(m[0], grad=True) as hook_g:
-                preds = m(xb)
-                preds[0, cat1].backward()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with hook_output(m[0]) as hook_a:
+                with hook_output(m[0], grad=True) as hook_g:
+                    preds = m(xb)
+                    preds[0, cat1].backward()
         acts = hook_a.stored[0].cpu()  # activation maps
         if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
             grad = hook_g.stored[0][0].cpu()
@@ -1559,7 +1615,7 @@ class FeatureClassifier(ArcGISModel):
         """
         Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
         and updates the feature layer with the prediction results in the ``output_label_field``.
-        Deprecated, please use arcgis.learn.classify_objects() instead.
+        Deprecated, Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
 
         ====================================     ====================================================================
         **Argument**                             **Description**

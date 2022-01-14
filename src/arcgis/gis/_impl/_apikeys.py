@@ -40,7 +40,7 @@ class APIKey(object):
         """
         The ``properties`` property retrieves the properties of the current APIKey object.
 
-        :returns:
+        :return:
             A dictionary containin the properties (if any) of the current APIKey object.
         """
         if self._properties is None:
@@ -53,7 +53,7 @@ class APIKey(object):
         """
         The ``apikey`` property retrieves the API Key value for the current key.
 
-        :returns:
+        :return:
             String
         """
         return self.properties.apiKey
@@ -74,7 +74,7 @@ class APIKey(object):
         Resets the API Key for the Item. The call will return the information
         with the new API Key information.
 
-        :returns:
+        :return:
             A dictionary with the APIKey object information
 
         """
@@ -134,6 +134,9 @@ class APIKey(object):
         ================  ===============================================================================
 
 
+        :return:
+            A dictionary
+
         .. code-block:: python
 
             # Usage Example
@@ -144,9 +147,6 @@ class APIKey(object):
             >>>                               "portal:app:access:item:itemId",
             >>>                               "premium:user:geocode",
             >>>                               "premium:user:networkanalysis"])
-
-        :returns:
-            A dictionary
 
         """
         url = f"{ self._gis._portal.resturl}oauth2/apps/{self.properties.client_id}/update"
@@ -285,6 +285,9 @@ class APIKeyManager(object):
                             configured.
         ================  ===============================================================================
 
+        :return:
+            An :class:`~arcgis.gis._impl.APIKey` object
+
         .. code-block:: python
 
             # Usage Example
@@ -293,9 +296,6 @@ class APIKeyManager(object):
             >>>                     http_referers = ["https://foo.com", "https://bar.com"],
             >>>                     privleges = ["portal:apikey:basemaps", "portal:app:access:item:itemId",
             >>>                                        "premium:user:geocode", "premium:user:networkanalysis"])
-
-        :returns:
-            An :class:`~arcgis.gis._impl.APIKey` object
         """
         api_item = self._gis.content.add(
             {
@@ -335,14 +335,14 @@ class APIKeyManager(object):
                           a list of string values.
         ================  ===============================================================================
 
+        :return:
+            A boolean indicating success (True), or failure (False)
+
         .. code-block:: python
 
             # Usage Example
 
             >>> gis.APIKeyManager.validate(ApiKey1)
-
-        :returns:
-            A boolean indicating success (True), or failure (False)
 
         """
         if isinstance(privileges, (list, tuple)):
@@ -367,7 +367,7 @@ class APIKeyManager(object):
         The ``keys`` property retrieves a tuple of :class:`~arcgis.gis._impl.APIKey` objects registered with the
         Organization.
 
-        :returns:
+        :return:
             A `tuple <https://docs.python.org/3/tutorial/datastructures.html#tuples-and-sequences>`_ of
             :class:`~arcgis.gis._impl.APIKey` objects
 

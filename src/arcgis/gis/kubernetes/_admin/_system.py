@@ -5,6 +5,9 @@ from ._upgrades import UpgradeManager
 from ._recovery import RecoveryManager
 from ._content import LanguageManager
 from ._architecture import ArchitectureManager
+from ._tasks import TaskManager
+from ._adaptors import WebAdaptorManager
+from ._license import LicenseManager
 from typing import List, Dict, Any, Tuple, Optional
 
 
@@ -122,6 +125,17 @@ class Indexer(_BaseKube):
     This resource contains connection information to the default indexing service.
     """
 
+    def reconfigure(self) -> bool:
+        """
+        This operation recreates the index service metadata, schema, and data in the event it becomes corrupted.
+
+        :returns: Boolean
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/reconfigure"
+        res = self._con.post(url, params)
+        return res.get("status", "failed") == "success"
+
     @property
     def status(self):
         """
@@ -133,7 +147,7 @@ class Indexer(_BaseKube):
         issues. If indexing is in progress, you can monitor the status by
         refreshing the page.
 
-        :returns: dict
+        :return: dict
 
         """
         params = {"f": "json"}
@@ -164,6 +178,44 @@ class Indexer(_BaseKube):
         if "status" in res:
             return res["status"] == "success"
         return res
+
+
+class Container:
+    """
+    A single representation of a registered container.
+    """
+
+    _properties = None
+    _url = None
+    _con = None
+    _gis = None
+
+    def __init__(self, url: str, gis: "GIS"):
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+
+    def properties(self):
+        """returns the properties of the endpoint"""
+        return self._con.get(self._url, {"f": "json"})
+
+    def edit(self, value: dict) -> dict:
+        """
+        Allows certain container registry properties to be updated after your organization has been configured.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required dict. A dictionary of registry properties.
+        ===============     ====================================================================
+
+
+
+        :returns: bool
+        """
+        url = f"{self._url}/edit"
+        params = {"f": "json", "containerRegistryJson": value}
+        return self._con.post(url, params).get("status", "failed") == "success"
 
 
 class SystemManager(_BaseKube):
@@ -202,6 +254,21 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
+    def containers(self) -> list:
+        """
+        Returns the registered containers.
+
+        :returns: list
+        """
+        url = f"{self._url}/containerregistries"
+        params = {"f": "json"}
+        return [
+            Container(url=f"{url}/{container['id']}", gis=self._gis)
+            for continer in self._con.get(url, params).get("containerRegistries", [])
+        ]
+
+    # ----------------------------------------------------------------------
+    @property
     def deployments(self) -> DeploymentManager:
         """Manages the deployment settings for enterprise"""
         url = f"{self._url}/deployments"
@@ -227,7 +294,7 @@ class SystemManager(_BaseKube):
         This resource allows an administrator the ability to manage
         disaster recovery settings.
 
-        :returns: RecoveryManager
+        :return: RecoveryManager
         """
         if self._recovery is None:
             url = f"{self._url}/disasterrecovery"
@@ -236,20 +303,23 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def _adaptors(self):
-        """ """
-        # web adaptor
-        raise NotImplemented("Not Implemented in 1.9.0")
+    def web_adaptors(self) -> WebAdaptorManager:
+        """
+        The webadaptors resource lists the ArcGIS Enterprise on Kubernetes Web Adaptor configured your deployment. The web adaptor can be configured using the config operation.
+        """
+        url = f"{self._url}/webadaptors"
+        return WebAdaptorManager(url=url, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
-    def _licenses(self) -> List[Dict[str, Any]]:
+    def licenses(self) -> List[Dict[str, Any]]:
         """
         The licenses resource lists the current license level of ArcGIS Server and all authorized extensions.
 
-        :returns: List[Dict[str, Any]]
+        :return: List[Dict[str, Any]]
         """
-        raise NotImplemented("Not Implemented in 1.9.0")
+        url = f"{self._url}/licenses"
+        return LicenseManager(url=url, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
@@ -259,23 +329,29 @@ class SystemManager(_BaseKube):
         The languages resource provides a list of current languages for an
         organization.
 
-        :returns: LanguageManager
+        :return: LanguageManager
 
         """
         return LanguageManager(url=f"{self._url}/content", gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
-    def _tasks(self):
-        """ """
-        raise NotImplemented("Not Implemented in 1.9.0")
+    def tasks(self) -> TaskManager:
+        """
+        This resource returns a list of tasks (CleanGPJobs, BackupRetentionCleaner, CreateBackup) that exist within your deployment.
+        """
+        url = f"{self._url}/tasks"
+        return TaskManager(url=url, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
-    def _architecture_profiles(self) -> ArchitectureManager:
-        """Not Implemented in 1.9.0"""
-        # architecture profiles
-        raise NotImplemented("Not Implemented in 1.9.0")
+    def architecture_profiles(self) -> ArchitectureManager:
+        """
+        This resource returns the architecture profile that is set when an organization is configured and provides access to all three architecture
+        profile resources: development, standard-availability, and enhanced-availability.
+        """
+        url = f"{self._url}/architectureprofiles"
+        return ArchitectureManager(url=url, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
@@ -309,7 +385,7 @@ class SystemManager(_BaseKube):
         """
         Allows user to manage the site's indexer
 
-        :returns: `Indexer`
+        :return: `Indexer`
         """
         if self._indexer is None:
 
@@ -319,7 +395,7 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def servers(self):
+    def servers(self) -> ServerManager:
         """Returns a manager to work with ArcGIS Servers registerd with Kubernetes"""
         if self._sm is None:
             self._sm = ServerManager(url=f"{self._url}/servers", gis=self._gis)

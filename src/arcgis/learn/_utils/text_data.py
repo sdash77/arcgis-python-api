@@ -10,7 +10,7 @@ import warnings
 import traceback
 import pandas as pd
 from functools import partial
-
+from .._utils.common import always_warn
 
 HAS_FASTAI = True
 try:
@@ -275,6 +275,7 @@ class TextDataObject:
         process_labels=False,
         remove_html_tags=False,
         remove_urls=False,
+        **kwargs,
     ):
         if not HAS_FASTAI:
             _raise_fastai_exception(import_exception)
@@ -318,16 +319,37 @@ class TextDataObject:
                 remove_urls,
             )
         else:
-            validation_indexes = random.sample(
-                range(train_df.shape[0]), round(val_split_pct * train_df.shape[0])
-            )
-            training_indexes = list(
-                set([i for i in range(train_df.shape[0])]) - set(validation_indexes)
-            )
+            if len(label_cols) == 1 and kwargs.get("stratify") != False:
+                label_col = label_cols[0]
+                from sklearn.model_selection import train_test_split
 
-            temp_df = copy.deepcopy(train_df)
-            train_df = temp_df.loc[training_indexes]
-            valid_df = temp_df.loc[validation_indexes]
+                x, y = train_df[text_cols], train_df[label_col]
+                unique_labels = y.value_counts()[y.value_counts() == 1].index.tolist()
+
+                for (
+                    label
+                ) in unique_labels:  # duplicating datapoints with unique classes.
+                    idx = y[y == label].index.tolist()[0]
+                    train_df = train_df.append(train_df.iloc[idx])
+                train_df.reset_index(drop=True, inplace=True)
+                x, y = train_df[text_cols], train_df[label_col]
+                X_train, X_test, y_train, y_test = train_test_split(
+                    x, y, test_size=val_split_pct, stratify=y
+                )
+                train_df = pd.concat([X_train, y_train], axis=1)
+                valid_df = pd.concat([X_test, y_test], axis=1)
+                temp_df = pd.DataFrame()
+            else:
+                validation_indexes = random.sample(
+                    range(train_df.shape[0]), round(val_split_pct * train_df.shape[0])
+                )
+                training_indexes = list(
+                    set([i for i in range(train_df.shape[0])]) - set(validation_indexes)
+                )
+
+                temp_df = copy.deepcopy(train_df)
+                train_df = temp_df.loc[training_indexes]
+                valid_df = temp_df.loc[validation_indexes]
             # Removing rows with empty strings in the text_cols from the training and validation data
             train_df[text_cols].replace("", np.nan, inplace=True)
             train_df.dropna(inplace=True)
@@ -478,9 +500,10 @@ class TextDataObject:
         elif self._task == "ner":
             model_type, seq_length = kwargs["model_type"], kwargs["seq_len"]
             dl_kwargs = {"pin_memory": self.databunch_kwargs.get("pin_memory")}
-            device, num_workers = self.databunch_kwargs[
-                "device"
-            ], self.databunch_kwargs.get("num_workers")
+            device, num_workers = (
+                self.databunch_kwargs["device"],
+                self.databunch_kwargs.get("num_workers"),
+            )
             if num_workers:
                 dl_kwargs["num_workers"] = num_workers
 

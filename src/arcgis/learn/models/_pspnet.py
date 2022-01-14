@@ -129,7 +129,7 @@ class PSPNetClassifier(ArcGISModel):
                             at the cost of memory consumption. Default: False
     =====================   ===========================================
 
-    :returns: `PSPNetClassifier` Object
+    :return: `PSPNetClassifier` Object
     """
 
     def __init__(
@@ -340,7 +340,7 @@ class PSPNetClassifier(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `PSPNetClassifier` Object
+        :return: `PSPNetClassifier` Object
         """
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
@@ -463,6 +463,7 @@ class PSPNetClassifier(ArcGISModel):
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
+        _emd_template["SupportsVariableTileSize"] = True
         _emd_template["Classes"] = []
         class_data = {}
         for i, class_name in enumerate(
@@ -512,13 +513,15 @@ class PSPNetClassifier(ArcGISModel):
         if not hasattr(self.learn, "recorder"):
             return 0.0
 
+        if len(self.learn.recorder.metrics) == 0:
+            return 0.0
+
         try:
             model_accuracy = self.learn.recorder.metrics[-1][0]
             if checkpoint:
-                val_losses = self.learn.recorder.val_losses
-                model_accuracy = self.learn.recorder.metrics[
-                    val_losses.index(min(val_losses))
-                ][0]
+                model_accuracy = self.learn.recorder.metrics[self.learn._best_epoch][
+                    0
+                ]  # index using best epoch.
         except:
             model_accuracy = 0.0
 
@@ -540,7 +543,7 @@ class PSPNetClassifier(ArcGISModel):
                                 True.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
         num_classes = torch.arange(self._data.c)

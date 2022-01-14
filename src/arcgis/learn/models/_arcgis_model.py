@@ -37,21 +37,12 @@ try:
 
     from fastai.callbacks import TrackerCallback, EarlyStoppingCallback
     from fastai.basic_train import LearnerCallback
-
     from torch import nn
     import torch
     import numpy as np
     import math
     import warnings
     from fastai.distributed import *
-    import tensorflow as tf
-
-    tf.get_logger().setLevel(logging.ERROR)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        import onnx
-        import onnx_tf
-        from onnx_tf.backend import prepare
     from torchvision import datasets, transforms
     import argparse
     import torch.distributed as dist
@@ -282,6 +273,11 @@ class SaveModelCallback(TrackerCallback):
         self.every = every
         self.name = name
         self.load_best_at_end = load_best_at_end
+
+        # set some default value of best epoch attribute
+        self.best_epoch = 0
+        self.learn._best_epoch = 0
+
         if self.every not in ["improvement", "epoch"]:
             warn(
                 'SaveModel every {} is invalid, falling back to "improvement".'.format(
@@ -299,6 +295,11 @@ class SaveModelCallback(TrackerCallback):
         # do not save model after early stopping kicks in.
         if not kwargs.get("stop_training", False):
             current = self.get_monitor_value()
+
+            if isinstance(current, torch.Tensor):
+                if current.is_cuda:
+                    current = current.cpu()
+
             # if a better checkpoint is found.
             better_checkpoint = current is not None and self.operator(
                 current, self.best
@@ -308,9 +309,6 @@ class SaveModelCallback(TrackerCallback):
                 self.learn._best_epoch = epoch
                 self.best = current
 
-            if isinstance(current, torch.Tensor):
-                if current.is_cuda:
-                    current = current.cpu()
             self.current = current
 
             if self.every == "epoch":
@@ -343,7 +341,7 @@ class SaveModelCallback(TrackerCallback):
                 self.model.load(f"{self.name}_epoch_{self.best_epoch}")
             except FileNotFoundError:
                 # logging this to notify about possible errors.
-                logger.log(50, "Cannot load best model.")
+                print("Could not load the best model.")
 
             try:
                 self.model.save(
@@ -351,7 +349,7 @@ class SaveModelCallback(TrackerCallback):
                 )
             except:
                 # logging this to notify about possible errors.
-                logger.log(50, "Encountered error in saving checkpoint.")
+                print("Encountered error in saving checkpoint.")
 
 
 # Multispectral Models Specific resources start #
@@ -1144,6 +1142,30 @@ class ArcGISModel(object):
                         "NormalizationStats"
                     ][_stat].tolist()
             _emd_template["DoNormalize"] = self._data._do_normalize
+        if (
+            getattr(self._data, "_dataset_type", None) == "Pix2Pix"
+            or getattr(self._data, "_dataset_type", None) == "CycleGAN"
+        ):
+            _emd_template["ExtractBands"] = self._data._extract_bands
+            _emd_template["NormalizationStats"] = {
+                "band_min_values": self._data._band_min_values,
+                "band_max_values": self._data._band_max_values,
+                "band_mean_values": self._data._band_mean_values,
+                "band_std_values": self._data._band_std_values,
+                "scaled_min_values": self._data._scaled_min_values,
+                "scaled_max_values": self._data._scaled_max_values,
+                "scaled_mean_values": self._data._scaled_mean_values,
+                "scaled_std_values": self._data._scaled_std_values,
+            }
+            for _stat in _emd_template["NormalizationStats"]:
+                if _emd_template["NormalizationStats"][_stat] is not None:
+                    _emd_template["NormalizationStats"][_stat] = _emd_template[
+                        "NormalizationStats"
+                    ][_stat].tolist()
+            if getattr(self._data, "_dataset_type", None) == "CycleGAN":
+                _emd_template["n_channel_rev"] = len(
+                    _emd_template["NormalizationStats"]["band_min_values"]
+                )
         if getattr(self._data, "_dataset_type", None) == "Classified_Tiles":
             if not getattr(self, "_is_edge_detection", False):
                 if not getattr(self, "_orient_data", False):
@@ -1512,6 +1534,7 @@ class ArcGISModel(object):
                     "CycleGAN",
                     "Pix2Pix",
                     "SuperResolution",
+                    "ImageCaptioner",
                 ]
                 or save_inference_file
             ):
@@ -1591,6 +1614,14 @@ class ArcGISModel(object):
         return self.learn._save_tflite(name)
 
     def _save_pytorch_tflite(self, name):
+        import tensorflow as tf
+
+        tf.get_logger().setLevel(logging.ERROR)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import onnx
+            import onnx_tf
+            from onnx_tf.backend import prepare
         torch_model = self.learn.model
         torch_model = torch_model.eval()
         num_input_channels = list(self.learn.model.parameters())[0].shape[1]

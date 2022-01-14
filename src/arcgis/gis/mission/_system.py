@@ -56,7 +56,7 @@ class SystemManager(object):
         these properties. The properties are available to all server
         objects and extensions through the server environment interface.
 
-        :returns: PropertyMap
+        :return: PropertyMap
         """
         if self._properties is None:
             self._init()
@@ -66,22 +66,17 @@ class SystemManager(object):
     @properties.setter
     def properties(self, value):
         """
-        Sets the ArcGIS Mission Server has configuration properties that govern
-        some of its intricate behavior. This resource is a container for
-        these properties. The properties are available to all server
-        objects and extensions through the server environment interface.
-
-        :returns: PropertyMap
+        See main ``properties`` property docstring.
         """
-        properties: {
-            "PushIdentityToDatabase": True,
-            "messageFormat": "esriServiceCatalogMessageFormatSoapOrBin",
-            "uploadFileExtensionWhitelist": "soe,sd,sde,csv,txt,kmz,geodatabase",
-            "featureServiceXSSFilter": "inputOutput",
-            "percentageMaxAllowedComputeCores": 50,
-            "percentageMaxAllowedComputeMemory": 50,
-        }
-        props = {}
+        # properties: {
+        #     "PushIdentityToDatabase": True,
+        #     "messageFormat": "esriServiceCatalogMessageFormatSoapOrBin",
+        #     "uploadFileExtensionWhitelist": "soe,sd,sde,csv,txt,kmz,geodatabase",
+        #     "featureServiceXSSFilter": "inputOutput",
+        #     "percentageMaxAllowedComputeCores": 50,
+        #     "percentageMaxAllowedComputeMemory": 50,
+        # }
+        # props = {}
         url = self._url + "/properties/update"
         params = {"f": "json", "properties": {}}
         current = dict(self.properties)
@@ -149,7 +144,7 @@ class SystemManager(object):
         implementation is built on top of a file system and stores all the
         configurations in a hierarchy of folders and files.
 
-        :returns: dict
+        :return: dict
 
         """
         url = self._url + "/configStore"
@@ -234,7 +229,7 @@ class DirectoryManager(object):
         directory_type	       The type of directory. Values: DATA | WORKSPACE | OUTPUT
         ==================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         params = {"f": "json", "name": name, "path": path, "type": directory_type}
@@ -256,7 +251,7 @@ class DirectoryManager(object):
         directory_id           Required String.  The directory ID to remove.
         ==================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         params = {"f": "json"}
@@ -334,7 +329,7 @@ class WebAdaptorManager(object):
         description            Optional String. The optional web adapter description.
         ==================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean
 
         """
         params = {
@@ -477,7 +472,7 @@ class WebAdaptor(object):
     def unregister(self):
         """
         Unregisters a WebAdapter for the Mission Server
-        :returns: boolean
+        :return: boolean
         """
         url = self._url + "/unregister"
         params = {"f": "json"}

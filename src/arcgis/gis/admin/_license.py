@@ -23,8 +23,8 @@ class LicenseManager(BasePortalAdmin):
     gis                 required GIS, the gis connection object
     ===============     ====================================================
 
-    :returns:
-       LicenseManager Object
+    :return:
+       :class:`~arcgis.admin.LicenseManager` Object
     """
 
     _con = None
@@ -58,7 +58,8 @@ class LicenseManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
     def get(self, name):
         """
-        retrieves a license by it's name (title)
+        Retrieves a license by it's name (title)
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
@@ -68,8 +69,8 @@ class LicenseManager(BasePortalAdmin):
                             name="arcgis pro"
         ===============     ====================================================
 
-        :returns:
-           License Object
+        :return:
+           :class:`~arcgis.admin.License` Object
         """
         licenses = self.all()
         for l in licenses:
@@ -88,8 +89,8 @@ class LicenseManager(BasePortalAdmin):
         """
         Returns all Licenses registered with an organization
 
-        :returns:
-           list of License objects
+        :return:
+           List of :class:`~arcgis.admin.License` objects
         """
         licenses = []
         if self._properties is None:
@@ -106,8 +107,8 @@ class LicenseManager(BasePortalAdmin):
         """
         Returns a list of Application Bundles for an Organization
 
-        :returns:
-           list of Bundle objects
+        :return:
+           List of :class:`~arcgis.admin.Bundles` objects
 
         """
         if self._gis.version < [6, 4]:
@@ -145,7 +146,14 @@ class LicenseManager(BasePortalAdmin):
         the enterprise users cannot check out licenses to work in a disconnected setting
         for ArcGIS Pro.
 
-        :returns: Boolean
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required bool.
+                            Value: True | False
+        ===============     ====================================================================
+
+        :return: Boolean
 
         """
         lic = self.get("arcgis pro")
@@ -155,12 +163,7 @@ class LicenseManager(BasePortalAdmin):
     @offline_pro.setter
     def offline_pro(self, value):
         """
-        Administrators can get/set the disconnect settings for the ArcGIS Pro licensing.
-        A value of True means that a user can check out a license from the enterprise
-        inorder to use it in a disconnected setting.  By setting `offline_pro` to False,
-        the enterprise users cannot check out licenses to work in a disconnected setting
-        for ArcGIS Pro.
-
+        See main ``offline_pro`` property docstring
         """
         import json
 
@@ -245,11 +248,32 @@ class Bundle(object):
     @property
     def users(self):
         """returns a list of users assigned the application bundle"""
-        if self._users is None:
-            self._users = self._gis.users.search(
-                "appbundle:%s" % self.properties.appBundleItemId
-            )
-        return self._users
+        url = f"{self._gis._portal.resturl}/portals/self/users/search"
+        params = {
+            "f": "json",
+            "sortField": "fullname",
+            "sortOrder": "asc",
+            "q": f"appbundle: {self.properties.appBundleItemId}",
+            "start": 1,
+            "num": 60,
+            "total": 0,
+            "nextStart": -1,
+        }
+        res = self._con.get(url, params)
+        final = dict(res)
+        while res["nextStart"] > 0:
+            params["start"] = res["nextStart"]
+            res = self._con.get(url, params)
+            final["results"].extend(res["results"])
+            if res["nextStart"] == -1:
+                break
+        from arcgis.gis import User
+
+        users = [
+            User(gis=self._gis, username=user["username"], userdict=None)
+            for user in final["results"]
+        ]
+        return users
 
     # ----------------------------------------------------------------------
     def __len__(self):
@@ -258,12 +282,12 @@ class Bundle(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         """ """
-        return "<AppBundle: %s >" % self.properties["name"]
+        return "<AppBundle: %s>" % self.properties["name"]
 
     # ----------------------------------------------------------------------
     def __repr__(self):
         """ """
-        return "<AppBundle: %s >" % self.properties["name"]
+        return "<AppBundle: %s>" % self.properties["name"]
 
     # ----------------------------------------------------------------------
     def assign(self, users):
@@ -278,7 +302,7 @@ class Bundle(object):
         ===============     ====================================================
 
 
-        :returns: boolean
+        :return: Boolean. True if successful else False
 
         """
         if isinstance(users, (tuple, set, list)) == False:
@@ -314,7 +338,7 @@ class Bundle(object):
         ===============     ====================================================
 
 
-        :returns: boolean
+        :return: Boolean. True if successful else False.
 
         """
         if isinstance(users, (tuple, set, list)) == False:
@@ -354,8 +378,8 @@ class License(object):
                         and listing information.
     ===============     ====================================================
 
-    :returns:
-       License Object
+    :return:
+       :class:`~arcgis.admin.License` Object
     """
 
     _properties = None
@@ -477,7 +501,7 @@ class License(object):
                             examine the entitlements for.
         ===============     ====================================================
 
-        :returns: list
+        :return: list
         """
         if hasattr(user, "username"):
             user = user.username
@@ -515,7 +539,7 @@ class License(object):
                             examine the entitlements for.
         ===============     ====================================================
 
-        :returns:
+        :return:
            dictionary
         """
         item_id = self.properties["listing"]["itemId"]
@@ -560,8 +584,8 @@ class License(object):
                             user that their entitlements have changed.
         ===============     ====================================================
 
-        :returns:
-           boolean
+        :return:
+           Boolean. True if successful else False.
         """
         item_id = self.properties["listing"]["itemId"]
         if isinstance(entitlements, str):
@@ -601,7 +625,7 @@ class License(object):
                             user that their entitlements have changed.
         ===============     ====================================================
 
-        :returns:
+        :return:
            boolean
         """
         if entitlements == "*":

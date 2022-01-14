@@ -266,7 +266,7 @@ class ModelExtension(ArcGISModel):
 
         =====================   ===========================================
 
-        :returns: `ModelExtension` Object
+        :return: `ModelExtension` Object
         """
 
         emd_path = _get_emd_path(emd_path)
@@ -286,10 +286,11 @@ class ModelExtension(ArcGISModel):
 
         modelconfclass = emd["ModelFileConfigurationClass"]
 
-        sys.path.append(os.path.dirname(modelconf))
-        model_configuration = getattr(
-            importlib.import_module("{}".format(modelconf.name[0:-3])), modelconfclass
-        )
+        spec = importlib.util.spec_from_file_location(modelconfclass, modelconf)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        model_configuration = getattr(module, modelconfclass)
 
         backbone = emd["ModelParameters"].get("backbone", None)
 
@@ -379,9 +380,13 @@ class ModelExtension(ArcGISModel):
         checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
             return 0.0
+
+        if len(self.learn.recorder.metrics) == 0:
+            return 0.0
+
         model_accuracy = self.learn.recorder.metrics[-1][0]
         if checkpoint:
-            model_accuracy = np.max(self.learn.recorder.metrics)
+            model_accuracy = self.learn.recorder.metrics[self.learn._best_epoch][0]
         return float(model_accuracy)
 
     def _get_y(self, bbox, clas):
@@ -457,7 +462,7 @@ class ModelExtension(ArcGISModel):
                                 True.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
         num_classes = torch.arange(self._data.c)
@@ -468,7 +473,7 @@ class ModelExtension(ArcGISModel):
 
     def _per_class_metrics(self):
         """
-        Computer per class precision, recall and f1-score on validation set.
+        Computes per class precision, recall and f1-score on validation set.
         """
         try:
             self._check_requisites()
@@ -698,7 +703,7 @@ class ModelExtension(ArcGISModel):
                                 average precision.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
 
@@ -733,7 +738,7 @@ class ModelExtension(ArcGISModel):
                                 consider true detection.
         =====================   ===========================================
 
-        :returns: `dict`
+        :return: `dict`
         """
         self._check_requisites()
         acc = accuracies(
@@ -790,7 +795,7 @@ class ModelExtension(ArcGISModel):
                                 model was trained on).
         =====================   ===========================================
 
-        :returns:  Returns a tuple with predictions, labels and optionally confidence scores
+        :return:  Returns a tuple with predictions, labels and optionally confidence scores
                    if return_scores=True. The predicted bounding boxes are returned as a list
                    of lists containing the  xmin, ymin, width and height of each predicted
                    object in each image. The labels are returned as a list of class values

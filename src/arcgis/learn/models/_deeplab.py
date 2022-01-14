@@ -262,7 +262,7 @@ class DeepLab(ArcGISModel):
                             at the cost of memory consumption. Default: False
     =====================   ===========================================
 
-    :returns: ``DeepLab`` Object
+    :return: ``DeepLab`` Object
     """
 
     def __init__(
@@ -444,7 +444,7 @@ class DeepLab(ArcGISModel):
 
         =====================   ===========================================
 
-        :returns: `DeepLab` Object
+        :return: `DeepLab` Object
         """
 
         emd_path = _get_emd_path(emd_path)
@@ -498,6 +498,7 @@ class DeepLab(ArcGISModel):
         _emd_template["ModelParameters"]["keep_dilation"] = self.keep_dilation
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
+        _emd_template["SupportsVariableTileSize"] = True
         _emd_template["Classes"] = []
         class_data = {}
         for i, class_name in enumerate(
@@ -537,6 +538,9 @@ class DeepLab(ArcGISModel):
     def _get_model_metrics(self, **kwargs):
         checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
+            return 0.0
+
+        if len(self.learn.recorder.metrics) == 0:
             return 0.0
 
         model_accuracy = self.learn.recorder.metrics[-1][0]
@@ -638,7 +642,7 @@ class DeepLab(ArcGISModel):
                                 True.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
         num_classes = torch.arange(self._data.c)

@@ -15,7 +15,7 @@ def select(sdf, other):
     other                        Required Spatially Enabled DataFrame or arcgis.Geometry.  This is the selecting data.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     ud = pd.Series([False] * len(sdf))

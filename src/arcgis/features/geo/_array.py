@@ -1,26 +1,19 @@
 from distutils.version import LooseVersion
-
-
-import operator
-import json
-import numpy as np
-
-from pandas.core.arrays import ExtensionArray
-from pandas.core.dtypes.dtypes import ExtensionDtype
-from arcgis.geometry import Geometry
-import pandas as pd
-from .parser import _to_geo_array
-
 import numbers
 import operator
 import warnings
+import operator
+import json
 
 import numpy as np
 import pandas as pd
+
+
+from pandas.core.arrays import ExtensionArray
+from pandas.core.dtypes.dtypes import ExtensionDtype
 from pandas.api.extensions import ExtensionArray
 
 from collections.abc import Iterable
-import json
 from arcgis.geometry import Geometry
 
 # -----------------------------------------------------------------------------
@@ -52,7 +45,7 @@ def _unary_geo(op, left, *args, **kwargs):
 
     **used for accessing properties on objects**
 
-    :returns: GeoArray
+    :return: GeoArray
     """
     data = np.empty(len(left), dtype=object)
     data[:] = [getattr(geom, op, None) for geom in left]
@@ -66,7 +59,7 @@ def _unary_op(op, left, null_value=False):
 
     **used for accessing properties on objects**
 
-    :returns: pd.Series
+    :return: pd.Series
 
     """
     data = np.empty(len(left), dtype=object)
@@ -97,7 +90,7 @@ def _binary_predicate(name, left, right, *args, **kwargs):
          left : GeoArray
          right: GeoArray or Geometry
 
-    :returns: np.array (should be dtype bool)
+    :return: np.array (should be dtype bool)
 
     """
     if isinstance(right, pd.Series):
@@ -785,13 +778,13 @@ class GeoArray(ExtensionArray):
                             an alternative, if desired.
         ===============     ====================================================================
 
-        :returns: a tuple of angle and distance to another point using a measurement type.
+        :return: a tuple of angle and distance to another point using a measurement type.
         """
         return _binary_op(
             name="angle_distance_to",
             left=self.data,
             right=second_geometry,
-            **{"method": method}
+            **{"method": method},
         )
 
     # ----------------------------------------------------------------------
@@ -799,7 +792,7 @@ class GeoArray(ExtensionArray):
         """
         Constructs the boundary of the geometry.
 
-        :returns: arcgis.geometry.Polyline
+        :return: arcgis.geometry.Polyline
         """
 
         return _binary_op_geo(name="boundary", left=self.data, right=None)
@@ -817,7 +810,7 @@ class GeoArray(ExtensionArray):
                             A negative distance can only be specified against a polygon geometry.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Polygon
+        :return: arcgis.geometry.Polygon
         """
         return _binary_op_geo(name="buffer", left=self.data, **{"distance": distance})
 
@@ -833,7 +826,7 @@ class GeoArray(ExtensionArray):
                             represents the lower left bound and upper right bound of the extent.
         ===============     ====================================================================
 
-        :returns: output geometry clipped to extent
+        :return: output geometry clipped to extent
 
         """
         return _binary_op_geo(name="clip", left=self.data, **{"envelope": envelope})
@@ -855,13 +848,13 @@ class GeoArray(ExtensionArray):
                             + PROPER - Boundaries of geometries must not intersect.
         ===============     ====================================================================
 
-        :returns: boolean
+        :return: boolean
         """
         return _binary_predicate(
             name="contains",
             left=self.data,
             right=second_geometry,
-            **{"relation": relation}
+            **{"relation": relation},
         )
 
     # ----------------------------------------------------------------------
@@ -884,7 +877,7 @@ class GeoArray(ExtensionArray):
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         return _binary_predicate(name="crosses", left=self.data, right=second_geometry)
@@ -901,7 +894,7 @@ class GeoArray(ExtensionArray):
         cutter              Required Polyline. The cuttin polyline geometry
         ===============     ====================================================================
 
-        :returns: a list of two geometries
+        :return: a list of two geometries
 
         """
         return _binary_op_geo(name="cut", left=self.data, right=cutter)
@@ -931,13 +924,13 @@ class GeoArray(ExtensionArray):
                             be required to approximate the curve.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :return: arcgis.geometry.Geometry
 
         """
         return _binary_op_geo(
             name="densify",
             left=self.data,
-            **{"method": method, "distance": distance, "deviation": deviation}
+            **{"method": method, "distance": distance, "deviation": deviation},
         )
 
     # ----------------------------------------------------------------------
@@ -954,7 +947,7 @@ class GeoArray(ExtensionArray):
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :return: arcgis.geometry.Geometry
 
         """
         return _binary_op_geo(name="difference", left=self.data, right=second_geometry)
@@ -971,7 +964,7 @@ class GeoArray(ExtensionArray):
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         return _binary_predicate(
@@ -991,7 +984,7 @@ class GeoArray(ExtensionArray):
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
 
-        :returns: float
+        :return: float
 
         """
         return _binary_op(
@@ -1011,7 +1004,7 @@ class GeoArray(ExtensionArray):
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
 
         """
@@ -1029,7 +1022,7 @@ class GeoArray(ExtensionArray):
         max_offset          Required float. The maximum offset tolerance.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :return: arcgis.geometry.Geometry
 
         """
         return _binary_op_geo(
@@ -1056,7 +1049,7 @@ class GeoArray(ExtensionArray):
                             SQUAREMILLIMETERS | SQUAREYARDS
         ===============     ====================================================================
 
-        :returns: float
+        :return: float
 
         """
         return _binary_op(
@@ -1082,7 +1075,7 @@ class GeoArray(ExtensionArray):
                             MILLIMETERS | NAUTICALMILES | YARDS
         ===============     ====================================================================
 
-        :returns: float
+        :return: float
 
         """
         return _binary_op(
@@ -1131,14 +1124,14 @@ class GeoArray(ExtensionArray):
 
         ===============     ====================================================================
 
-        :returns: boolean array
+        :return: boolean array
 
         """
         return _binary_predicate(
             name="intersect",
             left=self.data,
             right=second_geometry,
-            **{"dimension": dimension}
+            **{"dimension": dimension},
         )
 
     # ----------------------------------------------------------------------
@@ -1162,7 +1155,7 @@ class GeoArray(ExtensionArray):
             name="measure_on_line",
             left=self.data,
             right=second_geometry,
-            **{"as_percentage": as_percentage}
+            **{"as_percentage": as_percentage},
         )
 
     # ----------------------------------------------------------------------
@@ -1210,7 +1203,7 @@ class GeoArray(ExtensionArray):
         return _binary_op_geo(
             name="point_from_angle_and_distance",
             left=self.data,
-            **{"angle": angle, "distance": distance, "method": method}
+            **{"angle": angle, "distance": distance, "method": method},
         )
 
     # ----------------------------------------------------------------------
@@ -1237,7 +1230,7 @@ class GeoArray(ExtensionArray):
         return _binary_op_geo(
             name="position_along_line",
             left=self.data,
-            **{"value": value, "use_percentage": use_percentage}
+            **{"value": value, "use_percentage": use_percentage},
         )
 
     # ----------------------------------------------------------------------
@@ -1254,7 +1247,7 @@ class GeoArray(ExtensionArray):
         transformation_name      Required String. The geotransformation name.
         ====================     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :return: arcgis.geometry.Geometry
         """
         return _binary_op_geo(
             name="project_as",
@@ -1262,7 +1255,7 @@ class GeoArray(ExtensionArray):
             **{
                 "spatial_reference": spatial_reference,
                 "transformation_name": transformation_name,
-            }
+            },
         )
 
     # ----------------------------------------------------------------------
@@ -1289,7 +1282,7 @@ class GeoArray(ExtensionArray):
             name="query_point_and_distance",
             left=self.data,
             right=second_geometry,
-            **{"use_percentage": use_percentage}
+            **{"use_percentage": use_percentage},
         )
 
     # ----------------------------------------------------------------------
@@ -1314,7 +1307,7 @@ class GeoArray(ExtensionArray):
                             (0 percent) to 1.0 (100 percent).
         ===============     ====================================================================
 
-        :returns: Geometry
+        :return: Geometry
 
         """
         return _binary_op_geo(
@@ -1324,7 +1317,7 @@ class GeoArray(ExtensionArray):
                 "start_measure": start_measure,
                 "end_measure": end_measure,
                 "use_percentage": use_percentage,
-            }
+            },
         )
 
     # ----------------------------------------------------------------------
@@ -1423,7 +1416,7 @@ class GeoArray(ExtensionArray):
             name="within",
             left=self.data,
             right=second_geometry,
-            **{"relation": relation}
+            **{"relation": relation},
         )
 
 

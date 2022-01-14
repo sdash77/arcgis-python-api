@@ -6,11 +6,12 @@ import json
 
 import arcgis
 from arcgis._impl.common._utils import chunks
-from arcgis.features import FeatureCollection, FeatureSet, SpatialDataFrame
+from arcgis.features import FeatureCollection, FeatureSet
 from arcgis.gis import GIS
 from arcgis.geometry import _types
 from arcgis.mapping._utils import _get_list_value
 from arcgis.mapping.symbol import create_symbol, _cmap2rgb
+
 
 __all__ = ["generate_renderer"]
 
@@ -92,9 +93,15 @@ class _DotDensity(object):
     @property
     def background(self):
         """
-        Returns the background color
+        Get/Set the background color
 
-        :returns: List
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string. Color to set the background to.
+        ===============     ====================================================================
+
+        :return: List
 
         """
         return self._bg_color
@@ -103,7 +110,24 @@ class _DotDensity(object):
     @property
     def shape(self):
         """
-        Returns the shape of the dots
+        Get/Set the shape of the dots
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string.
+                            Values: "o" | "+" | "d" | "s" | "x"
+        ===============     ====================================================================
+
+        :return:
+            The string representing the dot shape
+            {
+            "o": "Circle",  # default
+            "+": "Cross",
+            "d": "Diamond",
+            "s": "Square",
+            "x": "X",
+            }
         """
         return self._dot_shape
 
@@ -126,7 +150,7 @@ class _DotDensity(object):
     # ----------------------------------------------------------------------
     @property
     def unit(self):
-        """gets/sets the units"""
+        """Get/Set the units"""
         return self._unit
 
     # ----------------------------------------------------------------------
@@ -138,13 +162,23 @@ class _DotDensity(object):
     # ----------------------------------------------------------------------
     @property
     def size(self):
-        """returns the size of the dots"""
+        """Get/Set the size of the dots"""
         return self._dot_size
 
     # ----------------------------------------------------------------------
     @property
     def ref_scale(self):
-        """reference scale"""
+        """
+        Get/Set the reference scale
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required int or float.
+        ===============     ====================================================================
+
+        :return: Int or float value depicting the current reference scale
+        """
         return self._ref_scale
 
     # ----------------------------------------------------------------------
@@ -235,7 +269,7 @@ class _DotDensity(object):
         alpha               Optional float. A value between 0-1 that determines the symbol opacity.
         ===============     ====================================================================
 
-        :returns: Boolean
+        :return: True if successful otherwise error message
 
         """
         mapped_names = [n["field"].lower() for n in self.attributes]
@@ -248,7 +282,6 @@ class _DotDensity(object):
             return True
         else:
             raise ValueError("Field not found in dataset.")
-        return False
 
     # ----------------------------------------------------------------------
     def remove_attribute(self, field):
@@ -261,7 +294,7 @@ class _DotDensity(object):
         field               Required String.  Name of the dataset field
         ===============     ====================================================================
 
-        :returns: Boolean
+        :return:True if successful else False
 
         """
         mapped_names = [n["field"].lower() for n in self.attributes if "field" in n]
@@ -305,7 +338,7 @@ class _DotDensity(object):
     @property
     def dot_value(self):
         """
-        Get/Sets what each dot is worth. This should be an float/integer.
+        Get/Set what each dot is worth. This should be an float/integer.
         """
         return self._dot_value
 
@@ -472,7 +505,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     trans_exp_title         The title identifying and describing the associated
                             Arcade expression as defined in the valueExpression
                             property.
-    ----------------------  ---------------------------------------------------------
+    ======================  =========================================================
 
     **Size Info Visual Variable**
 
@@ -517,6 +550,12 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     si_value_unit           A string value indicating the required unit of measurement.
     ======================  =========================================================
 
+    **Rotation Info Visual Variable**
+
+    A rotation variable is a visual variable that defines the rotation of a symbol
+    based on a numeric data value returned from a field or expression. This value is
+    typically used to rotate symbols that indicate directionality.
+
     ======================  =========================================================
     **arguements**          **description**
     ----------------------  ---------------------------------------------------------
@@ -542,8 +581,10 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
 
 
     """
+    import pandas as pd
+
     v = []
-    if isinstance(sdf_or_list, SpatialDataFrame) and "trans_info_field" in kwargs:
+    if isinstance(sdf_or_list, pd.DataFrame) and "trans_info_field" in kwargs:
         trans_info_field = kwargs["trans_info_field"]
         data = sdf_or_list[trans_info_field].unique().tolist()
     elif isinstance(sdf_or_list, (tuple, list)):
@@ -568,7 +609,7 @@ def generate_renderer(
     label=None,
     render_type=None,
     colors=None,
-    **symbol_args
+    **symbol_args,
 ):
     """
     Generates the Renderer JSON
@@ -599,8 +640,7 @@ def generate_renderer(
                             allowed renderer types based on the geometry.
 
     ----------------------  ---------------------------------------------------------
-    sdf_or_series           optional SpatialDataFrame/Pandas Series/GeoSeries. The
-                            spatial dataset to render.
+    sdf_or_series           optional Pandas Series. The spatial dataset to render.
     ----------------------  ---------------------------------------------------------
     label                   optional string. Name of the layer in the TOC/Legend
     ----------------------  ---------------------------------------------------------
@@ -914,7 +954,7 @@ def generate_renderer(
     ======================  =========================================================
 
 
-    :returns: dict
+    :return: A dictionary of the renderer.
 
     """
     import numpy as np
@@ -1012,7 +1052,7 @@ def generate_renderer(
                 symbol_type=symbol_args.pop("symbol_type", None),
                 symbol_style=symbol_args.pop("symbol_style", None),
                 colors=colors[0],
-                **symbol_args
+                **symbol_args,
             )
         renderer = {
             "type": "simple",
@@ -1027,7 +1067,7 @@ def generate_renderer(
     elif render_type.lower() == "h":
         if sdf_or_series is None and "field" in symbol_args:
             raise ValueError(
-                "sdf_or_series must be a Pandas' Series, SpatialDataFrame"
+                "sdf_or_series must be a Pandas' Series"
                 + " or Pandas DataFrame for this type of renderer"
             )
         colorStops = []
@@ -1071,7 +1111,7 @@ def generate_renderer(
     elif render_type in ["u", "p"] and "field1" in symbol_args:
         if sdf_or_series is None:
             raise ValueError(
-                "sdf_or_series must be a Pandas' Series, SpatialDataFrame"
+                "sdf_or_series must be a Pandas' Series"
                 + " or Pandas DataFrame for this type of renderer"
             )
         st = symbol_args.pop("symbol_type", None)
@@ -1087,7 +1127,7 @@ def generate_renderer(
                 symbol_type=st,
                 symbol_style=ss,
                 colors=ccmap,
-                **symbol_args
+                **symbol_args,
             )
         field1 = symbol_args.pop("field1", None)
         if field1 is None:
@@ -1157,7 +1197,7 @@ def generate_renderer(
                             symbol_type=st,
                             symbol_style=ss,
                             colors=_get_list_value(idx, colors),
-                            **symbol_args
+                            **symbol_args,
                         ),
                     }
                 )
@@ -1171,7 +1211,7 @@ def generate_renderer(
     ):
         if sdf_or_series is None:
             raise ValueError(
-                "sdf_or_series must be a Pandas' Series, SpatialDataFrame"
+                "sdf_or_series must be a Pandas' Series"
                 + " or Pandas DataFrame for this type of renderer"
             )
         st = symbol_args.pop("symbol_type", None)
@@ -1187,7 +1227,7 @@ def generate_renderer(
                 symbol_type=st,
                 symbol_style=ss,
                 colors=ccmap,
-                **symbol_args
+                **symbol_args,
             )
         field_delimiter = symbol_args.pop("field_delimiter", ",")
         rotation_expression = symbol_args.pop("rotation_expression", None)
@@ -1219,7 +1259,7 @@ def generate_renderer(
     elif render_type == "c":
         if sdf_or_series is None:
             raise ValueError(
-                "sdf_or_series must be a Pandas' Series, SpatialDataFrame"
+                "sdf_or_series must be a Pandas' Series"
                 + " or Pandas DataFrame for this type of renderer"
             )
         class_count = symbol_args.pop(
@@ -1232,9 +1272,7 @@ def generate_renderer(
             default_color = colors[0]
             color = colors[0]
         try:
-            if isinstance(sdf_or_series, SpatialDataFrame) or hasattr(
-                sdf_or_series, "geometry_type"
-            ):
+            if hasattr(sdf_or_series, "geometry_type"):
                 gt = sdf_or_series.geometry_type
             elif (
                 hasattr(sdf_or_series, "spatial")
@@ -1259,7 +1297,8 @@ def generate_renderer(
             "minValue": symbol_args.pop("min_value", 0),
             "field": symbol_args.pop("field"),
             "defaultSymbol": symbol_args.pop(
-                "default_symbol", create_symbol(geometry_type=gt, colors=default_color)
+                "default_symbol",
+                create_symbol(geometry_type=gt, colors=default_color),
             ),
             "defaultLabel": symbol_args.pop("default_label", "Other"),
             "classificationMethod": symbol_args.pop("method", None),
@@ -1289,9 +1328,7 @@ def generate_renderer(
             gt = None
             if pair[1] is None:
                 break
-            if isinstance(sdf_or_series, SpatialDataFrame) or hasattr(
-                sdf_or_series, "geometry_type"
-            ):
+            if hasattr(sdf_or_series, "geometry_type"):
                 gt = sdf_or_series.geometry_type
             elif (
                 hasattr(sdf_or_series, "spatial")
@@ -1310,7 +1347,7 @@ def generate_renderer(
                         symbol_type=st,
                         colors=color,
                         cstep=steps[idx],
-                        **symbol_args
+                        **symbol_args,
                     ),
                 }
             )
@@ -1347,7 +1384,7 @@ def generate_renderer(
                     render_type="s",
                     colors=colors,
                     sdf_or_series=sdf_or_series,
-                    **symbol_args
+                    **symbol_args,
                 ),
             ),
             "observationRenderer": symbol_args.pop(
@@ -1358,7 +1395,7 @@ def generate_renderer(
                     render_type="s",
                     colors=colors,
                     sdf_or_series=sdf_or_series,
-                    **symbol_args
+                    **symbol_args,
                 ),
             ),
             "trackRenderer": symbol_args.pop(
@@ -1369,7 +1406,7 @@ def generate_renderer(
                     render_type="s",
                     colors=colors,
                     sdf_or_series=sdf_or_series,
-                    **symbol_args
+                    **symbol_args,
                 ),
             ),
         }
