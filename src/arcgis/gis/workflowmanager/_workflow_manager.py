@@ -509,8 +509,8 @@ class JobManager:
         try:
             url = f"{self._url}/jobs/{id}"
             job_dict = self._gis._con.get(
-                        url, {"token": self._gis._con.token, "extProps": get_ext_props}
-                    )
+                url, {"token": self._gis._con.token, "extProps": get_ext_props}
+            )
             return Job(job_dict, self._gis, self._url)
         except:
             self._handle_error(sys.exc_info())
@@ -882,9 +882,9 @@ class WorkflowManager:
         """
         try:
             role_array = self._gis._con.get(
-                        "{base}/community/roles".format(base=self._url),
-                        params={"token": self._gis._con.token},
-                    )["roles"]
+                "{base}/community/roles".format(base=self._url),
+                params={"token": self._gis._con.token},
+            )["roles"]
             return_array = [WMRole(r) for r in role_array]
             return return_array
         except:
@@ -899,9 +899,9 @@ class WorkflowManager:
         """
         try:
             user_array = self._gis._con.get(
-                        "{base}/community/users".format(base=self._url),
-                        params={"token": self._gis._con.token},
-                    )["users"]
+                "{base}/community/users".format(base=self._url),
+                params={"token": self._gis._con.token},
+            )["users"]
             return_array = [self.user(u["username"]) for u in user_array]
             return return_array
         except:
@@ -918,9 +918,9 @@ class WorkflowManager:
         """
         try:
             user_array = self._gis._con.get(
-                        "{base}/community/users".format(base=self._url),
-                        params={"token": self._gis._con.token},
-                    )["users"]
+                "{base}/community/users".format(base=self._url),
+                params={"token": self._gis._con.token},
+            )["users"]
             return_array = [
                 self.user(u["username"]) for u in user_array if u["isAssignable"]
             ]
@@ -941,9 +941,9 @@ class WorkflowManager:
         """
         try:
             group_array = self._gis._con.get(
-                        "{base}/community/groups".format(base=self._url),
-                        params={"token": self._gis._con.token},
-                    )["groups"]
+                "{base}/community/groups".format(base=self._url),
+                params={"token": self._gis._con.token},
+            )["groups"]
             return_array = [
                 self.group(g["id"]) for g in group_array if g["isAssignable"]
             ]
@@ -962,9 +962,9 @@ class WorkflowManager:
         """
         try:
             return self._gis._con.get(
-                        "{base}/settings".format(base=self._url),
-                        params={"token": self._gis._con.token},
-                    )["settings"]
+                "{base}/settings".format(base=self._url),
+                params={"token": self._gis._con.token},
+            )["settings"]
         except:
             self._handle_error(sys.exc_info())
 
@@ -980,9 +980,9 @@ class WorkflowManager:
         """
         try:
             group_array = self._gis._con.get(
-                        "{base}/community/groups".format(base=self._url),
-                        params={"token": self._gis._con.token},
-                    )["groups"]
+                "{base}/community/groups".format(base=self._url),
+                params={"token": self._gis._con.token},
+            )["groups"]
             return_array = [self.group(g["id"]) for g in group_array]
             return return_array
         except:
@@ -1010,8 +1010,8 @@ class WorkflowManager:
 
         try:
             return self._gis._con.get(
-                        "{base}/searches".format(base=self._url), params=params
-                    )["searches"]
+                "{base}/searches".format(base=self._url), params=params
+            )["searches"]
         except:
             self._handle_error(sys.exc_info())
 
@@ -1028,9 +1028,9 @@ class WorkflowManager:
         """
         try:
             template_array = self._gis._con.get(
-                        "{base}/jobTemplates".format(base=self._url),
-                        params={"token": self._gis._con.token},
-                    )["jobTemplates"]
+                "{base}/jobTemplates".format(base=self._url),
+                params={"token": self._gis._con.token},
+            )["jobTemplates"]
             return_array = [
                 JobTemplate(t, self._gis, self._url) for t in template_array
             ]
@@ -1050,9 +1050,9 @@ class WorkflowManager:
         """
         try:
             diagram_array = self._gis._con.get(
-                        "{base}/diagrams".format(base=self._url),
-                        params={"token": self._gis._con.token},
-                    )["diagrams"]
+                "{base}/diagrams".format(base=self._url),
+                params={"token": self._gis._con.token},
+            )["diagrams"]
             return_array = [JobDiagram(d, self._gis, self._url) for d in diagram_array]
             return return_array
         except:
@@ -2705,8 +2705,7 @@ class JobTemplate(object):
         gis = object.__getattribute__(self, "_gis")
         url = object.__getattribute__(self, "_url")
         id = object.__getattribute__(self, "job_template_id")
-        full_object = gis._con.get(url, {"token": gis._con.token}
-        )
+        full_object = gis._con.get(url, {"token": gis._con.token})
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
