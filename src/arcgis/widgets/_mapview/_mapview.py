@@ -1255,6 +1255,10 @@ class MapView(widgets.DOMWidget):
         elif "defaultBasemap" in self.gis.properties:
             self._gallery_basemaps["default"] = self.gis.properties["defaultBasemap"]
             self._basemap = "default"
+            # Add to text property so default is recorded
+            self._default_webscene_text_property["baseMap"] = self._gallery_basemaps[
+                "default"
+            ]
             # You need to re-write this dict to trigger the JS side change
             copy_gallery = dict(self._gallery_basemaps)
             self._gallery_basemaps = {}
