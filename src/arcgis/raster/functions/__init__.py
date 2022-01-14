@@ -6685,7 +6685,7 @@ def segment_mean_shift(
     ArcGIS Image Server to use this resource.
     At versions prior to 10.5, the hosting ArcGIS Server needs to have a Spatial Analyst license.
 
-    When specifying arguments for segment_Mean_shift, use either spectral_detail, spatial_detail as a pair, or use
+    When specifying arguments for ``segment_mean_shift``, use either spectral_detail, spatial_detail as a pair, or use
     spectral_radius, spatial_radius. They have an inverse relationship. spectral_radius = 21 - spectral_detail,
     spatial_radius  = 21 - spectral_radius
 
