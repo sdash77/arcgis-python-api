@@ -19,7 +19,10 @@ def read_suite(
     """
     suite = {}
     with open(suite_file_path, "r") as f:
-        suite = yaml.load(f)
+        try:
+            suite = yaml.load(f, Loader=yaml.FullLoader)
+        except:
+            suite = yaml.load(f)
 
     replace_placeholders(suite, GEOSAURUS_ROOT_DIR, arcgis_python_api_dir)
     unglob_paths(suite)

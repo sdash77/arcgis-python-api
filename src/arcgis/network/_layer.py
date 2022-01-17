@@ -287,6 +287,12 @@ class RouteLayer(NetworkLayer):
         preserve_objectid=False,
         future=False,
         time_windows_are_utc=False,
+        return_traversed_edges=None,
+        return_traversed_junctions=None,
+        return_traversed_turns=None,
+        geometry_precision=None,
+        geometry_precision_z=None,
+        geometry_precision_m=None,
     ):
         """
         The solve operation is performed on a network layer resource.
@@ -459,6 +465,18 @@ class RouteLayer(NetworkLayer):
         time_windows_are_utc                    Optional boolean. Specify whether the TimeWindowStart and TimeWindowEnd
                                                 attribute values on stops are specified in coordinated universal time (UTC)
                                                 or geographically local time.
+        -----------------------------------     --------------------------------------------------------------------
+        return_traversed_edges                  Optional boolean. Specify whether traversed edges will be returned by the service.
+        -----------------------------------     --------------------------------------------------------------------
+        return_traversed_junctions              Optional boolean. Specify whether traversed junctions will be returned by the service.
+        -----------------------------------     --------------------------------------------------------------------
+        return_traversed_turns                  Optional boolean. Specify whether traversed turns will be returned by the service.
+        -----------------------------------     --------------------------------------------------------------------
+        geometry_precision                      Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to x/y values only (not m- or z-values).
+        -----------------------------------     --------------------------------------------------------------------
+        geometry_precision_z                    Optional Integer. Use this parameter specify the number of decimal places in the response geometries returned by solve operation. This applies to z-value only.
+        -----------------------------------     --------------------------------------------------------------------
+        geometry_precision_m                    Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to m-value only.
         ===================================     ====================================================================
 
 
@@ -589,10 +607,23 @@ class RouteLayer(NetworkLayer):
             params["overrides"] = overrides
         if not preserve_objectid is None:
             params["preserveObjectID"] = preserve_objectid
+        if not geometry_precision is None:
+            params["geometryPrecision"] = geometry_precision
+        if not geometry_precision_z is None:
+            params["geometryPrecisionZ"] = geometry_precision_z
+        if not geometry_precision_m is None:
+            params["geometryPrecisionM"] = geometry_precision_m
+        if not return_traversed_edges is None:
+            params["returnTraversedEdges"] = return_traversed_edges
+        if not return_traversed_junctions is None:
+            params["returnTraversedJunctions"] = return_traversed_junctions
+        if not return_traversed_turns is None:
+            params["returnTraversedTurns"] = return_traversed_turns
+
         if future:
             f = self._run_async(
                 self._con.post,
-                **{"path": url, "postdata": params, "token": self._gis._con.token},
+                **{"path": url, "postdata": params},
             )
             return NAJob(future=f, task="RouteLayer Solve")
         return self._con.post(path=url, postdata=params)  # ,
@@ -646,6 +677,9 @@ class ServiceAreaLayer(NetworkLayer):
         preserve_objectid=False,
         future=False,
         ignore_invalid_locations=True,
+        geometry_precision=None,
+        geometry_precision_z=None,
+        geometry_precision_m=None,
     ):
         """The solve service area operation is performed on a network layer
         resource of type service area (layerType is esriNAServerServiceArea).
@@ -800,6 +834,9 @@ class ServiceAreaLayer(NetworkLayer):
             ignoreInvalidLocations - If true, the solver will ignore invalid
                                      locations. Otherwise, it will raise an error.
                                      Default is true.
+            geometry_precision - Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to x/y values only (not m- or z-values).
+            geometry_precision_z - Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to z values only.
+            geometry_precision_m - Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to m values only.
 
 
         """
@@ -901,10 +938,16 @@ class ServiceAreaLayer(NetworkLayer):
             params["overrides"] = overrides
         if not preserve_objectid is None:
             params["preserveObjectID"] = preserve_objectid
+        if not geometry_precision is None:
+            params["geometryPrecision"] = geometry_precision
+        if not geometry_precision_z is None:
+            params["geometryPrecisionZ"] = geometry_precision_z
+        if not geometry_precision_m is None:
+            params["geometryPrecisionM"] = geometry_precision_m
         if future:
             f = self._run_async(
                 self._con.post,
-                **{"path": url, "postdata": params, "token": self._gis._con.token},
+                **{"path": url, "postdata": params},
             )
             return NAJob(future=f, task="Solve Service Area")
         return self._con.post(path=url, postdata=params)
@@ -959,6 +1002,12 @@ class ClosestFacilityLayer(NetworkLayer):
         future=False,
         ignore_invalid_locations=True,
         directions_output_type=None,
+        return_traversed_edges=None,
+        return_traversed_junctions=None,
+        return_traversed_turns=None,
+        geometry_precision=None,
+        geometry_precision_z=None,
+        geometry_precision_m=None,
     ):
         """The solve operation is performed on a network layer resource of
         type closest facility (layerType is esriNAServerClosestFacilityLayer).
@@ -1120,6 +1169,14 @@ class ClosestFacilityLayer(NetworkLayer):
                                      locations. Otherwise, it will raise an error.
                                      Default is true.
 
+            return_traversed_edges - Optional boolean. Specify whether traversed edges will be returned by the service.
+            return_traversed_junctions - Optional boolean. Specify whether traversed junctions will be returned by the service.
+            return_traversed_turns - Optional boolean. Specify whether traversed turns will be returned by the service.
+            geometry_precision - Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to x/y values only (not m- or z-values).
+            geometry_precision_z - Optional Integer. Use this parameter specify the number of decimal places in the response geometries returned by solve operation. This applies to z-value only.
+            geometry_precision_m - Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to m-value only.
+
+
         """
 
         if not self.properties.layerType == "esriNAServerClosestFacilityLayer":
@@ -1224,6 +1281,18 @@ class ClosestFacilityLayer(NetworkLayer):
             params["overrides"] = overrides
         if not preserve_objectid is None:
             params["preserveObjectID"] = preserve_objectid
+        if not geometry_precision is None:
+            params["geometryPrecision"] = geometry_precision
+        if not geometry_precision_z is None:
+            params["geometryPrecisionZ"] = geometry_precision_z
+        if not geometry_precision_m is None:
+            params["geometryPrecisionM"] = geometry_precision_m
+        if not return_traversed_edges is None:
+            params["returnTraversedEdges"] = return_traversed_edges
+        if not return_traversed_junctions is None:
+            params["returnTraversedJunctions"] = return_traversed_junctions
+        if not return_traversed_turns is None:
+            params["returnTraversedTurns"] = return_traversed_turns
         if future:
             f = self._run_async(self._con.post, **{"path": url, "postdata": params})
             return NAJob(future=f, task="Solve Closest Facility")
@@ -1266,6 +1335,8 @@ class ODCostMatrixLayer(NetworkLayer):
         return_z=False,
         overrides=None,
         future=False,
+        geometry_precision=None,
+        geometry_precision_z=None,
     ):
         """
 
@@ -1375,6 +1446,10 @@ class ODCostMatrixLayer(NetworkLayer):
         overrides                                Optional Dict. Specify additional settings that can influence the behavior of the solver.
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, the result will be a `SolveJob` object and results will be returned asynchronously.
+        ------------------------------------     --------------------------------------------------------------------
+        geometry_precision                       Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to x/y values only (not m- or z-values).
+        ------------------------------------     --------------------------------------------------------------------
+        geometry_precision_z                     Optional Integer. Use this parameter specify the number of decimal places in the response geometries returned by solve operation. This applies to z-value only.
         ====================================     ====================================================================
 
         :return: Dictionary or `NAJob` when `future=True`
@@ -1464,6 +1539,11 @@ class ODCostMatrixLayer(NetworkLayer):
             params["returnZ"] = return_z
         if not overrides is None:
             params["overrides"] = overrides
+        if not geometry_precision is None:
+            params["geometryPrecision"] = geometry_precision
+        if not geometry_precision_z is None:
+            params["geometryPrecisionZ"] = geometry_precision_z
+
         if future:
             f = self._run_async(self._con.post, **{"path": url, "postdata": params})
             return NAJob(future=f, task="Solve OD Cost Matrix")

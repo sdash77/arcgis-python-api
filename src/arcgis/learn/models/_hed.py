@@ -72,7 +72,7 @@ class CustomHED:
 
         return final_loss
 
-    def post_process(self, pred, thres=0.5, thinning=True):
+    def post_process(self, pred, thres=0.5, thinning=True, prob_raster=False):
         """
         In this function you have to return list with appended output for each image in the batch with shape [C=1,H,W]!
 
@@ -82,8 +82,11 @@ class CustomHED:
         import numpy as np
 
         post_processed_pred = []
-        pred = pred[-1]
-        if thinning:
+        if isinstance(pred, list):
+            pred = pred[-1]
+        if prob_raster:
+            return pred
+        elif thinning:
             for p in pred:
                 p = self.torch.unsqueeze(
                     self.torch.tensor(
@@ -96,9 +99,9 @@ class CustomHED:
                     dim=0,
                 )
                 post_processed_pred.append(p)
+            return post_processed_pred
         else:
             return (pred >= thres).byte()
-        return post_processed_pred
 
 
 class HEDEdgeDetector(ModelExtension):

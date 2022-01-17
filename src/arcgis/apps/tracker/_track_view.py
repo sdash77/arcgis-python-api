@@ -181,7 +181,7 @@ class MobileUserManager:
     ==================     ====================================================================
     """
 
-    _VDQ_RE = """^created_user\s+(?:in|IN)\s+\(\s*((?:'[^']*')(?:\s*,\s*'[^']*')*)\s*\)(?:\s+((?:and|AND).*))?$"""
+    _VDQ_RE = r"""^created_user\s+(?:in|IN)\s+\(\s*((?:'[^']*')(?:\s*,\s*'[^']*')*)\s*\)(?:\s+((?:and|AND).*))?$"""
     _DEFAULT_VDQ = """created_user in ('')"""
 
     def __init__(self, track_view):

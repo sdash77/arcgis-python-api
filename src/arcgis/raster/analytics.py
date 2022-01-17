@@ -1300,7 +1300,7 @@ def copy_raster(
     context=None,
     raster_type_name=None,
     raster_type_params=None,
-    md_to_upload=None,
+    source_mosaic_dataset=None,
     *,
     gis=None,
     future=False,
@@ -1418,7 +1418,7 @@ def copy_raster(
                                          "Aerial", "ScannedAerial","ZY3-CRESDA"]
 
                                          If an existing mosaic dataset is being published as an 
-                                         imagery layer using the ``md_to_upload`` parameter, the
+                                         imagery layer using the ``source_mosaic_dataset`` parameter, the
                                          ``raster_type_name`` parameter can be set to None as it is not required.
 
                                          Example:
@@ -1459,7 +1459,7 @@ def copy_raster(
                                             "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
                                             "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
     --------------------------------     --------------------------------------------------------------------
-    md_to_upload                         Optional string. Path to the existing mosaic dataset to be published 
+    source_mosaic_dataset                Optional string. Path to the existing mosaic dataset to be published 
                                          as an imagery layer.
 
                                          To publish an existing mosaic dataset, specify the path to the input 
@@ -1585,7 +1585,7 @@ def copy_raster(
         landsat_mosaic = copy_raster(input_raster=[r"C:\data\landsat_data_folder"],
                                      output_name="mosaic_datset_op",
                                      context={"upload_properties":{"displayProgress":True}},
-                                     md_to_upload=r"C:\data\md.gdb\landsat",
+                                     source_mosaic_dataset=r"C:\data\md.gdb\landsat",
                                      gis = gis)
 
     """
@@ -1609,7 +1609,7 @@ def copy_raster(
         future=future,
         raster_type_name=raster_type_name,
         raster_type_params=raster_type_params,
-        md_to_upload=md_to_upload,
+        md_to_upload=source_mosaic_dataset,
         **kwargs
     )
 
@@ -1781,8 +1781,8 @@ def summarize_raster_within(
                                              set to Percentile.
                                              Parameter available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
-                                             number of values from the input value raster to be calculated are even.
+    percentile_interpolation_type            Optional str. Specifies the method of interpolation to be used when the 
+                                             specified percentile value lies between two input cell values.
                                                 - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
                                                 - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
                                                 - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output pixel type is floating point.
@@ -3142,7 +3142,7 @@ def create_image_collection(
     raster_type_params=None,
     out_sr=None,
     context=None,
-    md_to_upload=None,
+    source_mosaic_dataset=None,
     *,
     gis=None,
     future=False,
@@ -3162,9 +3162,9 @@ def create_image_collection(
     For this functionality to work on ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.8)
     needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
 
-    ==================                   ====================================================================
+    ======================               ====================================================================
     **Argument**                         **Description**
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     image_collection                     | Required, the name of the image collection to create.
                   
                                          | The image collection can be an existing image service, in \
@@ -3177,7 +3177,7 @@ def create_image_collection(
                                          | This parameter can be the Item representing an existing image_collection \
                                          or it can be a string representing the name of the image_collection \
                                          (either existing or to be created.)
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     input_rasters                        Required, the list of input rasters to be added to
                                          the image collection being created. This parameter can
                                          be any one of the following:
@@ -3190,7 +3190,7 @@ def create_image_collection(
 
                                          The function can create hosted imagery layers on enterprise and AGOL from 
                                          local raster datasets by uploading the data to the server.
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     raster_type_name                     | Required string. The name of the raster type to use for adding data to \
                                          the image collection.
 
@@ -3204,13 +3204,13 @@ def create_image_collection(
                                          "ZY3-CRESDA"]         
 
                                          If an existing mosaic dataset is being published as a 
-                                         dynamic imagery layer using the ``md_to_upload`` parameter, the
+                                         dynamic imagery layer using the ``source_mosaic_dataset`` parameter, the
                                          ``raster_type_name`` parameter can be set to None as it is not required.
 
 
                                          Example:
                                             "QuickBird"
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     raster_type_params                   | Optional dict. Additional ``raster_type`` specific parameters.
         
                                          | The process of add rasters to the image collection can be \
@@ -3245,7 +3245,7 @@ def create_image_collection(
                                             {"productType":"All","processingTemplate":"Pansharpen",
                                             "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
                                             "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     out_sr                               Optional integer. Additional parameters of the service.
                             
                                          The following additional parameters can be specified:
@@ -3256,7 +3256,7 @@ def create_image_collection(
 
                                          If the raster type name is set to "UAV/UAS", the spatial reference of the
                                          output image collection will be determined by the raster type parameters defined.
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     context                              | Optional dict. The context parameter is used to provide additional input parameters.
     
                                          | Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
@@ -3317,8 +3317,8 @@ def create_image_collection(
                                          Example:
                                             | {"fields": [{"name": "cloud_cover", "type": "Long"},
                                             | {"name": "cloud_shadow_count", "type": "Long"}]}
-    ------------------                   --------------------------------------------------------------------
-    md_to_upload                         Optional string. Path to the existing mosaic dataset to be published 
+    ----------------------               --------------------------------------------------------------------
+    source_mosaic_dataset                Optional string. Path to the existing mosaic dataset to be published 
                                          as a hosted dynamic imagery layer.
 
                                          To publish an existing mosaic dataset, specify the path to the input 
@@ -3333,19 +3333,19 @@ def create_image_collection(
 
                                          Example:
                                             "./data/temp_uploaded.gdb/test"
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                          results will be returned asynchronously.
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                          not exist, with the given folder name and persists the output in this folder.
                                          The dictionary returned by the gis.content.create_folder() can also be passed in as input.
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
-    ==================                   ====================================================================
+    ======================               ====================================================================
 
     :return: The imagery layer item
 
@@ -3864,7 +3864,7 @@ def create_image_collection(
                                                   input_rasters=[r"C:\data\landsat_data_folder"],
                                                   raster_type_name=None,
                                                   context={"upload_properties":{"displayProgress":True}},
-                                                  md_to_upload=r"C:\data\md.gdb\landsat",
+                                                  source_mosaic_dataset=r"C:\data\md.gdb\landsat",
                                                   gis=gis)
 
     """
@@ -3879,7 +3879,7 @@ def create_image_collection(
         out_sr=out_sr,
         context=context,
         future=future,
-        md_to_upload=md_to_upload,
+        md_to_upload=source_mosaic_dataset,
         **kwargs
     )
 
@@ -8540,12 +8540,12 @@ def zonal_statistics_as_table(
                                              - True - Statistics will be calculated for all dimensions (such as time or depth) \
                                              of a multidimensional image service.
     ------------------------------------     --------------------------------------------------------------------
-    percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
-                                             number of values from the input value raster to be calculated are even.
+    percentile_interpolation_type            Optional str. Specifies the method of interpolation to be used when 
+                                             the specified percentile value lies between two input cell values.
 
                                                 - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
-                                                - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
-                                                - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output pixel type is floating point.
+                                                - NEAREST - Nearest value to the desired percentile.
+                                                - LINEAR - Weighted average of two surrounding values from the desired percentile.
     ------------------------------------     --------------------------------------------------------------------
     output_name                              Optional string. Name of the output feature item or table item to be created.
                                              If not provided, a random name is generated by the method and used as 
