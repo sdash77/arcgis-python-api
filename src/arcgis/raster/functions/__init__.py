@@ -11525,8 +11525,8 @@ def ccdc_analysis(
 
     .. note::
         This raster function is only supported in conjunction with the detect_change_using_change_analysis_raster function.
-        To persist the output give the output of the ccdc_analysis function as input to the detect_change_using_change_analysis_raster()
-        and use the save() method on the resulting layer.
+        To persist the output give the output of the ccdc_analysis function as input to the :meth:`~arcgis.raster.functions.detect_change_using_change_analysis_raster`
+        method and use the ``save()`` method on the resulting layer.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -11560,12 +11560,18 @@ def ccdc_analysis(
                                              that must occur before an event is considered a change. A pixel must
                                              be flagged as an anomaly for the specified number of consecutive
                                              time slices before it is considered a true change. The default value is 6.
+
+                                             Example:
+                                                6
     ------------------------------------     --------------------------------------------------------------------
     update_frequency                         Optional Float. The value that represents the update frequency.
                                              The default value is 1.
+
+                                             Example:
+                                                1
     ====================================     ====================================================================
 
-    :return: Imagery layer item
+    :return: The output raster with the function applied.
 
     .. code-block:: python
 
@@ -11634,8 +11640,8 @@ def landtrendr_analysis(
 
     .. note::
         This raster function is only supported in conjunction with the detect_change_using_change_analysis_raster function.
-        To persist the output give the output of the landtrendr_analysis function as input to the detect_change_using_change_analysis_raster()
-        and use the save() method on the resulting layer.
+        To persist the output give the output of the landtrendr_analysis function as input to the :meth:`~arcgis.raster.functions.detect_change_using_change_analysis_raster`
+        method and use the ``save()`` method on the resulting layer.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -11659,13 +11665,13 @@ def landtrendr_analysis(
                                              Example:
                                                 "06-30"
     ------------------------------------     --------------------------------------------------------------------
-    max_num_segments                         Optional int. The maximum number of segments to be fitted to the
+    max_num_segments                         Optional integer. The maximum number of segments to be fitted to the
                                              time series for each pixel. The default is 5.
 
                                              Example:
                                                 5
     ------------------------------------     --------------------------------------------------------------------
-    vertex_count_overshoot                   Optional int. The number of additional vertices beyond
+    vertex_count_overshoot                   Optional integer. The number of additional vertices beyond
                                              max_num_segments + 1 that can be used to fit the model during
                                              the initial stage of identifying vertices. Later in the modeling
                                              process, the number of additional vertices will be reduced to
@@ -11708,7 +11714,7 @@ def landtrendr_analysis(
                                              Example:
                                                 True
     ------------------------------------     --------------------------------------------------------------------
-    min_num_observations                     Optional int. The minimum number of valid observations required to
+    min_num_observations                     Optional integer. The minimum number of valid observations required to
                                              perform fitting. The number of years in the input multidimensional
                                              dataset must be equal to or greater than this value. The default is 6.
 
@@ -11752,7 +11758,7 @@ def landtrendr_analysis(
                                                 True
     ====================================     ====================================================================
 
-    :return: Imagery layer item
+    :return: The output raster with the function applied.
 
     .. code-block:: python
 
