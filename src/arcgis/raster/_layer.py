@@ -1295,12 +1295,12 @@ class ImageryLayer(Layer):
             params["geometryType"] = "esriGeometryPoint"
         elif isinstance(geometry, Polygon):
             params["geometryType"] = "esriGeometryPolygon"
-        elif isinstance(from_geometry, (Envelope, PropertyMap)):
+        elif isinstance(geometry, (Envelope, PropertyMap)):
             params["geometryType"] = "esriGeometryEnvelope"
-        elif isinstance(from_geometry, dict):
-            if "x" in from_geometry:
+        elif isinstance(geometry, dict):
+            if "x" in geometry:
                 params["geometryType"] = "esriGeometryPoint"
-            elif "xmin" in from_geometry:
+            elif "xmin" in geometry:
                 params["geometryType"] = "esriGeometryEnvelope"
             else:
                 params["geometryType"] = "esriGeometryPolygon"
