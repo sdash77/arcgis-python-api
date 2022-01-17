@@ -720,36 +720,35 @@ class TestWorkflowManager(unittest.TestCase):
     def test_get_valid_searches(self):
         # Arrange
         valid_search = {
+            "searchId": "rrUF60TFQCe2K0vtgSsYpA",
+            "name": "My Jobs",
             "definition": {
-                "displayNames": [
-                    "Assigned To",
-                    "Name",
-                    "Current Step",
-                    "Type",
-                    "Priority",
-                    "Due Date",
-                    "Status",
-                ],
+                "q": "\"assignedType='User' AND closed=0 AND assignedTo='\" + $currentUser + \"' \"",
                 "fields": [
                     "assignedTo",
                     "jobName",
-                    "currentStep",
-                    "jobTemplateName",
-                    "priority",
                     "dueDate",
+                    "jobTemplateName",
+                    "currentStep",
+                    "priority",
                     "jobStatus",
                 ],
-                "num": 50,
-                "q": "\"assignedType='User' AND closed=0 AND assignedTo='\" "
-                '+ $currentUser + "\' "',
+                "displayNames": [
+                    "Assigned To",
+                    "Name",
+                    "Due",
+                    "Type",
+                    "Step",
+                    "Priority",
+                    "Status",
+                ],
                 "sortFields": [
                     {"field": "jobName", "sortOrder": "Asc"},
                     {"field": "priority", "sortOrder": "Asc"},
                 ],
                 "start": 0,
+                "num": 50,
             },
-            "name": "My Jobs",
-            "searchId": "rrUF60TFQCe2K0vtgSsYpA",
             "searchType": "Standard",
             "sortIndex": 1000,
         }
@@ -1034,6 +1033,129 @@ class TestWorkflowManager(unittest.TestCase):
         # Assert
         self.assertIsInstance(actual, bool, "Incorrect return type")
         self.assertTrue(actual, "Incorrectly updated search")
+
+    # endregion
+
+    # region Share Searches
+
+    def test_share_details_returns_successfully(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Search   " + uniqueness
+        search_id = uniqueness[0:22]
+        default_group_name = "Workflow Manager Admin " + self.connection.item_name
+        groups = self.connection.workflow_manager.groups
+
+        for group in groups:
+            if group["title"] == default_group_name:
+                break
+
+        search = self.connection.workflow_manager.saved_searches.create(
+            name=name,
+            definition={
+                "q": "closed=0",
+                "start": 0,
+                "num": 50,
+                "fields": [
+                    "assignedTo",
+                    "jobName",
+                    "currentStep",
+                    "jobTemplateName",
+                    "priority",
+                    "dueDate",
+                    "jobStatus",
+                ],
+                "displayNames": [
+                    "Assigned To",
+                    "Name",
+                    "Current Step",
+                    "Type",
+                    "Priority",
+                    "Due Date",
+                    "Status",
+                ],
+                "sortFields": [
+                    {"field": "jobName", "sortOrder": "Asc"},
+                    {"field": "priority", "sortOrder": "Asc"},
+                ],
+            },
+            search_type="Standard",
+            sort_index=5000,
+            search_id=search_id,
+        )
+
+        # Act
+        actual = self.connection.workflow_manager.saved_searches.share_details(search)
+
+        # Assert
+        self.assertIsInstance(actual, list, "Incorrect return type")
+        self.assertEqual(actual, [], "Incorrect return type")
+
+        self.connection.workflow_manager.saved_searches.share(search, [group["id"]])
+
+        actual_two = self.connection.workflow_manager.saved_searches.share_details(
+            search
+        )
+
+        self.assertIsInstance(actual_two, list, "Incorrect return type")
+        self.assertEqual(actual_two, [group["id"]], "Incorrect return type")
+
+    def test_share_saved_search_returns_successfully(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Search   " + uniqueness
+        search_id = uniqueness[0:22]
+        default_group_name = "Workflow Manager Admin " + self.connection.item_name
+        groups = self.connection.workflow_manager.groups
+
+        for group in groups:
+            if group["title"] == default_group_name:
+                break
+
+        search = self.connection.workflow_manager.saved_searches.create(
+            name=name,
+            definition={
+                "q": "closed=0",
+                "start": 0,
+                "num": 50,
+                "fields": [
+                    "assignedTo",
+                    "jobName",
+                    "currentStep",
+                    "jobTemplateName",
+                    "priority",
+                    "dueDate",
+                    "jobStatus",
+                ],
+                "displayNames": [
+                    "Assigned To",
+                    "Name",
+                    "Current Step",
+                    "Type",
+                    "Priority",
+                    "Due Date",
+                    "Status",
+                ],
+                "sortFields": [
+                    {"field": "jobName", "sortOrder": "Asc"},
+                    {"field": "priority", "sortOrder": "Asc"},
+                ],
+            },
+            search_type="Standard",
+            sort_index=5000,
+            search_id=search_id,
+        )
+
+        # Act
+        actual = self.connection.workflow_manager.saved_searches.share(
+            search, [group["id"]]
+        )
+
+        # Assert
+        self.assertIsInstance(actual, bool, "Incorrect return type")
+        self.assertEqual(actual, True, "Incorrect return type")
 
     # endregion
 
@@ -1402,6 +1524,34 @@ class TestWorkflowManager(unittest.TestCase):
         # Act
         try:
             self.connection.workflow_manager.jobs.close(test_id)
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
+    # region Reopen Jobs
+
+    def test_reopen_jobs(self):
+        # Arrange
+        id_list = self.create_job(count=3)
+
+        # Act
+        close_jobs = self.connection.workflow_manager.jobs.close(id_list)
+        reopen_jobs = self.connection.workflow_manager.jobs.reopen(id_list)
+
+        # Assert
+        self.assertTrue(close_jobs, "Incorrect return type")
+        self.assertTrue(reopen_jobs, "Incorrect return type")
+
+    def test_reopen_jobs_returns_not_found(self):
+        # Arrange
+        test_id = ["bad_id_12345"]
+
+        # Act
+        try:
+            self.connection.workflow_manager.jobs.reopen(test_id)
         except Exception as testException:
             assert True, (
                 "Expected error returned during test: " + testException.__str__()
@@ -1834,6 +1984,45 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Comments
+
+    def test_comments_returns_successfully(self):
+        # Arrange
+        job_id = self.create_job()[0]
+        url = "../README.md"
+
+        # Act
+        self.connection.workflow_manager.jobs.get(job_id).add_comment(
+            "This is a comment"
+        )
+        self.connection.workflow_manager.jobs.get(job_id).add_comment(
+            "This is a comment"
+        )
+        comments = self.connection.workflow_manager.jobs.get(job_id).comments
+        has_comment = len(comments) == 2
+
+        # Assert
+        self.assertIsInstance(comments, list, "Incorrect return type")
+        self.assertTrue(has_comment, "comments from job are not returned")
+
+    def test_add_comments_returns_successfully(self):
+        # Arrange
+        job_id = self.create_job()[0]
+        url = "../README.md"
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.get(job_id).add_comment(
+            "This is a comment"
+        )
+        comments = self.connection.workflow_manager.jobs.get(job_id).comments
+        has_comment = comments[0]["commentId"] == actual
+
+        # Assert
+        self.assertIsInstance(actual, str, "Incorrect return type")
+        self.assertTrue(has_comment, "commentId is not added to the job")
+
+    # endregion
+
     # endregion
 
     # region Job Template Tests
@@ -1990,6 +2179,63 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Share Templates
+
+    def test_job_template_share_details_returns_successfully(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Search   " + uniqueness
+        search_id = uniqueness[0:22]
+        default_group_name = "Workflow Manager Admin " + self.connection.item_name
+        groups = self.connection.workflow_manager.groups
+
+        for group in groups:
+            if group["title"] == default_group_name:
+                break
+
+        template_id = self.create_job_template()
+
+        # Act
+        template = self.connection.workflow_manager.job_template(template_id)
+        actual = template.share_details
+
+        # Assert
+        self.assertIsInstance(actual, list, "Incorrect return type")
+        self.assertEqual(actual, [], "Incorrect return type")
+
+        template.share([group["id"]])
+
+        actual_two = template.share_details
+
+        self.assertIsInstance(actual_two, list, "Incorrect return type")
+        self.assertEqual(actual_two, [group["id"]], "Incorrect return type")
+
+    def test_share_job_template_returns_successfully(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Search   " + uniqueness
+        search_id = uniqueness[0:22]
+        default_group_name = "Workflow Manager Admin " + self.connection.item_name
+        groups = self.connection.workflow_manager.groups
+
+        for group in groups:
+            if group["title"] == default_group_name:
+                break
+
+        template_id = self.create_job_template()
+
+        # Act
+        template = self.connection.workflow_manager.job_template(template_id)
+        actual = template.share([group["id"]])
+
+        # Assert
+        self.assertIsInstance(actual, bool, "Incorrect return type")
+        self.assertEqual(actual, True, "Incorrect return type")
+
+    # endregion
+
     # endregion
 
     # region Diagram Tests
@@ -2052,6 +2298,364 @@ class TestWorkflowManager(unittest.TestCase):
         # Act
         with self.assertRaisesRegex(Exception, "Diagram bad_id_12345 was not found"):
             self.connection.workflow_manager.diagram(test_id)
+
+    # endregion
+
+    # region Get Diagram Version
+
+    def test_get_specific_diagram_version(self):
+        # Arrange
+        old_id = self.create_diagram()
+        actual = self.connection.workflow_manager.update_diagram(
+            body={
+                "annotations": [],
+                "active": True,
+                "data_sources": [
+                    {"name": "dsource", "sourceType": "string", "url": "string"}
+                ],
+                "description": "UPDATED",
+                "diagram_id": old_id,
+                "diagram_name": "UPDATED " + str(datetime.datetime.now()),
+                "diagram_version": 2,
+                "display_grid": True,
+                "initial_step_id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                "initial_step_name": "Start/End",
+                "steps": [
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": False,
+                        "color": "130, 202, 237",
+                        "description": "Step to be put at the start and end of a workflow",
+                        "helpText": "Start/End help text",
+                        "helpUrl": "Start/End help url",
+                        "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                        "labelColor": "black",
+                        "name": "Start/End",
+                        "outlineColor": "130, 202, 237",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0,0,100,50",
+                        "proceedNext": True,
+                        "shape": 3,
+                        "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                    },
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": True,
+                        "color": "242, 226, 121",
+                        "description": "Step to indicate manual work, with no additional logic",
+                        "helpText": "Manual Step help text",
+                        "helpUrl": "Manual Step help url",
+                        "id": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                        "labelColor": "black",
+                        "name": "Manual Step 1",
+                        "outlineColor": "242, 226, 121",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "f7c67858-5ccf-f428-9356-72ada9d8600a",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 126}, {"x": 0, "y": 174}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0, -100, 100, 50",
+                        "proceedNext": True,
+                        "shape": 1,
+                        "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
+                    },
+                ],
+            }
+        )
+        version_one = self.connection.workflow_manager.diagram_version(old_id, 1)
+        version_two = self.connection.workflow_manager.diagram_version(old_id, 2)
+
+        # Act
+
+        # Assert
+        self.assertEqual(
+            version_one.description, "Test Description", "Incorrect Version description"
+        )
+        self.assertEqual(
+            version_two.description, "UPDATED", "Incorrect Version description"
+        )
+
+    def test_get_diagram_version_returns_error(self):
+        # Arrange
+        old_id = self.create_diagram()
+        actual = self.connection.workflow_manager.update_diagram(
+            body={
+                "annotations": [],
+                "active": True,
+                "data_sources": [
+                    {"name": "dsource", "sourceType": "string", "url": "string"}
+                ],
+                "description": "UPDATED",
+                "diagram_id": old_id,
+                "diagram_name": "UPDATED " + str(datetime.datetime.now()),
+                "diagram_version": 2,
+                "display_grid": True,
+                "initial_step_id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                "initial_step_name": "Start/End",
+                "steps": [
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": False,
+                        "color": "130, 202, 237",
+                        "description": "Step to be put at the start and end of a workflow",
+                        "helpText": "Start/End help text",
+                        "helpUrl": "Start/End help url",
+                        "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                        "labelColor": "black",
+                        "name": "Start/End",
+                        "outlineColor": "130, 202, 237",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0,0,100,50",
+                        "proceedNext": True,
+                        "shape": 3,
+                        "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                    },
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": True,
+                        "color": "242, 226, 121",
+                        "description": "Step to indicate manual work, with no additional logic",
+                        "helpText": "Manual Step help text",
+                        "helpUrl": "Manual Step help url",
+                        "id": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                        "labelColor": "black",
+                        "name": "Manual Step 1",
+                        "outlineColor": "242, 226, 121",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "f7c67858-5ccf-f428-9356-72ada9d8600a",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 126}, {"x": 0, "y": 174}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0, -100, 100, 50",
+                        "proceedNext": True,
+                        "shape": 1,
+                        "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
+                    },
+                ],
+            }
+        )
+
+        # Act
+        try:
+            # version 3 does not exist
+            self.connection.workflow_manager.diagram_version(old_id, 3)
+
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
+    # region Delete Diagram Version
+
+    def test_delete_specific_diagram_version(self):
+        # Arrange
+        old_id = self.create_diagram()
+        actual = self.connection.workflow_manager.update_diagram(
+            body={
+                "annotations": [],
+                "active": True,
+                "data_sources": [
+                    {"name": "dsource", "sourceType": "string", "url": "string"}
+                ],
+                "description": "UPDATED",
+                "diagram_id": old_id,
+                "diagram_name": "UPDATED " + str(datetime.datetime.now()),
+                "diagram_version": 2,
+                "display_grid": True,
+                "initial_step_id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                "initial_step_name": "Start/End",
+                "steps": [
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": False,
+                        "color": "130, 202, 237",
+                        "description": "Step to be put at the start and end of a workflow",
+                        "helpText": "Start/End help text",
+                        "helpUrl": "Start/End help url",
+                        "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                        "labelColor": "black",
+                        "name": "Start/End",
+                        "outlineColor": "130, 202, 237",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0,0,100,50",
+                        "proceedNext": True,
+                        "shape": 3,
+                        "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                    },
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": True,
+                        "color": "242, 226, 121",
+                        "description": "Step to indicate manual work, with no additional logic",
+                        "helpText": "Manual Step help text",
+                        "helpUrl": "Manual Step help url",
+                        "id": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                        "labelColor": "black",
+                        "name": "Manual Step 1",
+                        "outlineColor": "242, 226, 121",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "f7c67858-5ccf-f428-9356-72ada9d8600a",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 126}, {"x": 0, "y": 174}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0, -100, 100, 50",
+                        "proceedNext": True,
+                        "shape": 1,
+                        "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
+                    },
+                ],
+            }
+        )
+        version_one = self.connection.workflow_manager.diagram_version(old_id, 1)
+        version_two = self.connection.workflow_manager.diagram_version(old_id, 2)
+
+        # Act
+        actual = self.connection.workflow_manager.delete_diagram_version(old_id, 2)
+
+        # Assert
+        self.assertEqual(
+            version_one.description, "Test Description", "Incorrect Version description"
+        )
+        self.assertEqual(
+            version_two.description, "UPDATED", "Incorrect Version description"
+        )
+        self.assertTrue(actual, "Deleted diagram version successfully")
+
+    def test_delete_diagram_returns_error(self):
+        # Arrange
+        old_id = self.create_diagram()
+        actual = self.connection.workflow_manager.update_diagram(
+            body={
+                "annotations": [],
+                "active": True,
+                "data_sources": [
+                    {"name": "dsource", "sourceType": "string", "url": "string"}
+                ],
+                "description": "UPDATED",
+                "diagram_id": old_id,
+                "diagram_name": "UPDATED " + str(datetime.datetime.now()),
+                "diagram_version": 2,
+                "display_grid": True,
+                "initial_step_id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                "initial_step_name": "Start/End",
+                "steps": [
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": False,
+                        "color": "130, 202, 237",
+                        "description": "Step to be put at the start and end of a workflow",
+                        "helpText": "Start/End help text",
+                        "helpUrl": "Start/End help url",
+                        "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                        "labelColor": "black",
+                        "name": "Start/End",
+                        "outlineColor": "130, 202, 237",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0,0,100,50",
+                        "proceedNext": True,
+                        "shape": 3,
+                        "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                    },
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": True,
+                        "color": "242, 226, 121",
+                        "description": "Step to indicate manual work, with no additional logic",
+                        "helpText": "Manual Step help text",
+                        "helpUrl": "Manual Step help url",
+                        "id": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                        "labelColor": "black",
+                        "name": "Manual Step 1",
+                        "outlineColor": "242, 226, 121",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "f7c67858-5ccf-f428-9356-72ada9d8600a",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 126}, {"x": 0, "y": 174}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0, -100, 100, 50",
+                        "proceedNext": True,
+                        "shape": 1,
+                        "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
+                    },
+                ],
+            }
+        )
+
+        # Act
+        try:
+            # version 3 does not exist
+            self.connection.workflow_manager.delete_diagram_version(old_id, 3)
+
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
 
     # endregion
 
@@ -2279,6 +2883,199 @@ class TestWorkflowManager(unittest.TestCase):
         # Assert
         self.assertIsInstance(actual, list, "Incorrect return type")
         self.assertTrue(contains_table, "Incorrect return type")
+
+    # endregion
+
+    # region  LookUp Tables
+
+    # region Get LookUps by Type
+
+    def test_get_lookups(self):
+        # Act
+        priorities = self.connection.workflow_manager.lookups("priority")
+        statuses = self.connection.workflow_manager.lookups("status")
+
+        # Assert
+        self.assertIsInstance(statuses.lookups, list, "Incorrect lookups returned")
+        self.assertIsInstance(priorities.lookups, list, "Incorrect lookups returned")
+
+    def test_get_lookups_returns_not_found(self):
+        # Arrange
+        test_type = "bad_id_12345"
+
+        # Act
+        try:
+            self.connection.workflow_manager.lookups(test_type)
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
+    # region Create Look up Table
+
+    def test_create_lookup_successfully_returns(self):
+        # Arrange
+        lookups = [
+            {"lookupName": "Low", "value": 0},
+            {"lookupName": "Medium", "value": 5},
+            {"lookupName": "High", "value": 10},
+            {"lookupName": "EXTRA", "value": 15},
+            {"lookupName": "TEST", "value": 110},
+        ]
+
+        # Act
+        actual = self.connection.workflow_manager.create_lookup("priority", lookups)
+        testing = self.connection.workflow_manager.lookups("priority")
+
+        # Assert
+        self.assertIsInstance(actual, bool, "Incorrect return type")
+        self.assertEqual(actual, True, "Incorrect size")
+        self.assertEqual(5, len(testing.lookups), "Incorrect size")
+
+    # endregion
+
+    # region Delete LookupTable
+
+    def test_delete_lookup_successfully_returns(self):
+        # Arrange
+        lookups = [
+            {"lookupName": "Low", "value": 0},
+            {"lookupName": "Medium", "value": 5},
+            {"lookupName": "High", "value": 10},
+            {"lookupName": "EXTRA", "value": 15},
+            {"lookupName": "TEST", "value": 110},
+        ]
+
+        # Act
+        actual = self.connection.workflow_manager.create_lookup("test", lookups)
+        testing = self.connection.workflow_manager.delete_lookup("test")
+
+        # Assert
+        self.assertIsInstance(actual, bool, "Incorrect return type")
+        self.assertEqual(actual, True, "Incorrect size")
+        self.assertIsInstance(testing, bool, "Incorrect return type")
+        self.assertEqual(testing, True, "Incorrect size")
+
+    # endregion
+
+    # endregion
+
+    # region Automated Creations
+
+    def test_update_automation_creation_successfully_returns(self):
+        # Arrange
+        template_id = self.create_job_template()
+        adds = [
+            {
+                "automationName": "test_one",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
+            },
+            {
+                "automationName": "test_two",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"DayOfWeek","dayOfWeek":2,"hour":8,"minutes":0,'
+                '"endDate":1921305600000} ',
+            },
+        ]
+
+        # Act
+        template = self.connection.workflow_manager.job_template(template_id)
+        actual = template.update_automated_creation(adds)
+        creations = template.automated_creations
+
+        # Assert
+        self.assertEqual(len(creations), 2, "Incorrect size")
+
+        id_one = creations[0]["automationId"]
+        id_two = creations[1]["automationId"]
+        adds = [
+            {
+                "automationName": "test_three",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
+            }
+        ]
+        updates = [{"automationId": id_two, "automationName": "test_two_updated"}]
+        deletes = [id_one]
+
+        template.update_automated_creation(adds, updates, deletes)
+        creations_two = template.automated_creations
+
+        for c in creations_two:
+            if c["automationId"] == id_two:
+                break
+
+        self.assertEqual(c["automationName"], "test_two_updated", "Incorrect size")
+        self.assertEqual(len(creations_two), 2, "Incorrect size")
+
+    def test_get_automation_creation_successfully_returns(self):
+        # Arrange
+        template_id = self.create_job_template()
+        adds = [
+            {
+                "automationName": "test_one",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
+            },
+            {
+                "automationName": "test_two",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"DayOfWeek","dayOfWeek":2,"hour":8,"minutes":0,'
+                '"endDate":1921305600000} ',
+            },
+        ]
+
+        # Act
+        template = self.connection.workflow_manager.job_template(template_id)
+        template.update_automated_creation(adds, [], [])
+        creations = template.automated_creations
+
+        # Assert
+        self.assertEqual(len(creations), 2, "Incorrect size")
+
+    def test_get_specific_automation_creation_returns_successfully(self):
+        # Arrange
+        template_id = self.create_job_template()
+        adds = [
+            {
+                "automationName": "test_one",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"NumberOfDays","dayOfMonth":1,"hour":8,"minutes":0}',
+            },
+            {
+                "automationName": "test_two",
+                "automationType": "Scheduled",
+                "enabled": True,
+                "details": '{"timeType":"DayOfWeek","dayOfWeek":2,"hour":8,"minutes":0,'
+                '"endDate":1921305600000} ',
+            },
+        ]
+
+        # Act
+        template = self.connection.workflow_manager.job_template(template_id)
+        template.update_automated_creation(adds, [], [])
+        creations = template.automated_creations
+
+        id_one = creations[0]["automationId"]
+        actual = template.automated_creation(id_one)
+
+        # Assert
+        self.assertEqual(
+            actual["automationName"], "test_one", "Incorrect automated creation found"
+        )
+        self.assertEqual(
+            actual["automationType"], "Scheduled", "Incorrect automated creation found"
+        )
+        self.assertEqual(len(creations), 2, "Incorrect size")
 
     # endregion
 
