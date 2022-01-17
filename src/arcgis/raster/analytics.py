@@ -8930,61 +8930,61 @@ def train_random_trees_regression_model(
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_rasters                            Required ImageryLayer object. The single-band, multidimensional, or
-                                                multiband raster datasets, or mosaic datasets, containing explanatory variables.
+                                             multiband raster datasets, or mosaic datasets, containing explanatory variables.
     ------------------------------------     --------------------------------------------------------------------
     input_target_data                        Required FeatureLayer or ImageryLayer. The raster or point feature class
-                                                containing the target variable (dependant variable) data.
+                                             containing the target variable (dependant variable) data.
     ------------------------------------     --------------------------------------------------------------------
     target_value_field                       Optional string. The field name of the information to model in the target
-                                                point feature class or raster dataset.
+                                             point feature class or raster dataset.
     ------------------------------------     --------------------------------------------------------------------
     target_dimension                         Optional string. A date field or numeric field in the input point feature
-                                                class that defines the dimension values.
+                                             class that defines the dimension values.
     ------------------------------------     -------------------------------------------------------------------- 
     raster_dimension                         Optional string. The dimension name of the input multidimensional raster
-                                                (explanatory variables) that links to the dimension in the target data.
+                                             (explanatory variables) that links to the dimension in the target data.
     ------------------------------------     -------------------------------------------------------------------- 
     max_number_of_trees                      Optional integer. The maximum number of trees in the forest. Increasing
-                                                the number of trees will lead to higher accuracy rates, although this
-                                                improvement will level off. The number of trees increases the processing time linearly.
-                                                The default is 50.
+                                             the number of trees will lead to higher accuracy rates, although this
+                                             improvement will level off. The number of trees increases the processing time linearly.
+                                             The default is 50.
     ------------------------------------     -------------------------------------------------------------------- 
     max_tree_depth                           Optional integer. The maximum depth of each tree in the forest. Depth
-                                                determines the number of rules each tree can create, resulting in a decision.
-                                                Trees will not grow any deeper than this setting.
-                                                The default is 30.
+                                             determines the number of rules each tree can create, resulting in a decision.
+                                             Trees will not grow any deeper than this setting.
+                                             The default is 30.
     ------------------------------------     -------------------------------------------------------------------- 
     max_number_of_samples                    Optional integer. The maximum number of samples that will be used for
-                                                the regression analysis. A value that is less than or equal to 0 means
-                                                that the system will use all the samples from the input target raster
-                                                or point feature class to train the regression model.
-                                                The default value is 10,000.
+                                             the regression analysis. A value that is less than or equal to 0 means
+                                             that the system will use all the samples from the input target raster
+                                             or point feature class to train the regression model.
+                                             The default value is 10,000.
     ------------------------------------     -------------------------------------------------------------------- 
     average_points_per_cell                  Optional string. Specifies whether the average will be calculated when
-                                                multiple training points fall into one cell. This parameter is applicable
-                                                only when the input target is a point feature class.
-                                                Options include:
+                                             multiple training points fall into one cell. This parameter is applicable
+                                             only when the input target is a point feature class.
+                                             Options include:
                                                 - "KEEP_ALL_POINTS" — All points will be used when multiple training points fall into a single cell.
                                                                     This is the default.
                                                 - "AVERAGE_POINTS_PER_CELL" —The average value of the training points within a cell will be calculated.
     ------------------------------------     -------------------------------------------------------------------- 
     output_scatter_plots_name                Optional string. The name for the output scatterplots includes scatterplots
-                                                of training data, test data, and location test data.
+                                             of training data, test data, and location test data.
     ------------------------------------     -------------------------------------------------------------------- 
     output_sample_features_name              Optional string. Name of the output feature item a feature class containing
-                                                target values and predicted values for training points, test points, and location test points.
+                                             target values and predicted values for training points, test points, and location test points.
     ------------------------------------     -------------------------------------------------------------------- 
     percent_samples_for_testing              Optional float. Defines the percentage of test points used for error checking.
-                                                The tool checks for three types of errors: errors on training points,
-                                                errors on test points, and errors on test location points.
-                                                The default is 10. 
+                                             The tool checks for three types of errors: errors on training points,
+                                             errors on test points, and errors on test location points.
+                                             The default is 10. 
     ------------------------------------     -------------------------------------------------------------------- 
     output_importance_table_name             Optional string. Name of the output feature item or table item to be created.
-                                                This name is to create a table containing information describing the
-                                                importance of each explanatory variable used in the model. A larger
-                                                number indicates the corresponding variable is more correlated to the
-                                                predicted variable and will contribute more in prediction. Values range
-                                                between 0 and 1, and the sum of all the values equals 1.
+                                             This name is to create a table containing information describing the
+                                             importance of each explanatory variable used in the model. A larger
+                                             number indicates the corresponding variable is more correlated to the
+                                             predicted variable and will contribute more in prediction. Values range
+                                             between 0 and 1, and the sum of all the values equals 1.
     ------------------------------------     --------------------------------------------------------------------
     context                                  Context contains additional settings that affect task execution.
 
@@ -9019,13 +9019,13 @@ def train_random_trees_regression_model(
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
-                                                results will be returned asynchronously.
+                                             results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
-                                                not exist, with the given folder name and persists the output in this folder.
-                                                The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
 
-                                                Example:
+                                             Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
@@ -9041,9 +9041,9 @@ def train_random_trees_regression_model(
 
         input_target_data = gis.content.search("my_target_data")[0].layers[0]
 
-        summarize_categorical_raster_op = train_random_trees_regression_model(input_rasters=input_rasters,
-                                                                              input_target_data=input_target_data,
-                                                                              gis=gis)
+        train_random_trees_regression_model_op = train_random_trees_regression_model(input_rasters=input_rasters,
+                                                                                     input_target_data=input_target_data,
+                                                                                     gis=gis)
 
     """
 
