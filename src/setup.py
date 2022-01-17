@@ -192,12 +192,17 @@ data_files = [
 if not "darwin" in sys.platform:
     _get_rel_site_packages_dir() + "arcgis/gis/_impl"
     data_files += [
-        "arcgis/gis/_impl/_decrypt_nbauth.cp37-win_amd64.pyd",
-        "arcgis/gis/_impl/_decrypt_nbauth.cp38-win_amd64.pyd",
-        "arcgis/gis/_impl/_decrypt_nbauth.cp39-win_amd64.pyd",
-        "arcgis/gis/_impl/_decrypt_nbauth.cpython-37m-x86_64-linux-gnu.so",
-        "arcgis/gis/_impl/_decrypt_nbauth.cpython-38-x86_64-linux-gnu.so",
-        "arcgis/gis/_impl/_decrypt_nbauth.cpython-39-x86_64-linux-gnu.so",
+        (
+            _get_rel_site_packages_dir() + "arcgis/gis/_impl",
+            [
+                "arcgis/gis/_impl/_decrypt_nbauth.cp37-win_amd64.pyd",
+                "arcgis/gis/_impl/_decrypt_nbauth.cp38-win_amd64.pyd",
+                "arcgis/gis/_impl/_decrypt_nbauth.cp39-win_amd64.pyd",
+                "arcgis/gis/_impl/_decrypt_nbauth.cpython-37m-x86_64-linux-gnu.so",
+                "arcgis/gis/_impl/_decrypt_nbauth.cpython-38-x86_64-linux-gnu.so",
+                "arcgis/gis/_impl/_decrypt_nbauth.cpython-39-x86_64-linux-gnu.so",
+            ],
+        )
     ]
 
 
@@ -316,6 +321,10 @@ kwargs = {
             "learn/*.so",
             "learn/_tracking/*.pyd",
             "learn/_tracking/*.dll",
+            "learn/_mmdetection_config/*.py",
+            "learn/_mmdetection_config/**/*.py",
+            "learn/_mmdetection_config/**/**/*.py",
+            "learn/_mmseg_config/*.py",
             "gis/_impl/*.pyd",
             "gis/_impl/*.so",
         ],

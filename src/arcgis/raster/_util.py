@@ -1120,9 +1120,10 @@ def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
 
 def _upload(path, description=None, gis=None):
     """
-    Uploads a new item to the server. Once the operation is completed
-    successfully, the following is returned as a 2 element tuple:
-    the success Boolean, and the JSON structure of the uploaded item
+    The ``upload`` method uploads a new item to the server.
+
+    .. note::
+        Once the operation is completed successfully, item id of the uploaded item is returned.
 
     ===============     ====================================================================
     **Argument**        **Description**
@@ -1132,7 +1133,7 @@ def _upload(path, description=None, gis=None):
     description         Optional string. Descriptive text for the uploaded item.
     ===============     ====================================================================
 
-    :return: A tuple of (Boolean, dict)
+    :return: Item id of uploaded item
 
     """
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]

@@ -4960,11 +4960,10 @@ class FeatureLayerCollection(_GISResource):
     # ----------------------------------------------------------------------
     def upload(self, path, description=None, upload_size=None):
         """
-        The ``uploads`` method uploads a new item to the server.
+        The ``upload`` method uploads a new item to the server.
 
         .. note::
-            Once the operation is completed successfully, the following is returned as a 2 element tuple:
-            the success Boolean, and the JSON structure of the uploaded item
+            Once the operation is completed successfully, item id of the uploaded item is returned.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -4977,7 +4976,7 @@ class FeatureLayerCollection(_GISResource):
                             size of each part.  The default is 1mb.
         ===============     ====================================================================
 
-        :return: A tuple of (Boolean, dict)
+        :return: Item id of uploaded item
 
         """
         if os.path.getsize(path) < 10e6:
@@ -4992,11 +4991,10 @@ class FeatureLayerCollection(_GISResource):
             if description:
                 params["description"] = description
             res = self._con.post(path=url, postdata=params, files=files)
-            if "status" in res and res["status"] == "success":
-                return True, res
-            elif "success" in res:
-                return res["success"], res
-            return False, res
+            if "error" in res:
+                raise Exception(res)
+            else:
+                return res["item"]["itemID"]
         else:
             if upload_size is None:
                 upload_size = 1e6
