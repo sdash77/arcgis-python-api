@@ -761,7 +761,7 @@ def _ra_upload_allowed_extensions():
         "vh2,vh3,vh4,vh5,vh6,vh7,vh8,vh9,vha,vhb,vhc,vhd,vhe,vhf,vhg,vhh,vhj,"
         "view,vn1,vn2,vn3,vn4,vn5,vn6,vn7,vn8,vn9,vna,vnb,vnc,vnd,vne,vnf,vng,"
         "vnh,vnj,vrt,vt1,vt2,vt3,vt4,vt5,vt6,vt7,vt8,vt9,vta,vtb,vtc,vtd,vte,"
-        "vtf,vtg,vth,vtj,wo,xml,xpm,xyz,gdb,pjg".split(",")
+        "vtf,vtg,vth,vtj,wo,xml,xpm,xyz,gdb,pjg,pzp".split(",")
     )
 
 
