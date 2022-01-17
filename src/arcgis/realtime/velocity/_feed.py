@@ -3,6 +3,7 @@ from typing import Optional, Dict, Union, List
 from ._task import Task
 from ._util import _Util
 
+
 class Feed(Task):
     """
     Feed class implements Task and provides public facing methods to access Feeds API endpoints
@@ -37,7 +38,7 @@ class Feed(Task):
         .. code-block:: python
 
             # start feed
-            
+
             # Method: <item>.start
 
             sample_feed.start()
@@ -94,9 +95,9 @@ class Feed(Task):
         .. code-block:: python
 
             # Method: <item>.metrics
-            
+
             # Retrieve metrics of sample_feed
-            
+
             metrics = sample_feed.metrics
             metrics
         """
@@ -111,11 +112,11 @@ class Feed(Task):
          False (for failure) a dictionary with details is returned.
 
         .. code-block:: python
-            
+
             # Delete a feed
-            
+
             # Method: <item>.delete()
-                
+
             sample_feed.delete()
         """
         return self._util._delete("feed", self._id)
