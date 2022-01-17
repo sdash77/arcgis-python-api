@@ -2729,7 +2729,7 @@ class ImageryLayer(Layer):
                               whole image service. Eligible variable names can be queried from
                               multidimensional_info property of the Imagery Layer object.
         -----------------     --------------------------------------------------------------------
-        rendering_rule        Optional dict. Specifies the rendering rule for how the requested image should be rendered.
+        rendering_rule        Optional dictionary. Specifies the rendering rule for how the requested image should be rendered.
 
                               In the context of accessing image service statistics resource,
                               this parameter is used to retrieve statistics info in attached
@@ -2791,7 +2791,7 @@ class ImageryLayer(Layer):
                               if not specified.
                               This parameter is available from 10.8.1
         -----------------     --------------------------------------------------------------------
-        rendering_rule        Optional dict. Specifies the rendering rule for how the requested image should be rendered.
+        rendering_rule        Optional dictionary. Specifies the rendering rule for how the requested image should be rendered.
 
                               In the context of accessing image service histograms resource,
                               this parameter is used to retrieve histograms info in attached
