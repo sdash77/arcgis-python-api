@@ -4096,11 +4096,7 @@ class ImageryLayer(Layer):
         return self._con.post(path=url, postdata=params, timeout=None)
 
     def compute_angles(
-        self,
-        raster_id,
-        point=None,
-        angle_name=None,
-        spatial_reference=None
+        self, raster_id, point=None, angle_name=None, spatial_reference=None
     ):
         """
         The ``compute_angles`` method computes the rotation angle of a raster for a user-specified
@@ -4131,15 +4127,15 @@ class ImageryLayer(Layer):
         =================     ====================================================================
 
         :returns: A dictionary with the computed rotation angle of a raster.
-        
+
         """
         if self.tiles_only:
             raise RuntimeError(
                 "This operation cannot be performed on a TilesOnly Service"
             )
-        
+
         url = self._url + "/computeAngles"
-        params = {"rasterId": raster_id, "f":"json"}
+        params = {"rasterId": raster_id, "f": "json"}
         if point is not None:
             params["point"] = point
         if angle_name is not None:
@@ -15688,6 +15684,7 @@ class RasterCatalogItem(object):
             file_name=out_file,
             out_folder=out_folder,
         )
+
     # ----------------------------------------------------------------------
     @property
     def sensor(self):
