@@ -7854,38 +7854,6 @@ def contour(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def predict_using_regression(
-    rasters,
-    input_regression_definition
-):
-    """
-    Predicts data values using the output from the Train Random Trees Regression Model tool.
-
-    ================================     ====================================================================
-    **Argument**                         **Description**
-    --------------------------------     --------------------------------------------------------------------
-    rasters                              The input rasters on which the model is applied.
-    --------------------------------     --------------------------------------------------------------------
-    input_regression_definition          The JSON from the ECD file representing the trained model. This ECD file
-                                         is the output of the arcgis.raster.analytics.train_random_trees_regression_model tool. 
-    ================================     ====================================================================
-
-    :return: the output predicted raster
-
-    """
-    layer, raster, raster_ra = _raster_input(rasters)
-
-    template_dict = {
-        "rasterFunction": "PredictUsingRegression",
-        "rasterFunctionArguments": {
-            "Rasters": raster,
-            "RegressionDefinitionFile": input_regression_definition
-        },
-    }
-
-    return _clone_layer(layer, template_dict, raster_ra)
-
-
 class RFT:
     def __init__(self, raster_function_template, gis=None):
         try:
