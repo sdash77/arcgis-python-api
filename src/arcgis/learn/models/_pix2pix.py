@@ -37,7 +37,7 @@ class Pix2Pix(ArcGISModel):
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    data                    Required fastai Databunch with image chip sizes 
+    data                    Required fastai Databunch with image chip sizes
                             in multiples of 256. Returned data object from
                             `prepare_data` function.
     ---------------------   -------------------------------------------
@@ -89,6 +89,7 @@ class Pix2Pix(ArcGISModel):
 
             def __repr__(self):
                 return "<%s>" % (type(self).__name__)
+
         else:
             raise Exception("Image chip sizes should be in multiples of 256")
 
