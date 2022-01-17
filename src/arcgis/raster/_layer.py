@@ -4146,7 +4146,7 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        raster_id             required int. Specifies the object ID of the raster catalog which
+        raster_id             required integer. Specifies the object ID of the raster catalog which
                               will determine the raster and image coordinate system to use in a
                               mosaic dataset.
         -----------------     --------------------------------------------------------------------
