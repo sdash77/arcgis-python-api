@@ -762,6 +762,13 @@ def _ra_upload_allowed_extensions():
 class _ImageryUploaderAGOL:
     """helper class for concurrently uploading multiple files to user's rasterstore on AGOL"""
 
+    from azure.storage.blob import ContainerClient
+    from azure.core.exceptions import (
+        ClientAuthenticationError,
+        ServiceResponseError,
+        ServiceRequestError,
+    )
+
     def __init__(self, file_list, container, auto_renew, upload_properties, task, gis):
 
         self.file_list = file_list
@@ -820,12 +827,6 @@ class _ImageryUploaderAGOL:
 
     def upload_file(self, file_item):
         """method to upload single file"""
-        from azure.storage.blob import ContainerClient
-        from azure.core.exceptions import (
-            ClientAuthenticationError,
-            ServiceResponseError,
-            ServiceRequestError,
-        )
 
         file_name, i = file_item
         prefix = self.file_list[i]["prefix"]
@@ -907,13 +908,13 @@ class _ImageryUploaderAGOL:
                         self.url_list.append(url)
                 break
             except (
-                ClientAuthenticationError,
-                ServiceResponseError,
-                ServiceRequestError,
+                self.ClientAuthenticationError,
+                self.ServiceResponseError,
+                self.ServiceRequestError,
             ) as err:
                 if self.auto_renew:
                     sas_url = _generate_direct_access_url(self.gis)
-                    self.container = ContainerClient.from_container_url(sas_url)
+                    self.container = self.ContainerClient.from_container_url(sas_url)
                     continue
                 else:
                     raise
