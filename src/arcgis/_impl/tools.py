@@ -5969,6 +5969,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                         # get renderingRule and mosaicRule
                         input_param.update(layer_options["imageServiceParameters"])
 
+                try:
+                    if isinstance(input_param, dict) and "url" in input_param.keys():
+                        token = input_layer._gis._con._create_token(url)
+                        url = input_param["url"] + "?token=" + token
+                        input_param.update({"url": url})
+                except:
+                    pass
+
         elif isinstance(input_layer, dict):
             input_param = input_layer
 
