@@ -43,7 +43,7 @@ class BigDataAnalytics(Task):
             # Start big data analytics
 
             # Method: <item>.start()
-            
+
             sample_bigdata_task.start()
         """
         return self._util._start("analytics/bigdata", self._id)
@@ -61,7 +61,7 @@ class BigDataAnalytics(Task):
             # Stop big data analytics
 
             # Method: <item>.stop()
-            
+
             sample_bigdata_task.stop()
         """
         return self._util._stop("analytics/bigdata", self._id)
@@ -79,7 +79,7 @@ class BigDataAnalytics(Task):
             # Retrieve status of big data analytics task
 
             # Property: <item>.status()
-            
+
             status = sample_bigdata_task.status
             status
         """
@@ -98,7 +98,7 @@ class BigDataAnalytics(Task):
             # Retrieve metrics of big data analytics task
 
             # Property: <item>.metrics()
-            
+
             metrics = sample_bigdata_task.metrics
             metrics
         """
@@ -114,10 +114,10 @@ class BigDataAnalytics(Task):
 
         .. code-block:: python
 
-            # Delete a big data analytics 
+            # Delete a big data analytics
 
             # Method: <item>.delete()
-            
+
             sample_bigdata_task.delete
         """
         return self._util._delete("analytics/bigdata", self._id)

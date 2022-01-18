@@ -1,6 +1,7 @@
 from typing import Dict
 from abc import ABCMeta, abstractmethod
 
+
 class Task(metaclass=ABCMeta):
     @abstractmethod
     def start(self) -> Dict:
