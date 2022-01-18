@@ -23,12 +23,6 @@ _LOGGER = _logging.getLogger(__name__)
 try:
     import numpy as _np
     import requests as _requests
-    from azure.storage.blob import ContainerClient
-    from azure.core.exceptions import (
-        ClientAuthenticationError,
-        ServiceResponseError,
-        ServiceRequestError,
-    )
 except:
     pass
 
@@ -826,6 +820,13 @@ class _ImageryUploaderAGOL:
 
     def upload_file(self, file_item):
         """method to upload single file"""
+        from azure.storage.blob import ContainerClient
+        from azure.core.exceptions import (
+            ClientAuthenticationError,
+            ServiceResponseError,
+            ServiceRequestError,
+        )
+
         file_name, i = file_item
         prefix = self.file_list[i]["prefix"]
         current_time_str = prefix[:-1][8:]

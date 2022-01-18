@@ -2,7 +2,6 @@ from .._utils.env import _LAMBDA_TEXT_CLASSIFICATION
 
 if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._ssd import SingleShotDetector
-    from ._inferencing import _DynamicSSD
     from ._unet import UnetClassifier
     from ._retinanet import RetinaNet
     from ._classifier import FeatureClassifier

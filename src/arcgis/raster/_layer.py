@@ -26,7 +26,9 @@ except:
 _LOGGER = logging.getLogger(__name__)
 
 try:
-    import arcpy
+    from arcgis.auth.tools import LazyLoader
+
+    arcpy = LazyLoader("arcpy")
 except:
     pass
 
@@ -2200,6 +2202,7 @@ class ImageryLayer(Layer):
         true_curves=False,
         as_df=False,
         raster_query=None,
+        return_extent_only=False,
     ):
         """
         The ``query`` method queries an :class:`~arcgis.raster.ImageryLayer` by applying the filter specified by
@@ -2242,6 +2245,9 @@ class ImageryLayer(Layer):
         ------------------------------  --------------------------------------------------------------------
         return_count_only               optional boolean. If True, then an integer is returned only based on
                                         the sql statement
+        ------------------------------  --------------------------------------------------------------------
+        return_extent_only              optional boolean. If True, then only the extent is returned.
+                                        This parameter is available from 10.8.1 onwards.
         ------------------------------  --------------------------------------------------------------------
         pixel_size                      optional dict or string. Query visible rasters at a given pixel size.
                                         If pixel_size is not specified, rasters at all resolutions can be
@@ -2351,6 +2357,7 @@ class ImageryLayer(Layer):
             "returnGeometry": return_geometry,
             "returnIdsOnly": return_ids_only,
             "returnCountOnly": return_count_only,
+            "returnExtentOnly": return_extent_only,
         }
         if object_ids:
             params["objectIds"] = object_ids
@@ -2473,6 +2480,8 @@ class ImageryLayer(Layer):
         if return_count_only:
             return result["count"]
         elif return_ids_only:
+            return result
+        elif return_extent_only:
             return result
         elif return_geometry:
             if as_df:
@@ -3758,6 +3767,7 @@ class ImageryLayer(Layer):
         return_first_value_only=None,
         interpolation=None,
         out_fields=None,
+        slice_id=None,
     ):
         """
         The ``get_samples`` operation is supported by both mosaic dataset and raster
@@ -3835,6 +3845,10 @@ class ImageryLayer(Layer):
                                  This list is a comma-delimited list of field names. You can also
                                  specify the wildcard character (*) as the value of this parameter to
                                  include all the field values in the results.
+        -----------------------  -----------------------------------------------------------------------
+        slice_id                 Optional integer. The slice ID of a multidimensional raster. The operation 
+                                 will be performed for the specified slice.
+                                 This parameter is available from 10.9 onwards.
         =======================  =======================================================================
 
         :return:
@@ -3870,6 +3884,8 @@ class ImageryLayer(Layer):
             params["interpolation"] = interpolation
         if not out_fields is None:
             params["outFields"] = out_fields
+        if slice_id is not None:
+            params["sliceId"] = slice_id
         if self._datastore_raster:
             params["Raster"] = self._uri
 

@@ -3,6 +3,7 @@ from typing import Optional, Dict, Union, List
 from ._task import Task
 from ._util import _Util
 
+
 class RealTimeAnalytics(Task):
     """
     RealTimeAnalytics class implements Task and provides public facing methods to
@@ -42,7 +43,7 @@ class RealTimeAnalytics(Task):
             # Start real-time analytics
 
             # Method: <item>.start()
-            
+
             sample_realtime_task.start()
 
         """
@@ -61,7 +62,7 @@ class RealTimeAnalytics(Task):
             # Stop real-time analytics
 
             # Method: <item>.stop()
-            
+
             sample_realtime_task.stop()
 
         """
@@ -80,7 +81,7 @@ class RealTimeAnalytics(Task):
             # Retrieve status of real-time analytics task
 
             # Property: <item>.status()
-            
+
             status = sample_realtime_task.status
             status
 
@@ -100,7 +101,7 @@ class RealTimeAnalytics(Task):
             # Retrieve metrics of real-time analytics task
 
             # Property: <item>.metrics()
-            
+
             metrics = sample_realtime_task.metrics
             metrics
 
@@ -116,10 +117,10 @@ class RealTimeAnalytics(Task):
 
         .. code-block:: python
 
-            # Delete a real-time analytics 
+            # Delete a real-time analytics
 
             # Method: <item>.delete()
-            
+
             sample_realtime_task.delete
 
         """

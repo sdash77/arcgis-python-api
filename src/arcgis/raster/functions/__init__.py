@@ -6671,8 +6671,10 @@ def segment_mean_shift(
     spatial_detail=None,
     spectral_radius=None,
     spatial_radius=None,
-    min_num_pixels_per_segment=None,
+    min_num_pixels_per_segment=20,
     astype=None,
+    boundaries_only=False,
+    max_num_pixels_per_segment=-1,
 ):
     """
     The segment_mean_shift function produces a segmented output. Pixel values in the output image represent the
@@ -6683,9 +6685,9 @@ def segment_mean_shift(
     ArcGIS Image Server to use this resource.
     At versions prior to 10.5, the hosting ArcGIS Server needs to have a Spatial Analyst license.
 
-    When specifying arguments for SegmentMeanShift, use either SpectralDetail,SpatialDetail as a pair, or use
-    SpectralRadius, SpatialRadius. They have an inverse relationship. SpectralRadius = 21 - SpectralDetail,
-    SpatialRadius = 21 - SpectralRadius
+    When specifying arguments for ``segment_mean_shift``, use either spectral_detail, spatial_detail as a pair, or use
+    spectral_radius, spatial_radius. They have an inverse relationship. spectral_radius = 21 - spectral_detail,
+    spatial_radius  = 21 - spectral_radius
 
     The arguments for this function are as follows:
 
@@ -6694,20 +6696,71 @@ def segment_mean_shift(
     --------------------------------     --------------------------------------------------------------------
     raster                                  Required input Raster/ImageryLayer object.
     --------------------------------     --------------------------------------------------------------------
-    spectral_detail                         float between 0-21. Bigger value is faster and has more segments.
+    spectral_detail                         Optional float between 0-21. The relative importance of separating
+                                            objects based on color characteristics.
+
+                                            Smaller values result in broad classes and more smoothing.
+                                            A higher value is appropriate when you want to discriminate
+                                            between features having somewhat similar spectral characteristics.
     --------------------------------     --------------------------------------------------------------------
-    spatial_detail                          int between 0-21. Bigger value is faster and has more segments.
+    spatial_detail                          Optional integer between 0-21. The relative importance of separating
+                                            objects based on spatial characteristics.
+
+                                            Valid integer values range from 0 to 21. Smaller values result in
+                                            broad classes and more smoothing. A higher value is appropriate
+                                            for discriminating between features that are spatially small and
+                                            clustered together.
     --------------------------------     --------------------------------------------------------------------
-    spectral_radius                         float. Bigger value is slower and has less segments.
+    spectral_radius                         Optional float. The relative importance of separating objects
+                                            based on color characteristics.
+
+                                            Valid values range from 0 to 21. Larger values result in broad classes
+                                            and more smoothing. A lower value is appropriate when you want to
+                                            discriminate between features having somewhat similar spectral
+                                            characteristics.
     --------------------------------     --------------------------------------------------------------------
-    spatial_radius                          int. Bigger value is slower and has less segments.
+    spatial_radius                          Optional integer. The relative importance of separating objects
+                                            based on spatial characteristics.
+
+                                            Valid integer values range from 0 to 21. Larger values result in
+                                            broad classes and more smoothing. A lower value is appropriate for
+                                            discriminating between features that are spatially small and
+                                            clustered together.
     --------------------------------     --------------------------------------------------------------------
-    min_num_pixels_per_segment              int
+    min_num_pixels_per_segment              Optional integer. The minimum segment size, measured in pixels. This value is
+                                            related to your minimum mapping unit, and will filter out smaller
+                                            blocks of pixels. All segments that are smaller than the specified
+                                            value will merge the smaller segments with their best fitting
+                                            neighbor segment. The default is 20.
     --------------------------------     --------------------------------------------------------------------
-    astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    boundaries_only                         Optional boolean. The segment boundaries draw as a black contour line
+                                            around each segment. This is helpful so you can distinguish
+                                            adjacent segments that have similar colors.
+
+                                             - True : The segment boundaries are displayed with black contour lines around each segment.
+                                             - False : The segment boundaries are not displayed. This is the default.
+    --------------------------------     --------------------------------------------------------------------
+    max_num_pixels_per_segment              Optional integer. The maximum size of a segment. Segments that are larger than
+                                            the specified size will be divided. Use this parameter to prevent
+                                            artifacts in the output layer resulting from large segments. ``max_num_pixels_per_segment``
+                                            must be greater than ``min_num_pixels_per_segment`` when it is a positive integer.
+                                            The default is -1.
+    --------------------------------     --------------------------------------------------------------------
+    astype                                  Optional string. Specifies the output pixel type.
+                                            Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
 
     :return: The output raster.
+
+    .. code-block:: python
+
+        # Usage Example: Apply the segment_mean_shift function on a raster.
+
+        segmented_raster_op = segment_mean_shift(raster=raster_obj,
+                                                 spectral_detail=15.5,
+                                                 spatial_detail=15,
+                                                 min_num_pixels_per_segment=20
+                                                )
     """
 
     layer, raster, raster_ra = _raster_input(raster)
@@ -6729,11 +6782,16 @@ def segment_mean_shift(
         template_dict["rasterFunctionArguments"]["SpectralRadius"] = spectral_radius
     if spatial_radius is not None:
         template_dict["rasterFunctionArguments"]["SpatialRadius"] = spatial_radius
+    if boundaries_only is not None:
+        template_dict["rasterFunctionArguments"]["BoundariesOnly"] = boundaries_only
     if min_num_pixels_per_segment is not None:
         template_dict["rasterFunctionArguments"][
             "MinNumPixelsPerSegment"
         ] = min_num_pixels_per_segment
-
+    if max_num_pixels_per_segment is not None:
+        template_dict["rasterFunctionArguments"][
+            "MaxNumPixelsPerSegment"
+        ] = max_num_pixels_per_segment
     return _clone_layer(layer, template_dict, raster_ra)
 
 
