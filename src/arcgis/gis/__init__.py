@@ -10619,11 +10619,9 @@ class Item(dict):
                 lyr = ImageryLayer(self.url, self._gis)
                 try:
                     item_data = self.get_data()
-                    if "renderingRule" in item_data:
-                        lyr._fn = item_data["renderingRule"]
-                        lyr._fnra = item_data["renderingRule"]
-                    if "mosaicRule" in item_data:
-                        lyr._mosaic_rule = item_data["mosaicRule"]
+                    lyr._fn = item_data.get("renderingRule", None)
+                    lyr._fnra = item_data.get("renderingRule", None)
+                    lyr._mosaic_rule = item_data.get("mosaicRule", None)
                 except:
                     pass
                 layers.append(lyr)
