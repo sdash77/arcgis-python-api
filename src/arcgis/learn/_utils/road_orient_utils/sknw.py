@@ -37,9 +37,11 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import networkx as nx
-import numpy as np
-from numba import jit
+from arcgis.auth.tools import LazyLoader
+
+nx = LazyLoader("networkx")
+np = LazyLoader("numpy")
+jit = LazyLoader("numba.jit")
 
 
 # get neighbors d index
