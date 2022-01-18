@@ -8793,7 +8793,7 @@ def compute_change_raster(
         filter_method=filter_method,
         transition_class_colors=transition_class_colors,
         from_classname_field=to_class_name_field_name,
-        to_classname_field=to_classname_field,
+        to_classname_field=to_class_name_field_name,
         output_name=output_name,
         context=context,
         future=future,
