@@ -215,6 +215,10 @@ detect_change_using_change_analysis_raster
 __________________________________________
 .. autofunction:: arcgis.raster.functions.detect_change_using_change_analysis_raster
 
+dimensional_moving_statistics
+_____________________________
+.. autofunction:: arcgis.raster.functions.dimensional_moving_statistics
+
 divide
 ______
 .. autofunction:: arcgis.raster.functions.divide
@@ -417,6 +421,10 @@ ___
 monitor_vegetation
 __________________
 .. autofunction:: arcgis.raster.functions.monitor_vegetation
+
+mosaic_rasters
+______________
+.. autofunction:: arcgis.raster.functions.mosaic_rasters
 
 msavi
 _____

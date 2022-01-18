@@ -11885,6 +11885,242 @@ def landtrendr_analysis(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
+def dimensional_moving_statistics(
+    raster,
+    dimension=None,
+    backward_window=1,
+    forward_window=1,
+    statistics_type="MEAN",
+    percentile_value=90,
+    percentile_interpolation_type="AUTO_DETECT",
+    circular_wrap_value=360,
+):
+    """
+    The dimensional_moving_statistics function calculates statistics over a moving window
+    on multidimensional data along a specified dimension.
+
+    .. note::
+        This raster function does not support on the fly rendering and can only be used to generate persisted output.
+        To persist the output use the ``save()`` method on the resulting layer.
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required multidimensional Raster/ImageryLayer object.
+    --------------------------------     --------------------------------------------------------------------
+    dimension                            Optional string. The name of the dimension along which the window will move.
+
+                                         The default value is the first dimension other than x,y found in the 
+                                         input multidimensional raster.
+    --------------------------------     --------------------------------------------------------------------
+    backward_window                      Optional integer. The value of how many slices before or above to 
+                                         be included in the defined window. The value must be a positive integer 
+                                         from 1 to 100. The default value is 1.
+
+                                         The unit of this parameter is slice.
+    --------------------------------     --------------------------------------------------------------------
+    forward_window                       Optional integer. The value of how many slices after or below to 
+                                         be included in the defined window. The value must be a positive integer 
+                                         from 1 to 100. The default value is 1.
+
+                                         The unit of this parameter is slice.
+    --------------------------------     --------------------------------------------------------------------
+    statistics_type                      Optional string. Statistic type to be calculated.
+
+                                            - MEAN - The mean (average value) of the cells in the defined \
+                                            window will be calculated. This is the default.
+
+                                            - CIRCULAR_MEAN - The circular mean (average value) of the cells \
+                                            in the window will be calculated. When this statistics type is \
+                                            selected, use the ``circular_wrap_value`` parameter to designate \
+                                            a wrap value to use.
+
+                                            - MAJORITY - The majority (value that occurs most often) of the \
+                                            cells in the defined window will be identified.
+
+                                            - MAXIMUM - The maximum (largest value) of the cells in the \
+                                            defined window will be identified.
+
+                                            - MEDIAN - The median of the cells in the defined window will be \
+                                            identified.
+
+                                            - MINIMUM - The minimum (smallest value) of the cells in the \
+                                            defined window will be identified.
+
+                                            - PERCENTILE - A percentile of the cells in the defined window \
+                                            will be calculated. When this statistics_type is selected, the \
+                                            ``percentile_value`` and ``percentile_interpolation_type`` parameters \
+                                            become available. Use these new parameters to designate the \
+                                            percentile to calculate and choose the interpolation type to \
+                                            use, respectively.
+    --------------------------------     --------------------------------------------------------------------
+    percentile_value                     Optional float. The percentile value that will be calculated.
+                                         The default is 90, for the 90th percentile.
+
+                                         The value can range from 0 to 100. The 0th percentile is essentially equivalent
+                                         to the minimum statistic, and the 100th percentile is equivalent to the maximum
+                                         statistic. A value of 50 will produce essentially the same result as the median
+                                         statistic.
+
+                                         This parameter is only supported if the ``statistics_type`` parameter is set to PERCENTILE.                                  
+    --------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type        Optional string. Specifies the method of interpolation to be used when the 
+                                         specified percentile value lies between two input cell values.
+
+                                            - AUTO_DETECT - If the input value raster has integer pixel type, the \
+                                            NEAREST method is used. If the input value raster has floating point \
+                                            pixel type, then the LINEAR method is used. This is the default.
+
+                                            - NEAREST - Nearest value to the desired percentile. In this case, the \
+                                            output pixel type is same as that of the input value raster.
+
+                                            - LINEAR - Weighted average of two surrounding values from the desired \
+                                            percentile. In this case, the output pixel type is floating point.
+
+                                         This parameter is only supported if the ``statistics_type`` parameter is
+                                         set to MEDIAN or PERCENTILE.
+    --------------------------------     --------------------------------------------------------------------
+    circular_wrap_value                  Optional float. The value that will be used to round a linear value to 
+                                         the range of a given circular mean.
+
+                                         Its value must be positive. The default value is 360 degrees.
+
+                                         This parameter is only supported if the ``statistics_type`` parameter is
+                                         set to CIRCULAR_MEAN.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Calculates MEAN statistics over a moving window on multidimensional data along StdTime dimension.
+
+        op = dimensional_moving_statistics(raster, "StdTime")
+
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "DimensionalMovingStatistics",
+        "rasterFunctionArguments": {"Raster": raster},
+    }
+
+    if dimension is not None:
+        template_dict["rasterFunctionArguments"]["Dimension"] = dimension
+    if backward_window is not None:
+        template_dict["rasterFunctionArguments"]["BackwardWindow"] = backward_window
+    if forward_window is not None:
+        template_dict["rasterFunctionArguments"]["ForwardWindow"] = forward_window
+
+    statistics_types = {
+        "MEAN": 3,
+        "CIRCULAR_MEAN": 13,
+        "MAJORITY": 1,
+        "MAXIMUM": 2,
+        "MEDIAN": 4,
+        "MINIMUM": 5,
+        "PERCENTILE": 12,
+    }
+    if statistics_type is not None:
+        if statistics_type.upper() not in statistics_types.keys():
+            raise RuntimeError(
+                "statistics_type should be one of the following "
+                + str(statistics_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["StatisticsType"] = statistics_types[
+            statistics_type
+        ]
+
+    if percentile_value is not None:
+        template_dict["rasterFunctionArguments"]["percentile_value"] = percentile_value
+
+    percentile_interpolation_type_list = ["AUTO_DETECT", "NEAREST", "LINEAR"]
+    if percentile_interpolation_type is not None:
+        if (
+            percentile_interpolation_type.upper()
+            not in percentile_interpolation_type_list
+        ):
+            raise RuntimeError(
+                "percentile_interpolation_type should be one of the following "
+                + str(percentile_interpolation_type_list)
+            )
+        template_dict["rasterFunctionArguments"][
+            "percentile_interpolation_type"
+        ] = percentile_interpolation_type
+
+    if circular_wrap_value is not None:
+        template_dict["rasterFunctionArguments"][
+            "CircularWrapValue"
+        ] = circular_wrap_value
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def mosaic_rasters(rasters, mosaic_type="BLEND"):
+    """
+    The mosaic_rasters function creates a single mosaicked image using multiple images.
+    When there is overlap between the images, you can choose from several methods to
+    determine the priority with which images are displayed.
+
+    The arguments for the function are as follows:
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects.
+    --------------------------------     --------------------------------------------------------------------
+    mosaic_type                          Optional string. Resolve any conflict when you have parts of two or
+                                         more images that overlap. The options include the following:
+
+                                         - "FIRST" - Display the pixels from the first image in the list of images overlapping a given area.
+
+                                         - "LAST" - Display the pixels from the last image in the list of images overlapping a given area.
+
+                                         - "MIN" - Display the lowest valued pixel of all the overlapping layers. With this option, you have
+                                           no guarantee of displaying the pixels of just one image in the overlapping area but rather a
+                                           combination of all potential layers.
+
+                                         - "MAX" - Display the highest valued pixel of all the overlapping layers. With this option, you have
+                                           no guarantee of displaying the pixels of just one image in the overlapping area but rather a
+                                           combination of all potential layers.
+
+                                         - "MEAN" - Calculate and display an average of the overlapping pixels.
+
+                                         - "BLEND" - Calculate and display an average of the overlapping pixels by giving more weight to
+                                           pixels that are closer to neighboring images so the output is a smoother image.
+                                           This is the default.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: mosaic two rasters and display the pixels form the first raster in the list of rasters overlapping a given area.
+
+        mosaiced_op = mosaic_rasters([ras1, ras2], mosaic_type="FIRST")
+    """
+    raster = rasters
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    mosaic_types = {"FIRST": 1, "LAST": 2, "MIN": 3, "MAX": 4, "MEAN": 5, "BLEND": 6}
+
+    in_mosaic_type = mosaic_types[mosaic_type.upper()]
+
+    template_dict = {
+        "rasterFunction": "MosaicRasters",
+        "rasterFunctionArguments": {"Rasters": raster},
+        "variableName": "Rasters",
+    }
+
+    if mosaic_type is not None:
+        template_dict["rasterFunctionArguments"]["MosaicType"] = in_mosaic_type
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
+
 class RFT:
     def __init__(self, raster_function_template, gis=None):
         try:

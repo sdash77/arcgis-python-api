@@ -4444,6 +4444,11 @@ class Role(object):
         resp = self._portal.con.post(
             "portals/self/roles/" + self.role_id + "/setPrivileges", postdata
         )
+        if len(self.privileges) != len(value):
+            postdata["privileges"] = json.dumps(postdata["privileges"])
+            resp = self._portal.con.post(
+                "portals/self/roles/" + self.role_id + "/setPrivileges", postdata
+            )
         if resp:
             return resp.get("success")
 
