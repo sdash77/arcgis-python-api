@@ -26,7 +26,9 @@ except:
 _LOGGER = logging.getLogger(__name__)
 
 try:
-    import arcpy
+    from arcgis.auth.tools import LazyLoader
+
+    arcpy = LazyLoader("arcpy")
 except:
     pass
 

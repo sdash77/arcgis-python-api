@@ -50,7 +50,6 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
 
     from ._object_tracker import ObjectTracker
 
-    from .text import EntityRecognizer
     from ._utils.pointcloud_data import Transform3d
 from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart

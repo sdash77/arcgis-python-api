@@ -10,7 +10,6 @@ import traceback
 
 HAS_OPENCV = True
 HAS_FASTAI = True
-HAS_ARCPY = True
 
 # Try to import the necessary modules
 # Exception will turn the HAS_FASTAI flag to false so that relevant exception can be raised
@@ -60,11 +59,6 @@ try:
     import cv2
 except:
     HAS_OPENCV = False
-
-try:
-    import arcpy
-except:
-    HAS_ARCPY = False
 
 
 class RetinaNet(ArcGISModel):

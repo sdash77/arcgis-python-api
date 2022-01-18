@@ -13,7 +13,9 @@ import concurrent.futures
 import arcgis
 from arcgis.gis import GIS
 from arcgis.features import FeatureSet, FeatureCollection, Table
-from arcgis.mapping import MapImageLayer
+from arcgis.auth.tools import LazyLoader
+
+mapping = LazyLoader("arcgis.mapping")
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
 from arcgis._impl.common._utils import _date_handler
@@ -339,7 +341,9 @@ def _future_op(
             gptool._url.replace("/GPServer", "/MapServer") + "/jobs/" + job_id
         )
 
-        output_dict["result_layer"] = MapImageLayer(result_layer_url, gptool._gis)
+        output_dict["result_layer"] = mapping.MapImageLayer(
+            result_layer_url, gptool._gis
+        )
 
     num_returns = len(resp)
     if return_messages:
@@ -496,7 +500,9 @@ def _execute_gp_tool(
                 url.replace("/GPServer", "/MapServer") + "/jobs/" + job_id
             )
 
-            output_dict["result_layer"] = MapImageLayer(result_layer_url, gptool._gis)
+            output_dict["result_layer"] = mapping.MapImageLayer(
+                result_layer_url, gptool._gis
+            )
 
         num_returns = len(resp)
         if return_messages:
