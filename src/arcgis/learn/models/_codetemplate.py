@@ -160,7 +160,7 @@ class ArcGISObjectDetector:
                     "name": "test_time_augmentation",
                     "dataType": "string",
                     "required": False,
-                    "value": "True"
+                    "value": "False"
                     if "test_time_augmentation" not in self.json_info
                     else str(self.json_info["test_time_augmentation"]),
                     "displayName": "Perform test time augmentation while predicting",
@@ -1420,11 +1420,15 @@ class ArcGISSuperResolution:
         #raster_pixels[np.where(raster_mask == 0)] = 0
         pixelBlocks['raster_pixels'] = raster_pixels
 
-        xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)
-        chunks, num_rows, num_cols =  chunk_it(xx.transpose(1, 2, 0), self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
-        xx = patch_chips(crop_flatten(chunks, self.child_image_classifier.padding), num_rows, num_cols)
-        xx = xx.transpose(2, 0, 1)
-        pixelBlocks['output_pixels'] = xx
+        if hasattr(self.child_image_classifier, "updatePixelsSmooth"):
+            xx = self.child_image_classifier.updatePixelsSmooth( tlc, shape, props, **pixelBlocks).astype(props["pixelType"], copy=False)
+            pixelBlocks["output_pixels"] = xx
+        else:
+            xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)
+            chunks, num_rows, num_cols =  chunk_it(xx.transpose(1, 2, 0), self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
+            xx = patch_chips(crop_flatten(chunks, self.child_image_classifier.padding), num_rows, num_cols)
+            xx = xx.transpose(2, 0, 1)
+            pixelBlocks['output_pixels'] = xx
 
         return pixelBlocks
 

@@ -79,9 +79,18 @@ class Test_Workforce_Tracks(unittest.TestCase):
         cls.portal_url = _conf_reader["workforce_ago"]["url"]
         cls.portal_username = _conf_reader["workforce_ago"]["publisher_user"]
         cls.portal_password = _conf_reader["workforce_ago"]["publisher_password"]
-        cls.project_id = "0620ee75107747c6ac6ce3d2ac27f36f"
         cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
-        cls.project = Project(cls.gis.content.get(cls.project_id))
+        t = datetime.datetime.now()
+        cls.time_stamp = str.format(
+            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            str(t.year),
+            str(t.month),
+            str(t.day),
+            str(t.hour),
+            str(t.minute),
+            str(t.second),
+        )
+        cls.project = create_project(cls.time_stamp, major_version=1)
 
         r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
         if not r1:
@@ -113,12 +122,17 @@ class Test_Workforce_Tracks(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        try:
+            cls.project.delete()
+        except Exception as e:
+            print("Failed to delete project successfully!")
         print("\n==================================================================")
 
     def test_search_tracks(self):
         try:
             track = self.project.tracks.search()[0]
-            self.assertEqual(track.geometry, {"x": 123, "y": 456}, "Incorrect geometry")
+            self.assertEqual(track.geometry["x"], 123, "Incorrect x")
+            self.assertEqual(track.geometry["y"], 456, "Incorrect y")
             self.assertEqual(track.accuracy, 50, "Incorrect accuracy")
 
             tracks = self.project.tracks.search("1=0")
@@ -139,7 +153,8 @@ class Test_Workforce_Tracks(unittest.TestCase):
             track = self.project.tracks.search()[0]
             track.update(geometry={"x": 456, "y": 321}, accuracy=30)
             track = self.project.tracks.search()[0]
-            self.assertEqual(track.geometry, {"x": 456, "y": 321}, "Incorrect geometry")
+            self.assertEqual(track.geometry["x"], 456, "Incorrect x")
+            self.assertEqual(track.geometry["y"], 321, "Incorrect y")
             self.assertEqual(track.accuracy, 30, "Incorrect accuracy")
 
         except AssertionError as assertErrorException:
@@ -159,7 +174,8 @@ class Test_Workforce_Tracks(unittest.TestCase):
             track.accuracy = 30
             self.project.tracks.batch_update([track])
             track = self.project.tracks.search()[0]
-            self.assertEqual(track.geometry, {"x": 456, "y": 321}, "Incorrect geometry")
+            self.assertEqual(track.geometry["x"], 456, "Incorrect x")
+            self.assertEqual(track.geometry["y"], 321, "Incorrect y")
             self.assertEqual(track.accuracy, 30, "Incorrect accuracy")
 
         except AssertionError as assertErrorException:
@@ -177,9 +193,8 @@ class Test_Workforce_Tracks(unittest.TestCase):
             track = Track(self.project, geometry={"x": 456, "y": 321}, accuracy=50)
             self.project.tracks.batch_add([track])
             tracks = self.project.tracks.search()
-            self.assertEqual(
-                tracks[1].geometry, {"x": 456, "y": 321}, "Incorrect geometry"
-            )
+            self.assertEqual(tracks[1].geometry["x"], 456, "Incorrect x")
+            self.assertEqual(tracks[1].geometry["y"], 321, "Incorrect y")
             self.assertEqual(tracks[1].accuracy, 50, "Incorrect accuracy")
             self.assertEqual(len(tracks), 2, "Incorrect number of tracks")
 
@@ -197,9 +212,8 @@ class Test_Workforce_Tracks(unittest.TestCase):
         try:
             self.project.tracks.add(geometry={"x": 456, "y": 321}, accuracy=50)
             tracks = self.project.tracks.search()
-            self.assertEqual(
-                tracks[1].geometry, {"x": 456, "y": 321}, "Incorrect geometry"
-            )
+            self.assertEqual(tracks[1].geometry["x"], 456, "Incorrect x")
+            self.assertEqual(tracks[1].geometry["y"], 321, "Incorrect y")
             self.assertEqual(tracks[1].accuracy, 50, "Incorrect accuracy")
             self.assertEqual(len(tracks), 2, "Incorrect number of tracks")
 
