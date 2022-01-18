@@ -331,10 +331,6 @@ interpolate_irregular_data
 __________________________
 .. autofunction:: arcgis.raster.functions.interpolate_irregular_data
 
-interpolate_raster_by_dimension
-_______________________________
-.. autofunction:: arcgis.raster.functions.interpolate_raster_by_dimension
-
 iron_oxide
 __________
 .. autofunction:: arcgis.raster.functions.iron_oxide
