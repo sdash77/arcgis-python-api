@@ -1288,7 +1288,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def diagram_version(self, diagram_id:str, version_id:str):
+    def diagram_version(self, diagram_id: str, version_id: str):
         """
         Returns the :class:`diagram <arcgis.gis.workflowmanager.JobDiagram>` with the given version ID
 
@@ -2287,7 +2287,9 @@ class Job(object):
             return return_obj["success"]
         return return_obj
 
-    def add_attachment(self, attachment:str, alias:Optional[str]=None, folder:Optional[str]=None):
+    def add_attachment(
+        self, attachment: str, alias: Optional[str] = None, folder: Optional[str] = None
+    ):
         """
         Adds an attachment to the job
 
@@ -2406,7 +2408,7 @@ class Job(object):
         }
         return return_obj
 
-    def update_step(self, step_id:str, assigned_type:str, assigned_to:str):
+    def update_step(self, step_id: str, assigned_type: str, assigned_to: str):
         """
         Update the assignment of the current step in a job based on the current user's Workflow Manager assignment privileges
 
@@ -2455,7 +2457,7 @@ class Job(object):
         }
         return return_obj
 
-    def set_current_step(self, step_id:str):
+    def set_current_step(self, step_id: str):
         """
         Sets a single step to be the active step on the job. The ability to set a step as current is controlled by the **workflowSetStepCurrent** privilege.
 
@@ -2576,7 +2578,7 @@ class Job(object):
         }
         return return_obj
 
-    def add_comment(self, comment:str):
+    def add_comment(self, comment: str):
         """
         Adds a comment to the job
 
