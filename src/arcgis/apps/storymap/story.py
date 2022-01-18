@@ -997,11 +997,13 @@ class StoryMap(object):
                     # Update the date in new keywords
                     previously_published = True
                     keywords.remove(keyword)
-                elif ("smstatuspublished" in keyword or
-                    "smstatusdraft" in keyword or
-                    "smdraftresourceid" in keyword or
-                    "smeditorapp" in keyword or
-                    "Copy Item" in keyword):
+                elif (
+                    "smstatuspublished" in keyword
+                    or "smstatusdraft" in keyword
+                    or "smdraftresourceid" in keyword
+                    or "smeditorapp" in keyword
+                    or "Copy Item" in keyword
+                ):
                     # Remove old keywords and will be replaced in new keywords
                     keywords.remove(keyword)
             if previously_published is True:
@@ -1079,8 +1081,8 @@ class StoryMap(object):
         # get the item to copy
         item = self._gis.content.get(self._itemid)
 
-        # enterprise has no copy_item
-        if item._portal.is_arcgisonline is False:
+        # enterprise copy_item starting at 10.9
+        if item._portal.is_arcgisonline is False and self._gis.version < [9, 2]:
             clone = self._gis.content.clone_items(items=[item])
         else:
             clone = item.copy_item(

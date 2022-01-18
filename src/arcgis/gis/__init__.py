@@ -13741,7 +13741,7 @@ class Item(dict):
         Lastly, relationships and dependencies of the original item are not maintained in the new item.
 
         .. note::
-            This method is only available on ArcGIS Online
+            This method is only available on ArcGIS Online or ArcGIS Enterprise 10.9 or higher
 
         =======================    =============================================================
         **Argument**               **Description**
@@ -13772,27 +13772,25 @@ class Item(dict):
         :return: An :class:`~arcgis.gis.Item` object
         """
 
-        if self._portal.is_arcgisonline:
-            url = "%s/sharing/rest/content/users/%s/items/%s/copy" % (
-                self._portal.url,
-                self._user_id,
-                self.id,
-            )
-            params = {
-                "f": "json",
-                "title": title,
-                "tags": tags,
-                "includeResources": include_resources,
-                "copyPrivateResources": include_private,
-            }
-            res = self._portal.con.post(url, params)
-            if "itemId" in res:
-                return self._gis.content.get(res["itemId"])
-            elif "id" in res:
-                return self._gis.content.get(res["id"])
-            else:
-                return res
-        return
+        url = "%s/sharing/rest/content/users/%s/items/%s/copy" % (
+            self._portal.url,
+            self._user_id,
+            self.id,
+        )
+        params = {
+            "f": "json",
+            "title": title,
+            "tags": tags,
+            "includeResources": include_resources,
+            "copyPrivateResources": include_private,
+        }
+        res = self._portal.con.post(url, params)
+        if "itemId" in res:
+            return self._gis.content.get(res["itemId"])
+        elif "id" in res:
+            return self._gis.content.get(res["id"])
+        else:
+            return res
 
     # ----------------------------------------------------------------------
     def copy(self, title=None, tags=None, snippet=None, description=None, layers=None):
