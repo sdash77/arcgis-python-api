@@ -5,8 +5,7 @@ import arcgis
 from arcgis.learn import FeatureClassifier
 import arcpy
 
-prf_root_dir = os.path.join(os.path.dirname(__file__), os.pardir)
-sys.path.append(prf_root_dir)
+
 import numpy as np
 from .util import normalize_batch
 

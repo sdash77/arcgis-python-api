@@ -20,6 +20,13 @@ class DigestAuth(HTTPDigestAuth, SupportMultiAuth):  # pragma: no cover
     def __init__(self, username: str, password: str):
         HTTPDigestAuth.__init__(self, username, password)
 
+    @property
+    def token(self) -> str:
+        """
+        returns the authentication token
+        """
+        return None
+
 
 ###########################################################################
 class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
@@ -64,6 +71,17 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
 
     def __ne__(self, other):
         return not self == other
+
+        # ----------------------------------------------------------------------
+
+    @property
+    def token(self) -> str:
+        """
+        Gets the token.  This is always `None` for `EsriBasicAuth`
+
+        :returns: String
+        """
+        return None
 
     def generate_portal_server_token(self, r, **kwargs):
         """generates a server token using Portal token"""

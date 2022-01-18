@@ -55,7 +55,6 @@ except Exception as e:
     class TransformerForTextClassification:
         _supported_backbones = transformer_architectures
 
-
 else:
     warnings.filterwarnings("ignore", category=UserWarning, module="fastai")
 
@@ -753,6 +752,13 @@ class TextClassifier(ArcGISModel):
                     x[0] for x in validation_dataframe[self._data._label_cols].values
                 ]
                 target_names = self.learn.model._config.label2id.keys()
+                if len(target_names) != len(set(labels)):
+                    warnings.warn(
+                        f'Validation dataset classes {list(set(labels))} does not match the training dataset \
+classes {list(target_names)}, you could use "stratify=True" with prepare_textdata or try increasing the minority class \
+samples. Metrics are only being calculated for classes present in the validation dataset.'
+                    )
+                    target_names = set(labels)
                 output_dict = classification_report(
                     labels,
                     predictions,

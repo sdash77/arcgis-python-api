@@ -230,12 +230,13 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         url = _parse_arcgis_url(url=url)
         self.legacy = legacy
         self._verify_cert = verify_cert
+        self._base_url = url
         self._auth_url = f"{url}/sharing/rest/oauth2/authorize"
         self._token_url = f"{url}/sharing/rest/oauth2/token"
         self._signin_url = f"{url}/sharing/oauth2/signin"
         self._reset_password_url = f"{url}/sharing/oauth2/resetPassword"
         self._update_profile_url = f"{url}/sharing/oauth2/updateUserProfile"
-        self._clientid = kwargs.get("clientid", "arcgisonline")
+        self._clientid = kwargs.get("clientid", "arcgispro")
         self._no_go_token = set()
         self._username = username
         self._password = password
@@ -289,11 +290,13 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     # ----------------------------------------------------------------------
     def _init_token_auth_handshake(self):
         """perform initial handshake"""
-        self._oauth = OAuth2Session(
-            "arcgispro", redirect_uri="urn:ietf:wg:oauth:2.0:oob"
-        )
+        redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
+        self._oauth = OAuth2Session(self._clientid, redirect_uri=redirect_uri)
         authorization_url, state = self._oauth.authorization_url(
-            self._auth_url, **self._params
+            self._auth_url,
+            expiration=20160,
+            style="dark",
+            locale="en-US",
         )
         self._authorization_url = authorization_url
         self._state = state
@@ -329,7 +332,10 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         )
         matches = pattern.findall(signin_resp.text)
         if len(matches) > 0:
-            sign_json = json.loads(matches[0].strip())
+            try:
+                sign_json = json.loads(matches[0].strip())
+            except:
+                sign_json = json.loads(matches[0].strip() + "}")
         else:
             sign_json = {}
         if "messages" in sign_json and (
@@ -421,6 +427,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             code=code,
             verify=self._verify_cert,
             include_client_id=True,
+            **{"expiration": 20160},
         )
         if "expires_at" in self._auth_token:
             self._expiration_time = _dt.datetime.fromtimestamp(
@@ -437,13 +444,23 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     @property
     def token(self):
         """obtains the login token"""
-        if self._auth_token:
-            if (_dt.datetime.now() - _dt.timedelta(minutes=5)) >= self._expiration_time:
-                self._refresh()
-            return self._auth_token["access_token"]
-        else:
+        try:
+            if self._auth_token:
+                if (
+                    _dt.datetime.now() + _dt.timedelta(minutes=5)
+                ) >= self._expiration_time:
+                    self._refresh()
+                return self._auth_token["access_token"]
+            else:
+                self._init_token_auth_handshake()
+                return self.token
+        except:
+            self._auth_token = None
             self._init_token_auth_handshake()
-            return self.token
+            if self._auth_token:
+                return self.token
+            else:
+                raise
         return None
 
     # ----------------------------------------------------------------------
@@ -515,7 +532,8 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         self._auth_token = self._oauth.refresh_token(
             token_url=self._token_url,
             verify=self._verify_cert,
-            **{"client_id": self._clientid},  # "arcgispro"},
+            client_id=self._oauth.client_id,
+            expiration=20160,
         )
         if "expires_at" in self._auth_token:
             self._expiration_time = _dt.datetime.fromtimestamp(

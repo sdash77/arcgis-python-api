@@ -187,11 +187,14 @@ class MMSegmentationConfig:
 
         return model_output["loss"]
 
-    def post_process(self, pred, thres=0.5, thinning=True):
+    def post_process(self, pred, thres=0.5, thinning=True, prob_raster=False):
         """
         In this function you have to return list with appended output for each image in the batch with shape [C=1,H,W]!
         """
-        pred = self.torch.unsqueeze(pred.argmax(dim=1), dim=1)
+        if prob_raster:
+            return pred
+        else:
+            pred = self.torch.unsqueeze(pred.argmax(dim=1), dim=1)
         return pred
 
 

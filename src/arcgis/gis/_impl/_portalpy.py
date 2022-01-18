@@ -2,6 +2,7 @@
 
 
 from __future__ import absolute_import
+import io
 import copy
 import json
 import imghdr
@@ -99,6 +100,7 @@ class Portal(object):
         **kwargs,
     ):
         """The Portal constructor. Requires URL and optionally username/password."""
+        self._use_gen_token = kwargs.pop("use_gen_token", False)
         url = url.strip()  # be permissive in accepting home app urls
         homepos = url.find("/home")
         trust_env = kwargs.get("trust_env", None)
@@ -117,7 +119,12 @@ class Portal(object):
                 url = arcpy.GetActivePortalURL() or "https://www.arcgis.com/"
                 self.url = url
             except ImportError:
-                raise ImportError("Could not import arcpy")
+                raise ImportError(
+                    (
+                        "The login failed because the arcpy library could not be found in your Python environment. "
+                        "Try logging in with a different set of credentials."
+                    )
+                )
             except:
                 raise ValueError("Could not use Pro authentication.")
         else:
@@ -182,6 +189,7 @@ class Portal(object):
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
                     is_hosted_nb_home=is_hosted_nb_home,
+                    use_gen_token=self._use_gen_token,
                 )
             else:
                 self.con = Connection(
@@ -206,6 +214,7 @@ class Portal(object):
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
                     is_hosted_nb_home=is_hosted_nb_home,
+                    use_gen_token=self._use_gen_token,
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -294,21 +303,21 @@ class Portal(object):
             be provided.
 
 
-        ============     ====================================================
-        **Argument**     **Description**
-        ------------     ----------------------------------------------------
-        item_properties  required dictionary, see below for the keys and values
-        ------------     ----------------------------------------------------
-        data             optional string, either a path or URL to the data
-        ------------     ----------------------------------------------------
-        thumbnail        optional string, either a path or URL to an image
-        ------------     ----------------------------------------------------
-        metadata         optional string, either a path or URL to metadata.
-        ------------     ----------------------------------------------------
-        owner            optional string, defaults to logged in user.
-        ------------     ----------------------------------------------------
-        folder           optional string, content folder where placing item
-        ============     ====================================================
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        item_properties     Required dictionary, see below for the keys and values
+        ---------------     ----------------------------------------------------
+        data                Optional string, either a path or URL to the data
+        ---------------     ----------------------------------------------------
+        thumbnail           Optional string, either a path or URL to an image
+        ---------------     ----------------------------------------------------
+        metadata            Optional string, either a path or URL to metadata.
+        ---------------     ----------------------------------------------------
+        owner               Optional string, defaults to logged in user.
+        ---------------     ----------------------------------------------------
+        folder              Optional string, content folder where placing item
+        ===============     ====================================================
 
 
         ================  ============================================================================
@@ -361,12 +370,27 @@ class Portal(object):
         # Build the files list (tuples)
         files = []
         if data:
-            if _is_http_url(data):
+            if isinstance(data, (io.BytesIO, io.StringIO)) == False and _is_http_url(
+                data
+            ):
                 data = request.urlretrieve(data)[0]
-            else:
+            elif isinstance(data, (io.BytesIO, io.StringIO)) == False:
                 if not os.path.isfile(os.path.abspath(data)):
                     raise RuntimeError("File(" + data + ") not found.")
-            files.append(("file", data, os.path.basename(data)))
+            if isinstance(data, (io.BytesIO, io.StringIO)):
+
+                fn = item_properties.get("fileName", None)
+                if fn is None:
+                    raise ValueError(
+                        (
+                            "When using BytesIO or StringIO, a file name must be given in "
+                            "the item_properties as item_properties['fileName'] = 'mydata.<extension>'"
+                        )
+                    )
+                data.seek(0)
+                files.append(("file", data, fn))
+            else:
+                files.append(("file", data, os.path.basename(data)))
         if metadata:
             if _is_http_url(metadata):
                 metadata = request.urlretrieve(metadata)[0]
@@ -508,6 +532,9 @@ class Portal(object):
         path = "content/users/" + owner
         if folder and folder != "/":
             folder_id = self.get_folder_id(owner, folder)
+            if folder_id is None:
+                self.create_folder(owner, folder)
+                folder_id = self.get_folder_id(owner, folder)
             path += "/" + folder_id
         path += "/createService"
 
@@ -2480,8 +2507,11 @@ class Portal(object):
         if data:
             if isinstance(data, dict):
                 postdata["text"] = data  # json.dumps(data)
+            elif isinstance(data, (io.BytesIO, io.StringIO)):
+                files.append(("file", data, item_properties.get("fileName", None)))
             elif _is_http_url(data):
                 data = request.urlretrieve(data)[0]
+
             elif isinstance(data, str) and (len(data) < 32767) and os.path.isfile(data):
                 files.append(("file", data, os.path.basename(data)))
             else:

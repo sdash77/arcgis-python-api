@@ -6,6 +6,7 @@ from __future__ import absolute_import
 import os
 import json
 import time
+import logging
 import tempfile
 import collections
 from typing import Tuple
@@ -14,9 +15,11 @@ from arcgis.gis import _GISResource
 import concurrent.futures as _cf
 from typing import Optional, Dict, List, Any
 
+_log = logging.getLogger()
+
 # pylint: disable=protected-access
 
-
+###########################################################################
 class AttachmentManager(object):
     """
     Manager class for manipulating feature layer attachments. This class is not created by users directly.
@@ -191,7 +194,7 @@ class AttachmentManager(object):
 
             query = self._layer.query(
                 where=where,
-                object_ids=",".join(object_ids),
+                object_ids=",".join(map(str, object_ids)),
                 global_ids=",".join(global_ids),
                 return_ids_only=True,
             )
@@ -202,7 +205,10 @@ class AttachmentManager(object):
                     for att in attachments:
                         if not token is None:
                             att_path = "{}/{}/attachments/{}?token={}".format(
-                                self._layer.url, i, att["id"], self._layer._con.token
+                                self._layer.url,
+                                i,
+                                att["id"],
+                                self._layer._con.token,
                             )
                         else:
                             att_path = "{}/{}/attachments/{}".format(
@@ -283,7 +289,9 @@ class AttachmentManager(object):
                         )
                     else:
                         att_path = "{}/{}/attachments/{}".format(
-                            self._layer.url, result["parentObjectId"], data["id"]
+                            self._layer.url,
+                            result["parentObjectId"],
+                            data["id"],
                         )
                     preview = None
                     if data["contentType"].find("image") > -1:
@@ -319,8 +327,15 @@ class AttachmentManager(object):
                 pd.set_option("display.max_colwidth", -1)
                 return HTML(pd.DataFrame.from_dict(rows).to_html(escape=False))
             else:
+                if len(rows) == 0:
+                    return pd.DataFrame()
                 df = pd.DataFrame.from_dict(rows)
-                df.drop(["DOWNLOAD_URL", "IMAGE_PREVIEW"], axis=1, inplace=True)
+                df.drop(
+                    ["DOWNLOAD_URL", "IMAGE_PREVIEW"],
+                    axis=1,
+                    inplace=True,
+                    errors="ignore",
+                )
                 return df
         else:
             return rows
@@ -351,11 +366,15 @@ class AttachmentManager(object):
         if not os.path.isdir(save_folder):
             os.makedirs(save_folder)
         attachments = self.search(
-            object_ids=object_ids, attachment_types=attachment_types, as_df=True
+            object_ids=object_ids,
+            attachment_types=attachment_types,
+            as_df=True,
         )
         for row in attachments.to_dict(orient="records"):
             dlpath = os.path.join(
-                save_folder, "%s" % int(row["PARENTOBJECTID"]), "%s" % int(row["ID"])
+                save_folder,
+                "%s" % int(row["PARENTOBJECTID"]),
+                "%s" % int(row["ID"]),
             )
             if os.path.isdir(dlpath) == False:
                 os.makedirs(dlpath)
@@ -535,6 +554,7 @@ class AttachmentManager(object):
         return self._layer._update_attachment(oid, attachment_id, file_path)
 
 
+###########################################################################
 class SyncManager(object):
     """
     Manager class for manipulating replicas for syncing disconnected editing of :class:`~arcgis.features.FeatureLayer`s.
@@ -952,7 +972,12 @@ class SyncManager(object):
                 del extent["spatialReference"]
         extents_str = ",".join(
             format(x, "10.3f")
-            for x in [extent["xmin"], extent["ymin"], extent["xmax"], extent["ymax"]]
+            for x in [
+                extent["xmin"],
+                extent["ymin"],
+                extent["xmax"],
+                extent["ymax"],
+            ]
         )
         geom_filter = {"geometryType": "esriGeometryEnvelope"}
         geom_filter.update({"geometry": extents_str})
@@ -1450,38 +1475,56 @@ class FeatureLayerCollectionManager(_GISResource):
     Users call methods on this 'manager' object to manage the feature layer collection.
     """
 
+    _layers = None
+    _tables = None
+
     def __init__(self, url, gis=None, fs=None):
         super(FeatureLayerCollectionManager, self).__init__(url, gis)
         self._fs = fs
-        self._populate_layers()
         self._wh = None
         self._tp = _cf.ThreadPoolExecutor(5)
+
+    @property
+    def layers(self) -> list:
+        """
+        Returns a list of FeatureLayerManagers to work with FeatureLayers
+
+        :returns: List[FeatureLayerManagers]
+        """
+        self._layers = []
+        for table in self.properties.layers:
+            try:
+
+                self._layers.append(
+                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
+                )
+            except Exception as e:
+                _log.error(str(e))
+
+        return self._layers
+
+    @property
+    def tables(self) -> list:
+        """
+        Returns a list of FeatureLayerManagers to work with tables
+
+        :returns: List[FeatureLayerManagers]
+        """
+        self._tables = []
+        for table in self.properties.tables:
+            try:
+
+                self._tables.append(
+                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
+                )
+            except Exception as e:
+                _log.error(str(e))
 
     def _populate_layers(self):
         """
         populates layers and tables in the managed feature service
         """
-        layers = []
-        tables = []
-
-        try:
-            for layer in self.properties.layers:
-                layers.append(
-                    FeatureLayerManager(self.url + "/" + str(layer["id"]), self._gis)
-                )
-        except:
-            pass
-
-        try:
-            for table in self.properties.tables:
-                tables.append(
-                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
-                )
-        except:
-            pass
-
-        self.layers = layers
-        self.tables = tables
+        return
 
     @property
     def webhook_manager(self) -> WebHookServiceManager:
@@ -1659,6 +1702,11 @@ class FeatureLayerCollectionManager(_GISResource):
         else:
             me = gis.users.me.username
         url = "%s/content/users/%s/createService" % (url, me)
+        if spatial_reference is None:
+            # handle for tables
+            if "spatialReference" in fs.properties:
+                spatial_reference = fs.properties["spatialReference"]
+            # else it stays the spatial reference given or None
         params = {
             "f": "json",
             "isView": True,
@@ -1668,8 +1716,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     "isView": True,
                     "sourceSchemaChangesAllowed": allow_schema_changes,
                     "isUpdatableView": updateable,
-                    "spatialReference": spatial_reference
-                    or fs.properties["spatialReference"],
+                    "spatialReference": spatial_reference,
                     "initialExtent": extent or fs.properties["initialExtent"],
                     "capabilities": capabilities or fs.properties["capabilties"],
                 }
@@ -1706,16 +1753,22 @@ class FeatureLayerCollectionManager(_GISResource):
         if is_none_or_empty(view_layers) and is_none_or_empty(view_tables):
             # When view_layers and view_tables are not specified, create a view from all layers and tables
             for lyr in fs.layers:
+                lyr_id = lyr.manager.properties.serviceItemId
+                data_path = "content/items/" + lyr_id + "/data"
+                data = item._portal.con.get(path=data_path)
                 add_def["layers"].append(
                     {
                         "adminLayerInfo": {
+                            "popupInfo": data["layers"][0]["popupInfo"]
+                            if "layers" in data
+                            else None,
                             "viewLayerDefinition": {
                                 "sourceServiceName": os.path.basename(
                                     os.path.dirname(fs.url)
                                 ),
                                 "sourceLayerId": lyr.manager.properties["id"],
                                 "sourceLayerFields": "*",
-                            }
+                            },
                         },
                         "name": lyr.manager.properties["name"],
                     }
@@ -1742,16 +1795,22 @@ class FeatureLayerCollectionManager(_GISResource):
             if view_layers:
                 if isinstance(view_layers, list):
                     for lyr in view_layers:
+                        lyr_id = lyr.manager.properties.serviceItemId
+                        data_path = "content/items/" + lyr_id + "/data"
+                        data = item._portal.con.get(path=data_path)
                         add_def["layers"].append(
                             {
                                 "adminLayerInfo": {
+                                    "popupInfo": data["layers"][0]["popupInfo"]
+                                    if "layers" in data
+                                    else None,
                                     "viewLayerDefinition": {
                                         "sourceServiceName": os.path.basename(
                                             os.path.dirname(fs.url)
                                         ),
                                         "sourceLayerId": lyr.manager.properties["id"],
                                         "sourceLayerFields": "*",
-                                    }
+                                    },
                                 },
                                 "name": lyr.manager.properties["name"],
                             }
@@ -2437,6 +2496,7 @@ class FeatureLayerCollectionManager(_GISResource):
         return (publish_parameters, params)
 
 
+###########################################################################
 class FeatureLayerManager(_GISResource):
     """
     Allows updating the definition (if access permits) of a :class:`~arcgis.features.FeatureLayer`.
@@ -2637,8 +2697,20 @@ class FeatureLayerManager(_GISResource):
         The truncate operation supports deleting all features or attachments
         in a hosted feature service layer. The result of this operation is a
         response indicating success or failure with error code and description.
-        See: https://developers.arcgis.com/rest/services-reference/truncate-feature-layer-.htm # noqa
-        for additional information on this function.
+        See `Truncate (Feature Layer) <https://developers.arcgis.com/rest/services-reference/online/truncate-feature-layer-.htm>`_
+        for additional information on this method.
+
+        .. note::
+            The `truncate` method is restricted to
+            :class:`layers <arcgis.features.FeatureLayer>` that:
+
+              - do not serve as the origin in a relationship with other
+                layers
+              - do not reference the same underlying database tables that are
+                referenced by other layers (for example, if the layer was
+                published from a layer with a definition query and a
+                separate layer has also been published from that source)
+              - do not have `sync` enabled
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2655,10 +2727,14 @@ class FeatureLayerManager(_GISResource):
         ===============     ====================================================================
 
         :return:
-           JSON Message as dictionary indicatiing 'success' or 'error'
+           JSON Message as dictionary indicating `success` or `error`
 
         """
-        params = {"f": "json", "attachmentOnly": attachment_only, "async": asynchronous}
+        params = {
+            "f": "json",
+            "attachmentOnly": attachment_only,
+            "async": asynchronous,
+        }
         u_url = self._url + "/truncate"
 
         if asynchronous:

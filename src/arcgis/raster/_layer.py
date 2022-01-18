@@ -37,7 +37,9 @@ except:
 _LOGGER = logging.getLogger(__name__)
 
 try:
-    import arcpy
+    from arcgis.auth.tools import LazyLoader
+
+    arcpy = LazyLoader("arcpy")
 except:
     pass
 
@@ -112,6 +114,27 @@ class ImageryLayerCacheManager(_GISResource):
         url = self._url + "/jobs/%s/cancel" % job_id
         params = {"f": "json"}
         return self._con.post(url, params, timeout=None)
+
+    # ----------------------------------------------------------------------
+    def swap(self, target_service_name):
+        """
+        The swap operation replaces the current service cache with an existing one.
+
+        .. note::
+            The ``swap`` operation is for ArcGIS Online only.
+
+        ====================        ====================================================
+        **Argument**                **Description**
+        --------------------        ----------------------------------------------------
+        target_service_name         Required string. Name of service you want to swap with.
+        ====================        ====================================================
+
+        :returns: dictionary indicating success or error
+
+        """
+        url = self._url + "/swap"
+        params = {"f": "json", "targetServiceName": target_service_name}
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     @property
@@ -209,7 +232,13 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
+            from arcgis.mapping import ImageryLayer
+            from arcgis.gis import GIS
+
             # Example Usage
+            gis = GIS(url, username, password)
+            img_lyr = ImageryLayer("<url>", gis)
+            img_lyr_cache_manager = img_lyr.cache_manager
             imported_tiles = img_lyr_cache_manager.import_tiles(item = item1,
                                                                 levels = "11-20",
                                                                 extent = {
@@ -278,7 +307,13 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
+            from arcgis.mapping import ImageryLayer
+            from arcgis.gis import GIS
+
             # Example Usage
+            gis = GIS(url, username, password)
+            img_lyr = ImageryLayer("<url>", gis)
+            img_lyr_cache_manager = img_lyr.cache_manager
             updated_tiles = img_lyr_cache_manager.update_tiles(levels = "11-20",
                                                                extent = {
                                                                             "xmin":6224324.092137296,
@@ -425,7 +460,13 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
+            from arcgis.mapping import ImageryLayer
+            from arcgis.gis import GIS
+
             # Example Usage
+            gis = GIS(url, username, password)
+            img_lyr = ImageryLayer("<url>", gis)
+            img_lyr_cache_manager = img_lyr.cache_manager
             deleted_tiles = img_lyr_cache_manager.delete_tiles(levels = "11-20",
                                                                extent = {
                                                                             "xmin":6224324.092137296,
@@ -497,7 +538,8 @@ class _RasterRenderingService(Layer):
                     )
         self.url = url
         if url:
-            self.token = gis._con.generate_portal_server_token(serverUrl=url)
+            self.token = gis._con._create_token(url)
+
         else:
             self.token = None
 
@@ -1175,7 +1217,8 @@ class ImageryLayer(Layer):
                                         defines the location to be identified.
 
                                         .. note::
-                                            The location can be a point or polygon.
+                                            The location can be a point or polygon or envelope.
+                                            Support for envelope was added at 10.9.1.
         ----------------------------    --------------------------------------------------------------------
         mosaic_rule                     Optional string or dict. Specifies the mosaic rule when defining how
                                         individual images should be mosaicked. When a mosaic rule is not
@@ -1281,15 +1324,20 @@ class ImageryLayer(Layer):
 
         url = "%s/identify" % self._url
         params = {"f": "json", "geometry": dict(geometry)}
-        from arcgis.geometry._types import Point, Polygon
+        from arcgis.geometry._types import Point, Polygon, Envelope
+        from arcgis._impl.common._mixins import PropertyMap
 
         if isinstance(geometry, Point):
             params["geometryType"] = "esriGeometryPoint"
         elif isinstance(geometry, Polygon):
             params["geometryType"] = "esriGeometryPolygon"
+        elif isinstance(geometry, (Envelope, PropertyMap)):
+            params["geometryType"] = "esriGeometryEnvelope"
         elif isinstance(geometry, dict):
             if "x" in geometry:
                 params["geometryType"] = "esriGeometryPoint"
+            elif "xmin" in geometry:
+                params["geometryType"] = "esriGeometryEnvelope"
             else:
                 params["geometryType"] = "esriGeometryPolygon"
 
@@ -2202,6 +2250,7 @@ class ImageryLayer(Layer):
         true_curves: bool = False,
         as_df: bool = False,
         raster_query: Optional[str] = None,
+        return_extent_only: bool = False,
     ):
         """
         The ``query`` method queries an :class:`~arcgis.raster.ImageryLayer` by applying the filter specified by
@@ -2245,7 +2294,10 @@ class ImageryLayer(Layer):
         return_count_only               Optional boolean. If True, then an integer is returned only based on
                                         the sql statement
         ------------------------------  --------------------------------------------------------------------
-        pixel_size                      Optional dict or string. Query visible rasters at a given pixel size.
+        return_extent_only              optional boolean. If True, then only the extent is returned.
+                                        This parameter is available from 10.8.1 onwards.
+        ------------------------------  --------------------------------------------------------------------
+        pixel_size                      optional dict or string. Query visible rasters at a given pixel size.
                                         If pixel_size is not specified, rasters at all resolutions can be
                                         queried.
                                         Syntax:
@@ -2353,6 +2405,7 @@ class ImageryLayer(Layer):
             "returnGeometry": return_geometry,
             "returnIdsOnly": return_ids_only,
             "returnCountOnly": return_count_only,
+            "returnExtentOnly": return_extent_only,
         }
         if object_ids:
             params["objectIds"] = object_ids
@@ -2475,6 +2528,8 @@ class ImageryLayer(Layer):
         if return_count_only:
             return result["count"]
         elif return_ids_only:
+            return result
+        elif return_extent_only:
             return result
         elif return_geometry:
             if as_df:
@@ -2722,7 +2777,9 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
-    def statistics(self, variable: Optional[str] = None):
+    def statistics(
+        self, variable: Optional[str] = None, rendering_rule: Optional[dict] = None
+    ):
         """
         The ``statistics`` method retrieves the statistics of the raster.
 
@@ -2737,6 +2794,14 @@ class ImageryLayer(Layer):
                               each variable. If not specified, it will return statistics for the
                               whole image service. Eligible variable names can be queried from
                               multidimensional_info property of the Imagery Layer object.
+        -----------------     --------------------------------------------------------------------
+        rendering_rule        Optional dictionary. Specifies the rendering rule for how the requested image should be rendered.
+
+                              In the context of accessing image service statistics resource,
+                              this parameter is used to retrieve statistics info in attached
+                              predefined raster function templates (inside a StatisticsHistogram function).
+
+                              This parameter is available from 10.9.1
         =================     ====================================================================
 
         :return: A dictionary containing the statistics.
@@ -2757,14 +2822,24 @@ class ImageryLayer(Layer):
         if variable is not None:
             params["variable"] = variable
 
+        if rendering_rule is not None:
+            params["renderingRule"] = rendering_rule
+        elif self._fn is not None:
+            params["renderingRule"] = self._fn
+
         if self._datastore_raster:
             params["Raster"] = self._uri
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
+                del params["renderingRule"]
+                params["Raster"] = self._uri
 
         return self._con.post(
             path=url, postdata=params, token=self._token, timeout=None
         )
 
-    def get_histograms(self, variable: Optional[str] = None):
+    def get_histograms(
+        self, variable: Optional[str] = None, rendering_rule: Optional[dict] = None
+    ):
         """
         The ``get_histograms`` method retrieves the histograms of each band in the :class:`~arcgis.raster.ImageryLayer`
         as a list of dictionaries corresponding to each band.
@@ -2783,6 +2858,14 @@ class ImageryLayer(Layer):
                               each variable. It will return histograms for the whole ImageryLayer
                               if not specified.
                               This parameter is available from 10.8.1
+        -----------------     --------------------------------------------------------------------
+        rendering_rule        Optional dictionary. Specifies the rendering rule for how the requested image should be rendered.
+
+                              In the context of accessing image service histograms resource,
+                              this parameter is used to retrieve histograms info in attached
+                              predefined raster function templates (inside a StatisticsHistogram function).
+
+                              This parameter is available from 10.9.1
         =================     ====================================================================
 
         :return: A list
@@ -2806,8 +2889,16 @@ class ImageryLayer(Layer):
             params = {"f": "json"}
             if variable is not None:
                 params["variable"] = variable
+            if rendering_rule is not None:
+                params["renderingRule"] = rendering_rule
+            elif self._fn is not None:
+                params["renderingRule"] = self._fn
+
             if self._datastore_raster:
                 params["Raster"] = self._uri
+                if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
+                    del params["renderingRule"]
+                    params["Raster"] = self._uri
             hist_return = self._con.post(url, params, token=self._token, timeout=None)
 
             # process this into a dict
@@ -3782,6 +3873,7 @@ class ImageryLayer(Layer):
         return_first_value_only: Optional[bool] = None,
         interpolation: Optional[str] = None,
         out_fields: Optional[str] = None,
+        slice_id: Optional[int] = None,
     ):
         """
         The ``get_samples`` operation is supported by both mosaic dataset and raster
@@ -3859,6 +3951,10 @@ class ImageryLayer(Layer):
                                  This list is a comma-delimited list of field names. You can also
                                  specify the wildcard character (*) as the value of this parameter to
                                  include all the field values in the results.
+        -----------------------  -----------------------------------------------------------------------
+        slice_id                 Optional integer. The slice ID of a multidimensional raster. The operation 
+                                 will be performed for the specified slice.
+                                 This parameter is available from 10.9 onwards.
         =======================  =======================================================================
 
         :return:
@@ -3894,6 +3990,8 @@ class ImageryLayer(Layer):
             params["interpolation"] = interpolation
         if not out_fields is None:
             params["outFields"] = out_fields
+        if slice_id is not None:
+            params["sliceId"] = slice_id
         if self._datastore_raster:
             params["Raster"] = self._uri
 
@@ -4547,6 +4645,13 @@ class ImageryLayer(Layer):
         future                                   Optional boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
+        folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
+                                                 not exist, with the given folder name and persists the output in this folder.
+                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                                 Example:
+                                                    {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+        ------------------------------------     --------------------------------------------------------------------
         tiles_only                               In ArcGIS Online, the default output image service for this function
                                                  would be a Tiled Imagery Layer.
 
@@ -4566,6 +4671,7 @@ class ImageryLayer(Layer):
             img_lyr.save(output_name="saved_imagery_layer",
                          process_as_multidimensional=True,
                          build_transpose=True,
+                         folder="my_imagery_layers",
                          gis=gis)
         """
         g = _arcgis.env.active_gis if gis is None else gis
@@ -4582,7 +4688,7 @@ class ImageryLayer(Layer):
                     "opacity": 1,
                     "title": output_name,
                     "timeAnimation": False,
-                    "renderingRule": self._fn,
+                    "renderingRule": self._fnra,
                     "mosaicRule": self._mosaic_rule,
                 }
                 ext = self.properties.initialExtent
@@ -4596,7 +4702,9 @@ class ImageryLayer(Layer):
                     "extent": "{},{},{},{}".format(
                         ext["xmin"], ext["ymin"], ext["xmax"], ext["ymax"]
                     ),
-                    "spatialReference": self.properties.spatialReference.wkid,
+                    "spatialReference": json.dumps(
+                        dict(self.properties.spatialReference)
+                    ),
                     "text": json.dumps(text_data),
                 }
 
@@ -6220,9 +6328,7 @@ class ImageryLayer(Layer):
                     if (
                         (hasattr(self, "_lazy_token")) and self._lazy_token is None
                     ) or not hasattr(self, "_lazy_token"):
-                        token = self._gis._con.generate_portal_server_token(
-                            serverUrl=self._url
-                        )
+                        token = self._gis._con._create_token(self._url)
                         self._lazy_token = token
                 except Exception as e:
                     token = self._token
@@ -8322,6 +8428,15 @@ class Raster:
 
                                                  (Available only when image_server engine is used)
         ------------------------------------     --------------------------------------------------------------------
+        folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
+                                                 not exist, with the given folder name and persists the output in this folder.
+                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                                 (Available only when image_server engine is used)
+
+                                                 Example:
+                                                    {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+        ------------------------------------     --------------------------------------------------------------------
         tiles_only                               In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
                                                  To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
@@ -8343,6 +8458,7 @@ class Raster:
             # Usage Example 2: Saves the raster to the active GIS as an Imagery Layer Item (usecase for image_server engine rasters)
 
             raster2.save(output_name="output_imagery_layer_name",
+                         folder="my_rasters",
                          gis=gis)
 
         """
@@ -9101,10 +9217,14 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def catalog_path(self):
+        if self._datastore_raster:
+            return self._uri
         return self._url
 
     @property
     def path(self):
+        if self._datastore_raster:
+            return self._uri.rsplit("/", 1)[0]
         return self._url.rsplit("/", 1)[0]
 
     @property
@@ -11479,12 +11599,7 @@ class RasterCollection:
         else:
             self._context = context
 
-        if (
-            (engine is not None)
-            and engine != _ArcpyRasterCollection
-            and engine != _ImageServerRasterCollection
-            and engine != _LocalRasterCollection
-        ):
+        if engine is not None:
             self._ras_coll_engine = engine
             self._ras_coll_engine_obj = engine(
                 rasters=rasters,
@@ -11535,6 +11650,8 @@ class RasterCollection:
                             or "/vsi" in ele
                         ):
                             continue
+                        else:
+                            local_class = False
                     else:
                         local_class = False
 
@@ -11642,7 +11759,7 @@ class RasterCollection:
                               on the specification of the STAC API in use and the request_method
                               parameter value).
 
-                              For the “bbox” query parameter, :class:`~arcgis.geometry.Envelope`
+                              For the `bbox` query parameter, :class:`~arcgis.geometry.Envelope`
                               and :class:`~arcgis.geometry.Polygon`
                               objects are also accepted (in any spatial reference).
 
@@ -13694,6 +13811,8 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         if not isinstance(calendar_field, str):
             raise TypeError("calender_field must be string type")
 
+        calendar_field = calendar_field.upper()
+
         if calendar_field not in calendar_field_types:
             raise ValueError(
                 "invalid calender_field, must be one of "
@@ -14451,6 +14570,27 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         filtered_rasters = []
         attribute_dict = defaultdict(list)
 
+        calendar_field_types = [
+            "YEAR",
+            "MONTH",
+            "QUARTER",
+            "WEEK_OF_YEAR",
+            "DAY_OF_YEAR",
+            "DAY_OF_MONTH",
+            "DAY_OF_WEEK",
+            "HOUR",
+        ]
+        if not isinstance(calendar_field, str):
+            raise TypeError("calender_field must be string type")
+
+        calendar_field = calendar_field.upper()
+
+        if calendar_field not in calendar_field_types:
+            raise ValueError(
+                "invalid calender_field, must be one of "
+                + ", ".join(calendar_field_types)
+            )
+
         for item in iter(self):
             raster = self._get_raster_from_item(item)
 
@@ -14464,6 +14604,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 )
 
             selected = False
+
             if calendar_field == "YEAR":
                 if start <= date_time.year <= end:
                     selected = True
@@ -14635,6 +14776,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
 
             field_value = item[field_name]
 
+            operator = operator.lower()
             selected = False
             if operator == "equals":
                 selected = field_value == field_values
@@ -14778,9 +14920,9 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         return min(self._rasters_list, ignore_nodata=ignore_nodata)
 
     def median(self, ignore_nodata=True):
-        from arcgis.raster.functions import median
+        from arcgis.raster.functions import med
 
-        return median(self._rasters_list, ignore_nodata=ignore_nodata)
+        return med(self._rasters_list, ignore_nodata=ignore_nodata)
 
     def mean(self, ignore_nodata=True):
         from arcgis.raster.functions import mean
