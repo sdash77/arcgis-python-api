@@ -73,7 +73,7 @@ class SystemManager(BaseServer):
         """
         directs = []
         url = self._url + "/directories"
-        params = {"f": "json"}
+        params = {"f": "json", "private": False}
         res = self._con.get(path=url, params=params)
         for direct in res["directories"]:
             directs.append(
@@ -86,9 +86,10 @@ class SystemManager(BaseServer):
         return directs
 
     # ----------------------------------------------------------------------
+    @property
     def directories(self):
         """
-        :returns:
+        :return:
             The server directory object in a list.
         """
         return DirectoryManager(system=self)
@@ -104,7 +105,7 @@ class SystemManager(BaseServer):
         name                   Required string. The name of the registered directory.
         ==================     ====================================================================
 
-        :returns:
+        :return:
             The ArcGIS Server directory as an object.
 
         """
@@ -1155,7 +1156,7 @@ class DirectoryManager(object):
         """
         returns the current service directory properties for the server.
 
-        :returns: dict
+        :return: dict
         """
         return self._system._services_directory
 
@@ -1292,7 +1293,7 @@ class ServerDirectory(BaseServer):
         description,
         *,
         use_local_dir=None,
-        local_dir=None
+        local_dir=None,
     ):
         """
         The server directory's edit operation allows you to change the path

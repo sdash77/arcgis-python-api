@@ -283,10 +283,18 @@ class MapView(widgets.DOMWidget):
     @property
     def zoom(self):
         """
-        The ``zoom`` property defines the level of zoom applied to the Map Widget.
+        Get/Set the level of zoom applied to the Map Widget.
 
-        .. note::
-            The higher the number, the more zoomed in you are.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required int.
+                            .. note::
+                                The higher the number, the more zoomed in you are.
+        ===============     ====================================================================
+
+        :return:
+            Int value that represent the zoom level
 
         .. code-block:: python
 
@@ -312,8 +320,14 @@ class MapView(widgets.DOMWidget):
     @property
     def scale(self):
         """
-        The ``scale`` property represents the map scale at the center of the view. If set to X, the scale
+        Get/Set the map scale at the center of the view. If set to X, the scale
         of the map would be 1:X.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required int.
+        ===============     ====================================================================
 
         .. note::
             For continuous values to apply and not get "snapped" to the closest
@@ -338,8 +352,16 @@ class MapView(widgets.DOMWidget):
     def snap_to_zoom(self):
         """
         The ``snap_to_zoom`` property is used to determine how the zoom is enabled when the map widget is created.
-        When ``True``, snap to the next level of detail when zooming in or out.
-        When ``False``, the zoom is continuous.
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required bool.
+                            Values:
+                                + True: snap to the next level of detail when zooming in or out.
+                                + False: the zoom is continuous.
+        ===============     ====================================================================
 
         .. note::
             The ``snap_to_zoom`` method only applies in 2D mode.
@@ -357,8 +379,14 @@ class MapView(widgets.DOMWidget):
     @property
     def rotation(self):
         """
-        The ``rotation`` property represents the clockwise rotation of due north in relation to the top
+        Get/Set the clockwise rotation of due north in relation to the top
         of the view in degrees in 2D mode.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required float.
+        ===============     ====================================================================
 
         .. note::
             ``rotation`` cannot be set in 3D mode. Rather, 3D mode uses the :attr:`~arcgis.widgets.MapView.heading`
@@ -387,7 +415,7 @@ class MapView(widgets.DOMWidget):
     @property
     def heading(self):
         """
-         The ``heading`` property represents the compass heading of the camera in degrees when in 3D mode. ``heading`` is
+         Get/Set the compass heading of the camera in degrees when in 3D mode. ``heading`` is
          zero when north is the top of the screen. It increases as the view rotates
          clockwise. The angles are always normalized between 0 and 360 degrees.
 
@@ -418,7 +446,7 @@ class MapView(widgets.DOMWidget):
     @property
     def tilt(self):
         """
-        The ``tilt`` property represents the tilt of the camera in degrees with respect to the
+        Get/Set the tilt of the camera in degrees with respect to the
         surface as projected down from the camera position, when in 3D mode. ``tilt`` is zero when
         looking straight down at the surface and 90 degrees when the camera is
         looking parallel to the surface.
@@ -435,26 +463,31 @@ class MapView(widgets.DOMWidget):
     @property
     def basemap(self):
         """
-        The ``basemap`` property defines the basemap you would like to apply to the widget (``topo``,
-        ``national-geographic``, etc.).
+        Get/Set the basemap you would like to apply to the widget.
 
-        .. note::
-            See :attr:`~arcgis.widgets.MapView.basemaps` for a full list of possible maps
+         ===============     ====================================================================
+         **Argument**        **Description**
+         ---------------     --------------------------------------------------------------------
+         value               Required string. Ex: ('topo', 'national-geographic', etc.).
+                             .. note::
+                                 See :attr:`~arcgis.widgets.MapView.basemaps` for a full list of possible maps
+         ===============     ====================================================================
 
+         :return: basemap being used.
 
-        .. code-block:: python
+         .. code-block:: python
 
-            # Usage example: Set the widget basemap equal to an item
+             # Usage example: Set the widget basemap equal to an item
 
-            from arcgis.mapping import WebMap
-            widget = gis.map()
+             from arcgis.mapping import WebMap
+             widget = gis.map()
 
-            # Use basemap from another item as your own
-            widget.basemap = webmap
-            widget.basemap = tiled_map_service_item
-            widget.basemap = image_layer_item
-            widget.basemap = webmap2.basemap
-            widget.basemap - 'national-geographic'
+             # Use basemap from another item as your own
+             widget.basemap = webmap
+             widget.basemap = tiled_map_service_item
+             widget.basemap = image_layer_item
+             widget.basemap = webmap2.basemap
+             widget.basemap - 'national-geographic'
 
         """
         return self._basemap
@@ -517,38 +550,39 @@ class MapView(widgets.DOMWidget):
     @property
     def extent(self):
         """
-        The ``extent`` property represents the map widget's extent.
+        Get/Set the map widget's extent.
 
 
-        ==================     ====================================================================
-        getter                 A dict that represents the JSON of the map widget's extent.
-        ------------------     --------------------------------------------------------------------
-        setter                 A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
-                               or a dict that represents the JSON of the map widget's extent.
+            ==================     ====================================================================
+            **Argument**           **Description**
+            ------------------     --------------------------------------------------------------------
+            value                  Required dict.
+                                   A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
+                                   or a dict that represents the JSON of the map widget's extent.
 
-                               Examples for each:
-                               web_map.extent = [[-124.35, 32.54], [-114.31, 41.95]]
-                               web_map.extent = data_frame.spatial.full_extent
-                               web_map.extent = {
-                                    "xmin": -124.35,
-                                    "ymin": 32.54,
-                                    "xmax": -114.31,
-                                    "ymax": 41.95
-                                }
-        ==================     ====================================================================
+                                    Examples for each:
+                                    web_map.extent = [[-124.35, 32.54], [-114.31, 41.95]]
+                                    web_map.extent = data_frame.spatial.full_extent
+                                    web_map.extent = {
+                                            "xmin": -124.35,
+                                            "ymin": 32.54,
+                                            "xmax": -114.31,
+                                            "ymax": 41.95
+                                        }
+            ==================     ====================================================================
 
-         .. code-block:: python
+            .. code-block:: python
 
-            #Usage Example
+                #Usage Example
 
-            >>> from arcgis.gis import GIS, Item
-            >>> from arcgis.widgets import MapView
-            >>> map2 = gis.map("California")
-            >>> map2.extent
-            {
-            'xmin': -124.20822999999997, 'ymin': 31.436105693000048,
-            'xmax': -114.33222999999997, 'ymax': 41.31210569300005
-             }
+                >>> from arcgis.gis import GIS, Item
+                >>> from arcgis.widgets import MapView
+                >>> map2 = gis.map("California")
+                >>> map2.extent
+                {
+                'xmin': -124.20822999999997, 'ymin': 31.436105693000048,
+                'xmax': -114.33222999999997, 'ymax': 41.31210569300005
+                }
 
         """
         if self._readonly_extent:
@@ -591,7 +625,7 @@ class MapView(widgets.DOMWidget):
             if _is_iterable(value) and len(value) == 0:
                 pass
             else:
-                log.warn(
+                log.warning(
                     "extent must be set to either a 2d list, spatially "
                     "enabled data frame full_extent, or dict. Values specified "
                     "must include xmin, ymin, xmax, ymax. Please see the API doc for "
@@ -605,16 +639,16 @@ class MapView(widgets.DOMWidget):
     @property
     def center(self):
         """
-        The ``center`` property  represents the center of the ``Map Widget``.
+        Get/Set the center of the ``Map Widget``.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        getter                 A dict that represents the JSON of the map widget's center.
-        ------------------     --------------------------------------------------------------------
         setter                 A `[lat, long]` list, or a dict that represents the JSON of the map
                                widget's center.
         ==================     ====================================================================
+
+        :return: A dict that represents the JSON of the map widget's center.
 
         .. code-block:: python
 
@@ -641,7 +675,7 @@ class MapView(widgets.DOMWidget):
         if isinstance(value, dict):
             self._center = value
         elif len(value) != 2:
-            log.warn(
+            log.warning(
                 "If setting center to a list/tuple, the len() "
                 "must be exactly 2 entries long"
             )
@@ -673,7 +707,7 @@ class MapView(widgets.DOMWidget):
     _portal_url = Unicode("").tag(sync=True)
     _portal_sharing_rest_url = Unicode("").tag(sync=True)
     _username = Unicode("").tag(sync=True)
-    _trigger_interactive_draw_mode_for = Unicode("").tag(sync=True)
+    _trigger_interactive_draw_mode_for = Dict({}).tag(sync=True)
     _trigger_new_jlab_window_with_args = Dict({}).tag(sync=True)
     hide_mode_switch = Bool(False).tag(sync=True)
     """When ``hide_mode_switch`` is set to ``True`` the 2D/3D switch button will be hidden from the widget.
@@ -811,10 +845,6 @@ class MapView(widgets.DOMWidget):
             [<FeatureLayer url:"https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/Power_Plants_Itm/FeatureServer/0">]
         """
         return [self._hashed_layers[key] for key in self._hashed_layers]
-
-    @layers.setter
-    def layers(self, value):
-        raise Exception("Can't set layers directly: use add_layer()")
 
     # end how we store layers
 
@@ -1058,7 +1088,7 @@ class MapView(widgets.DOMWidget):
         """
         self._clear_embed_html_preview()
         if not self.ready:
-            log.warn(
+            log.warning(
                 "Cannot take screenshot if widget is not visible in "
                 "notebook: Please try again when widget is visible."
             )
@@ -1369,7 +1399,11 @@ class MapView(widgets.DOMWidget):
         if options is None:
             options = {}
         if isinstance(item, arcgis.features.FeatureLayer) and "renderer" not in options:
-            options["renderer"] = json.loads(item.renderer.json)
+            renderer_dict = json.loads(item.renderer.json)
+            if "renderer" in renderer_dict.keys():
+                options.update(renderer_dict)
+            else:
+                options["renderer"] = renderer_dict
         elif (
             isinstance(item, pd.DataFrame)
             and "renderer" not in options
@@ -1547,7 +1581,7 @@ class MapView(widgets.DOMWidget):
                         if wm_layer["id"] == hash_:
                             self.webmap.remove_layer(wm_layer)
             else:
-                log.warn("Could not find layer {} in layers".format(layer))
+                log.warning("Could not find layer {} in layers".format(layer))
                 output_bool = False
 
         # Layer is removed from python side: trigger removal from JS side
@@ -1741,6 +1775,9 @@ class MapView(widgets.DOMWidget):
         culture            Optional string. Language and country information.
         =================  =====================================================================
 
+        :return:
+            Item object corresponding to the new web map Item created.
+
         .. code-block:: python
 
            USAGE EXAMPLE: Save map widget as a new web map item in GIS
@@ -1750,8 +1787,6 @@ class MapView(widgets.DOMWidget):
            italy_streets_map = map1.save({'title':'Italy streets',
                                         'snippet':'Arterial road network of Italy',
                                         'tags':'streets, network, roads'})
-        :return:
-            Item object corresponding to the new web map Item created.
         """
         if mode == None:
             mode = self.mode
@@ -1848,7 +1883,7 @@ class MapView(widgets.DOMWidget):
                     elif "geometry" in graphic:
                         geom = Geometry(graphic["geometry"])
                     else:
-                        log.warn(
+                        log.warning(
                             "Graphic unsupported, not adding to webmap."
                             " {}".format(graphic)
                         )
@@ -1975,6 +2010,9 @@ class MapView(widgets.DOMWidget):
                            allowed (true) or not allowed (false).
         =================  =====================================================================
 
+        :return:
+           A boolean indicating success (True) or failure (False).
+
         .. code-block:: python
 
            USAGE EXAMPLE: Interactively add a new layer and change the basemap of an existing web map.
@@ -1983,9 +2021,6 @@ class MapView(widgets.DOMWidget):
            map1.add_layer(Italy_streets2)
            map1.basemap = 'dark-gray-vector'
            map1.update(thumbnail = './new_webmap.png')
-
-        :return:
-           A boolean indicating success (True) or failure (False).
 
         """
         if mode == None:
@@ -2253,8 +2288,12 @@ class MapView(widgets.DOMWidget):
             self.webmap.add_layer(fset, wm_options)
 
         else:  # User passed in a string for interactive draw mode
-            self._trigger_interactive_draw_mode_for = ""
-            self._trigger_interactive_draw_mode_for = shape
+            if symbol:
+                draw_options = {"shape": shape, "symbol": symbol}
+            else:
+                draw_options = {"shape": shape}
+            self._trigger_interactive_draw_mode_for = {}
+            self._trigger_interactive_draw_mode_for = draw_options
 
     def _draw_featureset(self, fset, popup, symbol):
         # FeatureSet needs special case

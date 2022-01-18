@@ -14,7 +14,7 @@ try:
     sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR))
     from build import build
 except Exception:
-    log.warn(
+    log.warning(
         "Couldn't import 'build' from {}. Attempting to continue..."
         "".format(GEOSAURUS_ROOT_DIR)
     )

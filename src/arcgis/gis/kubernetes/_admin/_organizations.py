@@ -7,6 +7,142 @@ from arcgis._impl.common._mixins import PropertyMap
 from typing import Dict, Any, Optional, List
 
 ###########################################################################
+class KubeEnterpriseGroups:
+    """
+    This resource is an umbrella for operations that inventory your
+    organization's groups, such as retrieving a list of users within a
+    specific group or listing which groups a specific user is assigned to.
+    The groups resource returns the total number of enterprise groups in
+    the system.
+    """
+
+    # ----------------------------------------------------------------------
+    def __init__(self, url: str, gis: "GIS"):
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
+    @property
+    def properties(self) -> dict:
+        """
+        returns the properties for the Organization
+
+        :return: dict
+        """
+        if self._properties is None:
+            self._properties = self._con.get(self._url, {"f": "json"})
+        return self._properties
+
+    # ----------------------------------------------------------------------
+    def search(self, query: str = "", max_count: int = 1000) -> dict:
+        """
+        Searches users in the configured enterprise user store.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        query                           Optional String. Text to narrow down the user search.
+        ---------------------------     --------------------------------------------------------------------
+        max_count                       Optional Integer.  The maximum number of recrods that the client will accept.
+        ===========================     ====================================================================
+
+        """
+        url = f"{self._url}/searchEnterpriseGroups"
+        params = {"f": "json", "filter": query, "maxCount": max_count}
+        return self._gis._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def find_within_groups(self, name: str, query: str = None, max_count: int = 1000):
+        """
+        This operation returns a list of users that are currently assigned to the enterprise group within the enterprise user and group stores.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        name                            Required String. The name of the group.
+        ---------------------------     --------------------------------------------------------------------
+        query                           Optional String. Text to narrow down the user search.
+        ---------------------------     --------------------------------------------------------------------
+        max_count                       Optional Integer.  The maximum number of recrods that the client will accept.
+        ===========================     ====================================================================
+        """
+        if query is None:
+            query = ""
+        url = f"{self._url}/getUsersWithinEnterpriseGroup"
+        params = {
+            "f": "json",
+            "groupName": name,
+            "filter": query,
+            "maxCount": max_count,
+        }
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def get_user_groups(
+        self, username: str, query: str = None, max_count: int = 1000
+    ) -> dict:
+        """
+        This operation searches groups in the configured role store. You can narrow down the search using the `query` parameter.
+
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        username                        Required String. The username to examine.
+        ---------------------------     --------------------------------------------------------------------
+        query                           Optional String. Text to narrow down the user search.
+        ---------------------------     --------------------------------------------------------------------
+        max_count                       Optional Integer.  The maximum number of recrods that the client will accept.
+        ===========================     ====================================================================
+
+        :returns: dict
+
+        """
+        if query is None:
+            query = ""
+
+        url = f"{self._url}/getEnterpriseGroupsForUser"
+        params = {
+            "f": "json",
+            "username": username,
+            "filter": query,
+            "maxCount": max_count,
+        }
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def refresh_membership(self, groups: List[str]) -> bool:
+        """
+        This operation iterates over every enterprise account configured in
+        your organization and determines whether the user account is part
+        of the input enterprise group. If there are any changes in
+        membership, the database and indexes are updated for each group.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        groups                          Required List[str]. The name of the groups to refresh.
+        ===========================     ====================================================================
+
+        :returns: bool
+        """
+        assert isinstance(groups, (list, tuple))
+        groups = ",".join(groups)
+        url = f"{self._url}/refreshMembership"
+        params = {"groups": groups, "f": "json"}
+        return self._con.post(url, params).get("status", False)
+
+
+###########################################################################
 class KubeOrgSecurity(object):
     """
     Allows the for the management of the security of the settings.
@@ -44,18 +180,46 @@ class KubeOrgSecurity(object):
 
     @property
     def enterprise_user(self):
-        """ """
+        """Allows users to manage and work with enterprise users"""
         url = f"{self._url}/users"
         return KubeEnterpriseUser(url, gis=self._gis)
 
+    @property
+    def enterprise_groups(self):
+        """Allows users to manage and work with enterprise groups"""
+        url = f"{self._url}/groups"
+        return KubeEnterpriseGroups(url, gis=self._gis)
+
 
 class KubeEnterpriseUser:
+    """
+    The `KubeEnterpriseUser` resource houses operations used to manage
+    members in your organization.
+    """
+
     _url = None
     _gis = None
 
     def __init__(self, url, gis):
         self._url = url
         self._gis = gis
+
+    def search(self, query: str = "", max_count: int = 1000) -> dict:
+        """
+        Searches users in the configured enterprise user store.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        query                           Optional String. Text to narrow down the user search.
+        ---------------------------     --------------------------------------------------------------------
+        max_count                       Optional Integer.  The maximum number of recrods that the client will accept.
+        ===========================     ====================================================================
+
+        """
+        url = f"{self._url}/searchEnterpriseUsers"
+        params = {"f": "json", "filter": query, "maxCount": max_count}
+        return self._gis._portal.con.post(url, params)
 
     def create_user(
         self,
@@ -113,7 +277,7 @@ class KubeEnterpriseUser:
 
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         role_lu = {
@@ -232,6 +396,36 @@ class KubeOrganization:
 
     # ----------------------------------------------------------------------
     @property
+    def org_property(self) -> dict:
+        """
+        This operation lists and sets properties specific to an organization that
+        can be modified to control your deployment.
+
+        :Returns: dict
+
+        """
+        url = f"{self._url}/properties"
+        params = {"f": "json"}
+        res = self._con.get(url, params)
+        return res
+
+    # ----------------------------------------------------------------------
+    @org_property.setter
+    def org_property(self, value: dict):
+        """
+        This operation lists and sets properties specific to an organization that
+        can be modified to control your deployment.
+
+        :Returns: dict
+        """
+        url = f"{self._url}/properties/update"
+        params = {"f": "json"}
+        res = self._con.get(url, params)
+        if res.get("status") == False:
+            raise Exception(res)
+
+    # ----------------------------------------------------------------------
+    @property
     def url(self):
         """gets/sets the service url"""
         return self._url
@@ -267,7 +461,7 @@ class KubeOrganization:
         """
         Returns manager to work with server federation.
 
-        :returns: KubeOrgFederations
+        :return: KubeOrgFederations
         """
         if self._federation is None:
             url = self._url + "/federation"
@@ -323,6 +517,47 @@ class KubeOrgFederations:
         url = f"{self._url}/servers"
         params = {"f": "json"}
         return self._con.get(path=url, params=params)
+
+    def federate(self, url: str, admin_url: str, username: str, password: str) -> bool:
+        """
+        This operation federates either a GIS Server or ArcGIS Image Server
+        with an organization. The federate operation performs a validation
+        check to determine whether the provided service and
+        dministrative URLs are accessible. If the resulting validation check
+        fails, a warning is returned. A SEVERE log type is also returned in
+        the organization's logs. After federation, administrators will be
+        unable to set a server role for the federated server.
+
+
+        :returns: bool
+
+        """
+        params = {
+            "f": "json",
+            "url": url,
+            "adminUrl": admin_url,
+            "username": username,
+            "password": password,
+        }
+        url = f"{self._url}/servers/federate"
+        return self._con.post(url, params).get("status", "failed") == "success"
+
+    def validate(self) -> dict:
+        """
+        The validate operation performs validation checks against all
+        federated GIS Server and ArcGIS Image Server types within your
+        organization, including the hosting server that is built in with an
+        ArcGIS Enterprise on Kubernetes deployment. On completion, this
+        operation returns status and accessibility information for all
+        organization servers. This response also includes any failure
+        messages from failed validation checks.
+
+        :returns: dict
+        """
+        url = f"{self._url}/servers/validate"
+        params = {"f": "json"}
+
+        return self._con.get(url, params)
 
 
 ###########################################################################
@@ -442,7 +677,7 @@ class KubeOrgLicense:
                                         a portal.
         ===========================     ====================================================================
 
-        :returns: Dict
+        :return: Dict
 
         """
         file = {"file": file}
@@ -483,7 +718,7 @@ class KubeOrganizations:
 
         params = {"f": "json"}
         try:
-            result = self._con.get(self._url, {"f": "json"})
+            result = self._con.get(self._url, params)
             if isinstance(result, dict):
                 self._json_dict = result
                 self._properties = PropertyMap(result)
@@ -531,7 +766,7 @@ class KubeOrganizations:
         """
         Returns a list of registered organizations with the Kubernetes deployment
 
-        :returns: tuple
+        :return: tuple
         """
         return tuple(
             [

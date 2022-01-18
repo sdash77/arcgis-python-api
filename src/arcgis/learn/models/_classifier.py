@@ -80,7 +80,9 @@ except Exception as e:
 
 HAS_ARCPY = True
 try:
-    import arcpy
+    from arcgis.auth.tools import LazyLoader
+
+    arcpy = LazyLoader("arcpy")
 except Exception:
     HAS_ARCPY = False
 
@@ -138,7 +140,7 @@ class FeatureClassifier(ArcGISModel):
                             valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
 
-    :returns: `FeatureClassifier` Object
+    :return: `FeatureClassifier` Object
     """
 
     def __init__(
@@ -327,7 +329,7 @@ class FeatureClassifier(ArcGISModel):
                                 be set to True.
         =====================   ===========================================
 
-        :returns: prediction label and confidence
+        :return: prediction label and confidence
         """
         img = open_image(img_path)
         pred = self.learn.predict(img)
@@ -369,8 +371,13 @@ class FeatureClassifier(ArcGISModel):
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
         _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
-        _emd_template["CropSizeFixed"] = 1  # hardcoded
-        _emd_template["BlackenAroundFeature"] = 0  # hardcoded
+        _emd_template["CropSizeFixed"] = int(
+            getattr(self._data, "_emd", {}).get("CropTileMode", "Fixed_Size")
+            == "Fixed_Size"
+        )
+        _emd_template["BlackenAroundFeature"] = int(
+            getattr(self._data, "_emd", {}).get("BlackenAroundFeature", False)
+        )
         _emd_template["ImageSpaceUsed"] = "MAP_SPACE"
         _emd_template["Classes"] = []
         class_data = {}
@@ -412,7 +419,7 @@ class FeatureClassifier(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `FeatureClassifier` Object
+        :return: `FeatureClassifier` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -600,6 +607,11 @@ class FeatureClassifier(ArcGISModel):
         if num_examples == 1:
             num_examples = 2
         learn_temp = copy.copy(self.learn)
+        from arcgis.learn._utils.labeled_tiles import plot_multi_top_losses_modified
+
+        ClassificationInterpretation.plot_multi_top_losses = (
+            plot_multi_top_losses_modified
+        )
         interp = ClassificationInterpretation.from_learner(learn_temp)
         heatmap = True
         if self._backend == "tensorflow":
@@ -608,6 +620,11 @@ class FeatureClassifier(ArcGISModel):
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
+                    # Add plt.show to avoid issues from previous plots from other method
+                    try:
+                        plt.show()
+                    except:
+                        pass
                     interp.plot_multi_top_losses(num_examples, figsize=(5, 5))
             except IndexError:
                 from IPython.display import clear_output
@@ -679,7 +696,7 @@ class FeatureClassifier(ArcGISModel):
         confidence_field        Optional String. The field name to use to add confidence.
         =====================   ===========================================
 
-        :returns: `FeatureCollection` Object
+        :return: `FeatureCollection` Object
         """
         return self._create_feature_layer(
             self._extract_images_geo_data(folder),

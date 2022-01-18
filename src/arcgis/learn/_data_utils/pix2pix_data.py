@@ -163,14 +163,73 @@ def _batch_stats_json(
         with open(normstats_json_path) as f:
             normstats = json.load(f)
 
+    emd_path = Path(os.path.abspath(path / "esri_model_definition.emd"))
+    with open(emd_path) as f:
+        emd_stats = json.load(f)
+    if "AllTilesStats2" not in emd_stats:
+        emd_stats = None
+    else:
+        if stats_file_name == "esri_normalization_stats_a.json":
+            domain_stats = emd_stats.get("AllTilesStats")
+        else:
+            domain_stats = emd_stats.get("AllTilesStats2")
+        mini, maxi, mean, std = [], [], [], []
+        for i in domain_stats:
+            mini.append(i.get("Min"))
+            maxi.append(i.get("Max"))
+            mean.append(i.get("Mean"))
+            std.append(i.get("StdDev"))
+
+        data_stats = [mini, maxi, mean, std]
+        data_stats_tensors = [
+            torch.tensor(mini),
+            torch.tensor(maxi),
+            torch.tensor(mean),
+            torch.tensor(std),
+        ]
+
     norm_pct_search = f"batch_stats_for_norm_pct_{round(norm_pct*100)}"
     if norm_pct_search in normstats:
         batch_stats = normstats[norm_pct_search]
-        for s in batch_stats:
-            if batch_stats[s] is not None:
-                batch_stats[s] = torch.tensor(batch_stats[s])
+        if emd_stats is not None:
+            for l, s in enumerate(batch_stats):
+                if l == len(data_stats):
+                    break
+                batch_stats[s] = data_stats[l]
+
+            for s in batch_stats:
+                if batch_stats[s] is not None:
+                    batch_stats[s] = torch.tensor(batch_stats[s])
+        else:
+            for s in batch_stats:
+                if batch_stats[s] is not None:
+                    batch_stats[s] = torch.tensor(batch_stats[s])
+
     else:
-        batch_stats = _get_batch_stats(img_list, norm_pct)
+        if emd_stats is not None:
+            batch_stats = {
+                "band_min_values": None,
+                "band_max_values": None,
+                "band_mean_values": None,
+                "band_std_values": None,
+                "scaled_min_values": None,
+                "scaled_max_values": None,
+                "scaled_mean_values": None,
+                "scaled_std_values": None,
+            }
+            for l, s in enumerate(batch_stats):
+                if l == len(data_stats):
+                    break
+                batch_stats[s] = data_stats[l]
+
+            for s in batch_stats:
+                if batch_stats[s] is not None:
+                    batch_stats[s] = torch.Tensor(batch_stats[s])
+        else:
+            batch_stats = _get_batch_stats(img_list, norm_pct)
+            for s in batch_stats:
+                if batch_stats[s] is not None:
+                    batch_stats[s] = torch.Tensor(batch_stats[s])
         normstats[norm_pct_search] = dict(batch_stats)
         for s in normstats[norm_pct_search]:
             if normstats[norm_pct_search][s] is not None:
@@ -358,16 +417,32 @@ class Pix2PixHDDataset(Dataset):
             image_B = ArcGISMSImage(image_B)
 
         else:
+            min_vals_a = self.batch_stats_a["band_min_values"].tolist()
+            max_vals_a = self.batch_stats_a["band_max_values"].tolist()
+            min_vals_b = self.batch_stats_b["band_min_values"].tolist()
+            max_vals_b = self.batch_stats_b["band_max_values"].tolist()
+            rgb_mins_a, rgb_maxs_a = (
+                [float(i) for i in min_vals_a],
+                [float(i) for i in max_vals_a],
+            )
+            rgb_mins_b, rgb_maxs_b = (
+                [float(i) for i in min_vals_b],
+                [float(i) for i in max_vals_b],
+            )
             if self.label_nc == False:
                 image_A = ArcGISMSImage.open(
-                    self.image_list_A[idx], imagery_type=self.imagery_type, div=255
+                    self.image_list_A[idx],
+                    imagery_type=self.imagery_type,
+                    div=(rgb_mins_a, rgb_maxs_a),
                 )
             else:
                 image_A = ImageSegment(ArcGISMSImage.open(self.image_list_A[idx]).data)
                 image_A = rescale_mask(image_A, self.mask_map)
 
             image_B = ArcGISMSImage.open(
-                self.image_list_B[idx], imagery_type=self.imagery_type, div=255
+                self.image_list_B[idx],
+                imagery_type=self.imagery_type,
+                div=(rgb_mins_b, rgb_maxs_b),
             )
 
         _resolve_tfms(self.train_tfms)
@@ -403,8 +478,11 @@ class Pix2PixHDDataset(Dataset):
         if axes is None:
             _, axes = plt.subplots(1, 2, figsize=(15, 7))
 
-        self.image_A.show(axes[0])
-        self.image_B.show(axes[1])
+        if self.label_nc == True:
+            self.image_A.show(axes[0])
+        else:
+            self.image_A.show(axes[0], rgb_bands=rgb_bands)
+        self.image_B.show(axes[1], rgb_bands=rgb_bands)
 
 
 def create_train_val_sets(
@@ -429,19 +507,19 @@ def create_train_val_sets(
     images_B = get_files(path_B, extensions=image_extensions, recurse=True)
 
     batch_stats_a, batch_stats_b = None, None
-    if _is_multispectral:
-        batch_stats_a = _batch_stats_json(
-            path,
-            ArcGISImageList(images_A),
-            norm_pct,
-            stats_file_name="esri_normalization_stats_a.json",
-        )
-        batch_stats_b = _batch_stats_json(
-            path,
-            ArcGISImageList(images_B),
-            norm_pct,
-            stats_file_name="esri_normalization_stats_b.json",
-        )
+
+    batch_stats_a = _batch_stats_json(
+        path,
+        ArcGISImageList(images_A),
+        norm_pct,
+        stats_file_name="esri_normalization_stats_a.json",
+    )
+    batch_stats_b = _batch_stats_json(
+        path,
+        ArcGISImageList(images_B),
+        norm_pct,
+        stats_file_name="esri_normalization_stats_b.json",
+    )
 
     total_num_images = len(images_B)
     val_num_images = int(total_num_images * val_split_pct)
@@ -506,6 +584,7 @@ def prepare_pix2pix_data(
     resize_to,
     norm_pct,
     _is_multispectral,
+    working_dir,
     **kwargs,
 ):
     norm_stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]  # kwargs.get('norm_stats', stats)
@@ -544,18 +623,22 @@ def prepare_pix2pix_data(
     data._imagery_type = imagery_type
     data._norm_pct = norm_pct
     # data.n_channel = data.train_ds[0][0][0].shape[0]
-    if _is_multispectral:
-        multispectral_additions(data)
+    multispectral_additions(data)
     if label_nc:
         data.label_nc = len(data.mask_map) + 1
     data.chip_size = data.resize_to
+    if working_dir is not None:
+        data.path = Path(os.path.abspath(working_dir))
     data._temp_folder = _prepare_working_dir(path)
     data.show_batch = types.MethodType(show_batch, data)
+    data._dataset_type = "Pix2Pix"
+    data._extract_bands = None
 
     return data
 
 
-def show_batch(self, rows=4):
+def show_batch(self, rows=4, **kwargs):
+    rgb_bands = kwargs.get("rgb_bands", None)
     fig, axes = plt.subplots(nrows=rows, ncols=2, squeeze=False, figsize=(20, rows * 5))
     top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
     plt.subplots_adjust(top=top)
@@ -564,7 +647,7 @@ def show_batch(self, rows=4):
     axes[0, 1].title.set_text("Target")
     img_idxs = [random.randint(0, len(self.train_ds) - 1) for k in range(rows)]
     for idx, im_idx in enumerate(img_idxs):
-        self.train_ds.show(im_idx, axes[idx])
+        self.train_ds.show(im_idx, axes[idx], rgb_bands)
 
 
 def to_device(z, device):
@@ -697,8 +780,8 @@ def predict(self, img_path):
         )
 
     pred_denorm = denormalize(prediction, *self._data.norm_stats)
-    pred_denorm = transforms.ToPILImage()(pred_denorm).convert("RGB")
-
+    pred_denorm = ArcGISMSImage(pred_denorm)
+    pred_denorm = pred_denorm.show()
     return pred_denorm
 
 
@@ -707,7 +790,7 @@ def rgb_or_ms(im_path):
     Function that returns the imagery type (RGB or ms) of an image.
     """
     try:
-        import gdal
+        from osgeo import gdal
 
         ds = gdal.Open(im_path)
         if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:

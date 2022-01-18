@@ -378,7 +378,7 @@ class _spaCyNERItemlist:
     data                    Required: list of tuple containing text and its entities.
     =====================   ===========================================
 
-    :returns: dataset.
+    :return: dataset.
     """
 
     def __init__(self, batch_size, data):
@@ -462,7 +462,7 @@ class spaCyNERDatabunch:
                             The default value is 5.
     =====================   ===========================================
 
-    :returns: dataset
+    :return: dataset
     """
 
     def __init__(self, ds, val_split_pct, batch_size, test_ds=None, address_tag=None):

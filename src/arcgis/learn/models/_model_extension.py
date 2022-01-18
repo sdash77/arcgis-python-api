@@ -12,7 +12,6 @@ logger = logging.getLogger()
 
 HAS_OPENCV = True
 HAS_FASTAI = True
-HAS_ARCPY = True
 
 try:
     import torch
@@ -64,11 +63,6 @@ try:
     import cv2
 except Exception:
     HAS_OPENCV = False
-
-try:
-    import arcpy
-except Exception:
-    HAS_ARCPY = False
 
 
 class ModelExtension(ArcGISModel):
@@ -266,7 +260,7 @@ class ModelExtension(ArcGISModel):
 
         =====================   ===========================================
 
-        :returns: `ModelExtension` Object
+        :return: `ModelExtension` Object
         """
 
         emd_path = _get_emd_path(emd_path)
@@ -286,10 +280,11 @@ class ModelExtension(ArcGISModel):
 
         modelconfclass = emd["ModelFileConfigurationClass"]
 
-        sys.path.append(os.path.dirname(modelconf))
-        model_configuration = getattr(
-            importlib.import_module("{}".format(modelconf.name[0:-3])), modelconfclass
-        )
+        spec = importlib.util.spec_from_file_location(modelconfclass, modelconf)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        model_configuration = getattr(module, modelconfclass)
 
         backbone = emd["ModelParameters"].get("backbone", None)
 
@@ -461,7 +456,7 @@ class ModelExtension(ArcGISModel):
                                 True.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
         num_classes = torch.arange(self._data.c)
@@ -702,7 +697,7 @@ class ModelExtension(ArcGISModel):
                                 average precision.
         =====================   ===========================================
 
-        :returns: `dict` if mean is False otherwise `float`
+        :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
 
@@ -737,7 +732,7 @@ class ModelExtension(ArcGISModel):
                                 consider true detection.
         =====================   ===========================================
 
-        :returns: `dict`
+        :return: `dict`
         """
         self._check_requisites()
         acc = accuracies(
@@ -794,7 +789,7 @@ class ModelExtension(ArcGISModel):
                                 model was trained on).
         =====================   ===========================================
 
-        :returns:  Returns a tuple with predictions, labels and optionally confidence scores
+        :return:  Returns a tuple with predictions, labels and optionally confidence scores
                    if return_scores=True. The predicted bounding boxes are returned as a list
                    of lists containing the  xmin, ymin, width and height of each predicted
                    object in each image. The labels are returned as a list of class values

@@ -1,9 +1,8 @@
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from arcgis.gis import GIS
-from typing import Dict, Any, Optional, List
 
 ###########################################################################
-class LicenseManager:
+class LicenseManager(_BaseKube):
     _gis = None
     _con = None
     _properties = None
@@ -37,7 +36,7 @@ class LicenseManager:
                                the current authorizations.
         ==================     ====================================================================
 
-        :return: Bool
+        :return: Boolean. True if successful else False.
 
         """
         url = f"{self._url}/validateLicense"

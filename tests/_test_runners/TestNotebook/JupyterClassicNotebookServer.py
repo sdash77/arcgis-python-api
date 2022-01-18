@@ -79,7 +79,7 @@ class JupyterClassicNotebookServer:
                 pid = out.split("\n")[0].lower().split("listening")[1].strip()
                 run_shell_command(f"taskkill /pid {pid} /f")
         except Exception as e:
-            log.warn(
+            log.warning(
                 f"Could not kill jupyter process running on {self.port}."
                 f" Beware of a leak of unkilled server instances..."
             )

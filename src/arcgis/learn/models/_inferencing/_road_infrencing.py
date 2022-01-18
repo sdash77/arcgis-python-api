@@ -5,7 +5,13 @@ try:
     import torch.nn as nn
     import math
     from torch import tensor
-    from .util import variable_tile_size_check
+    from .util import (
+        variable_tile_size_check,
+        fold_tensor,
+        unfold_tensor,
+        dihedral_transform,
+        create_interpolation_mask,
+    )
 
     HAS_TORCH = True
 except Exception:
@@ -211,14 +217,6 @@ class ChildImageClassifier:
                     "displayName": "Batch Size",
                     "description": "Batch Size",
                 },
-                {
-                    "name": "predict_background",
-                    "dataType": "string",
-                    "required": False,
-                    "value": "True",
-                    "displayName": "Predict Background",
-                    "description": "If False, will never predict the background/NoData Class.",
-                },
             ]
         )
         if (
@@ -245,6 +243,30 @@ class ChildImageClassifier:
                     },
                 ]
             )
+
+        required_parameters.extend(
+            [
+                {
+                    "name": "test_time_augmentation",
+                    "dataType": "string",
+                    "required": False,
+                    "value": "False"
+                    if "test_time_augmentation" not in self.json_info
+                    else str(self.json_info["test_time_augmentation"]),
+                    "displayName": "Perform test time augmentation while predicting",
+                    "description": "If True, will merge predictions from flipped and rotated images.",
+                },
+                {
+                    "name": "merge_policy",
+                    "dataType": "string",
+                    "required": False,
+                    "value": "max",
+                    "displayName": "Policy for merging augmented predictions",
+                    "description": "Policy for merging predictions('mean', 'max' or 'min'). Applicable when test_time_augmentation is True.",
+                },
+            ]
+        )
+
         required_parameters = variable_tile_size_check(
             self.json_info, required_parameters
         )
@@ -254,8 +276,8 @@ class ChildImageClassifier:
 
         self.tytx = int(scalars.get("tile_size", self.json_info["ImageHeight"]))
         self.padding = int(
-            scalars.get("padding", self.json_info["ImageHeight"] // 4)
-        )  # Default padding Imageheight//4.
+            scalars.get("padding", self.tytx // 4)
+        )  ## Default padding Imageheight//4.
         self.batch_size = (
             int(math.sqrt(int(scalars.get("batch_size", 4)))) ** 2
         )  # Default 4 batch_size
@@ -289,6 +311,16 @@ class ChildImageClassifier:
 
         self.thres = float(scalars.get("threshold", 0.5))  ## Default 0.5 threshold.
 
+        self.use_tta = scalars.get("test_time_augmentation", "false").lower() in [
+            "true",
+            "1",
+            "t",
+            "y",
+            "yes",
+        ]  # Default value True
+
+        self.merge_policy = scalars.get("merge_policy", "mean").lower()
+
         return {
             "extractBands": tuple(self.json_info["ExtractBands"]),
             "padding": self.padding,
@@ -296,6 +328,8 @@ class ChildImageClassifier:
             "ty": ty,
             "threshold": self.thres,
             "fixedTileSize": 1,
+            "test_time_augmentation": self.use_tta,
+            "merge_policy": self.merge_policy,
         }
 
     def pixel_classify_image(
@@ -307,11 +341,6 @@ class ChildImageClassifier:
         # logger.info("Normed length is ", len(normed_batch_tensor))
         with torch.no_grad():
             output, _ = model(normed_batch_tensor)
-            # logger.debug("Output  is ", output)
-            # logger.debug("Output  shape is ", output.shape)
-        # _, road_pixels = torch.max(output, axis=1)
-        # if not predict_bg:
-        #    road_pixels[road_pixels == 0] = -1
 
         if predict_bg:
             return output.max(dim=1)[1]
@@ -348,36 +377,91 @@ class ChildImageClassifier:
 
         return semantic_predictions
 
-    def detectRoads(self, tlc, shape, props, **pixelBlocks):
-
-        input_image = pixelBlocks["raster_pixels"].astype(np.float32)
-        input_image_tensor = tensor(input_image).to(self.device).float()
+    def split_predict_interpolate(self, normalized_image_tensor):
         model_arch = self.json_info["ModelParameters"]["mtl_model"]
-        kernel_size = self.tytx  # json_info["ImageHeight"]
-        stride = 2 * self.padding
+        kernel_size = self.tytx
+        stride = kernel_size - (2 * self.padding)
+
         if model_arch == "hourglass":
             kernel_size = (math.ceil(kernel_size / 2)) * 2
+
         # Split image into overlapping tiles
-        mask_t, base_tensor, t_size, patches = split_tensor(
-            input_image_tensor.unsqueeze(0), kernel_size, stride
+        masks, t_size, patches = unfold_tensor(
+            normalized_image_tensor, kernel_size, stride
         )
 
-        # predict
         with torch.no_grad():
             output, _ = self.model(patches)
 
-        # get probablity of roads - class 1
-        softmax_output = output.softmax(dim=1)[
-            :, [1], :, :
-        ]  # probability of road (class 1)
+        interpolation_mask = create_interpolation_mask(
+            kernel_size, 0, self.device, "hann"
+        )
+        output = output * interpolation_mask
+        masks = masks * interpolation_mask
 
         # merge predictions from overlapping chips
-        softmax_surface = rebuild_tensor(
-            softmax_output, mask_t, t_size, kernel_size, stride
+        int_surface = fold_tensor(output, masks, t_size, kernel_size, stride)
+
+        return int_surface
+
+    def tta_predict(self, normalized_image_tensor, test_time_aug=True):
+        all_activations = []
+
+        transforms = [0]
+        if test_time_aug:
+            if self.json_info["ImageSpaceUsed"] == "MAP_SPACE":
+                transforms = list(range(8))
+            else:
+                transforms = [
+                    0,
+                    2,
+                ]  # no vertical flips for pixel space (oriented imagery)
+
+        for k in transforms:
+            flipped_image_tensor = dihedral_transform(normalized_image_tensor[0], k)
+            int_surface = self.split_predict_interpolate(
+                flipped_image_tensor.unsqueeze(0)
+            )
+            corrected_activation = dihedral_transform(int_surface[0], k)
+
+            if k in [5, 6]:
+                corrected_activation = dihedral_transform(int_surface[0], k).rot90(
+                    2, [1, 2]
+                )
+
+            all_activations.append(corrected_activation)
+
+        all_activations = torch.stack(all_activations)
+
+        return all_activations
+
+    def detectRoads(self, tlc, shape, props, **pixelBlocks):  # 8 x 224 x 224 x 3
+        input_image = pixelBlocks["raster_pixels"].astype(np.float32)
+        input_image_tensor = torch.tensor(input_image).to(self.device).float()
+
+        normalized_image_tensor = input_image_tensor.unsqueeze(0)
+
+        all_activations = self.tta_predict(
+            normalized_image_tensor, test_time_aug=self.use_tta
         )
-        if self.probability_raster:
-            predictions = softmax_surface * tensor(1.0)
+
+        softmax_surface = all_activations.softmax(dim=1)[:, [1], :, :]
+        if self.merge_policy == "max":
+            activations = softmax_surface.max(dim=0)[0]
+        elif self.merge_policy == "min":
+            activations = softmax_surface.min(dim=0)[0]
         else:
-            predictions = softmax_surface.gt(self.thres) * tensor(1.0)
+            activations = softmax_surface.mean(dim=0)
+
+        if self.probability_raster:
+            predictions = activations
+        else:
+            predictions = activations.gt(self.thres) * torch.tensor(1)
+
         pad = self.padding
-        return predictions[0][0][pad:-pad, pad:-pad].unsqueeze(0).cpu().numpy()
+        return (
+            predictions[0][pad : -pad or None, pad : -pad or None]
+            .unsqueeze(0)
+            .cpu()
+            .numpy()
+        )

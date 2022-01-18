@@ -35,6 +35,7 @@ class AGOLAdminManager(object):
     _usage = None
     _category_schema = None
     _certificates = None
+    _servers = None
     # ----------------------------------------------------------------------
     def __init__(self, gis, ux=None, metadata=None, collaborations=None):
         """initializer"""
@@ -77,23 +78,6 @@ class AGOLAdminManager(object):
         completely optional and anonymous; none of the information
         collected is used to identify or contact members of your
         organization.
-        """
-        return self._gis.properties["eueiEnabled"]
-
-    # ----------------------------------------------------------------------
-    @_user_experience_program.setter
-    def _user_experience_program(self, value):
-        """
-        ArcGIS Online works continuously to improve our products and one of
-        the best ways to find out what needs improvement is through
-        customer feedback. The Esri User Experience Improvement program
-        (EUEI) allows your organization to contribute to the design and
-        development of ArcGIS Online. The program collects information
-        about the usage of ArcGIS Online including hardware and browser
-        characteristics, without interrupting work. The program is
-        completely optional and anonymous; none of the information
-        collected is used to identify or contact members of your
-        organization.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -102,7 +86,14 @@ class AGOLAdminManager(object):
                             in the Esri User Experience Improvement Program. False means the
                             organization will not be part of the program.
         ===============     ====================================================================
+        """
+        return self._gis.properties["eueiEnabled"]
 
+    # ----------------------------------------------------------------------
+    @_user_experience_program.setter
+    def _user_experience_program(self, value):
+        """
+        See main ``_user_experience_program`` property docstring.
         """
         if value != self._user_experience_program:
             self._gis.update_properties(
@@ -272,7 +263,7 @@ class AGOLAdminManager(object):
         ================  ===============================================================================
 
 
-        :returns: List of Tasks
+        :return: List of Tasks
 
         """
         _tasks = []
@@ -374,7 +365,7 @@ class AGOLAdminManager(object):
         save_folder       Optional String. The save location of the CSV file.
         ================  ===============================================================================
 
-        :returns: string or pd.DataFrame or dict
+        :return: string or pd.DataFrame or dict
 
         """
         import tempfile, json
@@ -459,3 +450,15 @@ class AGOLAdminManager(object):
 
             self._certificates = CertificateManager(gis=self._gis)
         return self._certificates
+
+    # ----------------------------------------------------------------------
+    @property
+    def servers(self):
+        """
+        Provides access to managing the services hosted on ArcGIS Online
+        """
+        if self._servers is None:
+            from arcgis.gis.agoserver import AGOLServersManager
+
+            self._servers = AGOLServersManager(gis=self._gis)
+        return self._servers

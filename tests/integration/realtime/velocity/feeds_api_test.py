@@ -2,6 +2,9 @@ import unittest
 
 from arcgis.gis import GIS
 from arcgis.realtime.velocity.feeds_manager import Feed
+from arcgis.realtime.velocity.feeds import RSS, HttpReceiver
+from arcgis.realtime.velocity.http_authentication_type import (NoAuth, BasicAuth, CertificateAuth)
+
 
 try:
     # Use your ArcGIS enterprise url and credentials to run the test
@@ -20,7 +23,37 @@ except:
 class TestFeedsApiMethods(unittest.TestCase):
     velocity = gis.velocity
     feeds = velocity.feeds
-    feed_item = feeds.get("e4d3c42193b14b48b912306919617010")
+
+    # HTTP Receiver Properties
+    name = "http_receiver_feed_1"
+    description = "some description about the HTTP Receiver feed"
+    sample_data = """name,age
+    dan,23"""
+
+    http_receiver = HttpReceiver(
+        label=name,
+        description=description,
+        authentication_type="none",
+        sample_message=sample_data,
+        data_format=None
+    )
+
+    http_receiver.rename_field("name", "name1")
+
+
+
+    # set track id for an existing field
+    http_receiver.set_track_id("name")
+
+
+
+    feeds.create(http_receiver)
+    feeds.items
+
+
+    # rss_feed = feeds._sample_message(input_type="feed")
+    # print(rss_feed)
+    #feed_item = feeds.get("e4d3c42193b14b48b912306919617010")
 
     # ----------------------------------------------------------------------
     @unittest.skipIf(SKIP_SOME_TESTS, "test_get_all_feeds skipping")
@@ -96,6 +129,8 @@ class TestFeedsApiMethods(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     # ----------------------------------------------------------------------
+
+    @unittest.skipIf(SKIP_SOME_TESTS, "test_feed_metrics skipping")
     def test_feed_status(self):
         print("\n ---- test_feed_status ----")
         try:

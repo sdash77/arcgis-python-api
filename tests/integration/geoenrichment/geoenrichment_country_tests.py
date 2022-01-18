@@ -9,29 +9,29 @@ import pandas as pd
 
 
 def usa_test(gis: Union[str, GIS, None]) -> None:
-    cntry = Country('USA', gis=gis)
+    cntry = Country("USA", gis=gis)
     assert isinstance(cntry, Country)
 
 
 def get_usa_test(gis: Union[str, GIS, None]) -> None:
-    cntry = Country.get('USA', gis=gis)
+    cntry = Country.get("USA", gis=gis)
     assert isinstance(cntry, Country)
 
 
 def get_can_test(gis: Union[str, GIS, None]) -> None:
-    cntry = Country.get('CAN', gis=gis)
+    cntry = Country.get("CAN", gis=gis)
     assert isinstance(cntry, Country)
 
 
 def get_usa_2019_test(gis: Union[str, GIS, None]) -> None:
-    cntry = Country.get('USA', gis=gis, year=2019)
+    cntry = Country.get("USA", gis=gis, year=2019)
     assert isinstance(cntry, Country)
 
 
 def dataset_test(country: Country) -> None:
     ds = country.dataset
     assert isinstance(ds, str)
-    assert 'ESRI' in ds
+    assert "ESRI" in ds
 
 
 def data_collections_test(country: Country) -> None:
@@ -60,7 +60,7 @@ def reports_test(country: Country) -> None:
 
 
 def search_cbsa_chicago(country: Country) -> None:
-    areas = country.search('chicago')
+    areas = country.search("chicago")
     assert areas
 
 

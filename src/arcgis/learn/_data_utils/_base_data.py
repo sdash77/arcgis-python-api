@@ -131,7 +131,7 @@ class ArcgisData(object):
                                 Default is 0.3 (30%) of data.
         =====================   ===========================================
 
-        :returns: data object
+        :return: data object
         """
         if not HAS_FASTAI:
             raise_fastai_import_error(import_exception=import_exception)

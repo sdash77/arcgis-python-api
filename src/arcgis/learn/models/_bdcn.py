@@ -72,7 +72,7 @@ class CustomBDCN:
 
         return final_loss
 
-    def post_process(self, pred, thres=0.5, thinning=True):
+    def post_process(self, pred, thres=0.5, thinning=True, prob_raster=False):
         """
         In this function you have to return list with appended output for each image in the batch with shape [C=1,H,W]!
 
@@ -82,8 +82,11 @@ class CustomBDCN:
         import numpy as np
 
         post_processed_pred = []
-        pred = pred[-1]
-        if thinning:
+        if isinstance(pred, list):
+            pred = pred[-1]
+        if prob_raster:
+            return pred
+        elif thinning:
             for p in pred:
                 p = self.torch.unsqueeze(
                     self.torch.tensor(
@@ -96,9 +99,9 @@ class CustomBDCN:
                     dim=0,
                 )
                 post_processed_pred.append(p)
+            return post_processed_pred
         else:
             return (pred >= thres).byte()
-        return post_processed_pred
 
 
 class BDCNEdgeDetector(ModelExtension):
@@ -122,7 +125,7 @@ class BDCNEdgeDetector(ModelExtension):
                             saved.
     =====================   ===========================================
 
-    :returns: ``Bi-Directional Cascade Network for Perceptual Edge Detection`` Object
+    :return: ``Bi-Directional Cascade Network for Perceptual Edge Detection`` Object
     """
 
     def __init__(self, data, backbone="vgg19", pretrained_path=None):
@@ -208,7 +211,7 @@ class BDCNEdgeDetector(ModelExtension):
 
         =====================   ===========================================
 
-        :returns: `Bi-Directional Cascade Network for Perceptual Edge Detection` Object
+        :return: `Bi-Directional Cascade Network for Perceptual Edge Detection` Object
         """
         emd_path = _get_emd_path(emd_path)
 
@@ -263,7 +266,7 @@ class BDCNEdgeDetector(ModelExtension):
                                 consider true detection.
         =====================   ===========================================
 
-        :returns: `dict`
+        :return: `dict`
         """
 
     def show_results(self, rows=5, thresh=0.5, thinning=True, **kwargs):

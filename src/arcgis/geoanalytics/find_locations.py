@@ -124,7 +124,7 @@ def geocode_locations(
     ==========================   ===============================================================
 
 
-    :returns: Feature Layer
+    :return: :class:`~arcgis.features.FeatureLayer`
 
     .. code-block:: python
 
@@ -208,7 +208,7 @@ def geocode_locations(
             )
         params["geocode_service_url"] = geocode_service_url
     elif isinstance(geocode_service, Geocoder):
-        geocode_service = geocode_service.url
+        geocode_service_url = geocode_service.url
         params["geocode_service_url"] = geocode_service_url
     elif isinstance(geocode_service, str):
         params["geocode_service_url"] = geocode_service
@@ -257,6 +257,10 @@ def geocode_locations(
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     try:
+        params["future"] = True
+        if hasattr(tbx, "geocode_locations") == False:
+            url = gis.properties.helperServices.geoanalytics.url
+            tbx = _import_toolbox(url, gis=gis)
         gpjob = tbx.geocode_locations(**params)
         if future:
             return GAJob(gpjob=gpjob, return_service=output_service)
@@ -390,7 +394,7 @@ def detect_incidents(
                                  The default value is 'False'.
     ==========================   ===============================================================
 
-    :returns: result_layer : Output Features as feature layer collection item.
+    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayerCollection`.
 
     .. code-block:: python
 
@@ -637,7 +641,7 @@ def find_dwell_locations(
                                  begin from. This parameter was introduced in ArcGIS Enterprise 10.8.1.
     ==========================   ===============================================================
 
-    :returns: Output Service if future is False and GAJob if future is True
+    :return: Output Service if future is False and GAJob if future is True
 
     """
     gis = None
@@ -857,13 +861,13 @@ def find_similar_locations(
                                  The default value is 'False'.
     ==========================   ===============================================================
 
-    :returns: named tuple with the following keys if ``return_tuple`` is set to 'True':
+    :return: named tuple with the following keys if ``return_tuple`` is set to 'True':
 
-      "output" : feature layer
+      "output" : :class:`~arcgis.features.FeatureLayer`
 
       "process_info" : list
 
-    else returns a feature layer of the results.
+    else returns a :class:`~arcgis.features.FeatureLayer` of the results.
 
     .. code-block:: python
 

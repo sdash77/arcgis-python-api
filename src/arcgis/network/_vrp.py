@@ -3,10 +3,6 @@ import json
 import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
-from arcgis.mapping import MapImageLayer
-from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
-from arcgis.geoprocessing._support import _execute_gp_tool
-from arcgis.geoprocessing import import_toolbox
 from arcgis._impl.common._utils import _validate_url
 from arcgis.network import _utils
 from ._routing_utils import _create_toolbox
@@ -1089,7 +1085,7 @@ def edit_vehicle_routing_problem(
                                              `False` - The solve operation will fail when any invalid orders are encountered. An invalid order is an order that the VRP solver can't reach. An order may be unreachable for a variety of reasons, including if it's located on a prohibited network element, it isn't located on the network at all, or it's located on a disconnected portion of the network.
     ====================================     ====================================================================
 
-    :returns: Named Tuple
+    :return: Named Tuple
 
     """
     if travel_mode is None:
@@ -3319,7 +3315,7 @@ solve_vehicle_routing_problem.__annotations__ = {
     "restrictions": str,
     "attribute_parameter_values": FeatureSet,
     "populate_route_lines": bool,
-    "route_line_simplification_tolerance": LinearUnit,
+    "route_line_simplification_tolerance": arcgis.geoprocessing.LinearUnit,
     "populate_directions": bool,
     "directions_language": str,
     "directions_style_name": str,

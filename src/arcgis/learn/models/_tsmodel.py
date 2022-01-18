@@ -89,7 +89,7 @@ class TimeSeriesModel(ArcGISModel):
     **kwargs                Optional kwargs.
     =====================   ===========================================
 
-    :returns: `TimeSeriesModel` Object
+    :return: `TimeSeriesModel` Object
     """
 
     def __init__(self, data, seq_len, model_arch="InceptionTime", **kwargs):
@@ -159,7 +159,7 @@ class TimeSeriesModel(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `TimeSeriesModel` Object
+        :return: `TimeSeriesModel` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

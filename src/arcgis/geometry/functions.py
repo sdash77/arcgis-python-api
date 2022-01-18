@@ -2,7 +2,9 @@
 The ``Functions`` module is used to take :class:`~arcgis.geometry.Geometry` types as parameters and return
 :class:`~arcgis.geometry.Geometry` type results.
 """
+from __future__ import annotations
 from enum import Enum
+from typing import Optional, Union
 import arcgis.env
 
 
@@ -518,19 +520,23 @@ def distance(
     It reports the `2D Euclidean` or `geodesic` distance between the two
     :class:`~arcgis.geometry.Geometry` objects.
 
-
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
-    geometry1        The :class:`~arcgis.geometry.Geometry` object from which the distance is measured.
-                      The structure of each geometry in the array is the
+    geometry1         The :class:`~arcgis.geometry.Geometry` object from which the distance is
+                      measured. The structure of each geometry in the array is the
                       same as the structure of the JSON geometry objects returned by
                       the ArcGIS REST API.
     ----------------  -------------------------------------------------------------------------------
-    geometry2        The :class:`~arcgis.geometry.Geometry` object to which the distance is measured.
-                      The structure of each geometry in the array is the
+    geometry2         The :class:`~arcgis.geometry.Geometry` object to which the distance is
+                      measured. The structure of each geometry in the array is the
                       same as the structure of the JSON geometry objects returned by
                       the ArcGIS REST API.
+    ----------------  -------------------------------------------------------------------------------
+    distance_unit     Optional. One of :class:`~arcgis.geometry.functions.LengthUnits` enumeration
+                      members. See Geometry Service
+                      `distance <https://developers.arcgis.com/rest/services-reference/enterprise/distance.htm>`_
+                      for full details.
     ----------------  -------------------------------------------------------------------------------
     geodesic          If ``geodesic`` is set to true, then the geodesic distance
                       between the ``geometry1`` and ``geometry2`` geometries is returned.
@@ -538,9 +544,11 @@ def distance(
                       the ellipsoid of the earth. If ``geodesic`` is set to false or not
                       specified, the planar distance is returned. The default value is false.
     ----------------  -------------------------------------------------------------------------------
-    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known
+                      ID or JSON object
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            An optional Boolean. This operation determines if the job is run asynchronously
+                      or not.
     ================  ===============================================================================
 
     :returns:
@@ -1329,7 +1337,12 @@ def trim_extend(
     )
 
 
-def union(spatial_ref, geometries, gis=None, future=False):
+def union(
+    geometries,
+    spatial_ref: Optional[Union[str, dict[str:str]]] = None,
+    gis=None,
+    future=False,
+):
     """
     The ``union`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
     This function constructs the set-theoretic union of the geometries
@@ -1341,13 +1354,17 @@ def union(spatial_ref, geometries, gis=None, future=False):
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
-    geometries        An array of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
-                      :class:`~arcgis.geometry.Polyline`, or :class:`~arcgis.geometry.Polygon` objects.
+    geometries        Required. An array of :class:`~arcgis.geometry.Point`,
+                      :class:`~arcgis.geometry.MultiPoint`, :class:`~arcgis.geometry.Polyline`,
+                      or :class:`~arcgis.geometry.Polygon` objects.
                       The structure of each geometry in the array is the
                       same as the structure of the JSON geometry objects returned by
                       the ArcGIS REST API.
     ----------------  -------------------------------------------------------------------------------
-    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    spatial_ref       An optional String or JSON Dict representing the wkid to be used. The default is the
+                      spatial reference found in the geometry or, if None found, then "4326".
+
+                      Example: "4326" or {"wkid":"4326"}
     ----------------  -------------------------------------------------------------------------------
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
@@ -1357,4 +1374,13 @@ def union(spatial_ref, geometries, gis=None, future=False):
     """
     if gis is None:
         gis = arcgis.env.active_gis
+    if spatial_ref is None:
+        spatial_ref = [
+            geom.spatialReference
+            for geom in geometries
+            if "spatialReference" in geom and geom.spatialReference is not None
+        ]
+        spatial_ref = spatial_ref[0] if len(spatial_ref) > 0 else "4326"
+    if isinstance(spatial_ref, dict):
+        spatial_ref = spatial_ref["wkid"]
     return gis._tools.geometry.union(spatial_ref, geometries, future=future)

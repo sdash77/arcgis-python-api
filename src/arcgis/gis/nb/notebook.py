@@ -29,6 +29,7 @@ class NotebookServer(object):
     _machine = None
     _notebook = None
     _security = None
+    _services = None
     _version = None
     _sitemanager = None
     # ----------------------------------------------------------------------
@@ -85,7 +86,7 @@ class NotebookServer(object):
         """
         Returns the notebook server version
 
-        :returns: List
+        :return: List
         """
         if self._version is None:
             self._version = [int(i) for i in self.properties.version.split(".")]
@@ -97,7 +98,7 @@ class NotebookServer(object):
         """
         Provides access to the notebook server's site management operations
 
-        :returns: :class:`~arcgis.gis.nb.SiteManager`
+        :return: :class:`~arcgis.gis.nb.SiteManager`
         """
         if self._sitemanager is None:
             from ._site import SiteManager
@@ -111,7 +112,7 @@ class NotebookServer(object):
         """
         Returns information about the server site itself
 
-        :returns: PropertyMap
+        :return: PropertyMap
 
         """
         url = self._url + "/info"
@@ -130,7 +131,7 @@ class NotebookServer(object):
 
         **This is only avaible if the site can be accessed around the web adapter**
 
-        :returns: boolean
+        :return: boolean
 
         """
         netloc = urlparse(self._url).netloc
@@ -147,7 +148,7 @@ class NotebookServer(object):
         """
         Provides access to the notebook server's logging system
 
-        :returns: :class:`~arcgis.gis.nb.LogManager`
+        :return: :class:`~arcgis.gis.nb.LogManager`
 
         """
         if self._logs is None:
@@ -176,7 +177,7 @@ class NotebookServer(object):
         Provides access to managing the registered machines with ArcGIS
         Notebook Server
 
-        :returns: :class:`~arcgis.gis.nb.MachineManager`
+        :return: :class:`~arcgis.gis.nb.MachineManager`
 
         """
         if self._machine is None:
@@ -218,3 +219,16 @@ class NotebookServer(object):
     def url(self):
         """The URL of the notebook server."""
         return self._url
+
+    def services(self):
+        """
+        Provices access to managing notebook created geoprocessing tools
+
+        :return: :class:`~arcgis.gis.nb._serivces.NBServicesManager`
+        """
+        if self._services is None:
+            from arcgis.gis.nb._services import NBServicesManager
+
+            url = self._url + "/services"
+            self._services = NBServicesManager(url, self._gis)
+        return self._services

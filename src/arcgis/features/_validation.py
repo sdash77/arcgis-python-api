@@ -108,7 +108,7 @@ class ValidationManager(object):
                             The default for this parameter is False.
         ===============     ====================================================================
 
-        :returns: dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = self._url + "/updateErrors"
@@ -190,7 +190,7 @@ class ValidationManager(object):
 
         ====================     ====================================================================
 
-        :returns: dictionary
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = self._url + "/evaluate"
