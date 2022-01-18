@@ -23,20 +23,20 @@ from ._business_analyst._utils import (
 from ._ge import _GeoEnrichment
 
 
-def _check_active_gis(gis=None):
-    """Helper function to get an active gis if no gis already declared in session."""
-    # prioritize active_gis
-    if gis is None and env.active_gis is not None:
-        gis = env.active_gis
-    return gis
-
-
 def _check_gis_source(gis=None):
     """Helper function handling using GIS('pro') as local source."""
+    # handle if GIS('pro') used to indicate using local source
     if isinstance(gis, GIS):
-        if gis._con._auth == "PRO":
+        if gis._con._auth == "PRO" or (gis._con._auth == "ANON" and avail_arcpy):
+            assert local_business_analyst_avail() and local_ba_data_avail(), ("If using ArcGIS Pro, you must have "
+                                                                              "Business Analyst with at least one "
+                                                                              "local data pack installed.")
             gis = "local"
-    gis = _check_active_gis(gis)
+
+    # if nothing else available, check to see if there is a gis in the session to use
+    if gis is None and env.active_gis is not None:
+        gis = env.active_gis
+
     return gis
 
 
@@ -70,19 +70,7 @@ def _call_method_by_source(fn) -> callable:
 
         # TODO: Swap the precedence of these once all methods are implemented
         # if the source is a GIS instance and was created using the "pro" keyword, set as local
-        if isinstance(src, GIS):
-            if src._con._auth == "PRO" or (src._con._auth == "ANON" and avail_arcpy):
-                assert local_business_analyst_avail() and local_ba_data_avail(), ("If using ArcGIS Pro, you must have "
-                                                                                  "Business Analyst with at least one "
-                                                                                  "local data pack installed.")
-                src = "local"
-
-        # check if active gis is in session
-        src = _check_active_gis(src)
-
-        # if nothing found, interrogate the local session and see if the environment has everything for local
-        if src is None and local_business_analyst_avail() and local_ba_data_avail():
-            src = "local"
+        src = _check_gis_source(src)
 
         # make sure a source was located or bingo out
         assert src is not None, ("The gis parameter needs to be populated with a valid GIS instance since there is "
@@ -340,9 +328,7 @@ class Country(object):
     ) -> None:
 
         # handle the caveat of using a GIS('Pro') input
-        if isinstance(gis, GIS):
-            if gis._con._auth == "PRO":
-                gis = "local"
+        gis = _check_gis_source(gis)
 
         # instantiate a BA object instance and save for future
         ba = _business_analyst.BusinessAnalyst(gis)
@@ -699,12 +685,7 @@ def get_countries(gis: GIS = None, as_df: bool = False):
         Pandas DataFrame of available countries.
     """
     # preprocess the gis object to determine if a local (ArcGIS Pro) gis source
-    if isinstance(gis, GIS):
-        if gis._con._auth == "PRO":
-            gis = "local"
-
-    # prioritize active_gis
-    gis = _check_active_gis(gis)
+    gis = _check_gis_source(gis)
 
     # get the dataframe of available countries
     out_res = _business_analyst.BusinessAnalyst(gis).countries
@@ -1143,12 +1124,7 @@ def enrich(
     :return: Spatial DataFrame or Panda's DataFrame with the requested variables for the study areas.
     """
     # handle the caveat of using a GIS('Pro') input
-    if isinstance(gis, GIS):
-        if gis._con._auth == "PRO":
-            gis = "local"
-
-    # prioritize active_gis
-    gis = _check_active_gis(gis)
+    gis = _check_gis_source(gis)
 
     # create the business analyst object
     ba = _business_analyst.BusinessAnalyst(gis)
