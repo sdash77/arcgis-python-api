@@ -1084,7 +1084,7 @@ class StoryMap(object):
         # get the item to copy
         item = self._gis.content.get(self._itemid)
 
-        # enterprise copy_item starting at 10.8
+        # enterprise copy_item starting at 10.8.1
         if item._portal.is_arcgisonline is False and self._gis.version < [8, 2]:
             clone = self._gis.content.clone_items(items=[item])
         else:
