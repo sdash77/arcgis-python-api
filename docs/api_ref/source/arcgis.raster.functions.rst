@@ -422,6 +422,10 @@ monitor_vegetation
 __________________
 .. autofunction:: arcgis.raster.functions.monitor_vegetation
 
+mosaic_rasters
+______________
+.. autofunction:: arcgis.raster.functions.mosaic_rasters
+
 msavi
 _____
 .. autofunction:: arcgis.raster.functions.msavi
