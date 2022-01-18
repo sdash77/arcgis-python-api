@@ -8737,12 +8737,12 @@ def compute_change_raster(
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-    from_class_name_field_name               Optional string. A field that stores class names in the raster1.
+    from_class_name_field_name               Optional string. A field that stores class names in the input_from_raster.
                                              The function automatically searches for CLASSNAME field or CLASS_NAME field to use.
                                              Use this parameter if the input does not contain these standard field names
                                              Example: "CLASSES"
     ------------------------------------     --------------------------------------------------------------------
-    to_class_name_field_name                 Optional string. A field that stores class names in the raster2.
+    to_class_name_field_name                 Optional string. A field that stores class names in the input_to_raster.
                                              The function automatically searches for CLASSNAME field or CLASS_NAME field to use.
                                              Use this parameter if the input does not contain these standard field names
                                              Example: "CLASSES"

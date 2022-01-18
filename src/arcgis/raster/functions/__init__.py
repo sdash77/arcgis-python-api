@@ -12168,22 +12168,29 @@ def interpolate_raster_by_dimension(
     ------------------------------------     --------------------------------------------------------------------
     raster                                   Required Raster/ImageryLayer object.
     ------------------------------------     --------------------------------------------------------------------
-    interpolation_method                     Optional string. Specifies the interpolation method. Possible values are - LINEAR, NEARESTNEIGHBOR
-                                             Default is LINEAR
+    interpolation_method                     Optional string. Specifies the interpolation method.
+
+                                             Possible values are - LINEAR, NEARESTNEIGHBOR
+
+                                             Default is LINEAR.
     ------------------------------------     --------------------------------------------------------------------
     variables                                Optional List. The list of variables that will be included in the interpolation.
                                              If not specified the function will take all variables by default.
     ------------------------------------     --------------------------------------------------------------------
     dimension_definition                     Optional String. Specifies the dimension definition. It can be one of the following:
-                                             - BY_VALUES
-                                             - BY_INTERVAL
-                                             - BY_TARGET_RASTER
+
+                                                - BY_VALUES
+                                                - BY_INTERVAL
+                                                - BY_TARGET_RASTER
     ------------------------------------     --------------------------------------------------------------------
-    dimension_values                         Optional List of Dicts. This slices the data based on the dimension name and the value specified.
+    dimension_values                         Optional List of Dictionaries. This slices the data based on the dimension name and the value specified.
                                              This parameter is required when the dimension_definition is set to BY_VALUES.
                                              If dimension is StdTime, then the value must be specified in
-                                             human readable time format (YYYY-MM-DDTHH:MM:SS). The input should be specified as:
+                                             human readable time format (YYYY-MM-DDTHH:MM:SS).
+
+                                             The input should be specified as:
                                              [{"dimension":"<dimension_name>", "value":"<dimension_value>"},{"dimension":"<dimension_name>", "value":"<dimension_value>"}]
+
                                              Example:
                                                  [{"dimension":"StdTime", "value":"2012-01-15T03:00:00"}]
     ------------------------------------     --------------------------------------------------------------------
@@ -12202,11 +12209,12 @@ def interpolate_raster_by_dimension(
     interval_unit                            Optional String. Specifies the interval unit.
                                              This parameter is required when the dimension_definition is set to BY_INTERVAL
                                              and the dimension parameter is set to StdTime.
-                                             - HOURS - Uses hours as the specified unit of time.
-                                             - DAYS - Uses days as the specified unit of time.
-                                             - WEEKS - Uses weeks as the specified unit of time.
-                                             - MONTHS - Uses months as the specified unit of time.
-                                             - YEARS -Uses years as the specified unit of time.
+
+                                                - HOURS - Uses hours as the specified unit of time.
+                                                - DAYS - Uses days as the specified unit of time.
+                                                - WEEKS - Uses weeks as the specified unit of time.
+                                                - MONTHS - Uses months as the specified unit of time.
+                                                - YEARS -Uses years as the specified unit of time.
     ------------------------------------     --------------------------------------------------------------------
     target_raster                            Optional Raster/ImageryLayer object. Parameter used to specify the target raster from which the dimension definition would be taken.
                                              Required when dimension_definition is set to BY_TARGET_RASTER
@@ -12221,7 +12229,10 @@ def interpolate_raster_by_dimension(
 
     .. code-block:: python
         # Usage Example 1: Apply the interpolate_raster_by_dimension() on the input raster using BY_VALUES dimension_definition.
-        interpolated_op = interpolate_raster_by_dimension(raster, variables="water_temp", dimension_definition="BY_VALUES", dimension_values=[{"dimension":"StdTime", "value":"2012-01-15T03:00:00"}])
+        interpolated_op = interpolate_raster_by_dimension(raster,
+                                                          variables="water_temp",
+                                                          dimension_definition="BY_VALUES",
+                                                          dimension_values=[{"dimension":"StdTime", "value":"2012-01-15T03:00:00"}])
 
     """
 
