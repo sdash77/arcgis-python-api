@@ -134,6 +134,17 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Health Check
+
+    def test_health_check_returns_successfully(self):
+        # Act
+        actual = self.connection.workflow_manager_admin.health_check
+
+        # Assert
+        self.assertTrue(actual, "Incorrect return type")
+
+    # endregion
+
 
 if __name__ == "__main__":
     unittest.main()

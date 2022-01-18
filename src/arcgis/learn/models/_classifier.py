@@ -80,7 +80,9 @@ except Exception as e:
 
 HAS_ARCPY = True
 try:
-    import arcpy
+    from arcgis.auth.tools import LazyLoader
+
+    arcpy = LazyLoader("arcpy")
 except Exception:
     HAS_ARCPY = False
 

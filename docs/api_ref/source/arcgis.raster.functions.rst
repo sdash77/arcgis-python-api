@@ -131,6 +131,10 @@ buffered
 ________
 .. autofunction:: arcgis.raster.functions.buffered
 
+ccdc_analysis
+_____________
+.. autofunction:: arcgis.raster.functions.ccdc_analysis
+
 cire
 ____
 .. autofunction:: arcgis.raster.functions.cire
@@ -334,6 +338,10 @@ __________
 is_null
 _______
 .. autofunction:: arcgis.raster.functions.is_null
+
+landtrendr_analysis
+___________________
+.. autofunction:: arcgis.raster.functions.landtrendr_analysis
 
 less_than
 _________

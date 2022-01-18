@@ -495,7 +495,7 @@ class ChildImageClassifier:
                     "name": "test_time_augmentation",
                     "dataType": "string",
                     "required": False,
-                    "value": "True"
+                    "value": "False"
                     if "test_time_augmentation" not in self.json_info
                     else str(self.json_info["test_time_augmentation"]),
                     "displayName": "Perform test time augmentation while predicting",

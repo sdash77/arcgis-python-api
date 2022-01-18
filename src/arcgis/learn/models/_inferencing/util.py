@@ -376,7 +376,8 @@ def pixel_classify_image(model, tiles, device, classes, predict_bg, model_info):
 
 def pixel_classify_superres_image(model, tiles, device):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
-    img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+    tiles = tensor(tiles)
+    img_normed = norm(tiles.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
     superres_predictions = superres_image(model, img_normed, device)
     superres_predictions = (
         superres_predictions
@@ -754,14 +755,16 @@ def update_pixels_img_trans(self, tlc, shape, props, **pixelBlocks):
         prediction = pixel_classify_pix2pix_hd_image(
             self.model, patches, self.device, model_info=self.json_info
         )
-    if model_name == "CycleGAN":
+    elif model_name == "CycleGAN":
         prediction = pixel_classify_cyclegan_image(
             self.model, patches, self.device, self.direction, model_info=self.json_info
         )
-    if model_name == "Pix2Pix":
+    elif model_name == "Pix2Pix":
         prediction = pixel_classify_pix2pix_image(
             self.model, patches, self.device, model_info=self.json_info
         )
+    elif model_name == "SuperResolution":
+        prediction = pixel_classify_superres_image(self.model, patches, self.device)
 
     interpolation_mask = create_interpolation_mask(kernel_size, 0, self.device, "hann")
 
