@@ -12228,6 +12228,7 @@ def interpolate_raster_by_dimension(
     :return: The output raster with the function applied.
 
     .. code-block:: python
+
         # Usage Example 1: Apply the interpolate_raster_by_dimension() on the input raster using BY_VALUES dimension_definition.
         interpolated_op = interpolate_raster_by_dimension(raster,
                                                           variables="water_temp",
