@@ -20,12 +20,13 @@ from arcgis.features import (
 from arcgis.geoprocessing import LinearUnit, DataFile, RasterData
 
 from arcgis.gis import Item, _GISResource, Layer
-from arcgis.mapping import MapImageLayer
+from arcgis.auth.tools import LazyLoader
+
+mapping = LazyLoader("arcgis.mapping")
 
 from ._types import LinearUnit, DataFile, RasterData
 
 from ..features import FeatureSet
-from ..mapping import MapImageLayer
 
 try:
     from arcgis.features.geo import _is_geoenabled
@@ -302,7 +303,7 @@ def _inspect_tool(taskprops, map_as_result):
             {
                 "name": "result_layer",
                 "display_name": "Result Layer",
-                "type": MapImageLayer,
+                "type": mapping.MapImageLayer,
             }
         )
 
@@ -956,7 +957,7 @@ class Toolbox(_AsyncResource):
                     {
                         "name": "result_layer",
                         "display_name": "Result Layer",
-                        "type": MapImageLayer,
+                        "type": mapping.MapImageLayer,
                     }
                 )
 
@@ -1260,7 +1261,9 @@ class Toolbox(_AsyncResource):
                     self.url.replace("/GPServer", "/MapServer") + "/jobs/" + job_id
                 )
 
-                output_dict["result_layer"] = MapImageLayer(result_layer_url, self._gis)
+                output_dict["result_layer"] = mapping.MapImageLayer(
+                    result_layer_url, self._gis
+                )
 
             num_returns = len(resp)
             if num_returns == 1:
