@@ -593,15 +593,15 @@ class License(object):
         item_id = self.properties["listing"]["itemId"]
         if isinstance(entitlements, str):
             entitlements = entitlements.split(",")
-        
+
         if not overwrite:
             existing = self.user_entitlement(username)
-            if existing and 'entitlements' in existing:
-                entitlement_set = set(existing['entitlements'])
+            if existing and "entitlements" in existing:
+                entitlement_set = set(existing["entitlements"])
                 for e in entitlements:
                     entitlement_set.add(e)
                 entitlements = list(entitlement_set)
-        
+
         params = {
             "f": "json",
             "userEntitlements": {"users": [username], "entitlements": entitlements},
