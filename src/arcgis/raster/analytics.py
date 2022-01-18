@@ -8609,6 +8609,8 @@ def compute_change_raster(
     transition_class_colors="AVERAGE",
     output_name=None,
     context=None,
+    from_classname_field=None,
+    to_classsname_field=None,
     *,
     gis=None,
     future=False,
@@ -8735,6 +8737,16 @@ def compute_change_raster(
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
+    from_class_name_field_name               Optional string. A field that stores class names in the raster1.
+                                             The function automatically searches for CLASSNAME field or CLASS_NAME field to use.
+                                             Use this parameter if the input does not contain these standard field names
+                                             Example: "CLASSES"
+    ------------------------------------     --------------------------------------------------------------------
+    to_class_name_field_name                 Optional string. A field that stores class names in the raster2.
+                                             The function automatically searches for CLASSNAME field or CLASS_NAME field to use.
+                                             Use this parameter if the input does not contain these standard field names
+                                             Example: "CLASSES"
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
@@ -8780,6 +8792,8 @@ def compute_change_raster(
         to_classes=to_classes,
         filter_method=filter_method,
         transition_class_colors=transition_class_colors,
+        from_classname_field=from_classname_field,
+        to_classsname_field=to_classsname_field,
         output_name=output_name,
         context=context,
         future=future,
