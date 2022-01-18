@@ -1,10 +1,8 @@
 import numpy as np
 
-HAS_OPENCV = True
-try:
-    import cv2
-except:
-    HAS_OPENCV = False
+from arcgis.auth.tools import LazyLoader
+
+cv2 = LazyLoader("cv2")
 
 
 def _pad_image(image, stride):

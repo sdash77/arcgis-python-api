@@ -11,7 +11,6 @@ from zipfile import ZipFile
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
-from arcgis.raster.analytics import copy_raster
 from .._utils.tabular_data import TabularDataObject, explain_prediction
 
 
@@ -1171,6 +1170,8 @@ class MLModel(object):
         )
         processed_raster.save(output_folder_path)
         if output_layer_name:
+            from arcgis.raster.analytics import copy_raster
+
             copy_raster_op = copy_raster(
                 input_raster=output_folder_path,
                 output_name=output_layer_name.replace(" ", ""),
