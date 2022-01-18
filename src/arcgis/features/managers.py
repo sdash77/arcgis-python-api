@@ -326,8 +326,15 @@ class AttachmentManager(object):
                 pd.set_option("display.max_colwidth", -1)
                 return HTML(pd.DataFrame.from_dict(rows).to_html(escape=False))
             else:
+                if len(rows) == 0:
+                    return pd.DataFrame()
                 df = pd.DataFrame.from_dict(rows)
-                df.drop(["DOWNLOAD_URL", "IMAGE_PREVIEW"], axis=1, inplace=True)
+                df.drop(
+                    ["DOWNLOAD_URL", "IMAGE_PREVIEW"],
+                    axis=1,
+                    inplace=True,
+                    errors="ignore",
+                )
                 return df
         else:
             return rows

@@ -18,11 +18,6 @@ try:
 except Exception:
     HAS_OPENCV = False
 
-try:
-    import arcpy
-except Exception:
-    HAS_ARCPY = False
-
 
 class VideoUtils:
     @staticmethod
