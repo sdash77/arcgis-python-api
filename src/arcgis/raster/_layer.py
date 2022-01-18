@@ -4614,7 +4614,7 @@ class ImageryLayer(Layer):
                     "opacity": 1,
                     "title": output_name,
                     "timeAnimation": False,
-                    "renderingRule": self._fn,
+                    "renderingRule": self._fnra,
                     "mosaicRule": self._mosaic_rule,
                 }
                 ext = self.properties.initialExtent
@@ -4628,7 +4628,9 @@ class ImageryLayer(Layer):
                     "extent": "{},{},{},{}".format(
                         ext["xmin"], ext["ymin"], ext["xmax"], ext["ymax"]
                     ),
-                    "spatialReference": self.properties.spatialReference.wkid,
+                    "spatialReference": json.dumps(
+                        dict(self.properties.spatialReference)
+                    ),
                     "text": json.dumps(text_data),
                 }
 
