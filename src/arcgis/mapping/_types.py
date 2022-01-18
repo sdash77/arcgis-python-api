@@ -4064,13 +4064,16 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             # connect to your GIS and get the tile layer item
             >>> gis = GIS(url, username, password)
 
-            >>> VectorTileLayer.edit_tile_service(service_name = "vtl_service_name",
-                                                  min_scale = 50,
-                                                  max_scale = 100,
-                                                  source_item_id = "geowarehouse_item_id",
-                                                  export_tiles_allowed = True,
-                                                  max_export_tile_count = 10000
-                                                 )
+            >>> vector_layer_item = gis.content.get('abcd_item-id')
+            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
+            >>> vtl_manager = vector_tile_layer.manager
+            >>> vtl_manager.edit_tile_service(service_name = "vector_layer_name",
+                                                        min_scale = 50,
+                                                        max_scale = 100,
+                                                        source_item_id = "geowarehouse_item_id",
+                                                        export_tiles_allowed = True,
+                                                        max_Export_Tile_Count = 10000
+                                                        )
         """
         params = {
             "f": "json",
@@ -4149,14 +4152,17 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             # connect to your GIS
             >>> gis = GIS(url, username, password)
 
-            >>> deleted_tiles = VectorTileLayerManager.delete_tiles(levels = "11-20",
-                                                                    extent = {"xmin":6224324.092137296,
-                                                                              "ymin":487347.5253569535,
-                                                                              "xmax":11473407.698535524,
-                                                                              "ymax":4239488.369818687,
-                                                                              "spatialReference":{"wkid":102100}
-                                                                              }
-                                                                    )
+            >>> vector_layer_item = gis.content.get('abcd_item-id')
+            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
+            >>> vtl_manager = vector_tile_layer.manager
+            >>> deleted_tiles = vtl_manager.delete_tiles(levels = "11-20",
+                                                  extent = {"xmin":6224324.092137296,
+                                                            "ymin":487347.5253569535,
+                                                            "xmax":11473407.698535524,
+                                                            "ymax":4239488.369818687,
+                                                            "spatialReference":{"wkid":102100}
+                                                            }
+                                                  )
             >>> type(deleted_tiles)
         """
         if self._gis._is_agol:
