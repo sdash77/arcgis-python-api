@@ -14,4 +14,6 @@ from ._layer import (
     ODCostMatrixLayer,
 )
 
-from . import analysis
+from arcgis.auth.tools import LazyLoader
+
+analysis = LazyLoader("arcgis.network.analysis")
