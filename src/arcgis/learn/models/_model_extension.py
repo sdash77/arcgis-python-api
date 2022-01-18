@@ -12,7 +12,6 @@ logger = logging.getLogger()
 
 HAS_OPENCV = True
 HAS_FASTAI = True
-HAS_ARCPY = True
 
 try:
     import torch
@@ -64,11 +63,6 @@ try:
     import cv2
 except Exception:
     HAS_OPENCV = False
-
-try:
-    import arcpy
-except Exception:
-    HAS_ARCPY = False
 
 
 class ModelExtension(ArcGISModel):
@@ -286,10 +280,11 @@ class ModelExtension(ArcGISModel):
 
         modelconfclass = emd["ModelFileConfigurationClass"]
 
-        sys.path.append(os.path.dirname(modelconf))
-        model_configuration = getattr(
-            importlib.import_module("{}".format(modelconf.name[0:-3])), modelconfclass
-        )
+        spec = importlib.util.spec_from_file_location(modelconfclass, modelconf)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        model_configuration = getattr(module, modelconfclass)
 
         backbone = emd["ModelParameters"].get("backbone", None)
 

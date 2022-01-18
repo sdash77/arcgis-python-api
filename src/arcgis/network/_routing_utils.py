@@ -2,10 +2,7 @@ import logging as _logging
 import arcgis
 from datetime import datetime
 from functools import lru_cache
-from arcgis.features import FeatureSet
-from arcgis.mapping import MapImageLayer
-from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
-from arcgis.geoprocessing._support import _execute_gp_tool
+
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.common._utils import _validate_url
 

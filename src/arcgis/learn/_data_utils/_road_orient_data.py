@@ -16,14 +16,8 @@ HAS_FASTAI = True
 
 try:
     import torch
-    from skimage import filters
     from .._utils.common import ArcGISMSImage
     from ._base_data import ArcgisData
-    from .._utils.road_orient_utils.affinity_utils import (
-        convertAngles2VecMap,
-        getKeypoints,
-        getVectorMapsAngles,
-    )
     from .._utils.pointcloud_data import get_device
     from fastai.basic_data import DatasetType
     from fastai.vision.data import imagenet_stats
@@ -37,7 +31,6 @@ try:
     from numpy import ma
     from PIL import Image as PILImage
     from scipy.ndimage.morphology import distance_transform_edt
-    from skimage.morphology import skeletonize
     from torch import Tensor
     from torch.utils.data import DataLoader, Dataset
     from torchvision import transforms as pytorch_tfms
@@ -111,6 +104,8 @@ def _plotOrientationOnImage(ax, orientMap, image, bin_size=20):
     """
     Plot Orientation Vectors overlay on Image
     """
+    from .._utils.road_orient_utils.affinity_utils import convertAngles2VecMap
+
     ax.imshow(image)
     orientmap_xy = convertAngles2VecMap(orientMap.shape, orientMap, bin_size)
     U = orientmap_xy[:, :, 0] * -1
@@ -401,15 +396,21 @@ class RoadOrientDataset(Dataset):
         if self.generate_orient:
             orient_label = self._getOrientationGT(np.copy(label.astype(np.uint8)))
             # orient_label = self._get_fastai_image(orient_label, dtype=np.float32)
-            return image, [
-                torch.from_numpy(label.copy()),
-                torch.from_numpy(orient_label.copy()),
-            ]
+            return (
+                image,
+                [
+                    torch.from_numpy(label.copy()),
+                    torch.from_numpy(orient_label.copy()),
+                ],
+            )
         else:
-            return image, [
-                torch.from_numpy(label.copy()),
-                torch.from_numpy(label.copy()),
-            ]
+            return (
+                image,
+                [
+                    torch.from_numpy(label.copy()),
+                    torch.from_numpy(label.copy()),
+                ],
+            )
 
     def _get_fastai_image(self, x, dtype) -> Image:
         """
@@ -438,6 +439,11 @@ class RoadOrientDataset(Dataset):
         """
         Create Orientation Label for given road label
         """
+        from .._utils.road_orient_utils.affinity_utils import (
+            getKeypoints,
+            getVectorMapsAngles,
+        )
+
         height, width = (
             road_mask.shape if isinstance(road_mask, np.ndarray) else road_mask.size
         )
@@ -461,6 +467,8 @@ class RoadOrientDataset(Dataset):
             2 - Compute Distance Transform
             3 - Convert Gaussian Road Mask using standard Deviation of 15
         """
+        from skimage.morphology import skeletonize
+
         gt_array = skeletonize(gt_array)
         distance_array = distance_transform_edt(1 - (gt_array))
         std = 15
@@ -472,6 +480,8 @@ class RoadOrientDataset(Dataset):
         """
         Threshold the gaussian mask.
         """
+        from skimage import filters
+
         if self.is_gaussian_mask:
             new_label = (np.array(label).astype(np.float)) / 255.0
         else:

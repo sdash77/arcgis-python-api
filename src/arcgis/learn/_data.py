@@ -43,7 +43,7 @@ try:
         ArcGISInstanceSegmentationItemList,
         ArcGISInstanceSegmentationMSItemList,
     )
-    from ._utils._ner_utils import _NERData
+
     from ._utils.pascal_voc_rectangles import ObjectDetectionItemList
     from .models._superres_utils import resize_one
     from ._utils.common import ArcGISMSImage, ArcGISImageList
@@ -62,7 +62,6 @@ try:
     from fastai.tabular.transform import FillMissing, Categorify, Normalize
     from fastai.tabular import cont_cat_split, add_datepart
     from ._utils.tabular_data import TabularDataObject
-    from ._utils.text_data import TextDataObject
     from ._utils.cyclegan import ImageTupleList, prepare_data_ms_cyclegan
     from ._utils.cyclegan import show_batch as show_batch_img2img
     import random
@@ -808,6 +807,7 @@ def prepare_textdata(
 
     if not HAS_FASTAI:
         _raise_fastai_import_error(import_exception)
+    from ._utils.text_data import TextDataObject
 
     # if task not in allowed_tasks:
     #     raise Exception(f"Wrong task choosen. Allowed tasks are {allowed_tasks}")
@@ -1758,6 +1758,20 @@ def prepare_data(
                     )
             else:
                 # MultiFolder Training
+                def _get_labels(x, ext=right):
+                    path = x.parent.parent
+                    label_dir = [
+                        os.path.join(path / "labels", lbl)
+                        for lbl in label_dirs
+                        if os.path.isdir(os.path.join(path / "labels", lbl))
+                    ]
+                    label_path = []
+                    for lbl in label_dir:
+                        if os.path.exists(Path(lbl) / (x.stem + ".{}".format(ext))):
+                            label_path.append(Path(lbl) / (x.stem + ".{}".format(ext)))
+                    return label_path
+
+                get_y_func = _get_labels
                 imageslist = []
                 for data_folder in data_folders:
                     imageslist.append(
@@ -2133,7 +2147,7 @@ def prepare_data(
                 if kwargs.get("stratify") != False:
                     src = (
                         ArcGISImageList(np.concatenate(imageslist))
-                        .label_list_from_func(get_y_func)
+                        .label_list_from_func(get_y_func, val_split_pct)
                         .stratified_split_by_pct(val_split_pct, seed=seed)
                         .label_from_func(get_y_func)
                     )
@@ -2231,6 +2245,8 @@ def prepare_data(
                 emd = json.load(f)
 
     elif dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
+        from ._utils._ner_utils import _NERData
+
         if batch_size == 64:
             batch_size = 8
         encoding = kwargs.get("encoding", "UTF-8")

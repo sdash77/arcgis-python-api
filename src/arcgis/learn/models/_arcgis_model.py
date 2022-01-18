@@ -74,15 +74,6 @@ except ImportError as e:
         pass
 
 
-try:
-    import tensorboardX
-
-    # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
-    from fastai.callbacks.tensorboard import LearnerTensorboardWriter
-    from .._utils.tensorboard_utils import ArcGISTBCallback
-except:
-    HAS_TENSORBOARDX = False
-
 logger = logging.getLogger()
 
 # For lr computation, skip beginning and trailing values.
@@ -950,7 +941,15 @@ class ArcGISModel(object):
                 )
             kwargs.pop("save_callback_params", None)
             # If tensorboardx is installed write a log with name as timestamp
-            if tensorboard and HAS_TENSORBOARDX:
+            if tensorboard:
+                try:
+                    import tensorboardX
+
+                    # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
+                    from fastai.callbacks.tensorboard import LearnerTensorboardWriter
+                    from .._utils.tensorboard_utils import ArcGISTBCallback
+                except:
+                    raise
                 training_id = time.strftime("log_%Y-%m-%d_%H-%M-%S")
                 log_path = Path(self._data.path) / "training_log"
                 abs_path = os.path.abspath(log_path)
