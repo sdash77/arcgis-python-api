@@ -11898,6 +11898,9 @@ def dimensional_moving_statistics(
     """
     The sum function calculates statistics over a moving window on multidimensional data along a specified dimension.
 
+    .. note::
+        This raster function does not support on the fly rendering and can only be used to generate persisted output.
+        To persist the output use the ``save()`` method on the resulting layer.
 
     The arguments for this function are as follows:
 
