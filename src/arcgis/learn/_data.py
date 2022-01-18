@@ -12,7 +12,6 @@ import types
 import traceback
 import copy
 import warnings
-
 from ._utils.env import ARCGIS_ENABLE_TF_BACKEND
 
 import_exception = None
@@ -44,7 +43,7 @@ try:
         ArcGISInstanceSegmentationItemList,
         ArcGISInstanceSegmentationMSItemList,
     )
-    from ._utils._ner_utils import _NERData
+
     from ._utils.pascal_voc_rectangles import ObjectDetectionItemList
     from .models._superres_utils import resize_one
     from ._utils.common import ArcGISMSImage, ArcGISImageList
@@ -63,7 +62,6 @@ try:
     from fastai.tabular.transform import FillMissing, Categorify, Normalize
     from fastai.tabular import cont_cat_split, add_datepart
     from ._utils.tabular_data import TabularDataObject
-    from ._utils.text_data import TextDataObject
     from ._utils.cyclegan import ImageTupleList, prepare_data_ms_cyclegan
     from ._utils.cyclegan import show_batch as show_batch_img2img
     import random
@@ -712,6 +710,7 @@ def prepare_textdata(
     remove_html_tags=False,
     remove_urls=False,
     working_dir=None,
+    **kwargs,
 ):
     """
     Prepares a text data object from the files present at data folder
@@ -786,7 +785,21 @@ def prepare_textdata(
                             for saving trained models and checkpoints.
     =====================   ===========================================
 
-    :return: `TextData` object
+    **Keyword Arguments**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    stratify                Optional boolean.
+                            If True, prepare_textdata
+                            will try to maintain the class proportion in
+                            train and validation data according to the
+                            val_split_pct.
+                            The default value is True.
+                            Note: Applies only to single-label text classification.
+    =====================   ===========================================
+
+    :returns: `TextData` object
 
     """
     # allowed_tasks = ["classification", "summarization", "translation",
@@ -794,6 +807,7 @@ def prepare_textdata(
 
     if not HAS_FASTAI:
         _raise_fastai_import_error(import_exception)
+    from ._utils.text_data import TextDataObject
 
     # if task not in allowed_tasks:
     #     raise Exception(f"Wrong task choosen. Allowed tasks are {allowed_tasks}")
@@ -819,6 +833,7 @@ def prepare_textdata(
             process_labels=process_labels,
             remove_html_tags=remove_html_tags,
             remove_urls=remove_urls,
+            **kwargs,
         )
 
     elif task.lower() == "sequence_translation":
@@ -1241,6 +1256,17 @@ def prepare_data(
                             `background_classcode` value. Only applicable
                             when specifying `classes_of_interest`.
                             Applicable only for dataset_type='PointCloud'.
+    ---------------------   -------------------------------------------
+    stratify                Optional boolean.
+                            If True, prepare_data
+                            will try to maintain the class proportion in
+                            train and validation data according to the
+                            val_split_pct.
+                            Default value feature classification is True.
+                            Default value pixel classification is False.
+
+                            Note: Applies only to single label feature classification
+                            and pixel classification.
     =====================   ===========================================
 
     :return: data object
@@ -1732,6 +1758,20 @@ def prepare_data(
                     )
             else:
                 # MultiFolder Training
+                def _get_labels(x, ext=right):
+                    path = x.parent.parent
+                    label_dir = [
+                        os.path.join(path / "labels", lbl)
+                        for lbl in label_dirs
+                        if os.path.isdir(os.path.join(path / "labels", lbl))
+                    ]
+                    label_path = []
+                    for lbl in label_dir:
+                        if os.path.exists(Path(lbl) / (x.stem + ".{}".format(ext))):
+                            label_path.append(Path(lbl) / (x.stem + ".{}".format(ext)))
+                    return label_path
+
+                get_y_func = _get_labels
                 imageslist = []
                 for data_folder in data_folders:
                     imageslist.append(
@@ -1785,6 +1825,15 @@ def prepare_data(
         def get_y_func(x, ext=right):
             return x.parents[1] / "labels" / (x.stem + ".{}".format(ext))
 
+        def get_label_pixels(x, ext=right):
+            import numpy as np
+
+            img_arr = ArcGISMSImage.read_image(
+                (x.parents[1] / "labels" / (x.stem + ".{}".format(ext)))
+            )
+            unique_pixels = np.unique(img_arr).astype("str")
+            return unique_pixels
+
         def image_without_label(imagefile, not_label_count=[0], ext=right):
             xmlfile = (
                 imagefile.parents[1] / "labels" / (imagefile.stem + ".{}".format(ext))
@@ -1811,17 +1860,31 @@ def prepare_data(
             }
 
         if data_folders is None and images_df is None:
-            data = (
-                ArcGISSegmentationItemList.from_folder(path / "images")
-                .filter_by_func(remove_image_without_label)
-                .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(
-                    get_y_func,
-                    classes=(["NoData"] + list(class_mapping.values())),
-                    class_mapping=class_mapping,
-                    color_mapping=color_mapping,
+            if kwargs.get("stratify"):
+                data = (
+                    ArcGISSegmentationItemList.from_folder(path / "images")
+                    .filter_by_func(remove_image_without_label)
+                    .label_list_from_func(get_label_pixels)
+                    .stratified_split_by_pct(val_split_pct, seed=seed)
+                    .label_from_func(
+                        get_y_func,
+                        classes=(["NoData"] + list(class_mapping.values())),
+                        class_mapping=class_mapping,
+                        color_mapping=color_mapping,
+                    )
                 )
-            )
+            else:
+                data = (
+                    ArcGISSegmentationItemList.from_folder(path / "images")
+                    .filter_by_func(remove_image_without_label)
+                    .split_by_rand_pct(val_split_pct, seed=seed)
+                    .label_from_func(
+                        get_y_func,
+                        classes=(["NoData"] + list(class_mapping.values())),
+                        class_mapping=class_mapping,
+                        color_mapping=color_mapping,
+                    )
+                )
         else:
             if images_df is not None:
                 # imagesdf should have two columns 0, 1
@@ -1927,15 +1990,12 @@ def prepare_data(
                 ObjectDetectionItemList.from_folder(path / "images")
                 .filter_by_func(remove_image_without_label)
                 .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(get_y_func)
             )
         else:
             if images_df is not None:
                 src = ObjectDetectionItemList.from_df(images_df, "images")
                 src.items = images_df[images_df.columns[0]].values
-                src = src.split_by_rand_pct(val_split_pct, seed=seed).label_from_func(
-                    get_y_func
-                )
+                src = src.split_by_rand_pct(val_split_pct, seed=seed)
             else:
                 # MultiFolder Training
                 imageslist = []
@@ -1949,9 +2009,50 @@ def prepare_data(
                     ObjectDetectionItemList(np.concatenate(imageslist))
                     .filter_by_func(remove_image_without_label)
                     .split_by_rand_pct(val_split_pct, seed=seed)
-                    .label_from_func(get_y_func)
                 )
             data = src
+        #
+        #
+        image_files = [*data.train.items, *data.valid.items]
+        argslist = [
+            {
+                "imagefile": im,
+                "class_mapping": class_mapping,
+                "height_width": height_width,
+                "dataset_type": dataset_type,
+            }
+            for im in image_files
+        ]
+        label_store = {}
+        from . import _utils
+
+        temp_folder = os.path.dirname(_utils.__file__)
+        from multiprocessing import Pool, cpu_count
+
+        sys.path.append(temp_folder)
+        from pascal_voc_rectangles_reader import _get_bbox_lbls_helper
+
+        pool = Pool(cpu_count(), initargs={"PYTHONPATH": temp_folder})
+        res = pool.imap(_get_bbox_lbls_helper, argslist)
+        for i, y in enumerate(res):
+            label_store[image_files[i]] = y
+        pool.close()
+        pool.join()
+        del pool
+        sys.path.remove(temp_folder)
+        data = data.label_from_func(label_store.get)
+        #
+        _bboxes = []
+        for x in label_store.values():
+            _bboxes.extend(x[0])
+        _bboxes = np.array(_bboxes, dtype=np.float32)
+        height_width = np.stack(
+            [
+                (_bboxes[:, 3] - _bboxes[:, 1]) * 1.25,
+                (_bboxes[:, 2] - _bboxes[:, 0]) * 1.25,
+            ],
+            -1,
+        ).tolist()
         #
         _show_batch_multispectral = show_batch_pascal_voc_rectangles
 
@@ -2015,11 +2116,20 @@ def prepare_data(
             kwargs_transforms["resize_method"] = ResizeMethod.SQUISH
 
         if data_folders is None and images_df is None:
-            data = (
-                ArcGISImageList.from_folder(path / "images")
-                .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(get_y_func)
-            )
+            if dataset_type == "Labeled_Tiles" and kwargs.get("stratify") != False:
+                data = (
+                    ArcGISImageList.from_folder(path / "images")
+                    .label_list_from_func(get_y_func, val_split_pct)
+                    .stratified_split_by_pct(val_split_pct, seed=seed)
+                    .label_from_func(get_y_func)
+                )
+            else:
+                data = (
+                    ArcGISImageList.from_folder(path / "images")
+                    .split_by_rand_pct(val_split_pct, seed=seed)
+                    .label_from_func(get_y_func)
+                )
+
         else:
             if images_df is not None:
                 src = ArcGISImageList.from_df(images_df, "images")
@@ -2034,11 +2144,19 @@ def prepare_data(
                     imageslist.append(
                         ArcGISImageList.from_folder(data_folder / "images").items
                     )
-                src = (
-                    ArcGISImageList(np.concatenate(imageslist))
-                    .split_by_rand_pct(val_split_pct, seed=seed)
-                    .label_from_func(get_y_func)
-                )
+                if kwargs.get("stratify") != False:
+                    src = (
+                        ArcGISImageList(np.concatenate(imageslist))
+                        .label_list_from_func(get_y_func, val_split_pct)
+                        .stratified_split_by_pct(val_split_pct, seed=seed)
+                        .label_from_func(get_y_func)
+                    )
+                else:
+                    src = (
+                        ArcGISImageList(np.concatenate(imageslist))
+                        .split_by_rand_pct(val_split_pct, seed=seed)
+                        .label_from_func(get_y_func)
+                    )
             data = src
         #
         _show_batch_multispectral = show_batch_labeled_tiles
@@ -2127,6 +2245,8 @@ def prepare_data(
                 emd = json.load(f)
 
     elif dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
+        from ._utils._ner_utils import _NERData
+
         if batch_size == 64:
             batch_size = 8
         encoding = kwargs.get("encoding", "UTF-8")
@@ -2212,7 +2332,7 @@ def prepare_data(
     elif dataset_type == "CycleGAN":
         if _is_multispectral:
             data = prepare_data_ms_cyclegan(
-                path, norm_pct, val_split_pct, seed, databunch_kwargs
+                path, _is_multispectral, norm_pct, val_split_pct, seed, databunch_kwargs
             )
             data.show_batch = types.MethodType(show_batch_img2img, data)
             data.n_channel = data.x[0].data[0].shape[0]
@@ -2231,10 +2351,8 @@ def prepare_data(
                 data.path = Path(os.path.abspath(working_dir))
             data._temp_folder = _prepare_working_dir(data.path)
             return data
-        data = (
-            ImageTupleList.from_folders(path, path_a, path_b)
-            .split_by_rand_pct(val_split_pct, seed=seed)
-            .label_empty()
+        data, batch_stats_a, batch_stats_b = prepare_data_ms_cyclegan(
+            path, _is_multispectral, norm_pct, val_split_pct, seed, databunch_kwargs
         )
         img_size = data.x[0].shape[-1]
         if resize_to is None:
@@ -2251,6 +2369,7 @@ def prepare_data(
             resize_to=resize_to,
             norm_pct=norm_pct,
             _is_multispectral=_is_multispectral,
+            working_dir=working_dir,
             **kwargs,
         )
         data._imagery_type_a = imagery_type_a
@@ -2471,6 +2590,26 @@ def prepare_data(
         data = data.transform(get_transforms(), **kwargs_transforms).databunch(
             **databunch_kwargs
         )
+        data._band_min_values = batch_stats_a["band_min_values"]
+        data._band_max_values = batch_stats_a["band_max_values"]
+        data._band_mean_values = batch_stats_a["band_mean_values"]
+        data._band_std_values = batch_stats_a["band_std_values"]
+        data._scaled_min_values = batch_stats_a["scaled_min_values"]
+        data._scaled_max_values = batch_stats_a["scaled_max_values"]
+        data._scaled_mean_values = batch_stats_a["scaled_mean_values"]
+        data._scaled_std_values = batch_stats_a["scaled_std_values"]
+
+        data._band_min_values_b = batch_stats_b["band_min_values"]
+        data._band_max_values_b = batch_stats_b["band_max_values"]
+        data._band_mean_values_b = batch_stats_b["band_mean_values"]
+        data._band_std_values_b = batch_stats_b["band_std_values"]
+        data._scaled_min_values_b = batch_stats_b["scaled_min_values"]
+        data._scaled_max_values_b = batch_stats_b["scaled_max_values"]
+        data._scaled_mean_values_b = batch_stats_b["scaled_mean_values"]
+        data._scaled_std_values_b = batch_stats_b["scaled_std_values"]
+
+        data._dataset_type = "CycleGAN"
+        data._extract_bands = None
         data.n_channel = data.x[0].data[0].shape[0]
         data._imagery_type_a = imagery_type_a
         data._imagery_type_b = imagery_type_b

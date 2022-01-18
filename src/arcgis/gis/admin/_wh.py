@@ -112,7 +112,14 @@ class WebhookManager(object):
 
     # ----------------------------------------------------------------------
     def create(
-        self, name, url, events="ALL", number_of_failures=5, days_in_past=5, secret=None
+        self,
+        name,
+        url,
+        events="ALL",
+        number_of_failures=5,
+        days_in_past=5,
+        secret=None,
+        properties=None,
     ):
         """
         Creates a WebHook to monitor REST endpoints and report activities
@@ -208,6 +215,8 @@ class WebhookManager(object):
         ---------------------------------  -------------------------------------------------------------------------------
         secret                             Optional String. Add a Secret to your payload that can be used to authenticate
                                            the message on your receiver.
+        ---------------------------------  -------------------------------------------------------------------------------
+        properties                         Optional Dict. At 10.9.1+ users can provide additional configuration properties.
         =================================  ===============================================================================
 
         :returns a :class:`WebHook<arcgis.gis.admin.Webhook>` instance
@@ -232,15 +241,20 @@ class WebhookManager(object):
         if secret is None:
             secret = ""
         purl = "%s/createWebhook" % self._url
+        config = {
+            "deactivationPolicy": {
+                "numberOfFailures": number_of_failures,
+                "daysInPast": days_in_past,
+            }
+        }
+        if properties:
+            config["properties"] = properties
         params = {
             "f": "json",
             "name": name,
             "url": url,
             "secret": secret,
-            "configuration": {
-                "numberOfFailures": number_of_failures,
-                "daysInPast": days_in_past,
-            },
+            "config": config,
         }
         if str(events).lower() == "all":
             params["changes"] = "allChanges"
@@ -503,9 +517,11 @@ class Webhook(object):
             "name": name,
             "url": url,
             "secret": secret,
-            "configuration": {
-                "numberOfFailures": number_of_failures,
-                "daysInPast": days_in_past,
+            "config": {
+                "deactivationPolicy": {
+                    "numberOfFailures": number_of_failures,
+                    "daysInPast": days_in_past,
+                }
             },
         }
 
@@ -515,41 +531,3 @@ class Webhook(object):
         if "success" in res:
             return res["success"]
         return False
-
-
-# if __name__ == "__main__":
-# from arcgis.gis import GIS
-# gis = GIS(url="https://dev0005215.esri.com/portal")
-# print(gis)
-# url = "{baseurl}portals/self/webhooks".format(baseurl=gis._portal.resturl)
-# whm = WebhookManager(url=url, gis=gis)
-# hook1 = whm.create(name="update_test", url="https://JJEYARAJAH.esri.com:8001", number_of_failures=5)
-# hook1.update(name='thisisupdated')
-# hook1.update(events='/users')
-# hook1.delete()
-# print(hook1.properties.name)
-
-# hook2 = whm.get("update_test")
-# isinstance(hook, Webhook)
-# assert hook.update(name="update_test", url="https://JJEYARAJAH.esri.com:8001", events="/users")
-# print(hook.properties)
-# print(hook.delete())
-##assert isinstance(whm, WebhookManager)
-##assert isinstance(whm.list(), list)
-##assert isinstance(whm.properties, PropertyMap)
-
-##wh = whm.get("Users Webhook")
-##assert isinstance(wh, Webhook)
-##assert isinstance(wh.notifications, list)
-###assert whm.create(name="AmazingWebHook", url="https://JJEYARAJAH.esri.com:8001", number_of_failures=5)
-##wh = whm.get("AmazingWebHook")
-##assert wh.deactivate()
-##assert wh.properties.isActive == False
-##assert wh.activate()
-##assert wh.properties.isActive == True
-
-##assert wh.delete()
-
-
-##print(whm.properties)
-# print()

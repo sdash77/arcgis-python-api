@@ -321,7 +321,7 @@ class PortalAdminManager(BasePortalAdmin):
         if self._license is None:
             from ._license import LicenseManager
 
-            url = "%s/portaladmin/license" % self._gis._portal.url
+            url = f"{self._gis._portal.resturl}/portals/self/purchases"
             self._license = LicenseManager(url=url, gis=self._gis)
         return self._license
 
@@ -391,7 +391,7 @@ class PortalAdminManager(BasePortalAdmin):
         if "message" in mode:
             params["description"] = mode.pop("message", "")
         res = self._con.post(url, params)
-        if "status" is res and res["status"] != "success":
+        if "status" in res and res["status"] != "success":
             raise RuntimeError(res)
 
     # ----------------------------------------------------------------------

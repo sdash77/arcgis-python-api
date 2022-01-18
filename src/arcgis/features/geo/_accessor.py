@@ -1,16 +1,18 @@
 """
 Holds Delegate and Accessor Logic
 """
-import os
-import copy
-import uuid
-import shutil
+from arcgis.auth.tools import LazyLoader
+
+os = LazyLoader("os")
+copy = LazyLoader("copy")
+uuid = LazyLoader("uuid")
+shutil = LazyLoader("shutil")
+datetime = LazyLoader("datetime")
+np = LazyLoader("numpy")
+tempfile = LazyLoader("tempfile")
+warnings = LazyLoader("warnings")
 import logging
-import datetime
-import tempfile
-import warnings
 import pandas as pd
-import numpy as np
 from collections.abc import Iterable
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
@@ -20,9 +22,11 @@ from ._io.fileops import (
     _sanitize_column_names,
     read_feather,
 )
-from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
-from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._isd import InsensitiveDict
+
+_geometry = LazyLoader("arcgis.geometry")
+_mixins = LazyLoader("arcgis._impl.common._mixins")
+_isd = LazyLoader("arcgis._impl.common._isd")
+
 
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
@@ -1211,10 +1215,10 @@ class GeoAccessor(object):
         if renderer is None:
             renderer = self._build_renderer()
         if isinstance(renderer, dict):
-            renderer = InsensitiveDict.from_dict(renderer)
-        elif isinstance(renderer, PropertyMap):
-            renderer = InsensitiveDict.from_dict(dict(renderer))
-        elif isinstance(renderer, InsensitiveDict):
+            renderer = _isd.InsensitiveDict.from_dict(renderer)
+        elif isinstance(renderer, _mixins.PropertyMap):
+            renderer = _isd.InsensitiveDict.from_dict(dict(renderer))
+        elif isinstance(renderer, _isd.InsensitiveDict):
             pass
         else:
             raise ValueError("renderer must be a dictionary type.")
@@ -1226,7 +1230,7 @@ class GeoAccessor(object):
         if self._meta.source and hasattr(self._meta.source, "properties"):
             return self._meta.renderer
         elif self.name is None:
-            self._meta.renderer = InsensitiveDict({})
+            self._meta.renderer = _isd.InsensitiveDict({})
             return self._meta.renderer
         gt = self.geometry_type[0]
         base_renderer = {
@@ -1272,7 +1276,7 @@ class GeoAccessor(object):
                     "width": 1,
                 },
             }
-        self._meta.renderer = InsensitiveDict(base_renderer)
+        self._meta.renderer = _isd.InsensitiveDict(base_renderer)
         return self._meta.renderer
 
     # ----------------------------------------------------------------------
@@ -1407,11 +1411,13 @@ class GeoAccessor(object):
                 try:
                     g = self._data.iloc[idx][col]
                     if isinstance(g, dict):
-                        self._sr = SpatialReference(Geometry(g["spatialReference"]))
+                        self._sr = _geometry.SpatialReference(
+                            _geometry.Geometry(g["spatialReference"])
+                        )
                     else:
-                        self._sr = SpatialReference(g["spatialReference"])
+                        self._sr = _geometry.SpatialReference(g["spatialReference"])
                 except:
-                    self._sr = SpatialReference({"wkid": 4326})
+                    self._sr = _geometry.SpatialReference({"wkid": 4326})
             self._name = col
             # q = self._data[col].isna()
             # self._data.loc[q, "SHAPE"] = None
@@ -2282,7 +2288,7 @@ class GeoAccessor(object):
                 or kwargs.pop("pallette", None)
                 or kwargs.pop("palette", "jet"),
                 alpha=kwargs.pop("alpha", 1),
-                **kwargs
+                **kwargs,
             )
 
         # small helper to address zoom level
@@ -2341,7 +2347,7 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_featureclass(
-        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
+        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=False
     ):
         """
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
@@ -2379,7 +2385,9 @@ class GeoAccessor(object):
             "in_memory",
         ]:
             location = os.path.abspath(path=location)
-        return to_featureclass(
+        origin_columns = self._data.columns.tolist()
+        origin_index = copy.deepcopy(self._data.index)
+        result = to_featureclass(
             self,
             location=location,
             overwrite=overwrite,
@@ -2387,9 +2395,12 @@ class GeoAccessor(object):
             sanitize_columns=sanitize_columns,
             has_m=has_m,
         )
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return result
 
     # ----------------------------------------------------------------------
-    def to_table(self, location, overwrite=True):
+    def to_table(self, location, overwrite=True, **kwargs):
         """
         The ``to_table`` method exports a geo enabled dataframe to a :class:`~arcgis.features.Table` object.
 
@@ -2401,6 +2412,10 @@ class GeoAccessor(object):
         overwrite                       Optional Boolean.  If True and if the table exists, it will be
                                         deleted and overwritten.  This is default.  If False, the table and
                                         the table exists, and exception will be raised.
+        ---------------------------     --------------------------------------------------------------------
+        sanitize_columns                Optional Boolean. If True, column names will be converted to
+                                        string, invalid characters removed and other checks will be
+                                        performed. The default is False.
         ===========================     ====================================================================
 
         :return: String
@@ -2409,15 +2424,33 @@ class GeoAccessor(object):
         from arcgis.features.geo._io.fileops import to_table
         from ._tools._utils import run_and_hide
 
-        return run_and_hide(
-            to_table, **{"geo": self, "location": location, "overwrite": overwrite}
+        sanitize_columns = kwargs.pop("sanitize_columns", False)
+        origin_columns = self._data.columns.tolist()
+        origin_index = copy.deepcopy(self._data.index)
+        location = os.path.abspath(location)
+        table = run_and_hide(
+            to_table,
+            **{
+                "geo": self,
+                "location": location,
+                "overwrite": overwrite,
+                "sanitize_columns": sanitize_columns,
+            },
         )
-        # return to_table(geo=self,
-        #                location=location,
-        #                overwrite=overwrite)
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return table
 
     # ----------------------------------------------------------------------
-    def to_featurelayer(self, title, gis=None, tags=None, folder=None):
+    def to_featurelayer(
+        self,
+        title=None,
+        gis=None,
+        tags=None,
+        folder=None,
+        sanitize_columns=False,
+        service_name=None,
+    ):
         """
         The ``to_featurelayer`` method publishes a spatial dataframe to a new
         :class:`~arcgis.features.FeatureLayer` object.
@@ -2425,7 +2458,8 @@ class GeoAccessor(object):
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        title                           Required string. The name of the service
+        title                           Optional string. The name of the service. If not provided, a random
+                                        string is generated.
         ---------------------------     --------------------------------------------------------------------
         gis                             Optional GIS. The GIS connection object
         ---------------------------     --------------------------------------------------------------------
@@ -2434,6 +2468,14 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         folder                          Optional string. Name of the folder where the featurelayer item
                                         and imported data would be stored.
+        ---------------------------     --------------------------------------------------------------------
+        sanitize_columns                Optional Boolean. If True, column names will be converted to string,
+                                        invalid characters removed and other checks will be performed. The
+                                        default is False.
+        ---------------------------     --------------------------------------------------------------------
+        service_name                    Optional String. The name for the service that will be added to the Item.
+                                        Name cannot be used already and cannot contain special characters, spaces,
+                                        or a numerical value as the first letter.
         ===========================     ====================================================================
 
         :return:
@@ -2441,13 +2483,42 @@ class GeoAccessor(object):
 
         """
         from arcgis import env
+        import copy
 
         if gis is None:
             gis = env.active_gis
             if gis is None:
                 raise ValueError("GIS object must be provided")
         content = gis.content
-        return content.import_data(self._data, folder=folder, title=title, tags=tags)
+        origin_columns = self._data.columns.tolist()
+        origin_index = copy.deepcopy(self._data.index)
+        if title is None:
+            title = uuid.uuid4().hex
+        if service_name:
+            # sanitize name
+            service_name = service_name.replace(" ", "")
+            if service_name[0].isnumeric():
+                raise ValueError(
+                    "First character of service_name cannot be an integer."
+                )
+            if (
+                content.is_service_name_available(service_name, "featureService")
+                is False
+            ):
+                raise ValueError(
+                    "This service name is unavailable for Feature Service."
+                )
+        result = content.import_data(
+            self._data,
+            folder=folder,
+            title=title,
+            tags=tags,
+            sanitize_columns=sanitize_columns,
+            service_name=service_name,
+        )
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return result
 
     # ----------------------------------------------------------------------
     @staticmethod
@@ -2502,7 +2573,7 @@ class GeoAccessor(object):
                     raise ValueError(
                         "Column provided is all NULL, please provide a valid column"
                     )
-                g = Geometry(df[geometry_column].iloc[valid_index])
+                g = _geometry.Geometry(df[geometry_column].iloc[valid_index])
                 sr = g.spatial_reference
                 if isinstance(sr, Iterable) and "wkid" in sr:
                     sr = sr["wkid"] or 4326
@@ -2542,7 +2613,7 @@ class GeoAccessor(object):
                             x = loc["x"]
                             y = loc["y"]
                             geoms.append(
-                                arcgis.geometry.Geometry(
+                                _geometry.Geometry(
                                     {"x": x, "y": y, "spatialReference": sr}
                                 )
                             )
@@ -2712,7 +2783,7 @@ class GeoAccessor(object):
                             the records returned.
         ---------------     ----------------------------------------------------
         skip_nulls          Optional Boolean. This controls whether records
-                            using nulls are skipped.
+                            using nulls are skipped. Default is True.
         ---------------     ----------------------------------------------------
         null_value          Optional String/Integer/Float. Replaces null values
                             from the input with a new value.
@@ -3035,7 +3106,7 @@ class GeoAccessor(object):
             if g not in [None, np.NaN, np.nan, ""] and isinstance(g, dict)
         ]
         srs = [
-            SpatialReference(sr)
+            _geometry.SpatialReference(sr)
             for sr in pd.DataFrame(data).drop_duplicates().to_dict("records")
         ]
         if len(srs) == 1:
@@ -3061,9 +3132,9 @@ class GeoAccessor(object):
             if sr and "wkt" in sr:
                 wkt = sr["wkt"]
 
-            if isinstance(ref, (dict, SpatialReference)) and sr is None:
+            if isinstance(ref, (dict, _geometry.SpatialReference)) and sr is None:
                 self._data[self.name] = self._data[self.name].geom.project_as(ref)
-            elif isinstance(ref, SpatialReference):
+            elif isinstance(ref, _geometry.SpatialReference):
                 if ref != sr:
                     self._data[self.name] = self._data[self.name].geom.project_as(ref)
             elif isinstance(ref, int):
@@ -3073,7 +3144,7 @@ class GeoAccessor(object):
                 if ref != wkt:
                     self._data[self.name] = self._data[self.name].geom.project_as(ref)
             elif isinstance(ref, dict):
-                nsr = SpatialReference(ref)
+                nsr = _geometry.SpatialReference(ref)
                 if sr != nsr:
                     self._data[self.name] = self._data[self.name].geom.project_as(ref)
         else:
@@ -3103,7 +3174,12 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_feature_collection(
-        self, name=None, drawing_info=None, extent=None, global_id_field=None
+        self,
+        name=None,
+        drawing_info=None,
+        extent=None,
+        global_id_field=None,
+        sanitize_columns=False,
     ):
         """
         The ``to_feature_collection`` converts a spatially enabled a Pandas DataFrame to a
@@ -3126,15 +3202,27 @@ class GeoAccessor(object):
                                DataFrame.
         ---------------------  ---------------------------------------------------------------
         global_id_field        Optional string. The Global ID field of the dataset.
+        ---------------------  ---------------------------------------------------------------
+        sanitize_columns       Optional Boolean. If True, column names will be converted to string,
+                               invalid characters removed and other checks will be performed. The
+                               default is False.
         =====================  ===============================================================
 
         :return:
             A :class:`~arcgis.features.FeatureCollection` object
         """
         from arcgis.features import FeatureCollection
-        import string
+        import string, copy
         import random
 
+        old_columns, old_index = None, None
+        if sanitize_columns:
+
+            old_columns = self._data.columns.tolist()
+            old_index = copy.deepcopy(self._data.index)
+            pd.DataFrame.reset_index(self._data)
+            self._data.reset_index(drop=True)
+            self.sanitize_column_names(inplace=True)
         if name is None:
             name = random.choice(string.ascii_letters) + uuid.uuid4().hex[:5]
         template = {"showLegend": True, "layers": []}
@@ -3252,6 +3340,9 @@ class GeoAccessor(object):
         }
         if global_id_field is not None:
             layer["layerDefinition"]["globalIdField"] = global_id_field
+        if not old_columns is None and not old_index is None:
+            self._data.columns = old_columns
+            self._data.index = old_index
         return FeatureCollection(layer)
 
     # ---------------------------------------------------------------------
@@ -3333,7 +3424,7 @@ class GeoAccessor(object):
             else:
                 return None
 
-        # vectorize converter so it will run efficiently on GeoSeries - avoids loops
+        # vectorize converter so it will run efficiently on pd.Series - avoids loops
         v_func = np.vectorize(_converter, otypes="O")
 
         # initialize empty array
@@ -3502,7 +3593,7 @@ class GeoAccessor(object):
         if ymin == ymax:
             ymin -= 0.001
             ymax += 0.001
-        return Geometry(
+        return _geometry.Geometry(
             {
                 "rings": [
                     [
@@ -3750,7 +3841,7 @@ class GeoAccessor(object):
         return pd.Series(
             GeoArray(
                 [
-                    Geometry(
+                    _geometry.Geometry(
                         {
                             "rings": [[new_vertices[l] for l in r]],
                             "spatialReference": sr,
@@ -3806,6 +3897,28 @@ class GeoAccessor(object):
                 )
                 self._data[self.name] = vals
                 return True
+            elif isinstance(spatial_reference, _geometry.SpatialReference) and HASARCPY:
+                vals = self._data[self.name].values.project_as(
+                    **{
+                        "spatial_reference": spatial_reference.as_arcpy,
+                        "transformation_name": transformation_name,
+                    }
+                )
+                self._data[self.name] = vals
+                return True
+            elif isinstance(spatial_reference, dict) and HASARCPY:
+                spatial_reference = _geometry.SpatialReference(
+                    spatial_reference
+                ).as_arcpy
+                vals = self._data[self.name].values.project_as(
+                    **{
+                        "spatial_reference": spatial_reference,
+                        "transformation_name": transformation_name,
+                    }
+                )
+                self._data[self.name] = vals
+                return True
+
             elif isinstance(spatial_reference, (int, str)) and HASPYPROJ:
                 vals = self._data[self.name].values.project_as(
                     **{

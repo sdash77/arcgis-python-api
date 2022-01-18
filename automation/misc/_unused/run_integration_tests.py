@@ -12,7 +12,7 @@ try:
     sys.path.append(os.path.join(INTEGRATION_TESTS_DIR))
     from run_test_cases import run_test_cases
 except Exception as e:
-    log.warn(
+    log.warning(
         "Couldn't import run_test_cases from {}. failing."
         "..".format(INTEGRATION_TESTS_DIR)
     )

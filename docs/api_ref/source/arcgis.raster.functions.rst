@@ -131,6 +131,10 @@ buffered
 ________
 .. autofunction:: arcgis.raster.functions.buffered
 
+ccdc_analysis
+_____________
+.. autofunction:: arcgis.raster.functions.ccdc_analysis
+
 cire
 ____
 .. autofunction:: arcgis.raster.functions.cire
@@ -210,6 +214,10 @@ _________
 detect_change_using_change_analysis_raster
 __________________________________________
 .. autofunction:: arcgis.raster.functions.detect_change_using_change_analysis_raster
+
+dimensional_moving_statistics
+_____________________________
+.. autofunction:: arcgis.raster.functions.dimensional_moving_statistics
 
 divide
 ______
@@ -331,6 +339,10 @@ is_null
 _______
 .. autofunction:: arcgis.raster.functions.is_null
 
+landtrendr_analysis
+___________________
+.. autofunction:: arcgis.raster.functions.landtrendr_analysis
+
 less_than
 _________
 .. autofunction:: arcgis.raster.functions.less_than
@@ -409,6 +421,10 @@ ___
 monitor_vegetation
 __________________
 .. autofunction:: arcgis.raster.functions.monitor_vegetation
+
+mosaic_rasters
+______________
+.. autofunction:: arcgis.raster.functions.mosaic_rasters
 
 msavi
 _____
