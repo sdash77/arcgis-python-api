@@ -1052,19 +1052,47 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     interactive_draw_shape: function(){
         esriLoader.loadModules(['esri/widgets/Sketch/SketchViewModel',
                                 'esri/layers/GraphicsLayer',
-                                'esri/Graphic'],
+                                'esri/Graphic',
+                                'esri/symbols/support/jsonUtils'],
         options).then(([SketchViewModel,
                         GraphicsLayer,
-                        Graphic]) => {
+                        Graphic,
+                        symbolJsonUtils
+                        ]) => {
             console.log("Entering interactive draw shape mode.");
-            var shape = this.model.get("_trigger_interactive_draw_mode_for");
+            var args = this.model.get('_trigger_interactive_draw_mode_for');
+            var shape = args.shape
+            if ('symbol' in args) {
+                var symbol = symbolJsonUtils.fromJSON(args.symbol);
+            }
+
             if(shape){
                 var view = this.activeView;
                 var graphicsLayer = this.getGraphicsLayer(GraphicsLayer);
-                var sketch = new SketchViewModel({
-                  layer: graphicsLayer,
-                  view: view,
-                });
+
+                if (symbol == null) {
+                    var sketch = new SketchViewModel({
+                        layer: graphicsLayer,
+                        view: view
+                    });
+                } else {
+                    var symbolType;
+                    if (shape == "polyline") {
+                        symbolType = "polylineSymbol"
+                    } else if (shape == "polygon") {
+                        symbolType = "polygonSymbol"
+                    } else if ((shape == "point") || (shape == "multipoint")) {
+                        symbolType = "pointSymbol"
+                    } else {
+                        symbolType = "symbol"
+                    }
+                    var sketch = new SketchViewModel({
+                        layer: graphicsLayer,
+                        view: view,
+                        [symbolType]: symbol,
+                    });
+                }
+
                 sketch.create(shape);
                 sketch.on("create", (event) => {
                     if(event.state == "complete"){

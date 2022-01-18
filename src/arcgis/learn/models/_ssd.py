@@ -13,7 +13,6 @@ logger = logging.getLogger()
 
 HAS_OPENCV = True
 HAS_FASTAI = True
-HAS_ARCPY = True
 
 try:
     import torch
@@ -89,11 +88,6 @@ try:
     import cv2
 except Exception:
     HAS_OPENCV = False
-
-try:
-    import arcpy
-except Exception:
-    HAS_ARCPY = False
 
 
 def _mobilenet_split(m: NnModule):

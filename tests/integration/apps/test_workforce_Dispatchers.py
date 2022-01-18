@@ -138,7 +138,15 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
 
     def test_search_dispatcher(self):
         try:
-            dispatcher = self.project.dispatchers.search()[0]
+            # 1=1 which is the default, appears to trigger some CDN caching, using 2>1 avoids this
+            dispatchers = self.project.dispatchers.search("2>1")
+            self.assertEqual(len(dispatchers), 2, "Incorrect number of dispatchers")
+
+            dispatcher = self.project.dispatchers.search(
+                "{} = '{}'".format(
+                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api"
+                )
+            )[0]
             self.assertEqual(
                 dispatcher.user_id, "ar_workforce_python_api", "Incorrect user id"
             )
@@ -147,17 +155,6 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
             )
             self.assertEqual(
                 dispatcher.contact_number, None, "Incorrect contact number"
-            )
-
-            dispatcher2 = self.project.dispatchers.search()[1]
-            self.assertEqual(
-                dispatcher2.user_id, "ar_workforce_python_api2", "Incorrect user id"
-            )
-            self.assertEqual(
-                dispatcher2.name, "ar_workforce_python_api2", "Incorrect name"
-            )
-            self.assertEqual(
-                dispatcher2.contact_number, "123-456-7890", "Incorrect contact number"
             )
 
             dispatchers = self.project.dispatchers.search(
@@ -182,7 +179,9 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
 
     def test_update_dispatcher(self):
         try:
-            dispatcher = self.project.dispatchers.search()[1]
+            dispatcher = self.project.dispatchers.get(
+                user_id="ar_workforce_python_api2"
+            )
             self.assertEqual(
                 dispatcher.user_id, "ar_workforce_python_api2", "Incorrect user id"
             )
@@ -193,7 +192,11 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
                 dispatcher.contact_number, "123-456-7890", "Incorrect contact number"
             )
             dispatcher.update(name="tester2")
-            dispatcher = self.project.dispatchers.search()[1]
+            dispatcher = self.project.dispatchers.search(
+                "{} = '{}'".format(
+                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api2"
+                )
+            )[0]
             self.assertEqual(dispatcher.name, "tester2", "Incorrect name")
 
         except AssertionError as assertErrorException:
@@ -208,7 +211,9 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
 
     def test_batch_update_dispatcher(self):
         try:
-            dispatcher = self.project.dispatchers.search()[1]
+            dispatcher = self.project.dispatchers.get(
+                user_id="ar_workforce_python_api2"
+            )
             self.assertEqual(
                 dispatcher.user_id, "ar_workforce_python_api2", "Incorrect user id"
             )
@@ -220,7 +225,11 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
             )
             dispatcher.name = "tester2"
             self.project.dispatchers.batch_update([dispatcher])
-            dispatcher = self.project.dispatchers.search()[1]
+            dispatcher = self.project.dispatchers.search(
+                "{} = '{}'".format(
+                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api2"
+                )
+            )[0]
             self.assertEqual(dispatcher.name, "tester2", "Incorrect name")
 
         except AssertionError as assertErrorException:
@@ -289,7 +298,11 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
         try:
 
             self.project.dispatchers.add(name="test", user_id="ar_OpsDashAUITest")
-            dispatcher = self.project.dispatchers.search()[-1]
+            dispatcher = self.project.dispatchers.search(
+                where="{} = '{}'".format(
+                    self.project._dispatcher_schema.user_id, "ar_OpsDashAUITest"
+                )
+            )[0]
             self.assertEqual(
                 dispatcher.user_id, "ar_OpsDashAUITest", "Incorrect user id"
             )
@@ -312,7 +325,11 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
                 self.project, name="test", user_id="ar_OpsDashAUITest"
             )
             self.project.dispatchers.batch_add([dispatcher])
-            dispatcher = self.project.dispatchers.search()[-1]
+            dispatcher = self.project.dispatchers.search(
+                where="{} = '{}'".format(
+                    self.project._dispatcher_schema.user_id, "ar_OpsDashAUITest"
+                )
+            )[0]
             self.assertEqual(
                 dispatcher.user_id, "ar_OpsDashAUITest", "Incorrect user id"
             )
@@ -343,7 +360,7 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
             # duplicate user id
             with self.assertRaises(ValidationError):
                 self.project.dispatchers.add(
-                    user_id="ar_workforce_python_api2", name="test"
+                    user_id="ar_workforce_python_api", name="test"
                 )
             # remove project owner
             with self.assertRaises(ValidationError):

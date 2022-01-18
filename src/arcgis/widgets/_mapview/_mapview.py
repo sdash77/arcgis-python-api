@@ -707,7 +707,7 @@ class MapView(widgets.DOMWidget):
     _portal_url = Unicode("").tag(sync=True)
     _portal_sharing_rest_url = Unicode("").tag(sync=True)
     _username = Unicode("").tag(sync=True)
-    _trigger_interactive_draw_mode_for = Unicode("").tag(sync=True)
+    _trigger_interactive_draw_mode_for = Dict({}).tag(sync=True)
     _trigger_new_jlab_window_with_args = Dict({}).tag(sync=True)
     hide_mode_switch = Bool(False).tag(sync=True)
     """When ``hide_mode_switch`` is set to ``True`` the 2D/3D switch button will be hidden from the widget.
@@ -923,6 +923,10 @@ class MapView(widgets.DOMWidget):
             from arcgis.mapping import WebMap
 
             self.webmap = WebMap()
+
+        # Set up default extent
+        if "defaultExtent" in self.gis.org_settings:
+            self.extent = self.gis.org_settings["defaultExtent"]
 
         # Handle callbacks and such
         self.on_msg(self._handle_map_msg)
@@ -1253,8 +1257,12 @@ class MapView(widgets.DOMWidget):
             self._gallery_basemaps = {}
             self._gallery_basemaps = copy_gallery
         elif "defaultBasemap" in self.gis.properties:
-            self._gallery_basemaps["default"] = self.gis.properties["defaultBasemap"]
+            self._gallery_basemaps["default"] = self.gis.org_settings["defaultBasemap"]
             self._basemap = "default"
+            # Add to text property so default is recorded
+            self._default_webscene_text_property["baseMap"] = self._gallery_basemaps[
+                "default"
+            ]
             # You need to re-write this dict to trigger the JS side change
             copy_gallery = dict(self._gallery_basemaps)
             self._gallery_basemaps = {}
@@ -1399,7 +1407,11 @@ class MapView(widgets.DOMWidget):
         if options is None:
             options = {}
         if isinstance(item, arcgis.features.FeatureLayer) and "renderer" not in options:
-            options["renderer"] = json.loads(item.renderer.json)
+            renderer_dict = json.loads(item.renderer.json)
+            if "renderer" in renderer_dict.keys():
+                options.update(renderer_dict)
+            else:
+                options["renderer"] = renderer_dict
         elif (
             isinstance(item, pd.DataFrame)
             and "renderer" not in options
@@ -2284,8 +2296,12 @@ class MapView(widgets.DOMWidget):
             self.webmap.add_layer(fset, wm_options)
 
         else:  # User passed in a string for interactive draw mode
-            self._trigger_interactive_draw_mode_for = ""
-            self._trigger_interactive_draw_mode_for = shape
+            if symbol:
+                draw_options = {"shape": shape, "symbol": symbol}
+            else:
+                draw_options = {"shape": shape}
+            self._trigger_interactive_draw_mode_for = {}
+            self._trigger_interactive_draw_mode_for = draw_options
 
     def _draw_featureset(self, fset, popup, symbol):
         # FeatureSet needs special case

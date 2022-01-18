@@ -136,7 +136,7 @@ class KubeServiceDirectory(_BaseKube):
         """
         returns a list of server folders
         """
-        self._init()
+        self._properties = None
         if self._is_agol:
             return ["/"]
         else:
