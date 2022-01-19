@@ -5957,7 +5957,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         if isinstance(input_layer, Raster):
             if hasattr(input_layer, "_engine_obj"):
                 input_layer = input_layer._engine_obj
-        if isinstance(input_layer, arcgis.gis.Item):
+        if isinstance(input_layer, Item):
             if input_layer.type == "Image Collection":
                 input_param = {"itemId": input_layer.itemid}
             else:
