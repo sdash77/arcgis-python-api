@@ -8922,6 +8922,7 @@ def train_random_trees_regression_model(
     future=False,
     **kwargs
 ):
+
     """
     Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
     Function available in ArcGIS Image Server 10.9.1 and higher.
