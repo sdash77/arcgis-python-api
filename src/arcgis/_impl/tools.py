@@ -6405,7 +6405,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                     else:
                         uri_list.append(item)
                 elif isinstance(item, ImageryLayer):
-                    url_list.append(item.url)
+                    url = item.url
+                    try:
+                        if "token" not in url:
+                            token = item._gis._con._create_token(url)
+                            url = url + "?token=" + token
+                    except:
+                        pass
+                    url_list.append(url)
 
             if len(item_id_list) > 0:
                 input_rasters_dict = {"itemIds": item_id_list}
