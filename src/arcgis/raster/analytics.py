@@ -8815,7 +8815,7 @@ def summarize_categorical_raster(
     ------------------------------------     --------------------------------------------------------------------
     area_of_interest                         Optional FeatureLayer object. The polygon feature layer containing the area
                                              or areas of interest to use when calculating the pixel count per category.
-                                             If no area of interest is specified, the entire raster dataset will be
+                                             If no area of interest is specified, the entire raster will be
                                              included in the analysis.
     ------------------------------------     --------------------------------------------------------------------
     area_of_interest_id_field                Optional String/Integer. The field in the polygon feature layer that
@@ -8879,8 +8879,8 @@ def summarize_categorical_raster(
 
         # Usage Example 1:
 
-        my_categorical_raster = gis.content.search("categorical_raster")[0].layers[0]
-        my_aoi = gis.content.search("area_of_interest_polygon")[0].layers[0]
+        my_categorical_raster = gis.content.search("categorical_raster", item_type="Imagery Layer")[0].layers[0]
+        my_aoi = gis.content.search("area_of_interest_polygon", item_type="Feature Layer")[0].layers[0]
 
         summarize_categorical_raster_op = summarize_categorical_raster(input_categorical_raster=my_categorical_raster,
                                                                        dimension="StdTime",
@@ -8931,16 +8931,16 @@ def train_random_trees_regression_model(
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_rasters                            Required ImageryLayer object. The single-band, multidimensional, or
-                                             multiband raster datasets, or mosaic datasets, containing explanatory variables.
+                                             multiband rasters, or mosaic datasets, containing explanatory variables.
     ------------------------------------     --------------------------------------------------------------------
-    input_target_data                        Required FeatureLayer or ImageryLayer object. The raster or point feature class
+    input_target_data                        Required FeatureLayer or ImageryLayer object. The raster or feature layer
                                              containing the target variable (dependant variable) data.
     ------------------------------------     --------------------------------------------------------------------
     target_value_field                       Optional String. The field name of the information to model in the target
-                                             point feature class or raster dataset.
+                                             feature layer or raster.
     ------------------------------------     --------------------------------------------------------------------
-    target_dimension                         Optional String. A date field or numeric field in the input point feature
-                                             class that defines the dimension values.
+    target_dimension_field                   Optional String. A date field or numeric field in the input feature
+                                             layer that defines the dimension values.
     ------------------------------------     --------------------------------------------------------------------
     raster_dimension                         Optional String. The dimension name of the input multidimensional raster
                                              (explanatory variables) that links to the dimension in the target data.
@@ -8958,12 +8958,12 @@ def train_random_trees_regression_model(
     max_number_of_samples                    Optional Integer. The maximum number of samples that will be used for
                                              the regression analysis. A value that is less than or equal to 0 means
                                              that the system will use all the samples from the input target raster
-                                             or point feature class to train the regression model.
+                                             or feature layer to train the regression model.
                                              The default value is 100,000.
     ------------------------------------     --------------------------------------------------------------------
     average_points_per_cell                  Optional String. Specifies whether the average will be calculated when
                                              multiple training points fall into one cell. This parameter is applicable
-                                             only when the input target is a point feature class.
+                                             only when the input target is a feature layer.
                                              Options include:
 
                                                 - "KEEP_ALL_POINTS" — All points will be used when multiple training points fall into a single cell. \
@@ -8973,7 +8973,7 @@ def train_random_trees_regression_model(
     output_scatter_plots_name                Optional String. The name for the output scatterplots includes scatterplots
                                              of training data, test data, and location test data.
     ------------------------------------     --------------------------------------------------------------------
-    output_sample_features_name              Optional String. Name of the output feature item a feature class containing
+    output_sample_features_name              Optional String. Name of the output feature class containing
                                              target values and predicted values for training points, test points, and location test points.
     ------------------------------------     --------------------------------------------------------------------
     percent_samples_for_testing              Optional Float. Defines the percentage of test points used for error checking.
@@ -9037,8 +9037,8 @@ def train_random_trees_regression_model(
 
         # Usage Example 1:
 
-        my_raster_1 = gis.content.search("raster_1")[0].layers[0]
-        my_raster_2 = gis.content.search("raster_2")[0].layers[0]
+        my_raster_1 = gis.content.search("raster_1", item_type="Imagery Layer")[0].layers[0]
+        my_raster_2 = gis.content.search("raster_2", item_type="Imagery Layer")[0].layers[0]
         input_rasters = [my_raster_1, my_raster_2]
 
         input_target_data = gis.content.search("my_target_data")[0].layers[0]
