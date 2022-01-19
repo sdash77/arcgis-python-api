@@ -18,7 +18,7 @@ from ._business_analyst._utils import (
     local_vs_gis,
     local_business_analyst_avail,
     local_ba_data_avail,
-    avail_arcpy
+    avail_arcpy,
 )
 from ._ge import _GeoEnrichment
 
@@ -28,9 +28,11 @@ def _check_gis_source(gis=None):
     # handle if GIS('pro') used to indicate using local source
     if isinstance(gis, GIS):
         if gis._con._auth == "PRO" or (gis._con._auth == "ANON" and avail_arcpy):
-            assert local_business_analyst_avail() and local_ba_data_avail(), ("If using ArcGIS Pro, you must have "
-                                                                              "Business Analyst with at least one "
-                                                                              "local data pack installed.")
+            assert local_business_analyst_avail() and local_ba_data_avail(), (
+                "If using ArcGIS Pro, you must have "
+                "Business Analyst with at least one "
+                "local data pack installed."
+            )
             gis = "local"
 
     # if nothing else available, check to see if there is a gis in the session to use
@@ -73,8 +75,10 @@ def _call_method_by_source(fn) -> callable:
         src = _check_gis_source(src)
 
         # make sure a source was located or bingo out
-        assert src is not None, ("The gis parameter needs to be populated with a valid GIS instance since there is "
-                                 "not an active GIS object in the session.")
+        assert src is not None, (
+            "The gis parameter needs to be populated with a valid GIS instance since there is "
+            "not an active GIS object in the session."
+        )
 
         # build function name to call
         fn_nm_to_call = (
