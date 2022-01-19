@@ -8813,7 +8813,7 @@ def summarize_categorical_raster(
                                              there is more than one dimension and no value is specified, all slices
                                              will be summarized using all combinations of dimension values.
     ------------------------------------     --------------------------------------------------------------------
-    area_of_interest                         Optional FeatureLayer. The polygon feature layer containing the area
+    area_of_interest                         Optional FeatureLayer object. The polygon feature layer containing the area
                                              or areas of interest to use when calculating the pixel count per category.
                                              If no area of interest is specified, the entire raster dataset will be
                                              included in the analysis.
@@ -8933,7 +8933,7 @@ def train_random_trees_regression_model(
     input_rasters                            Required ImageryLayer object. The single-band, multidimensional, or
                                              multiband raster datasets, or mosaic datasets, containing explanatory variables.
     ------------------------------------     --------------------------------------------------------------------
-    input_target_data                        Required FeatureLayer or ImageryLayer. The raster or point feature class
+    input_target_data                        Required FeatureLayer or ImageryLayer object. The raster or point feature class
                                              containing the target variable (dependant variable) data.
     ------------------------------------     --------------------------------------------------------------------
     target_value_field                       Optional String. The field name of the information to model in the target
