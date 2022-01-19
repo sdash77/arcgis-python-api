@@ -8883,9 +8883,9 @@ def summarize_categorical_raster(
         my_aoi = gis.content.search("area_of_interest_polygon")[0].layers[0]
 
         summarize_categorical_raster_op = summarize_categorical_raster(input_categorical_raster=my_categorical_raster,
-                                                                        dimension="StdTime",
-                                                                        area_of_interest=my_aoi,
-                                                                        gis=gis)
+                                                                       dimension="StdTime",
+                                                                       area_of_interest=my_aoi,
+                                                                       gis=gis)
 
     """
 
