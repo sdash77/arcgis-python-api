@@ -41,7 +41,7 @@ from arcgis.auth.tools import LazyLoader
 
 nx = LazyLoader("networkx")
 np = LazyLoader("numpy")
-jit = LazyLoader("numba.jit")
+from numba import jit
 
 
 # get neighbors d index

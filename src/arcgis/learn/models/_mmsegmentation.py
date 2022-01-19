@@ -176,14 +176,12 @@ class MMSegmentationConfig:
             if self.cfg.model.type == "CascadeEncoderDecoder":
                 losses = 0.0
                 for i in range(self.cfg.model.num_stages):
-                    losses += self.model.decode_head[i].losses(
-                        model_output, model_target[0]
-                    )["loss_seg"]
+                    _losses = self.model.decode_head[i].losses(model_output, model_target[0])
+                    losses += _losses.get('loss_ce', _losses.get('loss_seg'))
                 return losses
 
-            return self.model.decode_head.losses(model_output, model_target[0])[
-                "loss_seg"
-            ]
+            _losses = self.model.decode_head.losses(model_output, model_target[0])
+            return _losses.get('loss_ce', _losses.get('loss_seg'))
 
         return model_output["loss"]
 

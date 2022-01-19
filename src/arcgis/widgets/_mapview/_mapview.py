@@ -924,6 +924,10 @@ class MapView(widgets.DOMWidget):
 
             self.webmap = WebMap()
 
+        # Set up default extent
+        if "defaultExtent" in self.gis.org_settings:
+            self.extent = self.gis.org_settings["defaultExtent"]
+
         # Handle callbacks and such
         self.on_msg(self._handle_map_msg)
         self._draw_end_handlers = widgets.CallbackDispatcher()
@@ -1253,8 +1257,12 @@ class MapView(widgets.DOMWidget):
             self._gallery_basemaps = {}
             self._gallery_basemaps = copy_gallery
         elif "defaultBasemap" in self.gis.properties:
-            self._gallery_basemaps["default"] = self.gis.properties["defaultBasemap"]
+            self._gallery_basemaps["default"] = self.gis.org_settings["defaultBasemap"]
             self._basemap = "default"
+            # Add to text property so default is recorded
+            self._default_webscene_text_property["baseMap"] = self._gallery_basemaps[
+                "default"
+            ]
             # You need to re-write this dict to trigger the JS side change
             copy_gallery = dict(self._gallery_basemaps)
             self._gallery_basemaps = {}
