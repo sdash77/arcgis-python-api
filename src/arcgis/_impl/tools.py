@@ -211,6 +211,18 @@ class BaseAnalytics(object):
         if isinstance(input_layer, arcgis.gis.Item):
             if input_layer.type.lower() == "feature service":
                 input_param = input_layer.layers[0]._lyr_dict
+                try:
+                    input_layer_url = input_param.get("url", "")
+                    if (
+                        isinstance(input_param, dict)
+                        and "serviceToken" not in input_param.keys()
+                    ):
+                        token = input_layer.layers[0]._gis._con._create_token(
+                            input_layer_url
+                        )
+                        input_param.update({"serviceToken": token})
+                except:
+                    pass
             elif input_layer.type.lower() == "feature collection":
                 fcdict = input_layer.get_data()
                 fc = arcgis.features.FeatureCollection(fcdict["layers"][0])
@@ -232,6 +244,16 @@ class BaseAnalytics(object):
                 input_param = input_layer.layer
         elif isinstance(input_layer, arcgis.gis.Layer):
             input_param = input_layer._lyr_dict
+            try:
+                input_layer_url = input_param.get("url", "")
+                if (
+                    isinstance(input_param, dict)
+                    and "serviceToken" not in input_param.keys()
+                ):
+                    token = input_layer._gis._con._create_token(input_layer_url)
+                    input_param.update({"serviceToken": token})
+            except:
+                pass
 
         elif isinstance(
             input_layer, tuple
@@ -5935,12 +5957,24 @@ class _RasterAnalysisTools(BaseAnalytics):
         if isinstance(input_layer, Raster):
             if hasattr(input_layer, "_engine_obj"):
                 input_layer = input_layer._engine_obj
-        if isinstance(input_layer, arcgis.gis.Item):
+        if isinstance(input_layer, Item):
             if input_layer.type == "Image Collection":
                 input_param = {"itemId": input_layer.itemid}
             else:
                 if "layers" in input_layer:
                     input_param = input_layer.layers[0]._lyr_dict
+                    try:
+                        if (
+                            isinstance(input_param, dict)
+                            and "url" in input_param.keys()
+                        ):
+                            url = input_param["url"]
+                            if "token" not in url:
+                                token = input_layer._gis._con._create_token(url)
+                                url = input_param["url"] + "?token=" + token
+                                input_param.update({"url": url})
+                    except:
+                        pass
                 else:
                     raise TypeError("No layers in input layer Item")
 
@@ -5971,9 +6005,11 @@ class _RasterAnalysisTools(BaseAnalytics):
 
                 try:
                     if isinstance(input_param, dict) and "url" in input_param.keys():
-                        token = input_layer._gis._con._create_token(url)
-                        url = input_param["url"] + "?token=" + token
-                        input_param.update({"url": url})
+                        url = input_param["url"]
+                        if "token" not in url:
+                            token = input_layer._gis._con._create_token(url)
+                            url = input_param["url"] + "?token=" + token
+                            input_param.update({"url": url})
                 except:
                     pass
 
@@ -6369,7 +6405,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                     else:
                         uri_list.append(item)
                 elif isinstance(item, ImageryLayer):
-                    url_list.append(item.url)
+                    url = item.url
+                    try:
+                        if "token" not in url:
+                            token = item._gis._con._create_token(url)
+                            url = url + "?token=" + token
+                    except:
+                        pass
+                    url_list.append(url)
 
             if len(item_id_list) > 0:
                 input_rasters_dict = {"itemIds": item_id_list}
