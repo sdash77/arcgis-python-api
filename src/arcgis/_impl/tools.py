@@ -13327,6 +13327,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         to_classes=None,
         filter_method="CHANGED_PIXELS_ONLY",
         transition_class_colors="AVERAGE",
+        from_classname_field=None,
+        to_classname_field=None,
         output_name=None,
         context=None,
         future=False,
@@ -13422,19 +13424,38 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_name=output_name, task=task, output_properties=kwargs
         )
 
-        gpjob = self._tbx.compute_change_raster(
-            input_from_raster=input_from_raster,
-            input_to_raster=input_to_raster,
-            compute_change_method=compute_change_method,
-            from_classes=from_classes,
-            to_classes=to_classes,
-            filter_method=filter_method,
-            transition_class_colors=transition_class_colors,
-            output_name=output_raster,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (current_version is not None) and current_version < 10.91:
+                gpjob = self._tbx.compute_change_raster(
+                    input_from_raster=input_from_raster,
+                    input_to_raster=input_to_raster,
+                    compute_change_method=compute_change_method,
+                    from_classes=from_classes,
+                    to_classes=to_classes,
+                    filter_method=filter_method,
+                    transition_class_colors=transition_class_colors,
+                    output_name=output_raster,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
+            elif (current_version is not None) and current_version >= 10.91:
+                gpjob = self._tbx.compute_change_raster(
+                    input_from_raster=input_from_raster,
+                    input_to_raster=input_to_raster,
+                    compute_change_method=compute_change_method,
+                    from_classes=from_classes,
+                    to_classes=to_classes,
+                    filter_method=filter_method,
+                    transition_class_colors=transition_class_colors,
+                    from_classname_field=from_classname_field,
+                    to_classname_field=to_classname_field,
+                    output_name=output_raster,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
