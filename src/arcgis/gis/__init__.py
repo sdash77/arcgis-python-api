@@ -6,7 +6,7 @@ This module, the most important in the ArcGIS API for Python, provides functiona
 Python and is an invaluable tool in the API.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 import base64
 import json
 import locale
@@ -8290,14 +8290,15 @@ class Group(dict):
         """
         return self._portal.delete_group_thumbnail(self.groupid)
 
-    def remove_users(self, usernames):
+    def remove_users(self, usernames: list[str]):
         """
         The ``remove_users`` method is used to remove users from this group.
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        usernames         Required string.  A comma-separated list of users to be removed.
+        usernames         Required list of strings.
+                          A comma-separated list of users to be removed.
         ================  ========================================================
 
         :return:
