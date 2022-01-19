@@ -762,14 +762,14 @@ def _ra_upload_allowed_extensions():
 class _ImageryUploaderAGOL:
     """helper class for concurrently uploading multiple files to user's rasterstore on AGOL"""
 
-    from azure.storage.blob import ContainerClient
-    from azure.core.exceptions import (
-        ClientAuthenticationError,
-        ServiceResponseError,
-        ServiceRequestError,
-    )
-
     def __init__(self, file_list, container, auto_renew, upload_properties, task, gis):
+
+        from azure.storage.blob import ContainerClient
+        from azure.core.exceptions import (
+            ClientAuthenticationError,
+            ServiceResponseError,
+            ServiceRequestError,
+        )
 
         self.file_list = file_list
         self.container = container
@@ -982,8 +982,8 @@ def _upload_imagery_agol(
     except:
         _LOGGER.warning(
             "Install Azure library packages for Python."
-            + "(Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.8)"
-            + "\n(https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install)"
+            + "(Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.9)"
+            + "\n(https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package)"
         )
     gis = _arcgis.env.active_gis if gis is None else gis
     if direct_access_url is None:
