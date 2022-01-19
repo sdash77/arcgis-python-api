@@ -771,6 +771,13 @@ class _ImageryUploaderAGOL:
             ServiceRequestError,
         )
 
+        self.ContainerClient = ContainerClient
+        (
+            self.ClientAuthenticationError,
+            self.ServiceResponseError,
+            self.ServiceRequestError,
+        ) = (ClientAuthenticationError, ServiceResponseError, ServiceRequestError)
+
         self.file_list = file_list
         self.container = container
         self.auto_renew = auto_renew
