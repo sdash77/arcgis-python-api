@@ -6,6 +6,8 @@ import uuid
 import tempfile
 from urllib.parse import urlparse
 from typing import Optional, Union, Any
+
+import pandas as pd
 from arcgis.gis import GIS, Item
 
 ########################################################################
@@ -182,7 +184,7 @@ class Survey:
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def download(self, export_format: str, save_folder: Optional[str] = None) -> str:
+    def download(self, export_format: str, save_folder: Optional[str] = None) -> Union[str, pd.Dataframe]:
         """
         Exports the Survey's data to other format
 
@@ -627,12 +629,12 @@ class Survey:
                           users timezone. Example: EST - "+04:00"
         ----------------  ---------------------------------------------------------------
         report_title      Optional String. Specify the file name (without extension) of the
-                          result report file. For example, if outputFormat is .pdf, input:
+                          result report file. For example, if outputFormat is .pdf, input:
                           "abc" -> output: "abc.pdf"; input: "abc.docx" -> output: "abc.docx.pdf".
 
-                          If packageFiles is true, outputReportName will be used for report files
-                          inside the packaged file. If mergeFiles is either nextPage or continuous,
-                          outputReportName will be used as the merged file name.
+                          If packageFiles is true, outputReportName will be used for report files
+                          inside the packaged file. If mergeFiles is either nextPage or continuous,
+                          outputReportName will be used as the merged file name.
         ----------------  ---------------------------------------------------------------
         merge_files       Optional String. Specify if print multiple records into a single
                           report file (merged mode) or multiple files (split mode), and if
