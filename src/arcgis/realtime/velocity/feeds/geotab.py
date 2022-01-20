@@ -16,47 +16,83 @@ from arcgis.realtime.velocity.input.format import JsonFormat, _format_from_confi
 @dataclass
 class Geotab(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    label                  str. Unique label for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    description            str. Feed description.
-    ------------------     --------------------------------------------------------------------
-    url                    str. Address of the HTTP endpoint providing data.
-    ------------------     --------------------------------------------------------------------
-    database               str. Either "GET" or "POST"
-    ------------------     --------------------------------------------------------------------
-    username               str. Either "GET" or "POST"
-    ------------------     --------------------------------------------------------------------
-    password               str. Either "GET" or "POST"
-    ------------------     --------------------------------------------------------------------
-    **Optional Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    groups                 str. Either "GET" or "POST"
-    ------------------     --------------------------------------------------------------------
-    diagnostics_ids        str. Either "GET" or "POST"
-    ------------------     --------------------------------------------------------------------
-    data_format            JsonFormat.
-                           An instance that contains the data-format
-                           configuration for this feed. Configure only allowed formats.
-                           If this is not set right during initialization, a format will be
-                           auto-detected and set from a sample of the incoming data. This sample
-                           will be fetched from the configuration provided so far in the init.
-    ------------------     --------------------------------------------------------------------
-    track_id_field         str. name of the field from the incoming data that should be set as
-                           track_id.
-    ------------------     --------------------------------------------------------------------
-    geometry               Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
-                           that will be used to create geometry objects from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                           will be used to create time info from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    run_interval           RunInterval. An instance of scheduler configuration.
+    Poll Geotab for events. This data class can be used to define the feed configuration and use it to create the feed.
 
-                           default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
-    ==================     ====================================================================
+    ==================        ====================================================================
+    **Argument**              **Description**
+    ------------------        --------------------------------------------------------------------
+    label                     str. Unique label for this feed instance.
+    ------------------        --------------------------------------------------------------------
+    description               str. Feed description.
+    ------------------        --------------------------------------------------------------------
+    url                       str. The URL to authenticate Geotab.
+    ------------------        --------------------------------------------------------------------
+    database                  str. The name of the Geotab database providing data
+    ------------------        --------------------------------------------------------------------
+    username                  str. Specify the username to authenticate Geotab
+    ------------------        --------------------------------------------------------------------
+    password                  str. Specify the password to authenticate Geotab
+    ==================        ====================================================================
+
+    =====================     ==========================================================================================
+    **Optional Argument**     **Description**
+    =====================     ==========================================================================================
+    groups                    str. List of groups to include in the feature schema. Separate multiple values with a
+                              semi-colon.
+    ---------------------     ------------------------------------------------------------------------------------------
+    diagnostics_ids           str. List of diagnostic IDs to include in the feature schema. Separate multiple values
+                              with a semi-colon.
+    ---------------------     ------------------------------------------------------------------------------------------
+    data_format               JsonFormat.
+                              An instance that contains the data-format
+                              configuration for this feed. Configure only allowed formats.
+                              If this is not set right during initialization, a format will be
+                              auto-detected and set from a sample of the incoming data. This sample
+                              will be fetched from the configuration provided so far in the init.
+    ---------------------     ------------------------------------------------------------------------------------------
+    track_id_field            str. name of the field from the incoming data that should be set as
+                              track_id.
+    ---------------------     ------------------------------------------------------------------------------------------
+    geometry                  Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+                              that will be used to create geometry objects from the incoming data.
+    ---------------------     ------------------------------------------------------------------------------------------
+    time                      Union[TimeInstant, TimeInterval]. An instance of time configuration that
+                              will be used to create time info from the incoming data.
+    ---------------------     ------------------------------------------------------------------------------------------
+    run_interval              RunInterval. An instance of scheduler configuration.
+
+                              default value -
+                              RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
+    =====================     ==========================================================================================
+
+    :return: A data class with Geotab feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import Geotab
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+
+        geotab = Geotab(
+            label="feed_name",
+            description="feed_description",
+            url="Geotab_url",
+            database="Geotab_database",
+            username="Geotab_user_name",
+            password="Geotab_password",
+            data_format=None
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        geotab_feed = feeds.create(geotab)
+        geotab_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

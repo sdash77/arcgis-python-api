@@ -3,47 +3,51 @@ from dataclasses import field, dataclass
 
 from arcgis.realtime import Velocity
 from arcgis.realtime.velocity.feeds._feed_template import _FeedTemplate
-from arcgis.realtime.velocity.feeds.run_interval import RunInterval
 from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInterval
 
 
 @dataclass
-class FeatureLayer(_FeedTemplate, _HasTime):
+class StreamLayer(_FeedTemplate, _HasTime):
     """
-    Poll a feature layer for features at a fixed schedule. This data class can be used to define the feed configuration
-    and use it to create the feed.
+    Receive features from a Stream Layer. This data class can be used to define the feed configuration and use it to
+    create the feed.
 
     Data format is Esri Layer. Velocity will automatically handle the location for you.
 
-    =====================           ====================================================================
+    ==================              ====================================================================
     **Argument**                    **Description**
-    ---------------------           --------------------------------------------------------------------
+    ------------------              --------------------------------------------------------------------
     label                           str. Unique label for this feed instance.
-    ---------------------           --------------------------------------------------------------------
+    ------------------              --------------------------------------------------------------------
     description                     str. Feed description.
-    ---------------------           --------------------------------------------------------------------
-    query                           str. Feature layer query parameters
+    ------------------              --------------------------------------------------------------------
+    portal_item_id                  str. Portal item id of the Stream layer
+    ------------------              --------------------------------------------------------------------
+    query                           str. Stream layer query parameters
                                     default value - "1=1"
-    ---------------------           --------------------------------------------------------------------
-    fields                          str. Requested feature layer output fields. Example - "field1,field2"
+    ------------------              --------------------------------------------------------------------
+    fields                          str. Requested Stream layer output fields. Example - "field1,field2"
                                     default value - "*"
-    ---------------------           --------------------------------------------------------------------
+    ------------------              --------------------------------------------------------------------
     outSR                           int. Requested output Spatial Reference
                                     default value - 4326
                                     Additional information on Projected and Geographic Coordinate system at:
                                     https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm
-    =====================           ====================================================================
+    ------------------              --------------------------------------------------------------------
+    data_format                     str. Specify the overall format of your incoming data
+    ==================              ====================================================================
 
-    =====================           ====================================================================
+    ==========================      ==================================================================================
     **Optional Argument**           **Description**
-    =====================           ====================================================================
-                                    Note: either portal_item_id or url is required
-    ---------------------           --------------------------------------------------------------------
-    portal_item_id                  str. Portal item id of the feature layer
-                                    Note: either portal_item_id or url is required
-    ---------------------           --------------------------------------------------------------------
-    extent                          Dict[str, Any]. A Geometry object that defines the spatial extent for
-                                    the feature layer
+    ==========================      ==================================================================================
+    WHERE clause                    str. Query to retrieve a subset of features
+    --------------------------      ----------------------------------------------------------------------------------
+    Out fields                      str. Comma-separated list of fields to use for processing
+    --------------------------      ----------------------------------------------------------------------------------
+    Output spatial reference        str. Spatial reference in which queried features should return
+    --------------------------      ----------------------------------------------------------------------------------
+    extent                          Dict[str, Any]. JSON representing an Envelope as defined by the ArcGIS
+                                    REST API's JSON geometry schema.
 
                                     .. code-block:: python
 
@@ -59,50 +63,22 @@ class FeatureLayer(_FeedTemplate, _HasTime):
                                             "ymax": 6852675.132049575
                                         }
 
-    ---------------------           --------------------------------------------------------------------
-    time_stamp_field                str.
-                                    An optional Date field for latest features
-                                    Optionally, specify a date field to be used to retrieve only the latest
-                                    features from the feature layer.
-
-                                    If a timestamp field is not specified, ArcGIS Velocity will load all
-                                    features that meet the criteria of the WHERE clause when it polls the feature layer.
-
-                                    If a timestamp field is specified, the first time ArcGIS Velocity polls the feature
-                                    layer it will load all features with a timestamp field datetime within the past
-                                    minute and less than the first feed poll time that also meet the criteria of the
-                                    WHERE clause. Each subsequent poll, only features with a timestamp field value
-                                    between the last polling time and the current polling time that also meet the
-                                    criteria of the WHERE clause will be loaded.
-    ---------------------           --------------------------------------------------------------------
+    --------------------------      ----------------------------------------------------------------------------------
     track_id_field                  str. Name of the field from the incoming data that should be set as
                                     track_id.
-    ---------------------           --------------------------------------------------------------------
+    --------------------------      ----------------------------------------------------------------------------------
     time                            Union[TimeInstant, TimeInterval]. An instance of time configuration that
                                     will be used to create time info from the incoming data.
-    ---------------------           --------------------------------------------------------------------
-    run_interval                    RunInterval. An instance of scheduler configuration.
+    ==========================      ==================================================================================
 
-                                    default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
-    =====================           ====================================================================
-
-    :return: A data class with feature layer feed configuration.
+    :return: A data class with stream layer feed configuration.
 
     .. code-block:: python
 
         # Usage Example
 
-        from arcgis.realtime.velocity.feeds import FeatureLayer
-        from arcgis.realtime.velocity.http_authentication_type import (
-            NoAuth,
-            BasicAuth,
-            CertificateAuth,
-        )
-
-        from arcgis.realtime.velocity.input.format import DelimitedFormat
-        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds import StreamLayer
         from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
-        from arcgis.realtime.velocity.feeds.run_interval import RunInterval
 
         extent = {
             "spatialReference": {
@@ -115,60 +91,43 @@ class FeatureLayer(_FeedTemplate, _HasTime):
             "ymax": "ymax"
         }
 
-        # Feature Layer Properties
-
-        feature_layer_config = FeatureLayer(
+        stream_layer_config = StreamLayer(
             label="feed_name",
             description="feed_description",
+            portal_item_id="portal_id",
             query="1=1",
             fields="*",
             outSR=4326,
-            url="feed_sample_server_link",
-            extent=extent,
-            time_stamp_field="date_field"
-        )
-
-        feature_layer_config
-
-        # Set recurrence
-        feature_layer_config.run_interval = RunInterval(
-            cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
+            extent=extent
         )
 
         # use velocity object to get the FeedsManager instance
         feeds = velocity.feeds
 
         # use the FeedsManager object to create a feed from this feed configuration
-        feature_layer_feed = feeds.create(feature_layer_config)
-        feature_layer_feed.start()
+        stream_layer_feed = feeds.create(stream_layer_config)
+        stream_layer_feed.start()
         feeds.items
 
     """
 
     # fields that the user sets during init
-    # Feature Layer specific properties
+    # Stream Layer specific properties
+    portal_item_id: str
     query: str = field(default="1=1")
     fields: str = field(default="*")
     outSR: int = field(default=4326)
-    url: Optional[str] = None
-    portal_item_id: Optional[str] = None
     extent: Optional[Dict[str, Any]] = None
-    time_stamp_field: Optional[str] = None
 
     # FeedTemplate properties
     track_id_field: Optional[str] = None
     # HasTime properties
     time: Optional[Union[TimeInstant, TimeInterval]] = None
-    # scheduler
-    run_interval: RunInterval = field(
-        default=RunInterval(
-            cron_expression="0 * * ? * * *", timezone="America/Los_Angeles"
-        )
-    )
-    # Feature Layer is a standard format and format properties do not need to be set in the feed configuration
+    # Stream Layer is a standard format and format properties do not need to be set in the feed configuration
     data_format: Any = field(default=None, init=False)
+
     # FeedTemplate properties
-    _name: ClassVar[str] = "feature-layer"
+    _name: ClassVar[str] = "stream-layer"
 
     def __post_init__(self):
         if Velocity is None:
@@ -180,8 +139,6 @@ class FeatureLayer(_FeedTemplate, _HasTime):
             raise ValueError(
                 "Label should only contain alpha numeric, _ and space only"
             )
-        if self.url is None and self.portal_item_id is None:
-            raise ValueError("Either url or portal_item_id is required")
 
         # generate dictionary of this feed object's properties that will be used to query test-connection and
         # sample-messages Rest endpoint
@@ -226,7 +183,6 @@ class FeatureLayer(_FeedTemplate, _HasTime):
             "label": self.label,
             "description": self.description,
             "feed": {**self._generate_schema_transformation()},
-            **self.run_interval._build(),
             "properties": {"executable": True},
         }
 
@@ -236,32 +192,19 @@ class FeatureLayer(_FeedTemplate, _HasTime):
         return feed_configuration
 
     def _generate_feed_properties(self) -> dict:
-        if self.url:
-            url_or_portal_item_id = {f"{self._name}.url": self.url}
-        else:
-            url_or_portal_item_id = {f"{self._name}.portalItemId": self.portal_item_id}
-
         if self.extent:
             extent_properties = {f"{self._name}.extent": self.extent}
         else:
             extent_properties = {}
 
-        if self.time_stamp_field:
-            time_stamp_property = {
-                f"{self._name}.timestampField": self.time_stamp_field
-            }
-        else:
-            time_stamp_property = {}
-
         feed_properties = {
             "name": self._name,
             "properties": {
+                f"{self._name}.portalItemId": self.portal_item_id,
                 f"{self._name}.query": self.query,
                 f"{self._name}.fields": self.fields,
                 f"{self._name}.outSR": self.outSR,
-                **url_or_portal_item_id,
                 **extent_properties,
-                **time_stamp_property,
             },
         }
 

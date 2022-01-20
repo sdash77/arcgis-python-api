@@ -35,7 +35,6 @@ from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
 from ._arcgis_model import _get_backbone_meta
 from fastprogress.fastprogress import progress_bar
-from skimage.morphology import skeletonize, binary_dilation
 
 
 class _HEDModel(nn.Module):
@@ -183,6 +182,7 @@ def get_true_positive(mask1, mask2, buffer):
 
 
 def get_confusion_metric(gt, pred, buffer):
+    from skimage.morphology import skeletonize, binary_dilation
 
     tp, predicted_tp, actual_tp = 0, 0, 0
     for i in range(gt.shape[0]):

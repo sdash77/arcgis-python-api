@@ -16,6 +16,7 @@ class _FormatBase(object):
     def _build(self) -> dict:
         """
         abstract method that needs to be implemented by derived class.
+
         :return: Configuration properties in a dictionary that will be used to make the Rest call to the backend application
         """
         raise NotImplementedError
@@ -59,7 +60,6 @@ class RssFormat(_FormatBase):
     T = TypeVar("RssFormat")
     name: ClassVar[str] = "rss-format"
 
-    # TODO: move all the Geometry fields to a base class so that it is common for all formats.
     # format keys
     _BUILD_GEOMETRY_FROM_FIELDS_KEY: str = field(
         init=False, default=f"{name}.buildGeometryFromFields"
@@ -541,8 +541,12 @@ def _format_from_config(
 ]:
     """
     Identifies and instantiates a format object from a feed configuration json dict
-    :param config:
-    :return:
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    config                 dict. the feed configuration json/dict.
+    ==================     ====================================================================
     """
     if _FORMAT_NAME_KEY in config:
         if config[_FORMAT_NAME_KEY] == GeoRssFormat.name:

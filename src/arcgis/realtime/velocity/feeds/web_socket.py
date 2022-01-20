@@ -22,34 +22,66 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class WebSocket(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    label                  str. Unique label for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    description            str. Feed description.
-    ------------------     --------------------------------------------------------------------
-    url                    str. Web Socket URL over which messages are received.
-    ------------------     --------------------------------------------------------------------
+    Receives events from a web socket. This data class can be used to define the feed configuration and use it
+    to create the feed.
 
-    **Optional Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    data_format            Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
-                           An instance that contains the data-format
-                           configuration for this feed. Configure only allowed formats.
-                           If this is not set right during initialization, a format will be
-                           auto-detected and set from a sample of the incoming data. This sample
-                           will be fetched from the configuration provided so far in the init.
-    ------------------     --------------------------------------------------------------------
-    track_id_field         str. name of the field from the incoming data that should be set as
-                           track_id.
-    ------------------     --------------------------------------------------------------------
-    geometry               Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
-                           that will be used to create geometry objects from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                           will be used to create time info from the incoming data.
-    ==================     ====================================================================
+    ==================          ====================================================================
+    **Argument**                **Description**
+    ------------------          --------------------------------------------------------------------
+    label                       str. Unique label for this feed instance.
+    ------------------          --------------------------------------------------------------------
+    description                 str. Feed description.
+    ------------------          --------------------------------------------------------------------
+    url                         str. Web Socket URL over which messages are received.
+    ==================          ====================================================================
+
+    =====================       ===============================================================================
+    **Optional Argument**       **Description**
+    =====================       ===============================================================================
+    data_format                 Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
+                                An instance that contains the data-format
+                                configuration for this feed. Configure only allowed formats.
+                                If this is not set right during initialization, a format will be
+                                auto-detected and set from a sample of the incoming data. This sample
+                                will be fetched from the configuration provided so far in the init.
+    ---------------------       -------------------------------------------------------------------------------
+    track_id_field              str. name of the field from the incoming data that should be set as
+                                track_id.
+    ---------------------       -------------------------------------------------------------------------------
+    geometry                    Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+                                that will be used to create geometry objects from the incoming data.
+    ---------------------       -------------------------------------------------------------------------------
+    time                        Union[TimeInstant, TimeInterval]. An instance of time configuration that
+                                will be used to create time info from the incoming data.
+    =====================       ===============================================================================
+
+    :return: A data class with Web Socket feed configuration configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import WebSocket
+        from arcgis.realtime.velocity.input.format import DelimitedFormat
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+
+        web_socket = WebSocket(
+            label="feed_name",
+            description="feed_description",
+            url = "http://feed_url.com"
+        )
+
+        # create web socket feed
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        web_socket_feed = feeds.create(web_socket)
+        web_socket_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

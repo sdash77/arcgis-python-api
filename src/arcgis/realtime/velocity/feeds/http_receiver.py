@@ -1,4 +1,4 @@
-from typing import Union, Optional, ClassVar
+from typing import AsyncGenerator, Union, Optional, ClassVar
 from dataclasses import dataclass
 
 from arcgis.realtime import Velocity
@@ -22,37 +22,74 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    label                  str. Unique label for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    description            str. Feed description.
-    ------------------     --------------------------------------------------------------------
-    authentication_type    str. Either "none" or "arcgis"
-    ------------------     --------------------------------------------------------------------
-    sample_message         str. Some sample content to auto-detect data format from.
-                           example - name,age\nsam,23
-    ------------------     --------------------------------------------------------------------
+    Receive events via a dedicated HTTP endpoint. This data class can be used to define the feed configuration and use
+    it to create the feed.
 
+    ====================      ======================================================================
+    **Argument**              **Description**
+    --------------------      ----------------------------------------------------------------------
+    label                     str. Unique label for this feed instance.
+    --------------------      ----------------------------------------------------------------------
+    description               str. Feed description.
+    --------------------      ----------------------------------------------------------------------
+    authentication_type       str. Either "none" or "arcgis"
+    --------------------      ----------------------------------------------------------------------
+    sample_message            str. Some sample content to auto-detect data format from.
+                              example - "name,age\\nsam,23"
+    ====================      ======================================================================
+
+    =====================     ====================================================================
     **Optional Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    data_format            Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
-                           An instance that contains the data-format
-                           configuration for this feed. Configure only allowed formats.
-                           If this is not set right during initialization, a format will be
-                           auto-detected and set from a sample of the incoming data. This sample
-                           will be fetched from the configuration provided so far in the init.
-    ------------------     --------------------------------------------------------------------
-    track_id_field         str. name of the field from the incoming data that should be set as
-                           track_id.
-    ------------------     --------------------------------------------------------------------
-    geometry               Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
-                           that will be used to create geometry objects from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                           will be used to create time info from the incoming data.
-    ==================     ====================================================================
+    =====================     ====================================================================
+    data_format               Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
+                              An instance that contains the data-format
+                              configuration for this feed. Configure only allowed formats.
+                              If this is not set right during initialization, a format will be
+                              auto-detected and set from a sample of the incoming data. This sample
+                              will be fetched from the configuration provided so far in the init.
+    ---------------------     --------------------------------------------------------------------
+    track_id_field            str. name of the field from the incoming data that should be set as
+                              track_id.
+    ---------------------     --------------------------------------------------------------------
+    geometry                  Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry
+                              configuration that will be used to create geometry objects from the incoming data.
+    ---------------------     --------------------------------------------------------------------
+    time                      Union[TimeInstant, TimeInterval]. An instance of time configuration that
+                              will be used to create time info from the incoming data.
+    =====================     ====================================================================
+
+    :return: A data class with Http receiver feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import HttpReceiver
+        from arcgis.realtime.velocity.http_authentication_type import (
+            NoAuth,
+            BasicAuth,
+            CertificateAuth,
+        )
+
+        sample_message="name,age\n
+        dan,23"
+
+        http_receiver = HttpReceiver(
+            label="feed_name",
+            description="feed_description",
+            authentication_type="none",
+            sample_message=sample_message,
+            data_format=None
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        http_receiver_feed = feeds.create(http_receiver)
+        http_receiver_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

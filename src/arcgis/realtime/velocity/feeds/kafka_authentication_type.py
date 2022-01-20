@@ -12,6 +12,8 @@ class _KafkaAuthenticationType:
 
 @dataclass
 class NoAuth(_KafkaAuthenticationType):
+    """This dataclass is used to specify that no authentication is needed to connect to a Kafka Broker."""
+
     _auth_type: ClassVar[str] = "none"
 
     def _build(self, feed_or_source_name: str) -> Dict[str, str]:
@@ -20,6 +22,19 @@ class NoAuth(_KafkaAuthenticationType):
 
 @dataclass
 class SASLPlain(_KafkaAuthenticationType):
+    """
+    This dataclass is used to specify a SASL/Plain Authentication scenario using username and password for connecting
+    to a Kafka Broker.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    username               str. Username for basic authentication
+    ------------------     --------------------------------------------------------------------
+    password               str. Password for basic authentication
+    ==================     ====================================================================
+    """
+
     _auth_type: ClassVar[str] = "saslPlain"
 
     username: str

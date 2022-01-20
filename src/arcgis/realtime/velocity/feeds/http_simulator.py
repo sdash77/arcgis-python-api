@@ -18,52 +18,87 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class HttpSimulator(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    ==================              ====================================================================
-    **Argument**                    **Description**
-    ------------------              --------------------------------------------------------------------
-    label                           str. Unique label for this feed instance.
-    ------------------              --------------------------------------------------------------------
-    description                     str. Feed description.
-    ------------------              --------------------------------------------------------------------
-    url                             str. Address of the HTTP endpoint providing data.
-    ------------------              --------------------------------------------------------------------
-    field_separator                 str. Delimited field separator
-                                    default value - ","
-    ------------------              --------------------------------------------------------------------
-    features_per_execution          int.
-                                    default value - 1
-    ------------------              --------------------------------------------------------------------
-    interval_for_sending_events     int. Time in milliseconds
-                                    default value - 1000
-    ------------------              --------------------------------------------------------------------
-    repeat_simulation               bool.
-                                    default value - True
-    ------------------              --------------------------------------------------------------------
-    time_field_index                int.
-                                    default value - 0
-    ------------------              --------------------------------------------------------------------
-    convert_to_current_time         bool.
-                                    default value - True
-    ------------------              --------------------------------------------------------------------
+    Simulate events from a text file. This data class can be used to define the feed configuration and use it to create
+    the feed.
 
+    ============================    ====================================================================
+    **Argument**                    **Description**
+    ----------------------------    --------------------------------------------------------------------
+    label                           str. Unique label for this feed instance.
+    ----------------------------    --------------------------------------------------------------------
+    description                     str. Feed description.
+    ----------------------------    --------------------------------------------------------------------
+    url                             str. The full URL to the externally accessible simulation file.
+    ----------------------------    --------------------------------------------------------------------
+    field_separator                 str. The character, or delimiter, which separates field values in
+                                    the simulation file.
+                                    default value - ","
+    ----------------------------    --------------------------------------------------------------------
+    features_per_execution          int. The number of records (features) to simulate at a time.
+                                    default value - 1
+    ----------------------------    --------------------------------------------------------------------
+    interval_for_sending_events     int. The interval between sending the number of features per execution
+                                    default value - 1000
+    ----------------------------    --------------------------------------------------------------------
+    repeat_simulation               boolean. Whether to automatically restart from the beginning when
+                                    the end of the file is reached.
+                                    default value - True
+    ----------------------------    --------------------------------------------------------------------
+    time_field_index                int. The numerical index of the date field in the dataset, where the
+                                    index starts at 0.
+                                    default value - 0
+    ----------------------------    --------------------------------------------------------------------
+    convert_to_current_time         boolean. Whether to convert the time values in the dataset to
+                                    current time as the data is simulated.
+                                    default value - True
+    ============================    ====================================================================
+
+    ============================    ====================================================================
     **Optional Argument**           **Description**
-    ------------------              --------------------------------------------------------------------
+    ============================    ====================================================================
     data_format                     Union[DelimitedFormat].
                                     An instance that contains the data-format
                                     configuration for this feed. Configure only allowed formats.
                                     If this is not set right during initialization, a format will be
                                     auto-detected and set from a sample of the incoming data. This sample
                                     will be fetched from the configuration provided so far in the init.
-    ------------------              --------------------------------------------------------------------
+    ----------------------------    --------------------------------------------------------------------
     track_id_field                  str. name of the field from the incoming data that should be set as
                                     track_id.
-    ------------------              --------------------------------------------------------------------
+    ----------------------------    --------------------------------------------------------------------
     geometry                        Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
                                     that will be used to create geometry objects from the incoming data.
-    ------------------              --------------------------------------------------------------------
+    ----------------------------    --------------------------------------------------------------------
     time                            Union[TimeInstant, TimeInterval]. An instance of time configuration that
                                     will be used to create time info from the incoming data.
-    ==================              ====================================================================
+    ============================    ====================================================================
+
+    :return: A data class with Http simulator feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import HttpSimulator
+        from arcgis.realtime.velocity.input.format import DelimitedFormat
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+
+        http_simulator = HttpSimulator(
+            label="feed_name",
+            description="feed_description",
+            url="http_simulator_url",
+            data_format=None
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        http_simulator_feed = feeds.create(http_simulator)
+        http_simulator_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

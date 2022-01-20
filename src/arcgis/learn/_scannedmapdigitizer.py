@@ -2,20 +2,25 @@ import traceback
 
 HAS_DEPS = True
 try:
+    from arcgis.auth.tools import LazyLoader
     from pandas import DataFrame
-    import cv2
+
+    cv2 = LazyLoader("cv2")
     import numpy as np
-    import matplotlib.pyplot as plt
+
+    plt = LazyLoader("matplotlib.pyplot")
     import os
     import unittest
-    import h5py
+
+    h5py = LazyLoader("h5py")
     import math
     import sys
     import arcgis
     import xml.etree.ElementTree as ET
     from datetime import datetime
     from arcgis.geometry import Polygon
-    from IPython.display import clear_output
+
+    ipd = LazyLoader("IPython.display")
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -1788,7 +1793,7 @@ class ScannedMapDigitizer:
                 img_name.append("Region Binary Mask")
 
             hf.close()
-            clear_output(wait=True)
+            ipd.clear_output(wait=True)
             display_progress_bar(idx + 1, len(all_images), "Completed \n\n\r")
             if show_result:
                 plot_image(img_masks, img_name, 10)
@@ -1861,7 +1866,7 @@ class ScannedMapDigitizer:
             )
             display_images.append(image_output)
             image_name.append("Binary Template")
-            clear_output(wait=True)
+            ipd.clear_output(wait=True)
             display_progress_bar(idx + 1, len(all_images), "Completed \n\n\r")
             if show_result:
                 plot_image(display_images, image_name, 12)
@@ -2087,7 +2092,7 @@ class ScannedMapDigitizer:
                 "Scanned Map",
                 "Match Accuracy: " + str(round(max_val, 3) * 100) + " %",
             ]
-            clear_output(wait=True)
+            ipd.clear_output(wait=True)
             display_progress_bar(idx + 1, len(all_images), "Completed \n\n\r")
             if show_result:
                 plot_image(display_images, title, 12)
@@ -2267,7 +2272,7 @@ class ScannedMapDigitizer:
                 "Control Points on Search Region",
                 "Transformed Image",
             ]
-            clear_output(wait=True)
+            ipd.clear_output(wait=True)
             display_progress_bar(idx + 1, len(all_images), "Completed \n\n\r")
             if show_result:
                 plot_image(
@@ -2409,7 +2414,7 @@ class ScannedMapDigitizer:
                 mapped_species_region_img,
             )
             title = ["Scanned Map", "Transformed Region Mask"]
-            clear_output(wait=True)
+            ipd.clear_output(wait=True)
             display_progress_bar(idx + 1, len(all_images), "Completed \n\n\r")
             if show_result:
                 plot_image(

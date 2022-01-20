@@ -22,51 +22,86 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class MQTT(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    ==================      ====================================================================
-    **Argument**            **Description**
-    ------------------      --------------------------------------------------------------------
-    label                   str. Unique label for this feed instance.
-    ------------------      --------------------------------------------------------------------
-    description             str. Feed description.
-    ------------------      --------------------------------------------------------------------
-    host                    str. Hostname of the of the  broker prefixed with "tcp://" for non-SSL and
-                            "ssl://" for SSL connections
-    ------------------      --------------------------------------------------------------------
-    port                    int. Port on which the  broker is accessible
-    ------------------      --------------------------------------------------------------------
-    topic                   str. Topic over which event messages stream.
-    ------------------      --------------------------------------------------------------------
-    qos_level               int. Quality of Service (QoS) level defines the guarantee of delivery for a specific
-                            message. In MQTT 3.1.1, a QoS of 0 means a message is delivered at most once, a QoS of 1 at
-                            least once, and a QoS of 2 exactly once.
+    Receive events from an MQTT broker. This data class can be used to define the feed configuration and use it to
+    create the feed.
 
-                            default value - 0
-    ------------------     --------------------------------------------------------------------
+    ==================          ========================================================================================
+    **Argument**                **Description**
+    ------------------          ----------------------------------------------------------------------------------------
+    label                       str. Unique label for this feed instance.
+    ------------------          ----------------------------------------------------------------------------------------
+    description                 str. Feed description.
+    ------------------          ----------------------------------------------------------------------------------------
+    host                        str. Hostname of the of the  broker prefixed with "tcp://" for non-SSL and
+                                "ssl://" for SSL connections
+    ------------------          ----------------------------------------------------------------------------------------
+    port                        int. Port on which the MQTT broker is accessible
+    ------------------          ----------------------------------------------------------------------------------------
+    topic                       str. Topic over which event messages stream.
+    ------------------          ----------------------------------------------------------------------------------------
+    qos_level                   int. Quality of Service (QoS) level defines the guarantee of delivery for a specific
+                                message. In MQTT 3.1.1, a QoS of 0 means a message is delivered at most once, a QoS of 1
+                                at least once, and a QoS of 2 exactly once.
 
-    **Optional Argument**            **Description**
-    ------------------      --------------------------------------------------------------------
-    username                str. Username for basic authentication.
-    ------------------      --------------------------------------------------------------------
-    password                str. Password for basic authentication.
-    ------------------      --------------------------------------------------------------------
-    client_id               str. Client ID ArcGIS Velocity will use to connect to the  broker.
-    ------------------      --------------------------------------------------------------------
-    data_format             Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
-                            An instance that contains the data-format
-                            configuration for this feed. Configure only allowed formats.
-                            If this is not set right during initialization, a format will be
-                            auto-detected and set from a sample of the incoming data. This sample
-                            will be fetched from the configuration provided so far in the init.
-    ------------------      --------------------------------------------------------------------
-    track_id_field          str. name of the field from the incoming data that should be set as
-                            track_id.
-    ------------------      --------------------------------------------------------------------
-    geometry                Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
-                            that will be used to create geometry objects from the incoming data.
-    ------------------      --------------------------------------------------------------------
-    time                    Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                            will be used to create time info from the incoming data.
-    ==================      ====================================================================
+                                default value - 0
+    ==================          ========================================================================================
+
+    =====================       ========================================================================================
+    **Optional Argument**       **Description**
+    =====================       ========================================================================================
+    username                    str. Username for basic authentication.
+    ---------------------       ----------------------------------------------------------------------------------------
+    password                    str. Password for basic authentication.
+    ---------------------       ----------------------------------------------------------------------------------------
+    client_id                   str. Client ID ArcGIS Velocity will use to connect to the MQTT broker.
+    ---------------------       ----------------------------------------------------------------------------------------
+    data_format                 Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
+                                An instance that contains the data-format configuration for this feed. Configure only
+                                allowed formats. If this is not set right during initialization, a format will be
+                                auto-detected and set from a sample of the incoming data. This sample will be fetched
+                                from the configuration provided so far in the init.
+    ---------------------       ----------------------------------------------------------------------------------------
+    track_id_field              str. name of the field from the incoming data that should be set as
+                                track_id.
+    ---------------------       ----------------------------------------------------------------------------------------
+    geometry                    Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+                                that will be used to create geometry objects from the incoming data.
+    ---------------------       ----------------------------------------------------------------------------------------
+    time                        Union[TimeInstant, TimeInterval]. An instance of time configuration that
+                                will be used to create time info from the incoming data.
+    =====================       ========================================================================================
+
+    :return: A data class with MQTT feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import MQTT
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+
+        mqtt_config = MQTT(
+            label="feed_name",
+            description="feed_description",
+            host="Mqtt host",
+            port=8883,
+            topic="Mqtt topic",
+            qos_level=0,
+            username="Mqtt_username",
+            password="Mqtt_password",
+            client_id="Mqtt_client_id",
+            data_format=None
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        mqtt_feed = feeds.create(mqtt_config)
+        mqtt_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init

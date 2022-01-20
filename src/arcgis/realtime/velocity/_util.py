@@ -1,34 +1,44 @@
 import re
 
+from arcgis import GIS
+from typing import Optional, Dict, Union, List
+
 
 class _Util:
     """
     Private class that provides wrapper functions for Connection objects
     (gis._con) xhr functions and some re-usable function endpoint calls
     for _start, _stop, _delete operations on a task
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    gis                    An authenticated :class:`arcgis.gis.GIS` object.
+    ------------------     --------------------------------------------------------------------
+    base_url               Base url of Velocity.
+    ==================     ====================================================================
     """
 
     _gis = None
     _base_url = None
     _params = None
 
-    def __init__(self, gis, base_url):
-        """
-        :param url: Base url of Velocity.
-        :param gis: An authenticated arcigs.gis.GIS object.
-        """
+    def __init__(self, gis: GIS, base_url: str):
         self._gis = gis
         self._base_url = base_url
         self._params = {"authorization": f"token={gis._con.token}"}
 
-    # ----------------------------------------------------------------------
-    def _get_request(self, path):
+    def _get_request(self, path) -> Dict:
         """
         Private wrapper function that  builds the absolute url from
-        the base url + sub-path and then passing it to the xhr GET reqest
+        the base url + sub-path and then passing it to the xhr GET request
         gis._con.get(<url>, <params>)
 
-        :param path: feeds | realtime | bigdata
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   feeds | realtime | bigdata.
+        ==================     ====================================================================
+
         :return: Endpoint response
         """
         url = f"{self._base_url}{path}"
@@ -36,15 +46,24 @@ class _Util:
 
         return self._parse_response(response)
 
-    # ----------------------------------------------------------------------
-    def _put_request(self, task_type, id, payload=None):
+    def _put_request(self, task_type: str, id: str, payload: Dict = None) -> Dict:
         """
         Private wrapper function that  builds the absolute url from
-        the base url + sub-path and then passing it to the xhr PUT reqest
+        the base url + sub-path and then passing it to the xhr PUT request
         gis._con.put(<url>, <params>, <payload>)
 
-        :param path: feeds | realtime | bigdata
-        :param id: unique id of a task
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        task_type              feeds | realtime | bigdata
+        ------------------     --------------------------------------------------------------------
+        id                     unique id of a task
+        ------------------     --------------------------------------------------------------------
+        **Optional Argument**  **Description**
+        ------------------     --------------------------------------------------------------------
+        payload                post body
+        ==================     ====================================================================
+
         :return: Endpoint response
         """
         path = f"{task_type}/{id}/"
@@ -58,15 +77,32 @@ class _Util:
 
         return self._parse_response(response)
 
-    # ----------------------------------------------------------------------
-    def _post_request(self, task_type, id, payload=None, raise_error=True):
+    def _post_request(
+        self,
+        task_type: str,
+        id: Optional[str] = None,
+        payload: Dict = None,
+        raise_error: bool = True,
+    ) -> Dict:
         """
         Private wrapper function that  builds the absolute url from
-        the base url + sub-path and then passing it to the xhr POST reqest
+        the base url + sub-path and then passing it to the xhr POST request
         gis._con.post(<url>, <params>, <payload>)
 
-        :param task_type: feeds | realtime | bigdata
-        :param id: unique id of a task
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        task_type                  feeds | realtime | bigdata
+        ----------------------     --------------------------------------------------------------------
+        id                         unique id of a task
+        ----------------------     --------------------------------------------------------------------
+        **Optional Argument**      **Description**
+        ----------------------     --------------------------------------------------------------------
+        payload                    post body
+        ----------------------     --------------------------------------------------------------------
+        raise_error                Default value - True.
+        ======================     ====================================================================
+
         :return: Endpoint response
         """
         if id is not None:
@@ -87,95 +123,143 @@ class _Util:
         else:
             return self._parse_response(response)
 
-    # ----------------------------------------------------------------------
-    def _delete_request(self, path):
+    def _delete_request(self, path: str) -> bool:
         """
-         Private wrapper function that  builds the absolute url from
+        Private wrapper function that  builds the absolute url from
         the base url + sub-path and then passing it to the xhr DELETE reqest
         gis._con.delete(<url>, <params>)
 
-        :param path: feeds | realtime | bigdata
-        :return: endpoint response
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   feeds | realtime | bigdata.
+        ==================     ====================================================================
+
+        :return: Endpoint response
         """
         url = f"{self._base_url}{path}"
         response = self._gis._con.delete(url, self._params)
 
         return self._parse_response(response, return_boolean_for_success=True)
 
-    # ----------------------------------------------------------------------
-    def _get(self, task_type, id):
+    def _get(self, task_type: str, id: str) -> Dict:
         """
-         Generic task operation to get item by id
-        :param task_type: feed | realtime | bigdata
-        :param id: unique id of a task
-        :return: Endpoint response for start task
+        Generic task operation to get item by id
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        task_type              feeds | realtime | bigdata
+        ------------------     --------------------------------------------------------------------
+        id                     unique id of a task
+        ==================     ====================================================================
+
+        :return: Endpoint response
         """
         path = f"{task_type}/{id}"
         return self._get_request(path)
 
-    # ----------------------------------------------------------------------
-    def _start(self, task_type, id):
+    def _start(self, task_type: str, id: str) -> Dict:
         """
-         Generic start task operation
-        :param task_type: feed | realtime | bigdata
-        :param id: unique id of a task
-        :return: Endpoint response for start task
+        Generic start task operation
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        task_type              feeds | realtime | bigdata
+        ------------------     --------------------------------------------------------------------
+        id                     unique id of a task
+        ==================     ====================================================================
+
+        :return: Endpoint response
         """
         path = f"{task_type}/{id}/start"
         return self._get_request(path)
 
-    # ----------------------------------------------------------------------
-    def _stop(self, task_type, id):
+    def _stop(self, task_type: str, id: str) -> Dict:
         """
         Generic stop task operation
-        :param task_type: feed | realtime | bigdata
-        :param id: unique id of a task
-        Return True if the task was successfully stopped.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        task_type              feeds | realtime | bigdata
+        ------------------     --------------------------------------------------------------------
+        id                     unique id of a task
+        ==================     ====================================================================
 
         :return: boolean
-         a dictionary with error details.
         """
         path = f"{task_type}/{id}/stop"
         response = self._get_request(path)
 
         return response.get("status") == "success"
 
-    # ----------------------------------------------------------------------
-    def _status(self, task_type, id):
+    def _status(self, task_type: str, id: str) -> Dict:
         """
         Generic get status task with possible task types: feed | realtime | bigdata
-        :param task_type: feed | realtime | bigdata
-        :param id: unique id of a task
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        task_type              feeds | realtime | bigdata
+        ------------------     --------------------------------------------------------------------
+        id                     unique id of a task
+        ==================     ====================================================================
+
         :return: endpoint response for task status
         """
         path = f"{task_type}/{id}/status"
         return self._get_request(path)
 
-    # ----------------------------------------------------------------------
-    def _metrics(self, task_type, id):
+    def _metrics(self, task_type, id: str) -> Dict:
         """
         Generic get metrics task with possible task types: feed | realtime | bigdata
-        :param task_type: feed | realtime | bigdata
-        :param id: unique id of a task
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        task_type              feeds | realtime | bigdata
+        ------------------     --------------------------------------------------------------------
+        id                     unique id of a task
+        ==================     ====================================================================
+
         :return: endpoint response for task metrics
         """
         return self._post_request(task_type, id)
 
-    # ----------------------------------------------------------------------
-    def _delete(self, task_type, id):
+    def _delete(self, task_type: str, id: str) -> bool:
         """
-        :param task_type: feed | realtime | bigdata
-        :param id: unique id of a task
+        Generic task operation to delete item by id
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        task_type              feeds | realtime | bigdata
+        ------------------     --------------------------------------------------------------------
+        id                     unique id of a task
+        ==================     ====================================================================
+
         :return: A bool containing True (for success) or
          False (for failure) a dictionary with details is returned.
         """
         path = f"{task_type}/{id}"
         return self._delete_request(path)
 
-    # ----------------------------------------------------------------------
-    def _parse_response(self, response, return_boolean_for_success=False):
+    def _parse_response(
+        self, response: str, return_boolean_for_success=False
+    ) -> Union[bool, Dict]:
         """
-        :param response: Result object of an endpoint
+        Generic task operation to get item by id
+
+        ==========================      ====================================================================
+        **Argument**                    **Description**
+        --------------------------      --------------------------------------------------------------------
+        response                        Result object of an endpoint
+        --------------------------      --------------------------------------------------------------------
+        return_boolean_for_success      Default value False
+        ==========================      ====================================================================
+
         :return: Result or raise exception if status has an 'error' attribute
         """
         if isinstance(response, dict) and response.get("status") == "error":
@@ -192,8 +276,7 @@ class _Util:
             else:
                 return response
 
-    # ----------------------------------------------------------------------
-    def _validate_response(self, response):
+    def _validate_response(self, response: Dict) -> bool:
         if isinstance(response, dict) and response.get("status") == "error":
             return False
         elif isinstance(response, list):
@@ -206,11 +289,18 @@ class _Util:
             return True
 
     # ----------------------------------------------------------------------
-    def sample_messages(self, input_type, payload=None):
+    def sample_messages(self, input_type: str, payload: Dict = None) -> Dict:
         """
         Gets sample from a feed or source
-        :param input_type: "feed" | "sources"
-        :param payload: payload for the sample message
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        input_type             "feed" | "sources"
+        ------------------     --------------------------------------------------------------------
+        payload                payload for the sample message
+        ==================     ====================================================================
+
         :return: Sample message response including derived schema and raw samples
         """
         if payload is None:
@@ -221,17 +311,22 @@ class _Util:
         return _response
 
     # ----------------------------------------------------------------------
-    def test_connection(self, input_type, payload=None):
+    def test_connection(self, input_type: str, payload: Optional[Dict] = None) -> bool:
         """
         Tests Connection to a feed, source, output
-        :param input_type: "feed" | "sources" | "outputs"
-        :param payload: payload for the feed
-        Return True if test connection is successfully
-        :return: boolean
-        A dictionary with error details.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        input_type             "feed" | "sources" | "outputs"
+        ------------------     --------------------------------------------------------------------
+        payload                payload for the feed
+        ==================     ====================================================================
+
+        :return: True if test connection is successfully else a dictionary with error details.
         """
         if payload is None:
-           raise AttributeError("Post request payload is empty")
+            raise AttributeError("Post request payload is empty")
 
         path = f"{input_type}/testConnection"
 
@@ -240,23 +335,20 @@ class _Util:
         )
         return self._validate_response(_response)
 
-    def derive(self, sample_data: str, format_name: str = "Unknown"):
+    def derive(self, sample_data: str, format_name: str = "Unknown") -> Dict:
         if not sample_data:
             raise AttributeError("sample_data should not be empty")
 
         post_body = {
             "content": sample_data,
             "formatName": format_name,
-            "properties": {}
+            "properties": {},
         }
         response = self._post_request(
-            task_type="schema/derive",
-            id=None,
-            payload=post_body,
-            raise_error=False
+            task_type="schema/derive", id=None, payload=post_body, raise_error=False
         )
         return response
-    # ----------------------------------------------------------------------
-    def is_valid(self, label):
+
+    def is_valid(self, label: str) -> bool:
         pattern = "^[A-Za-z0-9_ ]*$"
         return bool(re.match(pattern, label))

@@ -23,44 +23,77 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class Kafka(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    label                  str. Unique label for this feed instance.
-    ------------------     --------------------------------------------------------------------
-    description            str. Feed description.
-    ------------------     --------------------------------------------------------------------
-    brokers                str. Comma-separated list of Kafka brokers, including the port, such as
-                           host1.domain.com:9092,host2.domain.com:9092
+    Receive events from a Kafka broker. This data class can be used to define the feed configuration and use it to
+    create the feed.
 
-                           example - "kafkaServer1.hostname.com:9092,kafkaServer2.hostname.com:9092"
-    ------------------     --------------------------------------------------------------------
-    topics                 str. Topic to which the output will send messages.
-    ------------------     --------------------------------------------------------------------
-    authentication         Union[NoAuth, SASLPlain]. Kafka authentication type.
-    ------------------     --------------------------------------------------------------------
+    ==================      ====================================================================
+    **Argument**            **Description**
+    ------------------      --------------------------------------------------------------------
+    label                   str. Unique label for this feed instance.
+    ------------------      --------------------------------------------------------------------
+    description             str. Feed description.
+    ------------------      --------------------------------------------------------------------
+    brokers                 str. Comma-separated list of Kafka brokers, including the port, such as
+                            host1.domain.com:9092,host2.domain.com:9092
 
-    **Optional Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    consumer_group_id      str. A unique string that identifies the consumer group that this feed
-                           belongs to as a consumer.
-    ------------------     --------------------------------------------------------------------
-    data_format            Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
-                           An instance that contains the data-format
-                           configuration for this feed. Configure only allowed formats.
-                           If this is not set right during initialization, a format will be
-                           auto-detected and set from a sample of the incoming data. This sample
-                           will be fetched from the configuration provided so far in the init.
-    ------------------     --------------------------------------------------------------------
-    track_id_field         str. name of the field from the incoming data that should be set as
-                           track_id.
-    ------------------     --------------------------------------------------------------------
-    geometry               Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
-                           that will be used to create geometry objects from the incoming data.
-    ------------------     --------------------------------------------------------------------
-    time                   Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                           will be used to create time info from the incoming data.
-    ==================     ====================================================================
+                            example - "kafkaServer1.hostname.com:9092,kafkaServer2.hostname.com:9092"
+    ------------------      --------------------------------------------------------------------
+    topics                  str. Topic to which the output will send messages.
+    ------------------      --------------------------------------------------------------------
+    authentication          Union[NoAuth, SASLPlain]. Kafka authentication type.
+    ==================      ====================================================================
+
+    =====================   ============================================================================================
+    **Optional Argument**   **Description**
+    =====================   ============================================================================================
+    consumer_group_id       str. A unique string that identifies the consumer group that this feed
+                            belongs to as a consumer.
+    ---------------------   --------------------------------------------------------------------------------------------
+    data_format             Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
+                            An instance that contains the data-format
+                            configuration for this feed. Configure only allowed formats.
+                            If this is not set right during initialization, a format will be
+                            auto-detected and set from a sample of the incoming data. This sample
+                            will be fetched from the configuration provided so far in the init.
+    ---------------------   --------------------------------------------------------------------------------------------
+    track_id_field          str. name of the field from the incoming data that should be set as
+                            track_id.
+    ---------------------   --------------------------------------------------------------------------------------------
+    geometry                Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+                            that will be used to create geometry objects from the incoming data.
+    ---------------------   --------------------------------------------------------------------------------------------
+    time                    Union[TimeInstant, TimeInterval]. An instance of time configuration that
+                            will be used to create time info from the incoming data.
+    =====================   ============================================================================================
+
+    :return: A data class with Kafka feed configuration.
+
+    .. code-block:: python
+
+        # Usage Example
+
+        from arcgis.realtime.velocity.feeds import Kafka
+        from arcgis.realtime.velocity.feeds.kafka_authentication_type import NoAuth, SASLPlain
+        from arcgis.realtime.velocity.feeds.geometry import XYZGeometry, SingleFieldGeometry
+        from arcgis.realtime.velocity.feeds.time import TimeInterval, TimeInstant
+
+        kafka_config = Kafka(
+            label="feed_name",
+            description="feed_description",
+            brokers="kafka.a4iot.com:9092",
+            topics="topicName",
+            authentication=NoAuth(),
+            data_format=None
+        )
+
+        # use velocity object to get the FeedsManager instance
+        feeds = velocity.feeds
+
+        # use the FeedsManager object to create a feed from this feed configuration
+        kafka_feed = feeds.create(kafka_config)
+        kafka_feed.start()
+        feeds.items
+
     """
 
     # fields that the user sets during init
