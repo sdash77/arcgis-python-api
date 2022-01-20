@@ -184,7 +184,9 @@ class Survey:
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def download(self, export_format: str, save_folder: Optional[str] = None) -> Union[str, pd.Dataframe]:
+    def download(
+        self, export_format: str, save_folder: Optional[str] = None
+    ) -> Union[str, pd.Dataframe]:
         """
         Exports the Survey's data to other format
 
