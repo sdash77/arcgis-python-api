@@ -83,9 +83,7 @@ class MapFeatureLayer(Layer):
         lyr_dict = {"type": "FeatureLayer", "url": url}
 
         if self.filter is not None:
-            lyr_dict["options"] = json.dumps(
-                {"definition_expression": self.filter}
-            )
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
         if self._time_filter is not None:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
@@ -139,9 +137,7 @@ class MapFeatureLayer(Layer):
 
         v = []
         if isinstance(value, _dt.datetime):
-            self._time_filter = (
-                f"{int(value.timestamp() * 1000)}"  # means single time
-            )
+            self._time_filter = f"{int(value.timestamp() * 1000)}"  # means single time
         elif isinstance(value, (tuple, list)):
             for idx, d in enumerate(value):
                 if idx > 1:
@@ -178,9 +174,7 @@ class MapFeatureLayer(Layer):
         from arcgis._impl.common._isd import InsensitiveDict
 
         if self._renderer is None and "drawingInfo" in self.properties:
-            self._renderer = InsensitiveDict(
-                dict(self.properties.drawingInfo.renderer)
-            )
+            self._renderer = InsensitiveDict(dict(self.properties.drawingInfo.renderer))
         return self._renderer
 
     # ----------------------------------------------------------------------
@@ -280,9 +274,7 @@ class MapFeatureLayer(Layer):
         import hashlib
 
         if not self.properties["hasAttachments"]:
-            raise Exception(
-                "Map Feature Layer doesn't have any attachments."
-            )
+            raise Exception("Map Feature Layer doesn't have any attachments.")
 
         if not os.path.exists(output_folder):
             raise Exception("Invalid output folder path.")
@@ -336,9 +328,7 @@ class MapFeatureLayer(Layer):
             attachment_path = os.path.join(path, f"{md5_hash}.jpg")
 
             object_attachments_mapping[row[1][object_id_field]].append(
-                os.path.join(
-                    "images", os.path.join(folder, f"{md5_hash}.jpg")
-                )
+                os.path.join("images", os.path.join(folder, f"{md5_hash}.jpg"))
             )
 
             if os.path.exists(attachment_path):
@@ -412,9 +402,7 @@ class MapFeatureLayer(Layer):
         if (os.path.getsize(file_path) >> 20) <= 9:
             params = {"f": "json"}
             if self._dynamic_layer:
-                attach_url = (
-                    self._url.split("?")[0] + "/%s/addAttachment" % oid
-                )
+                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
                 params["layer"] = self._dynamic_layer
             else:
                 attach_url = self._url + "/%s/addAttachment" % oid
@@ -431,9 +419,7 @@ class MapFeatureLayer(Layer):
             container = self.container
             itemid = container.upload(file_path)
             if self._dynamic_layer:
-                attach_url = (
-                    self._url.split("?")[0] + "/%s/addAttachment" % oid
-                )
+                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
                 params["layer"] = self._dynamic_layer
             else:
                 attach_url = self._url + "/%s/addAttachment" % oid
@@ -491,9 +477,7 @@ class MapFeatureLayer(Layer):
             params["layer"] = self._dynamic_layer
         else:
             url = self._url + f"/{oid}/updateAttachment"
-        res = self._con.post(
-            path=url, postdata=params, files=files, token=self._token
-        )
+        res = self._con.post(path=url, postdata=params, files=files, token=self._token)
         return res
 
     # ----------------------------------------------------------------------
@@ -967,9 +951,7 @@ class MapFeatureLayer(Layer):
         if return_true_curves is not None:
             params["returnTrueCurves"] = return_true_curves
         if return_exceeded_limit_features is not None:
-            params[
-                "returnExceededLimitFeatures"
-            ] = return_exceeded_limit_features
+            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
         params["where"] = where
         params["returnGeometry"] = return_geometry
         params["returnDistinctValues"] = return_distinct_values
@@ -1017,12 +999,8 @@ class MapFeatureLayer(Layer):
         if order_by_fields:
             params["orderByFields"] = order_by_fields
         if group_by_fields_for_statistics:
-            params[
-                "groupByFieldsForStatistics"
-            ] = group_by_fields_for_statistics
-        if statistic_filter and isinstance(
-            statistic_filter, StatisticFilter
-        ):
+            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
+        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
             params["outStatistics"] = statistic_filter.filter
         if out_statistics:
             params["outStatistics"] = out_statistics
@@ -1097,11 +1075,8 @@ class MapFeatureLayer(Layer):
         supports_pagination = True
         if (
             "advancedQueryCapabilities" not in self.properties
-            or "supportsPagination"
-            not in self.properties["advancedQueryCapabilities"]
-            or not self.properties["advancedQueryCapabilities"][
-                "supportsPagination"
-            ]
+            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
+            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
         ):
             supports_pagination = False
 
@@ -1136,9 +1111,7 @@ class MapFeatureLayer(Layer):
                 and not self.properties.geometryType is None
             ):
                 columns["SHAPE"] = object
-            df = pd.DataFrame([], columns=columns.keys()).astype(
-                columns, True
-            )
+            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
             if "SHAPE" in df.columns:
                 df["SHAPE"] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
@@ -1399,9 +1372,7 @@ class MapFeatureLayer(Layer):
         else:
             qrr_url = "%s/queryRelatedRecords" % self._url.split("?")[0]
 
-        return self._con.post(
-            path=qrr_url, postdata=params, token=self._token
-        )
+        return self._con.post(path=qrr_url, postdata=params, token=self._token)
 
     # ----------------------------------------------------------------------
     def get_html_popup(self, oid):
@@ -1424,9 +1395,7 @@ class MapFeatureLayer(Layer):
             pop_url = self._url + "/%s/htmlPopup" % oid
             params = {"f": "json"}
 
-            return self._con.get(
-                path=pop_url, params=params, token=self._token
-            )
+            return self._con.get(path=pop_url, params=params, token=self._token)
         return ""
 
     # ----------------------------------------------------------------------
@@ -1449,10 +1418,7 @@ class MapFeatureLayer(Layer):
             "CompletedWithErrors",
         ]
         status = con.get(url, params)
-        while (
-            status["status"] in status_allowed
-            and status["status"] != "Completed"
-        ):
+        while status["status"] in status_allowed and status["status"] != "Completed":
             if status["status"] == "Completed":
                 return status
             elif status["status"] == "CompletedWithErrors":
@@ -1468,9 +1434,7 @@ class MapFeatureLayer(Layer):
     def _query(self, url, params, raw=False):
         """returns results of query"""
         try:
-            result = self._con.post(
-                path=url, postdata=params, token=self._token
-            )
+            result = self._con.post(path=url, postdata=params, token=self._token)
         except Exception as queryException:
             error_list = [
                 "Error performing query operation",
@@ -1483,11 +1447,7 @@ class MapFeatureLayer(Layer):
                     if "resultRecordCount" in params
                     else 1000
                 )
-                offset = (
-                    int(params["resultOffset"])
-                    if "resultOffset" in params
-                    else 0
-                )
+                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
                 # reduce this number to 125 if you still sees 500/504 error
                 if max_record < 250:
                     # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
@@ -1527,9 +1487,7 @@ class MapFeatureLayer(Layer):
 
         if "error" in result:
             raise ValueError(result)
-        if "returnCountOnly" in params and is_true(
-            params["returnCountOnly"]
-        ):
+        if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
             return result["count"]
         elif "returnIdsOnly" in params and is_true(params["returnIdsOnly"]):
             return result
@@ -1589,9 +1547,7 @@ class MapFeatureLayer(Layer):
             from arcgis.geometry import Geometry
 
             geom = feature["geometry"] if "geometry" in feature else None
-            attribs = (
-                feature["attributes"] if "attributes" in feature else {}
-            )
+            attribs = feature["attributes"] if "attributes" in feature else {}
             if "centroid" in feature:
                 if attribs is None:
                     attribs = {"centroid": feature["centroid"]}
@@ -1623,11 +1579,7 @@ class MapFeatureLayer(Layer):
                     if "resultRecordCount" in params
                     else 1000
                 )
-                offset = (
-                    int(params["resultOffset"])
-                    if "resultOffset" in params
-                    else 0
-                )
+                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
                 # reduce this number to 125 if you still sees 500/504 error
                 if max_record < 250:
                     # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
@@ -1647,9 +1599,7 @@ class MapFeatureLayer(Layer):
                             records = self._query(url, params, raw=True)
                             if featureset_dict is not None:
                                 for feature in records["features"]:
-                                    featureset_dict["features"].append(
-                                        feature
-                                    )
+                                    featureset_dict["features"].append(feature)
                             else:
                                 featureset_dict = records
                             i += 1
@@ -1670,9 +1620,7 @@ class MapFeatureLayer(Layer):
         geom = None
         names = None
         dfields = []
-        rows = [
-            feature_to_row(row, sr) for row in featureset_dict["features"]
-        ]
+        rows = [feature_to_row(row, sr) for row in featureset_dict["features"]]
         if len(rows) == 0:
             return None
         df = pd.DataFrame.from_records(data=rows)
@@ -1737,9 +1685,7 @@ class MapRasterLayer(MapFeatureLayer):
             }
 
         if self.filter is not None:
-            lyr_dict["options"] = json.dumps(
-                {"definition_expression": self.filter}
-            )
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
         if self._time_filter is not None:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
@@ -1821,9 +1767,7 @@ class MapTable(MapFeatureLayer):
         lyr_dict = {"type": "FeatureLayer", "url": url}
 
         if self.filter is not None:
-            lyr_dict["options"] = json.dumps(
-                {"definition_expression": self.filter}
-            )
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
         if self._time_filter is not None:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
@@ -2114,9 +2058,7 @@ class MapTable(MapFeatureLayer):
         if sql_format is not None:
             params["sqlFormat"] = sql_format
         if return_exceeded_limit_features is not None:
-            params[
-                "returnExceededLimitFeatures"
-            ] = return_exceeded_limit_features
+            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
         params["where"] = where
         params["returnDistinctValues"] = return_distinct_values
         params["returnCountOnly"] = return_count_only
@@ -2149,12 +2091,8 @@ class MapTable(MapFeatureLayer):
         if order_by_fields:
             params["orderByFields"] = order_by_fields
         if group_by_fields_for_statistics:
-            params[
-                "groupByFieldsForStatistics"
-            ] = group_by_fields_for_statistics
-        if statistic_filter and isinstance(
-            statistic_filter, StatisticFilter
-        ):
+            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
+        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
             params["outStatistics"] = statistic_filter.filter
         if out_statistics:
             params["outStatistics"] = out_statistics
@@ -2203,11 +2141,8 @@ class MapTable(MapFeatureLayer):
         supports_pagination = True
         if (
             "advancedQueryCapabilities" not in self.properties
-            or "supportsPagination"
-            not in self.properties["advancedQueryCapabilities"]
-            or not self.properties["advancedQueryCapabilities"][
-                "supportsPagination"
-            ]
+            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
+            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
         ):
             supports_pagination = False
 
@@ -2242,9 +2177,7 @@ class MapTable(MapFeatureLayer):
                 and not self.properties.geometryType is None
             ):
                 columns["SHAPE"] = object
-            df = pd.DataFrame([], columns=columns.keys()).astype(
-                columns, True
-            )
+            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
             if "SHAPE" in df.columns:
                 df["SHAPE"] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
@@ -2360,9 +2293,7 @@ class MapTable(MapFeatureLayer):
                         df[fld] / 1000, infer_datetime_format=True, unit="s"
                     )
                 except:
-                    df[fld] = pd.to_datetime(
-                        df[fld], infer_datetime_format=True
-                    )
+                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
             return df
         return result
 

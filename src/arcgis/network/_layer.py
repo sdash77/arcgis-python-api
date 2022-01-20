@@ -7,7 +7,6 @@ from arcgis.gis import Layer, _GISResource
 from arcgis.features import Feature, FeatureSet
 from arcgis.features import FeatureLayer, FeatureLayerCollection, Table
 from arcgis.network import _utils
-from arcgis.mapping import MapImageLayer
 from arcgis._impl.common._utils import _validate_url
 
 try:

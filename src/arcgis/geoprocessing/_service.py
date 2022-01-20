@@ -11,10 +11,7 @@ from arcgis import env
 
 arcgis = LazyLoader("arcgis")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
-from datetime import datetime
-from arcgis.features import FeatureSet
-from arcgis.mapping import MapImageLayer
-from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
+
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing._tool import (
     _camelCase_to_underscore,
