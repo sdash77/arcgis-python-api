@@ -1,11 +1,10 @@
 """
 Utility functions useful for Business Analyst - the glue functions not fitting neatly anywhere else.
 """
-from collections import Iterable
 from functools import wraps, lru_cache
 import importlib
 from itertools import product
-from typing import AnyStr, Union, Tuple, Any
+from typing import Any, AnyStr, Iterable, Literal, Tuple, Union
 
 from arcgis.gis import GIS, User
 from arcgis.geometry import Geometry, SpatialReference
@@ -111,7 +110,7 @@ def local_ba_data_avail() -> bool:
     return avail
 
 
-def set_source(in_source: Union[str, GIS] = None) -> Union[str, GIS]:
+def set_source(in_source: Optional[Union[str, GIS]] = None) -> Union[str, GIS]:
     """
     Helper function to check source input. The source can be set explicitly, but if nothing is provided, it
     assumes the order of local first and then a Web GIS. Along the way, it also checks to see if a GIS object
@@ -208,7 +207,20 @@ def can_enrich_gis(user: User) -> bool:
     return bool_enrich
 
 
-def has_networkanalysis_gis(user: User, network_function: str = None) -> bool:
+def has_networkanalysis_gis(
+    user: User,
+    network_function: Optional[
+        Literal[
+            "closestfacility",
+            "locationallocation",
+            "optimizedrouting",
+            "origindestinationcostmatrix",
+            "routing",
+            "servicearea",
+            "vehiclerouting",
+        ]
+    ] = None,
+) -> bool:
     """Determine if the provided user has network analysis privileges in the Web GIS.
 
     .. note::
@@ -269,7 +281,7 @@ def has_networkanalysis_gis(user: User, network_function: str = None) -> bool:
 
 def geography_iterable_to_arcpy_geometry_list(
     geography_iterable: Union[pd.DataFrame, Iterable, Geometry],
-    geometry_filter: str = None,
+    geometry_filter: Optional[str] = None,
 ) -> list:
     """
     Processing helper to convert a iterable of geography_levels to a list of ArcPy Geometry objects suitable for input
@@ -431,7 +443,7 @@ def validate_spatial_reference(
 
 def get_spatially_enabled_dataframe(
     input_object: Union[pd.DataFrame, pd.Series, Geometry, Iterable, np.ndarray],
-    spatial_column: str = "SHAPE",
+    spatial_column: Optional[str] = "SHAPE",
 ) -> pd.DataFrame:
     """Garbage disposal taking variety of possible inputs and outputting, if possible, a Pandas Spatially Enabled
     DataFrame."""
@@ -471,7 +483,9 @@ def preproces_code_inputs(codes):
     return codes
 
 
-def get_top_codes(codes: Union[pd.Series, list, tuple], threshold=0.5) -> list:
+def get_top_codes(
+    codes: Union[pd.Series, list, tuple], threshold: Optional[float] = 0.5
+) -> list:
     """Get the top category codes by only keeping those compromising 50% or greater of the records.
 
     Args:
@@ -640,12 +654,12 @@ def validate_network_travel_mode(source, travel_mode):
 
 
 def add_proximity_to_enrich_feature(
-    source,
-    feature,
-    travel_mode="straight_line",
-    proximity_metric=None,
-    proximity_value=1,
-):
+    source: GIS,
+    feature: dict,
+    travel_mode: Optional[str] = "straight_line",
+    proximity_metric: Optional = None,
+    proximity_value: Optional[int] = 1,
+) -> dict:
     """Add proximity metrics onto a feature in a feature set for sending to the enrich REST endpoint."""
     # alias list to standardize the proximity_metric input
     if proximity_metric is not None:
@@ -718,12 +732,12 @@ def add_proximity_to_enrich_feature(
 
 
 def add_proximity_to_enrich_feature_list(
-    source,
-    feature_list,
+    source: GIS,
+    feature_list: Iterable,
     travel_mode="straight_line",
     proximity_metric=None,
     proximity_value=1,
-):
+) -> list:
     """Add proxmity metrics to a FeatureSet for sending to the enrich REST endpoint."""
     prx_feat_lst = [
         add_proximity_to_enrich_feature(

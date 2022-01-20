@@ -64,7 +64,7 @@ def get_first_child_key_str(key_path, pattern) -> str:
 
 
 def get_ba_country_key_str(
-    three_letter_country_code: str, year: [int, str] = None
+    three_letter_country_code: str, year: Optional[Union[int, str]] = None
 ) -> str:
     """Lookup the country registry key by three letter country identifier and year."""
     cntry_cd = three_letter_country_code.upper()
@@ -99,7 +99,9 @@ def get_ba_country_key_str(
 
 
 def get_ba_key_value(
-    locator_key, three_letter_country_identifier: str = "USA", year: [int, str] = None
+    locator_key,
+    three_letter_country_identifier: str = "USA",
+    year: Optional[Union[int, str]] = None,
 ) -> Path:
     """
     In the Business Analyst key, get the value corresponding to the provided locator key.
@@ -120,7 +122,7 @@ def get_ba_key_value(
 
 
 def get_ba_network_dataset_path(
-    three_letter_country_identifier: str, vintage_year: int = None
+    three_letter_country_identifier: str, vintage_year: Optional[int] = None
 ) -> Path:
     """
     Get the path to the transportation network dataset.
