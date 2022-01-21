@@ -4,7 +4,7 @@ Utility functions useful for Business Analyst - the glue functions not fitting n
 from functools import wraps, lru_cache
 import importlib
 from itertools import product
-from typing import Any, AnyStr, Iterable, Literal, Tuple, Union
+from typing import Any, AnyStr, Iterable, Optional, Tuple, Union
 
 from arcgis.gis import GIS, User
 from arcgis.geometry import Geometry, SpatialReference
@@ -209,17 +209,7 @@ def can_enrich_gis(user: User) -> bool:
 
 def has_networkanalysis_gis(
     user: User,
-    network_function: Optional[
-        Literal[
-            "closestfacility",
-            "locationallocation",
-            "optimizedrouting",
-            "origindestinationcostmatrix",
-            "routing",
-            "servicearea",
-            "vehiclerouting",
-        ]
-    ] = None,
+    network_function: Optional[str] = None,
 ) -> bool:
     """Determine if the provided user has network analysis privileges in the Web GIS.
 
