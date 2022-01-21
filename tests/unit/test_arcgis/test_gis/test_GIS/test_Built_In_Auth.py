@@ -1,7 +1,6 @@
 import unittest
 import pytest
 
-
 def test_built_in_auth():
     from arcgis.gis import GIS
 
@@ -14,3 +13,5 @@ def test_built_in_auth():
     )
 
     print("Logged in as: " + built_in_auth.properties.user.username)
+
+test_built_in_auth()

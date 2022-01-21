@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus_main\src")
+sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\src")
 import os
 import unittest
 
@@ -10,7 +10,7 @@ gis = GIS(profile="your_online_profile", verify_cert=False)
 
 # Major cities point layer
 try:
-    item = gis.content.search("major_cities")[1]
+    item = gis.content.search("major_cities", "Feature Layer")[0]
     assert item
 except:
     fp = "./major_cities"
