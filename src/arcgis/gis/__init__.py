@@ -847,7 +847,10 @@ class GIS(object):
                     self._utoken = json_data["token"]
                 self._expiration = json_data.get("expiration", None)
                 if "encryptedToken" in json_data:
-                    from arcgis.gis._impl._decrypt_nbauth import get_token
+                    try:
+                        from arcgis.gis._impl._decrypt_nbauth import get_token
+                    except ImportError as ie:
+                        from arcgis.gis._impl.nbauth import get_token
 
                     self._utoken = get_token(nb_auth_file_path)
 

@@ -422,7 +422,13 @@ class WNetcGANLoss(nn.Module):
             percep_loss3 += percep_loss3
 
         percep_loss = torch.mean(
-            torch.tensor((percep_loss1, 2 * percep_loss2, 5 * percep_loss3,))
+            torch.tensor(
+                (
+                    percep_loss1,
+                    2 * percep_loss2,
+                    5 * percep_loss3,
+                )
+            )
         )
 
         self.norm_vec_loss = self.norm_loss(fake_C, self.real_C)
@@ -553,7 +559,13 @@ class WNetcGANTrainer(LearnerCallback):
             percep_loss3 += percep_loss3
 
         percep_loss = torch.mean(
-            torch.tensor((percep_loss1, 2 * percep_loss2, 5 * percep_loss3,))
+            torch.tensor(
+                (
+                    percep_loss1,
+                    2 * percep_loss2,
+                    5 * percep_loss3,
+                )
+            )
         )
 
         if random.choice([0, 1]) < 0.5:

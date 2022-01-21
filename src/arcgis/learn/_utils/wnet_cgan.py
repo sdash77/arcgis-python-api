@@ -492,7 +492,13 @@ def prepare_data_wnetcgan(path, norm_pct, val_split_pct, seed, databunch_kwargs)
 
     data = (
         ImageTupleListMS2.from_folders(
-            path, path_a, path_b, path_c, batch_stats_a, batch_stats_b, batch_stats_c,
+            path,
+            path_a,
+            path_b,
+            path_c,
+            batch_stats_a,
+            batch_stats_b,
+            batch_stats_c,
         )
         .split_by_rand_pct(val_split_pct, seed=seed)
         .label_empty()
