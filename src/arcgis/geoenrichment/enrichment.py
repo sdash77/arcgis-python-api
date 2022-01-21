@@ -377,6 +377,9 @@ class Country(object):
 
     @property
     def properties(self):
+        """
+        Returns ``namedtuple`` of relevant properties based on the gis source.
+        """
         return self._ba_cntry.properties
 
     @_lazy_property
@@ -1477,9 +1480,6 @@ def enrich(
 
     Refer to https://developers.arcgis.com/rest/geoenrichment/api-reference/street-address-locations.htm for
     the format of intersection_geographies parameter.
-
-    .. note: Performance Tip: If you wish to speed up the operation and don't care about the geometries, set
-    return_geometry=False
 
     :return: Spatial DataFrame or Panda's DataFrame with the requested variables for the study areas.
     """
