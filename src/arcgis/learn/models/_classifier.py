@@ -1557,8 +1557,19 @@ class FeatureClassifier(ArcGISModel):
         self, im, cl, heatmap_thresh: int = 16, image: bool = True, grad_vis=False
     ):
         if isinstance(cl, fastai.core.MultiCategory):
-            cat = cl.raw  # Handles MuliCategory types
-            cat1 = cat[0]
+            if not cl.raw: # If the predictions are all 0, including for None class
+                xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
+                xb, _ = self._data.one_item(
+                    im, detach=False, denorm=False
+                )
+                xb_im = Image(xb[0])
+                xb_im_denorm = Image(xb_norm[0])
+                _, ax = plt.subplots(figsize=(6, 6))
+                xb_im_denorm.show(ax, title=f"Predicted class: None")
+                return
+            else:
+                cat = cl.raw  # Handles MuliCategory types
+                cat1 = cat[0]
         else:
             cat1 = int(cl)
         m = self.learn.model.eval()
@@ -1583,8 +1594,8 @@ class FeatureClassifier(ArcGISModel):
                 sz = list(xb_im.shape[-2:])
                 if grad_vis == True:
                     _, ax = plt.subplots(nrows=1, ncols=2, figsize=(12, 12))
-                    xb_im_denorm.show(ax[0], title=f"pred. class: {cl}")
-                    xb_im_denorm.show(ax[1], title=f"pred. class: {cl}")
+                    xb_im_denorm.show(ax[0], title=f"Predicted class: {cl}")
+                    xb_im_denorm.show(ax[1], title=f"Predicted class: {cl}")
                     ax[1].imshow(
                         mult,
                         alpha=0.4,
@@ -1594,7 +1605,7 @@ class FeatureClassifier(ArcGISModel):
                     )
                 else:
                     _, ax = plt.subplots(figsize=(6, 6))
-                    xb_im_denorm.show(ax, title=f"pred. class: {cl}")
+                    xb_im_denorm.show(ax, title=f"Predicted class: {cl}")
             return mult
 
     @deprecated(
