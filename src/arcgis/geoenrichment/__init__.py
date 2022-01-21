@@ -13,11 +13,9 @@ making to select the best locations for a new store.
 
 If the site selection is for a new distribution center, just as important as who the location will serve is knowing
 who is available to work in the distribution center. If the area already has a large population of skilled workers,
-finding labor to work in the distribution center will be significantly easier.
-
-Similarly, once stores are in place, knowing detailed information about the people in the surrounding area enables
-forecasting revenue for these existing store locations. This is especially important as markets evolve due to
-demographic shifts and competitive pressures.
+finding labor to work in the distribution center will be significantly easier. Similarly, once stores are in place,
+knowing detailed information about the people in the surrounding area enables forecasting revenue for these existing
+store locations. This is especially important as markets evolve due to demographic shifts and competitive pressures.
 
 Far from being the only applications, site selection and forecasting are two very common examples of how the
 ``arcgis.geoenrichment`` module is used. Since such a powerful Human Geography tool, increasingly this module is being
@@ -29,7 +27,6 @@ people based on their demographic characteristics (clustering). Defining charact
 identified (feature selection) to better understand the challenges people are facing and meet the needs of a community.
 While far from the only application, this is just one example of how ``arcgis.geoenrichent`` can be used to understand
 and answer Human Geography public policy questions.
-
 """
 
 __all__ = [

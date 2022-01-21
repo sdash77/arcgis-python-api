@@ -585,8 +585,8 @@ class Country(object):
                                          output. The default is ``True``.
         ----------------------------     --------------------------------------------------------------------
         standard_geography_level         If using a list of standard geography identifiers, the geography
-                                         level must be specified here. This value is the ``name`` column
-                                         retrieved in the ``Country.levels`` property.
+                                         level must be specified here. This value is the ``level_name``
+                                         column retrieved in the ``Country.levels`` property.
         ----------------------------     --------------------------------------------------------------------
         standard_geography_id_column     If providing a Pandas DataFrame as input, and the DataFrame contains
                                          a column with standard geography identifiers you desire to use for
