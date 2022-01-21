@@ -1090,10 +1090,10 @@ def generate_raster(
 
                                               - Resampling Method (resamplingMethod): The output raster will be
                                                 resampled to method specified.
-                                                The supported values are: Bilinear, Nearest, Cubic.
+                                                The supported values are: BILINEAR, NEAREST, CUBIC.
 
                                                 Example:
-                                                    {'resamplingMethod': "Nearest"}
+                                                    {'resamplingMethod': "NEAREST"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.

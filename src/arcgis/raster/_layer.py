@@ -4619,10 +4619,10 @@ class ImageryLayer(Layer):
 
                                                   - Resampling Method (resamplingMethod): The output raster will be
                                                     resampled to method specified.
-                                                    The supported values are: Bilinear, Nearest, Cubic.
+                                                    The supported values are: BILINEAR, NEAREST, CUBIC.
 
                                                     Example:
-                                                        {'resamplingMethod': "Nearest"}
+                                                        {'resamplingMethod': "NEAREST"}
         ------------------------------------     --------------------------------------------------------------------
         gis                                      Optional :class:`~arcgis.gis.GIS` object.
                                                  The GIS to be used for saving the
