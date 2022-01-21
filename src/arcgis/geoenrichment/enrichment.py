@@ -271,18 +271,10 @@ class Country(object):
     class can reference country data and methods available using data accessed through
     both a Web GIS and a local installation of `ArcGIS Pro with the Business Analyst
     extension and local country data` installed. Specifying this source is accomplished
-    using the ``gis`` parameter when instantiating
-    (See :meth:`~arcgis.geoenrichment.Country.get`). If using the keyword ``Pro``,
-    ``Country`` will try to use ArcGIS Pro with Business Analyst
+    using the ``gis`` parameter when instantiating. If using the keyword ``Pro``,
+    :class:`~arcgis.geoenrichment.Country` will use ArcGIS Pro with Business Analyst
     and will error if the specified country is not available locally. Available
-    countries can be discovered using the :func:`~arcgis.geoenrichment.get_countries`
-    function.
-
-    .. note::
-        Currently, when using a `GIS('Pro')` instance, only the ``data_collections``
-        and ``enrich_variables`` properties are supported to discover available
-        enrichment variables.
-
+    countries can be discovered using :func:`~arcgis.geoenrichment.get_countries`.
     """
 
     @classmethod
@@ -389,6 +381,15 @@ class Country(object):
 
     @_lazy_property
     def geometry(self):
+        """
+        Returns a :class:`~arcgis.geometry.Polygon` object delineating the country's area.
+
+        .. note::
+
+            Currently this is only supported when using a Web GIS (ArcGIS Online
+            or ArcGIS Enterprise) as the ``gis`` source.
+
+        """
         if isinstance(self._gis, GIS):
             lvlid = [lvl["id"] for lvl in self.levels if lvl["isWholeCountry"]][0]
             df = standard_geography_query(
@@ -412,7 +413,7 @@ class Country(object):
     @_lazy_property
     def _geog_levels(self):
         """
-        Returns levels of geography in this country, including branches for all datasets
+        Returns levels of geography in this country, including branches for all datasets.
         """
         params = {"f": "json"}
         url = self._base_url + "/Geoenrichment/standardgeographylevels/%s" % (
@@ -424,7 +425,7 @@ class Country(object):
     @property
     def levels(self) -> pd.DataFrame:
         """
-        Returns levels of geography in this country, for the current dataset
+        Returns levels of geography in this country, for the current dataset.
         """
         return self._ba_cntry.geography_levels
 
@@ -437,7 +438,13 @@ class Country(object):
     @property
     def dataset(self):
         """
-        Returns the currently used dataset for this country
+        Returns the currently used dataset for this country.json.
+
+        .. note::
+
+            This is only supported when using a Web GIS (ArcGIS Online
+            or ArcGIS Enterprise as the ``gis`` source.
+
         """
         if isinstance(self._gis, GIS):
             ds_id = self._dataset_id
@@ -528,6 +535,69 @@ class Country(object):
     def enrich_variables(self):
         """
         Pandas Dataframe of available geoenrichment variables.
+
+        For instance, the following code, if run in Jupter, will render the table below.
+
+        .. code-block:: python
+
+            from arcgis.gis import GIS
+            from arcgis.geoenrichment import Country
+
+            usa = Country('usa', gis=GIS('pro'))
+
+            usa.enrich_variables.head()
+
+        .. list-table::
+            :widths: 1 10 27 13 24 24
+            :header-rows: 1
+
+            * -
+              - name
+              - alias
+              - data_collection
+              - enrich_name
+              - enrich_field_name
+            * - 0
+              - CHILD_CY
+              - 2021 Child Population
+              - AgeDependency
+              - AgeDependency.CHILD_CY
+              - AgeDependency_CHILD_CY
+            * - 1
+              - WORKAGE_CY
+              - 2021 Working-Age Population
+              - AgeDependency
+              - AgeDependency.WORKAGE_CY
+              - AgeDependency_WORKAGE_CY
+            * - 2
+              - SENIOR_CY
+              - 2021 Senior Population
+              - AgeDependency
+              - AgeDependency.SENIOR_CY
+              - AgeDependency_SENIOR_CY
+            * - 3
+              - CHLDDEP_CY
+              - 2021 Child Dependency Ratio
+              - AgeDependency
+              - AgeDependency.CHLDDEP_CY
+              - AgeDependency_CHLDDEP_CY
+            * - 4
+              - AGEDEP_CY
+              - 2021 Age Dependency Ratio
+              - AgeDependency
+              - AgeDependency.AGEDEP_CY
+              - AgeDependency_AGEDEP_CY
+
+        The values in this table can be useful for filtering to identify the variables you
+        want to use for analysis and also for matching to existing datasets. This table,
+        once filtered to variables of interest can be used as input directly into the
+        :func:`~arcgis.geoenrichment.Country.enrich` method's ``enrich_variables``
+        parameter.
+
+        Also, the ``enrich_field_name`` column in this table corresponds to the field
+        naming convention used in output from the Enrich Layer tool in ArcGIS Pro. This
+        enables you to, with a little scripting, identify variables used in previous
+        analysis.
         """
         return self._ba_cntry.enrich_variables
 
@@ -563,7 +633,7 @@ class Country(object):
 
         The geographies for enrichment can be provided in a number of forms: a Spatially
         Enabled Pandas Data Frame or an Iterable my be provided. The iterable may be
-        comprised of ``arcgis.geometry.Geometry`` object instances or standard
+        comprised of :class:`~arcgis.geometry.Geometry` object instances or standard
         geography identifiers. While other values, such as string addresses or
         points-of-interest names may be provided, it is recommended to retrieve these
         locations in your workflow before performing enrichment.
@@ -577,16 +647,17 @@ class Country(object):
         enrich_variables                 Enrich variables can be specified using either a list of strings or
                                          the Pandas DataFrame returned from the 'Country.enrich_variables`
                                          property. If using a list of strings, the values are mached against
-                                         the `Country.enrich_variables` dataframe columns for `name`,
-                                         'enrich_name', or 'enrich_field_name'. All the values must match
-                                         to one of these columns.
+                                         the :func:`arcgis.geoenrichment.Country.enrich_variables` dataframe
+                                         columns for `name`, 'enrich_name', or 'enrich_field_name'. All the
+                                         values must match to one of these columns.
         ----------------------------     --------------------------------------------------------------------
         return_geometry                  Boolean indicating if the geometry needs to be returned in the
                                          output. The default is ``True``.
         ----------------------------     --------------------------------------------------------------------
         standard_geography_level         If using a list of standard geography identifiers, the geography
                                          level must be specified here. This value is the ``level_name``
-                                         column retrieved in the ``Country.levels`` property.
+                                         column retrieved in the
+                                         :func:`arcgis.geoenrichment.Country.levels` property.
         ----------------------------     --------------------------------------------------------------------
         standard_geography_id_column     If providing a Pandas DataFrame as input, and the DataFrame contains
                                          a column with standard geography identifiers you desire to use for
@@ -778,6 +849,11 @@ class Country(object):
                 # Usage Example 2
 
                 india.named_places.states['Bihar'].districts['Aurangabad'].subdistricts['Barun']
+
+        .. note::
+
+            Currently this is only supported when using a Web GIS (ArcGIS Online
+            or ArcGIS Enterprise as the ``gis`` source.
         """
         pass
 
@@ -804,6 +880,11 @@ class Country(object):
 
         :return:
             A list of named areas that match the query string
+
+        .. note::
+
+            Currently this is only supported when using a Web GIS (ArcGIS Online
+            or ArcGIS Enterprise as the ``gis`` source.
         """
 
     def _search_gis(self, query, layers=["*"]):
@@ -834,7 +915,14 @@ class Country(object):
     @_lazy_property
     @local_vs_gis
     def reports(self):
-        """Returns the available reports for this country as a Pandas dataframe"""
+        """
+        Returns the available reports for this country as a Pandas dataframe.
+
+        .. note::
+
+            Currently this is only supported when using a Web GIS (ArcGIS Online
+            or ArcGIS Enterprise as the ``gis`` source.
+        """
         pass
 
     def _reports_gis(self):
@@ -854,11 +942,91 @@ class Country(object):
 
     @_lazy_property
     def travel_modes(self):
-        """DataFrame of available travel modes for the country."""
+        """
+        DataFrame of available travel modes for the country. This is determined by what
+        transportation networks are available for the given country.
+
+        For instance, running the following code in Jupyter will return the table below.
+
+        .. code-block:: python
+
+            from arcgis.gis import GIS
+            from arcgis.geoenrichment import Country
+
+            usa = Country('usa', gis=GIS('pro'))
+
+            usa.travel_modes
+
+        .. list-table::
+            :widths: 1 17 17 30 10 15 8 15 10
+            :header-rows: 1
+
+            * -
+              - name
+              - alias
+              - description
+              - type
+              - impedance
+              - impedance_category
+              - time_attribute_name
+              - distance_attribute_name
+            * - 0
+              - driving_time
+              - Driving Time
+              - Models the movement of cars...
+              - AUTOMOBILE
+              - TravelTime
+              - temporal
+              - TravelTime
+              - Kilometers
+            * - 1
+              - driving_distance
+              - Driving Distance
+              - Models the movement of cars...
+              - AUTOMOBILE
+              - Kilometers
+              - distance
+              - TravelTime
+              - Kilometers
+            * - 2
+              - trucking_time
+              - Trucking Time
+              - Models basic truck travel b...
+              - TRUCK
+              - TruckTravelTime
+              - temporal
+              - TruckTravelTime
+              - Kilometers
+            * - 3
+              - trucking_distance
+              - Trucking Distance
+              - Models basic truck travel b...
+              - TRUCK
+              - Kilometers
+              - distance
+              - TruckTravelTime
+              - Kilometers
+            * - 4
+              - walking_time
+              - Walking Time
+              - Follows paths and roads tha...
+              - WALK
+              - WalkTime
+              - temporal
+              - WalkTime
+              - Kilometers
+
+        .. note::
+
+            The values in the ``name`` column are what is required for the
+            ``proximity_type`` parameter for the
+            :func:`~arcgis.geoenrichment.Country.enrich` method.
+
+        """
         return self._ba_cntry.travel_modes
 
 
-def get_countries(gis: GIS = None, as_df: bool = False):
+def get_countries(gis: GIS = None, as_df: bool = True):
     """
     Retrieve available countries based on the GIS source being used.
 
@@ -877,10 +1045,9 @@ def get_countries(gis: GIS = None, as_df: bool = False):
                            explicitly provided.
 
     as_df                  Optional boolean, specifying if a Pandas DataFrame output is
-                           desired. If ``False`` (the default), a list of
-                           :class:`~arcgis.geoenrichment.Country` objects will be
-                           returned. If ``True``, a Pandas DataFrame of available countries is
-                           returned.
+                           desired. If ``True``, (the default) a Pandas DataFrame of available
+                           countries is returned. If ``False`` , a list of
+                           :class:`~arcgis.geoenrichment.Country` objects is returned.
     ==================     ====================================================================
 
     :return:
