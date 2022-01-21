@@ -1557,11 +1557,9 @@ class FeatureClassifier(ArcGISModel):
         self, im, cl, heatmap_thresh: int = 16, image: bool = True, grad_vis=False
     ):
         if isinstance(cl, fastai.core.MultiCategory):
-            if not cl.raw: # If the predictions are all 0, including for None class
+            if not cl.raw:  # If the predictions are all 0, including for None class
                 xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
-                xb, _ = self._data.one_item(
-                    im, detach=False, denorm=False
-                )
+                xb, _ = self._data.one_item(im, detach=False, denorm=False)
                 xb_im = Image(xb[0])
                 xb_im_denorm = Image(xb_norm[0])
                 _, ax = plt.subplots(figsize=(6, 6))

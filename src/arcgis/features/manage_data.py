@@ -56,7 +56,7 @@ def generate_tessellation(
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
 
@@ -185,7 +185,7 @@ def dissolve_boundaries(
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
 
@@ -407,7 +407,7 @@ def merge_layers(
 
                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                             .. code-block:: python
 
@@ -548,7 +548,7 @@ def overlay_layers(
 
                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                             .. code-block:: python
 
