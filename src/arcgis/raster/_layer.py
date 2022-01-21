@@ -4851,7 +4851,7 @@ class ImageryLayer(Layer):
             feature_layer = img_lyr.to_features(output_type="Polygon",
                                                 simplify = False,
                                                 output_name="new_feature_layer",
-                                                create_multipart_freatures = True,
+                                                create_multipart_features = True,
                                                 )
 
         """
