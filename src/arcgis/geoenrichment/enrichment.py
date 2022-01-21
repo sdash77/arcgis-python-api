@@ -2,7 +2,7 @@ import collections
 from functools import wraps
 from pathlib import Path
 import re
-from typing import Any, Union, Iterable
+from typing import Any, Union, Iterable, Optional
 
 from arcgis import __version__
 from arcgis import env
@@ -286,9 +286,9 @@ class Country(object):
     """
 
     @classmethod
-    def get(cls, name: str, gis: GIS = None, year: Union[str, int] = None):
+    def get(cls, name: str, gis: GIS = None, year: Optional[Union[str, int]] = None):
         """
-        Gets a reference to a particular country, given its name, or its
+        Get a reference to a particular country, given its name, or its
         two letter abbreviation or three letter ISO3 code.
 
         ================  ========================================================
@@ -327,7 +327,7 @@ class Country(object):
         self,
         iso3: str,
         gis: GIS = None,
-        year: Union[str, int] = None,
+        year: Optional[Union[str, int]] = None,
         **kwargs,
     ) -> None:
 
@@ -543,7 +543,206 @@ class Country(object):
         proximity_metric: str = None,
         output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
     ):
-        """TODO: Write docs"""
+        """
+        Enrich provides access to a massive dataset describing exactly who people are
+        in a geographic location. The most common way to delineate geographies for
+        enrichment is using polygons delineated areas, although points and lines can
+        be used as well.
+
+        When points or lines are provided, an area surrounding the geometries is used
+        for enrichment. This area can be defined using additional parameters, but by
+        default is one kilometer around the geometry. Also, only straight-line distance
+        is supported with line geometries, but points can use available transportation
+        network methods – typically drive distance or drive time.
+
+        While already popular for site analysis, forecast modeling for a store or
+        facility location, enrich provides access to a massive amount of data for any
+        analysis of people and their relationship and interaction with the surrounding
+        community, culture, economy and even the natural environment. Succinctly,
+        enrich is how to access data for human geography analysis.
+
+        The geographies for enrichment can be provided in a number of forms: a Spatially
+        Enabled Pandas Data Frame or an Iterable my be provided. The iterable may be
+        comprised of ``arcgis.geometry.Geometry`` object instances or standard
+        geography identifiers. While other values, such as string addresses or
+        points-of-interest names may be provided, it is recommended to retrieve these
+        locations in your workflow before performing enrichment.
+
+        ============================     ====================================================================
+        **Argument**                     **Description**
+        ----------------------------     --------------------------------------------------------------------
+        geographies                      Required list, FeatureSet or SpatiallyEnabledDataFrame containing
+                                         the input areas to be enriched.
+        ----------------------------     --------------------------------------------------------------------
+        enrich_variables                 Enrich variables can be specified using either a list of strings or
+                                         the Pandas DataFrame returned from the 'Country.enrich_variables`
+                                         property. If using a list of strings, the values are mached against
+                                         the `Country.enrich_variables` dataframe columns for `name`,
+                                         'enrich_name', or 'enrich_field_name'. All the values must match
+                                         to one of these columns.
+        ----------------------------     --------------------------------------------------------------------
+        return_geometry                  Boolean indicating if the geometry needs to be returned in the
+                                         output. The default is ``True``.
+        ----------------------------     --------------------------------------------------------------------
+        standard_geography_level         If using a list of standard geography identifiers, the geography
+                                         level must be specified here. This value is the ``name`` column
+                                         retrieved in the ``Country.levels`` property.
+        ----------------------------     --------------------------------------------------------------------
+        standard_geography_id_column     If providing a Pandas DataFrame as input, and the DataFrame contains
+                                         a column with standard geography identifiers you desire to use for
+                                         specifying the input geographies, please provide the name of the
+                                         column as a string in this parameter.
+        ----------------------------     --------------------------------------------------------------------
+        proximity_type                   If providing point geometries as input geographies, you have the
+                                         option to provide the method used to create the proximity around the
+                                         point based on the available travel modes. These travel modes can
+                                         be discovered using the ``Country.travel_modes`` property. Valid
+                                         values are from the ``name`` column in this returned DataFrame.
+                                         Also, in addition to the transportation network travel modes, you
+                                         also have the option of using ``straight_line``, just using a
+                                         straight line distance, a buffer, around the geometry. This is the
+                                         default, and the only option if the geometry type is line.
+        ----------------------------     --------------------------------------------------------------------
+        proximity_value                  This is the scalar value as either a decimal float or integer
+                                         defining the size of the proximity zone around the source geometry
+                                         to be used for enrichment. For instance, if desiring a five minute
+                                         drive time, this value will be ``5``.
+        ----------------------------     --------------------------------------------------------------------
+        proximity_metric                 This is the unit of measure defining the area to be used in defining
+                                         the area surrounding geometries to use for enrichment. If interested
+                                         in getting a five minute drive time, this value will be ``minutes``.
+        ----------------------------     --------------------------------------------------------------------
+        output_spatial_reference         The default output will be WGS84 (WKID 4326). If a different output
+                                         spatial reference is desired, please provide it here as a WKID or
+                                         ``arcgis.features.SpatialReference`` object instance.
+        ============================     ====================================================================
+
+        :return:
+            Pandas DataFrame with enriched data.
+
+        Here is an example of using ArcGIS Pro with Business Analyst and the United
+        States data pack installed locally to enrich with a few key variables.
+
+        .. code-block:: python
+
+            from arcgis.gis import GIS
+            from arcgis.geoenrichment import Country
+
+            # create country object instance to use local ArcGIS Pro + Business Analyst + USA data pack
+            usa = Country('usa', gis=GIS('pro'))
+
+            # select current year key enrichment variables for analysis
+            ev_df = usa.enrich_variables
+            kv_df = ev_df[
+                (ev_df.data_collection.str.lower().str.contains('key'))  # key data collection
+                & (ev_df.alias.str.lower().str.endswith('cy'))           # current year
+            ]
+
+            # get data from ArcGIS Online to enrich as Spatially Enabled DataFrame
+            itm_id = '15d227c6da8d4b7baf713709ba3693ce'  # USA federal district court polygons
+            gis = GIS()  # anonymous connection to ArcGIS Online
+            aoi_df = gis.content.get(itm_id).layers[0].query().sdf
+
+            # enrich with variables selected above
+            enrich_df = usa.enrich(aoi_df, enrich_variables=kv_df)
+
+        Next, we can perform a similar workflow using ArcGIS Online instead of ArcGIS Pro by creating
+        a couple of point geometries and using five-minute drive times around the locations.
+
+        .. code-block:: python
+
+            import os
+
+            from arcgis.gis import GIS
+            from arcgis.geoenrichment import Country
+            from arcgis.geometry import Geometry
+            from dotenv import find_dotenv, load_dotenv
+
+            # load environment settings from .env file
+            load_dotenv(find_dotenv())
+
+            # create connection to ArcGIS Online organization using values saved in .env file
+            gis_agol = GIS(
+                url=os.getenv('ESRI_GIS_URL'),
+                username=os.getenv('ESRI_GIS_USERNAME'),
+                password=os.getenv('ESRI_GIS_PASSWORD')
+            )
+
+            # create a country object instance
+            usa = Country('usa', gis=gis_agol)
+
+            # get just key variables for the current year
+            ev_df = usa.enrich_variables
+            kv_df = ev_df[
+                (ev_df.data_collection.str.lower().str.contains('key'))  # key data collection
+                & (ev_df.alias.str.lower().str.endswith('cy'))           # current year
+            ]
+
+            # create a couple of point geometries on the fly for the example
+            coord_lst = [
+                (-122.9074835, 47.0450249),  # Bayview Grocery Store
+                (-122.8749600, 47.0464031)   # Ralph's Thriftway Grocery Store
+            ]
+            geom_lst = [Geometry({'x': pt[0], 'y': pt[1], 'spatialReference': {'wkid': 4326}}) for pt in coord_lst]
+
+            # enrich the geometries and get a spatially enabled dataframe
+            enrich_df = usa.enrich(
+                geographies=geom_lst,
+                enrich_variables=kv_df,
+                proximity_type='driving_time',
+                proximity_value=5
+                proxmity_metric='minutes'
+            )
+
+        Finally, we can also use standard geography identifiers to specify the geographies as well.
+
+        .. code-block:: python
+
+            import os
+
+            from arcgis.gis import GIS
+            from arcgis.geoenrichment import Country
+            from arcgis.geometry import Geometry
+            from dotenv import find_dotenv, load_dotenv
+
+            # load environment settings from .env file
+            load_dotenv(find_dotenv())
+
+            # create connection to ArcGIS Online organization using values saved in .env file
+            gis_agol = GIS(
+                url=os.getenv('ESRI_GIS_URL'),
+                username=os.getenv('ESRI_GIS_USERNAME'),
+                password=os.getenv('ESRI_GIS_PASSWORD')
+            )
+
+            # create a country object instance
+            usa = Country('usa', gis=gis_agol)
+
+            # get just key variables for the current year
+            ev_df = usa.enrich_variables
+            kv_df = ev_df[
+                (ev_df.data_collection.str.lower().str.contains('key'))  # key data collection
+                & (ev_df.alias.str.lower().str.endswith('cy'))           # current year
+            ]
+
+            # the block group ids for Olympia, WA
+            id_lst = ['530670101001', '530670101002', '530670101003', '530670101004', '530670102001', '530670102002',
+                      '530670102003', '530670103001', '530670103002', '530670103003', '530670103004', '530670104001',
+                      '530670104002', '530670104003', '530670105101', '530670105201', '530670105202', '530670105203',
+                      '530670105204', '530670106001', '530670106002', '530670106003', '530670106004', '530670106005',
+                      '530670107001', '530670107002', '530670107003', '530670108001', '530670108002', '530670109101',
+                      '530670109102', '530670109103', '530670110001', '530670111002', '530670112001', '530670113001',
+                      '530670116211', '530670117101', '530670117102', '530670117103', '530670120002', '530670122121',
+                      '530670122122', '530670122124', '530670111001', '530670121004']
+
+            # enrich the geometries and get a spatially enabled dataframe
+            enrich_df = usa.enrich(
+                geographies=geom_lst,
+                enrich_variables=kv_df,
+                standard_geography_level='block_groups'
+            )
+
+        """
         # invoke enrich on the business analyst object
         enrich_res = self._ba_cntry.enrich(
             geographies,
@@ -562,10 +761,10 @@ class Country(object):
     @local_vs_gis
     def subgeographies(self):
         """
-        Returns the named geographical places in this country, as NamedArea objects. Each named area has attributes for the
-        supported subgeography levels within it, and the value of those attributes are dictionaries containing the named
-        places within that level of geography. This allows for interactive selection of places using intellisense and a
-        notation such as the following:
+        Returns the named geographical places in this country, as NamedArea objects. Each named area has attributes for
+        the supported subgeography levels within it, and the value of those attributes are dictionaries containing the
+        named places within that level of geography. This allows for interactive selection of places using intellisense
+        and a notation such as the following:
 
         .. code-block:: python
 
@@ -1014,32 +1213,22 @@ def enrich(
     proximity_metric=None,
 ):
     """
-    Returns demographic and other requested information for the specified study areas.
-    Study areas define the location of the point or area you want to enrich
-    with additional information or create reports about.
+    Enrich provides access to a massive dataset describing exactly who people are
+    in a geographic location. The most common way to delineate geographies for
+    enrichment is using polygons delineated areas, although points and lines can
+    be used as well.
 
-    The areas you are interested in retrieving demographic information about are defined
-    in the ``study_areas`` parameter. These locations are most commonly defined by providing
-    a geographic locations, typically as polygons in a Spatially Enabled Data Frame. These
-    locations can also be specified using point and line geometries as well.
+    When points or lines are provided, an area surrounding the geometries is used
+    for enrichment. This area can be defined using additional parameters, but by
+    default is one kilometer around the geometry. Also, only straight-line distance
+    is supported with line geometries, but points can use available transportation
+    network methods – typically drive distance or drive time.
 
-    ``study_areas``, while the most common input is a Spatialy Enabled DataFrame, can also be
-    a list of ``arcgis.geometry.Geometry`` objects, or a list of standard geography identifers.
-    An example of standard geography identifiers, is FIPS or ZIP (postal) codes in the United
-    States.
-
-    When point or line geometries are provided, the an area around these geometries must be
-    defined to get the enrichment variables requested. This area is how the enrich method
-    allocates the demographic variables.
-
-    The default is to create a one kilometer straight line buffered distance. Other methods
-    and distances, such as driving time and driving distance can be specified for points
-    using the ``proximity_type`, ``proximity_value`` and ``proximity_metric`` parameters.
-
-    Available travel modes are determined by the network solver associated with the
-    Business Analyst source being used. If the
-
-    If the geometries are lines, the only valid ``proximity_type`` is ``straight_line``.
+    While already popular for site analysis, forecast modeling for a store or
+    facility location, enrich provides access to a massive amount of data for any
+    analysis of people and their relationship and interaction with the surrounding
+    community, culture, economy and even the natural environment. Succinctly,
+    enrich is how to access data for human geography analysis.
 
     =========================     ====================================================================
     **Argument**                  **Description**
