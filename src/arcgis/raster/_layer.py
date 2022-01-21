@@ -4602,7 +4602,7 @@ class ImageryLayer(Layer):
                                                     specified by cell size.
 
                                                     Example:
-                                                        {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                        {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                                   - Parallel Processing Factor (parallelProcessingFactor): controls
                                                     Raster Processing (CPU) service instances.

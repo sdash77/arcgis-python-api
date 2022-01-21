@@ -1073,7 +1073,7 @@ def generate_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -1753,7 +1753,7 @@ def summarize_raster_within(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Resampling Method (resamplingMethod): The output raster will be 
                                                 resampled to method specified.
@@ -2113,7 +2113,7 @@ def calculate_density(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Resampling Method (resamplingMethod): The output raster will be
                                                 resampled to method specified.
@@ -2371,7 +2371,7 @@ def create_viewshed(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Resampling Method (resamplingMethod): The output raster will be
                                                 resampled to method specified.
@@ -2603,7 +2603,7 @@ def interpolate_points(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
@@ -2749,7 +2749,7 @@ def classify(
                                               specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                             - Parallel Processing Factor (parallelProcessingFactor): controls
                                               Raster Processing (CPU) service instances.
@@ -2943,7 +2943,7 @@ def segment(
                                               specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                             - Parallel Processing Factor (parallelProcessingFactor): controls
                                               Raster Processing (CPU) service instances.
@@ -4998,7 +4998,7 @@ def generate_multidimensional_anomaly(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -5409,7 +5409,7 @@ def aggregate_multidimensional_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -5626,7 +5626,7 @@ def generate_trend_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -5840,7 +5840,7 @@ def predict_using_trend_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -6056,7 +6056,7 @@ def find_argument_statistics(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -6215,7 +6215,7 @@ def linear_spectral_unmixing(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -6444,7 +6444,7 @@ def subset_multidimensional_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -7223,7 +7223,7 @@ def analyze_changes_using_ccdc(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -7407,7 +7407,7 @@ def detect_change_using_change_analysis_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -8024,7 +8024,7 @@ def merge_multidimensional_rasters(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -8273,7 +8273,7 @@ def analyze_changes_using_landtrendr(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -8720,7 +8720,7 @@ def compute_change_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
