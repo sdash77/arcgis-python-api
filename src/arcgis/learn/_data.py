@@ -64,6 +64,8 @@ try:
     from ._utils.tabular_data import TabularDataObject
     from ._utils.cyclegan import ImageTupleList, prepare_data_ms_cyclegan
     from ._utils.cyclegan import show_batch as show_batch_img2img
+    from ._utils.wnet_cgan import prepare_data_wnetcgan
+    from ._utils.wnet_cgan import show_batch_wnet as show_batch_img2depth
     import random
     import PIL
 
@@ -1110,8 +1112,8 @@ def prepare_data(
     chip_size               Optional integer, default 224. Size of the image to train the model.
                             Images are cropped to the specified chip_size.
                             If image size is less than chip_size, the image size is
-                            used as chip_size. Not supported for SuperResolution, SiamMask,
-                            Pix2Pix and CycleGAN.
+                            used as chip_size. Not supported for SuperResolution, 
+                            SiamMask, WNet_cGAN, Pix2Pix and CycleGAN.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
                             as validation.
@@ -1142,11 +1144,11 @@ def prepare_data(
                             'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles',
                             'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'superres', 'CycleGAN', 'Pix2Pix' and 'ObjectTracking'.
+                            'superres', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN', and 'ObjectTracking'.
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'CycleGAN' and 'Pix2Pix' and 'ObjectTracking'.
+                            'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
                             This parameter is also mandatory while preparing data
                             for 'EntityRecognizer' model. Accepted data format
                             for this model are - ['ner_json','BIO', 'LBIOU'].
@@ -1364,6 +1366,10 @@ def prepare_data(
         elif _check_esri_files(path / "A") and _check_esri_files(path / "B"):
             has_esri_files = True
             dataset_type = "CycleGAN"
+        elif _check_esri_files(path / "train_A_C") and _check_esri_files(
+            path / "train_B"
+        ):
+            dataset_type = "WNet_cGAN"
         elif not has_esri_files:
             raise Exception(
                 "Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files"
@@ -2382,6 +2388,59 @@ def prepare_data(
             data._do_normalize = False
 
         return data
+    elif dataset_type == "WNet_cGAN":
+        from osgeo import gdal
+        from ._utils.cyclegan import get_files, image_extensions
+
+        path_a = path / "train_A_C" / "images"
+        path_c = path / "train_A_C" / "images2"
+        path_b = path / "train_B" / "images"
+
+        json_file_wnet = path / "train_A_C" / "esri_model_definition.emd"
+        with open(json_file_wnet) as f:
+            emd_wnet = json.load(f)
+        _image_space_used = emd_wnet.get("ImageSpaceUsed", _map_space)
+
+        files_list_a = get_files(path_a, extensions=image_extensions, recurse=True)
+        files_list_b = get_files(path_b, extensions=image_extensions, recurse=True)
+        files_list_c = get_files(path_c, extensions=image_extensions, recurse=True)
+        msimage_list_a, msimage_list_b, msimage_list_c = (
+            ArcGISImageList(files_list_a),
+            ArcGISImageList(files_list_b),
+            ArcGISImageList(files_list_c),
+        )
+        img_type = "RGB"
+        _im_path1, _im_path2 = (str(files_list_a[0]), str(files_list_b[0]))
+        ds1, ds2 = gdal.Open(_im_path1), gdal.Open(_im_path2)
+        if (
+            msimage_list_a[0].shape[0] > 3
+            or msimage_list_b[0].shape[0] > 3
+            or ds1.GetRasterBand(1).DataType != gdal.GDT_Byte
+            or ds2.GetRasterBand(1).DataType != gdal.GDT_Byte
+        ):
+            img_type = kwargs["imagery_type"] = "ms"
+            _is_multispectral = True
+        data = prepare_data_wnetcgan(
+            path, norm_pct, val_split_pct, seed, databunch_kwargs
+        )
+        data.show_batch = types.MethodType(show_batch_img2depth, data)
+        data.n_channel = data.x[0].data[0].shape[0]
+        data._is_multispectral = _is_multispectral
+        data._imagery_type = _imagery_type
+        data._bands = _bands
+        data._norm_pct = norm_pct
+        data._extract_bands = None
+        data._do_normalize = False
+        data._image_space_used = _image_space_used
+        data.nband_a = msimage_list_a[0].shape[0]
+        data.nband_b = msimage_list_b[0].shape[0]
+        data.nband_c = msimage_list_c[0].shape[0]
+        x_shape = data.train_ds[0][0].shape
+        data.chip_size = x_shape[-1]
+        if working_dir is not None:
+            data.path = Path(os.path.abspath(working_dir))
+        data._temp_folder = _prepare_working_dir(data.path)
+        return data
     elif dataset_type == "ObjectTracking":
         from ._utils.object_tracking_data import (
             prepare_object_tracking_data,
@@ -2579,7 +2638,6 @@ def prepare_data(
         data._imagery_type_a = imagery_type_a
         data._imagery_type_b = imagery_type_b
         data.show_batch = types.MethodType(show_batch_img2img, data)
-
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         data = (
             data.transform(get_transforms(), **kwargs_transforms)
