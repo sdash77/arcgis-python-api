@@ -32,7 +32,7 @@ class WNet_cGAN(ArcGISModel):
 
     """
     Creates a model object which generates images of type C from type A and type B.
-    
+
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
@@ -42,7 +42,7 @@ class WNet_cGAN(ArcGISModel):
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
-                                             
+
     :returns: `WNet_cGAN` Object
     """
 
@@ -78,7 +78,7 @@ class WNet_cGAN(ArcGISModel):
 
         """
         Creates a WNet_cGAN object from an Esri Model Definition (EMD) file.
-        
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -89,7 +89,7 @@ class WNet_cGAN(ArcGISModel):
                                 object from `prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
-        
+
         :returns: `WNet_cGAN` Object
         """
 
@@ -206,7 +206,7 @@ class WNet_cGAN(ArcGISModel):
         img_path1                Required path of an image 1.
         img_path2                Required path of an image 2.
         =====================   ===========================================
-        
+
         """
 
         self.learn.model.arcgis_results = True
@@ -253,7 +253,7 @@ class WNet_cGAN(ArcGISModel):
 
     def compute_metrics(self, accuracy=True, show_progress=True):
         """
-        Computes Peak Signal-to-Noise Ratio (PSNR) and 
+        Computes Peak Signal-to-Noise Ratio (PSNR) and
         Structural Similarity Index Measure (SSIM) on validation set.
 
         """
@@ -264,7 +264,7 @@ class WNet_cGAN(ArcGISModel):
 
     @property
     def supported_datasets(self):
-        """ Supported dataset types for this model. """
+        """Supported dataset types for this model."""
         return WNet_cGAN._supported_datasets()
 
     @staticmethod
