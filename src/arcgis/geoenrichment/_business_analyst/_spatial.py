@@ -1,5 +1,5 @@
 import importlib.util
-from typing import Union
+from typing import Union, Optional
 
 from arcgis.env import active_gis
 from arcgis.geometry import find_transformation, SpatialReference, Point

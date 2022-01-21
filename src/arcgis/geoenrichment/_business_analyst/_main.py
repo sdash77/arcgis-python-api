@@ -4,7 +4,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import re
-from typing import Union, Awaitable, Iterable
+from typing import Union, Awaitable, Iterable, Optional
 import uuid
 from warnings import warn
 
@@ -170,8 +170,8 @@ class AOI(object):
 
     def get_geography_level(
         self,
-        selector: Optional[[str, pd.DataFrame]] = None,
-        selection_field: Optional[str] = "NAME",
+        selector: Optional[Union[str, pd.DataFrame]] = None,
+        selection_field: str = "NAME",
         query_string: Optional[str] = None,
         output_spatial_reference: Optional[Union[SpatialReference, dict, int]] = 4326,
         return_geometry: Optional[bool] = True,
@@ -604,14 +604,14 @@ class Country(AOI):
         self,
         geographies: Union[pd.DataFrame, Iterable, Path],
         enrich_variables: Union[pd.DataFrame, Iterable],
-        return_geometry: Optional[bool] = True,
+        return_geometry: bool = True,
         standard_geography_level: Optional[Union[int, str]] = None,
         standard_geography_id_column: Optional[str] = None,
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        output_spatial_reference: Optional[Union[int, dict, SpatialReference]] = 4326,
-        estimate_credits: Optional[bool] = False,
+        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
         """Local enrich method implementation."""
@@ -634,14 +634,14 @@ class Country(AOI):
         self,
         geographies: Union[pd.DataFrame, Iterable, Path],
         enrich_variables: Union[pd.DataFrame, Iterable],
-        return_geometry: Optional[bool] = True,
+        return_geometry: bool = True,
         standard_geography_level: Optional[Union[int, str]] = None,
         standard_geography_id_column: Optional[str] = None,
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        output_spatial_reference: Optional[Union[int, dict, SpatialReference]] = 4326,
-        estimate_credits: Optional[bool] = False,
+        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        estimate_credits: bool = False,
         **kwargs,
     ) -> Union[pd.DataFrame, Path, float]:
         """Local enrich method implementation."""
@@ -1589,9 +1589,9 @@ class BusinessAnalyst(object):
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        return_geometry: Optional[bool] = True,
-        output_spatial_reference: Optional[Union[int, dict, SpatialReference]] = 4326,
-        estimate_credits: Optional[bool] = False,
+        return_geometry: bool = True,
+        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
         """
@@ -1783,12 +1783,12 @@ class BusinessAnalyst(object):
         enrich_variables: pd.DataFrame,
         country: Optional[Country] = None,
         standard_geography_level: Optional[Union[int, str]] = None,
-        proximity_type: Optional[str] = "straight_line",
-        proximity_value: Optional[Union[float, int]] = 1,
-        proximity_metric: Optional[str] = "Kilometers",
-        return_geometry: Optional[bool] = True,
-        output_spatial_reference: Optional[Union[int, dict, SpatialReference]] = 4326,
-        estimate_credits: Optional[bool] = False,
+        proximity_type: str = "straight_line",
+        proximity_value: Union[float, int] = 1,
+        proximity_metric: str = "Kilometers",
+        return_geometry: bool = True,
+        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
         """Redirect enabling all the front end validation to be handled in the non-underscore function."""
@@ -1803,9 +1803,9 @@ class BusinessAnalyst(object):
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        return_geometry: Optional[bool] = True,
-        output_spatial_reference: Optional[Union[int, dict, SpatialReference]] = 4326,
-        estimate_credits: Optional[bool] = False,
+        return_geometry: bool = True,
+        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
         """Local enrich implementation."""
@@ -1974,9 +1974,9 @@ class BusinessAnalyst(object):
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        return_geometry: Optional[bool] = True,
-        output_spatial_reference: Optional[Union[int, dict, SpatialReference]] = 4326,
-        estimate_credits: Optional[bool] = False,
+        return_geometry: bool = True,
+        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
         """Web GIS implementation for _enrich"""
