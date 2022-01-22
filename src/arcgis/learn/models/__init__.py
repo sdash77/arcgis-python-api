@@ -31,3 +31,4 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._deepsort import DeepSort
     from ._auto_ml import AutoML
     from ._pix2pix_hd import Pix2PixHD
+    from ._wnet_cgan import WNet_cGAN

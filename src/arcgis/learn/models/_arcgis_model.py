@@ -1144,6 +1144,7 @@ class ArcGISModel(object):
         if (
             getattr(self._data, "_dataset_type", None) == "Pix2Pix"
             or getattr(self._data, "_dataset_type", None) == "CycleGAN"
+            or getattr(self._data, "_dataset_type", None) == "WNet_cGAN"
         ):
             _emd_template["ExtractBands"] = self._data._extract_bands
             _emd_template["NormalizationStats"] = {
@@ -1161,6 +1162,22 @@ class ArcGISModel(object):
                     _emd_template["NormalizationStats"][_stat] = _emd_template[
                         "NormalizationStats"
                     ][_stat].tolist()
+            if getattr(self._data, "_dataset_type", None) == "WNet_cGAN":
+                _emd_template["NormalizationStats_b"] = {
+                    "band_min_values": self._data._band_min_values_b,
+                    "band_max_values": self._data._band_max_values_b,
+                    "band_mean_values": self._data._band_mean_values_b,
+                    "band_std_values": self._data._band_std_values_b,
+                    "scaled_min_values": self._data._scaled_min_values_b,
+                    "scaled_max_values": self._data._scaled_max_values_b,
+                    "scaled_mean_values": self._data._scaled_mean_values_b,
+                    "scaled_std_values": self._data._scaled_std_values_b,
+                }
+                for _stat in _emd_template["NormalizationStats_b"]:
+                    if _emd_template["NormalizationStats_b"][_stat] is not None:
+                        _emd_template["NormalizationStats_b"][_stat] = _emd_template[
+                            "NormalizationStats_b"
+                        ][_stat].tolist()
             if getattr(self._data, "_dataset_type", None) == "CycleGAN":
                 _emd_template["n_channel_rev"] = len(
                     _emd_template["NormalizationStats"]["band_min_values"]

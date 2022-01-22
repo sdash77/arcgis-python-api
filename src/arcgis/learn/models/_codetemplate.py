@@ -1571,8 +1571,11 @@ class ArcGISImageTranslation:
         return configuration
     def updateRasterInfo(self, **kwargs):
         direction = getattr(self.child_image_classifier, "direction", "None")
+        tar_nband = self.json_info.get("n_band_c", None)
         if direction == "BtoA":
             kwargs["output_info"]["bandCount"] = int(self.json_info["n_channel_rev"])
+        elif tar_nband != None:
+             kwargs["output_info"]["bandCount"] = int(tar_nband)
         else:
             kwargs["output_info"]["bandCount"] = int(self.json_info["n_channel"])
         kwargs['output_info']['pixelType'] = 'f4'
