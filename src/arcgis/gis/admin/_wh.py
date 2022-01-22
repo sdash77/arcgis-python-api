@@ -34,7 +34,9 @@ class WebhookManager(object):
     def __str__(self):
         from urllib.parse import urlparse
 
-        return "<WebhookManager @ {id}>".format(id=urlparse(self._url).netloc)
+        return "<WebhookManager @ {id}>".format(
+            id=urlparse(self._url).netloc
+        )
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -309,7 +311,9 @@ class Webhook(object):
     def _init(self):
         """Constructor"""
         if self._properties is None:
-            self._properties = PropertyMap(self._con.get(self._url, {"f": "json"}))
+            self._properties = PropertyMap(
+                self._con.get(self._url, {"f": "json"})
+            )
 
     # ----------------------------------------------------------------------
     @property
@@ -482,14 +486,19 @@ class Webhook(object):
                                             | Enable a specific user's account                   | /users/<username>/enable  |
                                             +----------------------------------------------------+---------------------------+
 
-                                           Example Syntax: ['/users', '/groups/abcd1234....']
+                                           .. code-block:: python
+
+                                               #Example Usage:
+
+                                               >>> events = ['/users', '/groups/abcd1234....']
 
         ---------------------------------  -------------------------------------------------------------------------------
-        number_of_failures                 Optional Integer. The number of failures to allow before the service
+        number_of_failures                 Optional Integer. The number of failures to allow before the webhook is
+                                           deactivated.
         ---------------------------------  -------------------------------------------------------------------------------
         days_in_past                       Option Integer. The number of days to report back on.
         ---------------------------------  -------------------------------------------------------------------------------
-        secret                             Optional String. Add a Secret to your payload that can be used to authenticate
+        secret                             Optional String. Add a secret to your payload that can be used to authenticate
                                            the message on your receiver.
         =================================  ===============================================================================
 
@@ -507,7 +516,9 @@ class Webhook(object):
                 self.properties.config.deactivationPolicy.numberOfFailures
             )
         if days_in_past is None:
-            days_in_past = self.properties.config.deactivationPolicy.daysInPast
+            days_in_past = (
+                self.properties.config.deactivationPolicy.daysInPast
+            )
         if events is None:
             events = ",".join(list(self.properties.events))
         purl = self._url + "/update"
