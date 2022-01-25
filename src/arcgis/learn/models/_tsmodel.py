@@ -60,7 +60,7 @@ except:
 def _get_model_from_path(pretrained_path):
     learn = load_learner(
         os.path.dirname(pretrained_path),
-        os.path.basename(pretrained_path).split(".")[0] + "_exported.pth",
+        os.path.basename(pretrained_path).rsplit(".",1)[0] + "_exported.pth",
         no_check=True,
     )
 
