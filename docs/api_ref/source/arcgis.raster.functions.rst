@@ -215,6 +215,10 @@ detect_change_using_change_analysis_raster
 __________________________________________
 .. autofunction:: arcgis.raster.functions.detect_change_using_change_analysis_raster
 
+dimensional_moving_statistics
+_____________________________
+.. autofunction:: arcgis.raster.functions.dimensional_moving_statistics
+
 divide
 ______
 .. autofunction:: arcgis.raster.functions.divide
@@ -327,6 +331,10 @@ interpolate_irregular_data
 __________________________
 .. autofunction:: arcgis.raster.functions.interpolate_irregular_data
 
+interpolate_raster_by_dimension
+_______________________________
+.. autofunction:: arcgis.raster.functions.interpolate_raster_by_dimension
+
 iron_oxide
 __________
 .. autofunction:: arcgis.raster.functions.iron_oxide
@@ -417,6 +425,10 @@ ___
 monitor_vegetation
 __________________
 .. autofunction:: arcgis.raster.functions.monitor_vegetation
+
+mosaic_rasters
+______________
+.. autofunction:: arcgis.raster.functions.mosaic_rasters
 
 msavi
 _____

@@ -4611,6 +4611,7 @@ class ImageryLayer(Layer):
         for_viz=False,
         process_as_multidimensional=None,
         build_transpose=None,
+        context=None,
         *,
         gis=None,
         future=False,
@@ -4648,6 +4649,65 @@ class ImageryLayer(Layer):
         build_transpose                          Optional bool, if set to true, transforms the output
                                                  multidimensional raster. Valid only if process_as_multidimensional
                                                  is set to True
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  context contains additional settings that affect task execution.
+
+                                                 context parameter overwrites values set through arcgis.env parameter
+
+                                                 This function has the following settings:
+
+                                                  - Extent (extent): A bounding box that defines the analysis area.
+
+                                                    Example:
+                                                        {"extent": {"xmin": -122.68,
+                                                        "ymin": 45.53,
+                                                        "xmax": -122.45,
+                                                        "ymax": 45.6,
+                                                        "spatialReference": {"wkid": 4326}}}
+
+                                                  - Output Spatial Reference (outSR): The output raster will be
+                                                    projected into the output spatial reference.
+
+                                                    Example:
+                                                        {"outSR": {spatial reference}}
+
+                                                  - Snap Raster (snapRaster): The output raster will have its
+                                                    cells aligned with the specified snap raster.
+
+                                                    Example:
+                                                        {'snapRaster': {'url': '<image_service_url>'}}
+
+                                                  - Mask (mask): Only cells that fall within the analysis
+                                                    mask will be considered in the operation.
+
+                                                    Example:
+                                                        {"mask": {"url": "<image_service_url>"}}
+
+                                                  - Cell Size (cellSize): The output raster will have the resolution
+                                                    specified by cell size.
+
+                                                    Example:
+                                                        {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                                  - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                    Raster Processing (CPU) service instances.
+
+                                                    Example:
+                                                        Syntax example with a specified number of processing instances:
+
+                                                        {"parallelProcessingFactor": "2"}
+
+                                                        Syntax example with a specified percentage of total
+                                                        processing instances:
+
+                                                        {"parallelProcessingFactor": "60%"}
+
+                                                  - Resampling Method (resamplingMethod): The output raster will be
+                                                    resampled to method specified.
+                                                    The supported values are: BILINEAR, NEAREST, CUBIC.
+
+                                                    Example:
+                                                        {'resamplingMethod': "NEAREST"}
         ------------------------------------     --------------------------------------------------------------------
         gis                                      Optional :class:`~arcgis.gis.GIS` object.
                                                  The GIS to be used for saving the
@@ -4760,6 +4820,7 @@ class ImageryLayer(Layer):
                             build_transpose=build_transpose,
                             gis=g,
                             future=future,
+                            context=context,
                             **kwargs,
                         )
                 except Exception:
@@ -4784,6 +4845,7 @@ class ImageryLayer(Layer):
         output_name=None,
         create_multipart_features=False,
         max_vertices_per_feature=None,
+        context=None,
         *,
         gis=None,
         future=False,
@@ -4837,6 +4899,27 @@ class ImageryLayer(Layer):
         ------------------------------------     --------------------------------------------------------------------
         max_vertices_per_feature                 Optional int. The vertex limit used to subdivide a polygon into smaller polygons.
         ------------------------------------     --------------------------------------------------------------------
+        context                                  context contains additional settings that affect task execution.
+
+                                                 context parameter overwrites values set through arcgis.env parameter
+
+                                                 This function has the following settings:
+
+                                                  - Extent (extent): A bounding box that defines the analysis area.
+
+                                                    Example:
+                                                        {"extent": {"xmin": -122.68,
+                                                        "ymin": 45.53,
+                                                        "xmax": -122.45,
+                                                        "ymax": 45.6,
+                                                        "spatialReference": {"wkid": 4326}}}
+
+                                                  - Output Spatial Reference (outSR): The output raster will be
+                                                    projected into the output spatial reference.
+
+                                                    Example:
+                                                        {"outSR": {spatial reference}}
+        ------------------------------------     --------------------------------------------------------------------
         gis                                      Optional GIS object. If not speficied, the currently active connection
                                                  is used.
         ------------------------------------     --------------------------------------------------------------------
@@ -4853,7 +4936,7 @@ class ImageryLayer(Layer):
             feature_layer = img_lyr.to_features(output_type="Polygon",
                                                 simplify = False,
                                                 output_name="new_feature_layer",
-                                                create_multipart_freatures = True,
+                                                create_multipart_features = True,
                                                 )
 
         """
@@ -4871,6 +4954,7 @@ class ImageryLayer(Layer):
             max_vertices_per_feature=max_vertices_per_feature,
             gis=g,
             future=future,
+            context=context,
             **kwargs,
         )
 
@@ -9193,10 +9277,14 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def catalog_path(self):
+        if self._datastore_raster:
+            return self._uri
         return self._url
 
     @property
     def path(self):
+        if self._datastore_raster:
+            return self._uri.rsplit("/", 1)[0]
         return self._url.rsplit("/", 1)[0]
 
     @property

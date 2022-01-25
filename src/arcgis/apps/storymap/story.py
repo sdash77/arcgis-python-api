@@ -966,7 +966,7 @@ class StoryMap(object):
             ]
             # Setting the keywords in a set will remove duplicates
             p = {
-                "keywords": list(set(keywords + new_keywords)),
+                "typeKeywords": list(set(keywords + new_keywords)),
                 "text": json.dumps(self._properties),
             }
             if title:
@@ -998,11 +998,12 @@ class StoryMap(object):
                     previously_published = True
                     keywords.remove(keyword)
                 elif (
-                    "smstatuspublished"
-                    or "smstatusdraft"
-                    or "smdraftresourceid"
-                    or "smeditorapp"
-                ) in keyword:
+                    "smstatuspublished" in keyword
+                    or "smstatusdraft" in keyword
+                    or "smdraftresourceid" in keyword
+                    or "smeditorapp" in keyword
+                    or "Copy Item" in keyword
+                ):
                     # Remove old keywords and will be replaced in new keywords
                     keywords.remove(keyword)
             if previously_published is True:
@@ -1026,7 +1027,7 @@ class StoryMap(object):
                     "smdraftresourceid:" + draft,
                 ]
             # Pass through set first to remove duplicates
-            p = {"keywords": list(set(keywords + new_keywords))}
+            p = {"typeKeywords": list(set(keywords + new_keywords))}
             if title:
                 p["title"] = title
             if tags:
@@ -1057,6 +1058,9 @@ class StoryMap(object):
         It is highly recommended that once the duplicate is created, open it in Story Maps
         builder to ensure the issue checker finds any issues before editing.
 
+        .. note::
+            Can be used with ArcGIS Online or with ArcGIS Enterprise starting 10.8.1
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1080,15 +1084,18 @@ class StoryMap(object):
         # get the item to copy
         item = self._gis.content.get(self._itemid)
 
-        # enterprise has no copy_item
-        if item._portal.is_arcgisonline is False:
-            return self._gis.content.clone_items(items=[item])
+        # enterprise copy_item starting at 10.8.1
+        if item._portal.is_arcgisonline is False and self._gis.version < [8, 2]:
+            clone = self._gis.content.clone_items(items=[item])
         else:
-            return item.copy_item(
+            clone = item.copy_item(
                 title="(Copy) " + self._item.title if title is None else title,
                 include_resources=True,
                 include_private=True,
             )
+        # save to update keywords
+        clone_story = StoryMap(clone.id)
+        return clone_story.save()
 
     # ----------------------------------------------------------------------
     def _delete(self, node_id, resource_id=None):

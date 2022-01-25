@@ -46,6 +46,8 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         AutoML,
         DeepSort,
         Pix2PixHD,
+        MaXDeepLab,
+        WNet_cGAN,
     )
 
     from ._object_tracker import ObjectTracker

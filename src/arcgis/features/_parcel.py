@@ -71,7 +71,8 @@ class ParcelFabricManager(object):
         """returns the Parcel Layer for the service"""
         if (
             "controllerDatasetLayers" in self._flc.properties
-            and "parcelLayerId" in self._flc.properties.controllerDatasetLayers
+            and "parcelLayerId"
+            in self._flc.properties.controllerDatasetLayers
         ):
             url = "%s/%s" % (
                 self._flc.url,
@@ -93,7 +94,9 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def assign_to_record(self, features, record, write_attribute, moment=None):
+    def assign_to_record(
+        self, features, record, write_attribute, moment=None
+    ):
         """
         Assigns the specified parcel features to the specified record. If
         parcel polygons are assigned, the record polygon will be updated to
@@ -108,8 +111,11 @@ class ParcelFabricManager(object):
         features                 Required List. The parcel features to assign to the specified record.
                                  Can be parcels, parcel polygons, parcel points, and parcel lines.
 
+                                 :Syntax:
 
-                                 :Syntax: ``parcelFeatures=[{"id":"<guid>","layerId":"<layerID>"},{...}]``
+                                 .. code-block:: python
+
+                                     >>> features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
 
         --------------------     --------------------------------------------------------------------
         record                   Required String. The record that will be assigned to the specified
@@ -126,7 +132,7 @@ class ParcelFabricManager(object):
                                  they do not want to use the current moment
         ====================     ====================================================================
 
-        :return: Boolean. True if successful otherwise False
+        :return: Boolean. `True` if successful otherwise `False`
 
         """
         url = "{base}/assignFeaturesToRecord".format(base=self._url)
@@ -148,7 +154,9 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def build(self, extent=None, moment=None, return_errors=False, record=None):
+    def build(
+        self, extent=None, moment=None, return_errors=False, record=None
+    ):
         """
         A `build` will fix known parcel fabric errors.
 
@@ -169,15 +177,24 @@ class ParcelFabricManager(object):
         extent                   Optional Envelope. The extent to build.
 
 
-                                 :Syntax: {"xmin":X min,"ymin": y min, "xmax": x max, "ymax": y max,
-                                         "spatialReference": <wkt of spatial reference>}
+                                 :Syntax:
+
+                                 .. code-block:: python
+
+                                     >>> extent={
+                                                 "xmin":X min,
+                                                 "ymin": y min,
+                                                 "xmax": x max,
+                                                 "ymax": y max,
+                                                 "spatialReference": {"wkid": <wkid_value>}
+                                                }
 
         --------------------     --------------------------------------------------------------------
         moment                   Optional String. This should only be specified by the client when
                                  they do not want to use the current moment
         --------------------     --------------------------------------------------------------------
-        return_errors            Optional Boolean. If True, a verbose response will be given if errors
-                                 occured.  The default is False.  **Deprecated**
+        return_errors            Optional Boolean. If `True`, a verbose response will be given if errors
+                                 occured.  The default is `False`.  **Deprecated**
         --------------------     --------------------------------------------------------------------
         record                   Optional String. Represents the record identifier (guid).  If a
                                  record guid is provided, only parcels associated to the record are
@@ -185,7 +202,7 @@ class ParcelFabricManager(object):
         ====================     ====================================================================
 
 
-        :return: Boolean. True if successful else False
+        :return: Boolean. `True` if successful else `False`
 
         """
         url = "{base}/build".format(base=self._url)
@@ -231,7 +248,12 @@ class ParcelFabricManager(object):
         parent_parcels              parent parcels that will be clipped into.
 
 
-                                    :Syntax:  ``parentParcels= <parcel (guid)+layer (name)...>``
+                                    :Syntax:
+
+                                    .. code-block:: python
+
+                                        >>> parent_parcels= <parcel (guid)+layer (name)...>
+
         -----------------------     --------------------------------------------------------------------
         clip_record                 Optional String. It is the GUID for the active legal record.
         -----------------------     --------------------------------------------------------------------
@@ -241,27 +263,32 @@ class ParcelFabricManager(object):
                                     parcel type.
 
 
-                                    :Syntax: ``clippingParcels= <"id" : "parcel guid", "layerId": "<layer id>"...>``
+                                    :Syntax: ``clipping_parcels= <"id" : "parcel guid", "layerId": "<layer id>"...>``
 
-                                    Example:
+                                    .. code-block:: python
 
-                                    ``[{"id":"{D01D3F47-5FE2-4E39-8C07-E356B46DBC78}","layerId":"16"}]``
+                                        # Example:
+                                        >>> clipping_parcels = [{"id":"{D01D3F47-5FE2-4E39-8C07-E356B46DBC78}","layerId":"16"}]``
 
-                                    **Either clipping_parcels or geometry is required.**
+                                    .. note::
+                                        Either `clipping_parcels` or `geometry` is required.
+
         -----------------------     --------------------------------------------------------------------
         geometry                    Optional Polygon. Allows for the clipping a parcel based on geometry instead of
                                     'clippingParcels' geometry. No parcel lineage is created.
 
-                                    **Either clipping_parcels or geometry is required.**
+                                    .. note::
+                                        Either `clipping_parcels` or `geometry` is required.
+
         -----------------------     --------------------------------------------------------------------
         moment                      Optional String. This should only be specified by the client when
                                     they do not want to use the current moment
         -----------------------     --------------------------------------------------------------------
         option                      Optional String. Represents the type of clip to perform:
 
-                                      -  PreserveArea - Preserve the areas that intersect and discard the remainder areas. (default)
-                                      -  DiscardArea - Discard the areas that intersect and preserve the remainder areas.
-                                      -  PreserveBothAreasSplit - Preserve both the intersecting and remainder areas.
+                                      -  `PreserveArea` - Preserve the areas that intersect and discard the remainder areas. (default)
+                                      -  `DiscardArea` - Discard the areas that intersect and preserve the remainder areas.
+                                      -  `PreserveBothAreasSplit` - Preserve both the intersecting and remainder areas.
         -----------------------     --------------------------------------------------------------------
         area_unit                   Optional String. Area units to be used when calculating the stated
                                     areas of the clipped parcels. The stated area of the clipped parcels
@@ -328,15 +355,22 @@ class ParcelFabricManager(object):
 
 
                                  :Syntax:
-                                 ``attributeOverrides = [{
-                                                            "type": "PropertySet",
-                                                            "propertySetItems": [
-                                                              <field name> ,
-                                                              <field value>
-                                                            ]
-                                                        }]``
 
-                                 * to set subtype, include subtype value in this list.
+                                 .. code-block:: python
+
+                                     >>> attributeOverrides = [
+                                                               {
+                                                                "type": "PropertySet",
+                                                                "propertySetItems": [
+                                                                                     <field name>,
+                                                                                     <field value>
+                                                                                    ]
+                                                               }
+                                                              ]
+
+                                 .. note::
+                                     To set subtype, include subtype value in this list.
+
         --------------------     --------------------------------------------------------------------
         child_name               Optional String. A descript of the child layer. **DEPRECATED**
         --------------------     --------------------------------------------------------------------
@@ -423,11 +457,11 @@ class ParcelFabricManager(object):
                                     moment.
         -----------------------     --------------------------------------------------------------------
         mark_historic               Optional Boolean. Mark the parent parcels historic. The default is
-                                    False.
+                                    `False`.
         -----------------------     --------------------------------------------------------------------
         use_source_attributes       Optional Boolean. If the source and the target line schema match,
                                     attributes from the parent parcel lines will be copied to the new
-                                    child parcel lines when it is set to  True. The default is False.
+                                    child parcel lines when it is set to  `True`. The default is `False`.
         -----------------------     --------------------------------------------------------------------
         use_polygon_attributes      Optional Boolean. Parameter representing whether to preserve and
                                     transfer attributes of the parent parcels to the generated seeds.
@@ -435,14 +469,17 @@ class ParcelFabricManager(object):
         attribute_overrides         Optional Dictionary. To set fields on the child parcel lines with a
                                     specific value. Uses a key/value pair of FieldName/Value.
 
-                                    :Syntax:
-                                    ``attributeOverrides = [{
-                                                                "type": "PropertySet",
-                                                                "propertySetItems": [
-                                                                  <field name> ,
-                                                                  <field value>
-                                                                ]
-                                                            }]``
+                                    Syntax:
+
+                                    .. code-block:: python
+
+                                        >>> attributeOverrides = [{"type": "PropertySet",
+                                                                   "propertySetItems": [
+                                                                                        <field name>,
+                                                                                        <field value>
+                                                                                       ]
+                                                                 }]
+
         -----------------------     --------------------------------------------------------------------
         parcel_subtype              Optional Integer. Represents the target parcel subtype.
         =======================     ====================================================================
@@ -474,7 +511,9 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def change_type(self, parcels, target_type, parcel_subtype=0, moment=None):
+    def change_type(
+        self, parcels, target_type, parcel_subtype=0, moment=None
+    ):
         """
 
         Changes a set of parcels to a new parcel type. It creates new
@@ -500,7 +539,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :return: Boolean. True if successful else False
+        :return: Boolean. `True` if successful else `False`
 
 
         """
@@ -542,7 +581,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :return: Boolean. True if success else False
+        :return: Boolean. `True` if success else `False`
 
 
         """
@@ -562,7 +601,9 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def update_history(self, features, record, moment=None, set_as_historic=False):
+    def update_history(
+        self, features, record, moment=None, set_as_historic=False
+    ):
         """
         Sets the specified parcel features to current or historic using the
         specified record. If setting current parcels as historic, the
@@ -578,7 +619,16 @@ class ParcelFabricManager(object):
                                     Can be parcels, parcel polygons, parcel points, and parcel lines.
 
 
-                                    :Syntax: ``features=[{"id":"<guid>","layerId":"<layerID>"},{...}]``
+                                    :Syntax:
+
+                                    .. code-block:: python
+
+                                        >>> features=[
+                                                      {"id":"<guid>",
+                                                       "layerId":"<layerID>"},
+                                                      {...}
+                                                     ]
+
         -----------------------     --------------------------------------------------------------------
         record                      Required String. A **GUID** representing the record that will be
                                     assigned to the features set as current or historic.
@@ -589,7 +639,7 @@ class ParcelFabricManager(object):
                                     moment.
         -----------------------     --------------------------------------------------------------------
         set_as_historic             Optional Boolean.  Boolean parameter representing whether to set the
-                                    features as historic (true). If false, features will be set as
+                                    features as historic (`True`). If `False`, features will be set as
                                     current.
         =======================     ====================================================================
 
@@ -653,7 +703,9 @@ class ParcelFabricManager(object):
         elif extent is None:
             pass
         elif not extent is None:
-            raise ValueError("Parameter `extent` must be None, Envelope or dict.")
+            raise ValueError(
+                "Parameter `extent` must be None, Envelope or dict."
+            )
         if moment is None:
             moment = int(time.time())
         gdb_version = self._version.properties.versionName
@@ -671,7 +723,9 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def duplicate(self, parcels, parcel_type, record, parcel_subtype=None, moment=None):
+    def duplicate(
+        self, parcels, parcel_type, record, parcel_subtype=None, moment=None
+    ):
         """
         `duplicate` allows for the cloning of parcels from a specific record.
 
@@ -691,7 +745,14 @@ class ParcelFabricManager(object):
 
                                     :Syntax:
 
-                                    ``[{"id":"<parcelguid>","layerId":"16"},{...}]``
+                                    .. code-block:: python
+
+                                        >>>> parcels=[
+                                                      {"id":"<parcelguid>",
+                                                       "layerId":"16"
+                                                      },
+                                                      {...}
+                                                     ]
 
         -----------------------     --------------------------------------------------------------------
         parcel_type                 Required Integer. The target parcel type.
@@ -746,44 +807,49 @@ class ParcelFabricManager(object):
         input parcels. A least-squares adjustment is a mathematical procedure that uses statistical
         analysis to estimate the most likely coordinates for connected points in a measurement network.
 
-        Use apply_least_squares_adjustment to apply the results of a least squares adjustment to parcel fabric feature classes.
+        Use :meth:`~arcgis.features._parcel.ParcelFabricManager.apply_least_squares_adjustment`
+        to apply the results of a least squares adjustment to parcel fabric feature classes.
 
         ============================    ====================================================================
         **Argument**                    **Description**
-        -----------------------         --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         analysis_type                   Optional string. Represents the type of least squares analysis that will be run on the input parcels.
 
-                                            CONSISTENCY_CHECK - A free-network least-squares adjustment will be run to check dimensions on
-                                            parcel lines for inconsistencies and mistakes. Fixed or weighted control points will not be
-                                            used by the adjustment.
+                                        * CONSISTENCY_CHECK - A free-network least-squares adjustment will be run to check dimensions on
+                                          parcel lines for inconsistencies and mistakes. Fixed or weighted control points will not be
+                                          used by the adjustment.
 
-                                            WEIGHTED_LEAST_SQUARES - A weighted least-squares adjustment will be run to compute updated
-                                            coordinates for parcel points. The parcels being adjusted should connect to at least two fixed
-                                            or weighted control points.
+                                        * WEIGHTED_LEAST_SQUARES - A weighted least-squares adjustment will be run to compute updated
+                                          coordinates for parcel points. The parcels being adjusted should connect to at least two fixed
+                                          or weighted control points.
 
                                         The default value is CONSISTENCY_CHECK.
-        -----------------------         --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         convergence_tolerance           Optional float. Represents the maximum coordinate shift expected after iterating the least squares adjustment. A least
                                         squares adjustment is run repeatedly (in iterations) until the solution converges. The solution is
                                         considered converged when maximum coordinate shift encountered becomes less than the specified convergence
                                         tolerance.
 
                                         The default value is 0.05 meters or 0.164 feet.
-        -----------------------         --------------------------------------------------------------------
+        ----------------------------    --------------------------------------------------------------------
         parcel_features                 Optional list. Represents the input parcels that will be analyzed by a least squares adjustment.
 
 
-                                        :Syntax: ``parcel_features = [{"id":"<guid>","layerId":"<layerID>"},{...}]``
+                                        :Syntax:
+
+                                        .. code-block:: python
+
+                                            >>> parcel_features = [{"id":"<guid>","layerId":"<layerID>"},{...}]
 
                                         If None, the method will analyze the entire parcel fabric.
-        -----------------------         --------------------------------------------------------------------
-        future                          Optional boolean. If true, the request is processed as an asynchronous job and a URL is returned that points a location
+        ----------------------------    --------------------------------------------------------------------
+        future                          Optional boolean. If `True`, the request is processed as an asynchronous job and a URL is returned that points a location
                                         displaying the status of the job.
 
-                                        The default is False.
+                                        The default is `False`.
         ============================    ====================================================================
 
-        :return: Boolean. True if successful else False
+        :return: Boolean. `True` if successful else `False`
 
         """
         url = "{base}/analyzeByLeastSquaresAdjustment".format(base=self._url)
@@ -824,7 +890,8 @@ class ParcelFabricManager(object):
         in the AdjustmentLines and AdjustmentPoints feature classes are applied to the corresponding parcel line, connection line,
         and parcel fabric point feature classes.
 
-        Use analyze_least_squares_adjustment to run a least-squares analysis on parcels and store the results in adjustment feature classes.
+        Use :meth:`~arcgis.features._parcel.ParcelFabricManager.analyze_least_squares_adjustment`
+        to run a least-squares analysis on parcels and store the results in adjustment feature classes.
 
         ====================     ====================================================================
         **Argument**             **Description**
@@ -840,15 +907,15 @@ class ParcelFabricManager(object):
                                   Error Ellipse Direction fields will be updated with the values stored in the same fields in the AdjustmentPoints
                                   feature class.
 
-                                  The default is True
+                                  The default is `True`
         --------------------     --------------------------------------------------------------------
-        future                   Optional boolean. If true, the request is processed as an asynchronous job and a URL is returned that points a location
+        future                   Optional boolean. If `True`, the request is processed as an asynchronous job and a URL is returned that points a location
                                  displaying the status of the job.
 
-                                 The default is False.
+                                 The default is `False`.
         ====================     ====================================================================
 
-        :return: Boolean. True if successful else False
+        :return: Boolean. `True` if successful else `False`
 
         """
 
@@ -911,10 +978,10 @@ class ParcelFabricManager(object):
                                     record being used for the divide.
                                     If missing, no parcel history is created.
         --------------------------- --------------------------------------------------------------------
-        divide_option               Required String. The type of division to be performed:
-                                        - ProportionalArea
-                                        - EqualArea
-                                        - EqualWidth
+        divide_option               Required String. The type of division to be performed.
+                                        - `ProportionalArea`
+                                        - `EqualArea`
+                                        - `EqualWidth`
         --------------------------- --------------------------------------------------------------------
         divide_number_of_parts      Required Integer. The number parts into which the parcel will
                                     be divided.
@@ -930,7 +997,7 @@ class ParcelFabricManager(object):
         --------------------------- --------------------------------------------------------------------
         divide_left_side            Required Boolean. Parameter indicating if area being divided is
                                     starting from the leftmost edge of the parcel. Any remainder area
-                                    will be to the right of the divided parts. If false, the area being
+                                    will be to the right of the divided parts. If `False`, the area being
                                     divided starts from the rightmost edge of the parcel and any remainder
                                     area will be to the left of the divided parts.
 
@@ -950,12 +1017,17 @@ class ParcelFabricManager(object):
                                         default value of `False` will be applied.
         --------------------------- --------------------------------------------------------------------
         default_area_unit           Required Integer. The units in which area will be stored. The parameter
-                                    is specified as a domain code from the PF_AreaUnits parcel fabric
+                                    is specified as a domain code from the `PF_AreaUnits` parcel fabric
                                     domain.
 
-                                    Example:
-                                        Square feet: `defaultAreaUnit=109405`
-                                        Square meters: `defaultAreaUnit=109404`
+                                    .. code-block:: python
+
+                                        #Example Usage:
+
+                                        #Square feet
+                                        >>> default_area_unit=109405
+                                        #Square meters
+                                        >>> default_area_unit=109404
 
         --------------------------- --------------------------------------------------------------------
         divide_cogo_line_bearing    Optional Float. Parameter representing the COGO direction

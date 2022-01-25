@@ -12,7 +12,11 @@ import time
 import concurrent.futures
 import six
 from arcgis._impl.common import _utils
-from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
+from arcgis._impl.common._filters import (
+    StatisticFilter,
+    TimeFilter,
+    GeometryFilter,
+)
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
 from arcgis.features._async import EditFeatureJob
@@ -403,7 +407,10 @@ class FeatureLayer(Layer):
 
             if token is not None:
                 url = "{}/{}/attachments/{}?token={}".format(
-                    self.url, row[1][object_id_field], row[1]["ID"], self._con.token
+                    self.url,
+                    row[1][object_id_field],
+                    row[1]["ID"],
+                    self._con.token,
                 )
             else:
                 url = "{}/{}/attachments/{}".format(
@@ -888,7 +895,10 @@ class FeatureLayer(Layer):
             )
             for ids in chunks(oid_info["objectIds"], max_records):
                 ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))
+                sql = "%s in (%s)" % (
+                    oid_info["objectIdFieldName"],
+                    ",".join(ids),
+                )
                 params["where"] = sql
                 jobs[sql] = self._con.post(url, params)
             for where, submit_job in jobs.items():
@@ -1716,7 +1726,12 @@ class FeatureLayer(Layer):
         if len(kwargs) > 0:
             for key, val in kwargs.items():
                 if (
-                    key in ("returnCountOnly", "returnExtentOnly", "returnIdsOnly")
+                    key
+                    in (
+                        "returnCountOnly",
+                        "returnExtentOnly",
+                        "returnIdsOnly",
+                    )
                     and val
                 ):
                     # If these keys are passed in as kwargs instead of parameters, set return_all_records
@@ -1794,7 +1809,11 @@ class FeatureLayer(Layer):
                 df.spatial._meta.source = self
             return df
         elif record_count <= max_records:
-            if supports_pagination and record_count > 0:
+            if (
+                supports_pagination
+                and record_count > 0
+                and return_distinct_values == False
+            ):
                 params["resultRecordCount"] = record_count
             if as_df:
                 import pandas as pd
@@ -1813,7 +1832,9 @@ class FeatureLayer(Layer):
                     try:
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
-                                df[fld] / 1000, infer_datetime_format=True, unit="s"
+                                df[fld] / 1000,
+                                infer_datetime_format=True,
+                                unit="s",
                             )
                     except:
                         if fld in df.columns:
@@ -1835,7 +1856,10 @@ class FeatureLayer(Layer):
             params["returnIdsOnly"] = False
             for ids in chunks(oid_info["objectIds"], max_records):
                 ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))
+                sql = "%s in (%s)" % (
+                    oid_info["objectIdFieldName"],
+                    ",".join(ids),
+                )
                 params["where"] = sql
                 if not as_df:
                     records = self._query(url, params, raw=as_raw)
@@ -1895,11 +1919,15 @@ class FeatureLayer(Layer):
                 if fld in df.columns:
                     try:
                         df[fld] = pd.to_datetime(
-                            df[fld] / 1000, infer_datetime_format=True, unit="s"
+                            df[fld] / 1000,
+                            infer_datetime_format=True,
+                            unit="s",
                         )
                     except:
                         df[fld] = pd.to_datetime(
-                            df[fld], infer_datetime_format=True, errors="coerce"
+                            df[fld],
+                            infer_datetime_format=True,
+                            errors="coerce",
                         )
             return df
         return result
@@ -2181,12 +2209,12 @@ class FeatureLayer(Layer):
                                        source_table_name=  "Building"
         ------------------------   --------------------------------------------------------------------
         field_mappings             Optional list. Used to map source data to a destination layer.
-                                   Syntax: fieldMappings=[{"name" : <"targetName">,
+                                   Syntax: field_mappings=[{"name" : <"targetName">,
                                                            "sourceName" : < "sourceName">}, ...]
                                    .. code-block:: python
 
                                        # Example usage:
-                                       fieldMappings=[{"name" : "CountyID",
+                                       field_mappings=[{"name" : "CountyID",
                                                        "sourceName" : "GEOID10"}]
         ------------------------   --------------------------------------------------------------------
         edits                      Optional string. Only feature collection json is supported. Append
@@ -2256,7 +2284,7 @@ class FeatureLayer(Layer):
             # Usage Example
 
             >>> feature_layer.append(source_table_name= "Building",
-                                    field_Mappings=[{"name" : "CountyID",
+                                    field_mappings=[{"name" : "CountyID",
                                                     "sourceName" : "GEOID10"}],
                                     upsert = True,
                                     append_fields = ["fieldName1", "fieldName2",...., fieldname22],
@@ -2477,7 +2505,8 @@ class FeatureLayer(Layer):
             executor = concurrent.futures.ThreadPoolExecutor(1)
             res = self._con.post(path=delete_url, postdata=params)
             future = executor.submit(
-                self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
+                self._status_via_url,
+                *(self._con, res["statusUrl"], {"f": "json"}),
             )
             executor.shutdown(False)
             return future
@@ -2704,7 +2733,8 @@ class FeatureLayer(Layer):
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
             params["adds"] = json.dumps(
-                adds[cols].spatial.__feature_set__["features"], default=_date_handler
+                adds[cols].spatial.__feature_set__["features"],
+                default=_date_handler,
             )
         elif (
             HAS_PANDAS
@@ -2752,7 +2782,8 @@ class FeatureLayer(Layer):
             HAS_PANDAS and isinstance(updates, pd.DataFrame) and _is_geoenabled(updates)
         ):
             params["updates"] = json.dumps(
-                updates.spatial.__feature_set__["features"], default=_date_handler
+                updates.spatial.__feature_set__["features"],
+                default=_date_handler,
             )
         elif (
             HAS_PANDAS
@@ -2838,7 +2869,8 @@ class FeatureLayer(Layer):
                 executor = concurrent.futures.ThreadPoolExecutor(1)
                 res = self._con.post_multipart(path=edit_url, postdata=params)
                 future = executor.submit(
-                    self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
+                    self._status_via_url,
+                    *(self._con, res["statusUrl"], {"f": "json"}),
                 )
                 executor.shutdown(False)
 
@@ -2984,7 +3016,8 @@ class FeatureLayer(Layer):
                 postdata=params,
             )
             future = executor.submit(
-                self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
+                self._status_via_url,
+                *(self._con, res["statusUrl"], {"f": "json"}),
             )
             executor.shutdown(False)
             return future
@@ -3609,7 +3642,11 @@ class Table(FeatureLayer):
                 df.spatial._meta.source = self
             return df
         elif record_count <= max_records:
-            if supports_pagination and record_count > 0:
+            if (
+                supports_pagination
+                and record_count > 0
+                and return_distinct_values == False
+            ):
                 params["resultRecordCount"] = record_count
             if as_df:
                 import pandas as pd
@@ -3628,7 +3665,9 @@ class Table(FeatureLayer):
                     try:
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
-                                df[fld] / 1000, infer_datetime_format=True, unit="s"
+                                df[fld] / 1000,
+                                infer_datetime_format=True,
+                                unit="s",
                             )
                     except:
                         if fld in df.columns:
@@ -3650,7 +3689,10 @@ class Table(FeatureLayer):
             params["returnIdsOnly"] = False
             for ids in chunks(oid_info["objectIds"], max_records):
                 ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))
+                sql = "%s in (%s)" % (
+                    oid_info["objectIdFieldName"],
+                    ",".join(ids),
+                )
                 params["where"] = sql
                 if not as_df:
                     records = self._query(url, params, raw=as_raw)
@@ -3752,7 +3794,9 @@ class FeatureLayerCollection(_GISResource):
         self._populate_layers()
         self._admin = None
         try:
-            from arcgis.gis.server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import (
+                AdminServiceGen,
+            )
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:
@@ -4603,7 +4647,10 @@ class FeatureLayerCollection(_GISResource):
             if wait:
                 export_job = self._con.post(path=url, postdata=params)
                 status = self._replica_status(url=export_job["statusUrl"])
-                while status["status"] not in ("Completed", "CompletedWithErrors"):
+                while status["status"] not in (
+                    "Completed",
+                    "CompletedWithErrors",
+                ):
                     if status["status"] == "Failed":
                         return status
                     # wait before checking again
@@ -4677,7 +4724,8 @@ class FeatureLayerCollection(_GISResource):
                 executor = concurrent.futures.ThreadPoolExecutor(1)
                 res = self._con.post(path=url, postdata=params)
                 future = executor.submit(
-                    self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
+                    self._status_via_url,
+                    *(self._con, res["statusUrl"], {"f": "json"}),
                 )
                 executor.shutdown(False)
                 return future
