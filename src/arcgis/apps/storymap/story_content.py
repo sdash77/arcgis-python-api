@@ -215,7 +215,7 @@ class Image(object):
         return self._story._delete(self.node, self.resource_node)
 
     # ----------------------------------------------------------------------
-    def _add_image(self, caption=None, alt_text=None, display=None, story=None):
+    def _add_image(self, caption="", alt_text=None, display=None, story=None):
         # Assign the story
         self._story = story
         # Make an add resource call if not url
@@ -538,7 +538,7 @@ class Video(object):
     # ----------------------------------------------------------------------
     def _add_video(
         self,
-        caption=None,
+        caption="",
         alt_text=None,
         display=None,
         story=None,
