@@ -2506,137 +2506,6 @@ class UserManager(object):
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def report(
-        self,
-        report_type: str,
-        start_time: Optional[datetime],
-        *,
-        duration: Optional[str] = "weekly",
-    ) -> Item:
-        """
-
-        The reports operation is to generate the reports of the overall
-        usage of the organizations. Reports define organization usage
-        metrics in one place for the day, week, or month. Administrators
-        can monitor who is using which services, consuming how much credits
-        and storage within certain time period. Reports also include
-        current state of the organization such as number of items, groups,
-        users, level 1s vs level 2s, App license assignments and public
-        items.
-
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        report_type       Required String. The type of organizational report to
-                          generated. The allowed report types are: `credits`,
-                          `content`, `users`, and `activity`.
-        ----------------  --------------------------------------------------------
-        start_time        Required Datetime. The day on which the report is
-                          generated. Each report must start on a Sunday or Monday
-                          for the start date for weekly and monthly reports. All
-                          datetimes must be in GMT timezone. Passing in `None` for
-                          the `start_time` will use the closest Sunday to the date
-                          for weekly and monthly reports.  For daily reports, the
-                          current day/time will be used in GMT.
-        ----------------  --------------------------------------------------------
-        duration          Optional String. The time frame on which the reports are
-                          ran.  The allowed values are: `monthly`, `weekly`,
-                          `daily`. For `activity` and `credits` a `start_time`
-                          is required.
-        ================  ========================================================
-
-
-        .. code-block:: python
-
-            # Usage Example
-
-            import datetime as _dt
-            seven_days_ago = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=7)
-            item = user.report("content",
-                               seven_days_ago,
-                               duration="weekly")
-
-
-        :return: Item
-
-        """
-
-        import datetime as _dt
-
-        assert report_type in ["users", "credits", "activity", "content"]
-        assert duration in ["monthly", "weekly", "daily"]
-
-        def weeknumber(dayname):
-            if dayname == "Monday":
-                return -1
-            if dayname == "Tuesday":
-                return -2
-            if dayname == "Wednesday":
-                return -3
-            if dayname == "Thursday":
-                return -4
-            if dayname == "Friday":
-                return -5
-            if dayname == "Saturday":
-                return -6
-            if dayname == "Sunday":
-                return 0
-
-        if self._gis._portal.is_arcgisonline == False:
-            raise Exception("The report operation only works on ArcGIS Online.")
-        if report_type.lower() != "activity" and duration == "daily":
-            raise ValueError("Daily only applies to activity report type.")
-        if (
-            start_time
-            and isinstance(start_time, _dt.datetime)
-            and start_time.date().today().strftime("%A") in ["Monday", "Sunday"]
-            and duration in ["weekly", "monthly"]
-        ):
-            raise ValueError(
-                "Invalid start_time. Weekly report must start from Sunday or Monday."
-            )
-        elif start_time and isinstance(start_time, _dt.datetime):
-            start_time = int(start_time.timestamp() * 1000)
-        elif isinstance(start_time, (int, float)):
-            start_time = int(start_time)
-        elif start_time is None and duration in ["weekly", "monthly"]:
-            now = _dt.datetime.now(_dt.timezone.utc)
-            dow = weeknumber(now.strftime("%A"))  # day of the week
-            start_time = now + _dt.timedelta(days=dow)
-            start_time = int(start_time.timestamp() * 1000)
-        elif start_time is None and duration in ["daily"]:
-            start_time = _dt.datetime.now(_dt.timezone.utc)
-        params = {
-            "f": "json",
-            "reportType": "org",
-            "reportSubType": report_type,
-            "timeDuration": duration,
-            "startTime": start_time,
-        }
-
-        url = "%s/sharing/rest/community/users/%s/report" % (
-            self._gis._url,
-            self._user_id,
-        )
-        res = self._gis._con.post(url, params)
-        time.sleep(2)
-        try:
-            item = Item(self._gis, res["itemId"])
-            status = item.status()
-            counter = 1
-            while not status["status"] in ["completed", "failed"]:
-                status = item.status()
-                time.sleep(counter)
-                counter += 1
-                if counter > 5:
-                    counter = 5
-            return item
-        except Exception as e:
-            raise e
-
-        return item
-
-    # ----------------------------------------------------------------------
     @property
     def user_settings(self):
         """
@@ -9301,6 +9170,137 @@ class User(dict):
         )
         params = {"f": "json"}
         return self._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def report(
+        self,
+        report_type: str,
+        start_time: Optional[datetime],
+        *,
+        duration: Optional[str] = "weekly",
+    ) -> Item:
+        """
+
+        The reports operation is to generate the reports of the overall
+        usage of the organizations. Reports define organization usage
+        metrics in one place for the day, week, or month. Administrators
+        can monitor who is using which services, consuming how much credits
+        and storage within certain time period. Reports also include
+        current state of the organization such as number of items, groups,
+        users, level 1s vs level 2s, App license assignments and public
+        items.
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        report_type       Required String. The type of organizational report to
+                          generated. The allowed report types are: `credits`,
+                          `content`, `users`, and `activity`.
+        ----------------  --------------------------------------------------------
+        start_time        Required Datetime. The day on which the report is
+                          generated. Each report must start on a Sunday or Monday
+                          for the start date for weekly and monthly reports. All
+                          datetimes must be in GMT timezone. Passing in `None` for
+                          the `start_time` will use the closest Sunday to the date
+                          for weekly and monthly reports.  For daily reports, the
+                          current day/time will be used in GMT.
+        ----------------  --------------------------------------------------------
+        duration          Optional String. The time frame on which the reports are
+                          ran.  The allowed values are: `monthly`, `weekly`,
+                          `daily`. For `activity` and `credits` a `start_time`
+                          is required.
+        ================  ========================================================
+
+
+        .. code-block:: python
+
+            # Usage Example
+
+            import datetime as _dt
+            seven_days_ago = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=7)
+            item = user.report("content",
+                               seven_days_ago,
+                               duration="weekly")
+
+
+        :return: Item
+
+        """
+
+        import datetime as _dt
+
+        assert report_type in ["users", "credits", "activity", "content"]
+        assert duration in ["monthly", "weekly", "daily"]
+
+        def weeknumber(dayname):
+            if dayname == "Monday":
+                return -1
+            if dayname == "Tuesday":
+                return -2
+            if dayname == "Wednesday":
+                return -3
+            if dayname == "Thursday":
+                return -4
+            if dayname == "Friday":
+                return -5
+            if dayname == "Saturday":
+                return -6
+            if dayname == "Sunday":
+                return 0
+
+        if self._gis._portal.is_arcgisonline == False:
+            raise Exception("The report operation only works on ArcGIS Online.")
+        if report_type.lower() != "activity" and duration == "daily":
+            raise ValueError("Daily only applies to activity report type.")
+        if (
+            start_time
+            and isinstance(start_time, _dt.datetime)
+            and start_time.date().today().strftime("%A") in ["Monday", "Sunday"]
+            and duration in ["weekly", "monthly"]
+        ):
+            raise ValueError(
+                "Invalid start_time. Weekly report must start from Sunday or Monday."
+            )
+        elif start_time and isinstance(start_time, _dt.datetime):
+            start_time = int(start_time.timestamp() * 1000)
+        elif isinstance(start_time, (int, float)):
+            start_time = int(start_time)
+        elif start_time is None and duration in ["weekly", "monthly"]:
+            now = _dt.datetime.now(_dt.timezone.utc)
+            dow = weeknumber(now.strftime("%A"))  # day of the week
+            start_time = now + _dt.timedelta(days=dow)
+            start_time = int(start_time.timestamp() * 1000)
+        elif start_time is None and duration in ["daily"]:
+            start_time = _dt.datetime.now(_dt.timezone.utc)
+        params = {
+            "f": "json",
+            "reportType": "org",
+            "reportSubType": report_type,
+            "timeDuration": duration,
+            "startTime": start_time,
+        }
+
+        url = "%s/sharing/rest/community/users/%s/report" % (
+            self._gis._url,
+            self._user_id,
+        )
+        res = self._gis._con.post(url, params)
+        time.sleep(2)
+        try:
+            item = Item(self._gis, res["itemId"])
+            status = item.status()
+            counter = 1
+            while not status["status"] in ["completed", "failed"]:
+                status = item.status()
+                time.sleep(counter)
+                counter += 1
+                if counter > 5:
+                    counter = 5
+            return item
+        except Exception as e:
+            raise e
+
+        return item
 
     # ----------------------------------------------------------------------
     @property
