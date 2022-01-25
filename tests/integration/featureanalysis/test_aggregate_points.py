@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
@@ -1790,7 +1791,7 @@ data = [
 polygon_data = "https://earthworks.stanford.edu/catalog/stanford-dc841dq9031"
 
 
-profiles = ["your_online_profile", "ent11"] #enterprise must be 10.9.1+
+profiles = ["your_online_profile", "ent11"]  # enterprise must be 10.9.1+
 
 
 class TestAggregatePoints(unittest.TestCase):
@@ -1815,7 +1816,7 @@ class TestAggregatePoints(unittest.TestCase):
             polygon_layer = polygon_item.layers[0]
             assert isinstance(point_layer, FeatureLayer)
             assert isinstance(polygon_layer, FeatureLayer)
-            
+
             # create layer that will be overwritten
             test_id = str(datetime.datetime.now().microsecond)
             output_name = "overwrite_test_agg_" + test_id
