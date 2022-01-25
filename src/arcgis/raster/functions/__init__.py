@@ -11912,11 +11912,11 @@ def dimensional_moving_statistics(
     dimension=None,
     backward_window=1,
     forward_window=1,
+    nodata_handling="DATA",
     statistics_type="MEAN",
     percentile_value=90,
     percentile_interpolation_type="AUTO_DETECT",
     circular_wrap_value=360,
-    nodata_handling="DATA",
 ):
     """
     The dimensional_moving_statistics function calculates statistics over a moving window
@@ -11949,6 +11949,19 @@ def dimensional_moving_statistics(
                                          from 1 to 100. The default value is 1.
 
                                          The unit of this parameter is slice.
+    --------------------------------     --------------------------------------------------------------------
+    nodata_handling                      Optional string. Specifies how NoData values will be handled by the 
+                                         statistic calculation.
+
+                                            - DATA - NoData values in the value input will be ignored in the \
+                                            results of the defined window that they fall within. This is the \
+                                            default.
+
+                                            - NODATA - Output values will be NoData if any NoData values are \
+                                            found in the input within the defined window.
+
+                                            - FILL_NODATA - NoData cell values will be replaced using the selected \
+                                            statistic on the values within the defined window.
     --------------------------------     --------------------------------------------------------------------
     statistics_type                      Optional string. Statistic type to be calculated.
 
@@ -12012,19 +12025,6 @@ def dimensional_moving_statistics(
 
                                          This parameter is only supported if the ``statistics_type`` parameter is
                                          set to CIRCULAR_MEAN.
-    --------------------------------     --------------------------------------------------------------------
-    nodata_handling                      Optional string. Specifies how NoData values will be handled by the 
-                                         statistic calculation.
-
-                                            - DATA - NoData values in the value input will be ignored in the \
-                                            results of the defined window that they fall within. This is the \
-                                            default.
-
-                                            - NODATA - Output values will be NoData if any NoData values are \
-                                            found in the input within the defined window.
-
-                                            - FILL_NODATA - NoData cell values will be replaced using the selected \
-                                            statistic on the values within the defined window.
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
