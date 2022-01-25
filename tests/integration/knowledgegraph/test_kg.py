@@ -12,7 +12,13 @@ try:
     from arcgis.graph import KnowledgeGraph
 
     url = "https://dev0018783.esri.com/server/rest/services/Hosted/KGS_PanamaPapers/KnowledgeGraphServer"
-    gis = GIS("https://dev0018783.esri.com/portal/", "publisher2", "esri.agp123")
+    gis = GIS(
+        "https://dev0018783.esri.com/portal/",
+        "publisher2",
+        "esri.agp123",
+        verify_cert=False,
+        trust_env=True,
+    )
     kg = KnowledgeGraph(url, gis=gis)
     print("Logged in as: " + gis.properties.user.username)
     SKIP = False
@@ -40,6 +46,10 @@ class TestKGMethods(unittest.TestCase):
         assert isinstance(result, (list, tuple))
         if len(result) > 0:
             assert isinstance(result[0], dict)
+
+    def test_search(self):
+        search = kg.search("China")
+        assert isinstance(search, list)
 
     def test_validate_import(self):
         kg._validate_import()

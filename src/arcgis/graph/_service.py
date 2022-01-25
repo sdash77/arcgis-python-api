@@ -47,6 +47,48 @@ class KnowledgeGraph:
             self._properties = _isd.InsensitiveDict(resp)
         return self._properties
 
+    def search(self, query: str, category: str = "both") -> List[dict]:
+        """
+        category allowed values: both, entity, relationship
+
+        :return: List[dict]
+        """
+        url = self._url + "/graph/search"
+        cat_lu = {
+            "both": _kgparser.esriNamedTypeCategory.both,
+            "relationships": _kgparser.esriNamedTypeCategory.relationship,
+            "entities": _kgparser.esriNamedTypeCategory.entity,
+        }
+        assert str(category).lower() in cat_lu.keys()
+        r_enc = _kgparser.GraphSearchRequestEncoder()
+        r_enc.search_query = query
+        r_enc.return_geometry = True
+        r_enc.max_num_results = self.properties["maxRecordCount"]
+        r_enc.type_category_filter = cat_lu[category.lower()]
+        r_enc.encode()
+        assert r_enc.get_encoding_result().error.error_code == 0
+        query_dec = _kgparser.GraphQueryDecoder()
+        count = 0
+
+        session = self._gis._con._session
+        request = session.post(
+            url=url,
+            params={"f": "pbf"},
+            data=r_enc.get_encoding_result().byte_buffer,
+            stream=True,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+        content_length = request.headers.get("Content-Length", None)
+        rows = []
+        query_dec = _kgparser.GraphQueryDecoder()
+        for chunk in request.iter_content(8192):
+            did_push = query_dec.push_buffer(chunk)
+            count = 0
+            while query_dec.next_row():
+                rows.extend(query_dec.get_current_row())
+                count += 1
+        return rows
+
     def query(self, query: str) -> List[dict]:
         """
         Queries the Knowledge Graph
