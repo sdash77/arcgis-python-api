@@ -6,9 +6,11 @@ import sys
 # sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7538\src")
 import unittest
 from arcgis.gis import GIS
-from arcgis.graph import KnowledgeGraph
+
 
 try:
+    from arcgis.graph import KnowledgeGraph
+
     url = "https://dev0018783.esri.com/server/rest/services/Hosted/KGS_PanamaPapers/KnowledgeGraphServer"
     gis = GIS("https://dev0018783.esri.com/portal/", "publisher2", "esri.agp123")
     kg = KnowledgeGraph(url, gis=gis)
@@ -16,6 +18,17 @@ try:
     SKIP = False
 except:
     SKIP = True
+
+
+@unittest.skipIf(SKIP, "Cannot login or get service")
+class TestImport(unittest.TestCase):
+    def test_import(self):
+        from arcgis.graph import KnowledgeGraph
+
+    def test_search(self):
+        items = gis.content.search('type:Knowledge Graph')
+        if len(items) > 0:
+            assert isinstance(KnowledgeGraph.fromitem(items[0]), KnowledgeGraph)
 
 
 @unittest.skipIf(SKIP, "Cannot login or get service")

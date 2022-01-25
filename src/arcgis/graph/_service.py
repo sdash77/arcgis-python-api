@@ -2,13 +2,15 @@ import datetime as _dt
 from arcgis.auth.tools import LazyLoader
 
 try:
-    import _arcgisknowledge as _kgparser
+    from arcgis.graph import _arcgisknowledge as _kgparser
 
     HAS_KG = True
 except ImportError as e:
     HAS_KG = False
 _gis = LazyLoader("arcgis.gis")
 _isd = LazyLoader("arcgis._impl.common._isd")
+from typing import List
+import platform
 
 
 class KnowledgeGraph:
@@ -22,8 +24,20 @@ class KnowledgeGraph:
         self._gis = gis
 
     def _validate_import(self):
-        if HAS_KG == False:
+        p = platform.platform().lower().find("windows") > -1
+        if HAS_KG == False and p:
             raise ImportError("Missing _arcgisknowledge library.")
+        elif HAS_KG == False and p == False:
+            raise ImportError("KnowledgeGraph is currently only supported on Windows.")
+
+    @classmethod
+    def fromitem(cls, item):
+        """Returns the KnowledgeGraph Service from an Item"""
+        if item.type != "Knowledge Graph":
+            raise ValueError(
+                "Invalid item type, please provide a 'Knowledge Graph' item."
+            )
+        return cls(url=item.url, gis=item._gis)
 
     @property
     def properties(self) -> _isd.InsensitiveDict:
