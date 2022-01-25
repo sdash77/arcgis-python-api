@@ -4179,7 +4179,7 @@ class ImageryLayer(Layer):
         .. code-block:: python
 
             # Example Usage: Compute the cache info for a given spatial reference.
-            
+
             cache_info_op = img_lyr.compute_cache_info(out_sr=3857)
 
         """
@@ -4210,15 +4210,21 @@ class ImageryLayer(Layer):
                               will determine the raster and image coordinate system to use in a
                               mosaic dataset.
         -----------------     --------------------------------------------------------------------
-        point                 Optional dictionary. The point geometry that defines the reference
-                              point of rotation to compute the angle direction. By default, takes
-                              the centroid of image as point of rotation.
+        point                 Optional dictionary or :class:`~arcgis.geometry.Point` object.
+                              The point geometry that defines the reference point of rotation to 
+                              compute the angle direction. By default, takes the centroid of image
+                              as point of rotation.
         -----------------     --------------------------------------------------------------------
         angle_name            Optional string. Specifies the name (or names) of the rotation
                               angle to be computed.
-                              Possible options are
-                              - "up"
-                              - "north"
+
+                              Possible options are: 
+
+                              - "up": The computed angle after rotating the map so the top of the image is always \
+                              oriented to the direction of the sensor when it acquired the image.
+                              - "north": The computed angle after rotating so the top of the image is always \
+                              toward north.
+                              
                               You can specify multiple angle names by separating the names with a
                               comma. By default, angles are computed for all directions.
         -----------------     --------------------------------------------------------------------
@@ -4231,9 +4237,17 @@ class ImageryLayer(Layer):
         .. code-block:: python
 
             # Example Usage: Compute angles for a given point and rotation angle.
+
+            my_point = {
+                        "x": 7952916.33, 
+                        "y": 3869525.96,
+                        "spatialReference": {"wkid": 3857}
+                       }
+
+            my_point_object = Point(my_point)
             
             compute_angles_op = img_lyr.compute_angles(raster_id=1,
-                                                       point={"x": 7953660.35, "y": 3880828.27},
+                                                       point=my_point_object,
                                                        angle_name="north",
                                                        spatial_reference={"wkid": 54004})
 
