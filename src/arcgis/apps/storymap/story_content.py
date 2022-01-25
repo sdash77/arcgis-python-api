@@ -1024,7 +1024,7 @@ class Embed(object):
         return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
-    def _add_link(self, caption=None, alt_text=None, display="card", story=None):
+    def _add_link(self, caption="", alt_text=None, display="card", story=None):
         self._story = story
         sections = _parse.urlparse(self._path)
         # Create embed node, no resource node needed
