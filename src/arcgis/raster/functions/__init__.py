@@ -12016,15 +12016,15 @@ def dimensional_moving_statistics(
     nodata_handling                      Optional string. Specifies how NoData values will be handled by the 
                                          statistic calculation.
 
-                                            - DATA - NoData values in the value input will be ignored in the 
-                                            results of the defined window that they fall within. This is the 
+                                            - DATA - NoData values in the value input will be ignored in the \
+                                            results of the defined window that they fall within. This is the \
                                             default.
 
-                                            - NODATA - Output values will be NoData if any NoData values exist 
-                                            in the input within the defined window.
+                                            - NODATA - Output values will be NoData if any NoData values are \
+                                            found in the input within the defined window.
 
-                                            - FILL_NODATA - NoData cell values will be replaced using the selected 
-                                            statistic within the defined window.
+                                            - FILL_NODATA - NoData cell values will be replaced using the selected \
+                                            statistic on the values within the defined window.
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -12033,7 +12033,7 @@ def dimensional_moving_statistics(
 
         # Usage Example 1: Calculates MEAN statistics over a moving window on multidimensional data along StdTime dimension.
 
-        op = dimensional_moving_statistics(raster, "StdTime")
+        op = dimensional_moving_statistics(raster, dimension="StdTime")
 
     """
     layer, raster, raster_ra = _raster_input(raster)
