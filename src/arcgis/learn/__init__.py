@@ -46,6 +46,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         AutoML,
         DeepSort,
         Pix2PixHD,
+        MaXDeepLab,
         WNet_cGAN,
     )
 
