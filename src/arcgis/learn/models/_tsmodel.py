@@ -60,7 +60,7 @@ except:
 def _get_model_from_path(pretrained_path):
     learn = load_learner(
         os.path.dirname(pretrained_path),
-        os.path.basename(pretrained_path).rsplit(".",1)[0] + "_exported.pth",
+        os.path.basename(pretrained_path).rsplit(".", 1)[0] + "_exported.pth",
         no_check=True,
     )
 
@@ -293,7 +293,7 @@ class TimeSeriesModel(ArcGISModel):
                 path, framework, False, gis, save_optimizer=save_optimizer, **kwargs
             )
         if publish:
-            file_name = os.path.basename(saved_path) + '.dlpk'
+            file_name = os.path.basename(saved_path) + ".dlpk"
             dlpk_path = Path(os.path.join(saved_path, file_name))
             self._publish_dlpk(
                 dlpk_path,

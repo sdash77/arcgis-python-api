@@ -50,7 +50,7 @@ def _get_learner_object(data, layers, emb_szs, ps, emb_drop, pretrained_path):
     if pretrained_path:
         learn = load_learner(
             os.path.dirname(pretrained_path),
-            os.path.basename(pretrained_path).rsplit(".",1)[0] + "_exported.pth",
+            os.path.basename(pretrained_path).rsplit(".", 1)[0] + "_exported.pth",
         )
         learn.path = data.path
         if not data._is_empty:
