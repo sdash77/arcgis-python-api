@@ -55,9 +55,7 @@ def _create_output_image_service(gis, output_name, task):
         create_params=create_parameters,
         service_type="imageService",
     )
-    description = (
-        "Image Service generated from running the " + task + " tool."
-    )
+    description = "Image Service generated from running the " + task + " tool."
     item_properties = {
         "description": description,
         "tags": "Analysis Result, " + task,
@@ -107,9 +105,7 @@ def _gbl_clone_layer(layer, function_chain, function_chain_ra, **kwargs):
     return newlyr
 
 
-def _feature_gbl_clone_layer(
-    layer, function_chain, function_chain_ra, **kwargs
-):
+def _feature_gbl_clone_layer(layer, function_chain, function_chain_ra, **kwargs):
     if isinstance(layer, Item):
         layer = layer.layers[0]
 
@@ -127,9 +123,7 @@ def _feature_gbl_clone_layer(
     return newlyr
 
 
-def _gbl_clone_layer_raster(
-    layer, function_chain, function_chain_ra, **kwargs
-):
+def _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs):
 
     if layer._datastore_raster:
         newlyr = Raster(
@@ -150,9 +144,7 @@ def _gbl_clone_layer_raster(
         try:
             import arcpy, json
 
-            arcpylyr = arcpy.ia.Apply(
-                layer._uri, json.dumps(function_chain_ra)
-            )
+            arcpylyr = arcpy.ia.Apply(layer._uri, json.dumps(function_chain_ra))
             newlyr = Raster(
                 str(arcpylyr),
                 is_multidimensional=layer._is_multidimensional,
@@ -247,17 +239,13 @@ def euclidean_distance(
 
     if in_barrier_data is not None:
         layer2, in_barrier_data, raster_ra2 = _raster_input(in_barrier_data)
-        template_dict["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = in_barrier_data
+        template_dict["rasterFunctionArguments"]["in_barrier_data"] = in_barrier_data
 
     if cell_size is not None:
         template_dict["rasterFunctionArguments"]["cell_size"] = cell_size
 
     if max_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = max_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = max_distance
 
     distance_method_list = ["PLANAR", "GEODESIC"]
     if distance_method is not None:
@@ -266,19 +254,13 @@ def euclidean_distance(
                 "distance_method should be one of the following "
                 + str(distance_method_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "distance_method"
-        ] = distance_method
+        template_dict["rasterFunctionArguments"]["distance_method"] = distance_method
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra
 
     if in_barrier_data is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_barrier_data"] = raster_ra2
 
     return _gbl_clone_layer(layer, template_dict, function_chain_ra)
 
@@ -364,28 +346,20 @@ def euclidean_allocation(
 
     if in_value_raster is not None:
         layer2, in_value_raster, raster_ra2 = _raster_input(in_value_raster)
-        template_dict["rasterFunctionArguments"][
-            "in_value_raster"
-        ] = in_value_raster
+        template_dict["rasterFunctionArguments"]["in_value_raster"] = in_value_raster
 
     if in_barrier_data is not None:
         layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
-        template_dict["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = in_barrier_data
+        template_dict["rasterFunctionArguments"]["in_barrier_data"] = in_barrier_data
 
     if cell_size is not None:
         template_dict["rasterFunctionArguments"]["cell_size"] = cell_size
 
     if max_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = max_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = max_distance
 
     if source_field is not None:
-        template_dict["rasterFunctionArguments"][
-            "source_field"
-        ] = source_field
+        template_dict["rasterFunctionArguments"]["source_field"] = source_field
 
     distance_method_list = ["PLANAR", "GEODESIC"]
     if distance_method is not None:
@@ -394,22 +368,14 @@ def euclidean_allocation(
                 "distance_method should be one of the following "
                 + str(distance_method_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "distance_method"
-        ] = distance_method
+        template_dict["rasterFunctionArguments"]["distance_method"] = distance_method
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
     if in_value_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_value_raster"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_value_raster"] = raster_ra2
     if in_barrier_data is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = raster_ra3
+        function_chain_ra["rasterFunctionArguments"]["in_barrier_data"] = raster_ra3
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
@@ -504,9 +470,7 @@ def cost_distance(
     }
 
     if max_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = max_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = max_distance
 
     if source_cost_multiplier is not None:
         template_dict["rasterFunctionArguments"][
@@ -524,9 +488,7 @@ def cost_distance(
         ] = source_resistance_rate
 
     if source_capacity is not None:
-        template_dict["rasterFunctionArguments"][
-            "source_capacity"
-        ] = source_capacity
+        template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
 
     source_direction_list = ["FROM_SOURCE", "TO_SOURCE"]
 
@@ -536,17 +498,11 @@ def cost_distance(
                 "source_direction should be one of the following "
                 + str(source_direction_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "source_direction"
-        ] = source_direction
+        template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra1
-    function_chain_ra["rasterFunctionArguments"][
-        "in_cost_raster"
-    ] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
@@ -656,19 +612,13 @@ def cost_allocation(
     }
     if in_value_raster is not None:
         layer3, in_value_raster, raster_ra3 = _raster_input(in_value_raster)
-        template_dict["rasterFunctionArguments"][
-            "in_value_raster"
-        ] = in_value_raster
+        template_dict["rasterFunctionArguments"]["in_value_raster"] = in_value_raster
 
     if max_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = max_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = max_distance
 
     if source_field is not None:
-        template_dict["rasterFunctionArguments"][
-            "source_field"
-        ] = source_field
+        template_dict["rasterFunctionArguments"]["source_field"] = source_field
 
     if source_cost_multiplier is not None:
         template_dict["rasterFunctionArguments"][
@@ -686,9 +636,7 @@ def cost_allocation(
         ] = source_resistance_rate
 
     if source_capacity is not None:
-        template_dict["rasterFunctionArguments"][
-            "source_capacity"
-        ] = source_capacity
+        template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
 
     source_direction_list = ["FROM_SOURCE", "TO_SOURCE"]
 
@@ -698,21 +646,13 @@ def cost_allocation(
                 "source_direction should be one of the following "
                 + str(source_direction_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "source_direction"
-        ] = source_direction
+        template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra1
-    function_chain_ra["rasterFunctionArguments"][
-        "in_cost_raster"
-    ] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
     if in_value_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_value_raster"
-        ] = raster_ra3
+        function_chain_ra["rasterFunctionArguments"]["in_value_raster"] = raster_ra3
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
@@ -827,9 +767,7 @@ def zonal_statistics(
             ignore_nodata = "DATA"
         elif ignore_nodata is False:
             ignore_nodata = "NODATA"
-        template_dict["rasterFunctionArguments"][
-            "ignore_nodata"
-        ] = ignore_nodata
+        template_dict["rasterFunctionArguments"]["ignore_nodata"] = ignore_nodata
 
     statistics_type_list = [
         "MEAN",
@@ -850,9 +788,7 @@ def zonal_statistics(
                 "statistics_type should be one of the following "
                 + str(statistics_type_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "statistics_type"
-        ] = statistics_type
+        template_dict["rasterFunctionArguments"]["statistics_type"] = statistics_type
 
     if process_as_multidimensional is not None:
         if isinstance(process_as_multidimensional, bool):
@@ -866,9 +802,7 @@ def zonal_statistics(
                 ] = "CURRENT_SLICE"
 
     if percentile_value is not None:
-        template_dict["rasterFunctionArguments"][
-            "percentile_value"
-        ] = percentile_value
+        template_dict["rasterFunctionArguments"]["percentile_value"] = percentile_value
 
     percentile_interpolation_type_list = ["AUTO_DETECT", "NEAREST", "LINEAR"]
     if percentile_interpolation_type is not None:
@@ -886,9 +820,7 @@ def zonal_statistics(
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_zone_data"] = raster_ra1
-    function_chain_ra["rasterFunctionArguments"][
-        "in_value_raster"
-    ] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["in_value_raster"] = raster_ra2
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
@@ -1001,9 +933,7 @@ def least_cost_path(
     """
     layer1, in_source_data, raster_ra1 = _raster_input(in_source_data)
     layer2, in_cost_raster, raster_ra2 = _raster_input(in_cost_raster)
-    layer3, in_destination_data, raster_ra3 = _raster_input(
-        in_destination_data
-    )
+    layer3, in_destination_data, raster_ra3 = _raster_input(in_destination_data)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -1026,15 +956,12 @@ def least_cost_path(
         path_type_list = ["EACH_CELL", "EACH_ZONE", "BEST_SINGLE"]
         if path_type.upper() not in path_type_list:
             raise RuntimeError(
-                "path_type should be one of the following "
-                + str(path_type_list)
+                "path_type should be one of the following " + str(path_type_list)
             )
         template_dict["rasterFunctionArguments"]["path_type"] = path_type
 
     if max_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = max_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = max_distance
 
     if source_cost_multiplier is not None:
         template_dict["rasterFunctionArguments"][
@@ -1052,9 +979,7 @@ def least_cost_path(
         ] = source_resistance_rate
 
     if source_capacity is not None:
-        template_dict["rasterFunctionArguments"][
-            "source_capacity"
-        ] = source_capacity
+        template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
 
     source_direction_list = ["FROM_SOURCE", "TO_SOURCE"]
 
@@ -1064,20 +989,12 @@ def least_cost_path(
                 "source_direction should be one of the following "
                 + str(source_direction_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "source_direction"
-        ] = source_direction
+        template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra1
-    function_chain_ra["rasterFunctionArguments"][
-        "in_cost_raster"
-    ] = raster_ra2
-    function_chain_ra["rasterFunctionArguments"][
-        "in_destination_data"
-    ] = raster_ra3
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["in_destination_data"] = raster_ra3
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
@@ -1126,12 +1043,8 @@ def flow_distance(
                             - MAXIMUM - When multiple flow paths exist, maximum flow distance is computed.
     :return: output raster with function applied
     """
-    layer1, input_stream_raster, raster_ra1 = _raster_input(
-        input_stream_raster
-    )
-    layer2, input_surface_raster, raster_ra2 = _raster_input(
-        input_surface_raster
-    )
+    layer1, input_stream_raster, raster_ra1 = _raster_input(input_stream_raster)
+    layer2, input_surface_raster, raster_ra2 = _raster_input(input_surface_raster)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -1159,9 +1072,7 @@ def flow_distance(
                 "distance_type should be one of the following "
                 + str(distance_type_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "distance_type"
-        ] = distance_type
+        template_dict["rasterFunctionArguments"]["distance_type"] = distance_type
 
     flow_direction_type_list = ["D8", "MFD", "DINF"]
     if flow_direction_type is not None:
@@ -1188,12 +1099,8 @@ def flow_distance(
             ] = statistics_type
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_stream_raster"
-    ] = raster_ra1
-    function_chain_ra["rasterFunctionArguments"][
-        "in_surface_raster"
-    ] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["in_stream_raster"] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_surface_raster"] = raster_ra2
     if input_flow_direction_raster is not None:
         function_chain_ra["rasterFunctionArguments"][
             "in_flow_direction_raster"
@@ -1233,9 +1140,7 @@ def flow_accumulation(
         },
     }
     if input_weight_raster is not None:
-        layer2, input_weight_raster, raster_ra2 = _raster_input(
-            input_weight_raster
-        )
+        layer2, input_weight_raster, raster_ra2 = _raster_input(input_weight_raster)
         template_dict["rasterFunctionArguments"][
             "in_weight_raster"
         ] = input_weight_raster
@@ -1245,8 +1150,7 @@ def flow_accumulation(
     if data_type is not None:
         if data_type.upper() not in data_type_list:
             raise RuntimeError(
-                "data_type should be one of the following "
-                + str(data_type_list)
+                "data_type should be one of the following " + str(data_type_list)
             )
         template_dict["rasterFunctionArguments"]["data_type"] = data_type
 
@@ -1266,9 +1170,7 @@ def flow_accumulation(
         "in_flow_direction_raster"
     ] = raster_ra1
     if input_weight_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_weight_raster"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_weight_raster"] = raster_ra2
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
@@ -1391,9 +1293,7 @@ def flow_direction(
             out_var.output_drop_service # gives you the output drop raster imagery layer item
 
     """
-    layer, input_surface_raster, raster_ra = _raster_input(
-        input_surface_raster
-    )
+    layer, input_surface_raster, raster_ra = _raster_input(input_surface_raster)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -1409,8 +1309,7 @@ def flow_direction(
     if force_flow is not None:
         if force_flow.upper() not in force_flow_list:
             raise RuntimeError(
-                "force_flow should be one of the following "
-                + str(force_flow_list)
+                "force_flow should be one of the following " + str(force_flow_list)
             )
         template_dict["rasterFunctionArguments"]["force_flow"] = force_flow
 
@@ -1426,9 +1325,7 @@ def flow_direction(
         ] = flow_direction_type
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_surface_raster"
-    ] = raster_ra
+    function_chain_ra["rasterFunctionArguments"]["in_surface_raster"] = raster_ra
 
     if generate_out_drop_raster is True:
         return _gbl_clone_layer(
@@ -1463,9 +1360,7 @@ def fill(input_surface_raster, zlimit=None):
     :return: output raster with function applied
 
     """
-    layer, input_surface_raster, raster_ra = _raster_input(
-        input_surface_raster
-    )
+    layer, input_surface_raster, raster_ra = _raster_input(input_surface_raster)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -1481,9 +1376,7 @@ def fill(input_surface_raster, zlimit=None):
         template_dict["rasterFunctionArguments"]["z_limit"] = zlimit
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_surface_raster"
-    ] = raster_ra
+    function_chain_ra["rasterFunctionArguments"]["in_surface_raster"] = raster_ra
 
     return _gbl_clone_layer(layer, template_dict, function_chain_ra)
 
@@ -1536,9 +1429,7 @@ def nibble(
                 "nibble_values should be one of the following "
                 + str(nibble_values_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "nibble_values"
-        ] = nibble_values
+        template_dict["rasterFunctionArguments"]["nibble_values"] = nibble_values
 
     nibble_no_data_list = ["PRESERVE_NODATA", "PROCESS_NODATA"]
     if nibble_no_data is not None:
@@ -1547,27 +1438,17 @@ def nibble(
                 "nibble_nodata should be one of the following "
                 + str(nibble_no_data_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "nibble_nodata"
-        ] = nibble_no_data
+        template_dict["rasterFunctionArguments"]["nibble_nodata"] = nibble_no_data
 
     if input_zone_raster is not None:
-        layer3, input_zone_raster, raster_ra3 = _raster_input(
-            input_zone_raster
-        )
-        template_dict["rasterFunctionArguments"][
-            "in_zone_raster"
-        ] = input_zone_raster
+        layer3, input_zone_raster, raster_ra3 = _raster_input(input_zone_raster)
+        template_dict["rasterFunctionArguments"]["in_zone_raster"] = input_zone_raster
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_raster"] = raster_ra1
-    function_chain_ra["rasterFunctionArguments"][
-        "in_mask_raster"
-    ] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["in_mask_raster"] = raster_ra2
     if input_zone_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_zone_raster"
-        ] = raster_ra3
+        function_chain_ra["rasterFunctionArguments"]["in_zone_raster"] = raster_ra3
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
@@ -1600,9 +1481,7 @@ def stream_link(input_raster, input_flow_direction_raster):
     }
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_stream_raster"
-    ] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_stream_raster"] = raster_ra1
     function_chain_ra["rasterFunctionArguments"][
         "in_flow_direction_raster"
     ] = raster_ra2
@@ -1631,9 +1510,7 @@ def watershed(
     layer1, input_flow_direction_raster, raster_ra1 = _raster_input(
         input_flow_direction_raster
     )
-    layer2, input_pour_point_data, raster_ra2 = _raster_input(
-        input_pour_point_data
-    )
+    layer2, input_pour_point_data, raster_ra2 = _raster_input(input_pour_point_data)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -1647,17 +1524,13 @@ def watershed(
     }
 
     if pour_point_field is not None:
-        template_dict["rasterFunctionArguments"][
-            "pour_point_field"
-        ] = pour_point_field
+        template_dict["rasterFunctionArguments"]["pour_point_field"] = pour_point_field
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"][
         "in_flow_direction_raster"
     ] = raster_ra1
-    function_chain_ra["rasterFunctionArguments"][
-        "in_pour_point_data"
-    ] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["in_pour_point_data"] = raster_ra2
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
@@ -1772,17 +1645,11 @@ def calculate_travel_cost(
         layer2, in_cost_raster, raster_ra2 = _raster_input(in_cost_raster)
 
     if in_surface_raster is not None:
-        layer3, in_surface_raster, raster_ra3 = _raster_input(
-            in_surface_raster
-        )
+        layer3, in_surface_raster, raster_ra3 = _raster_input(in_surface_raster)
     if in_horizontal_raster is not None:
-        layer4, in_horizontal_raster, raster_ra4 = _raster_input(
-            in_horizontal_raster
-        )
+        layer4, in_horizontal_raster, raster_ra4 = _raster_input(in_horizontal_raster)
     if in_vertical_raster is not None:
-        layer5, in_vertical_raster, raster_ra5 = _raster_input(
-            in_vertical_raster
-        )
+        layer5, in_vertical_raster, raster_ra5 = _raster_input(in_vertical_raster)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -1795,9 +1662,7 @@ def calculate_travel_cost(
     }
 
     if in_cost_raster is not None:
-        template_dict["rasterFunctionArguments"][
-            "in_cost_raster"
-        ] = in_cost_raster
+        template_dict["rasterFunctionArguments"]["in_cost_raster"] = in_cost_raster
 
     if in_surface_raster is not None:
         template_dict["rasterFunctionArguments"][
@@ -1825,9 +1690,7 @@ def calculate_travel_cost(
             "horizontal_factor should be one of the following "
             + str(horizontal_factor_list)
         )
-    template_dict["rasterFunctionArguments"][
-        "horizontal_factor"
-    ] = horizontal_factor
+    template_dict["rasterFunctionArguments"]["horizontal_factor"] = horizontal_factor
 
     vertical_factor_list = [
         "BINARY",
@@ -1845,14 +1708,10 @@ def calculate_travel_cost(
             "vertical_factor should be one of the following "
             + str(vertical_factor_list)
         )
-    template_dict["rasterFunctionArguments"][
-        "vertical_factor"
-    ] = vertical_factor
+    template_dict["rasterFunctionArguments"]["vertical_factor"] = vertical_factor
 
     if maximum_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = maximum_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = maximum_distance
 
     if source_cost_multiplier is not None:
         template_dict["rasterFunctionArguments"][
@@ -1870,9 +1729,7 @@ def calculate_travel_cost(
         ] = source_resistance_rate
 
     if source_capacity is not None:
-        template_dict["rasterFunctionArguments"][
-            "source_capacity"
-        ] = source_capacity
+        template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
 
     if source_direction is not None:
         source_direction_list = ["FROM_SOURCE", "TO_SOURCE"]
@@ -1881,28 +1738,18 @@ def calculate_travel_cost(
                 "source_direction should be one of the following "
                 + str(source_direction_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "source_direction"
-        ] = source_direction
+        template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
 
     if allocation_field is not None:
-        template_dict["rasterFunctionArguments"][
-            "allocation_field"
-        ] = allocation_field
+        template_dict["rasterFunctionArguments"]["allocation_field"] = allocation_field
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
     if in_cost_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_cost_raster"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
 
     if in_surface_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_surface_raster"
-        ] = raster_ra3
+        function_chain_ra["rasterFunctionArguments"]["in_surface_raster"] = raster_ra3
 
     if in_horizontal_raster is not None:
         function_chain_ra["rasterFunctionArguments"][
@@ -1910,9 +1757,7 @@ def calculate_travel_cost(
         ] = raster_ra4
 
     if in_vertical_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_vertical_raster"
-        ] = raster_ra5
+        function_chain_ra["rasterFunctionArguments"]["in_vertical_raster"] = raster_ra5
 
     if isinstance(in_source_data, ImageryLayer):
         return _gbl_clone_layer(
@@ -2027,9 +1872,7 @@ def kernel_density(
     }
 
     if search_radius is not None:
-        template_dict["rasterFunctionArguments"][
-            "search_radius"
-        ] = search_radius
+        template_dict["rasterFunctionArguments"]["search_radius"] = search_radius
 
     if cell_size is not None:
         template_dict["rasterFunctionArguments"]["cell_size"] = cell_size
@@ -2062,22 +1905,16 @@ def kernel_density(
             "out_cell_values should be one of the following "
             + str(out_cell_values_list)
         )
-    template_dict["rasterFunctionArguments"][
-        "out_cell_values"
-    ] = out_cell_values
+    template_dict["rasterFunctionArguments"]["out_cell_values"] = out_cell_values
 
     method_list = ["PLANAR", "GEODESIC"]
     if method.upper() not in method_list:
-        raise RuntimeError(
-            "method should be one of the following " + str(method_list)
-        )
+        raise RuntimeError("method should be one of the following " + str(method_list))
     template_dict["rasterFunctionArguments"]["method"] = method
 
     if in_barriers is not None:
         input_barriers = _layer_input(in_barriers)
-        template_dict["rasterFunctionArguments"][
-            "in_barriers"
-        ] = input_barriers
+        template_dict["rasterFunctionArguments"]["in_barriers"] = input_barriers
 
     if isinstance(in_features, Item):
         in_features = in_features.layers[0]
@@ -2138,15 +1975,9 @@ def cost_path(
 
     :return: output raster with function applied
     """
-    layer1, in_destination_data, raster_ra1 = _raster_input(
-        in_destination_data
-    )
-    layer2, in_cost_distance_raster, raster_ra2 = _raster_input(
-        in_cost_distance_raster
-    )
-    layer3, in_cost_backlink_raster, raster_ra3 = _raster_input(
-        in_cost_backlink_raster
-    )
+    layer1, in_destination_data, raster_ra1 = _raster_input(in_destination_data)
+    layer2, in_cost_distance_raster, raster_ra2 = _raster_input(in_cost_distance_raster)
+    layer3, in_cost_backlink_raster, raster_ra3 = _raster_input(in_cost_backlink_raster)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -2164,8 +1995,7 @@ def cost_path(
         path_type_list = ["EACH_CELL", "EACH_ZONE", "BEST_SINGLE"]
         if path_type.upper() not in path_type_list:
             raise RuntimeError(
-                "path_type should be one of the following "
-                + str(path_type_list)
+                "path_type should be one of the following " + str(path_type_list)
             )
         template_dict["rasterFunctionArguments"]["path_type"] = path_type
 
@@ -2180,15 +2010,9 @@ def cost_path(
         ] = force_flow_direction_convention
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_destination_data"
-    ] = raster_ra1
-    function_chain_ra["rasterFunctionArguments"][
-        "in_cost_distance_raster"
-    ] = raster_ra2
-    function_chain_ra["rasterFunctionArguments"][
-        "in_cost_backlink_raster"
-    ] = raster_ra3
+    function_chain_ra["rasterFunctionArguments"]["in_destination_data"] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_cost_distance_raster"] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["in_cost_backlink_raster"] = raster_ra3
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
@@ -2259,17 +2083,13 @@ def euclidean_direction(
 
     if in_barrier_data is not None:
         layer2, in_barrier_data, raster_ra2 = _raster_input(in_barrier_data)
-        template_dict["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = in_barrier_data
+        template_dict["rasterFunctionArguments"]["in_barrier_data"] = in_barrier_data
 
     if cell_size is not None:
         template_dict["rasterFunctionArguments"]["cell_size"] = cell_size
 
     if max_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = max_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = max_distance
 
     distance_method_list = ["PLANAR", "GEODESIC"]
     if distance_method is not None:
@@ -2278,19 +2098,13 @@ def euclidean_direction(
                 "distance_method should be one of the following "
                 + str(distance_method_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "distance_method"
-        ] = distance_method
+        template_dict["rasterFunctionArguments"]["distance_method"] = distance_method
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra
 
     if in_barrier_data is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_barrier_data"] = raster_ra2
 
     return _gbl_clone_layer(layer, template_dict, function_chain_ra)
 
@@ -2384,9 +2198,7 @@ def cost_backlink(
     }
 
     if max_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = max_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = max_distance
 
     if source_cost_multiplier is not None:
         template_dict["rasterFunctionArguments"][
@@ -2404,9 +2216,7 @@ def cost_backlink(
         ] = source_resistance_rate
 
     if source_capacity is not None:
-        template_dict["rasterFunctionArguments"][
-            "source_capacity"
-        ] = source_capacity
+        template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
 
     if source_direction is not None:
         source_direction_list = ["FROM_SOURCE", "TO_SOURCE"]
@@ -2415,17 +2225,11 @@ def cost_backlink(
                 "source_direction should be one of the following "
                 + str(source_direction_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "source_direction"
-        ] = source_direction
+        template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra1
-    function_chain_ra["rasterFunctionArguments"][
-        "in_cost_raster"
-    ] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
@@ -2543,18 +2347,12 @@ def region_group(
 
     if add_link is not None:
         if add_link.upper() == "ADD_LINK" or add_link.upper() == "NO_LINK":
-            template_dict["rasterFunctionArguments"][
-                "add_link"
-            ] = add_link.upper()
+            template_dict["rasterFunctionArguments"]["add_link"] = add_link.upper()
         else:
-            raise RuntimeError(
-                "add_link should either be 'ADD_LINK' or 'NO_LINK' "
-            )
+            raise RuntimeError("add_link should either be 'ADD_LINK' or 'NO_LINK' ")
 
     if excluded_value is not None:
-        template_dict["rasterFunctionArguments"][
-            "excluded_value"
-        ] = excluded_value
+        template_dict["rasterFunctionArguments"]["excluded_value"] = excluded_value
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_raster"] = raster_ra
@@ -2579,12 +2377,8 @@ def corridor(in_distance_raster1, in_distance_raster2):
 
     :return: output raster with function applied
     """
-    layer1, in_distance_raster1, raster_ra1 = _raster_input(
-        in_distance_raster1
-    )
-    layer2, in_distance_raster2, raster_ra2 = _raster_input(
-        in_distance_raster2
-    )
+    layer1, in_distance_raster1, raster_ra1 = _raster_input(in_distance_raster1)
+    layer2, in_distance_raster2, raster_ra2 = _raster_input(in_distance_raster2)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -2598,12 +2392,8 @@ def corridor(in_distance_raster1, in_distance_raster2):
     }
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_distance_raster1"
-    ] = raster_ra1
-    function_chain_ra["rasterFunctionArguments"][
-        "in_distance_raster2"
-    ] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["in_distance_raster1"] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_distance_raster2"] = raster_ra2
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
@@ -2699,17 +2489,11 @@ def path_distance(
         layer2, in_cost_raster, raster_ra2 = _raster_input(in_cost_raster)
 
     if in_surface_raster is not None:
-        layer3, in_surface_raster, raster_ra3 = _raster_input(
-            in_surface_raster
-        )
+        layer3, in_surface_raster, raster_ra3 = _raster_input(in_surface_raster)
     if in_horizontal_raster is not None:
-        layer4, in_horizontal_raster, raster_ra4 = _raster_input(
-            in_horizontal_raster
-        )
+        layer4, in_horizontal_raster, raster_ra4 = _raster_input(in_horizontal_raster)
     if in_vertical_raster is not None:
-        layer5, in_vertical_raster, raster_ra5 = _raster_input(
-            in_vertical_raster
-        )
+        layer5, in_vertical_raster, raster_ra5 = _raster_input(in_vertical_raster)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -2722,9 +2506,7 @@ def path_distance(
     }
 
     if in_cost_raster is not None:
-        template_dict["rasterFunctionArguments"][
-            "in_cost_raster"
-        ] = in_cost_raster
+        template_dict["rasterFunctionArguments"]["in_cost_raster"] = in_cost_raster
 
     if in_surface_raster is not None:
         template_dict["rasterFunctionArguments"][
@@ -2774,14 +2556,10 @@ def path_distance(
                 "vertical_factor should be one of the following "
                 + str(vertical_factor_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "vertical_factor"
-        ] = vertical_factor
+        template_dict["rasterFunctionArguments"]["vertical_factor"] = vertical_factor
 
     if maximum_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = maximum_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = maximum_distance
 
     if source_cost_multiplier is not None:
         template_dict["rasterFunctionArguments"][
@@ -2799,9 +2577,7 @@ def path_distance(
         ] = source_resistance_rate
 
     if source_capacity is not None:
-        template_dict["rasterFunctionArguments"][
-            "source_capacity"
-        ] = source_capacity
+        template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
 
     if source_direction is not None:
         source_direction_list = ["FROM_SOURCE", "TO_SOURCE"]
@@ -2816,18 +2592,12 @@ def path_distance(
             ] = source_direction
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
     if in_cost_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_cost_raster"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
 
     if in_surface_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_surface_raster"
-        ] = raster_ra3
+        function_chain_ra["rasterFunctionArguments"]["in_surface_raster"] = raster_ra3
 
     if in_horizontal_raster is not None:
         function_chain_ra["rasterFunctionArguments"][
@@ -2835,9 +2605,7 @@ def path_distance(
         ] = raster_ra4
 
     if in_vertical_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_vertical_raster"
-        ] = raster_ra5
+        function_chain_ra["rasterFunctionArguments"]["in_vertical_raster"] = raster_ra5
 
     return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
 
@@ -2941,17 +2709,11 @@ def path_distance_allocation(
         layer2, in_cost_raster, raster_ra2 = _raster_input(in_cost_raster)
 
     if in_surface_raster is not None:
-        layer3, in_surface_raster, raster_ra3 = _raster_input(
-            in_surface_raster
-        )
+        layer3, in_surface_raster, raster_ra3 = _raster_input(in_surface_raster)
     if in_horizontal_raster is not None:
-        layer4, in_horizontal_raster, raster_ra4 = _raster_input(
-            in_horizontal_raster
-        )
+        layer4, in_horizontal_raster, raster_ra4 = _raster_input(in_horizontal_raster)
     if in_vertical_raster is not None:
-        layer5, in_vertical_raster, raster_ra5 = _raster_input(
-            in_vertical_raster
-        )
+        layer5, in_vertical_raster, raster_ra5 = _raster_input(in_vertical_raster)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -2964,9 +2726,7 @@ def path_distance_allocation(
     }
 
     if in_cost_raster is not None:
-        template_dict["rasterFunctionArguments"][
-            "in_cost_raster"
-        ] = in_cost_raster
+        template_dict["rasterFunctionArguments"]["in_cost_raster"] = in_cost_raster
 
     if in_surface_raster is not None:
         template_dict["rasterFunctionArguments"][
@@ -3016,25 +2776,17 @@ def path_distance_allocation(
                 "vertical_factor should be one of the following "
                 + str(vertical_factor_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "vertical_factor"
-        ] = vertical_factor
+        template_dict["rasterFunctionArguments"]["vertical_factor"] = vertical_factor
 
     if maximum_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = maximum_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = maximum_distance
 
     if in_value_raster is not None:
         layer6, in_value_raster, raster_ra6 = _raster_input(in_value_raster)
-        template_dict["rasterFunctionArguments"][
-            "in_value_raster"
-        ] = in_value_raster
+        template_dict["rasterFunctionArguments"]["in_value_raster"] = in_value_raster
 
     if source_field is not None:
-        template_dict["rasterFunctionArguments"][
-            "source_field"
-        ] = source_field
+        template_dict["rasterFunctionArguments"]["source_field"] = source_field
 
     if source_cost_multiplier is not None:
         template_dict["rasterFunctionArguments"][
@@ -3052,9 +2804,7 @@ def path_distance_allocation(
         ] = source_resistance_rate
 
     if source_capacity is not None:
-        template_dict["rasterFunctionArguments"][
-            "source_capacity"
-        ] = source_capacity
+        template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
 
     if source_direction is not None:
         source_direction_list = ["FROM_SOURCE", "TO_SOURCE"]
@@ -3063,23 +2813,15 @@ def path_distance_allocation(
                 "source_direction should be one of the following "
                 + str(source_direction_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "source_direction"
-        ] = source_direction
+        template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
     if in_cost_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_cost_raster"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
 
     if in_surface_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_surface_raster"
-        ] = raster_ra3
+        function_chain_ra["rasterFunctionArguments"]["in_surface_raster"] = raster_ra3
 
     if in_horizontal_raster is not None:
         function_chain_ra["rasterFunctionArguments"][
@@ -3087,14 +2829,10 @@ def path_distance_allocation(
         ] = raster_ra4
 
     if in_vertical_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_vertical_raster"
-        ] = raster_ra5
+        function_chain_ra["rasterFunctionArguments"]["in_vertical_raster"] = raster_ra5
 
     if in_value_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_value_raster"
-        ] = raster_ra6
+        function_chain_ra["rasterFunctionArguments"]["in_value_raster"] = raster_ra6
 
     return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
 
@@ -3199,17 +2937,11 @@ def path_distance_back_link(
         layer2, in_cost_raster, raster_ra2 = _raster_input(in_cost_raster)
 
     if in_surface_raster is not None:
-        layer3, in_surface_raster, raster_ra3 = _raster_input(
-            in_surface_raster
-        )
+        layer3, in_surface_raster, raster_ra3 = _raster_input(in_surface_raster)
     if in_horizontal_raster is not None:
-        layer4, in_horizontal_raster, raster_ra4 = _raster_input(
-            in_horizontal_raster
-        )
+        layer4, in_horizontal_raster, raster_ra4 = _raster_input(in_horizontal_raster)
     if in_vertical_raster is not None:
-        layer5, in_vertical_raster, raster_ra5 = _raster_input(
-            in_vertical_raster
-        )
+        layer5, in_vertical_raster, raster_ra5 = _raster_input(in_vertical_raster)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -3222,9 +2954,7 @@ def path_distance_back_link(
     }
 
     if in_cost_raster is not None:
-        template_dict["rasterFunctionArguments"][
-            "in_cost_raster"
-        ] = in_cost_raster
+        template_dict["rasterFunctionArguments"]["in_cost_raster"] = in_cost_raster
 
     if in_surface_raster is not None:
         template_dict["rasterFunctionArguments"][
@@ -3274,14 +3004,10 @@ def path_distance_back_link(
                 "vertical_factor should be one of the following "
                 + str(vertical_factor_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "vertical_factor"
-        ] = vertical_factor
+        template_dict["rasterFunctionArguments"]["vertical_factor"] = vertical_factor
 
     if maximum_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = maximum_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = maximum_distance
 
     if source_cost_multiplier is not None:
         template_dict["rasterFunctionArguments"][
@@ -3299,9 +3025,7 @@ def path_distance_back_link(
         ] = source_resistance_rate
 
     if source_capacity is not None:
-        template_dict["rasterFunctionArguments"][
-            "source_capacity"
-        ] = source_capacity
+        template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
 
     if source_direction is not None:
         source_direction_list = ["FROM_SOURCE", "TO_SOURCE"]
@@ -3310,23 +3034,15 @@ def path_distance_back_link(
                 "source_direction should be one of the following "
                 + str(source_direction_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "source_direction"
-        ] = source_direction
+        template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
     if in_cost_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_cost_raster"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
 
     if in_surface_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_surface_raster"
-        ] = raster_ra3
+        function_chain_ra["rasterFunctionArguments"]["in_surface_raster"] = raster_ra3
 
     if in_horizontal_raster is not None:
         function_chain_ra["rasterFunctionArguments"][
@@ -3334,9 +3050,7 @@ def path_distance_back_link(
         ] = raster_ra4
 
     if in_vertical_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_vertical_raster"
-        ] = raster_ra5
+        function_chain_ra["rasterFunctionArguments"]["in_vertical_raster"] = raster_ra5
 
     return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
 
@@ -3488,34 +3202,22 @@ def calculate_distance(
     }
 
     if maximum_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = maximum_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = maximum_distance
 
     if output_cell_size is not None:
-        template_dict["rasterFunctionArguments"][
-            "output_cell_size"
-        ] = output_cell_size
+        template_dict["rasterFunctionArguments"]["output_cell_size"] = output_cell_size
 
     if allocation_field is not None:
-        template_dict["rasterFunctionArguments"][
-            "allocation_field"
-        ] = allocation_field
+        template_dict["rasterFunctionArguments"]["allocation_field"] = allocation_field
 
     if distance_method is not None:
-        template_dict["rasterFunctionArguments"][
-            "distance_method"
-        ] = distance_method
+        template_dict["rasterFunctionArguments"]["distance_method"] = distance_method
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
 
     if in_barrier_data is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_barrier_data"] = raster_ra2
 
     if isinstance(in_source_data, ImageryLayer):
         return _gbl_clone_layer(
@@ -3614,17 +3316,13 @@ def euclidean_back_direction(
 
     if in_barrier_data is not None:
         layer2, in_barrier_data, raster_ra2 = _raster_input(in_barrier_data)
-        template_dict["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = in_barrier_data
+        template_dict["rasterFunctionArguments"]["in_barrier_data"] = in_barrier_data
 
     if cell_size is not None:
         template_dict["rasterFunctionArguments"]["cell_size"] = cell_size
 
     if max_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "maximum_distance"
-        ] = max_distance
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = max_distance
 
     distance_method_list = ["PLANAR", "GEODESIC"]
     if distance_method is not None:
@@ -3633,19 +3331,13 @@ def euclidean_back_direction(
                 "distance_method should be one of the following "
                 + str(distance_method_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "distance_method"
-        ] = distance_method
+        template_dict["rasterFunctionArguments"]["distance_method"] = distance_method
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra
 
     if in_barrier_data is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_barrier_data"] = raster_ra2
 
     return _gbl_clone_layer(layer, template_dict, function_chain_ra)
 
@@ -3702,9 +3394,7 @@ def flow_length(
     }
 
     if input_weight_raster is not None:
-        layer2, input_weight_raster, raster_ra2 = _raster_input(
-            input_weight_raster
-        )
+        layer2, input_weight_raster, raster_ra2 = _raster_input(input_weight_raster)
         template_dict["rasterFunctionArguments"][
             "in_weight_raster"
         ] = input_weight_raster
@@ -3725,9 +3415,7 @@ def flow_length(
         "in_flow_direction_raster"
     ] = raster_ra1
     if input_weight_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_weight_raster"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_weight_raster"] = raster_ra2
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
@@ -3767,9 +3455,7 @@ def sink(input_flow_direction_raster):
     }
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_flow_direction_raster"
-    ] = raster_ra
+    function_chain_ra["rasterFunctionArguments"]["in_flow_direction_raster"] = raster_ra
 
     return _gbl_clone_layer(layer, template_dict, function_chain_ra)
 
@@ -3822,19 +3508,13 @@ def snap_pour_point(
         ] = in_accumulation_raster
 
     if snap_distance is not None:
-        template_dict["rasterFunctionArguments"][
-            "snap_distance"
-        ] = snap_distance
+        template_dict["rasterFunctionArguments"]["snap_distance"] = snap_distance
 
     if pour_point_field is not None:
-        template_dict["rasterFunctionArguments"][
-            "pour_point_field"
-        ] = pour_point_field
+        template_dict["rasterFunctionArguments"]["pour_point_field"] = pour_point_field
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_pour_point_data"
-    ] = raster_ra
+    function_chain_ra["rasterFunctionArguments"]["in_pour_point_data"] = raster_ra
 
     if in_accumulation_raster is not None:
         function_chain_ra["rasterFunctionArguments"][
@@ -3878,9 +3558,7 @@ def stream_order(
     :return: output raster with function applied
 
     """
-    layer1, input_stream_raster, raster_ra1 = _raster_input(
-        input_stream_raster
-    )
+    layer1, input_stream_raster, raster_ra1 = _raster_input(input_stream_raster)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -3904,17 +3582,12 @@ def stream_order(
     if order_method is not None:
         if order_method.upper() not in order_method_list:
             raise RuntimeError(
-                "order_method should be one of the following "
-                + str(order_method_list)
+                "order_method should be one of the following " + str(order_method_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "order_method"
-        ] = order_method
+        template_dict["rasterFunctionArguments"]["order_method"] = order_method
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_stream_raster"
-    ] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_stream_raster"] = raster_ra1
     if input_flow_direction_raster is not None:
         function_chain_ra["rasterFunctionArguments"][
             "in_flow_direction_raster"
@@ -3959,18 +3632,14 @@ def expand(input_raster, number_of_cells, zone_values):
     }
 
     if number_of_cells is not None:
-        template_dict["rasterFunctionArguments"][
-            "number_cells"
-        ] = number_of_cells
+        template_dict["rasterFunctionArguments"]["number_cells"] = number_of_cells
 
     zone_values_str = zone_values
     if isinstance(zone_values, list):
         zone_values_str = ";".join(str(zone) for zone in zone_values)
 
     if zone_values_str is not None:
-        template_dict["rasterFunctionArguments"][
-            "zone_values"
-        ] = zone_values_str
+        template_dict["rasterFunctionArguments"]["zone_values"] = zone_values_str
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_raster"] = raster_ra1
@@ -4014,18 +3683,14 @@ def shrink(input_raster, number_of_cells, zone_values):
     }
 
     if number_of_cells is not None:
-        template_dict["rasterFunctionArguments"][
-            "number_cells"
-        ] = number_of_cells
+        template_dict["rasterFunctionArguments"]["number_cells"] = number_of_cells
 
     zone_values_str = zone_values
     if isinstance(zone_values, list):
         zone_values_str = ";".join(str(zone) for zone in zone_values)
 
     if zone_values_str is not None:
-        template_dict["rasterFunctionArguments"][
-            "zone_values"
-        ] = zone_values_str
+        template_dict["rasterFunctionArguments"]["zone_values"] = zone_values_str
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_raster"] = raster_ra1
@@ -4173,26 +3838,18 @@ def distance_accumulation(
 
     if in_barrier_data is not None:
         if isinstance(in_barrier_data, ImageryLayer):
-            layer3, in_barrier_data, raster_ra3 = _raster_input(
-                in_barrier_data
-            )
+            layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
         else:
             raster_ra3 = _layer_input(in_barrier_data)
             in_barrier_data = raster_ra3
             layer3 = raster_ra3
 
     if in_surface_raster is not None:
-        layer4, in_surface_raster, raster_ra4 = _raster_input(
-            in_surface_raster
-        )
+        layer4, in_surface_raster, raster_ra4 = _raster_input(in_surface_raster)
     if in_horizontal_raster is not None:
-        layer5, in_horizontal_raster, raster_ra5 = _raster_input(
-            in_horizontal_raster
-        )
+        layer5, in_horizontal_raster, raster_ra5 = _raster_input(in_horizontal_raster)
     if in_vertical_raster is not None:
-        layer6, in_vertical_raster, raster_ra6 = _raster_input(
-            in_vertical_raster
-        )
+        layer6, in_vertical_raster, raster_ra6 = _raster_input(in_vertical_raster)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -4216,14 +3873,10 @@ def distance_accumulation(
     }
 
     if in_cost_raster is not None:
-        template_dict["rasterFunctionArguments"][
-            "in_cost_raster"
-        ] = in_cost_raster
+        template_dict["rasterFunctionArguments"]["in_cost_raster"] = in_cost_raster
 
     if in_barrier_data is not None:
-        template_dict["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = in_barrier_data
+        template_dict["rasterFunctionArguments"]["in_barrier_data"] = in_barrier_data
 
     if in_surface_raster is not None:
         template_dict["rasterFunctionArguments"][
@@ -4246,14 +3899,10 @@ def distance_accumulation(
         ] = horizontal_factor
 
     if vertical_factor is not None:
-        template_dict["rasterFunctionArguments"][
-            "vertical_factor"
-        ] = vertical_factor
+        template_dict["rasterFunctionArguments"]["vertical_factor"] = vertical_factor
 
     if distance_method is not None:
-        template_dict["rasterFunctionArguments"][
-            "distance_method"
-        ] = distance_method
+        template_dict["rasterFunctionArguments"]["distance_method"] = distance_method
 
     if source_initial_accumulation is not None:
         template_dict["rasterFunctionArguments"][
@@ -4277,32 +3926,20 @@ def distance_accumulation(
                 "source_direction should be one of the following "
                 + str(source_direction_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "source_direction"
-        ] = source_direction
+        template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
     else:
-        template_dict["rasterFunctionArguments"][
-            "source_direction"
-        ] = "FROM_SOURCE"
+        template_dict["rasterFunctionArguments"]["source_direction"] = "FROM_SOURCE"
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
     if in_cost_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_cost_raster"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
 
     if in_barrier_data is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = raster_ra3
+        function_chain_ra["rasterFunctionArguments"]["in_barrier_data"] = raster_ra3
 
     if in_surface_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_surface_raster"
-        ] = raster_ra4
+        function_chain_ra["rasterFunctionArguments"]["in_surface_raster"] = raster_ra4
 
     if in_horizontal_raster is not None:
         function_chain_ra["rasterFunctionArguments"][
@@ -4310,9 +3947,7 @@ def distance_accumulation(
         ] = raster_ra5
 
     if in_vertical_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_vertical_raster"
-        ] = raster_ra6
+        function_chain_ra["rasterFunctionArguments"]["in_vertical_raster"] = raster_ra6
 
     if (
         output_back_direction_raster_name is not None
@@ -4341,9 +3976,7 @@ def distance_accumulation(
             )
 
     if isinstance(in_source_data, ImageryLayer):
-        return _gbl_clone_layer(
-            in_source_data, template_dict, function_chain_ra
-        )
+        return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
     else:
         return _feature_gbl_clone_layer(
             in_source_data, template_dict, function_chain_ra
@@ -4488,26 +4121,18 @@ def distance_allocation(
 
     if in_barrier_data is not None:
         if isinstance(in_barrier_data, ImageryLayer):
-            layer3, in_barrier_data, raster_ra3 = _raster_input(
-                in_barrier_data
-            )
+            layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
         else:
             raster_ra3 = _layer_input(in_barrier_data)
             in_barrier_data = raster_ra3
             layer3 = raster_ra3
 
     if in_surface_raster is not None:
-        layer4, in_surface_raster, raster_ra4 = _raster_input(
-            in_surface_raster
-        )
+        layer4, in_surface_raster, raster_ra4 = _raster_input(in_surface_raster)
     if in_horizontal_raster is not None:
-        layer5, in_horizontal_raster, raster_ra5 = _raster_input(
-            in_horizontal_raster
-        )
+        layer5, in_horizontal_raster, raster_ra5 = _raster_input(in_horizontal_raster)
     if in_vertical_raster is not None:
-        layer6, in_vertical_raster, raster_ra6 = _raster_input(
-            in_vertical_raster
-        )
+        layer6, in_vertical_raster, raster_ra6 = _raster_input(in_vertical_raster)
 
     template_dict = {
         "rasterFunction": "GPAdapter",
@@ -4531,14 +4156,10 @@ def distance_allocation(
     }
 
     if in_cost_raster is not None:
-        template_dict["rasterFunctionArguments"][
-            "in_cost_raster"
-        ] = in_cost_raster
+        template_dict["rasterFunctionArguments"]["in_cost_raster"] = in_cost_raster
 
     if in_barrier_data is not None:
-        template_dict["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = in_barrier_data
+        template_dict["rasterFunctionArguments"]["in_barrier_data"] = in_barrier_data
 
     if in_surface_raster is not None:
         template_dict["rasterFunctionArguments"][
@@ -4561,19 +4182,13 @@ def distance_allocation(
         ] = horizontal_factor
 
     if vertical_factor is not None:
-        template_dict["rasterFunctionArguments"][
-            "vertical_factor"
-        ] = vertical_factor
+        template_dict["rasterFunctionArguments"]["vertical_factor"] = vertical_factor
 
     if source_field is not None:
-        template_dict["rasterFunctionArguments"][
-            "source_field"
-        ] = source_field
+        template_dict["rasterFunctionArguments"]["source_field"] = source_field
 
     if distance_method is not None:
-        template_dict["rasterFunctionArguments"][
-            "distance_method"
-        ] = distance_method
+        template_dict["rasterFunctionArguments"]["distance_method"] = distance_method
 
     if source_initial_accumulation is not None:
         template_dict["rasterFunctionArguments"][
@@ -4597,32 +4212,20 @@ def distance_allocation(
                 "source_direction should be one of the following "
                 + str(source_direction_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "source_direction"
-        ] = source_direction
+        template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
     else:
-        template_dict["rasterFunctionArguments"][
-            "source_direction"
-        ] = "FROM_SOURCE"
+        template_dict["rasterFunctionArguments"]["source_direction"] = "FROM_SOURCE"
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_source_data"
-    ] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
     if in_cost_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_cost_raster"
-        ] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
 
     if in_barrier_data is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_barrier_data"
-        ] = raster_ra3
+        function_chain_ra["rasterFunctionArguments"]["in_barrier_data"] = raster_ra3
 
     if in_surface_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_surface_raster"
-        ] = raster_ra4
+        function_chain_ra["rasterFunctionArguments"]["in_surface_raster"] = raster_ra4
 
     if in_horizontal_raster is not None:
         function_chain_ra["rasterFunctionArguments"][
@@ -4630,9 +4233,7 @@ def distance_allocation(
         ] = raster_ra5
 
     if in_vertical_raster is not None:
-        function_chain_ra["rasterFunctionArguments"][
-            "in_vertical_raster"
-        ] = raster_ra6
+        function_chain_ra["rasterFunctionArguments"]["in_vertical_raster"] = raster_ra6
 
     if (
         output_back_direction_raster_name is not None
@@ -4663,9 +4264,7 @@ def distance_allocation(
             )
 
     if isinstance(in_source_data, ImageryLayer):
-        return _gbl_clone_layer(
-            in_source_data, template_dict, function_chain_ra
-        )
+        return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
     else:
         return _feature_gbl_clone_layer(
             in_source_data, template_dict, function_chain_ra
@@ -4781,15 +4380,12 @@ def optimal_path_as_raster(
         path_type_list = ["EACH_CELL", "EACH_ZONE", "BEST_SINGLE"]
         if path_type.upper() not in path_type_list:
             raise RuntimeError(
-                "path_type should be one of the following "
-                + str(path_type_list)
+                "path_type should be one of the following " + str(path_type_list)
             )
         template_dict["rasterFunctionArguments"]["path_type"] = path_type
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["rasterFunctionArguments"][
-        "in_destination_data"
-    ] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_destination_data"] = raster_ra1
 
     if in_distance_accumulation_raster is not None:
         function_chain_ra["rasterFunctionArguments"][
@@ -4809,9 +4405,7 @@ def optimal_path_as_raster(
         )
 
 
-def boundary_clean(
-    input_raster, sort_type="NO_SORT", number_of_runs="TWO_WAY"
-):
+def boundary_clean(input_raster, sort_type="NO_SORT", number_of_runs="TWO_WAY"):
     """
     The boundary_clean function smooths the boundary between zones in a raster.
     Function available in ArcGIS Image Server 10.9 and higher.
@@ -4878,16 +4472,13 @@ def boundary_clean(
         sort_type_list = ["NO_SORT", "DESCEND", "ASCEND"]
         if sort_type.upper() not in sort_type_list:
             raise RuntimeError(
-                "sort_type should be one of the following "
-                + str(sort_type_list)
+                "sort_type should be one of the following " + str(sort_type_list)
             )
         template_dict["rasterFunctionArguments"]["sort_type"] = sort_type
 
     if number_of_runs is not None:
         if isinstance(number_of_runs, bool):
-            template_dict["rasterFunctionArguments"][
-                "number_of_runs"
-            ] = number_of_runs
+            template_dict["rasterFunctionArguments"]["number_of_runs"] = number_of_runs
         elif isinstance(number_of_runs, str):
             if number_of_runs.upper() == "TWO_WAY":
                 number_of_runs = True
@@ -4897,9 +4488,7 @@ def boundary_clean(
                 raise RuntimeError(
                     "number_of_runs should be one of the following - TWO_WAY, ONE_WAY or should be of type bool."
                 )
-            template_dict["rasterFunctionArguments"][
-                "number_of_runs"
-            ] = number_of_runs
+            template_dict["rasterFunctionArguments"]["number_of_runs"] = number_of_runs
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_raster"] = raster_ra1
 
@@ -5104,9 +4693,7 @@ def viewshed(
                 "analysis_method should be one of the following "
                 + str(analysis_method_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "analysis_method"
-        ] = analysis_method
+        template_dict["rasterFunctionArguments"]["analysis_method"] = analysis_method
 
     if analysis_type is not None:
         analysis_type_list = ["FREQUENCY", "OBSERVERS"]
@@ -5115,14 +4702,10 @@ def viewshed(
                 "analysis_type should be one of the following "
                 + str(analysis_type_list)
             )
-        template_dict["rasterFunctionArguments"][
-            "analysis_type"
-        ] = analysis_type
+        template_dict["rasterFunctionArguments"]["analysis_type"] = analysis_type
 
     if vertical_error is not None:
-        template_dict["rasterFunctionArguments"][
-            "vertical_error"
-        ] = vertical_error
+        template_dict["rasterFunctionArguments"]["vertical_error"] = vertical_error
 
     if refractivity_coefficient is not None:
         template_dict["rasterFunctionArguments"][
@@ -5130,9 +4713,7 @@ def viewshed(
         ] = refractivity_coefficient
 
     if surface_offset is not None:
-        template_dict["rasterFunctionArguments"][
-            "surface_offset"
-        ] = surface_offset
+        template_dict["rasterFunctionArguments"]["surface_offset"] = surface_offset
 
     if observer_elevation is not None:
         template_dict["rasterFunctionArguments"][
@@ -5140,14 +4721,10 @@ def viewshed(
         ] = observer_elevation
 
     if observer_offset is not None:
-        template_dict["rasterFunctionArguments"][
-            "observer_offset"
-        ] = observer_offset
+        template_dict["rasterFunctionArguments"]["observer_offset"] = observer_offset
 
     if inner_radius is not None:
-        template_dict["rasterFunctionArguments"][
-            "inner_radius"
-        ] = inner_radius
+        template_dict["rasterFunctionArguments"]["inner_radius"] = inner_radius
 
     if inner_radius_is_3d is not None:
         template_dict["rasterFunctionArguments"][
@@ -5155,9 +4732,7 @@ def viewshed(
         ] = inner_radius_is_3d
 
     if outer_radius is not None:
-        template_dict["rasterFunctionArguments"][
-            "outer_radius"
-        ] = outer_radius
+        template_dict["rasterFunctionArguments"]["outer_radius"] = outer_radius
 
     if outer_radius_is_3d is not None:
         template_dict["rasterFunctionArguments"][

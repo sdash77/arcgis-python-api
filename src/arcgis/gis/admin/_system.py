@@ -268,10 +268,7 @@ class System(BasePortalAdmin):
         :return: :class:`~arcgis.gis.admin.EmailManager`
         """
         # if "supportsEmail" in self._gis.properties and self._properties.supportsEmail:
-        if (
-            self._gis.version >= [7, 3]
-            or "supportsEmail" in self._gis.properties
-        ):
+        if self._gis.version >= [7, 3] or "supportsEmail" in self._gis.properties:
             if self._email is None:
                 self._email = EmailManager(
                     url=self._url + "/emailSettings", gis=self._gis
