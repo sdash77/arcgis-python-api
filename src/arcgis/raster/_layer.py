@@ -4168,8 +4168,8 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        out_sr                The spatial reference of the boundary's geometry. The spatial reference
-                              can be specified as a well-known ID.
+        out_sr                Optional integer. The spatial reference of the boundary's geometry.
+                              The spatial reference can be specified as a well-known ID.
                               If the ``out_SR`` is not specified, the boundary will be reported in the
                               spatial reference of the image service.
         =================     ====================================================================
@@ -4200,15 +4200,15 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        raster_id             required integer. Specifies the object ID of the raster catalog which
+        raster_id             Required integer. Specifies the object ID of the raster catalog which
                               will determine the raster and image coordinate system to use in a
                               mosaic dataset.
         -----------------     --------------------------------------------------------------------
-        point                 optional dictionary. The point geometry that defines the reference
+        point                 Optional dictionary. The point geometry that defines the reference
                               point of rotation to compute the angle direction. By default, takes
                               the centroid of image as point of rotation.
         -----------------     --------------------------------------------------------------------
-        angle_name            optional string. Specifies the name (or names) of the rotation
+        angle_name            Optional string. Specifies the name (or names) of the rotation
                               angle to be computed.
                               Possible options are
                               - "up"
@@ -4216,7 +4216,7 @@ class ImageryLayer(Layer):
                               You can specify multiple angle names by separating the names with a
                               comma. By default, angles are computed for all directions.
         -----------------     --------------------------------------------------------------------
-        spatial_reference     optional dictionary. Specifies the spatial reference to be used by
+        spatial_reference     Optional dictionary. Specifies the spatial reference to be used by
                               the image. By default, the spatial reference of the image is used.
         =================     ====================================================================
 
