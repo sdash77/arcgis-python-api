@@ -215,7 +215,7 @@ class Image(object):
         return self._story._delete(self.node, self.resource_node)
 
     # ----------------------------------------------------------------------
-    def _add_image(self, caption="", alt_text=None, display=None, story=None):
+    def _add_image(self, caption=None, alt_text=None, display=None, story=None):
         # Assign the story
         self._story = story
         # Make an add resource call if not url
@@ -227,10 +227,10 @@ class Image(object):
             "type": "image",
             "data": {
                 "image": self.resource_node,
-                "caption": caption,
-                "alt": alt_text,
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
             },
-            "config": {"size": display},
+            "config": {"size": "" if display is None else display},
         }
 
         # Create resource node. Different if file path or url
@@ -538,7 +538,7 @@ class Video(object):
     # ----------------------------------------------------------------------
     def _add_video(
         self,
-        caption="",
+        caption=None,
         alt_text=None,
         display=None,
         story=None,
@@ -562,8 +562,8 @@ class Video(object):
                 "type": "video",
                 "data": {
                     "video": self.resource_node,
-                    "caption": caption,
-                    "alt": alt_text,
+                    "caption": "" if caption is None else caption,
+                    "alt": "" if alt_text is None else alt_text,
                 },
                 "config": {
                     "size": display,
@@ -819,8 +819,8 @@ class Audio(object):
     # ----------------------------------------------------------------------
     def _add_audio(
         self,
-        caption="",
-        alt_text="",
+        caption=None,
+        alt_text=None,
         display=None,
         story=None,
     ):
@@ -832,8 +832,8 @@ class Audio(object):
             "type": "audio",
             "data": {
                 "audio": self.resource_node,
-                "caption": caption,
-                "alt": alt_text,
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
             },
             "config": {"size": display},
         }
@@ -1024,7 +1024,7 @@ class Embed(object):
         return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
-    def _add_link(self, caption="", alt_text=None, display="card", story=None):
+    def _add_link(self, caption=None, alt_text=None, display="card", story=None):
         self._story = story
         sections = _parse.urlparse(self._path)
         # Create embed node, no resource node needed
@@ -1034,9 +1034,9 @@ class Embed(object):
                 "url": self._path,
                 "embedType": "link",
                 "title": sections.netloc,
-                "description": caption,
+                "description": "" if caption is None else caption,
                 "providerUrl": sections.netloc,
-                "alt": alt_text,
+                "alt": "" if alt_text is None else alt_text,
                 "display": display,
             },
         }
