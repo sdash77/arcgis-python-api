@@ -4170,11 +4170,17 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         out_sr                Optional integer. The spatial reference of the boundary's geometry.
                               The spatial reference can be specified as a well-known ID.
-                              If the ``out_SR`` is not specified, the boundary will be reported in the
-                              spatial reference of the image service.
+                              If the ``out_sr`` is not specified, it will use the spatial
+                              reference of the image service.
         =================     ====================================================================
 
         :returns: A dictionary with the image tile cache scheme information.
+
+        .. code-block:: python
+
+            # Example Usage: Compute the cache info for a given spatial reference.
+            
+            cache_info_op = img_lyr.compute_cache_info(out_sr=3857)
 
         """
         if self.tiles_only:
@@ -4221,6 +4227,15 @@ class ImageryLayer(Layer):
         =================     ====================================================================
 
         :returns: A dictionary with the computed rotation angle of a raster.
+
+        .. code-block:: python
+
+            # Example Usage: Compute angles for a given point and rotation angle.
+            
+            compute_angles_op = img_lyr.compute_angles(raster_id=1,
+                                                       point={"x": 7953660.35, "y": 3880828.27},
+                                                       angle_name="north",
+                                                       spatial_reference={"wkid": 54004})
 
         """
         if self.tiles_only:
