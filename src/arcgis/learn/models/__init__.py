@@ -2,7 +2,6 @@ from .._utils.env import _LAMBDA_TEXT_CLASSIFICATION
 
 if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._ssd import SingleShotDetector
-    from ._inferencing import _DynamicSSD
     from ._unet import UnetClassifier
     from ._retinanet import RetinaNet
     from ._classifier import FeatureClassifier
@@ -32,3 +31,5 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._deepsort import DeepSort
     from ._auto_ml import AutoML
     from ._pix2pix_hd import Pix2PixHD
+    from ._max_deeplab import MaXDeepLab
+    from ._wnet_cgan import WNet_cGAN

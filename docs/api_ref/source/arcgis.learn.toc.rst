@@ -166,6 +166,13 @@ Pix2PixHD
     :inherited-members:
     :undoc-members:
 
+WNet_cGAN
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.WNet_cGAN
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 SuperResolution
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.SuperResolution
