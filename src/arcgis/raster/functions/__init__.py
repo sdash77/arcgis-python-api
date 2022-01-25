@@ -11916,6 +11916,7 @@ def dimensional_moving_statistics(
     percentile_value=90,
     percentile_interpolation_type="AUTO_DETECT",
     circular_wrap_value=360,
+    nodata_handling="DATA",
 ):
     """
     The dimensional_moving_statistics function calculates statistics over a moving window
@@ -12011,6 +12012,19 @@ def dimensional_moving_statistics(
 
                                          This parameter is only supported if the ``statistics_type`` parameter is
                                          set to CIRCULAR_MEAN.
+    --------------------------------     --------------------------------------------------------------------
+    nodata_handling                      Optional string. Specifies how NoData values will be handled by the 
+                                         statistic calculation.
+
+                                            - DATA - NoData values in the value input will be ignored in the 
+                                            results of the defined window that they fall within. This is the 
+                                            default.
+
+                                            - NODATA - Output values will be NoData if any NoData values exist 
+                                            in the input within the defined window.
+
+                                            - FILL_NODATA - NoData cell values will be replaced using the selected 
+                                            statistic within the defined window.
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -12052,11 +12066,11 @@ def dimensional_moving_statistics(
                 + str(statistics_types.keys())
             )
         template_dict["rasterFunctionArguments"]["StatisticsType"] = statistics_types[
-            statistics_type
+            statistics_type.upper()
         ]
 
     if percentile_value is not None:
-        template_dict["rasterFunctionArguments"]["percentile_value"] = percentile_value
+        template_dict["rasterFunctionArguments"]["PercentileValue"] = percentile_value
 
     percentile_interpolation_type_list = ["AUTO_DETECT", "NEAREST", "LINEAR"]
     if percentile_interpolation_type is not None:
@@ -12069,13 +12083,24 @@ def dimensional_moving_statistics(
                 + str(percentile_interpolation_type_list)
             )
         template_dict["rasterFunctionArguments"][
-            "percentile_interpolation_type"
+            "PercentileInterpolationType"
         ] = percentile_interpolation_type
 
     if circular_wrap_value is not None:
         template_dict["rasterFunctionArguments"][
             "CircularWrapValue"
         ] = circular_wrap_value
+
+    nodata_handling_types = {"DATA": -1, "NODATA": 0, "FILL_NODATA": 3}
+    if nodata_handling is not None:
+        if nodata_handling.upper() not in nodata_handling_types.keys():
+            raise RuntimeError(
+                "nodata_handling parameter value should be one of the following "
+                + str(nodata_handling_types.keys())
+            )
+        template_dict["rasterFunctionArguments"][
+            "NoDataHandling"
+        ] = nodata_handling_types[nodata_handling.upper()]
 
     return _clone_layer(layer, template_dict, raster_ra)
 
