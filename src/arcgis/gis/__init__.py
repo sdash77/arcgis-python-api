@@ -2506,61 +2506,6 @@ class UserManager(object):
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    @property
-    def user_settings(self):
-        """
-        Gets/sets the user's settings
-
-        The `user_settings` allows administrators to set, and edit, new
-        member defaults. Members who create their own built-in accounts and
-        members added by an administrator or through automatic account
-        creation will be automatically assigned the new member defaults.
-
-        Passing in `None` to the property will delete all the user settings.
-
-        **Settings Key/Value Dictionary**
-
-        ================  ===============================================================================
-        **Keys**          **Description**
-        ----------------  -------------------------------------------------------------------------------
-        role	          String/Role. The role ID. To assign a custom role as the new member default,
-                          provide a Role object.
-
-                          Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object
-        ----------------  -------------------------------------------------------------------------------
-        userLicenseType   String. The ID of a user type licensed with your organization. To see which
-                          user types are included with your organization's licensing, see the License
-                          resource in the Portal Admin API.
-
-                          Values: `creator`, `editor`, `Advanced GIS`, `Basic GIS`, `Standard GIS`,
-                          `viewer`, or `fieldWorker`
-        ----------------  -------------------------------------------------------------------------------
-        groups            List of String/Groups. An array of group ID numbers or `Group` objects that
-                          specify the groups new members will be added to.
-        ----------------  -------------------------------------------------------------------------------
-        userType          String.  This key only applies to `ArcGIS Online`. If new members will have
-                          Esri access (both) or if Esri access will be disabled (arcgisonly). The default
-                          value is `arcgisonly`.
-
-                          Values: `arcgisonly` or `both`
-        ----------------  -------------------------------------------------------------------------------
-        apps              List of dictionaries.  An array of an app's itemID and, when applicable, entitlement.
-                          Example: `{"apps" :[{"itemId": "f761dd0f298944dcab22d1e888c60293","entitlements": ["Insights"]}]}`
-        ----------------  -------------------------------------------------------------------------------
-        appBundles        List of dictionaries. An array of an app bundle's ID.
-
-                          Example: `{"appBundles":[{"itemId": "99d7956c7e824ff4ab27422e2a26c2b7}]}`
-        ================  ===============================================================================
-
-        :return: Dictionary of the user settings
-
-        """
-        if self._gis.version >= [7, 3]:
-            url = f"{self._gis._portal.resturl}portals/self/userDefaultSettings"
-            params = {"f": "json"}
-            return self._gis._con.get(url, params)
-        return None
-
     def report(
         self,
         report_type: str,
@@ -2690,6 +2635,62 @@ class UserManager(object):
             raise e
 
         return item
+
+    # ----------------------------------------------------------------------
+    @property
+    def user_settings(self):
+        """
+        Gets/sets the user's settings
+
+        The `user_settings` allows administrators to set, and edit, new
+        member defaults. Members who create their own built-in accounts and
+        members added by an administrator or through automatic account
+        creation will be automatically assigned the new member defaults.
+
+        Passing in `None` to the property will delete all the user settings.
+
+        **Settings Key/Value Dictionary**
+
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        role	          String/Role. The role ID. To assign a custom role as the new member default,
+                          provide a Role object.
+
+                          Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object
+        ----------------  -------------------------------------------------------------------------------
+        userLicenseType   String. The ID of a user type licensed with your organization. To see which
+                          user types are included with your organization's licensing, see the License
+                          resource in the Portal Admin API.
+
+                          Values: `creator`, `editor`, `Advanced GIS`, `Basic GIS`, `Standard GIS`,
+                          `viewer`, or `fieldWorker`
+        ----------------  -------------------------------------------------------------------------------
+        groups            List of String/Groups. An array of group ID numbers or `Group` objects that
+                          specify the groups new members will be added to.
+        ----------------  -------------------------------------------------------------------------------
+        userType          String.  This key only applies to `ArcGIS Online`. If new members will have
+                          Esri access (both) or if Esri access will be disabled (arcgisonly). The default
+                          value is `arcgisonly`.
+
+                          Values: `arcgisonly` or `both`
+        ----------------  -------------------------------------------------------------------------------
+        apps              List of dictionaries.  An array of an app's itemID and, when applicable, entitlement.
+                          Example: `{"apps" :[{"itemId": "f761dd0f298944dcab22d1e888c60293","entitlements": ["Insights"]}]}`
+        ----------------  -------------------------------------------------------------------------------
+        appBundles        List of dictionaries. An array of an app bundle's ID.
+
+                          Example: `{"appBundles":[{"itemId": "99d7956c7e824ff4ab27422e2a26c2b7}]}`
+        ================  ===============================================================================
+
+        :return: Dictionary of the user settings
+
+        """
+        if self._gis.version >= [7, 3]:
+            url = f"{self._gis._portal.resturl}portals/self/userDefaultSettings"
+            params = {"f": "json"}
+            return self._gis._con.get(url, params)
+        return None
 
     # ----------------------------------------------------------------------
     @user_settings.setter
