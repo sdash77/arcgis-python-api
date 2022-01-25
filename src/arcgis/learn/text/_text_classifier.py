@@ -55,6 +55,7 @@ except Exception as e:
     class TransformerForTextClassification:
         _supported_backbones = transformer_architectures
 
+
 else:
     warnings.filterwarnings("ignore", category=UserWarning, module="fastai")
 
