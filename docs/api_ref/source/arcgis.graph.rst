@@ -5,6 +5,6 @@ arcgis.graph module
 
 KnowledgeGraph
 --------------
-.. autoclass:: arcgis.realtime.KnowledgeGraph
+.. autoclass:: arcgis.graph.KnowledgeGraph
     :members:
     :undoc-members:

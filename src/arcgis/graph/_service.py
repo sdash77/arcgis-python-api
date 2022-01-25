@@ -69,15 +69,8 @@ class KnowledgeGraph:
             "token": self._gis._con.token,
             "openCypherQuery": query,
         }
-        stream = False
-        if stream:
-            data = self._gis._con.post(
-                url, params, return_raw_response=True, try_json=False
-            )
-        else:
-            data = self._gis._con.get(
-                url, params, return_raw_response=True, try_json=False
-            )
+
+        data = self._gis._con.get(url, params, return_raw_response=True, try_json=False)
         buffer_dm = data.content
         gqd = _kgparser.GraphQueryDecoder()
         gqd.push_buffer(buffer_dm)
