@@ -1612,7 +1612,7 @@ class ArcGISModel(object):
 
         if publish:
             self._publish_dlpk(
-                (saved_path.parent / saved_path.stem).with_suffix(".dlpk"),
+                (saved_path.parent / os.path.basename(saved_path)).with_suffix(".dlpk"),
                 gis=gis,
                 overwrite=kwargs.get("overwrite", False),
             )

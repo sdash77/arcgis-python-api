@@ -289,8 +289,14 @@ class TimeSeriesModel(ArcGISModel):
         from IPython.utils import io
 
         with io.capture_output() as captured:
-            super().save(
-                path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs
+            saved_path = super().save(
+                path, framework, False, gis, save_optimizer=save_optimizer, **kwargs
+            )
+        if publish:
+            self._publish_dlpk(
+                (saved_path / os.path.basename(saved_path)).with_suffix(".dlpk"),
+                gis=gis,
+                overwrite=kwargs.get("overwrite", False),
             )
 
         return Path(path)
