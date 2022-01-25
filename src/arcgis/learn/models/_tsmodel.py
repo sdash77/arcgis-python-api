@@ -293,8 +293,10 @@ class TimeSeriesModel(ArcGISModel):
                 path, framework, False, gis, save_optimizer=save_optimizer, **kwargs
             )
         if publish:
+            file_name = os.path.basename(saved_path) + '.dlpk'
+            dlpk_path = Path(os.path.join(saved_path, file_name))
             self._publish_dlpk(
-                (saved_path / os.path.basename(saved_path)).with_suffix(".dlpk"),
+                dlpk_path,
                 gis=gis,
                 overwrite=kwargs.get("overwrite", False),
             )
