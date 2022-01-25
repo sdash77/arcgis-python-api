@@ -1461,7 +1461,7 @@ def prepare_data(
     ):
         with open(stats_file) as f:
             stats = json.load(f)
-            if dataset_type is not "Panoptic":
+            if dataset_type != "Panoptic":
                 dataset_type = stats["MetaDataMode"]
 
         with open(path / "map.txt") as f:
