@@ -586,8 +586,8 @@ class Video(object):
                 "data": {
                     "url": self._path,
                     "embedType": "video",
-                    "caption": caption,
-                    "alt": alt_text,
+                    "caption": "" if caption is None else caption,
+                    "alt": "" if alt_text is None else alt_text,
                     "display": "inline",
                     "aspectRatio": 1.778,
                     "addedAsEmbedCode": True,
@@ -1325,8 +1325,8 @@ class Map(object):
             "type": "webmap",
             "data": {
                 "map": self.resource_node,
-                "caption": caption,
-                "alt": alt_text,
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
                 "extent": self._extent,
                 "center": self._center,
                 "zoom": 2,
@@ -1924,8 +1924,8 @@ class Gallery(object):
             "type": "gallery",
             "data": {
                 "galleryLayout": display if display is not None else "jigsaw",
-                "caption": caption,
-                "alt": alt_text,
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
             },
             "children": self._children,
         }
