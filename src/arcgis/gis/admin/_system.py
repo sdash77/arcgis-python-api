@@ -75,9 +75,7 @@ class Indexer(BasePortalAdmin):
     def reconfigure(self) -> bool:
         """
         This operation recreates the index service metadata, schema, and data in the event it becomes corrupted.
-
         :returns: Boolean
-
         """
         params = {"f": "json"}
         url = f"{self._url}/reconfigure"
@@ -614,7 +612,7 @@ class System(BasePortalAdmin):
         """
         Allows user to manage the site's indexer
 
-        :return: :class:`~arcgis.gis.admin.Indexer`
+        :return: `Indexer`
         """
         if self._indexer is None:
 
@@ -720,10 +718,7 @@ class WebAdaptors(BasePortalAdmin):
         """
         url = "%s/config/update" % self._url
         if isinstance(shared_key, str):
-            params = {
-                "webAdaptorsConfig": {"sharedkey": shared_key},
-                "f": "json",
-            }
+            params = {"webAdaptorsConfig": {"sharedkey": shared_key}, "f": "json"}
         elif isinstance(shared_key, dict) and "sharedKey" in shared_key:
             params = {"webAdaptorsConfig": shared_key, "f": "json"}
         return self._con.post(path=url, postdata=params)

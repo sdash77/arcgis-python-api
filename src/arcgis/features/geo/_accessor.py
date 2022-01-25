@@ -181,9 +181,7 @@ class GeoSeriesAccessor:
             A Series of strings
         """
         return pd.Series(
-            self._data.hull_rectangle,
-            name="hull_rectangle",
-            index=self._index,
+            self._data.hull_rectangle, name="hull_rectangle", index=self._index
         )
 
     # ----------------------------------------------------------------------
@@ -331,9 +329,7 @@ class GeoSeriesAccessor:
             A Series of :class:`~arcgis.geometry.SpatialReference` objects.
         """
         return pd.Series(
-            self._data.spatial_reference,
-            name="spatial_reference",
-            index=self._index,
+            self._data.spatial_reference, name="spatial_reference", index=self._index
         )
 
     # ----------------------------------------------------------------------
@@ -449,9 +445,7 @@ class GeoSeriesAccessor:
 
         """
         return pd.Series(
-            self._data.clip(**{"envelope": envelope}),
-            index=self._index,
-            name="clip",
+            self._data.clip(**{"envelope": envelope}), index=self._index, name="clip"
         )
 
     # ----------------------------------------------------------------------
@@ -535,9 +529,7 @@ class GeoSeriesAccessor:
 
         """
         return pd.Series(
-            self._data.cut(**{"cutter": cutter}),
-            index=self._index,
-            name="cut",
+            self._data.cut(**{"cutter": cutter}), index=self._index, name="cut"
         )
 
     # ----------------------------------------------------------------------
@@ -571,11 +563,7 @@ class GeoSeriesAccessor:
         """
         return pd.Series(
             self._data.densify(
-                **{
-                    "method": method,
-                    "distance": distance,
-                    "deviation": deviation,
-                }
+                **{"method": method, "distance": distance, "deviation": deviation}
             ),
             index=self._index,
             name="densify",
@@ -797,10 +785,7 @@ class GeoSeriesAccessor:
         """
         return pd.Series(
             self._data.intersect(
-                **{
-                    "second_geometry": second_geometry,
-                    "dimension": dimension,
-                }
+                **{"second_geometry": second_geometry, "dimension": dimension}
             ),
             name="intersect",
             index=self._index,
@@ -826,10 +811,7 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.measure_on_line(
-            **{
-                "second_geometry": second_geometry,
-                "as_percentage": as_percentage,
-            }
+            **{"second_geometry": second_geometry, "as_percentage": as_percentage}
         )
         return pd.Series(res, index=self._index, name="measure_on_line")
 
@@ -966,10 +948,7 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.query_point_and_distance(
-            **{
-                "second_geometry": second_geometry,
-                "use_percentage": use_percentage,
-            }
+            **{"second_geometry": second_geometry, "use_percentage": use_percentage}
         )
         return pd.Series(res, index=self._index, name="query_point_and_distance")
 
@@ -1521,12 +1500,7 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def join(
-        self,
-        right_df,
-        how="inner",
-        op="intersects",
-        left_tag="left",
-        right_tag="right",
+        self, right_df, how="inner", op="intersects", left_tag="left", right_tag="right"
     ):
         """
         The ``join`` method joins the current DataFrame to another Spatially-Enabled DataFrame based
@@ -1658,10 +1632,7 @@ class GeoAccessor(object):
             # within implemented as the inverse of contains; swap names
             left_df, right_df = right_df, left_df
             result = result.rename(
-                columns={
-                    "_key_left": "_key_right",
-                    "_key_right": "_key_left",
-                }
+                columns={"_key_left": "_key_right", "_key_right": "_key_left"}
             )
 
         if how == "inner":
@@ -1692,10 +1663,7 @@ class GeoAccessor(object):
                 left_df.drop(left_df.spatial._name, axis=1)
                 .merge(
                     result.merge(
-                        right_df,
-                        left_on="_key_right",
-                        right_index=True,
-                        how="right",
+                        right_df, left_on="_key_right", right_index=True, how="right"
                     ),
                     left_index=True,
                     right_on="_key_left",
@@ -2379,12 +2347,7 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_featureclass(
-        self,
-        location,
-        overwrite=True,
-        has_z=None,
-        has_m=None,
-        sanitize_columns=False,
+        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=False
     ):
         """
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
@@ -2394,23 +2357,23 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         location                        Required string. The output of the table.
         ---------------------------     --------------------------------------------------------------------
-        overwrite                       Optional Boolean.  If `True` and if the feature class exists, it
-                                        will be deleted and overwritten. This is default. If `False`, and
-                                        the feature class exists, an exception will be raised.
+        overwrite                       Optional Boolean.  If True and if the feature class exists, it will be
+                                        deleted and overwritten.  This is default.  If False, the feature class
+                                        and the feature class exists, and exception will be raised.
         ---------------------------     --------------------------------------------------------------------
-        has_z                           Optional Boolean.  If `True`, the dataset will be forced to have Z
+        has_z                           Optional Boolean.  If True, the dataset will be forced to have Z
                                         based geometries.  If a geometry is missing a Z value when true, a
-                                        `RuntimeError` will be raised.  When `False`, the API will not use
-                                        the Z value.
+                                        RuntimeError will be raised.  When False, the API will not use the
+                                        Z value.
         ---------------------------     --------------------------------------------------------------------
-        has_m                           Optional Boolean.  If `True`, the dataset will be forced to have M
-                                        based geometries.  If a geometry is missing a M value when `True`, a
-                                        `RuntimeError` will be raised. When `False`, the API will not use
-                                        the M value.
+        has_m                           Optional Boolean.  If True, the dataset will be forced to have M
+                                        based geometries.  If a geometry is missing a M value when true, a
+                                        RuntimeError will be raised. When False, the API will not use the
+                                        M value.
         ---------------------------     --------------------------------------------------------------------
-        sanitize_columns                Optional Boolean. If `True`, column names will be converted to
-                                        strings, invalid characters removed and other checks will be
-                                        performed and edits made. The default is `True`.
+        sanitize_columns                Optional Boolean. If True, column names will be converted to string,
+                                        invalid characters removed and other checks will be performed. The
+                                        default is True.
         ===========================     ====================================================================
 
         :return:
@@ -2560,11 +2523,7 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     @staticmethod
     def from_df(
-        df,
-        address_column="address",
-        geocoder=None,
-        sr=None,
-        geometry_column=None,
+        df, address_column="address", geocoder=None, sr=None, geometry_column=None
     ):
         """
         The ``from_df`` creates a Spatially Enabled DataFrame from a dataframe with an address column.
@@ -2642,8 +2601,7 @@ class GeoAccessor(object):
                     start = i
                     stop = i + batch_size if i + batch_size < N else N
                     res = batch_geocode(
-                        list(df[start:stop][address_column]),
-                        geocoder=geocoder,
+                        list(df[start:stop][address_column]), geocoder=geocoder
                     )
                     for index in range(len(res)):
                         try:
@@ -3073,35 +3031,19 @@ class GeoAccessor(object):
                 and not col in date_cols
             ):
                 fields.append(
-                    {
-                        "name": col,
-                        "type": "esriFieldTypeSmallInteger",
-                        "alias": col,
-                    }
+                    {"name": col, "type": "esriFieldTypeSmallInteger", "alias": col}
                 )
             elif isinstance(col_val, (int, np.int, np.int64)) and not col in date_cols:
                 fields.append(
-                    {
-                        "name": col,
-                        "type": "esriFieldTypeInteger",
-                        "alias": col,
-                    }
+                    {"name": col, "type": "esriFieldTypeInteger", "alias": col}
                 )
             elif isinstance(col_val, (float, np.float64)) and not col in date_cols:
                 fields.append(
-                    {
-                        "name": col,
-                        "type": "esriFieldTypeDouble",
-                        "alias": col,
-                    }
+                    {"name": col, "type": "esriFieldTypeDouble", "alias": col}
                 )
             elif isinstance(col_val, (np.float32)) and not col in date_cols:
                 fields.append(
-                    {
-                        "name": col,
-                        "type": "esriFieldTypeSingle",
-                        "alias": col,
-                    }
+                    {"name": col, "type": "esriFieldTypeSingle", "alias": col}
                 )
         fs["fields"] = fields
         for row in df.to_dict("records"):
@@ -3571,8 +3513,7 @@ class GeoAccessor(object):
         """
         q = self._data[self.name].geom.centroid.isnull()
         df = pd.DataFrame(
-            self._data[~q][self.name].geom.centroid.tolist(),
-            columns=["x", "y"],
+            self._data[~q][self.name].geom.centroid.tolist(), columns=["x", "y"]
         )
         return df["x"].mean(), df["y"].mean()
 
@@ -4029,9 +3970,5 @@ class GeoAccessor(object):
         """
 
         return _sanitize_column_names(
-            self,
-            convert_to_string,
-            remove_special_char,
-            inplace,
-            use_snake_case,
+            self, convert_to_string, remove_special_char, inplace, use_snake_case
         )

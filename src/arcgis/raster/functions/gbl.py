@@ -12,12 +12,7 @@ Functions can be applied to various rasters (or images), including the following
 * Rasters within imagery layers
 
 """
-from arcgis.raster._layer import (
-    ImageryLayer,
-    Raster,
-    _ArcpyRaster,
-    RasterCollection,
-)
+from arcgis.raster._layer import ImageryLayer, Raster, _ArcpyRaster, RasterCollection
 from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 import copy
@@ -51,9 +46,7 @@ def _create_output_image_service(gis, output_name, task):
     }
 
     output_service = gis.content.create_service(
-        output_name,
-        create_params=create_parameters,
-        service_type="imageService",
+        output_name, create_params=create_parameters, service_type="imageService"
     )
     description = "Image Service generated from running the " + task + " tool."
     item_properties = {
@@ -670,7 +663,8 @@ def zonal_statistics(
 
     """
     Calculates statistics on values of a raster within the zones of another dataset.
-    For more information, see `Zonal Statistics function <https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/zonal-statistics-global-function.htm>`_
+    For more information see,
+     https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/zonal-statistics-global-function.htm
 
     Parameters
     ----------
@@ -1679,12 +1673,7 @@ def calculate_travel_cost(
             "in_vertical_raster"
         ] = in_vertical_raster
 
-    horizontal_factor_list = [
-        "BINARY",
-        "LINEAR",
-        "FORWARD",
-        "INVERSE_LINEAR",
-    ]
+    horizontal_factor_list = ["BINARY", "LINEAR", "FORWARD", "INVERSE_LINEAR"]
     if horizontal_factor.upper() not in horizontal_factor_list:
         raise RuntimeError(
             "horizontal_factor should be one of the following "
@@ -2523,12 +2512,7 @@ def path_distance(
             "in_vertical_raster"
         ] = in_vertical_raster
 
-    horizontal_factor_list = [
-        "BINARY",
-        "LINEAR",
-        "FORWARD",
-        "INVERSE_LINEAR",
-    ]
+    horizontal_factor_list = ["BINARY", "LINEAR", "FORWARD", "INVERSE_LINEAR"]
     if horizontal_factor is not None:
         if horizontal_factor.upper() not in horizontal_factor_list:
             raise RuntimeError(
@@ -2743,12 +2727,7 @@ def path_distance_allocation(
             "in_vertical_raster"
         ] = in_vertical_raster
 
-    horizontal_factor_list = [
-        "BINARY",
-        "LINEAR",
-        "FORWARD",
-        "INVERSE_LINEAR",
-    ]
+    horizontal_factor_list = ["BINARY", "LINEAR", "FORWARD", "INVERSE_LINEAR"]
     if horizontal_factor is not None:
         if horizontal_factor.upper() not in horizontal_factor_list:
             raise RuntimeError(
@@ -2971,12 +2950,7 @@ def path_distance_back_link(
             "in_vertical_raster"
         ] = in_vertical_raster
 
-    horizontal_factor_list = [
-        "BINARY",
-        "LINEAR",
-        "FORWARD",
-        "INVERSE_LINEAR",
-    ]
+    horizontal_factor_list = ["BINARY", "LINEAR", "FORWARD", "INVERSE_LINEAR"]
     if horizontal_factor is not None:
         if horizontal_factor.upper() not in horizontal_factor_list:
             raise RuntimeError(
@@ -3525,9 +3499,7 @@ def snap_pour_point(
 
 
 def stream_order(
-    input_stream_raster,
-    input_flow_direction_raster=None,
-    order_method="STRAHLER",
+    input_stream_raster, input_flow_direction_raster=None, order_method="STRAHLER"
 ):
     """
     Creates a raster layer that assigns a numeric order to segments 
