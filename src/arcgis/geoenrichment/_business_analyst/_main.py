@@ -1849,7 +1849,9 @@ class BusinessAnalyst(object):
                 req_param_lst.append(deepcopy(params))
 
         # bach request asynchronously
-        enrich_res_df = run_async(_get_enrich_rest, ge_url, req_param_lst, retrieve_geometry)
+        enrich_res_df = run_async(
+            _get_enrich_rest, ge_url, req_param_lst, retrieve_geometry
+        )
 
         # clean up the response dataframe schema
         drop_cols = [c for c in enrich_res_df.columns if "objectid" in c.lower()] + [
