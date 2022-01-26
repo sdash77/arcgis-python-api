@@ -10,7 +10,7 @@ from arcgis.features.find_locations import derive_new_locations
 profiles = ["your_online_profile", "ent11"]
 
 
-class Test(unittest.TestCase):
+class TestDeriveNewLocations(unittest.TestCase):
     def test_overwrite(self):
         """tests overwriting an Item layer using the context param"""
         for profile in profiles:
@@ -23,10 +23,8 @@ class Test(unittest.TestCase):
             else:
                 cougars_item = gis.content.get("8599c3fd627a4f818ea22be321e084f7")
             assert isinstance(cougars_item, Item)
-            state_park = cougars_item.layers[4]
             vegetation = cougars_item.layers[7]
             slope = cougars_item.layers[5]
-            sub_watershed = cougars_item.layers[6]
             highways = cougars_item.layers[0]
             streams = cougars_item.layers[1]
 

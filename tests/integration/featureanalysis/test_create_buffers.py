@@ -7,7 +7,7 @@ from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.use_proximity import create_buffers
 
-profiles = ["ent11"]
+profiles = ["your_online_profile", "ent11"]
 
 
 class TestCreateBuffers(unittest.TestCase):
