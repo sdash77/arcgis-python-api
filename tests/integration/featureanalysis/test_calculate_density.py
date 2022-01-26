@@ -105,150 +105,6 @@ data = [
             "spatialReference": {"wkid": 102100, "latestWkid": 3857},
         },
     },
-    {
-        "FID": 5,
-        "NAME": "AVALON BAGLES AND BURGERS",
-        "ADDR": "174 E YORBA LINDA BLVD",
-        "PHONE": "(714) 985-1382",
-        "DAYS": "Mon - Sun",
-        "HOURS": "7AM - 4 PM",
-        "OPTIONS": "Takeout, 3rd party Delivery",
-        "DISCOUNTS": "None",
-        "NOTES": " ",
-        "DEL_OPTS": "Grubhub, Doordash, Seamless",
-        "TYPE": "Bagels, Burgers, Sandwiches",
-        "WEBSITE": "https://avalonbagelstoburgers.com/",
-        "Doordash": "https://www.doordash.com/store/avalon-bagels-to-burgers-placentia-320809/en-US",
-        "Grubhub": "https://www.grubhub.com/restaurant/avalon-bagels-to-burgers---placentia-174-e-yorba-linda-blvd-placentia/553124",
-        "Postmates": " ",
-        "Other": " ",
-        "OUTDINE": "Open",
-        "SHAPE": {
-            "x": -13120516.589507373,
-            "y": 4013511.6346839233,
-            "spatialReference": {"wkid": 102100, "latestWkid": 3857},
-        },
-    },
-    {
-        "FID": 6,
-        "NAME": "ISE JAPANESE RESTAURANT",
-        "ADDR": "1241 E YORBA LINDA BLVD",
-        "PHONE": "(714) 993-6442",
-        "DAYS": "Mon - Thur, Fri, Sat",
-        "HOURS": "11 AM - 10 PM, 11 AM - 10:30 PM, 11:30 AM - 10 PM",
-        "OPTIONS": "Takeout",
-        "DISCOUNTS": "None",
-        "NOTES": " ",
-        "DEL_OPTS": " ",
-        "TYPE": "Japanese",
-        "WEBSITE": "https://isesushi.wordpress.com",
-        "Doordash": " ",
-        "Grubhub": " ",
-        "Postmates": " ",
-        "Other": " ",
-        "OUTDINE": "Open",
-        "SHAPE": {
-            "x": -13117975.00648396,
-            "y": 4013952.0928615234,
-            "spatialReference": {"wkid": 102100, "latestWkid": 3857},
-        },
-    },
-    {
-        "FID": 7,
-        "NAME": "COFFEE BEAN & TEA LEAF #392",
-        "ADDR": "1188 E YORBA LINDA BLVD",
-        "PHONE": "(310) 237-2326",
-        "DAYS": "Mon - Sun",
-        "HOURS": "6 AM - 6 PM",
-        "OPTIONS": "Drive-Thru",
-        "DISCOUNTS": "None",
-        "NOTES": "657-216-5920",
-        "DEL_OPTS": "Postmates",
-        "TYPE": "Coffee",
-        "WEBSITE": "https://coffeebean.com",
-        "Doordash": " ",
-        "Grubhub": " ",
-        "Postmates": "https://postmates.com/merchant/the-coffee-bean-placentia",
-        "Other": " ",
-        "OUTDINE": "Open",
-        "SHAPE": {
-            "x": -13118132.860060971,
-            "y": 4013795.8679011846,
-            "spatialReference": {"wkid": 102100, "latestWkid": 3857},
-        },
-    },
-    {
-        "FID": 8,
-        "NAME": "PORKY'S PIZZA",
-        "ADDR": "1152 E IMPERIAL HWY",
-        "PHONE": "(714) 572-1777",
-        "DAYS": "Sun - Thur, Fri - Sat",
-        "HOURS": "11 AM - 9 PM, 11 AM - 10 PM",
-        "OPTIONS": "Takeout, Delivery",
-        "DISCOUNTS": "None",
-        "NOTES": "*Ubereats, Postmates, Doordash",
-        "DEL_OPTS": "Ubereats, Postmates, Doordash",
-        "TYPE": "Pizza",
-        "WEBSITE": "https://porkyspizza.com",
-        "Doordash": "https://www.doordash.com/store/porky-s-pizza-placentia-16731/en-US",
-        "Grubhub": " ",
-        "Postmates": " ",
-        "Other": " ",
-        "OUTDINE": "Open",
-        "SHAPE": {
-            "x": -13118260.5041459,
-            "y": 4015977.511310816,
-            "spatialReference": {"wkid": 102100, "latestWkid": 3857},
-        },
-    },
-    {
-        "FID": 9,
-        "NAME": "FISH IN A BOTTLE",
-        "ADDR": "1205 E IMPERIAL HWY",
-        "PHONE": "(714) 528-4000",
-        "DAYS": "Until this Sunday",
-        "HOURS": "11:30 AM - 9:30 PM, Sat 11:30 AM -10:30, Sun 4 PM*",
-        "OPTIONS": "Take-out",
-        "DISCOUNTS": "None",
-        "NOTES": "*Doordash, Postmates, call in orders only, Will n*",
-        "DEL_OPTS": "Doordash, Postmates",
-        "TYPE": "Sushi",
-        "WEBSITE": "http://fish-in-a-bottle-sushi-grill.cafes-usa.com/",
-        "Doordash": " ",
-        "Grubhub": " ",
-        "Postmates": "https://postmates.com/merchant/fish-in-a-bottle-placentia",
-        "Other": " ",
-        "OUTDINE": "Open",
-        "SHAPE": {
-            "x": -13118048.480420934,
-            "y": 4015961.906490283,
-            "spatialReference": {"wkid": 102100, "latestWkid": 3857},
-        },
-    },
-    {
-        "FID": 10,
-        "NAME": "WINGSTOP #1553",
-        "ADDR": "1093 E IMPERIAL HWY",
-        "PHONE": "(714) 868-7000",
-        "DAYS": "Mon - Sun",
-        "HOURS": "10:30 AM - Midnight",
-        "OPTIONS": "Delivery, Takeout",
-        "DISCOUNTS": "Mondays & Tuesdays 60 cent boneless wings.",
-        "NOTES": "*Doordash",
-        "DEL_OPTS": "Doordash",
-        "TYPE": "Chicken Wings",
-        "WEBSITE": "https://wingstop.com",
-        "Doordash": "https://www.doordash.com/store/wingstop-placentia-647491/en-US",
-        "Grubhub": " ",
-        "Postmates": " ",
-        "Other": " ",
-        "OUTDINE": "Open",
-        "SHAPE": {
-            "x": -13118439.698197426,
-            "y": 4016169.0124437176,
-            "spatialReference": {"wkid": 102100, "latestWkid": 3857},
-        },
-    },
 ]
 
 # download shapefile and upload to respective portal if not already present
@@ -270,16 +126,9 @@ class TestCalculateDensity(unittest.TestCase):
             fs = gis.content.import_data(sdf)
             # gather layers
             point_item = gis.content.get(fs.id)
-            if gis._is_agol:
-                polygon_item = gis.content.get("1ac6896bcafc4dccb29c70f45c442b00")
-            else:
-                polygon_item = gis.content.get("070c78e3d52e4b97aa2d36a5fb9845fe")
             assert isinstance(point_item, Item)
-            assert isinstance(polygon_item, Item)
             point_layer = point_item.layers[0]
-            polygon_layer = polygon_item.layers[0]
             assert isinstance(point_layer, FeatureLayer)
-            assert isinstance(polygon_layer, FeatureLayer)
 
             # create layer that will be overwritten
             test_id = str(datetime.datetime.now().microsecond)
@@ -296,7 +145,6 @@ class TestCalculateDensity(unittest.TestCase):
             print("Overwriting target layer")
             overwrite = calculate_density(
                 input_layer=point_layer,
-                bounding_polygon_layer=polygon_layer,
                 output_name=target_layer,
                 context={"overwrite": True},
             )

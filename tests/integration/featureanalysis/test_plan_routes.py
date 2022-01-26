@@ -36,25 +36,29 @@ class TestPlanRoutes(unittest.TestCase):
             test_id = str(datetime.datetime.now().microsecond)
             output_name = "test_plan_routes_" + test_id
             print("Creating ", output_name)
-            target_item = plan_routes(stops_layer=hq_lyr,
-                   route_count=0,
-                   max_stops_per_route=6,
-                   route_start_time=datetime.datetime(2019, 6, 20, 6, 0),
-                   start_layer=office_lyr,
-                   output_name=output_name,)
+            target_item = plan_routes(
+                stops_layer=office_lyr,
+                route_count=1,
+                max_stops_per_route=6,
+                route_start_time=datetime.datetime(2019, 6, 20, 6, 0),
+                start_layer=hq_lyr,
+                output_name=output_name,
+            )
             assert isinstance(target_item, Item)
             target_layer = target_item.layers[0]
             assert isinstance(target_layer, FeatureLayer)
             target_layer_count_1 = len(target_item.layers)
 
             # perform overwrite
-            overwrite = plan_routes(stops_layer=hq_lyr,
-                   route_count=0,
-                   max_stops_per_route=10,
-                   route_start_time=datetime.datetime(2019, 6, 20, 6, 0),
-                   start_layer=office_lyr,
-                   output_name=target_layer,
-                   context={"overwrite":True})
+            overwrite = plan_routes(
+                stops_layer=office_lyr,
+                route_count=1,
+                max_stops_per_route=10,
+                route_start_time=datetime.datetime(2019, 6, 20, 6, 0),
+                start_layer=hq_lyr,
+                output_name=target_layer,
+                context={"overwrite": True},
+            )
             assert isinstance(overwrite, Item)
             assert target_item.id == overwrite.id
             # overwrite should not append. Only one layer should be present
