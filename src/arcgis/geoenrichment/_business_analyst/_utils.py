@@ -1,9 +1,11 @@
 """
 Utility functions useful for Business Analyst - the glue functions not fitting neatly anywhere else.
 """
+import asyncio
 from functools import wraps, lru_cache
 import importlib
 from itertools import product
+import threading
 from typing import Any, AnyStr, Iterable, Optional, Tuple, Union
 
 from arcgis.gis import GIS, User
@@ -736,3 +738,30 @@ def add_proximity_to_enrich_feature_list(
         for f in feature_list
     ]
     return prx_feat_lst
+
+
+# asynchronous function support section - solution located on StackOverflow
+# https://stackoverflow.com/questions/55409641/asyncio-run-cannot-be-called-from-a-running-event-loop
+class RunThread(threading.Thread):
+    def __init__(self, func, args, kwargs):
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+        super().__init__()
+
+    def run(self):
+        self.result = asyncio.run(self.func(*self.args, **self.kwargs))
+
+
+def run_async(func, *args, **kwargs):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop and loop.is_running():
+        thread = RunThread(func, args, kwargs)
+        thread.start()
+        thread.join()
+        return thread.result
+    else:
+        return asyncio.run(func(*args, **kwargs))
