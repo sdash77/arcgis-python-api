@@ -7,7 +7,7 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 2.0.0
+  version: 2.0.1
 requirements:
   build:
   - python
@@ -21,7 +21,7 @@ requirements:
   - pandas >=1
   - numpy >=1.16.2
   - matplotlib
-  - keyring >=19, <21.8.0
+  - keyring >=23.2.0
   - pytest
   - pyshp >=2
   - requests
