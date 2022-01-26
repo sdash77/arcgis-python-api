@@ -11912,6 +11912,7 @@ def dimensional_moving_statistics(
     dimension=None,
     backward_window=1,
     forward_window=1,
+    nodata_handling="DATA",
     statistics_type="MEAN",
     percentile_value=90,
     percentile_interpolation_type="AUTO_DETECT",
@@ -11948,6 +11949,19 @@ def dimensional_moving_statistics(
                                          from 1 to 100. The default value is 1.
 
                                          The unit of this parameter is slice.
+    --------------------------------     --------------------------------------------------------------------
+    nodata_handling                      Optional string. Specifies how NoData values will be handled by the 
+                                         statistic calculation.
+
+                                            - DATA - NoData values in the value input will be ignored in the \
+                                            results of the defined window that they fall within. This is the \
+                                            default.
+
+                                            - NODATA - Output values will be NoData if any NoData values are \
+                                            found in the input within the defined window.
+
+                                            - FILL_NODATA - NoData cell values will be replaced using the selected \
+                                            statistic on the values within the defined window.
     --------------------------------     --------------------------------------------------------------------
     statistics_type                      Optional string. Statistic type to be calculated.
 
@@ -12019,7 +12033,7 @@ def dimensional_moving_statistics(
 
         # Usage Example 1: Calculates MEAN statistics over a moving window on multidimensional data along StdTime dimension.
 
-        op = dimensional_moving_statistics(raster, "StdTime")
+        op = dimensional_moving_statistics(raster, dimension="StdTime")
 
     """
     layer, raster, raster_ra = _raster_input(raster)
@@ -12052,11 +12066,11 @@ def dimensional_moving_statistics(
                 + str(statistics_types.keys())
             )
         template_dict["rasterFunctionArguments"]["StatisticsType"] = statistics_types[
-            statistics_type
+            statistics_type.upper()
         ]
 
     if percentile_value is not None:
-        template_dict["rasterFunctionArguments"]["percentile_value"] = percentile_value
+        template_dict["rasterFunctionArguments"]["PercentileValue"] = percentile_value
 
     percentile_interpolation_type_list = ["AUTO_DETECT", "NEAREST", "LINEAR"]
     if percentile_interpolation_type is not None:
@@ -12069,13 +12083,24 @@ def dimensional_moving_statistics(
                 + str(percentile_interpolation_type_list)
             )
         template_dict["rasterFunctionArguments"][
-            "percentile_interpolation_type"
+            "PercentileInterpolationType"
         ] = percentile_interpolation_type
 
     if circular_wrap_value is not None:
         template_dict["rasterFunctionArguments"][
             "CircularWrapValue"
         ] = circular_wrap_value
+
+    nodata_handling_types = {"DATA": -1, "NODATA": 0, "FILL_NODATA": 3}
+    if nodata_handling is not None:
+        if nodata_handling.upper() not in nodata_handling_types.keys():
+            raise RuntimeError(
+                "nodata_handling parameter value should be one of the following "
+                + str(nodata_handling_types.keys())
+            )
+        template_dict["rasterFunctionArguments"][
+            "NoDataHandling"
+        ] = nodata_handling_types[nodata_handling.upper()]
 
     return _clone_layer(layer, template_dict, raster_ra)
 
