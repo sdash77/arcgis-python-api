@@ -824,7 +824,9 @@ class TestCreateViewshed(unittest.TestCase):
             test_id = str(datetime.datetime.now().microsecond)
             output_name = "overwrite_test_create_viewshed_" + test_id
             print("Creating ", output_name)
-            target_item = create_viewshed(input_layer=point_layer, output_name=output_name)
+            target_item = create_viewshed(
+                input_layer=point_layer, output_name=output_name
+            )
             assert isinstance(target_item, Item)
             target_layer = target_item.layers[0]
             assert isinstance(target_layer, FeatureLayer)
