@@ -64,6 +64,7 @@ try:
     from ._utils.tabular_data import TabularDataObject
     from ._utils.cyclegan import ImageTupleList, prepare_data_ms_cyclegan
     from ._utils.cyclegan import show_batch as show_batch_img2img
+    from .models._max_deeplab_utils import show_batch_panoptic
     from ._utils.wnet_cgan import prepare_data_wnetcgan
     from ._utils.wnet_cgan import show_batch_wnet as show_batch_img2depth
     import random
@@ -1090,7 +1091,8 @@ def prepare_data(
     -For feature categorization use Labelled Tiles or Imagenet format.
     -For pixel classification, use Classified Tiles format.
     -For entity extraction from text, use IOB, BILUO or ner_json formats.
-    -For DeepSort, use Imagenet format
+    -For DeepSort, use Imagenet format.
+    -For panoptic segmentation, use Panoptic format.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -1144,14 +1146,18 @@ def prepare_data(
                             'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles',
                             'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'superres', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN', and 'ObjectTracking'.
+                            'superres', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN',
+                            'Panoptic', and 'ObjectTracking'.
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
                             'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
-                            This parameter is also mandatory while preparing data
+                            This parameter is mandatory while preparing data
                             for 'EntityRecognizer' model. Accepted data format
                             for this model are - ['ner_json','BIO', 'LBIOU'].
+                            This parameter is mandatory while preparing data
+                            for 'MaXDeepLab' panoptic segmentation model.
+                            Accepted data format is 'Panoptic'.
     ---------------------   -------------------------------------------
     resize_to               Optional integer or tuple of integers.
                             A tuple should be of the form (height, width).
@@ -1171,37 +1177,12 @@ def prepare_data(
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    imagery_type            **deprecated**
-                            Optional string. Type of imagery used to export
-                            the training data, valid values are:
-                                - 'naip'
-                                - 'sentinel2'
-                                - 'landsat8'
-                                - 'ms' - any other type of imagery
-    ---------------------   -------------------------------------------
-    bands                   **deprecated**
-                            Optional list. Bands of the imagery used to export
-                            training data.
-                            For example ['r', 'g', 'b', 'nir', 'u']
-                            where 'nir' is near infrared band and 'u' is a miscellaneous band.
-    ---------------------   -------------------------------------------
-    rgb_bands               **deprecated**
-                            Optional list. Indices of red, green and blue bands
-                            in the imagery used to export the training data.
-                            for example: [2, 1, 0]
-    ---------------------   -------------------------------------------
-    extract_bands           **deprecated**
-                            Optional list. Indices of bands to be used for
-                            training the model, same as in the imagery used to
-                            export the training data.
-                            for example: [3, 1, 0] where we will not be using
-                            the band at index 2 to train our model.
-    ---------------------   -------------------------------------------
-    norm_pct                **deprecated**
-                            Optional float. Percentage of training data to be
-                            used for calculating imagery statistics for
-                            normalizing the data.
-                            Default is 0.3 (30%) of data.
+    n_masks                 Optional int. Default value is 30.
+                            Required for MaXDeepLab panoptic segmentation model.
+                            It represents the max number of class labels and
+                            instances any image can contain. To compute the exact
+                            value for your dataset, use the 'compute_n_masks()'
+                            method available with MaXDeepLab model.
     ---------------------   -------------------------------------------
     downsample_factor       Optional float. Factor to downsample the images
                             for image SuperResolution.
@@ -1480,7 +1461,8 @@ def prepare_data(
     ):
         with open(stats_file) as f:
             stats = json.load(f)
-            dataset_type = stats["MetaDataMode"]
+            if dataset_type != "Panoptic":
+                dataset_type = stats["MetaDataMode"]
 
         with open(path / "map.txt") as f:
             while True:
@@ -1693,7 +1675,7 @@ def prepare_data(
             return label_path
 
         label_dirs = []
-        index_dir = {}  # for handling calss value with any number
+        index_dir = {}  # for handling class value with any number
         for i, k in enumerate(sorted(class_mapping.keys())):
             label_dirs.append(class_mapping[k])
             index_dir[k] = i + 1
@@ -1802,6 +1784,77 @@ def prepare_data(
             data = src
         #
         _show_batch_multispectral = show_batch_rcnn_masks
+
+        if transforms is None:
+            ranges = (0, 1)
+            if _image_space_used == _map_space:
+                train_tfms = [
+                    crop(size=chip_size, p=1.0, row_pct=ranges, col_pct=ranges),
+                    dihedral_affine(),
+                    brightness(change=(0.4, 0.6)),
+                    contrast(scale=(1.0, 1.5)),
+                    rand_zoom(scale=(1.0, 1.2)),
+                ]
+            else:
+                train_tfms = [
+                    crop(size=chip_size, p=1.0, row_pct=ranges, col_pct=ranges),
+                    brightness(change=(0.4, 0.6)),
+                    contrast(scale=(1.0, 1.5)),
+                    rand_zoom(scale=(1.0, 1.2)),
+                ]
+            val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
+            transforms = (train_tfms, val_tfms)
+            kwargs_transforms["size"] = chip_size
+
+        kwargs_transforms["tfm_y"] = True
+
+    ## Create databunch for Panoptic Segmentation
+    elif dataset_type == "Panoptic":
+
+        if class_mapping.get(0):
+            del class_mapping[0]
+
+        if color_mapping.get(0):
+            del color_mapping[0]
+
+        if is_no_color(color_mapping):
+            color_mapping = {
+                j: [random.choice(range(256)) for i in range(3)]
+                for j in class_mapping.keys()
+            }
+
+        def image_without_label(imagefile, not_label_count=[0], ext=right):
+            xmlfile = (
+                imagefile.parents[1] / "labels" / (imagefile.stem + ".{}".format(ext))
+            )
+            if not os.path.exists(xmlfile):
+                not_label_count[0] += 1
+                return False
+            return True
+
+        remove_image_without_label = partial(
+            image_without_label, not_label_count=not_label_count
+        )
+
+        # Function to read the labels
+        def get_y_func(x, ext=right):
+            return x.parents[1] / "labels" / (x.stem + ".{}".format(ext))
+
+        from ._data_utils._panoptic_data import PanopticSegmentationItemList
+
+        data = (
+            PanopticSegmentationItemList.from_folder(path / "images")
+            .filter_by_func(remove_image_without_label)
+            .split_by_rand_pct(val_split_pct, seed=seed)
+            .label_from_func(
+                get_y_func,
+                chip_size=chip_size,
+                classes=(["NoData"] + list(class_mapping.values())),
+                class_mapping=class_mapping,
+                color_mapping=color_mapping,
+                n_masks=kwargs.get("n_masks", 30),
+            )
+        )
 
         if transforms is None:
             ranges = (0, 1)
@@ -1959,6 +2012,7 @@ def prepare_data(
 
         kwargs_transforms["tfm_y"] = True
         kwargs_transforms["size"] = chip_size
+
     elif dataset_type in ["PASCAL_VOC_rectangles", "KITTI_rectangles"]:
 
         def image_without_label(imagefile, dataset_type, not_label_count=[0]):
@@ -2084,6 +2138,7 @@ def prepare_data(
 
         kwargs_transforms["tfm_y"] = True
         databunch_kwargs["collate_fn"] = collate_fn
+
     elif dataset_type in ["Labeled_Tiles", "MultiLabeled_Tiles", "Imagenet"]:
         if dataset_type == "Labeled_Tiles":
             get_y_func = partial(_get_lbls, class_mapping=class_mapping)
@@ -2200,6 +2255,7 @@ def prepare_data(
                 del val_tfms[0]
 
             transforms = (train_tfms, val_tfms)
+
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         path_hr = path / "images"
         path_lr = path / "labels"
@@ -2691,6 +2747,11 @@ def prepare_data(
         data.train_ds.x._div = 255.0
         data.valid_ds.x._div = 255.0
         data.is_normalized = True
+
+        if dataset_type == "Panoptic":
+            data.c = len(data.classes)
+            data.show_batch = types.MethodType(show_batch_panoptic, data)
+
     if dataset_type in ["PASCAL_VOC_rectangles", "KITTI_rectangles"]:
         data.show_batch = types.MethodType(show_batch_object_detection, data)
     # Imagery type used while opening image chips
@@ -2720,6 +2781,7 @@ def prepare_data(
         "ChangeDetection",
         "superres",
         "Imagenet",
+        "Panoptic",
     ]:
         data._dataset_type = stats["MetaDataMode"]
     else:
