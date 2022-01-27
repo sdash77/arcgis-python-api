@@ -25,6 +25,28 @@ prepare_textdata
 ^^^^^^^^^^^^^^^^
 .. autofunction:: arcgis.learn.prepare_textdata
 
+Automated Machine Learning
+----------------------------
+AutoML
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AutoML
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+AutoDL
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AutoDL
+    :members:
+    :inherited-members:
+
+ImageryModel
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.ImageryModel
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Object Classification Models
 ----------------------------
 FeatureClassifier
@@ -255,13 +277,6 @@ MLModel
 TimeSeriesModel
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.TimeSeriesModel
-    :members:
-    :inherited-members:
-    :undoc-members:
-
-AutoML
-^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.learn.AutoML
     :members:
     :inherited-members:
     :undoc-members:
