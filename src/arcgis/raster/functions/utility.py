@@ -10,6 +10,7 @@ from arcgis.auth import (
     EsriKerberosAuth,
     EsriWindowsAuth,
     BaseEsriAuth,
+    EsriGenTokenAuth,
 )
 
 
@@ -574,6 +575,7 @@ def _generate_layer_token(layer, url):
             EsriAPIKeyAuth,
             ArcGISProAuth,
             EsriBuiltInAuth,
+            EsriGenTokenAuth,
         ),
     ):
         temp_r = reuests.get(
