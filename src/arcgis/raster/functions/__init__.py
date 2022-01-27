@@ -9238,7 +9238,9 @@ def _raster_item(raster, raster_id=None):
                 if (
                     (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
                 ) or not hasattr(raster, "_lazy_token"):
-                    raster._lazy_token = raster._gis._con._create_token(url)
+                    from .utility import _generate_layer_token
+
+                    raster._lazy_token = _generate_layer_token(raster)
                 if isinstance(raster._lazy_token, str):
                     url = url + "?token=" + raster._lazy_token
             except:
