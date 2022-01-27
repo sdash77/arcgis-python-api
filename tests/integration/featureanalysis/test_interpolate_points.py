@@ -1263,7 +1263,7 @@ class TestInterpolatePoints(unittest.TestCase):
                 point_layer,
                 field="Workers",
                 interpolate_option=5,
-                output_prediction_error=False,
+                output_prediction_error=True,
                 classification_type="EqualArea",
                 num_classes=5,
                 output_name=output_name,
@@ -1277,7 +1277,7 @@ class TestInterpolatePoints(unittest.TestCase):
                 point_layer,
                 field="Workers",
                 interpolate_option=5,
-                output_prediction_error=False,
+                output_prediction_error=True,
                 classification_type="EqualArea",
                 num_classes=6,
                 output_name=target_layer,
@@ -1286,7 +1286,7 @@ class TestInterpolatePoints(unittest.TestCase):
             assert isinstance(overwrite, Item)
             assert target_item.id == overwrite.id
             # overwrite should not append. Only one layer should be present
-            assert len(target_item.layers) == 1
+            assert len(target_item.layers) == 2
 
             # delete items that were added for test purpose
             assert target_item.delete()
