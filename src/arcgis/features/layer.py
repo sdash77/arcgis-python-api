@@ -2515,8 +2515,8 @@ class FeatureLayer(Layer):
     def estimates(self) -> Dict[str, Any]:
         """
         Returns up-to-date approximations of layer information, such as row count
-        and extent. Layers that support the `estimates` will include an
-        `infoInEstimates` information in the `properties`.
+        and extent. Layers that support this property will include
+        `infoInEstimates` information in the layer's :attr:`~arcgis.features.FeatureLayer.properties`.
 
         :returns: Dict[str, Any]
 
