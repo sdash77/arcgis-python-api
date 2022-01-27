@@ -210,7 +210,7 @@ class FeatureLayer(Layer):
         updating its definition.
 
         :return:
-            A :class:`~arcgis.feature.FeatureLayerManager`
+            A :class:`~arcgis.features.managers.FeatureLayerManager`
 
         .. code-block:: python
 

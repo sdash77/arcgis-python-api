@@ -17,6 +17,13 @@ PortalAdminManager
     :undoc-members:
     :show-inheritance:
 
+KubernetesAdmin
+---------------
+.. autoclass:: arcgis.gis.kubernetes.KubernetesAdmin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
 AGOLUsageReports
 ---------------
 .. autoclass:: arcgis.gis.admin.AGOLUsageReports
