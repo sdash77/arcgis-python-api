@@ -8,7 +8,7 @@ from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.find_locations import choose_best_facilities
 
-profiles = ["your_online_profile", "ent11"]
+profiles = ["your_online_profile","ent11"]
 
 
 class TestChooseBestFacilities(unittest.TestCase):
@@ -62,7 +62,6 @@ class TestChooseBestFacilities(unittest.TestCase):
             assert len(target_item.layers) == target_layer_count_1
             # delete items that were added for test purposes
             assert target_item.delete()
-            assert fs.delete()
 
 
 if __name__ == "__main__":
