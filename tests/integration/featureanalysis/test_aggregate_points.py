@@ -1838,13 +1838,13 @@ class TestAggregatePoints(unittest.TestCase):
                 point_layer=point_layer,
                 polygon_layer=new_polygon_layer,
                 keep_boundaries_with_no_points=False,
-                group_by_field="TYPE",
+                group_by_field="TYPE", #creates a table that will also be overwritten
                 output_name=target_layer,
                 context={"overwrite": True},
             )
             assert isinstance(overwrite, Item)
             assert target_item.id == overwrite.id
-            # overwrite should not append. Only one layer should be present
+            # overwrite should not append. Only one layer and one table should be present
             assert len(target_item.layers) == 1
             assert len(target_item.tables) == 1
 

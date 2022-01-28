@@ -48,7 +48,7 @@ class TestCreateWatersheds(unittest.TestCase):
             )
             assert isinstance(overwrite, Item)
             assert target_item.id == overwrite.id
-            # overwrite creates one layer
+            # overwrite creates same number of layers. (In this case two)
             assert len(target_item.layers) == target_layer_count_1
             # delete content created by tests
             assert target_item.delete()

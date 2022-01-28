@@ -58,7 +58,7 @@ class TestChooseBestFacilities(unittest.TestCase):
             )
             assert isinstance(overwrite, Item)
             assert target_item.id == overwrite.id
-            # overwrite should not append. Only one layer should be present
+            # overwrite should not append. Only three layers should be present in this case
             assert len(target_item.layers) == target_layer_count_1
             # delete items that were added for test purposes
             assert target_item.delete()
