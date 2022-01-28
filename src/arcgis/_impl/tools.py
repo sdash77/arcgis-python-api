@@ -5979,7 +5979,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                     url = input_param["url"] + "?token=" + token
                                 input_param.update({"url": url})
                     except:
-                        raise
+                        pass
                 else:
                     raise TypeError("No layers in input layer Item")
 
@@ -6021,7 +6021,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                 url = input_param["url"] + "?token=" + token
                             input_param.update({"url": url})
                 except:
-                    raise
+                    pass
 
         elif isinstance(input_layer, dict):
             input_param = input_layer
