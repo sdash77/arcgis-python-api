@@ -6426,7 +6426,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                             if token is not None:
                                 url = url + "?token=" + token
                     except:
-                        raise
+                        pass
                     url_list.append(url)
 
             if len(item_id_list) > 0:
