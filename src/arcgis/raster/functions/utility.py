@@ -3,16 +3,15 @@ from arcgis.gis import Item
 import numbers
 from arcgis.features.layer import FeatureLayer
 from arcgis.auth import (
+    EsriUserTokenAuth,
+    EsriOAuth2Auth,
     EsriNotebookAuth,
     EsriAPIKeyAuth,
-    EsriPKIAuth,
-    EsriBasicAuth,
-    EsriKerberosAuth,
-    EsriWindowsAuth,
-    BaseEsriAuth,
+    ArcGISProAuth,
+    EsriBuiltInAuth,
     EsriGenTokenAuth,
 )
-
+import requests
 
 def _raster_input(raster, raster2=None):
     layer = None
@@ -567,7 +566,7 @@ def _pixel_type_string_to_long(pixel_type):
 def _generate_layer_token(layer, url):
     token = layer._gis._con._create_token(url)
     if isinstance(
-        raster._gis._session.auth,
+        layer._gis._con._session.auth,
         (
             EsriUserTokenAuth,
             EsriOAuth2Auth,
@@ -578,7 +577,7 @@ def _generate_layer_token(layer, url):
             EsriGenTokenAuth,
         ),
     ):
-        temp_r = reuests.get(
+        temp_r = requests.get(
             url, {"f": "json", "token": token}, verify=layer._gis._verify_cert
         )
         if temp_r.status_code != 200:
