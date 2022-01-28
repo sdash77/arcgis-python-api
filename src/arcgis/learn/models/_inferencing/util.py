@@ -488,12 +488,12 @@ def pixel_classify_wnet_image(model, tiles, device, model_info):
     num_band_b = model_info.get("n_band_b", None)
     num_band_tar = model_info.get("n_band_c", None)
 
-    if num_band_a == 1 and num_band_a == 1:
+    if num_band_a == 1 and num_band_b == 1:
         tile_a = tiles[:, num_band_a, :, :][:, None, :, :]
         tile_b = tiles[:, num_band_b, :, :][:, None, :, :]
     else:
         tile_a = tiles[:, :num_band_a, :, :]
-        tile_b = tiles[:, num_band_b:, :, :]
+        tile_b = tiles[:, num_band_a:, :, :]
 
     num_chanel = model_info.get("n_channel", None)
 

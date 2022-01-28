@@ -25,6 +25,34 @@ prepare_textdata
 ^^^^^^^^^^^^^^^^
 .. autofunction:: arcgis.learn.prepare_textdata
 
+Transform3d
+^^^^^^^^^^^
+.. autoclass:: arcgis.learn.Transform3d
+    :members:
+    :undoc-members:
+
+Automated Machine Learning
+----------------------------
+AutoML
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AutoML
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+AutoDL
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AutoDL
+    :members:
+    :inherited-members:
+
+ImageryModel
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.ImageryModel
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Object Classification Models
 ----------------------------
 FeatureClassifier
@@ -196,12 +224,6 @@ PointCNN
     :inherited-members:
     :undoc-members:
 
-Transform3d
-^^^^^^^^^^^
-.. autoclass:: arcgis.learn.Transform3d
-    :members:
-    :undoc-members:
-
 Object Tracking Models
 ------------------------
 SiamMask
@@ -255,13 +277,6 @@ MLModel
 TimeSeriesModel
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.TimeSeriesModel
-    :members:
-    :inherited-members:
-    :undoc-members:
-
-AutoML
-^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.learn.AutoML
     :members:
     :inherited-members:
     :undoc-members:
