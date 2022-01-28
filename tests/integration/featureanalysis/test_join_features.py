@@ -1,5 +1,7 @@
 import sys
 
+from arcgis.features.layer import Table
+
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
@@ -1795,91 +1797,34 @@ profiles = ["your_online_profile", "ent11"]  # enterprise must be 10.9.1+
 
 
 class TestJoinFeatures(unittest.TestCase):
-    # def test_overwrite_layer(self):
-    #     """tests overwriting an Item layer using the context param"""
-    #     for profile in profiles:
-    #         # establish gis connection
-    #         gis = GIS(profile=profile, verify_cert=False)
-    #         print("User: ", gis.users.me.username)
-    #         # add point layer to portal
-    #         sdf = pd.DataFrame(data)
-    #         fs = gis.content.import_data(sdf)
-    #         # gather layers
-    #         point_item = gis.content.get(fs.id)
-    #         if gis._is_agol:
-    #             polygon_item = gis.content.get("1ac6896bcafc4dccb29c70f45c442b00")
-    #         else:
-    #             polygon_item = gis.content.get("070c78e3d52e4b97aa2d36a5fb9845fe")
-    #         assert isinstance(point_item, Item)
-    #         assert isinstance(polygon_item, Item)
-    #         point_layer = point_item.layers[0]
-    #         polygon_layer = polygon_item.layers[0]
-    #         assert isinstance(point_layer, FeatureLayer)
-    #         assert isinstance(polygon_layer, FeatureLayer)
-
-    #         # create layer that will be overwritten
-    #         test_id = str(datetime.datetime.now().microsecond)
-    #         output_name = "test_join_features_" + test_id
-    #         target_item = join_features(
-    #             target_layer=polygon_layer,
-    #             join_layer=point_layer,
-    #             spatial_relationship="withindistance",
-    #             spatial_relationship_distance=10,
-    #             spatial_relationship_distance_units="Meters",
-    #             output_name=output_name,
-    #         )
-    #         assert isinstance(target_item, Item)
-    #         target_layer = target_item.layers[0]
-    #         new_polygon_layer = polygon_item.layers[0]
-    #         assert isinstance(target_layer, FeatureLayer)
-    #         assert isinstance(new_polygon_layer, FeatureLayer)
-
-    #         # perform overwrite
-    #         overwrite = join_features(
-    #             target_layer=polygon_layer,
-    #             join_layer=point_layer,
-    #             spatial_relationship="withindistance",
-    #             spatial_relationship_distance=8,
-    #             spatial_relationship_distance_units="Meters",
-    #             output_name=target_layer,
-    #             context={
-    #                 "overwrite": True,
-    #             },
-    #         )
-    #         assert isinstance(overwrite, Item)
-    #         assert target_item.id == overwrite.id
-    #         # overwrite should not append. Only one layer should be present
-    #         assert len(target_item.layers) == 1
-
-    #         # delete items that were added for test purpose
-    #         assert target_item.delete()
-    #         assert fs.delete()
-        
-    def test_overwrite_table(self):
-        """tests overwriting an Item table using the context param"""
+    def test_overwrite_layer(self):
+        """tests overwriting an Item layer using the context param"""
         for profile in profiles:
             # establish gis connection
             gis = GIS(profile=profile, verify_cert=False)
             print("User: ", gis.users.me.username)
+            # add point layer to portal
+            sdf = pd.DataFrame(data)
+            fs = gis.content.import_data(sdf)
+            # gather layers
+            point_item = gis.content.get(fs.id)
             if gis._is_agol:
-                us_hospitals = gis.content.get("5fdb2869753140c8836353097b207591")
-                us_airports = gis.content.get("2150d4ebe2124f4c821f43de49a6c679")
+                polygon_item = gis.content.get("1ac6896bcafc4dccb29c70f45c442b00")
             else:
-                us_hospitals = gis.content.get("611b534bd637499f92039fe10b2bd877")
-                us_airports = gis.content.get("")
-            assert isinstance(us_hospitals, Item)
-            assert isinstance(us_airports, Item)
-            airport_table = us_airports.tables[0]
-            hospital_table = us_hospitals.tables[0]
-            assert isinstance(airport_table, FeatureLayer)
-            assert isinstance(hospital_table, FeatureLayer)
+                polygon_item = gis.content.get("070c78e3d52e4b97aa2d36a5fb9845fe")
+            assert isinstance(point_item, Item)
+            assert isinstance(polygon_item, Item)
+            point_layer = point_item.layers[0]
+            polygon_layer = polygon_item.layers[0]
+            assert isinstance(point_layer, FeatureLayer)
+            assert isinstance(polygon_layer, FeatureLayer)
 
             # create layer that will be overwritten
             test_id = str(datetime.datetime.now().microsecond)
             output_name = "test_join_features_" + test_id
             target_item = join_features(
-                target_layer=airport_table,
-                join_layer=hospital_table,
+                target_layer=polygon_layer,
+                join_layer=point_layer,
                 spatial_relationship="withindistance",
                 spatial_relationship_distance=10,
                 spatial_relationship_distance_units="Meters",
@@ -1887,12 +1832,14 @@ class TestJoinFeatures(unittest.TestCase):
             )
             assert isinstance(target_item, Item)
             target_layer = target_item.layers[0]
+            new_polygon_layer = polygon_item.layers[0]
             assert isinstance(target_layer, FeatureLayer)
+            assert isinstance(new_polygon_layer, FeatureLayer)
 
             # perform overwrite
             overwrite = join_features(
-                target_layer=airport_table,
-                join_layer=hospital_table,
+                target_layer=polygon_layer,
+                join_layer=point_layer,
                 spatial_relationship="withindistance",
                 spatial_relationship_distance=8,
                 spatial_relationship_distance_units="Meters",
@@ -1908,7 +1855,57 @@ class TestJoinFeatures(unittest.TestCase):
 
             # delete items that were added for test purpose
             assert target_item.delete()
-            break
+            assert fs.delete()
+        
+    def test_overwrite_table(self):
+        """tests overwriting an Item table using the context param"""
+        for profile in profiles:
+            # establish gis connection
+            gis = GIS(profile=profile, verify_cert=False)
+            print("User: ", gis.users.me.username)
+            if gis._is_agol:
+                us_hospitals = gis.content.get("5fdb2869753140c8836353097b207591")
+                us_airports = gis.content.get("2150d4ebe2124f4c821f43de49a6c679")
+            else:
+                us_hospitals = gis.content.get("611b534bd637499f92039fe10b2bd877")
+                us_airports = gis.content.get("14238e9f22df4ffa9061e4580684f4ac")
+            assert isinstance(us_hospitals, Item)
+            assert isinstance(us_airports, Item)
+            airport_table = us_airports.tables[0]
+            hospital_table = us_hospitals.tables[0]
+            assert isinstance(airport_table, FeatureLayer)
+            assert isinstance(hospital_table, FeatureLayer)
+
+            # create layer that will be overwritten
+            test_id = str(datetime.datetime.now().microsecond)
+            output_name = "test_join_features_" + test_id
+            target_item = join_features(
+                target_layer=airport_table,
+                join_layer=hospital_table,
+                attribute_relationship=[{"targetField":"CITY","operator":"equal","joinField":"CITY"}],
+                output_name=output_name,
+            )
+            assert isinstance(target_item, Item)
+            target_table = target_item.tables[0]
+            assert isinstance(target_table, Table)
+
+            # perform overwrite
+            overwrite = join_features(
+                target_layer=airport_table,
+                join_layer=hospital_table,
+                attribute_relationship=[{"targetField":"STATE","operator":"equal","joinField":"STATE"}],
+                output_name=target_table,
+                context={
+                    "overwrite": True,
+                },
+            )
+            assert isinstance(overwrite, Item)
+            assert target_item.id == overwrite.id
+            # overwrite should not append. Only one layer should be present
+            assert len(target_item.tables) == 1
+
+            # delete items that were added for test purpose
+            assert target_item.delete()
 
 
 if __name__ == "__main__":

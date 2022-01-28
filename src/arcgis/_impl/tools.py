@@ -3131,17 +3131,18 @@ class _FeatureAnalysisTools(BaseAnalytics):
         overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
+        # Not needed if input and join are table layers so only add if needed
+        if spatial_relationship is not None:
+            params["spatialRelationship"] = spatial_relationship
+        if spatial_relationship_distance is not None:
+            params["spatialRelationshipDistance"] = spatial_relationship_distance
+        if spatial_relationship_distance_units is not None:
+            params[
+                "spatialRelationshipDistanceUnits"
+            ] = spatial_relationship_distance_units
         if estimate:
             params["targetLayer"] = target_layer
             params["joinLayer"] = join_layer
-            if spatial_relationship is not None:
-                params["spatialRelationship"] = spatial_relationship
-            if spatial_relationship_distance is not None:
-                params["spatialRelationshipDistance"] = spatial_relationship_distance
-            if spatial_relationship_distance_units is not None:
-                params[
-                    "spatialRelationshipDistanceUnits"
-                ] = spatial_relationship_distance_units
             if attribute_relationship is not None:
                 params["attributeRelationship"] = attribute_relationship
             if summary_fields is not None:
@@ -3160,9 +3161,6 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {
             "target_layer": target_layer,
             "join_layer": join_layer,
-            "spatial_relationship": spatial_relationship,
-            "spatial_relationship_distance": spatial_relationship_distance,
-            "spatial_relationship_distance_units": spatial_relationship_distance_units,
             "attribute_relationship": attribute_relationship,
             "join_operation": join_operation,
             "summary_fields": summary_fields,
