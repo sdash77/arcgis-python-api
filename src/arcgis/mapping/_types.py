@@ -308,7 +308,6 @@ class WebMap(HasTraits, collections.OrderedDict):
     def __str__(self):
         return json.dumps(self, default=_utils._date_handler)
 
-
     def add_table(self, table, options=None):
         """
         Adds the given Table to the ``WebMap``.
@@ -1695,8 +1694,8 @@ class WebMap(HasTraits, collections.OrderedDict):
         self._pop_ups = value
         if value in [0, "0", False, "false"]:
             self._pop_ups = False
-    
-    def configure_pop_ups(self, layer_title:str, field_name:str, visibility:bool):
+
+    def configure_pop_ups(self, layer_title: str, field_name: str, visibility: bool):
         """
         This method can be used to change the visibility of a field for a layer on the Web Map.
 
@@ -1722,7 +1721,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         for field in layer.popupInfo.fieldInfos:
             if field["fieldName"] == field_name:
                 layer.popupInfo.fieldInfos[idx].visible = visibility
-            idx +=1
+            idx += 1
         return self.get_layer(title=layer_title)
 
     @property
