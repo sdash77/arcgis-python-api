@@ -185,7 +185,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ArcGIS Online or Enterprise.
         """
 
-        # Dashboard items.
+        # Viewer items.
         self._id = str(uuid4())
         self.type = "mapWidget"
 
@@ -202,7 +202,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         self._height = 1
         self._width = 1
-        # Dashboard items end here.
+        # Viewer items end here.
 
         from arcgis.widgets import MapView
 
