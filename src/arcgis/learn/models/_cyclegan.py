@@ -198,6 +198,13 @@ class CycleGAN(ArcGISModel):
         """
         Displays the results of a trained model on a part of the validation set.
 
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
         """
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)

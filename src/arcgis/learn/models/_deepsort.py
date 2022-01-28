@@ -173,6 +173,14 @@ class DeepSort(ArcGISModel):
     def show_results(self, rows=5):
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
         """
         self._check_requisites()
         from fastai.basic_data import DatasetType

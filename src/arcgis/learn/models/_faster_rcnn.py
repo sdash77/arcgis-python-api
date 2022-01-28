@@ -834,4 +834,20 @@ class FasterRCNN(ModelExtension):
 
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
+        thresh                  Optional float. The probability above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        =====================   ===========================================
+
         """
