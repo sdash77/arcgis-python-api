@@ -25,6 +25,12 @@ prepare_textdata
 ^^^^^^^^^^^^^^^^
 .. autofunction:: arcgis.learn.prepare_textdata
 
+Transform3d
+^^^^^^^^^^^
+.. autoclass:: arcgis.learn.Transform3d
+    :members:
+    :undoc-members:
+
 Automated Machine Learning
 ----------------------------
 AutoML
@@ -216,12 +222,6 @@ PointCNN
 .. autoclass:: arcgis.learn.PointCNN
     :members:
     :inherited-members:
-    :undoc-members:
-
-Transform3d
-^^^^^^^^^^^
-.. autoclass:: arcgis.learn.Transform3d
-    :members:
     :undoc-members:
 
 Object Tracking Models
