@@ -1791,7 +1791,7 @@ data = [
 polygon_data = "https://earthworks.stanford.edu/catalog/stanford-dc841dq9031"
 
 
-profiles = ["your_online_profile", "ent11"]  # enterprise must be 10.9.1+
+profiles = [ "your_online_profile", "ent11"]  # enterprise must be 10.9.1+
 
 
 class TestAggregatePoints(unittest.TestCase):
@@ -1824,6 +1824,7 @@ class TestAggregatePoints(unittest.TestCase):
                 point_layer=point_layer,
                 polygon_layer=polygon_layer,
                 keep_boundaries_with_no_points=False,
+                group_by_field="TYPE",
                 output_name=output_name,
             )
             assert isinstance(target_item, Item)
@@ -1837,6 +1838,7 @@ class TestAggregatePoints(unittest.TestCase):
                 point_layer=point_layer,
                 polygon_layer=new_polygon_layer,
                 keep_boundaries_with_no_points=False,
+                group_by_field="TYPE",
                 output_name=target_layer,
                 context={"overwrite": True},
             )
@@ -1844,6 +1846,7 @@ class TestAggregatePoints(unittest.TestCase):
             assert target_item.id == overwrite.id
             # overwrite should not append. Only one layer should be present
             assert len(target_item.layers) == 1
+            assert len(target_item.tables) == 1
 
             # delete items that were added for test purpose
             assert target_item.delete()

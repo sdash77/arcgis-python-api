@@ -1,13 +1,11 @@
 import sys
-
-from arcgis.features.analyze_patterns import interpolate_points
-
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
 import pandas as pd
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
+from arcgis.features.analyze_patterns import interpolate_points
 
 data = [
     {
@@ -1279,7 +1277,7 @@ class TestInterpolatePoints(unittest.TestCase):
                 interpolate_option=5,
                 output_prediction_error=True,
                 classification_type="EqualArea",
-                num_classes=6,
+                num_classes=5,
                 output_name=target_layer,
                 context={"overwrite": True},
             )
