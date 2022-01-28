@@ -308,12 +308,6 @@ class WebMap(HasTraits, collections.OrderedDict):
     def __str__(self):
         return json.dumps(self, default=_utils._date_handler)
 
-    @property
-    def definition(self):
-        """
-        The ``definition`` property will return a JSON Dictionary of all the properties of the Web Map.
-        """
-        return self.definition
 
     def add_table(self, table, options=None):
         """
@@ -1335,7 +1329,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required string. What basemap you would like to apply to the map
-                               (‘topo’, ‘national-geographic’, etc.).
+                               ('topo', 'national-geographic', etc.).
                                See :attr:`~arcgis.mapping.WebMap.basemaps` and
                                :attr:`~arcgis.mapping.WebMap.gallery_basemaps` for a full list.
         ==================     ====================================================================
@@ -1679,9 +1673,9 @@ class WebMap(HasTraits, collections.OrderedDict):
         return OfflineMapAreaManager(self.item, self._gis)
 
     @property
-    def pop_ups(self):
+    def view_pop_ups(self):
         """
-        Get/Set whether popups are enabled for the dashboard widget.
+        Get/Set whether pop ups are enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1689,23 +1683,52 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if popups are enabled for dashboard widget, False otherwise.
+        :return: True if popups are enabled for viewer widget, False otherwise.
         """
         return self._pop_ups
 
-    @pop_ups.setter
-    def pop_ups(self, value):
+    @view_pop_ups.setter
+    def view_pop_ups(self, value):
         """
-        See main ``pop_ups`` property docstring.
+        See main ``view_pop_ups`` property docstring.
         """
         self._pop_ups = value
         if value in [0, "0", False, "false"]:
             self._pop_ups = False
+    
+    def configure_pop_ups(self, layer_title:str, field_name:str, visibility:bool):
+        """
+        This method can be used to change the visibility of a field for a layer on the Web Map.
+
+        .. note::
+            Changes will not be seen on the Web Map viewer until the Web Map is saved or updated using
+            the ``save`` or ``update`` method. Once this is done, reload the Web Map to see changes or view
+            on the Portal Web Map Viewer.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        layer_title            Required string. The name of the layer.
+        ------------------     --------------------------------------------------------------------
+        field_name             Required string. The name of the field to change the visibility of.
+        ------------------     --------------------------------------------------------------------
+        visibility             Required bool. True if the field should be visible on the pop up for
+                               the layer, else False.
+        ==================     ====================================================================
+        """
+        layer = self.get_layer(title=layer_title)
+
+        idx = 0
+        for field in layer.popupInfo.fieldInfos:
+            if field["fieldName"] == field_name:
+                layer.popupInfo.fieldInfos[idx].visible = visibility
+            idx +=1
+        return self.get_layer(title=layer_title)
 
     @property
     def bookmarks(self):
         """
-        Get/Set whether bookmarks are enabled for the dashboard widget.
+        Get/Set whether bookmarks are enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1713,7 +1736,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if bookmarks are enabled for dashboard widget, False otherwise.
+        :return: True if bookmarks are enabled for viewer widget, False otherwise.
         """
         return self._bookmarks
 
@@ -1729,7 +1752,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def legend(self):
         """
-        Get/Set whether legend visibility is enabled for the dashboard widget.
+        Get/Set whether legend visibility is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1737,7 +1760,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if legend visibility is enabled for dashboard widget, False otherwise.
+        :return: True if legend visibility is enabled for viewer widget, False otherwise.
         """
         return self._legend
 
@@ -1753,7 +1776,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def layer_visibility(self):
         """
-        Get/Set whether layer visibility is enabled for the dashboard widget.
+        Get/Set whether layer visibility is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1761,7 +1784,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if layer visibility is enabled for dashboard widget, False otherwise.
+        :return: True if layer visibility is enabled for viewer widget, False otherwise.
         """
         return self._layer_visibility
 
@@ -1802,7 +1825,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def search(self):
         """
-        Get/Set whether search is enabled for the dashboard widget.
+        Get/Set whether search is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1810,7 +1833,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if search is enabled for dashboard widget, False otherwise.
+        :return: True if search is enabled for viewer widget, False otherwise.
         """
         return self._search
 
@@ -1826,7 +1849,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def zoom(self):
         """
-        Get/Set whether zoom is enabled for the dashboard widget.
+        Get/Set whether zoom is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1834,7 +1857,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if zoom is enabled for dashboard widget, False otherwise.
+        :return: True if zoom is enabled for viewer widget, False otherwise.
         """
         return self._zoom
 
@@ -1850,7 +1873,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def navigation(self):
         """
-        Get/Set whether navigation is enabled for the dashboard widget.
+        Get/Set whether navigation is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1858,7 +1881,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if navigation is enabled for dashboard widget, False otherwise.
+        :return: True if navigation is enabled for viewer widget, False otherwise.
         """
         return self._navigation
 
@@ -1874,7 +1897,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def scale_bar(self):
         """
-        Get/Set the scale bar type for the dashboard widget.
+        Get/Set the scale bar type for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1926,7 +1949,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def width(self):
         """
-        Get/Set the width of the dashboard widget.
+        Get/Set the width of the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
