@@ -566,26 +566,32 @@ def _pixel_type_string_to_long(pixel_type):
 
 def _generate_layer_token(layer, url):
     token = layer._gis._con._create_token(url)
-    if isinstance(
-        layer._gis._con._session.auth,
-        (
-            EsriUserTokenAuth,
-            EsriOAuth2Auth,
-            EsriNotebookAuth,
-            EsriAPIKeyAuth,
-            ArcGISProAuth,
-            EsriBuiltInAuth,
-            EsriGenTokenAuth,
-        ),
-    ):
-        temp_r = requests.get(
-            url, {"f": "json", "token": token}, verify=layer._gis._verify_cert
-        )
-        if temp_r.status_code != 200:
-            return None
-        elif (
-            temp_r.status_code == 200 and temp_r.text.lower().find("invalid token") > -1
+    if token:
+        if isinstance(
+            layer._gis._con._session.auth,
+            (
+                EsriUserTokenAuth,
+                EsriOAuth2Auth,
+                EsriNotebookAuth,
+                EsriAPIKeyAuth,
+                ArcGISProAuth,
+                EsriBuiltInAuth,
+                EsriGenTokenAuth,
+            ),
         ):
-            return None
+            temp_r = requests.get(
+                url, {"f": "json", "token": token}, verify=layer._gis._verify_cert
+            )
+            if temp_r.status_code != 200:
+                return None
+            elif (
+                temp_r.status_code == 200
+                and temp_r.text.lower().find("invalid token") > -1
+            ):
+                return None
+            else:
+                return token
         else:
             return token
+    else:
+        return None

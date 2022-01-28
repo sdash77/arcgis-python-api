@@ -6451,7 +6451,8 @@ class ImageryLayer(Layer):
                         from .functions.utility import _generate_layer_token
 
                         token = _generate_layer_token(self, self._url)
-                        self._lazy_token = token
+                        if token is not None:
+                            self._lazy_token = token
                 except Exception as e:
                     token = self._token
                 try:
