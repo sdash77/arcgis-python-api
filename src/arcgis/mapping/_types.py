@@ -1672,7 +1672,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         return OfflineMapAreaManager(self.item, self._gis)
 
     @property
-    def view_pop_ups(self):
+    def pop_ups(self):
         """
         Get/Set whether pop ups are enabled for the viewer widget.
 
@@ -1686,10 +1686,10 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
         return self._pop_ups
 
-    @view_pop_ups.setter
-    def view_pop_ups(self, value):
+    @pop_ups.setter
+    def pop_ups(self, value):
         """
-        See main ``view_pop_ups`` property docstring.
+        See main ``pop_ups`` property docstring.
         """
         self._pop_ups = value
         if value in [0, "0", False, "false"]:
