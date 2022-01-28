@@ -13,6 +13,7 @@ from arcgis.auth import (
 )
 import requests
 
+
 def _raster_input(raster, raster2=None):
     layer = None
     if isinstance(raster, Raster):
