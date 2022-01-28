@@ -71,17 +71,16 @@ class KnowledgeGraph:
         count = 0
 
         session = self._gis._con._session
-        request = session.post(
+        response = session.post(
             url=url,
             params={"f": "pbf"},
             data=r_enc.get_encoding_result().byte_buffer,
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
-        content_length = request.headers.get("Content-Length", None)
         rows = []
         query_dec = _kgparser.GraphQueryDecoder()
-        for chunk in request.iter_content(8192):
+        for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
             count = 0
             while query_dec.next_row():
@@ -118,12 +117,7 @@ class KnowledgeGraph:
         gqd.push_buffer(buffer_dm)
         rows = []
         while gqd.next_row():
-            i = 0
-            while gqd.get_value(i):
-                v = gqd.get_value(i)
-                rows.append(_kgparser.to_value_object(v))
-                i += 1
-                del v
+            rows.append(gqd.get_current_row())
         return rows
 
     @property
