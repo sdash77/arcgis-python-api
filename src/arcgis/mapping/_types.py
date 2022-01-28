@@ -308,6 +308,13 @@ class WebMap(HasTraits, collections.OrderedDict):
     def __str__(self):
         return json.dumps(self, default=_utils._date_handler)
 
+    @property
+    def definition(self):
+        """
+        The ``definition`` property will return a JSON Dictionary of all the properties of the Web Map.
+        """
+        return self.definition
+
     def add_table(self, table, options=None):
         """
         Adds the given Table to the ``WebMap``.

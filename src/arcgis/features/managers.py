@@ -2595,7 +2595,7 @@ class FeatureLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def update_definition(self, json_dict, future=False):
         """
-        The updateDefinition operation supports updating a definition
+        The `update_definition` operation supports updating a definition
         property in a hosted feature layer. The result of this
         operation is a response indicating success or failure with error
         code and description.

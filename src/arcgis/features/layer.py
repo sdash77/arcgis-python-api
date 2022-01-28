@@ -73,6 +73,13 @@ class FeatureLayer(Layer):
         self._time_filter = None
 
     @property
+    def properties(self):
+        """
+        The ``properties`` method returns a JSON Dictionary indicating all the properties of the feature layer.
+        """
+        return self.properties
+        
+    @property
     def time_filter(self):
         """
         The ``time_filter`` method is used to set a time filter instead of querying time-enabled map
