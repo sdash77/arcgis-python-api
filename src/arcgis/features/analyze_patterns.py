@@ -778,8 +778,6 @@ def interpolate_points(
                                  but it reasonably could be as low as 40 or as high as 60. To calculate this range of reasonable values,
                                  multiply the standard error by 2, add this value to the predicted value to get the upper end of the range,
                                  and subtract it from the predicted value to get the lower end of the range.
-
-                                 If True and overwrite is set to True in context parameter, the new layers will be appended rather than overwritten.
     ---------------------------  -------------------------------------------------------------------------------------------
     classification_type          Optional string. Determines how predicted values will be classified into areas.
 
