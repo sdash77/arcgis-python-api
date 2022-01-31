@@ -47,6 +47,20 @@ SceneLayer
     :undoc-members:
     :show-inheritance:
 
+SceneLayerManager
+^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.mapping.SceneLayerManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EnterpriseSceneLayerManager
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.mapping.EnterpriseSceneLayerManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 BuildingLayer
 ^^^^^^^^^^^^^
 .. autoclass:: arcgis.mapping.BuildingLayer

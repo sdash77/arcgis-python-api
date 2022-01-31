@@ -113,7 +113,15 @@ class Pix2PixHD(ArcGISModel):
 
     def show_results(self, rows=2, **kwargs):
         """
-        Displays the results of a trained model on the validation set.
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
         """
         show_results(self, rows, **kwargs)
 
