@@ -81,15 +81,16 @@ class MaXDeepLabConfig:
 class MaXDeepLab(ModelExtension):
     """
     Creates a ``MaXDeepLab`` panoptic segmentation model.
+    This model supports only RGB imagery.
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+    data                    Required fastai Databunch. Returned data
+                            object from ``prepare_data`` function.
     ---------------------   -------------------------------------------
-    pretrained_path         Optional string. Path where pre-trained model is
-                            saved.
+    pretrained_path         Optional string. Path where pre-trained
+                            model is saved.
     =====================   ===========================================
 
     :returns: ``MaXDeepLab`` Object
