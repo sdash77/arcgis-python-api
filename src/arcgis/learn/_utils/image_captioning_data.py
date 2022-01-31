@@ -753,7 +753,7 @@ def show_batch(self, rows=2, **kwargs):
     show_coords = kwargs.get("show_coords", False)
     fig, ax = plt.subplots(rows, rows, figsize=figsize)
 
-    img_idxs = [random.randint(0, len(self.train_ds) - 1) for k in range(rows ** 2)]
+    img_idxs = [random.randint(0, len(self.train_ds) - 1) for k in range(rows**2)]
     # iterate through the rows and get transformed images from the dataset class
     for k, idx in enumerate(img_idxs):
         img, captions = self.train_ds[idx]

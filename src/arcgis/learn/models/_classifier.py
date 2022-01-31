@@ -197,7 +197,7 @@ class FeatureClassifier(ArcGISModel):
 
                 class MultLabelFbetaModified(MultiLabelFbeta):
                     def fbeta_score(self, precision, recall):
-                        beta2 = self.beta ** 2
+                        beta2 = self.beta**2
                         fbeta = (
                             (1 + beta2)
                             * (precision * recall)

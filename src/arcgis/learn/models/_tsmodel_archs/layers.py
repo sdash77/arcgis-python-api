@@ -160,7 +160,7 @@ class Exp(nn.Module):
         )
 
     def forward(self, x):
-        return x ** self.weight
+        return x**self.weight
 
 
 class GeneralRelu(nn.Module):
