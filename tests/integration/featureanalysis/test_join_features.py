@@ -1,14 +1,18 @@
 import sys
-
-from arcgis.features.layer import Table
-
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
 import pandas as pd
 from arcgis.gis import GIS, Item
+from arcgis.features.layer import Table
 from arcgis.features import FeatureLayer
 from arcgis.features.summarize_data import join_features
+from arcgis.gis import ProfileManager
+profile_list = ProfileManager().list()
+
+if not 'ent11' in profile_list:
+    GIS(url="https://gpportal.esri.com/portal/", username="admin", password="esri.agp", profile="ent11") #create enterprise 11 connection
+
 
 data = [
     {
