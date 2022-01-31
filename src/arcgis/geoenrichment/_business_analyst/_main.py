@@ -1435,12 +1435,9 @@ class BusinessAnalyst(object):
                     f"Not all input enrich_variables were matched ({len(e_df.index):,}/{len(enrich_variables):,})"
                 )
 
-        # ensure all necessary point proximity values are provided if going down this path
-        if proximity_value:
-            assert proximity_metric is not None, (
-                "If providing a proximity_value, you must also provide the "
-                "unit of measure in the proximity_metric parameter."
-            )
+        # set the default proximity metric if none provided
+        if proximity_metric is None:
+            proximity_metric = "kilometers"
 
         e_df = self._enrich(
             geographies,
