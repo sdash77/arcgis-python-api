@@ -664,7 +664,7 @@ def zonal_statistics(
     """
     Calculates statistics on values of a raster within the zones of another dataset.
     For more information see,
-     https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/zonal-statistics-global-function.htm
+    `Zonal Statistics function <https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/zonal-statistics-global-function.htm>`_
 
     Parameters
     ----------

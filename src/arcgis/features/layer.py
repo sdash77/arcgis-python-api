@@ -2209,12 +2209,12 @@ class FeatureLayer(Layer):
                                        source_table_name=  "Building"
         ------------------------   --------------------------------------------------------------------
         field_mappings             Optional list. Used to map source data to a destination layer.
-                                   Syntax: fieldMappings=[{"name" : <"targetName">,
+                                   Syntax: field_mappings=[{"name" : <"targetName">,
                                                            "sourceName" : < "sourceName">}, ...]
                                    .. code-block:: python
 
                                        # Example usage:
-                                       fieldMappings=[{"name" : "CountyID",
+                                       field_mappings=[{"name" : "CountyID",
                                                        "sourceName" : "GEOID10"}]
         ------------------------   --------------------------------------------------------------------
         edits                      Optional string. Only feature collection json is supported. Append
@@ -2284,7 +2284,7 @@ class FeatureLayer(Layer):
             # Usage Example
 
             >>> feature_layer.append(source_table_name= "Building",
-                                    field_Mappings=[{"name" : "CountyID",
+                                    field_mappings=[{"name" : "CountyID",
                                                     "sourceName" : "GEOID10"}],
                                     upsert = True,
                                     append_fields = ["fieldName1", "fieldName2",...., fieldname22],
@@ -2515,8 +2515,8 @@ class FeatureLayer(Layer):
     def estimates(self) -> Dict[str, Any]:
         """
         Returns up-to-date approximations of layer information, such as row count
-        and extent. Layers that support the `estimates` will include an
-        `infoInEstimates` information in the `properties`.
+        and extent. Layers that support this property will include
+        `infoInEstimates` information in the layer's :attr:`~arcgis.features.FeatureLayer.properties`.
 
         :returns: Dict[str, Any]
 
