@@ -1509,7 +1509,9 @@ class BusinessAnalyst(object):
         if isinstance(geographies, (Iterable, pd.Series)) and not isinstance(
             geographies, pd.DataFrame
         ):
-            if not isinstance(geographies[0], Geometry) and isinstance(geographies[0], dict):
+            if not isinstance(geographies[0], Geometry) and isinstance(
+                geographies[0], dict
+            ):
                 raise ValueError(
                     "Raw JSON is not supported as input for geoenrichment when using a 'local' source."
                 )
