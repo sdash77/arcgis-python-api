@@ -764,7 +764,7 @@ class Country(object):
                 geographies=geom_lst,
                 enrich_variables=kv_df,
                 proximity_type='driving_time',
-                proximity_value=5
+                proximity_value=5,
                 proxmity_metric='minutes'
             )
 
