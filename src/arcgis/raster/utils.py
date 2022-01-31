@@ -31,8 +31,8 @@ def upload_imagery_to_agol_userstore(
     The list of urls can then be used with :meth:`arcgis.raster.analytics.copy_raster` or :meth:`arcgis.raster.analytics.create_image_collection`
     method to create imagery layers on ArcGIS Online.
     
-    For this functionality to work, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.8)
-    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
+    For this functionality to work, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.9)
+    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package
 
     ====================================     ====================================================================
     **Argument**                             **Description**

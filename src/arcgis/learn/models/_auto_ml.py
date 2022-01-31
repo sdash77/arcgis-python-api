@@ -253,8 +253,11 @@ class AutoML(object):
         # validation_data_batch_df = pd.DataFrame(validation_data_batch,
         # columns=self._data._continuous_variables + self._data._categorical_variables)
         sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
-        output_labels = self._predict(validation_data_batch)
-        df = self._data._dataframe.loc[
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            output_labels = self._predict(validation_data_batch)
+        pd.options.mode.chained_assignment = None
+        df = self._data._dataframe.iloc[
             sample_indexes
         ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
 

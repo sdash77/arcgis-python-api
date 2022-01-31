@@ -174,7 +174,7 @@ class DataStoreManager(BaseServer):
         if path[0] != "/":
             path = "/%s" % path
         params = {"f": "json", "itemPath": path}
-        url = "%s/federateDataItem"
+        url = "%s/federateDataItem" % self._url
         res = self._con.post(url, params)
         if "success" in res:
             return res["success"]

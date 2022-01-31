@@ -205,7 +205,10 @@ class AttachmentManager(object):
                     for att in attachments:
                         if not token is None:
                             att_path = "{}/{}/attachments/{}?token={}".format(
-                                self._layer.url, i, att["id"], self._layer._con.token
+                                self._layer.url,
+                                i,
+                                att["id"],
+                                self._layer._con.token,
                             )
                         else:
                             att_path = "{}/{}/attachments/{}".format(
@@ -286,7 +289,9 @@ class AttachmentManager(object):
                         )
                     else:
                         att_path = "{}/{}/attachments/{}".format(
-                            self._layer.url, result["parentObjectId"], data["id"]
+                            self._layer.url,
+                            result["parentObjectId"],
+                            data["id"],
                         )
                     preview = None
                     if data["contentType"].find("image") > -1:
@@ -322,8 +327,15 @@ class AttachmentManager(object):
                 pd.set_option("display.max_colwidth", -1)
                 return HTML(pd.DataFrame.from_dict(rows).to_html(escape=False))
             else:
+                if len(rows) == 0:
+                    return pd.DataFrame()
                 df = pd.DataFrame.from_dict(rows)
-                df.drop(["DOWNLOAD_URL", "IMAGE_PREVIEW"], axis=1, inplace=True)
+                df.drop(
+                    ["DOWNLOAD_URL", "IMAGE_PREVIEW"],
+                    axis=1,
+                    inplace=True,
+                    errors="ignore",
+                )
                 return df
         else:
             return rows
@@ -354,11 +366,15 @@ class AttachmentManager(object):
         if not os.path.isdir(save_folder):
             os.makedirs(save_folder)
         attachments = self.search(
-            object_ids=object_ids, attachment_types=attachment_types, as_df=True
+            object_ids=object_ids,
+            attachment_types=attachment_types,
+            as_df=True,
         )
         for row in attachments.to_dict(orient="records"):
             dlpath = os.path.join(
-                save_folder, "%s" % int(row["PARENTOBJECTID"]), "%s" % int(row["ID"])
+                save_folder,
+                "%s" % int(row["PARENTOBJECTID"]),
+                "%s" % int(row["ID"]),
             )
             if os.path.isdir(dlpath) == False:
                 os.makedirs(dlpath)
@@ -956,7 +972,12 @@ class SyncManager(object):
                 del extent["spatialReference"]
         extents_str = ",".join(
             format(x, "10.3f")
-            for x in [extent["xmin"], extent["ymin"], extent["xmax"], extent["ymax"]]
+            for x in [
+                extent["xmin"],
+                extent["ymin"],
+                extent["xmax"],
+                extent["ymax"],
+            ]
         )
         geom_filter = {"geometryType": "esriGeometryEnvelope"}
         geom_filter.update({"geometry": extents_str})
@@ -2676,8 +2697,20 @@ class FeatureLayerManager(_GISResource):
         The truncate operation supports deleting all features or attachments
         in a hosted feature service layer. The result of this operation is a
         response indicating success or failure with error code and description.
-        See: https://developers.arcgis.com/rest/services-reference/truncate-feature-layer-.htm # noqa
-        for additional information on this function.
+        See `Truncate (Feature Layer) <https://developers.arcgis.com/rest/services-reference/online/truncate-feature-layer-.htm>`_
+        for additional information on this method.
+
+        .. note::
+            The `truncate` method is restricted to
+            :class:`layers <arcgis.features.FeatureLayer>` that:
+
+              - do not serve as the origin in a relationship with other
+                layers
+              - do not reference the same underlying database tables that are
+                referenced by other layers (for example, if the layer was
+                published from a layer with a definition query and a
+                separate layer has also been published from that source)
+              - do not have `sync` enabled
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2694,10 +2727,14 @@ class FeatureLayerManager(_GISResource):
         ===============     ====================================================================
 
         :return:
-           JSON Message as dictionary indicatiing 'success' or 'error'
+           JSON Message as dictionary indicating `success` or `error`
 
         """
-        params = {"f": "json", "attachmentOnly": attachment_only, "async": asynchronous}
+        params = {
+            "f": "json",
+            "attachmentOnly": attachment_only,
+            "async": asynchronous,
+        }
         u_url = self._url + "/truncate"
 
         if asynchronous:

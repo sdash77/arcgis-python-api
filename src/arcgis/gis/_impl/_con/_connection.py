@@ -341,7 +341,7 @@ class Connection(object):
                 s.auth = self._custom_auth
             parsed = self._parsed(url)
             root = (
-                fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+                rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             )
             params = {"f": "json"}
             results = []
@@ -1148,11 +1148,24 @@ class Connection(object):
                         )
             elif isinstance(files, (list, tuple)):
                 for key, filePath, fileName in files:
-                    if isinstance(fileName, str):
+                    import io
+
+                    if (
+                        isinstance(fileName, str)
+                        and isinstance(filePath, (io.StringIO, io.BytesIO)) == False
+                    ):
                         fields[key] = (
                             fileName,
                             open(filePath, "rb"),
                             mimetypes.guess_type(filePath)[0],
+                        )
+                    elif isinstance(fileName, str) and isinstance(
+                        filePath, (io.StringIO, io.BytesIO)
+                    ):
+                        fields[key] = (
+                            fileName,
+                            filePath,
+                            None,
                         )
                     else:
                         fields[key] = v
@@ -1658,7 +1671,7 @@ class Connection(object):
             # Brute Force Method
             parsed = urlparse(baseurl)
             root = (
-                fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+                rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             )
             parts = ["/info", "/rest/services", "/rest/info", "/sharing/rest/info"]
             params = {"f": "json"}

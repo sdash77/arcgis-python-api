@@ -463,6 +463,7 @@ class PSPNetClassifier(ArcGISModel):
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
+        _emd_template["SupportsVariableTileSize"] = True
         _emd_template["Classes"] = []
         class_data = {}
         for i, class_name in enumerate(
@@ -484,6 +485,14 @@ class PSPNetClassifier(ArcGISModel):
     def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
         """
         self._check_requisites()
         if rows > len(self._data.valid_ds):

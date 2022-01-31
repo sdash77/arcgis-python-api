@@ -6,10 +6,11 @@ This module, the most important in the ArcGIS API for Python, provides functiona
 Python and is an invaluable tool in the API.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 import base64
 import json
 import locale
+import io
 import os
 import re
 import tempfile
@@ -846,7 +847,10 @@ class GIS(object):
                     self._utoken = json_data["token"]
                 self._expiration = json_data.get("expiration", None)
                 if "encryptedToken" in json_data:
-                    from arcgis.gis._impl._decrypt_nbauth import get_token
+                    try:
+                        from arcgis.gis._impl._decrypt_nbauth import get_token
+                    except ImportError as ie:
+                        from arcgis.gis._impl.nbauth import get_token
 
                     self._utoken = get_token(nb_auth_file_path)
 
@@ -4443,6 +4447,11 @@ class Role(object):
         resp = self._portal.con.post(
             "portals/self/roles/" + self.role_id + "/setPrivileges", postdata
         )
+        if len(self.privileges) != len(value):
+            postdata["privileges"] = json.dumps(postdata["privileges"])
+            resp = self._portal.con.post(
+                "portals/self/roles/" + self.role_id + "/setPrivileges", postdata
+            )
         if resp:
             return resp.get("success")
 
@@ -5048,7 +5057,8 @@ class ContentManager(object):
         ---------------     --------------------------------------------------------------------
         item_properties     Required dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
-        data                Optional string. Either a path or URL to the data.
+        data                Optional string, io.StringIO, or io.BytesIO. Either a path or URL to
+                            the data or an instance of `StringIO` or `BytesIO` objects.
         ---------------     --------------------------------------------------------------------
         thumbnail           Optional string. Either a path or URL to a thumbnail image.
         ---------------     --------------------------------------------------------------------
@@ -5144,7 +5154,6 @@ class ContentManager(object):
             >>>                                         "commentsEnabled" : False
             >>>                                        } , owner = "User1234")
         """
-        import os
 
         filetype = None
         if not isinstance(item_properties, dict):
@@ -5161,7 +5170,12 @@ class ContentManager(object):
                 "layers": [data.spatial.to_feature_collection()._lyr_dict]
             }
             data = None
-        if data is not None:
+
+        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            assert "type" in item_properties
+            assert "title" in item_properties
+
+        elif data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
 
@@ -5234,6 +5248,11 @@ class ContentManager(object):
 
             is_file = os.path.isfile(data)
             if is_file and bytesto(os.stat(data).st_size) < 7:
+                multipart = False
+                item_properties.pop("multipart", None)
+            elif (
+                is_file == False and hasattr(data, "tell") and bytesto(data.tell()) < 7
+            ):
                 multipart = False
                 item_properties.pop("multipart", None)
             else:
@@ -8274,14 +8293,15 @@ class Group(dict):
         """
         return self._portal.delete_group_thumbnail(self.groupid)
 
-    def remove_users(self, usernames):
+    def remove_users(self, usernames: list[str]):
         """
         The ``remove_users`` method is used to remove users from this group.
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        usernames         Required string.  A comma-separated list of users to be removed.
+        usernames         Required list of strings.
+                          A comma-separated list of users to be removed.
         ================  ========================================================
 
         :return:
@@ -10616,7 +10636,15 @@ class Item(dict):
             params = {"f": "json"}
 
             if self.type == "Image Service":  # service that is itself a layer
-                layers.append(ImageryLayer(self.url, self._gis))
+                lyr = ImageryLayer(self.url, self._gis)
+                try:
+                    item_data = self.get_data()
+                    lyr._fn = item_data.get("renderingRule", None)
+                    lyr._fnra = item_data.get("renderingRule", None)
+                    lyr._mosaic_rule = item_data.get("mosaicRule", None)
+                except:
+                    pass
+                layers.append(lyr)
 
             elif self.type == "Feature Collection":
                 lyrs = self.get_data()["layers"]
@@ -11521,7 +11549,7 @@ class Item(dict):
 
         portalurl = self.homepage
 
-        locale.setlocale(locale.LC_ALL, "")
+        # locale.setlocale(locale.LC_ALL, "")
         numViews = locale.format("%d", self.numViews, grouping=True)
         return (
             """<div class="item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
@@ -12096,7 +12124,8 @@ class Item(dict):
          ---------------     --------------------------------------------------------------------
          item_properties     Required dictionary. See table below for the keys and values.
          ---------------     --------------------------------------------------------------------
-         data                Optional string. Either a path or URL to the data.
+         data                Optional string, io.StringIO, or io.BytesIO. Either a path or URL to
+                             the data or an instance of `StringIO` or `BytesIO` objects.
          ---------------     --------------------------------------------------------------------
          thumbnail           Optional string. Either a path or URL to a thumbnail image.
          ---------------     --------------------------------------------------------------------
@@ -12180,6 +12209,15 @@ class Item(dict):
             if "tags" in item_properties:
                 if type(item_properties["tags"]) is list:
                     item_properties["tags"] = ",".join(item_properties["tags"])
+
+        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            if item_properties is None:
+                item_properties = {}
+            if not "type" in item_properties:
+                item_properties["type"] = self.type
+            if not "fileName" in item_properties:
+                fileName = self.name
+                item_properties["fileName"] = fileName
 
         ret = self._portal.update_item(
             self.itemid,
@@ -12529,6 +12567,7 @@ class Item(dict):
             "APIKey2Item",
             "WebStyle2DesktopStyle",
             "Map2FeatureCollectionMobileApp2Code",
+            "Mission2Item",
         ]
     )
 
@@ -13706,7 +13745,7 @@ class Item(dict):
         Lastly, relationships and dependencies of the original item are not maintained in the new item.
 
         .. note::
-            This method is only available on ArcGIS Online
+            This method is only available on ArcGIS Online or ArcGIS Enterprise 10.9 or higher
 
         =======================    =============================================================
         **Argument**               **Description**
@@ -13737,27 +13776,25 @@ class Item(dict):
         :return: An :class:`~arcgis.gis.Item` object
         """
 
-        if self._portal.is_arcgisonline:
-            url = "%s/sharing/rest/content/users/%s/items/%s/copy" % (
-                self._portal.url,
-                self._user_id,
-                self.id,
-            )
-            params = {
-                "f": "json",
-                "title": title,
-                "tags": tags,
-                "includeResources": include_resources,
-                "copyPrivateResources": include_private,
-            }
-            res = self._portal.con.post(url, params)
-            if "itemId" in res:
-                return self._gis.content.get(res["itemId"])
-            elif "id" in res:
-                return self._gis.content.get(res["id"])
-            else:
-                return res
-        return
+        url = "%s/sharing/rest/content/users/%s/items/%s/copy" % (
+            self._portal.url,
+            self._user_id,
+            self.id,
+        )
+        params = {
+            "f": "json",
+            "title": title,
+            "tags": tags,
+            "includeResources": include_resources,
+            "copyPrivateResources": include_private,
+        }
+        res = self._portal.con.post(url, params)
+        if "itemId" in res:
+            return self._gis.content.get(res["itemId"])
+        elif "id" in res:
+            return self._gis.content.get(res["id"])
+        else:
+            return res
 
     # ----------------------------------------------------------------------
     def copy(self, title=None, tags=None, snippet=None, description=None, layers=None):

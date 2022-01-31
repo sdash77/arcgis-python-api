@@ -566,7 +566,7 @@ class License(object):
         return {}
 
     # ----------------------------------------------------------------------
-    def assign(self, username, entitlements, suppress_email=True):
+    def assign(self, username, entitlements, suppress_email=True, overwrite=True):
         """
         grants a user an entitlement.
 
@@ -576,12 +576,15 @@ class License(object):
         username            required string, the name of the user you wish to
                             assign an entitlement to.
         ---------------     ----------------------------------------------------
-        entitlments         required list, a list of entitlements values
+        entitlements        required list, a list of entitlements values
         ---------------     ----------------------------------------------------
-        suppress_email       optional boolean, if True, the org will not notify
+        suppress_email      optional boolean, if True, the org will not notify
                             a user that their entitlements has changed (default)
                             If False, the org will send an email notifying a
                             user that their entitlements have changed.
+        ---------------     ----------------------------------------------------
+        overwrite           optional boolean, if True, existing entitlements
+                            for the user are dropped
         ===============     ====================================================
 
         :return:
@@ -590,6 +593,15 @@ class License(object):
         item_id = self.properties["listing"]["itemId"]
         if isinstance(entitlements, str):
             entitlements = entitlements.split(",")
+
+        if not overwrite:
+            existing = self.user_entitlement(username)
+            if existing and "entitlements" in existing:
+                entitlement_set = set(existing["entitlements"])
+                for e in entitlements:
+                    entitlement_set.add(e)
+                entitlements = list(entitlement_set)
+
         params = {
             "f": "json",
             "userEntitlements": {"users": [username], "entitlements": entitlements},
