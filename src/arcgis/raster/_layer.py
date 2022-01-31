@@ -4154,6 +4154,120 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
+    def compute_cache_info(self, out_sr=None):
+        """
+        The ``compute_cache_info`` method computes and generates new image service tile cache
+        schemes for image services.
+        If the corresponding image tile cache scheme is missing, it will also create a new set of
+        cached image tiles in the cache directory of the image service. This operation only
+        generates image tile cache schemes based on raster tiles (LERC2D format).
+
+        .. note::
+            This applies to image services that have dynamic service caching capability enabled.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        out_sr                Optional integer. The spatial reference of the boundary's geometry.
+                              The spatial reference can be specified as a well-known ID.
+                              If the ``out_sr`` is not specified, it will use the spatial
+                              reference of the image service.
+        =================     ====================================================================
+
+        :returns: A dictionary with the image tile cache scheme information.
+
+        .. code-block:: python
+
+            # Example Usage: Compute the cache info for a given spatial reference.
+
+            cache_info_op = img_lyr.compute_cache_info(out_sr=3857)
+
+        """
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        url = self._url + "/computeCacheInfo"
+        params = {"f": "json"}
+        if out_sr is not None:
+            params["outSR"] = out_sr
+
+        return self._con.post(path=url, postdata=params, timeout=None)
+
+    def compute_angles(
+        self, raster_id, point=None, angle_name=None, spatial_reference=None
+    ):
+        """
+        The ``compute_angles`` method computes the rotation angle of a raster for a user-specified
+        angle direction, and optionally, a user-specified rotation point and user-specified
+        spatial reference.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        raster_id             Required integer. Specifies the object ID of the raster catalog which
+                              will determine the raster and image coordinate system to use in a
+                              mosaic dataset.
+        -----------------     --------------------------------------------------------------------
+        point                 Optional dictionary or :class:`~arcgis.geometry.Point` object.
+                              The point geometry that defines the reference point of rotation to 
+                              compute the angle direction. By default, takes the centroid of image
+                              as point of rotation.
+        -----------------     --------------------------------------------------------------------
+        angle_name            Optional string. Specifies the name (or names) of the rotation
+                              angle to be computed.
+
+                              Possible options are: 
+
+                              - "up": The computed angle after rotating the map so the top of the image is always \
+                              oriented to the direction of the sensor when it acquired the image.
+                              - "north": The computed angle after rotating so the top of the image is always \
+                              toward north.
+                              
+                              You can specify multiple angle names by separating the names with a
+                              comma. By default, angles are computed for all directions.
+        -----------------     --------------------------------------------------------------------
+        spatial_reference     Optional dictionary. Specifies the spatial reference to be used by
+                              the image. By default, the spatial reference of the image is used.
+        =================     ====================================================================
+
+        :returns: A dictionary with the computed rotation angle of a raster.
+
+        .. code-block:: python
+
+            # Example Usage: Compute angles for a given point and rotation angle.
+
+            my_point = {
+                        "x": 7952916.33, 
+                        "y": 3869525.96,
+                        "spatialReference": {"wkid": 3857}
+                       }
+
+            my_point_object = Point(my_point)
+            
+            compute_angles_op = img_lyr.compute_angles(raster_id=1,
+                                                       point=my_point_object,
+                                                       angle_name="north",
+                                                       spatial_reference={"wkid": 54004})
+
+        """
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        url = self._url + "/computeAngles"
+        params = {"rasterId": raster_id, "f": "json"}
+        if point is not None:
+            params["point"] = point
+        if angle_name is not None:
+            params["angleName"] = angle_name
+        if spatial_reference is not None:
+            params["spatialReference"] = spatial_reference
+
+        return self._con.post(path=url, postdata=params, timeout=None)
+
     def calculate_volume(
         self,
         geometries,
@@ -15801,6 +15915,40 @@ class RasterCatalogItem(object):
             file_name=out_file,
             out_folder=out_folder,
         )
+
+    # ----------------------------------------------------------------------
+    @property
+    def image_support_data(self):
+        """
+        The ``image_support_data`` property returns  image support data of
+        the NITF based raster catalog item. Specifically, the Image Support
+        Data resource returns the NITF file structure and contents in XML
+        format to provide more detailed information about a particular NITF file.
+        """
+        url = "%s/info/imageSupportData" % self._url
+        out_folder = tempfile.gettempdir()
+        out_file = "imageSupportData.xml"
+        return self._con.get(
+            path=url,
+            params={},
+            try_json=False,
+            file_name=out_file,
+            out_folder=out_folder,
+        )
+
+    # ----------------------------------------------------------------------
+    @property
+    def sensor(self):
+        """
+        The ``sensor`` property returns information about the sensor.
+        Example:
+        {
+            "name": "IdentityXform",
+            "sensor_provider": "esri"
+        }
+        """
+        url = "%s/info/sensor" % self._url
+        return self._con.get(path=url, params={"f": "json"})
 
     # ----------------------------------------------------------------------
     @property

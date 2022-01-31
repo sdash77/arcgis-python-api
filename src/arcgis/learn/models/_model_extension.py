@@ -457,6 +457,9 @@ class ModelExtension(ArcGISModel):
             self.predict_video = self._predict_video
 
     def _accuracy(self):
+        """
+        Returns accuracy of the model.
+        """
         try:
             return self.learn.validate()[1].tolist()
         except Exception as e:

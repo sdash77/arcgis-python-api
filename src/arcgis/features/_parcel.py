@@ -71,8 +71,7 @@ class ParcelFabricManager(object):
         """returns the Parcel Layer for the service"""
         if (
             "controllerDatasetLayers" in self._flc.properties
-            and "parcelLayerId"
-            in self._flc.properties.controllerDatasetLayers
+            and "parcelLayerId" in self._flc.properties.controllerDatasetLayers
         ):
             url = "%s/%s" % (
                 self._flc.url,
@@ -94,9 +93,7 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def assign_to_record(
-        self, features, record, write_attribute, moment=None
-    ):
+    def assign_to_record(self, features, record, write_attribute, moment=None):
         """
         Assigns the specified parcel features to the specified record. If
         parcel polygons are assigned, the record polygon will be updated to
@@ -154,9 +151,7 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def build(
-        self, extent=None, moment=None, return_errors=False, record=None
-    ):
+    def build(self, extent=None, moment=None, return_errors=False, record=None):
         """
         A `build` will fix known parcel fabric errors.
 
@@ -511,9 +506,7 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def change_type(
-        self, parcels, target_type, parcel_subtype=0, moment=None
-    ):
+    def change_type(self, parcels, target_type, parcel_subtype=0, moment=None):
         """
 
         Changes a set of parcels to a new parcel type. It creates new
@@ -601,9 +594,7 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def update_history(
-        self, features, record, moment=None, set_as_historic=False
-    ):
+    def update_history(self, features, record, moment=None, set_as_historic=False):
         """
         Sets the specified parcel features to current or historic using the
         specified record. If setting current parcels as historic, the
@@ -703,9 +694,7 @@ class ParcelFabricManager(object):
         elif extent is None:
             pass
         elif not extent is None:
-            raise ValueError(
-                "Parameter `extent` must be None, Envelope or dict."
-            )
+            raise ValueError("Parameter `extent` must be None, Envelope or dict.")
         if moment is None:
             moment = int(time.time())
         gdb_version = self._version.properties.versionName
@@ -723,9 +712,7 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def duplicate(
-        self, parcels, parcel_type, record, parcel_subtype=None, moment=None
-    ):
+    def duplicate(self, parcels, parcel_type, record, parcel_subtype=None, moment=None):
         """
         `duplicate` allows for the cloning of parcels from a specific record.
 
