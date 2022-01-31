@@ -9,10 +9,16 @@ from arcgis.gis import GIS, Item
 from arcgis.geometry import Geometry
 from arcgis.features.use_proximity import find_nearest
 from arcgis.gis import ProfileManager
+
 profile_list = ProfileManager().list()
 
-if not 'ent11' in profile_list:
-    GIS(url="https://gpportal.esri.com/portal/", username="admin", password="esri.agp", profile="ent11") #create enterprise 11 connection
+if not "ent11" in profile_list:
+    GIS(
+        url="https://gpportal.esri.com/portal/",
+        username="admin",
+        password="esri.agp",
+        profile="ent11",
+    )  # create enterprise 11 connection
 
 
 profiles = ["your_online_profile", "ent11"]

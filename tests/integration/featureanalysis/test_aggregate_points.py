@@ -8,10 +8,16 @@ from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.analysis import aggregate_points
 from arcgis.gis import ProfileManager
+
 profile_list = ProfileManager().list()
 
-if not 'ent11' in profile_list:
-    GIS(url="https://gpportal.esri.com/portal/", username="admin", password="esri.agp", profile="ent11") #create enterprise 11 connection
+if not "ent11" in profile_list:
+    GIS(
+        url="https://gpportal.esri.com/portal/",
+        username="admin",
+        password="esri.agp",
+        profile="ent11",
+    )  # create enterprise 11 connection
 
 data = [
     {
@@ -1796,7 +1802,7 @@ data = [
 polygon_data = "https://earthworks.stanford.edu/catalog/stanford-dc841dq9031"
 
 
-profiles = [ "your_online_profile", "ent11"]  # enterprise must be 10.9.1+
+profiles = ["your_online_profile", "ent11"]  # enterprise must be 10.9.1+
 
 
 class TestAggregatePoints(unittest.TestCase):
@@ -1843,7 +1849,7 @@ class TestAggregatePoints(unittest.TestCase):
                 point_layer=point_layer,
                 polygon_layer=new_polygon_layer,
                 keep_boundaries_with_no_points=False,
-                group_by_field="TYPE", #creates a table that will also be overwritten
+                group_by_field="TYPE",  # creates a table that will also be overwritten
                 output_name=target_layer,
                 context={"overwrite": True},
             )

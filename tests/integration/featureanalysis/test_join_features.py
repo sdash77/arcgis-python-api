@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
@@ -8,10 +9,16 @@ from arcgis.features.layer import Table
 from arcgis.features import FeatureLayer
 from arcgis.features.summarize_data import join_features
 from arcgis.gis import ProfileManager
+
 profile_list = ProfileManager().list()
 
-if not 'ent11' in profile_list:
-    GIS(url="https://gpportal.esri.com/portal/", username="admin", password="esri.agp", profile="ent11") #create enterprise 11 connection
+if not "ent11" in profile_list:
+    GIS(
+        url="https://gpportal.esri.com/portal/",
+        username="admin",
+        password="esri.agp",
+        profile="ent11",
+    )  # create enterprise 11 connection
 
 
 data = [
@@ -1860,7 +1867,7 @@ class TestJoinFeatures(unittest.TestCase):
             # delete items that were added for test purpose
             assert target_item.delete()
             assert fs.delete()
-        
+
     def test_overwrite_table(self):
         """tests overwriting an Item table using the context param"""
         for profile in profiles:
@@ -1886,7 +1893,9 @@ class TestJoinFeatures(unittest.TestCase):
             target_item = join_features(
                 target_layer=airport_table,
                 join_layer=hospital_table,
-                attribute_relationship=[{"targetField":"CITY","operator":"equal","joinField":"CITY"}],
+                attribute_relationship=[
+                    {"targetField": "CITY", "operator": "equal", "joinField": "CITY"}
+                ],
                 output_name=output_name,
             )
             assert isinstance(target_item, Item)
@@ -1897,7 +1906,9 @@ class TestJoinFeatures(unittest.TestCase):
             overwrite = join_features(
                 target_layer=airport_table,
                 join_layer=hospital_table,
-                attribute_relationship=[{"targetField":"STATE","operator":"equal","joinField":"STATE"}],
+                attribute_relationship=[
+                    {"targetField": "STATE", "operator": "equal", "joinField": "STATE"}
+                ],
                 output_name=target_table,
                 context={
                     "overwrite": True,
