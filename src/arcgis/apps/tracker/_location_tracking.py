@@ -52,9 +52,9 @@ class LocationTrackingManager:
 
     def enable(
         self,
-        tracks_layer_shards=6,
-        lkl_layer_shards=3,
-        tracks_layer_rolling_index_strategy="Monthly",
+        tracks_layer_shards: int = 6,
+        lkl_layer_shards: int = 3,
+        tracks_layer_rolling_index_strategy: str = "Monthly",
     ):
         """
         Enables location tracking for the organization.
@@ -240,7 +240,7 @@ class LocationTrackingManager:
                     break
         return True
 
-    def create_track_view(self, title):
+    def create_track_view(self, title: str):
         """
         This creates a :class:`~arcgis.apps.tracker.TrackView`.
 

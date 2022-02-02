@@ -5,6 +5,8 @@ calculate_density takes known quantities of some phenomenon and spreads these qu
 find_hot_spots identifies statistically significant clustering in the spatial pattern of your data.
 interpolate_points predicts values at new locations based on measurements found in a collection of points.
 """
+from __future__ import annotations
+from typing import Any, Optional, Union
 from arcgis.auth.tools import LazyLoader
 
 _arcgis = LazyLoader("arcgis")
@@ -12,21 +14,37 @@ _util = LazyLoader("arcgis._impl.common._utils")
 
 # --------------------------------------------------------------------------
 def calculate_density(
-    input_layer,
-    field=None,
-    cell_size=None,
-    cell_size_units="Meters",
-    radius=None,
-    radius_units=None,
-    bounding_polygon_layer=None,
-    area_units=None,
-    classification_type="EqualInterval",
-    num_classes=10,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    field: Optional[str] = None,
+    cell_size: Optional[float] = None,
+    cell_size_units: str = "Meters",
+    radius: Optional[float] = None,
+    radius_units: Optional[str] = None,
+    bounding_polygon_layer: Optional[
+        Union[
+            _arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    area_units: Optional[str] = None,
+    classification_type: str = "EqualInterval",
+    num_classes: int = 10,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/cal_density_standard/calculate_density.png
@@ -155,16 +173,23 @@ def calculate_density(
 
 # --------------------------------------------------------------------------
 def summarize_center_and_dispersion(
-    analysis_layer,
-    summarize_type,
-    ellipse_size=None,
-    weight_field=None,
-    group_field=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    analysis_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    summarize_type: str,
+    ellipse_size: Optional[str] = None,
+    weight_field: Optional[str] = None,
+    group_field: Optional[str] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
 
     """
@@ -261,15 +286,22 @@ def summarize_center_and_dispersion(
 
 # --------------------------------------------------------------------------
 def find_point_clusters(
-    analysis_layer,
-    min_features_cluster,
-    search_distance=None,
-    search_distance_unit=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    analysis_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    min_features_cluster: int,
+    search_distance: Optional[float] = None,
+    search_distance_unit: Optional[str] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/find_point_clusters/find_point_clusters.png
@@ -383,21 +415,46 @@ def find_point_clusters(
 
 # --------------------------------------------------------------------------
 def find_hot_spots(
-    analysis_layer,
-    analysis_field=None,
-    divided_by_field=None,
-    bounding_polygon_layer=None,
-    aggregation_polygon_layer=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    shape_type=None,
-    cell_size=None,
-    cell_size_unit=None,
-    distance_band=None,
-    distance_band_unit=None,
-    future=False,
+    analysis_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    analysis_field: Optional[str] = None,
+    divided_by_field: Optional[str] = None,
+    bounding_polygon_layer: Optional[
+        Union[
+            _arcgis.gis._arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    aggregation_polygon_layer: Optional[
+        Union[
+            _arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    shape_type: Optional[str] = None,
+    cell_size: Optional[float] = None,
+    cell_size_unit: Optional[str] = None,
+    distance_band: Optional[float] = None,
+    distance_band_unit: Optional[str] = None,
+    future: bool = False,
 ):
     """
 
@@ -528,22 +585,47 @@ def find_hot_spots(
 
 # --------------------------------------------------------------------------
 def find_outliers(
-    analysis_layer,
-    analysis_field=None,
-    divided_by_field=None,
-    bounding_polygon_layer=None,
-    aggregation_polygon_layer=None,
-    permutations=None,
-    shape_type=None,
-    cell_size=None,
-    cell_units=None,
-    distance_band=None,
-    band_units=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    analysis_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    analysis_field: Optional[str] = None,
+    divided_by_field: Optional[str] = None,
+    bounding_polygon_layer: Optional[
+        Union[
+            _arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    aggregation_polygon_layer: Optional[
+        Union[
+            _arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    permutations: Optional[str] = None,
+    shape_type: Optional[str] = None,
+    cell_size: Optional[float] = None,
+    cell_units: Optional[str] = None,
+    distance_band: Optional[float] = None,
+    band_units: Optional[str] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/find_outliers/find_outliers.png
@@ -684,20 +766,41 @@ def find_outliers(
 
 # --------------------------------------------------------------------------
 def interpolate_points(
-    input_layer,
-    field,
-    interpolate_option="5",
-    output_prediction_error=False,
-    classification_type="GeometricInterval",
-    num_classes=10,
-    class_breaks=[],
-    bounding_polygon_layer=None,
-    predict_at_point_layer=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    field: str,
+    interpolate_option: str = "5",
+    output_prediction_error: bool = False,
+    classification_type: str = "GeometricInterval",
+    num_classes: int = 10,
+    class_breaks: Optional[list[float]] = [],
+    bounding_polygon_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ] = None,
+    predict_at_point_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/interpolate_points/interpolate_points.png

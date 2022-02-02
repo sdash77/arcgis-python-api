@@ -4,11 +4,15 @@ These tools are used for the day-to-day management of geographic and tabular dat
 
 copy_to_data_store copies data to your ArcGIS Data Store and creates a layer in your web GIS.
 """
+from __future__ import annotations
+from datetime import datetime
 import json as _json
 import logging as _logging
-import datetime as _datetime
+from typing import Any, Optional, Union
 import arcgis as _arcgis
-from arcgis.features import FeatureSet as _FeatureSet
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
+from arcgis.gis import GIS, Item
 
 from ._util import (
     _id_generator,
@@ -27,13 +31,24 @@ _use_async = True
 
 
 def run_python_script(
-    code,
-    layers=None,
-    gis=None,
-    context=None,
-    future=False,
-    parameters=None,
-    param_as_input=False,
+    code: str,
+    layers: Optional[
+        list[
+            Union[
+                Item,
+                FeatureCollection,
+                FeatureLayer,
+                FeatureLayerCollection,
+                str,
+                dict[str, Any],
+            ]
+        ]
+    ] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    parameters: Optional[dict[str, Any]] = None,
+    param_as_input: bool = False,
 ):
     """
 
@@ -215,14 +230,21 @@ def run_python_script(
 
 
 def dissolve_boundaries(
-    input_layer,
-    dissolve_fields=None,
-    summary_fields=None,
-    multipart=False,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    dissolve_fields: Optional[str] = None,
+    summary_fields: Optional[list[dict[str, Any]]] = None,
+    multipart: bool = False,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/dissolve_boundaries/dissolve_boundaries.png
@@ -387,13 +409,27 @@ def dissolve_boundaries(
 
 
 def merge_layers(
-    input_layer,
-    merge_layer,
-    merge_attributes=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    merge_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    merge_attributes: Optional[list[dict[str, str]]] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
 
@@ -553,7 +589,26 @@ def merge_layers(
 
 
 def clip_layer(
-    input_layer, clip_layer, output_name=None, gis=None, context=None, future=False
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    clip_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/clip_layer/clip_layer.png
@@ -667,14 +722,28 @@ def clip_layer(
 
 
 def overlay_data(
-    input_layer,
-    overlay_layer,
-    overlay_type="intersect",
-    output_name=None,
-    gis=None,
-    include_overlaps=True,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    overlay_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    overlay_type: str = "intersect",
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    include_overlaps: bool = True,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images//overlay_layers/overlay_layers.png
@@ -853,7 +922,27 @@ def overlay_data(
     return
 
 
-def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=False):
+def append_data(
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    append_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    field_mapping: Optional[list[dict[str, str]]] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
     """
     Only available at ArcGIS Enterprise 10.6.1 and later.
 
@@ -961,19 +1050,26 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
 
 
 def calculate_fields(
-    input_layer,
-    field_name,
-    data_type,
-    expression,
-    track_aware=False,
-    track_fields=None,
-    time_boundary_split=None,
-    time_split_unit=None,
-    time_reference=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    field_name: str,
+    data_type: str,
+    expression: str,
+    track_aware: bool = False,
+    track_fields: Optional[str] = None,
+    time_boundary_split: Optional[int] = None,
+    time_split_unit: Optional[str] = None,
+    time_reference: Optional[datetime] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
 
@@ -1120,7 +1216,18 @@ def calculate_fields(
 
 
 def copy_to_data_store(
-    input_layer, output_name=None, gis=None, context=None, future=False
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/copy_to_data_store/copy_to_data_store.png
