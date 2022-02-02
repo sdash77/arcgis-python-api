@@ -1,10 +1,10 @@
 import sys
 from unittest.case import SkipTest
 
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus_main\\src")
+sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import unittest
 from arcgis.gis import GIS
-from arcgis.apps.storymap.story import StoryMap, Themes
+from arcgis.apps.storymap import StoryMap, Themes
 from arcgis.apps.storymap import (
     Image,
     Audio,
@@ -70,7 +70,7 @@ class TestStoryMap(unittest.TestCase):
 
     def test_add_video(self):
         """Test adding a Video and seeing properties"""
-        bear = Video(content + r"\bear.mp4")
+        bear = Video(content + r"\underwater.mp4")
         video = story.add(bear)
 
         assert video
@@ -153,7 +153,7 @@ class TestStoryMap(unittest.TestCase):
     def test_get(self):
         """Test the get method for getting nodes by type and from an id"""
         assert story.get(type="text")
-        text = story.get("text")[0]
+        text = story.get(type="text")[0]
         text_id = list(text.keys())[0]
         assert story.get(node=text_id)
 
