@@ -1,10 +1,13 @@
+from __future__ import annotations
 import os
 import json
 import time
 import uuid
 import tempfile
 from urllib.parse import urlparse
-from typing import List
+from typing import Optional, Union, Any
+
+import pandas as pd
 from arcgis.gis import GIS, Item
 
 ########################################################################
@@ -38,7 +41,7 @@ class SurveyManager:
 
     # ----------------------------------------------------------------------
     @property
-    def surveys(self) -> List:
+    def surveys(self) -> list:
         """returns a list of existing Survey"""
         query = (
             'type:"Form" AND NOT tags:"noxlsform"'
@@ -59,7 +62,7 @@ class SurveyManager:
         return [Survey(item=i, sm=self) for i in items]
 
     # ----------------------------------------------------------------------
-    def get(self, survey_id):
+    def get(self, survey_id: Union[Item, str]):
         """returns a single `Survey` object from and Item ID or Item"""
         if isinstance(survey_id, Item):
             survey_id = survey_id.id
@@ -67,7 +70,7 @@ class SurveyManager:
         return Survey(item=item, sm=self)
 
     # ----------------------------------------------------------------------
-    def _xform2webform(self, xform):
+    def _xform2webform(self, xform: str):
         """
         converts the xform xml to JSON for the item
 
@@ -87,7 +90,7 @@ class SurveyManager:
         )
 
     # ----------------------------------------------------------------------
-    def _xls2xform(self, file_path):
+    def _xls2xform(self, file_path: str):
         """
         Converts a XLSForm spreadsheet to XForm XML. The spreadsheet must be in Excel XLS(X) format
 
@@ -154,7 +157,7 @@ class Survey:
     _ssi = None
     _baseurl = None
     # ----------------------------------------------------------------------
-    def __init__(self, item, sm, baseurl=None):
+    def __init__(self, item, sm, baseurl: Optional[str] = None):
         """Constructor"""
         if baseurl is None:
             baseurl = "survey123.arcgis.com"
@@ -181,7 +184,9 @@ class Survey:
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def download(self, export_format: str, save_folder: str = None) -> str:
+    def download(
+        self, export_format: str, save_folder: Optional[str] = None
+    ) -> Union[str, pd.Dataframe]:
         """
         Exports the Survey's data to other format
 
@@ -218,18 +223,18 @@ class Survey:
         report_template: Item,
         where: str = "1=1",
         utc_offset: str = "+00:00",
-        report_title: str = None,
-        package_name: str = None,
+        report_title: Optional[str] = None,
+        package_name: Optional[str] = None,
         output_format: str = "docx",
-        folder_id: str = None,
-        merge_files: str = None,
-        survey_item: "Item" = None,
-        webmap_item: "Item" = None,
-        map_scale: float = None,
+        folder_id: Optional[str] = None,
+        merge_files: Optional[str] = None,
+        survey_item: Optional[Item] = None,
+        webmap_item: Optional[Item] = None,
+        map_scale: Optional[float] = None,
         locale: str = "en",
     ) -> str:
         """
-        Creates a MS Word Report.  The `generate_report` method allows users to either save the
+        Creates a MS Word Report or PDF.  The `generate_report` method allows users to either save the
         report to the enterprise or export it directly to disk.
 
         To save to disk, do not specify a `folder_id`.
@@ -335,7 +340,7 @@ class Survey:
 
     # ----------------------------------------------------------------------
     @property
-    def report_templates(self) -> List:
+    def report_templates(self) -> list:
         """
         Returns a list of saved report items
 
@@ -349,7 +354,7 @@ class Survey:
         return report_templates
 
     @property
-    def reports(self) -> List:
+    def reports(self) -> list:
         """returns a list of generated reports"""
         return self._si._gis.content.search(
             'owner: %s AND type:"Microsoft Word" AND tags:"Survey 123"'
@@ -359,7 +364,7 @@ class Survey:
         )
 
     # ----------------------------------------------------------------------
-    def create_report_template(self, template_type: str = None):
+    def create_report_template(self, template_type: Optional[str] = None):
         """
         The `create_report_template` creates a simple default template that
         can be downloaded locally, editted and uploaded back up as a report
@@ -400,7 +405,7 @@ class Survey:
 
     # ----------------------------------------------------------------------
 
-    def check_template_syntax(self, template_file: str = None):
+    def check_template_syntax(self, template_file: Optional[str] = None):
         """
         A sync operation to check any syntax which will lead to a failure
         when generating reports in the given feature.
@@ -434,7 +439,7 @@ class Survey:
     # ----------------------------------------------------------------------
 
     def upload_report_template(
-        self, template_file: str = None, template_name: str = None
+        self, template_file: Optional[str] = None, template_name: Optional[str] = None
     ):
         """
         Check report template syntax to idenfify any syntax which will lead to a failure
@@ -506,7 +511,7 @@ class Survey:
 
     # ----------------------------------------------------------------------
 
-    def update_report_template(self, template_file: str = None):
+    def update_report_template(self, template_file: Optional[str] = None):
         """
         Check report template syntax to idenfify any syntax which will lead to a failure
         when generating reports in the given feature and updates existing Report template Org item.
@@ -601,11 +606,11 @@ class Survey:
         report_template: Item,
         where: str = "1=1",
         utc_offset: str = "+00:00",
-        report_title: str = None,
-        merge_files: str = None,
-        survey_item: "Item" = None,
-        webmap_item: "Item" = None,
-        map_scale: float = None,
+        report_title: Optional[str] = None,
+        merge_files: Optional[str] = None,
+        survey_item: Optional[Item] = None,
+        webmap_item: Optional[Item] = None,
+        map_scale: Optional[float] = None,
         locale: str = "en",
     ) -> str:
 
@@ -626,12 +631,12 @@ class Survey:
                           users timezone. Example: EST - "+04:00"
         ----------------  ---------------------------------------------------------------
         report_title      Optional String. Specify the file name (without extension) of the
-                          result report file. For example, if outputFormat is .pdf, input:
+                          result report file. For example, if outputFormat is .pdf, input:
                           "abc" -> output: "abc.pdf"; input: "abc.docx" -> output: "abc.docx.pdf".
 
-                          If packageFiles is true, outputReportName will be used for report files
-                          inside the packaged file. If mergeFiles is either nextPage or continuous,
-                          outputReportName will be used as the merged file name.
+                          If packageFiles is true, outputReportName will be used for report files
+                          inside the packaged file. If mergeFiles is either nextPage or continuous,
+                          outputReportName will be used as the merged file name.
         ----------------  ---------------------------------------------------------------
         merge_files       Optional String. Specify if print multiple records into a single
                           report file (merged mode) or multiple files (split mode), and if
