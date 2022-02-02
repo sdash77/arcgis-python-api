@@ -123,7 +123,7 @@ def compute_sensor_model(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     compute_sensor_model computes the bundle block adjustment for the image collection
@@ -194,7 +194,7 @@ def compute_sensor_model(
         location_accuracy=location_accuracy,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -236,7 +236,7 @@ def alter_processing_states(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Alter the processing states of the image collection.
@@ -281,7 +281,7 @@ def alter_processing_states(
         image_collection=image_collection,
         new_states=new_states,
         future=future,
-        **kwargs
+        **kwargs,
     )
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -439,7 +439,7 @@ def match_control_points(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     The match_control_points is a function that takes a collection of ground control points
@@ -564,7 +564,7 @@ def match_control_points(
         similarity=similarity,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -612,7 +612,7 @@ def color_correction(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Color balance the image collection. 
@@ -721,7 +721,7 @@ def color_correction(
         target_image=target_image,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -778,7 +778,7 @@ def compute_control_points(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     This service tool is used for computing matching control points between images
@@ -870,7 +870,7 @@ def compute_control_points(
         image_location_accuracy=image_location_accuracy,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -917,7 +917,7 @@ def compute_seamlines(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Compute seamlines on the image collection. This service tool is used to compute
@@ -986,7 +986,7 @@ def compute_seamlines(
         seamlines_method=seamlines_method,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -1025,7 +1025,7 @@ def edit_control_points(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     This service can be used to append additional ground control point sets to
@@ -1125,7 +1125,7 @@ def edit_control_points(
         image_collection=image_collection,
         input_control_points=control_points,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -1157,7 +1157,7 @@ def generate_dem(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Generate a DEM from the image collection. Refer to "Interpolate From Point Cloud"
@@ -1261,7 +1261,7 @@ def generate_dem(
         matching_method=matching_method,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -1355,7 +1355,7 @@ def generate_orthomosaic(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Function can be used for generating single ortho-rectified mosaicked image from image collection after
@@ -1454,7 +1454,7 @@ def generate_orthomosaic(
         recompute_color_correction=recompute_color_correction,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -1534,7 +1534,7 @@ def generate_report(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     This function is used to generate orthomapping report with image collection
@@ -1565,7 +1565,7 @@ def generate_report(
         image_collection=image_collection,
         report_format=report_format,
         future=future,
-        **kwargs
+        **kwargs,
     )
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -1596,7 +1596,7 @@ def query_camera_info(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     This service tool is used to query specific or the entire digital camera
@@ -1659,7 +1659,7 @@ def query_control_points(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Query for control points in an image collection. It allows users to query

@@ -149,7 +149,7 @@ def _flow_direction_analytics_converter(
     other_outputs=None,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     input_surface_raster = (
         forceFlow
@@ -175,7 +175,7 @@ def _flow_direction_analytics_converter(
         output_drop_name,
         gis=gis,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -185,7 +185,7 @@ def _calculate_travel_cost_analytics_converter(
     other_outputs=None,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     input_source = None
     input_cost_raster = None
@@ -283,7 +283,7 @@ def _calculate_travel_cost_analytics_converter(
         output_allocation_name,
         gis=gis,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -293,7 +293,7 @@ def _calculate_distance_analytics_converter(
     other_outputs=None,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     input_source = None
     maximum_distance = None
@@ -352,7 +352,7 @@ def _calculate_distance_analytics_converter(
         distance_method,
         gis=gis,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -479,7 +479,7 @@ def _distance_accumulation_analytics_converter(
         output_source_direction_raster_name=output_source_direction_raster_name,
         output_source_location_raster_name=output_source_location_raster_name,
         gis=gis,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -620,7 +620,7 @@ def _distance_allocation_analytics_converter(
         output_source_direction_raster_name=output_source_direction_raster_name,
         output_source_location_raster_name=output_source_location_raster_name,
         gis=gis,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -706,7 +706,7 @@ def _save_ra(
     other_outputs=None,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     if raster_function["rasterFunctionArguments"]["toolName"] == "FlowDirection_sa":
         return _flow_direction_analytics_converter(
@@ -715,7 +715,7 @@ def _save_ra(
             other_outputs=other_outputs,
             gis=gis,
             future=future,
-            **kwargs
+            **kwargs,
         )
     if (
         raster_function["rasterFunctionArguments"]["toolName"]
@@ -727,7 +727,7 @@ def _save_ra(
             other_outputs=other_outputs,
             gis=gis,
             future=future,
-            **kwargs
+            **kwargs,
         )
     if raster_function["rasterFunctionArguments"]["toolName"] == "CalculateDistance_sa":
         return _calculate_distance_analytics_converter(
@@ -736,7 +736,7 @@ def _save_ra(
             other_outputs=other_outputs,
             gis=gis,
             future=future,
-            **kwargs
+            **kwargs,
         )
     if (
         raster_function["rasterFunctionArguments"]["toolName"]
@@ -747,7 +747,7 @@ def _save_ra(
             output_name=output_name,
             other_outputs=other_outputs,
             gis=gis,
-            **kwargs
+            **kwargs,
         )
     if (
         raster_function["rasterFunctionArguments"]["toolName"]
@@ -758,7 +758,7 @@ def _save_ra(
             output_name=output_name,
             other_outputs=other_outputs,
             gis=gis,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -994,7 +994,7 @@ def generate_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -1151,7 +1151,7 @@ def generate_raster(
         output_name=output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -1164,7 +1164,7 @@ def convert_feature_to_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -1290,7 +1290,7 @@ def convert_feature_to_raster(
         value_field=value_field,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -1309,7 +1309,7 @@ def copy_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -1615,7 +1615,7 @@ def copy_raster(
         raster_type_name=raster_type_name,
         raster_type_params=raster_type_params,
         md_to_upload=source_mosaic_dataset,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -1633,7 +1633,7 @@ def summarize_raster_within(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -1855,7 +1855,7 @@ def summarize_raster_within(
         percentile_value=percentile_value,
         percentile_interpolation_type=percentile_interpolation_type,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -1871,7 +1871,7 @@ def convert_raster_to_feature(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -1981,7 +1981,7 @@ def convert_raster_to_feature(
         create_multipart_features=create_multipart_features,
         max_vertices_per_feature=max_vertices_per_feature,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -1997,7 +1997,7 @@ def calculate_density(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -2181,7 +2181,7 @@ def calculate_density(
         context=context,
         future=future,
         input_barriers=input_barriers,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -2206,7 +2206,7 @@ def create_viewshed(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -2447,7 +2447,7 @@ def create_viewshed(
         above_ground_level_output_name=above_ground_level_output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -2465,7 +2465,7 @@ def interpolate_points(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -2677,7 +2677,7 @@ def interpolate_points(
         output_prediction_error=output_prediction_error,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -2690,7 +2690,7 @@ def classify(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -2844,7 +2844,7 @@ def classify(
         additional_input_raster=additional_input_raster,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -2860,7 +2860,7 @@ def segment(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -3016,7 +3016,7 @@ def segment(
         remove_tiling_artifacts=remove_tiling_artifacts,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -3030,7 +3030,7 @@ def train_classifier(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     .. image:: _static/images/ra_train_classifier/ra_train_classifier.png
@@ -3133,7 +3133,7 @@ def train_classifier(
         segment_attributes=segment_attributes,
         dimension_value_field=dimension_value_field,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -3151,7 +3151,7 @@ def create_image_collection(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -3885,7 +3885,7 @@ def create_image_collection(
         context=context,
         future=future,
         md_to_upload=source_mosaic_dataset,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -3901,7 +3901,7 @@ def add_image(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     .. image:: _static/images/add_image/add_image.png 
@@ -4031,7 +4031,7 @@ def add_image(
         raster_type_params=raster_type_params,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -4044,7 +4044,7 @@ def delete_image(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     .. image:: _static/images/delete_image/delete_image.png
@@ -4138,7 +4138,7 @@ def _flow_direction(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     """
     Replaces cells of a raster corresponding to a mask
@@ -4184,7 +4184,7 @@ def _flow_direction(
         flow_direction_type=flow_direction_type,
         output_drop_name=output_drop_name,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -4209,7 +4209,7 @@ def _calculate_travel_cost(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     """
 
@@ -4290,7 +4290,7 @@ def _calculate_travel_cost(
         output_allocation_name=output_allocation_name,
         allocation_field=allocation_field,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -4307,7 +4307,7 @@ def optimum_travel_cost_network(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -4391,7 +4391,7 @@ def optimum_travel_cost_network(
         output_neighbor_network_name=output_neighbor_network_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -4401,7 +4401,7 @@ def list_datastore_content(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
 
@@ -4462,7 +4462,7 @@ def build_footprints(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -4529,7 +4529,7 @@ def build_footprints(
         value_range=value_range,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -4540,7 +4540,7 @@ def build_overview(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -4600,7 +4600,7 @@ def build_overview(
         cell_size=cell_size,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -4611,7 +4611,7 @@ def calculate_statistics(
     *,
     gis=None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Calculates statistics for an image collection
@@ -4678,7 +4678,7 @@ def calculate_statistics(
         skip_factors=skip_factors,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -4698,7 +4698,7 @@ def determine_travel_costpath_as_polyline(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -4792,7 +4792,7 @@ def determine_travel_costpath_as_polyline(
         destination_field=destination_field,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -4810,7 +4810,7 @@ def _calculate_distance(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -4904,7 +4904,7 @@ def _calculate_distance(
         input_barrier_raster_or_features=input_barrier_data,
         output_back_direction_name=output_back_direction_name,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -4920,7 +4920,7 @@ def generate_multidimensional_anomaly(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Computes the anomaly for each slice in a multidimensional raster to generate a multidimensional dataset.
@@ -5094,7 +5094,7 @@ def generate_multidimensional_anomaly(
         context=context,
         reference_mean_raster=reference_mean_raster,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -5105,7 +5105,7 @@ def build_multidimensional_transpose(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Transposes a multidimensional raster dataset, which chunks the multidimensional data along each dimension
@@ -5169,7 +5169,7 @@ def build_multidimensional_transpose(
         context=context,
         delete_transpose=delete_transpose,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -5193,7 +5193,7 @@ def aggregate_multidimensional_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Generates a multidimensional image service by aggregating existing multidimensional raster variables along a dimension.
@@ -5546,7 +5546,7 @@ def aggregate_multidimensional_raster(
         percentile_interpolation_type=percentile_interpolation_type,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -5568,7 +5568,7 @@ def generate_trend_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Estimates the trend for each pixel along a dimension for a given variable in a multidimensional raster.
@@ -5755,7 +5755,7 @@ def generate_trend_raster(
         slope_p_value=slope_p_value,
         seasonal_period=seasonal_period,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -5773,7 +5773,7 @@ def predict_using_trend_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Estimates the trend for each pixel along a dimension for a given variable in a multidimensional raster.
@@ -5950,7 +5950,7 @@ def predict_using_trend_raster(
         interval_unit=interval_unit,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -5970,7 +5970,7 @@ def find_argument_statistics(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Extracts the dimension value at which a given statistic is attained for each pixel in a multidimensional raster.
@@ -6169,7 +6169,7 @@ def find_argument_statistics(
         ignore_nodata=ignore_nodata,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -6182,7 +6182,7 @@ def linear_spectral_unmixing(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Performs subpixel classification and calculates the fractional abundance of endmembers for individual pixels.
@@ -6319,7 +6319,7 @@ def linear_spectral_unmixing(
         value_option=value_option,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -6339,7 +6339,7 @@ def subset_multidimensional_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Subsets a multidimensional raster by slicing data along defined variables and dimensions.
@@ -6541,7 +6541,7 @@ def subset_multidimensional_raster(
         iteration_unit=iteration_unit,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -6560,7 +6560,7 @@ def costpath_as_polyline(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -6655,7 +6655,7 @@ def costpath_as_polyline(
         destination_field=destination_field,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -6668,7 +6668,7 @@ def define_nodata(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -6747,7 +6747,7 @@ def define_nodata(
         num_of_bands=num_of_bands,
         composite_value=composite_value,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -6763,7 +6763,7 @@ def optimal_path_as_line(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -6875,7 +6875,7 @@ def optimal_path_as_line(
         context=context,
         create_network_paths=create_network_paths,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -6891,7 +6891,7 @@ def optimal_region_connections(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -7046,7 +7046,7 @@ def optimal_region_connections(
         output_neighbor_connections_name=output_neighbor_connections_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -7072,7 +7072,7 @@ def _distance_accumulation(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -7096,7 +7096,7 @@ def _distance_accumulation(
         output_source_location_raster_name=output_source_location_raster_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -7123,7 +7123,7 @@ def _distance_allocation(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -7148,7 +7148,7 @@ def _distance_allocation(
         output_source_location_raster_name=output_source_location_raster_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -7164,7 +7164,7 @@ def analyze_changes_using_ccdc(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -7328,7 +7328,7 @@ def analyze_changes_using_ccdc(
         output_name=output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -7358,7 +7358,7 @@ def detect_change_using_change_analysis_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -7690,7 +7690,7 @@ def detect_change_using_change_analysis_raster(
         output_name=output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -7706,7 +7706,7 @@ def manage_multidimensional_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Function edits a multidimensional raster by adding or deleting variables or dimensions.
@@ -7806,7 +7806,7 @@ def manage_multidimensional_raster(
         dimension_description=dimension_description,
         dimension_unit=dimension_unit,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -7827,7 +7827,7 @@ def sample(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -7974,7 +7974,7 @@ def sample(
         generate_feature_class=generate_feature_class,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -7986,7 +7986,7 @@ def merge_multidimensional_rasters(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -8114,7 +8114,7 @@ def merge_multidimensional_rasters(
         output_name=output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -8137,7 +8137,7 @@ def analyze_changes_using_landtrendr(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -8364,7 +8364,7 @@ def analyze_changes_using_landtrendr(
         output_name=output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -8468,7 +8468,7 @@ def zonal_statistics_as_table(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -8622,7 +8622,7 @@ def zonal_statistics_as_table(
         percentile_interpolation_type=percentile_interpolation_type,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -8641,7 +8641,7 @@ def compute_change_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -8824,7 +8824,7 @@ def compute_change_raster(
         output_name=output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -8838,7 +8838,7 @@ def summarize_categorical_raster(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -8939,7 +8939,7 @@ def summarize_categorical_raster(
         output_summary_table_name=output_summary_table_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -8961,7 +8961,7 @@ def train_random_trees_regression_model(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -9107,5 +9107,5 @@ def train_random_trees_regression_model(
         output_importance_table_name=output_importance_table_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
