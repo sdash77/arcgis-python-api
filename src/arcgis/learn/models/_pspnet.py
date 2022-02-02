@@ -485,6 +485,14 @@ class PSPNetClassifier(ArcGISModel):
     def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
         """
         self._check_requisites()
         if rows > len(self._data.valid_ds):
