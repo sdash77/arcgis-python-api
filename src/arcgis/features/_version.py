@@ -868,15 +868,15 @@ class Version(object):
         import json
         params = {
             "f": "json",
-            "sessionID": self._guid,
+            "sessionId": self._guid,
             "resultType": result_type,
-            "fromMoment": json.dumps(from_moment),
-            "moment": json.dumps(moment),
+            "fromMoment": from_moment,
+            "moment": moment,
             "layers": layers,
             "async": future,
         }        
         if future:
-            res = self._con.post(path=url, postdata=params)
+            res = self._con.post(path=url, postdata=params)   
             n=1
             if "statusUrl" in res:
                 time.sleep(1)
@@ -892,9 +892,8 @@ class Version(object):
                         n = 40
                     time.sleep(0.5 * n)
                     n += 1
-                if return_messages:
-                    return (True, sres)
-            return res
+                else:
+                    return sres
         else:
             res = self._con.post(url, params)
             if "success" in res:
