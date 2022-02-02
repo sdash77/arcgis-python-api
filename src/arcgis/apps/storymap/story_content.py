@@ -2178,53 +2178,6 @@ class Sidecar(object):
         return sidecar_tree
 
     # ----------------------------------------------------------------------
-    @property
-    def caption(self):
-        """
-        Get/Set the caption property for the sidecar.
-
-        ==================  ========================================
-        **Argument**        **Description**
-        ------------------  ----------------------------------------
-        caption             String. The new caption for the Sidecar.
-        ==================  ========================================
-
-        :return:
-            The caption that is being used.
-        """
-        return self._story._properties["nodes"][self.node]["data"]["caption"]
-
-    # ----------------------------------------------------------------------
-    @caption.setter
-    def caption(self, caption):
-        if isinstance(caption, str):
-            self._story._properties["nodes"][self.node]["data"]["caption"] = caption
-        return self.caption
-
-    # ----------------------------------------------------------------------
-    @property
-    def alt_text(self):
-        """
-        Get/Set the alternte text property for the sidecar.
-
-        ==================  ========================================
-        **Argument**        **Description**
-        ------------------  ----------------------------------------
-        alt_text            String. The new alt_text for the Sidecar.
-        ==================  ========================================
-
-        :return:
-            The alternate text that is being used.
-        """
-        return self._story._properties["nodes"][self.node]["data"]["alt"]
-
-    # ----------------------------------------------------------------------
-    @alt_text.setter
-    def alt_text(self, alt_text):
-        self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
-        return self.alt_text
-
-    # ----------------------------------------------------------------------
     def edit(
         self,
         content: Union[Image, Video, Map, Text, Embed],
