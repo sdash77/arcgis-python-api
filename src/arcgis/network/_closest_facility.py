@@ -1,7 +1,11 @@
+from __future__ import annotations
 import logging as _logging
+from typing import Any, Optional, Union
+
 import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
+from arcgis.gis import GIS
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing import import_toolbox
@@ -554,39 +558,45 @@ default_tolerance = {"distance": 10, "units": "esriMeters"}
 
 
 def find_closest_facilities(
-    incidents,
-    facilities,
-    measurement_units="Minutes",
-    analysis_region=None,
-    number_of_facilities_to_find=1,
-    cutoff=None,
-    travel_direction="Incident to Facility",
-    use_hierarchy=True,
-    time_of_day=None,
-    time_of_day_usage="Start Time",
-    uturn_at_junctions="Allowed Only at Intersections and Dead Ends",
-    point_barriers=None,
-    line_barriers=None,
-    polygon_barriers=None,
-    restrictions=None,
-    attribute_parameter_values=None,
-    route_shape="True Shape",
-    route_line_simplification_tolerance=None,
-    populate_directions=False,
-    directions_language="en",
-    directions_distance_units="Miles",
-    directions_style_name="NA Desktop",
-    time_zone_for_time_of_day="Geographically Local",
-    travel_mode="Custom",
-    impedance="Drive Time",
-    save_output_network_analysis_layer=False,
+    incidents: Union[FeatureSet, dict[str, Any], list[FeatureSet]],
+    facilities: Union[FeatureSet, dict[str, Any], list[FeatureSet]],
+    measurement_units: str = "Minutes",
+    analysis_region: Optional[str] = None,
+    number_of_facilities_to_find: int = 1,
+    cutoff: Optional[float] = None,
+    travel_direction: str = "Incident to Facility",
+    use_hierarchy: bool = True,
+    time_of_day: Optional[datetime] = None,
+    time_of_day_usage: str = "Start Time",
+    uturn_at_junctions: str = "Allowed Only at Intersections and Dead Ends",
+    point_barriers: Optional[
+        Union[FeatureSet, dict[str, Any], list[FeatureSet]]
+    ] = None,
+    line_barriers: Optional[Union[FeatureSet, dict[str, Any], list[FeatureSet]]] = None,
+    polygon_barriers: Optional[
+        Union[FeatureSet, dict[str, Any], list[FeatureSet]]
+    ] = None,
+    restrictions: Optional[str] = None,
+    attribute_parameter_values: Union[
+        FeatureSet, dict[str, Any], list[FeatureSet]
+    ] = None,
+    route_shape: str = "True Shape",
+    route_line_simplification_tolerance: Optional[LinearUnit] = None,
+    populate_directions: bool = False,
+    directions_language: str = "en",
+    directions_distance_units: str = "Miles",
+    directions_style_name: str = "NA Desktop",
+    time_zone_for_time_of_day: str = "Geographically Local",
+    travel_mode: str = "Custom",
+    impedance: str = "Drive Time",
+    save_output_network_analysis_layer: bool = False,
     overrides=None,
-    save_route_data=False,
-    time_impedance="TravelTime",
-    distance_impedance="Kilometers",
-    output_format="Feature Set",
-    gis=None,
-    future=False,
+    save_route_data: bool = False,
+    time_impedance: str = "TravelTime",
+    distance_impedance: str = "Kilometers",
+    output_format: str = "Feature Set",
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     Finds one or more facilities that are closest from an incident based on travel time or travel distance and outputs the best routes,

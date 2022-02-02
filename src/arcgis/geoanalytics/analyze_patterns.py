@@ -4,18 +4,20 @@ These tools help you identify, quantify, and visualize spatial patterns in your 
 calculate_density takes known quantities of some phenomenon and spreads these quantities across the map.
 find_hot_spots identifies statistically significant clustering in the spatial pattern of your data.
 """
+from __future__ import annotations
 import json as _json
 from datetime import datetime as _datetime
 import logging as _logging
+from typing import Any, Optional, Union
 import arcgis as _arcgis
-from arcgis.features import FeatureSet as _FeatureSet
-from arcgis.features import Table as _Table
-
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
 from arcgis import env as _env
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing import import_toolbox
+from arcgis.gis import GIS, Item
 from ._util import (
     _id_generator,
     _feature_input,
@@ -30,24 +32,40 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 # --------------------------------------------------------------------------
 def forest(
-    input_layer,
-    var_prediction,
-    var_explanatory,
-    trees,
-    max_tree_depth=None,
-    random_vars=None,
-    sample_size=100,
-    min_leaf_size=None,
-    prediction_type="train",
-    features_to_predict=None,
-    validation=10,
-    importance_tbl=False,
-    exp_var_matching=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    return_tuple=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    var_prediction: dict[str, Any],
+    var_explanatory: list[dict[str, Any]],
+    trees: int,
+    max_tree_depth: Optional[int] = None,
+    random_vars: Optional[int] = None,
+    sample_size: int = 100,
+    min_leaf_size: Optional[int] = None,
+    prediction_type: str = "train",
+    features_to_predict: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    validation: int = 10,
+    importance_tbl: bool = False,
+    exp_var_matching: Optional[list[dict[str, Any]]] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    return_tuple: bool = False,
 ):
     """
     .. image:: _static/images/forest/forest.png
@@ -356,20 +374,27 @@ def forest(
 
 # --------------------------------------------------------------------------
 def gwr(
-    input_layer,
-    explanatory_variables,
-    dependent_variable,
-    model_type="Continuous",
-    neighborhood_selection_method="UserDefined",
-    neighborhood_type="NumberOfNeighbors",
-    distance_band=None,
-    distance_band_unit=None,
-    number_of_neighbors=None,
-    local_weighting_scheme="BiSquare",
-    output_name=None,
-    context=None,
-    gis=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    explanatory_variables: list[str],
+    dependent_variable: list[str],
+    model_type: str = "Continuous",
+    neighborhood_selection_method: str = "UserDefined",
+    neighborhood_type: str = "NumberOfNeighbors",
+    distance_band: Optional[float] = None,
+    distance_band_unit: Optional[str] = None,
+    number_of_neighbors: Optional[int] = None,
+    local_weighting_scheme: str = "BiSquare",
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     This tool performs GeographicallyWeightedRegression (GWR), which is a
@@ -559,19 +584,35 @@ def gwr(
 
 # --------------------------------------------------------------------------
 def glr(
-    input_layer,
-    var_dependent,
-    var_explanatory,
-    regression_family="Continuous",
-    features_to_predict=None,
-    gen_coeff_table=False,
-    exp_var_matching=None,
-    dep_mapping=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    return_tuple=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    var_dependent: str,
+    var_explanatory: list[str],
+    regression_family: str = "Continuous",
+    features_to_predict: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    gen_coeff_table: bool = False,
+    exp_var_matching: Optional[list[dict[str, str]]] = None,
+    dep_mapping: Optional[list[dict[str, str]]] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    return_tuple: bool = False,
 ):
     """
     .. image:: _static/images/glr/glr.png
@@ -807,18 +848,25 @@ def glr(
 
 # --------------------------------------------------------------------------
 def find_point_clusters(
-    input_layer,
-    method,
-    min_feature_clusters,
-    search_distance=None,
-    distance_unit=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    time_method=None,
-    search_duration=None,
-    duration_unit=None,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    method: str,
+    min_feature_clusters: int,
+    search_distance: Optional[float] = None,
+    distance_unit: Optional[str] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    time_method: Optional[str] = None,
+    search_duration: Optional[str] = None,
+    duration_unit: Optional[str] = None,
 ):
     """
     This tool extracts clusters from your input point features and identifies any surrounding noise.
@@ -966,24 +1014,31 @@ def find_point_clusters(
 
 # --------------------------------------------------------------------------
 def calculate_density(
-    input_layer,
-    fields=None,
-    weight="""Uniform""",
-    bin_type="""Square""",
-    bin_size=None,
-    bin_size_unit=None,
-    time_step_interval=None,
-    time_step_interval_unit=None,
-    time_step_repeat_interval=None,
-    time_step_repeat_interval_unit=None,
-    time_step_reference=None,
-    radius=None,
-    radius_unit=None,
-    area_units="""SquareKilometers""",
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    fields: Optional[str] = None,
+    weight: str = """Uniform""",
+    bin_type: str = """Square""",
+    bin_size: Optional[float] = None,
+    bin_size_unit: Optional[str] = None,
+    time_step_interval: Optional[int] = None,
+    time_step_interval_unit: Optional[str] = None,
+    time_step_repeat_interval: Optional[str] = None,
+    time_step_repeat_interval_unit: Optional[str] = None,
+    time_step_reference: Optional[_datetime] = None,
+    radius: Optional[int] = None,
+    radius_unit: Optional[str] = None,
+    area_units: str = """SquareKilometers""",
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/calculate_density/calculate_density.png
@@ -1199,19 +1254,26 @@ def calculate_density(
 
 # --------------------------------------------------------------------------
 def find_hot_spots(
-    point_layer,
-    bin_size=5,
-    bin_size_unit="Miles",
-    neighborhood_distance=5,
-    neighborhood_distance_unit="Miles",
-    time_step_interval=None,
-    time_step_interval_unit=None,
-    time_step_alignment=None,
-    time_step_reference=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    point_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    bin_size: float = 5,
+    bin_size_unit: str = "Miles",
+    neighborhood_distance: float = 5,
+    neighborhood_distance_unit: str = "Miles",
+    time_step_interval: Optional[int] = None,
+    time_step_interval_unit: Optional[str] = None,
+    time_step_alignment: Optional[str] = None,
+    time_step_reference: Optional[_datetime] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/geo_find_hot_spots/geo_find_hot_spots.png
@@ -1388,17 +1450,24 @@ def find_hot_spots(
 
 # --------------------------------------------------------------------------
 def create_space_time_cube(
-    point_layer: _FeatureSet,
+    point_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
     bin_size: float,
     bin_size_unit: str,
     time_step_interval: int,
     time_step_interval_unit: str,
-    time_step_alignment: str = None,
-    time_step_reference: _datetime = None,
-    summary_fields: str = None,
-    output_name: str = None,
-    context: str = None,
-    gis=None,
+    time_step_alignment: Optional[str] = None,
+    time_step_reference: Optional[_datetime] = None,
+    summary_fields: Optional[str] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ) -> DataFile:
     """

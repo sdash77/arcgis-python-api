@@ -1,6 +1,8 @@
 import os
 import logging as _logging
+from typing import Any, Optional
 import arcgis
+from arcgis.gis import GIS
 
 
 _log = _logging.getLogger(__name__)
@@ -25,7 +27,10 @@ def _get_list_value(index, array):
 
 
 def export_map(
-    web_map_as_json=None, format="""PDF""", layout_template="""MAP_ONLY""", gis=None
+    web_map_as_json: Optional[dict] = None,
+    format: str = """PDF""",
+    layout_template: str = """MAP_ONLY""",
+    gis: Optional[GIS] = None,
 ):
     """
     The ``export_map`` function takes the state of the ``WebMap`` object (for example, included services, layer visibility
@@ -105,7 +110,7 @@ export_map.__annotations__ = {
 }
 
 
-def get_layout_templates(gis=None):
+def get_layout_templates(gis: Optional[GIS] = None):
     """
 
     The ``get_layout_templates`` method returns the content of the :class:`~arcgis.gis.GIS` object's layout templates.
