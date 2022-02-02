@@ -1,20 +1,26 @@
 from ._arcgis_model import ArcGISModel
-from pathlib import Path
-import json
 from ._arcgis_model import _EmptyData, _change_tail
-from ._codetemplate import instance_detector_prf
-import math
 
+HAS_OPENCV = True
 try:
+    from pathlib import Path
+    import json
+    import math
+    import PIL
     import torch
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
     from fastai.vision.image import open_image
     from fastai.vision import flatten_model
+    from fastai.vision.image import pil2tensor
     from fastai.core import has_arg, split_kwargs_by_func
     from torchvision.models import resnet34
     from torchvision import models
+    from skimage.measure import find_contours
+    from arcgis.learn.models._inferencing.util import nms
+    from ._codetemplate import instance_detector_prf
+    from arcgis.learn.models._deepsort_predict_utils import non_max_suppression
     import numpy as np
     import types
     from .._data import prepare_data, _raise_fastai_import_error
@@ -38,6 +44,8 @@ try:
         train_callback,
         compute_class_AP,
     )
+    from .._image_utils import _get_image_chips, _draw_predictions
+
     from ._MaskRCNN_PointRend import create_pointrend
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from fastai.torch_core import split_model_idx
@@ -47,13 +55,35 @@ try:
     from fastai.basic_data import DatasetType
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
     import os as arcgis_os
-    from .._utils.common import get_nbatches, image_batch_stretcher
+    from .._utils.common import get_nbatches, image_batch_stretcher, read_image
     from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
     HAS_FASTAI = True
 except Exception as e:
     # raise Exception(e)
     HAS_FASTAI = False
+
+try:
+    import cv2
+except Exception:
+    HAS_OPENCV = False
+
+
+def chips_to_batch(chips, model_height, model_width, batch_size=1):
+    dtype = np.float32
+    band_count = 3
+    if len(chips) != 0:
+        dtype = chips[0].dtype
+
+    batch = np.zeros(
+        shape=(batch_size, band_count, model_height, model_width),
+        dtype=dtype,
+    )
+    for b in range(batch_size):
+        if b < len(chips):
+            batch[b, :, :model_height, :model_height] = chips[b]
+
+    return batch
 
 
 def grid_anchors(self, grid_sizes, strides):
@@ -432,6 +462,7 @@ class MaskRCNN(ArcGISModel):
                 c=len(class_mapping) + 1,
                 chip_size=kwargs.get("chip_size", emd["ImageHeight"]),
             )
+            data.resize_to = emd.get("resize_to", None)
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
             data.emd_path = emd_path
@@ -483,13 +514,18 @@ class MaskRCNN(ArcGISModel):
             "average_precision_score": self.average_precision_score(show_progress=True)
         }
 
-    def _predict_results(self, xb):
+    def _predict_batch(self, images):
+        model = self.learn.model
+        model.eval()
+        model = model.to(self._device)
+        normed_batch_tensor = images.to(self._device)
+        predictions = model(list(normed_batch_tensor))
+        normed_batch_tensor.detach().cpu()
+        del normed_batch_tensor
+        return predictions
 
-        self.learn.model.eval()
-        xb_l = xb.to(self._device)
-        predictions = self.learn.model(list(xb_l))
-        xb_l = xb_l.detach().cpu()
-        del xb_l
+    def _predict_results(self, xb):
+        predictions = self._predict_batch(xb)
         predictionsf = []
         for i in range(len(predictions)):
             predictionsf.append({})
@@ -776,3 +812,333 @@ class MaskRCNN(ArcGISModel):
                 iou_thresh,
             )
             return dict(zip(self._data.classes[1:], aps))
+
+    def _get_transformed_image(self, image, resize=False):
+        if resize:
+            resize_to = None
+            if self._data.chip_size is not None:
+                resize_to = self._data.resize_to
+            elif self._data.resize_to is not None:
+                resize_to = self._data.chip_size
+
+            if resize_to is not None:
+                if isinstance(resize_to, tuple):
+                    image = cv2.resize(image, resize_to)
+                else:
+                    image = cv2.resize(image, (resize_to, resize_to))
+        return image
+
+    def _pixel_mask_image(
+        self,
+        batch,
+        orig_img_dim,
+        min_obj_size,
+        threshold,
+        offsets,
+        scale_ratio,
+        pred_mask,
+        pred_box,
+        pred_class,
+        pred_score,
+        extra_chips=0,
+    ):
+        predictions = self._predict_batch(torch.tensor(batch).float())
+
+        for batch_idx in range(len(predictions) - extra_chips):
+            offset = offsets[batch_idx]
+            masks = predictions[batch_idx]["masks"].squeeze().detach().cpu().numpy()
+            if masks.shape[0] != 0:
+                if len(masks.shape) == 2:
+                    masks = masks[None]
+
+                for n, mask in enumerate(masks):
+                    if predictions[batch_idx]["scores"][n].tolist() >= threshold:
+                        contours = find_contours(mask, 0.5, fully_connected="high")
+                        coord_list = []
+                        for c_idx, contour in enumerate(contours):
+                            contour[:, 0] = (contour[:, 0] + (offset[0])) * scale_ratio[
+                                0
+                            ]
+                            contour[:, 1] = (contour[:, 1] + (offset[1])) * scale_ratio[
+                                1
+                            ]
+                            if c_idx == 0:
+                                coord_list.append(contour[:, [1, 0]].tolist())
+                            else:
+                                coord_list.append(
+                                    list(reversed(contour[:, [1, 0]].tolist()))
+                                )
+                        box = (
+                            predictions[batch_idx]["boxes"][n]
+                            .cpu()
+                            .detach()
+                            .numpy()
+                            .tolist()
+                        )
+
+                        box[0] = (box[0] + offset[1]) * scale_ratio[1]
+                        box[2] = (box[2] + offset[1]) * scale_ratio[1]
+                        box[1] = (box[1] + offset[0]) * scale_ratio[0]
+                        box[3] = (box[3] + offset[0]) * scale_ratio[0]
+
+                        if box[0] < 0:
+                            box[0] = 0
+
+                        if box[1] < 0:
+                            box[1] = 0
+
+                        if box[2] >= orig_img_dim[1]:
+                            box[2] = orig_img_dim[1] - 1
+
+                        if box[3] >= orig_img_dim[0]:
+                            box[3] = orig_img_dim[0] - 1
+
+                        box[2] -= box[0]
+                        box[3] -= box[1]
+                        if math.sqrt(box[2] * box[3]) >= min_obj_size:
+                            pred_box.append(box)
+                            pred_class.append(
+                                predictions[batch_idx]["labels"][n].tolist()
+                            )
+                            pred_score.append(
+                                predictions[batch_idx]["scores"][n].tolist()
+                            )
+                            pred_mask.append(coord_list)
+
+    def _get_batched_predictions(
+        self,
+        chips,
+        tytx,
+        orig_img_dim,
+        scale_ratio,
+        threshold=0.5,
+        nms_overlap=0.3,
+        min_obj_size=1,
+        batch_size=1,
+    ):
+        data = []
+        offsets = []
+
+        pred_mask = []
+        pred_box = []
+        pred_class = []
+        pred_score = []
+
+        data_counter = 0
+        for idx in range(len(chips)):
+            chip = chips[idx]
+            if self._data._is_multispectral:
+                t = torch.tensor(
+                    np.rollaxis(chip["chip"], -1, 0).astype(np.float32),
+                    dtype=torch.float32,
+                )[None]
+                scaled_t = self._data._min_max_scaler(t)[0]
+                frame = scaled_t[self._data._extract_bands].detach().cpu().numpy()
+            else:
+                frame = (
+                    pil2tensor(
+                        PIL.Image.fromarray(
+                            cv2.cvtColor(chip["chip"], cv2.COLOR_BGR2RGB)
+                        ),
+                        dtype=np.float32,
+                    )
+                    .div_(255)
+                    .detach()
+                    .cpu()
+                    .numpy()
+                )
+
+            data.append(frame)
+            offsets.append((chip["ymin"], chip["xmin"]))
+
+            data_counter += 1
+
+            if data_counter % batch_size == 0 or idx == len(chips) - 1:
+                batch = chips_to_batch(data, tytx, tytx, batch_size)
+
+                self._pixel_mask_image(
+                    batch,
+                    orig_img_dim,
+                    min_obj_size,
+                    threshold,
+                    offsets,
+                    scale_ratio,
+                    pred_mask=pred_mask,
+                    pred_box=pred_box,
+                    pred_class=pred_class,
+                    pred_score=pred_score,
+                    extra_chips=batch_size - len(data),
+                )
+                data = []
+                offsets = []
+                data_counter = 0
+
+        import copy
+
+        pred_box_indices = non_max_suppression(
+            copy.deepcopy(np.array(pred_box)), nms_overlap, pred_score
+        )
+        filtered_mask = [pred_mask[i] for i in pred_box_indices]
+        filtered_box = [pred_box[i] for i in pred_box_indices]
+        filtered_class = [
+            self._data.class_mapping[pred_class[i]] for i in pred_box_indices
+        ]
+        filtered_score = [pred_score[i] for i in pred_box_indices]
+
+        return filtered_mask, filtered_box, filtered_class, filtered_score
+
+    def predict(
+        self,
+        image_path,
+        threshold=0.5,
+        nms_overlap=0.1,
+        return_scores=True,
+        visualize=False,
+        resize=False,
+        **kwargs,
+    ):
+        """
+        Predicts and displays the results of a trained model on a single image.
+        This method is only supported for RGB images.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        image_path              Required. Path to the image file to make the
+                                predictions on.
+        ---------------------   -------------------------------------------
+        thresh                  Optional float. The probability above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        ---------------------   -------------------------------------------
+        return_scores           Optional boolean.
+                                Will return the probability scores of the
+                                bounding box predictions if True.
+        ---------------------   -------------------------------------------
+        visualize               Optional boolean. Displays the image with
+                                predicted bounding boxes if True.
+        ---------------------   -------------------------------------------
+        resize                  Optional boolean. Resizes the image to the
+                                same size (chip_size parameter in prepare_data)
+                                that the model was trained on, before detecting
+                                objects. Note that if resize_to parameter was
+                                used in prepare_data, the image is resized to
+                                that size instead.
+
+                                By default, this parameter is false and the
+                                detections are run in a sliding window fashion
+                                by applying the model on cropped sections of
+                                the image (of the same size as the model was
+                                trained on).
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        batch_size              Optional int. Batch size to be used
+                                during tiled inferencing
+        ---------------------   -------------------------------------------
+        min_obj_size            Optional int. Minimum object size
+                                to be detected.
+        =====================   ===========================================
+
+        :return: 'List' of xmin, ymin, width, height, labels, scores, of predicted bounding boxes on the given image
+        """
+
+        if not HAS_OPENCV:
+            raise Exception(
+                "This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24"
+            )
+
+        if isinstance(image_path, str):
+            import os
+
+            if not os.path.isfile(image_path):
+                return None, None, None
+            if self._data._is_multispectral:
+                resize_to = None
+                if resize:
+                    if self._data.resize_to is not None:
+                        resize_to = self._data.resize_to
+                    elif self._data.chip_size is not None:
+                        resize_to = self._data.chip_size
+                image = read_image(image_path, resize_to)
+                resize = False
+            else:
+                image = cv2.imread(image_path)
+        else:
+            image = image_path
+
+        orig_height, orig_width, _ = image.shape
+        orig_frame = image.copy()
+
+        image = self._get_transformed_image(image, resize)
+        height, width, _ = image.shape
+
+        tytx = int(kwargs.get("tile_size", self._data.chip_size))
+        batch_size = int(kwargs.get("batch_size", 1))
+        min_obj_size = int(kwargs.get("min_obj_size", 1))
+
+        if not resize:
+            chips = _get_image_chips(image, tytx)
+        else:
+            chips = [
+                {
+                    "width": width,
+                    "height": height,
+                    "xmin": 0,
+                    "ymin": 0,
+                    "chip": image,
+                    "predictions": [],
+                }
+            ]
+
+        masks, predictions, labels, scores = self._get_batched_predictions(
+            chips,
+            tytx,
+            (orig_height, orig_width),
+            (orig_height / (1.0 * height), orig_width / (1.0 * width)),
+            threshold,
+            nms_overlap,
+            min_obj_size,
+            batch_size,
+        )
+
+        if visualize:
+            if self._data._is_multispectral:
+                t = torch.tensor(
+                    np.rollaxis(orig_frame, -1, 0).astype(np.float32),
+                    dtype=torch.float32,
+                )[None]
+                scaled_t = self._data._min_max_scaler(t)[0]
+                orig_frame = (
+                    (scaled_t * 255)
+                    .round()
+                    .numpy()
+                    .astype(np.uint8)[self._data._symbology_rgb_bands]
+                )
+                orig_frame = np.rollaxis(orig_frame, 0, 3)
+                a = np.zeros(orig_frame.shape, dtype=np.uint8)
+                a[:] = orig_frame[:]
+                if len(labels) > 0:
+                    image = _draw_predictions(a, predictions, labels)
+                else:
+                    image = orig_frame
+            else:
+                image = _draw_predictions(orig_frame, predictions, labels)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+            plt.xticks([])
+            plt.yticks([])
+            plt.imshow(PIL.Image.fromarray(image))
+
+        if return_scores:
+            return masks, predictions, labels, scores
+        else:
+            return masks, predictions, labels

@@ -76,7 +76,9 @@ class Indexer(BasePortalAdmin):
     def reconfigure(self) -> bool:
         """
         This operation recreates the index service metadata, schema, and data in the event it becomes corrupted.
+
         :returns: Boolean
+
         """
         params = {"f": "json"}
         url = f"{self._url}/reconfigure"
@@ -613,7 +615,7 @@ class System(BasePortalAdmin):
         """
         Allows user to manage the site's indexer
 
-        :return: `Indexer`
+        :return: :class:`~arcgis.gis.admin.Indexer`
         """
         if self._indexer is None:
 

@@ -110,7 +110,7 @@ def multispectral_additions(
             )
 
             data._scaled_std_values = (
-                (data._band_std_values ** 2)
+                (data._band_std_values**2)
                 * (data._scaled_mean_values / data._band_mean_values)
             ) ** 0.5
 

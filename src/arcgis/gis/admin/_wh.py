@@ -483,14 +483,19 @@ class Webhook(object):
                                             | Enable a specific user's account                   | /users/<username>/enable  |
                                             +----------------------------------------------------+---------------------------+
 
-                                           Example Syntax: ['/users', '/groups/abcd1234....']
+                                           .. code-block:: python
+
+                                               #Example Usage:
+
+                                               >>> events = ['/users', '/groups/abcd1234....']
 
         ---------------------------------  -------------------------------------------------------------------------------
-        number_of_failures                 Optional Integer. The number of failures to allow before the service
+        number_of_failures                 Optional Integer. The number of failures to allow before the webhook is
+                                           deactivated.
         ---------------------------------  -------------------------------------------------------------------------------
         days_in_past                       Option Integer. The number of days to report back on.
         ---------------------------------  -------------------------------------------------------------------------------
-        secret                             Optional String. Add a Secret to your payload that can be used to authenticate
+        secret                             Optional String. Add a secret to your payload that can be used to authenticate
                                            the message on your receiver.
         =================================  ===============================================================================
 
