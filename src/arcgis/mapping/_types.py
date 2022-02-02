@@ -154,6 +154,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             >> [{}...{}]  # returns a list of dictionaries representing each operational layer
 
     .. code-block:: python
+
             # USAGE EXAMPLE 2: Creating a new WebMap object
 
             from arcgis.mapping import WebMap
@@ -220,7 +221,10 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._extent = self.item.extent
         else:
             # default spatial ref for current web map
-            self._default_spatial_reference = {"wkid": 102100, "latestWkid": 3857}
+            self._default_spatial_reference = {
+                "wkid": 102100,
+                "latestWkid": 3857,
+            }
 
             # pump in a simple, default webmap dict - no layers yet, just basemap
             self._basemap = {
@@ -572,7 +576,8 @@ class WebMap(HasTraits, collections.OrderedDict):
                     if hasattr(layer.layer, "layers"):
                         if hasattr(layer.layer.layers[0], "layerDefinition"):
                             if hasattr(
-                                layer.layer.layers[0].layerDefinition, "serviceItemId"
+                                layer.layer.layers[0].layerDefinition,
+                                "serviceItemId",
                             ):
                                 new_layer[
                                     "type"
@@ -901,7 +906,12 @@ class WebMap(HasTraits, collections.OrderedDict):
         return False
 
     def save(
-        self, item_properties, thumbnail=None, metadata=None, owner=None, folder=None
+        self,
+        item_properties,
+        thumbnail=None,
+        metadata=None,
+        owner=None,
+        folder=None,
     ):
         """
         Saves the ``WebMap`` object as a new Web Map Item in your :class:`~arcgis.gis.GIS`.
@@ -1131,7 +1141,9 @@ class WebMap(HasTraits, collections.OrderedDict):
             if "type" in item_properties:
                 item_properties.pop("type")  # type should not be changed.
             return self.item.update(
-                item_properties=item_properties, thumbnail=thumbnail, metadata=metadata
+                item_properties=item_properties,
+                thumbnail=thumbnail,
+                metadata=metadata,
             )
         else:
             raise RuntimeError(
@@ -1164,7 +1176,12 @@ class WebMap(HasTraits, collections.OrderedDict):
                 if "ArcGISFeatureLayer" in layer.layerType:
                     if any(
                         capability in layer_object.properties.capabilities
-                        for capability in ["Create", "Update", "Delete", "Editing"]
+                        for capability in [
+                            "Create",
+                            "Update",
+                            "Delete",
+                            "Editing",
+                        ]
                     ):
                         return True
             except Exception:
@@ -1966,7 +1983,10 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         if self.events.enable:
             data["events"].append(
-                {"type": self.events.type, "actions": self.events.synced_widgets}
+                {
+                    "type": self.events.type,
+                    "actions": self.events.synced_widgets,
+                }
             )
 
         return data
@@ -2607,17 +2627,30 @@ class OfflineMapAreaManager(object):
         area                   Required object.  Bookmark or extent. Specify as either:
 
                                    + bookmark name
-                                   `WebMap.definition.bookmarks` returns list of bookmarks.
+
+                                    .. code-block:: python
+
+                                        >>> area = 'Bookmark1'
+
+                                    .. note:: `WebMap.definition.bookmarks` returns list of bookmarks.
 
                                    + list of coordinate pairs:
-                                   [['xmin', 'ymin'], ['xmax', 'ymax']]
+
+                                    .. code-block:: python
+
+                                        >>> area = [['xmin', 'ymin'], ['xmax', 'ymax']]
 
                                    + dictionary:
-                                   {'xmin': <value>,
-                                   'ymin': <value>,
-                                   'xmax': <value>,
-                                   'ymax': <value>,
-                                   'spatialReference' : {'wkid' : <value>}}
+
+                                    .. code-block:: python
+
+                                        >>> area = {
+                                                    'xmin': <value>,
+                                                    'ymin': <value>,
+                                                    'xmax': <value>,
+                                                    'ymax': <value>,
+                                                    'spatialReference' : {'wkid' : <value>}
+                                                   }
 
                                .. note::
                                     If spatial reference is not specified, it is assumed 'wkid': 4326.
@@ -2645,45 +2678,45 @@ class OfflineMapAreaManager(object):
 
                                The following are valid variables:
 
-                                    + Never - never refreshes the offline package (default)
-                                    + Daily - refreshes everyday
-                                    + Weekly - refreshes once a week
-                                    + Monthly - refreshes once a month
+                                    + ``Never`` - never refreshes the offline package (default)
+                                    + ``Daily`` - refreshes everyday
+                                    + ``Weekly`` - refreshes once a week
+                                    + ``Monthly`` - refreshes once a month
 
         ------------------     --------------------------------------------------------------------
         refresh_rates          Optional dict. This parameter allows for the customization of the
                                scheduler.  The dictionary accepts the following:
 
-                                {
-                                "hour" : 1
-                                "minute" = 0
-                                "nthday" = 3
-                                "day_of_week" = 0
-                                }
+                               .. code-block:: python
+
+                                   {
+                                    "hour" : 1
+                                    "minute" = 0
+                                    "nthday" = 3
+                                    "day_of_week" = 0
+                                   }
 
                                - hour - a value between 0-23 (integers)
                                - minute a value between 0-60 (integers)
                                - nthday - this is used for monthly only. This say the refresh will occur on the 'x' day of the month.
                                - day_of_week - a value between 0-6 where 0 is Sunday and 6 is Saturday.
 
-                               Example **Daily**:
+                               .. code-block:: python
 
-                                {
-                                "hour": 10,
-                                "minute" : 30
-                                }
+                                   # Example **Daily**: every day at 10:30 AM UTC
 
-                               This means every day at 10:30 AM UTC
+                                    >>> refresh_rates = {
+                                                         "hour": 10,
+                                                         "minute" : 30
+                                                        }
 
-                               Example **Weekly**:
+                                   # Example **Weekly**: every Wednesday at 11:59 PM UTC
 
-                                {
-                                    "hour" : 23,
-                                    "minute" : 59,
-                                    "day_of_week" : 4
-                                }
-
-                               This means every Wednesday at 11:59 PM UTC
+                                    >>> refresh_rates = {
+                                                         "hour" : 23,
+                                                         "minute" : 59,
+                                                         "day_of_week" : 4
+                                                        }
         ------------------     --------------------------------------------------------------------
         enable_updates         Optional Boolean.  Allows for the updating of the layers.
         ------------------     --------------------------------------------------------------------
@@ -2691,12 +2724,12 @@ class OfflineMapAreaManager(object):
                                service URLs, in the map to ignore. The task generates packages for
                                all map layers by default.
 
-                               Example:
+                               .. code-block:: python
 
-                                [
-                                "https://services.arcgis.com/ERmEceOGq5cHrItq/arcgis/rest/services/SaveTheBaySync/FeatureServer/1",
-                                "https://services.arcgis.com/ERmEceOGq5cHrItq/arcgis/rest/services/WildfireSync/FeatureServer/0"
-                                ]
+                                   >>> ignore_layers = [
+                                                        "https://services.arcgis.com/ERmEceOGq5cHrItq/arcgis/rest/services/SaveTheBaySync/FeatureServer/1",
+                                                        "https://services.arcgis.com/ERmEceOGq5cHrItq/arcgis/rest/services/WildfireSync/FeatureServer/0"
+                                                       ]
 
         ------------------     --------------------------------------------------------------------
         tile_services          Optional List.  An array of JSON objects that contains additional
@@ -2704,14 +2737,14 @@ class OfflineMapAreaManager(object):
                                .vtpk) need to be created. Each tile service is specified with its
                                URL and desired level of details.
 
-                               Example:
+                               .. code-block:: python
 
-                                [
-                                {
-                                "url": "https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer",
-                                "levels": "17,18,19"
-                                }
-                                ]
+                                   >>> tile_services = [
+                                                        {
+                                                         "url": "https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer",
+                                                         "levels": "17,18,19"
+                                                        }
+                                                       ]
 
         ==================     ====================================================================
 
@@ -3270,7 +3303,8 @@ class OfflineMapAreaManager(object):
                 # LOD that is closest to min scale. Do similar for max_scale.
 
                 sorted_lods = sorted(
-                    layer0_obj.properties.tileInfo.lods, key=lambda x: x["scale"]
+                    layer0_obj.properties.tileInfo.lods,
+                    key=lambda x: x["scale"],
                 )
                 keys = [l["scale"] for l in sorted_lods]
 
@@ -3724,8 +3758,8 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         Values:
 
            + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap
-           + 'ArcObjects11': means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
-           + 'DMaps': means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
+           + `ArcObjects`: means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
+           + `DMaps`: means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
 
         :return: Boolean
 
@@ -3746,7 +3780,8 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
     The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted vector tile layers.
     A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
 
-    ..note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
+    .. note::
+        Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
     """
 
     def __init__(self, url, gis=None, vect_tile_lyr=None):
@@ -3944,7 +3979,10 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             if extent:
                 if isinstance(extent, dict):
                     extent2 = "{},{},{},{}".format(
-                        extent["xmin"], extent["ymin"], extent["xmax"], extent["ymax"]
+                        extent["xmin"],
+                        extent["ymin"],
+                        extent["xmax"],
+                        extent["ymax"],
                     )
                     extent = extent2
                 params["extent"] = extent
@@ -3993,25 +4031,28 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         export_tile_count, max_scale, and min_scale properties. Allowed for
         Enterprise and ArcGIS Online
 
-        =================     ======================================================
-        **Argument**          **Description**
-        -----------------     --------------------------------------------------
-        source_item_id        Required String. The Source Item ID is the GeoWarehouse
-                              Item ID of the tile service
-        -----------------     ------------------------------------------------------
-        export_tiles_allowed  Optional boolean. ``exports_tiles_allowed`` sets
-                              the value to let users export tiles
-        -----------------     ------------------------------------------------------
-        min_scale             Optional float. Sets the services minimum scale for caching.
-        -----------------     ------------------------------------------------------
-        max_scale             Optional float. Sets the services maximum scale for caching.
-        -----------------     ------------------------------------------------------
-        max_export_tile_      Optional int. ``max_export_tile_count``sets the maximum amount
-        count                 of tiles to be exported from a single call.
-        -----------------     ------------------------------------------------------
-        service_name          Optional String. Name of the service to edit. This only
-                              only applies for enterprise.
-        =================     ======================================================
+        ======================     =======================================================
+        **Argument**               **Description**
+        ----------------------     -------------------------------------------------------
+        source_item_id             Required String. The Source Item ID is the GeoWarehouse
+                                   Item ID of the tile service
+        ----------------------     -------------------------------------------------------
+        export_tiles_allowed       Optional boolean. ``exports_tiles_allowed`` sets
+                                   the value to let users export tiles
+        ----------------------     -------------------------------------------------------
+        min_scale                  Optional float. Sets the services minimum scale for
+                                   caching.
+        ----------------------     -------------------------------------------------------
+        max_scale                  Optional float. Sets the services maximum scale for
+                                   caching.
+        ----------------------     -------------------------------------------------------
+        max_export_tile_count      Optional int. ``max_export_tile_count`` sets the
+                                   maximum amount of tiles to be exported from a single
+                                   call.
+        ----------------------     -------------------------------------------------------
+        service_name               Optional String. Name of the service to edit. This only
+                                   only applies for enterprise.
+        ======================     =======================================================
 
         .. code-block:: python
 
@@ -4020,10 +4061,13 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             >>> from arcgis.mapping import VectorTileLayer
             >>> from arcgis.gis import GIS
 
-            # connect to your GIS and get the web map item
+            # connect to your GIS and get the tile layer item
             >>> gis = GIS(url, username, password)
 
-            >>> VectorTileLayer.edit_tile_service(service_name = "vector_layer_name",
+            >>> vector_layer_item = gis.content.get('abcd_item-id')
+            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
+            >>> vtl_manager = vector_tile_layer.manager
+            >>> vtl_manager.edit_tile_service(service_name = "vector_layer_name",
                                                         min_scale = 50,
                                                         max_scale = 100,
                                                         source_item_id = "geowarehouse_item_id",
@@ -4105,10 +4149,13 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             >>> from arcgis.mapping import VectorTileLayer
             >>> from arcgis.gis import GIS
 
-            # connect to your GIS and get the web map item
+            # connect to your GIS
             >>> gis = GIS(url, username, password)
 
-            >>> deleted_tiles = VectorTileLayerManager.delete_tiles(levels = "11-20",
+            >>> vector_layer_item = gis.content.get('abcd_item-id')
+            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
+            >>> vtl_manager = vector_tile_layer.manager
+            >>> deleted_tiles = vtl_manager.delete_tiles(levels = "11-20",
                                                   extent = {"xmin":6224324.092137296,
                                                             "ymin":487347.5253569535,
                                                             "xmax":11473407.698535524,
@@ -4117,7 +4164,6 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
                                                             }
                                                   )
             >>> type(deleted_tiles)
-            <Dictionary>
         """
         if self._gis._is_agol:
             params = {
@@ -4168,7 +4214,10 @@ class VectorTileLayer(arcgis.gis.Layer):
                 adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
             self._admin = VectorTileLayerManager(adminURL, self._gis, self)
         else:
-            rd = {"/rest/": "/admin/", "/VectorTileServer": ".VectorTileServer"}
+            rd = {
+                "/rest/": "/admin/",
+                "/VectorTileServer": ".VectorTileServer",
+            }
             adminURL = self._str_replace(self._url, rd)
             if adminURL.split("/")[-1].isdigit():
                 adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
@@ -4255,13 +4304,14 @@ class VectorTileLayer(arcgis.gis.Layer):
                                     Ensure that the tiles are present at each specified level.
 
                                     .. code-block:: python
-                                    # Example:
 
-                                        //Comma-separated values
-                                        levels=1,2,3,4,5,6,7,8,9
+                                        # Example:
 
-                                        //Ranged values
-                                        levels=1-4, 7-9
+                                        # Comma-separated values
+                                        >>> levels=1,2,3,4,5,6,7,8,9
+
+                                        //Range values
+                                        >>> levels=1-4, 7-9
         ---------------------       -------------------------------------------------------
         export_extent               Dictionary of the extent (bounding box) of the vector
                                     tile package to be exported.
@@ -4269,34 +4319,39 @@ class VectorTileLayer(arcgis.gis.Layer):
                                     The default value is the full extent of the tiled map service.
 
                                     .. code-block:: python
-                                    # Example:
 
-                                        {
-                                        "xmin": -109.55, "ymin" : 25.76,
-                                        "xmax": -86.39, "ymax" : 49.94,
-                                        "spatialReference": {"wkid": 4326}
-                                        }
+                                        # Example:
+
+                                        >>> export_extent = {
+                                                             "xmin": -109.55, "ymin" : 25.76,
+                                                             "xmax": -86.39, "ymax" : 49.94,
+                                                             "spatialReference": {"wkid": 4326}
+                                                            }
         ---------------------       -------------------------------------------------------
         polygon                     Introduced at 10.7. A JSON representation of a polygon,
                                     containing an array of rings and a spatialReference.
 
                                     .. code-block:: python
-                                    # Example:
 
-                                        {
-                                        "rings": [
-                                            [[6453,16815],[10653,16423],[14549,5204],[-7003,6939],[6453,16815]],
-                                            [[914,7992],[3140,11429],[1510,10525],[914,7992]]
-                                        ],
-                                        "spatialReference": {"wkid": 54004}
-                                        }
+                                        # Example:
+
+                                        polygon = {
+                                                   "rings": [
+                                                             [[6453,16815],[10653,16423],
+                                                             [14549,5204],[-7003,6939],
+                                                             [6453,16815]],[[914,7992],
+                                                             [3140,11429],[1510,10525],
+                                                             [914,7992]]
+                                                            ],
+                                                   "spatialReference": {"wkid": 54004}
+                                                  }
         ---------------------       -------------------------------------------------------
-        max_export_tile_count       Optional float. ``max_export_tile_count``sets the maximum
-                                    amount of tiles to be exported from a single call.
+        max_export_tile_count       Optional float. ``max_export_tile_count`` sets the
+                                    maximum amount of tiles to be exported from a single
+                                    call.
 
                                     .. note::
                                         The default value is 100000.
-                                    Required boolean. ``exports_tiles_allowed`` sets the value to let users export tiles
         =====================       =======================================================
 
         :returns:
@@ -4401,7 +4456,7 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
     The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted map image layers.
     A :class:`~arcgis.mapping.MapImageLayer` offers access to layer content.
 
-    ..note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/MapServer/
+    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/MapServer/
     """
 
     def __init__(self, url, gis=None, map_img_lyr=None):
@@ -4411,7 +4466,7 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
         self._ms = map_img_lyr
 
     # ----------------------------------------------------------------------
-    def edit(self, service_dictionairy):
+    def edit(self, service_dictionary):
         """
         To edit a service, you need to submit the complete JSON
         representation of the service, which includes the updates to the
@@ -4421,14 +4476,14 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
         ===================     ====================================================================
         **Argument**            **Description**
         -------------------     --------------------------------------------------------------------
-        service_dictionairy     Required dict. The service JSON as a dictionary.
+        service_dictionary      Required dict. The service JSON as a dictionary.
         ===================     ====================================================================
 
 
         :return: boolean
         """
         mil_service = _services.Service(self.url, self._gis)
-        return mil_service.edit(service_dictionairy)
+        return mil_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
@@ -4447,11 +4502,11 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
         """
         Allows for the switching of the service provide and how it is hosted on the ArcGIS Server instance.
 
-        Values:
+        Provider parameter options:
 
-           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap
-           + 'ArcObjects11': means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
-           + 'DMaps': means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
+           + `ArcObjects` means the service is running under the ArcMap runtime i.e. published from ArcMap
+           + `ArcObjects11`: means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
+           + `DMaps`: means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
 
         :return: Boolean
 
@@ -4491,8 +4546,8 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         res = self._con.post(url, params)
 
         super(MapImageLayerManager, self)._refresh()
-
-        self._ms._refresh()
+        if self._ms:
+            self._ms._refresh()
 
         return res
 
@@ -4681,7 +4736,10 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             if extent:
                 if isinstance(extent, dict):
                     extent2 = "{},{},{},{}".format(
-                        extent["xmin"], extent["ymin"], extent["xmax"], extent["ymax"]
+                        extent["xmin"],
+                        extent["ymin"],
+                        extent["xmax"],
+                        extent["ymax"],
                     )
                     extent = extent2
                 params["extent"] = extent
@@ -4726,24 +4784,30 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         """
         The ``edit_tile_service`` operation updates a Tile Service's properties.
 
-        =================     ======================================================
-        **Argument**          **Description**
-        -----------------     ------------------------------------------------------
-        service_definition    Required String. Updates a service definition.
-        -----------------     ------------------------------------------------------
-        min_scale             Required float. Sets the services minimum scale for caching.
-        -----------------     ------------------------------------------------------
-        max_scale             Required float. Sets the services maximum scale for caching.
-        -----------------     ------------------------------------------------------
-        source_item_id        Required String. The Source Item ID is the GeoWarehouse Item ID of the map service
-        -----------------     ------------------------------------------------------
-        export_tiles_allowed  Required boolean. ``exports_tiles_allowed`` sets the value to let users export tiles
-        -----------------     ------------------------------------------------------
-        max_export_tile_count Optional float. ``max_export_tile_count``sets the maximum amount of tiles to be exported from a single call.
+        =====================     ======================================================
+        **Argument**              **Description**
+        ---------------------     ------------------------------------------------------
+        service_definition        Required String. Updates a service definition.
+        ---------------------     ------------------------------------------------------
+        min_scale                 Required float. Sets the services minimum scale for
+                                  caching.
+        ---------------------     ------------------------------------------------------
+        max_scale                 Required float. Sets the services maximum scale for
+                                  caching.
+        ---------------------     ------------------------------------------------------
+        source_item_id            Required String. The Source Item ID is the
+                                  GeoWarehouse Item ID of the map service
+        ---------------------     ------------------------------------------------------
+        export_tiles_allowed      Required boolean. ``exports_tiles_allowed`` sets the
+                                  value to let users export tiles
+        ---------------------     ------------------------------------------------------
+        max_export_tile_count     Optional float. ``max_export_tile_count`` sets the
+                                  maximum amount of tiles to be exported from a single
+                                  call.
 
-                              .. note::
-                                The default value is 100000.
-        =================     ======================================================
+                                  .. note::
+                                      The default value is 100000.
+        =====================     ======================================================
 
         .. code-block:: python
 
@@ -4757,12 +4821,12 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             >>> map_image_layer = MapImageLayer("<url>", gis)
             >>> mil_manager = map_image_layer.manager
             >>> mil_manager.edit_tile_service(service_definition = "updated service definition",
-                                                        min_scale = 50,
-                                                        max_scale = 100,
-                                                        source_item_id = "geowarehouse_item_id",
-                                                        export_tiles_allowed = True,
-                                                        max_Export_Tile_Count = 10000
-                                                        )
+                                              min_scale = 50,
+                                              max_scale = 100,
+                                              source_item_id = "geowarehouse_item_id",
+                                              export_tiles_allowed = True,
+                                              max_Export_Tile_Count = 10000
+                                             )
         """
         params = {
             "f": "json",
@@ -4859,7 +4923,9 @@ class MapImageLayer(arcgis.gis.Layer):
         self._populate_layers()
         self._admin = None
         try:
-            from arcgis.gis.server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import (
+                AdminServiceGen,
+            )
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:
@@ -5190,13 +5256,13 @@ class MapImageLayer(arcgis.gis.Layer):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        geometry               required :class:`~arcgis.geometry.Geometry` or list. The geometry to identify on.
-                               The type of
-                               the geometry is specified by the geometryType parameter. The
-                               structure of the geometries is same as the structure of the JSON
-                               geometry objects returned by the API. In addition to the JSON
-                               structures, for points and envelopes, you can specify the geometries
-                               with a simpler comma-separated syntax.
+        geometry               required :class:`~arcgis.geometry.Geometry` or list. The geometry
+                               to identify on. The type of the geometry is specified by the
+                               `geometryType` parameter. The structure of the geometries is same as
+                               the structure of the JSON geometry objects returned by the API (See
+                               `Geometry Objects <https://developers.arcgis.com/documentation/common-data-types/geometry-objects.htm>`_).
+                               In addition to the JSON structures, for points and envelopes, you
+                               can specify the geometries with a simpler comma-separated syntax.
         ------------------     --------------------------------------------------------------------
         geometry_type          required string.The type of geometry specified by the geometry
                                parameter. The geometry type could be a point, line, polygon, or an
@@ -5301,7 +5367,7 @@ class MapImageLayer(arcgis.gis.Layer):
                                array of pre-authored parameterized filters for those layers. When
                                value is not specified for any parameter in a request, the default
                                value, that is assigned during authoring time, gets used instead.
-        =================     ====================================================================
+        ==================     ====================================================================
 
         :return:
             A dictionary
@@ -6254,5 +6320,9 @@ class Events(object):
                     action_type = "filter"
                     widget_id = str(widgets._id) + "#main"
                     self._actions.append(
-                        {"type": action_type, "by": "geometry", "targetId": widget_id}
+                        {
+                            "type": action_type,
+                            "by": "geometry",
+                            "targetId": widget_id,
+                        }
                     )

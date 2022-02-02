@@ -6,11 +6,11 @@ This module, the most important in the ArcGIS API for Python, provides functiona
 Python and is an invaluable tool in the API.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 import base64
 import json
 import locale
-import sys
+import io
 import os
 import re
 import tempfile
@@ -21,20 +21,22 @@ import functools
 
 from datetime import datetime
 import logging
-from typing import Tuple, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from urllib.error import HTTPError
-from urllib.parse import urlparse
 import concurrent.futures
 
-import arcgis.env
-from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._utils import _DisableLogger
-from arcgis.gis._impl._con._helpers import _is_http_url
-from arcgis._impl.common._deprecate import deprecated
-from arcgis._impl.common._utils import chunks as _chunks
 from cachetools import cached, TTLCache
-from ._impl import _portalpy
-from ._impl._jb import StatusJob
+
+from arcgis.auth.tools import LazyLoader
+
+arcgis_env = LazyLoader("arcgis.env")
+arcgis = LazyLoader("arcgis")
+_agoserver = LazyLoader("arcgis.gis.agoserver._api")
+_mixins = LazyLoader("arcgis._impl.common._mixins")
+_common_utils = LazyLoader("arcgis._impl.common._utils")
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
+_portalpy = LazyLoader("arcgis.gis._impl._portalpy")
+_jb = LazyLoader("arcgis.gis._impl._jb")
 
 _log = logging.getLogger(__name__)
 
@@ -199,7 +201,7 @@ class GIS(object):
 
                         {
                             "http" : "http://10.343.10.22:111",
-                            "https" : "https://127.343.13.22:6443",
+                            "https" : "https://127.343.13.22:6443"
                         }
     ----------------    ---------------------------------------------------------------
     expiration          Optional Integer.  The default is 60 minutes.  The expiration
@@ -272,6 +274,7 @@ class GIS(object):
 
     """
 
+    _toolgp = None
     _server_list = None
     _is_hosted_nb_home = False
     _product_version = None
@@ -323,7 +326,6 @@ class GIS(object):
         custom_auth = kwargs.pop("custom_auth", None)
         custom_adapter = kwargs.pop("adapter", None)
         self._expiration = kwargs.pop("expiration", None)
-        from arcgis._impl.tools import _Tools
 
         if profile is not None and len(profile) == 0:
             raise ValueError("A `profile` name must not be an empty string.")
@@ -558,7 +560,7 @@ class GIS(object):
             force_refresh = True
 
         # If a token was injected, then force refresh to get updated properties
-        self._lazy_properties = PropertyMap(
+        self._lazy_properties = _mixins.PropertyMap(
             self._portal.get_properties(force=force_refresh)
         )
 
@@ -666,14 +668,25 @@ class GIS(object):
                 )
             except:
                 pass
-        self._tools = _Tools(self)
+        # self._tools = _Tools(self)
         if set_active:
-            arcgis.env.active_gis = self
+            from arcgis import env
+
+            env.active_gis = self
         if self._product_version is None:
             self._is_agol = self._portal.is_arcgisonline
             self._product_version = [
                 int(i) for i in self._portal.get_version().split(".")
             ]
+
+    # ----------------------------------------------------------------------
+    @property
+    def _tools(self):
+        if self._toolgp is None:
+            from arcgis._impl.tools import _Tools
+
+            self._toolgp = _Tools(self)
+        return self._toolgp
 
     # ----------------------------------------------------------------------
     @_lazy_property
@@ -834,7 +847,10 @@ class GIS(object):
                     self._utoken = json_data["token"]
                 self._expiration = json_data.get("expiration", None)
                 if "encryptedToken" in json_data:
-                    from arcgis.gis._impl._decrypt_nbauth import get_token
+                    try:
+                        from arcgis.gis._impl._decrypt_nbauth import get_token
+                    except ImportError as ie:
+                        from arcgis.gis._impl.nbauth import get_token
 
                     self._utoken = get_token(nb_auth_file_path)
 
@@ -1015,7 +1031,7 @@ class GIS(object):
         """
         ``properties`` manages the actual properties of the GIS object.
         """
-        return PropertyMap(self._get_properties(force=True))
+        return _mixins.PropertyMap(self._get_properties(force=True))
 
     def update_properties(self, properties_dict):
         """The ``update_properties`` method updates the GIS's properties from those in ``properties_dict``. This method
@@ -1062,7 +1078,9 @@ class GIS(object):
 
         resp = self._portal.con.post("portals/self/update", postdata)
         if resp:
-            self._lazy_properties = PropertyMap(self._portal.get_properties(force=True))
+            self._lazy_properties = _mixins.PropertyMap(
+                self._portal.get_properties(force=True)
+            )
             # delattr(self, '_lazy_properties') # force refresh of properties when queried next
             return resp.get("success")
 
@@ -1110,6 +1128,46 @@ class GIS(object):
             url = f"{self._portal.resturl}portals/self/urls"
         return self._con.get(url, params=params)
 
+    @property
+    def hosting_servers(self) -> list:
+        """
+        Returns the hosting servers for the GIS
+
+        :returns: list
+        """
+        if self._portal.is_arcgisonline:
+
+            info = self._registered_servers()
+            tile_urls = set(info["urls"].get("tiles", {}).get("https", []))
+            feature_urls = set(info["urls"].get("features", {}).get("https", []))
+            tile_urls = set(info["urls"].get("tiles", {}).get("https", []))
+            tile_urls = [url for url in tile_urls if url not in feature_urls]
+            pid = self.properties.id
+            feature_urls = [
+                _agoserver.AGOLServicesDirectory(
+                    f"https://{url}/{pid}/arcgis/rest/services", gis=self
+                )
+                for url in feature_urls
+            ]
+            tile_urls = [
+                _agoserver.AGOLServicesDirectory(
+                    f"https://{url}/tiles/{pid}/arcgis/rest/services", gis=self
+                )
+                for url in tile_urls
+            ]
+            return feature_urls + tile_urls
+        else:
+            from arcgis.gis.server import ServicesDirectory
+
+            info = self._registered_servers()
+            servers = [
+                ServicesDirectory(server["url"], gis=self)
+                for server in info["servers"]
+                if server.get("serverRole", None) == "HOSTING_SERVER"
+            ]
+            return servers
+        return []
+
     # ----------------------------------------------------------------------
     @property
     def servers(self) -> dict:
@@ -1120,7 +1178,8 @@ class GIS(object):
         :return: dict
         """
         if self._portal.is_arcgisonline:
-            return None
+            info = self._registered_servers()
+            return info
         elif self._portal.is_kubernetes or self._portal.is_arcgisonline == False:
 
             url = self._portal.resturl + f"portals/{self.properties['id']}/servers"
@@ -1675,12 +1734,12 @@ class GroupMigrationManager(object):
                 self._status, **{"job_id": res["jobId"], "key": res["key"]}
             )
             executor.shutdown(False)
-            job = StatusJob(
+            job = _jb.StatusJob(
                 future=futureobj,
                 op="Export Group Content",
                 jobid=res["jobId"],
                 gis=self._gis,
-                notify=arcgis.env.verbose,
+                notify=arcgis_env.verbose,
             )
             if future:
                 return job
@@ -1752,7 +1811,7 @@ class GroupMigrationManager(object):
                 op="Export Group Content",
                 jobid=res["jobId"],
                 gis=self._gis,
-                notify=arcgis.env.verbose,
+                notify=arcgis_env.verbose,
             )
             if future:
                 return job
@@ -2849,6 +2908,7 @@ class UserManager(object):
                            - Members assigned the ``viewer`` role cannot create or share content, or perform analysis, and the ``viewer`` role is compatible with all user types.
                            - The Data Editor role ``viewplusedit`` is compatible with all user types except ``viewer``.
                            - The ``org_user``, ``org_publisher``, and ``org_admin`` roles are compatible with the Creator, GIS Professional, Storyteller, and Insights Analyst user types.
+                           - A complete list of `user_type` values can be obtained from the `license_types` property on the `UserManager`.
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
                           which means unlimited. (10.7+)
@@ -3560,7 +3620,7 @@ class UserManager(object):
 
         """
         try:
-            with _DisableLogger():
+            with _common_utils._DisableLogger():
                 user = self._portal.get_user(username)
 
         except RuntimeError as re:
@@ -3618,7 +3678,7 @@ class UserManager(object):
                     else:
                         ul.append(user)
                 results = []
-                for chunk in _chunks(ul, n=25):
+                for chunk in _common_utils.chunks(ul, n=25):
                     params["users"] = ",".join(chunk)
                     res = self._portal.con.post(url, params)
                     results.extend([r["status"] for r in res["results"]])
@@ -3667,7 +3727,7 @@ class UserManager(object):
                     else:
                         ul.append(user)
                 results = []
-                for chunk in _chunks(ul, n=25):
+                for chunk in _common_utils.chunks(ul, n=25):
                     params["users"] = ",".join(chunk)
                     res = self._portal.con.post(url, params)
                     results.extend([r["status"] for r in res["results"]])
@@ -3830,6 +3890,54 @@ class UserManager(object):
                 items["results"] = items["results"][:max_items]
             return items
         return None
+
+    def org_search(
+        self, query: str = None, sort_field: str = None, sort_order: str = None
+    ) -> tuple:
+        """
+        The `org_search` method allows users to find users within the organization only.
+        Users can search for details such as `provider`, `fullName` and other user properties
+        where the other user searches are limited.  This operation will not show any user outside
+        the organization.
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        query             Optional string. The query string.  See notes above. Pass None
+                          to get list of all users in the organization.
+        ----------------  --------------------------------------------------------
+        sort_field        Optional string. Valid values can be username (the default) or created.
+        ----------------  --------------------------------------------------------
+        sort_order        Optional string. Valid values are asc (the default) or desc.
+        ================  ========================================================
+
+        :returns: List[User]
+        """
+        results = []
+        if query is None:
+            query = "*"
+        url = f"{self._gis._portal.resturl}/portals/self/users/search"
+        params = {
+            "num": 100,
+            "f": "json",
+            "q": query,
+            "start": 1,
+            "sortField": sort_field or "",
+            "sortOrder": sort_order or "",
+        }
+        resp = self._gis._con.get(url, params)
+        results.extend(resp.get("results", []))
+        while resp.get("nextStart", -1) > 0:
+            params["start"] = resp["nextStart"]
+            resp = self._gis._con.get(url, params)
+            users = resp.get("results", [])
+            results.extend(users)
+            if len(users) == 0:
+                break
+        return tuple(
+            User(gis=self._gis, username=user["username"], userdict=user)
+            for user in results
+        )
 
     # ----------------------------------------------------------------------
     def search(
@@ -4340,6 +4448,11 @@ class Role(object):
         resp = self._portal.con.post(
             "portals/self/roles/" + self.role_id + "/setPrivileges", postdata
         )
+        if len(self.privileges) != len(value):
+            postdata["privileges"] = json.dumps(postdata["privileges"])
+            resp = self._portal.con.post(
+                "portals/self/roles/" + self.role_id + "/setPrivileges", postdata
+            )
         if resp:
             return resp.get("success")
 
@@ -4945,7 +5058,8 @@ class ContentManager(object):
         ---------------     --------------------------------------------------------------------
         item_properties     Required dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
-        data                Optional string. Either a path or URL to the data.
+        data                Optional string, io.StringIO, or io.BytesIO. Either a path or URL to
+                            the data or an instance of `StringIO` or `BytesIO` objects.
         ---------------     --------------------------------------------------------------------
         thumbnail           Optional string. Either a path or URL to a thumbnail image.
         ---------------     --------------------------------------------------------------------
@@ -5041,7 +5155,6 @@ class ContentManager(object):
             >>>                                         "commentsEnabled" : False
             >>>                                        } , owner = "User1234")
         """
-        import os
 
         filetype = None
         if not isinstance(item_properties, dict):
@@ -5058,7 +5171,12 @@ class ContentManager(object):
                 "layers": [data.spatial.to_feature_collection()._lyr_dict]
             }
             data = None
-        if data is not None:
+
+        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            assert "type" in item_properties
+            assert "title" in item_properties
+
+        elif data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
 
@@ -5133,6 +5251,11 @@ class ContentManager(object):
             if is_file and bytesto(os.stat(data).st_size) < 7:
                 multipart = False
                 item_properties.pop("multipart", None)
+            elif (
+                is_file == False and hasattr(data, "tell") and bytesto(data.tell()) < 7
+            ):
+                multipart = False
+                item_properties.pop("multipart", None)
             else:
                 if "multipart" in item_properties:
                     item_properties["multipart"] = True
@@ -5142,8 +5265,6 @@ class ContentManager(object):
             multipart = False
             item_properties.pop("multipart", None)
         if multipart and is_file:
-            import copy
-
             item_properties["multipart"] = True
             params = {}
             params.update(item_properties)
@@ -6406,6 +6527,8 @@ class ContentManager(object):
         ---------------------  --------------------------------------------------------------------------
         sanitize_columns       Optional boolean. The default is False.  When true, the column name will
                                modified in order to allow for successful publishing.
+        ---------------------  --------------------------------------------------------------------------
+        service_name           Optional String. The name for the service that will be added to the Item.
         =====================  ==========================================================================
 
 
@@ -6454,7 +6577,10 @@ class ContentManager(object):
             import random
             import string
 
-            temp_dir = os.path.join(tempfile.gettempdir(), "a" + uuid4().hex[:7])
+            service_name = kwargs.pop("service_name", None)
+            if service_name is None:
+                service_name = "a" + uuid4().hex[:7]
+            temp_dir = os.path.join(tempfile.gettempdir(), service_name)
             title = kwargs.pop("title", uuid4().hex)
             tags = kwargs.pop("tags", "FGDB")
             target_sr = kwargs.pop("target_sr", 102100)
@@ -6462,12 +6588,12 @@ class ContentManager(object):
             os.makedirs(temp_dir)
             temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
             if has_arcpy:
+                from arcgis.features.geo._tools._utils import run_and_hide
+
                 name = "%s%s.gdb" % (
                     random.choice(string.ascii_lowercase),
                     uuid4().hex[:5],
                 )
-                from arcgis.features.geo._tools._utils import run_and_hide
-
                 result = run_and_hide(
                     fn=arcpy.CreateFileGDB_management,
                     **{"out_folder_path": temp_dir, "out_name": name},
@@ -6573,7 +6699,7 @@ class ContentManager(object):
                 postdata["itemIdToCreate"] = item_id
             res = self._portal.con.post(
                 path, postdata
-            )  # , use_ordered_dict=True) - OrderedDict >36< PropertyMap
+            )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
 
             fc = FeatureCollection(res["featureCollection"]["layers"][0])
             return fc
@@ -6626,7 +6752,7 @@ class ContentManager(object):
                 postdata["itemIdToCreate"] = item_id
             res = self._portal.con.post(
                 path, postdata
-            )  # , use_ordered_dict=True) - OrderedDict >36< PropertyMap
+            )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
 
             fc = FeatureCollection(res["featureCollection"]["layers"][0])
             return fc
@@ -6830,7 +6956,7 @@ class ContentManager(object):
             for i in range(0, len(l), n):
                 yield l[i : i + n]
 
-        for i in _chunks(l=updates, n=100):
+        for i in _common_utils.chunks(l=updates, n=100):
             params["items"] = i
 
             res = self._gis._con.post(path=path, postdata=params)
@@ -7126,9 +7252,7 @@ class CategorySchemaManager(object):
         """Constructor"""
         self._url = base_url
         if gis is None:
-            import arcgis
-
-            gis = arcgis.env.active_gis
+            gis = arcgis_env.active_gis
         self._gis = gis
 
     # ----------------------------------------------------------------------
@@ -7143,9 +7267,8 @@ class CategorySchemaManager(object):
     @property
     def properties(self):
         """The ``properties`` method retrieves the properties of the schema."""
-        from arcgis._impl.common._mixins import PropertyMap
 
-        return PropertyMap(self.schema)
+        return _mixins.PropertyMap(self.schema)
 
     # ----------------------------------------------------------------------
     @property
@@ -7376,6 +7499,7 @@ class ResourceManager(object):
         text=None,
         archive=False,
         access=None,
+        properties=None,
     ):
         """
         The ``add`` operation adds new file resources to an existing item. For example, an image that is
@@ -7416,6 +7540,9 @@ class ResourceManager(object):
                           which makes the item resource have the same access as the item.
 
                           Supported values: `private` or `inherit`.
+        ----------------  ---------------------------------------------------------------
+        properties        Optional Dictionary. Set the properties for the resources such
+                          as the `editInfo`.
         ================  ===============================================================
 
         :return:
@@ -7467,8 +7594,11 @@ class ResourceManager(object):
         if text is not None:
             params["text"] = text
         params["archive"] = "true" if archive else "false"
+        if isinstance(properties, dict):
+            params["properties"] = properties
         if access and str(access) in ["inherit", "private"]:
             params["access"] = access
+        # IF properties passed in, add them to params
         resp = self._portal.con.post(query_url, params, files=files, compress=False)
         return resp
 
@@ -8164,14 +8294,15 @@ class Group(dict):
         """
         return self._portal.delete_group_thumbnail(self.groupid)
 
-    def remove_users(self, usernames):
+    def remove_users(self, usernames: list[str]):
         """
         The ``remove_users`` method is used to remove users from this group.
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        usernames         Required string.  A comma-separated list of users to be removed.
+        usernames         Required list of strings.
+                          A comma-separated list of users to be removed.
         ================  ========================================================
 
         :return:
@@ -8277,7 +8408,7 @@ class Group(dict):
         )
 
     # ----------------------------------------------------------------------
-    @deprecated(
+    @_common_deprecated.deprecated(
         deprecated_in="v1.5.1",
         removed_in=None,
         current_version=None,
@@ -8776,10 +8907,10 @@ class GroupApplication(object):
         """Loads the properties."""
         try:
             res = self._con.get(self._url, {"f": "json"})
-            self._properties = PropertyMap(res)
+            self._properties = _mixins.PropertyMap(res)
             self._json_dict = res
         except:
-            self._properties = PropertyMap({})
+            self._properties = _mixins.PropertyMap({})
             self._json_dict = {}
 
     @property
@@ -9613,6 +9744,124 @@ class User(dict):
             self._hydrate()
         return ret["success"]
 
+    @property
+    def landing_page(self) -> str:
+        """
+        Gets or sets the User's login page,
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        value             Required string. The values are `home`, `gallery`, `map`,
+                          `scene`, `groups`, `content`, or `organization`
+        ================  ==========================================================
+
+        :return: str
+
+        .. code-block:: python
+
+           # Usage example: Setting login page
+
+           >>> user1 = gis.users.get("org_data_viewer")
+
+           >>> user1.landing_page = "map"
+
+        """
+        value = self.user_settings.get("landingPage", {}).get("url", "")
+        lu = {
+            "index.html": "home",
+            "gallery.html": "gallery",
+            "webmap/viewer.html": "map",
+            "webscene/viewer.html": "scene",
+            "groups.html": "groups",
+            "content.html": "content",
+            "organization.html": "organization",
+        }
+
+        if value == "":
+            return None
+        return lu[value.lower()]
+
+    @landing_page.setter
+    def landing_page(self, value: str):
+        """
+        Returns the User's login page
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        value             Required string. The values are `home`, `gallery`, `map`,
+                          `scene`, `groups`, `content`, or `organization`
+        ================  ==========================================================
+
+        :return: str
+        """
+        value = value.lower()
+        landing_pages_lu = {
+            "home": "index.html",
+            "gallery": "gallery.html",
+            "map": "webmap/viewer.html",
+            "scene": "webscene/viewer.html",
+            "groups": "groups.html",
+            "content": "content.html",
+            "organization": "organization.html",
+        }
+        if value in landing_pages_lu:
+            value = landing_pages_lu[value]
+            us = self.user_settings
+            us["landingPage"] = {"url": f"{value}"}
+            url = "%s/sharing/rest/community/users/%s/setProperties" % (
+                self._gis._url,
+                self.username,
+            )
+            params = {"f": "json", "properties": us}
+            res = self._gis._con.post(url, params)
+
+        else:
+            raise ValueError("The ")
+
+    # ----------------------------------------------------------------------
+    @property
+    def user_settings(self) -> dict:
+        """
+        Get/set the current user's settings that are defined in the user profile.
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        value             Required dict. The `landingPage` and `appLauncher` settings.
+        ================  ==========================================================
+
+        :return: dict
+        """
+        url = "%s/sharing/rest/community/users/%s/properties" % (
+            self._gis._url,
+            self.username,
+        )
+        params = {"f": "json"}
+        return self._gis._con.get(url, params).get("properties", {})
+
+    # ----------------------------------------------------------------------
+    @user_settings.setter
+    def user_settings(self, value: dict):
+        """
+        Get/set the current user's settings that are defined in the user profile.
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        value             Required dict. The `landingPage` and `appLauncher` settings.
+        ================  ==========================================================
+
+        :return: dict
+        """
+        url = "%s/sharing/rest/community/users/%s/setProperties" % (
+            self._gis._url,
+            self.username,
+        )
+        params = {"f": "json", "properties": value}
+        self._gis._con.post(url, params)
+
     # ----------------------------------------------------------------------
     def disable(self):
         """
@@ -10388,7 +10637,15 @@ class Item(dict):
             params = {"f": "json"}
 
             if self.type == "Image Service":  # service that is itself a layer
-                layers.append(ImageryLayer(self.url, self._gis))
+                lyr = ImageryLayer(self.url, self._gis)
+                try:
+                    item_data = self.get_data()
+                    lyr._fn = item_data.get("renderingRule", None)
+                    lyr._fnra = item_data.get("renderingRule", None)
+                    lyr._mosaic_rule = item_data.get("mosaicRule", None)
+                except:
+                    pass
+                layers.append(lyr)
 
             elif self.type == "Feature Collection":
                 lyrs = self.get_data()["layers"]
@@ -10476,7 +10733,7 @@ class Item(dict):
         super(Item, self).update(itemdict)
         self.__dict__.update(itemdict)
         try:
-            with _DisableLogger():
+            with _common_utils._DisableLogger():
                 self._populate_layers()
         except:
             pass
@@ -10491,14 +10748,14 @@ class Item(dict):
         if name == "layers":
             if self["layers"] == None or self["layers"] == []:
                 try:
-                    with _DisableLogger():
+                    with _common_utils._DisableLogger():
                         self._populate_layers()
                 except Exception as e:
                     if (
                         str(e).lower().find("token required") > -1
                         and self._gis._con._auth.lower() == "pki"
                     ):
-                        with _DisableLogger():
+                        with _common_utils._DisableLogger():
                             self._populate_layers()
                     else:
                         print(e)
@@ -10507,7 +10764,7 @@ class Item(dict):
         elif name == "tables":
             if self["tables"] == None or self["tables"] == []:
                 try:
-                    with _DisableLogger():
+                    with _common_utils._DisableLogger():
                         self._populate_layers()
                 except:
                     pass
@@ -11293,7 +11550,7 @@ class Item(dict):
 
         portalurl = self.homepage
 
-        locale.setlocale(locale.LC_ALL, "")
+        # locale.setlocale(locale.LC_ALL, "")
         numViews = locale.format("%d", self.numViews, grouping=True)
         return (
             """<div class="item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
@@ -11868,7 +12125,8 @@ class Item(dict):
          ---------------     --------------------------------------------------------------------
          item_properties     Required dictionary. See table below for the keys and values.
          ---------------     --------------------------------------------------------------------
-         data                Optional string. Either a path or URL to the data.
+         data                Optional string, io.StringIO, or io.BytesIO. Either a path or URL to
+                             the data or an instance of `StringIO` or `BytesIO` objects.
          ---------------     --------------------------------------------------------------------
          thumbnail           Optional string. Either a path or URL to a thumbnail image.
          ---------------     --------------------------------------------------------------------
@@ -11952,6 +12210,15 @@ class Item(dict):
             if "tags" in item_properties:
                 if type(item_properties["tags"]) is list:
                     item_properties["tags"] = ",".join(item_properties["tags"])
+
+        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            if item_properties is None:
+                item_properties = {}
+            if not "type" in item_properties:
+                item_properties["type"] = self.type
+            if not "fileName" in item_properties:
+                fileName = self.name
+                item_properties["fileName"] = fileName
 
         ret = self._portal.update_item(
             self.itemid,
@@ -12301,6 +12568,7 @@ class Item(dict):
             "APIKey2Item",
             "WebStyle2DesktopStyle",
             "Map2FeatureCollectionMobileApp2Code",
+            "Mission2Item",
         ]
     )
 
@@ -13478,7 +13746,7 @@ class Item(dict):
         Lastly, relationships and dependencies of the original item are not maintained in the new item.
 
         .. note::
-            This method is only available on ArcGIS Online
+            This method is only available on ArcGIS Online or ArcGIS Enterprise 10.9 or higher
 
         =======================    =============================================================
         **Argument**               **Description**
@@ -13509,27 +13777,25 @@ class Item(dict):
         :return: An :class:`~arcgis.gis.Item` object
         """
 
-        if self._portal.is_arcgisonline:
-            url = "%s/sharing/rest/content/users/%s/items/%s/copy" % (
-                self._portal.url,
-                self._user_id,
-                self.id,
-            )
-            params = {
-                "f": "json",
-                "title": title,
-                "tags": tags,
-                "includeResources": include_resources,
-                "copyPrivateResources": include_private,
-            }
-            res = self._portal.con.post(url, params)
-            if "itemId" in res:
-                return self._gis.content.get(res["itemId"])
-            elif "id" in res:
-                return self._gis.content.get(res["id"])
-            else:
-                return res
-        return
+        url = "%s/sharing/rest/content/users/%s/items/%s/copy" % (
+            self._portal.url,
+            self._user_id,
+            self.id,
+        )
+        params = {
+            "f": "json",
+            "title": title,
+            "tags": tags,
+            "includeResources": include_resources,
+            "copyPrivateResources": include_private,
+        }
+        res = self._portal.con.post(url, params)
+        if "itemId" in res:
+            return self._gis.content.get(res["itemId"])
+        elif "id" in res:
+            return self._gis.content.get(res["id"])
+        else:
+            return res
 
     # ----------------------------------------------------------------------
     def copy(self, title=None, tags=None, snippet=None, description=None, layers=None):
@@ -14057,7 +14323,7 @@ class ItemDependency(object):
             res = self._con.get(self._url, params)
             if "list" in res:
                 items += res["list"]
-        self._properties = PropertyMap({"items": items})
+        self._properties = _mixins.PropertyMap({"items": items})
 
     # ----------------------------------------------------------------------
     @property
@@ -14293,7 +14559,7 @@ class _GISResource(object):
                 else:
                     raise e
 
-        self._lazy_properties = PropertyMap(dictdata)
+        self._lazy_properties = _mixins.PropertyMap(dictdata)
 
     @property
     def properties(self):
@@ -14315,7 +14581,7 @@ class _GISResource(object):
         self._lazy_token = None
         err = None
 
-        with _DisableLogger():
+        with _common_utils._DisableLogger():
             try:
                 self._refresh()
 

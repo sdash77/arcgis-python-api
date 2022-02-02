@@ -505,7 +505,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     trans_exp_title         The title identifying and describing the associated
                             Arcade expression as defined in the valueExpression
                             property.
-    ----------------------  ---------------------------------------------------------
+    ======================  =========================================================
 
     **Size Info Visual Variable**
 
@@ -549,6 +549,12 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     ----------------------  ---------------------------------------------------------
     si_value_unit           A string value indicating the required unit of measurement.
     ======================  =========================================================
+
+    **Rotation Info Visual Variable**
+
+    A rotation variable is a visual variable that defines the rotation of a symbol
+    based on a numeric data value returned from a field or expression. This value is
+    typically used to rotate symbols that indicate directionality.
 
     ======================  =========================================================
     **arguements**          **description**
@@ -1291,7 +1297,8 @@ def generate_renderer(
             "minValue": symbol_args.pop("min_value", 0),
             "field": symbol_args.pop("field"),
             "defaultSymbol": symbol_args.pop(
-                "default_symbol", create_symbol(geometry_type=gt, colors=default_color)
+                "default_symbol",
+                create_symbol(geometry_type=gt, colors=default_color),
             ),
             "defaultLabel": symbol_args.pop("default_label", "Other"),
             "classificationMethod": symbol_args.pop("method", None),

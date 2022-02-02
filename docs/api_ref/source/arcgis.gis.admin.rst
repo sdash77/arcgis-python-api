@@ -17,6 +17,13 @@ PortalAdminManager
     :undoc-members:
     :show-inheritance:
 
+KubernetesAdmin
+---------------
+.. autoclass:: arcgis.gis.kubernetes.KubernetesAdmin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
 AGOLUsageReports
 ---------------
 .. autoclass:: arcgis.gis.admin.AGOLUsageReports
@@ -107,7 +114,13 @@ UX
     :undoc-members:
     :show-inheritance:
 
-
+EmailManager
+------------
+.. autoclass:: arcgis.gis.admin.EmailManager
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   
 Federation
 ---------------
 .. autoclass:: arcgis.gis.admin.Federation
@@ -115,6 +128,12 @@ Federation
    :undoc-members:
    :show-inheritance:
 
+Indexer
+-------
+.. autoclass:: arcgis.gis.admin.Indexer
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Logs
 ---------------
@@ -122,7 +141,6 @@ Logs
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 Machines
 ---------------

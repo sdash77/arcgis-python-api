@@ -113,7 +113,15 @@ class Pix2PixHD(ArcGISModel):
 
     def show_results(self, rows=2, **kwargs):
         """
-        Displays the results of a trained model on the validation set.
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
         """
         show_results(self, rows, **kwargs)
 
@@ -169,7 +177,9 @@ class Pix2PixHD(ArcGISModel):
                     setattr(data, ("_" + _stat), normalization_stats_b[_stat])
 
             data._is_multispectral = emd.get("IsMultispectral", False)
-            data.n_channel = emd["n_channel"]
+            data.n_channel = emd.get("n_intput_channel", None)
+            if data.n_channel == None:
+                data.n_channel = emd.get("n_channel", None)
             data.label_nc = emd.get("label_nc", None)
             data.output_nc = emd.get("output_nc", None)
             data.mask_map = emd.get("mask_map", None)
@@ -187,7 +197,7 @@ class Pix2PixHD(ArcGISModel):
         _emd_template["ModelConfiguration"] = "_pix2pix_hd"
         _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
         _emd_template["ModelType"] = "Pix2PixHD"
-        _emd_template["n_channel"] = self.output_nc
+        _emd_template["n_intput_channel"] = self.output_nc
         _emd_template["label_nc"] = self._data.label_nc
         if self._data.label_nc != 0:
             _emd_template["mask_map"] = self._data.mask_map.tolist()
@@ -198,22 +208,25 @@ class Pix2PixHD(ArcGISModel):
             norm_stats.append(k)
         _emd_template["norm_stats"] = list(norm_stats)
         # _emd_template["SupportsVariableTileSize"] = True
-        if self._data._is_multispectral:
-            _emd_template["NormalizationStats_b"] = {
-                "band_min_values": self._data._band_min_values_b,
-                "band_max_values": self._data._band_max_values_b,
-                "band_mean_values": self._data._band_mean_values_b,
-                "band_std_values": self._data._band_std_values_b,
-                "scaled_min_values": self._data._scaled_min_values_b,
-                "scaled_max_values": self._data._scaled_max_values_b,
-                "scaled_mean_values": self._data._scaled_mean_values_b,
-                "scaled_std_values": self._data._scaled_std_values_b,
-            }
-            for _stat in _emd_template["NormalizationStats_b"]:
-                if _emd_template["NormalizationStats_b"][_stat] is not None:
-                    _emd_template["NormalizationStats_b"][_stat] = _emd_template[
-                        "NormalizationStats_b"
-                    ][_stat].tolist()
+        # if self._data._is_multispectral:
+        _emd_template["NormalizationStats_b"] = {
+            "band_min_values": self._data._band_min_values_b,
+            "band_max_values": self._data._band_max_values_b,
+            "band_mean_values": self._data._band_mean_values_b,
+            "band_std_values": self._data._band_std_values_b,
+            "scaled_min_values": self._data._scaled_min_values_b,
+            "scaled_max_values": self._data._scaled_max_values_b,
+            "scaled_mean_values": self._data._scaled_mean_values_b,
+            "scaled_std_values": self._data._scaled_std_values_b,
+        }
+        for _stat in _emd_template["NormalizationStats_b"]:
+            if _emd_template["NormalizationStats_b"][_stat] is not None:
+                _emd_template["NormalizationStats_b"][_stat] = _emd_template[
+                    "NormalizationStats_b"
+                ][_stat].tolist()
+        _emd_template["n_channel"] = len(
+            _emd_template["NormalizationStats_b"]["band_min_values"]
+        )
         return _emd_template
 
     @property

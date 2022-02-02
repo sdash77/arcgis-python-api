@@ -13,7 +13,6 @@ logger = logging.getLogger()
 
 HAS_OPENCV = True
 HAS_FASTAI = True
-HAS_ARCPY = True
 
 try:
     import torch
@@ -89,11 +88,6 @@ try:
     import cv2
 except Exception:
     HAS_OPENCV = False
-
-try:
-    import arcpy
-except Exception:
-    HAS_ARCPY = False
 
 
 def _mobilenet_split(m: NnModule):
@@ -710,6 +704,22 @@ class SingleShotDetector(ArcGISModel):
 
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
+        thresh                  Optional float. The probability above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        =====================   ===========================================
+
         """
         self._check_requisites()
         if rows > len(self._data.valid_ds):

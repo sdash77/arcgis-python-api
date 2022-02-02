@@ -1073,7 +1073,7 @@ def generate_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -1090,10 +1090,10 @@ def generate_raster(
 
                                               - Resampling Method (resamplingMethod): The output raster will be
                                                 resampled to method specified.
-                                                The supported values are: Bilinear, Nearest, Cubic.
+                                                The supported values are: BILINEAR, NEAREST, CUBIC.
 
                                                 Example:
-                                                    {'resamplingMethod': "Nearest"}
+                                                    {'resamplingMethod': "NEAREST"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
@@ -1300,7 +1300,7 @@ def copy_raster(
     context=None,
     raster_type_name=None,
     raster_type_params=None,
-    md_to_upload=None,
+    source_mosaic_dataset=None,
     *,
     gis=None,
     future=False,
@@ -1316,8 +1316,8 @@ def copy_raster(
     The function can also create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online from local raster datasets by uploading the data to the server.
     Multiple images are mosaicked into a single dataset to create one layer.
     
-    For this functionality to work in ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.8)
-    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
+    For this functionality to work in ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.9)
+    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package
 
     ================================     ====================================================================
     **Argument**                         **Description**
@@ -1418,7 +1418,7 @@ def copy_raster(
                                          "Aerial", "ScannedAerial","ZY3-CRESDA"]
 
                                          If an existing mosaic dataset is being published as an 
-                                         imagery layer using the ``md_to_upload`` parameter, the
+                                         imagery layer using the ``source_mosaic_dataset`` parameter, the
                                          ``raster_type_name`` parameter can be set to None as it is not required.
 
                                          Example:
@@ -1459,7 +1459,7 @@ def copy_raster(
                                             "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
                                             "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
     --------------------------------     --------------------------------------------------------------------
-    md_to_upload                         Optional string. Path to the existing mosaic dataset to be published 
+    source_mosaic_dataset                Optional string. Path to the existing mosaic dataset to be published 
                                          as an imagery layer.
 
                                          To publish an existing mosaic dataset, specify the path to the input 
@@ -1585,7 +1585,7 @@ def copy_raster(
         landsat_mosaic = copy_raster(input_raster=[r"C:\data\landsat_data_folder"],
                                      output_name="mosaic_datset_op",
                                      context={"upload_properties":{"displayProgress":True}},
-                                     md_to_upload=r"C:\data\md.gdb\landsat",
+                                     source_mosaic_dataset=r"C:\data\md.gdb\landsat",
                                      gis = gis)
 
     """
@@ -1609,7 +1609,7 @@ def copy_raster(
         future=future,
         raster_type_name=raster_type_name,
         raster_type_params=raster_type_params,
-        md_to_upload=md_to_upload,
+        md_to_upload=source_mosaic_dataset,
         **kwargs
     )
 
@@ -1753,7 +1753,7 @@ def summarize_raster_within(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Resampling Method (resamplingMethod): The output raster will be 
                                                 resampled to method specified.
@@ -2113,7 +2113,7 @@ def calculate_density(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Resampling Method (resamplingMethod): The output raster will be
                                                 resampled to method specified.
@@ -2371,7 +2371,7 @@ def create_viewshed(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Resampling Method (resamplingMethod): The output raster will be
                                                 resampled to method specified.
@@ -2603,7 +2603,7 @@ def interpolate_points(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
@@ -2749,7 +2749,7 @@ def classify(
                                               specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                             - Parallel Processing Factor (parallelProcessingFactor): controls
                                               Raster Processing (CPU) service instances.
@@ -2943,7 +2943,7 @@ def segment(
                                               specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                             - Parallel Processing Factor (parallelProcessingFactor): controls
                                               Raster Processing (CPU) service instances.
@@ -3142,7 +3142,7 @@ def create_image_collection(
     raster_type_params=None,
     out_sr=None,
     context=None,
-    md_to_upload=None,
+    source_mosaic_dataset=None,
     *,
     gis=None,
     future=False,
@@ -3159,12 +3159,12 @@ def create_image_collection(
     The function can also create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online from local raster datasets by uploading the data to the server.
     A collection can be created from multiple input rasters.
     
-    For this functionality to work on ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.8)
-    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
+    For this functionality to work on ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.9)
+    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package
 
-    ==================                   ====================================================================
+    ======================               ====================================================================
     **Argument**                         **Description**
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     image_collection                     | Required, the name of the image collection to create.
                   
                                          | The image collection can be an existing image service, in \
@@ -3177,7 +3177,7 @@ def create_image_collection(
                                          | This parameter can be the Item representing an existing image_collection \
                                          or it can be a string representing the name of the image_collection \
                                          (either existing or to be created.)
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     input_rasters                        Required, the list of input rasters to be added to
                                          the image collection being created. This parameter can
                                          be any one of the following:
@@ -3190,7 +3190,7 @@ def create_image_collection(
 
                                          The function can create hosted imagery layers on enterprise and AGOL from 
                                          local raster datasets by uploading the data to the server.
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     raster_type_name                     | Required string. The name of the raster type to use for adding data to \
                                          the image collection.
 
@@ -3204,13 +3204,13 @@ def create_image_collection(
                                          "ZY3-CRESDA"]         
 
                                          If an existing mosaic dataset is being published as a 
-                                         dynamic imagery layer using the ``md_to_upload`` parameter, the
+                                         dynamic imagery layer using the ``source_mosaic_dataset`` parameter, the
                                          ``raster_type_name`` parameter can be set to None as it is not required.
 
 
                                          Example:
                                             "QuickBird"
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     raster_type_params                   | Optional dict. Additional ``raster_type`` specific parameters.
         
                                          | The process of add rasters to the image collection can be \
@@ -3245,7 +3245,7 @@ def create_image_collection(
                                             {"productType":"All","processingTemplate":"Pansharpen",
                                             "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
                                             "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     out_sr                               Optional integer. Additional parameters of the service.
                             
                                          The following additional parameters can be specified:
@@ -3256,7 +3256,7 @@ def create_image_collection(
 
                                          If the raster type name is set to "UAV/UAS", the spatial reference of the
                                          output image collection will be determined by the raster type parameters defined.
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     context                              | Optional dict. The context parameter is used to provide additional input parameters.
     
                                          | Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
@@ -3317,8 +3317,8 @@ def create_image_collection(
                                          Example:
                                             | {"fields": [{"name": "cloud_cover", "type": "Long"},
                                             | {"name": "cloud_shadow_count", "type": "Long"}]}
-    ------------------                   --------------------------------------------------------------------
-    md_to_upload                         Optional string. Path to the existing mosaic dataset to be published 
+    ----------------------               --------------------------------------------------------------------
+    source_mosaic_dataset                Optional string. Path to the existing mosaic dataset to be published 
                                          as a hosted dynamic imagery layer.
 
                                          To publish an existing mosaic dataset, specify the path to the input 
@@ -3333,19 +3333,19 @@ def create_image_collection(
 
                                          Example:
                                             "./data/temp_uploaded.gdb/test"
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                          results will be returned asynchronously.
-    ------------------                   --------------------------------------------------------------------
+    ----------------------               --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                          not exist, with the given folder name and persists the output in this folder.
                                          The dictionary returned by the gis.content.create_folder() can also be passed in as input.
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
-    ==================                   ====================================================================
+    ======================               ====================================================================
 
     :return: The imagery layer item
 
@@ -3864,7 +3864,7 @@ def create_image_collection(
                                                   input_rasters=[r"C:\data\landsat_data_folder"],
                                                   raster_type_name=None,
                                                   context={"upload_properties":{"displayProgress":True}},
-                                                  md_to_upload=r"C:\data\md.gdb\landsat",
+                                                  source_mosaic_dataset=r"C:\data\md.gdb\landsat",
                                                   gis=gis)
 
     """
@@ -3879,7 +3879,7 @@ def create_image_collection(
         out_sr=out_sr,
         context=context,
         future=future,
-        md_to_upload=md_to_upload,
+        md_to_upload=source_mosaic_dataset,
         **kwargs
     )
 
@@ -4998,7 +4998,7 @@ def generate_multidimensional_anomaly(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -5409,7 +5409,7 @@ def aggregate_multidimensional_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -5626,7 +5626,7 @@ def generate_trend_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -5840,7 +5840,7 @@ def predict_using_trend_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -6056,7 +6056,7 @@ def find_argument_statistics(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -6215,7 +6215,7 @@ def linear_spectral_unmixing(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -6444,7 +6444,7 @@ def subset_multidimensional_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -7223,7 +7223,7 @@ def analyze_changes_using_ccdc(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -7407,7 +7407,7 @@ def detect_change_using_change_analysis_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -8024,7 +8024,7 @@ def merge_multidimensional_rasters(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -8273,7 +8273,7 @@ def analyze_changes_using_landtrendr(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -8609,6 +8609,8 @@ def compute_change_raster(
     transition_class_colors="AVERAGE",
     output_name=None,
     context=None,
+    from_class_name_field_name=None,
+    to_class_name_field_name=None,
     *,
     gis=None,
     future=False,
@@ -8720,7 +8722,7 @@ def compute_change_raster(
                                                 specified by cell size.
 
                                                 Example:
-                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
                                               - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
@@ -8734,6 +8736,16 @@ def compute_change_raster(
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    from_class_name_field_name               Optional string. A field that stores class names in the input_from_raster.
+                                             The function automatically searches for CLASSNAME field or CLASS_NAME field to use.
+                                             Use this parameter if the input does not contain these standard field names
+                                             Example: "CLASSES"
+    ------------------------------------     --------------------------------------------------------------------
+    to_class_name_field_name                 Optional string. A field that stores class names in the input_to_raster.
+                                             The function automatically searches for CLASSNAME field or CLASS_NAME field to use.
+                                             Use this parameter if the input does not contain these standard field names
+                                             Example: "CLASSES"
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -8780,7 +8792,292 @@ def compute_change_raster(
         to_classes=to_classes,
         filter_method=filter_method,
         transition_class_colors=transition_class_colors,
+        from_classname_field=from_class_name_field_name,
+        to_classname_field=to_class_name_field_name,
         output_name=output_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
+
+
+def summarize_categorical_raster(
+    input_categorical_raster,
+    dimension=None,
+    area_of_interest=None,
+    area_of_interest_id_field=None,
+    output_summary_table_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
+
+    """
+    Generates a table containing the pixel count for each class, in each slice of an input categorical raster.
+    Function available in ArcGIS Image Server 10.9.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_from_raster                        Required ImageryLayer object. The multidimensional, categorical raster to be summarized.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension                                Optional String. The name of the dimension to use for the summary. If
+                                             there is more than one dimension and no value is specified, all slices
+                                             will be summarized using all combinations of dimension values.
+    ------------------------------------     --------------------------------------------------------------------
+    area_of_interest                         Optional FeatureLayer object. The polygon feature layer containing the area
+                                             or areas of interest to use when calculating the pixel count per category.
+                                             If no area of interest is specified, the entire raster will be
+                                             included in the analysis.
+    ------------------------------------     --------------------------------------------------------------------
+    area_of_interest_id_field                Optional String/Integer. The field in the polygon feature layer that
+                                             defines each area of interest.
+    ------------------------------------     --------------------------------------------------------------------
+    output_summary_table_name                Optional String. Name of the output feature item or table item to be created
+                                             If not provided, a random name is generated by the method and used as
+                                             the output name.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                             context parameter overwrites values set through arcgis.env parameter
+
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be
+                                                projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ====================================     ====================================================================
+
+    :return:
+        Feature Layer
+
+    .. code-block:: python
+
+        # Usage Example 1:
+
+        my_categorical_raster = gis.content.search("categorical_raster", item_type="Imagery Layer")[0].layers[0]
+        my_aoi = gis.content.search("area_of_interest_polygon", item_type="Feature Layer")[0].layers[0]
+
+        summarize_categorical_raster_op = summarize_categorical_raster(input_categorical_raster=my_categorical_raster,
+                                                                       dimension="StdTime",
+                                                                       area_of_interest=my_aoi,
+                                                                       gis=gis)
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.summarize_categorical_raster(
+        input_categorical_raster=input_categorical_raster,
+        dimension=dimension,
+        area_of_interest=area_of_interest,
+        area_of_interest_id_field=area_of_interest_id_field,
+        output_summary_table_name=output_summary_table_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
+
+
+def train_random_trees_regression_model(
+    input_rasters,
+    input_target_data,
+    target_value_field=None,
+    target_dimension_field=None,
+    raster_dimension=None,
+    max_number_of_trees=50,
+    max_tree_depth=30,
+    max_number_of_samples=100000,
+    average_points_per_cell="KEEP_ALL_POINTS",
+    output_scatter_plots_name=None,
+    output_sample_features_name=None,
+    percent_samples_for_testing=10,
+    output_importance_table_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
+
+    """
+    Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
+    Function available in ArcGIS Image Server 10.9.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_rasters                            Required ImageryLayer object. The single-band, multidimensional, or
+                                             multiband rasters, or mosaic datasets, containing explanatory variables.
+    ------------------------------------     --------------------------------------------------------------------
+    input_target_data                        Required FeatureLayer or ImageryLayer object. The raster or feature layer
+                                             containing the target variable (dependant variable) data.
+    ------------------------------------     --------------------------------------------------------------------
+    target_value_field                       Optional String. The field name of the information to model in the target
+                                             feature layer or raster.
+    ------------------------------------     --------------------------------------------------------------------
+    target_dimension_field                   Optional String. A date field or numeric field in the input feature
+                                             layer that defines the dimension values.
+    ------------------------------------     --------------------------------------------------------------------
+    raster_dimension                         Optional String. The dimension name of the input multidimensional raster
+                                             (explanatory variables) that links to the dimension in the target data.
+    ------------------------------------     --------------------------------------------------------------------
+    max_number_of_trees                      Optional Integer. The maximum number of trees in the forest. Increasing
+                                             the number of trees will lead to higher accuracy rates, although this
+                                             improvement will level off. The number of trees increases the processing time linearly.
+                                             The default is 50.
+    ------------------------------------     --------------------------------------------------------------------
+    max_tree_depth                           Optional Integer. The maximum depth of each tree in the forest. Depth
+                                             determines the number of rules each tree can create, resulting in a decision.
+                                             Trees will not grow any deeper than this setting.
+                                             The default is 30.
+    ------------------------------------     --------------------------------------------------------------------
+    max_number_of_samples                    Optional Integer. The maximum number of samples that will be used for
+                                             the regression analysis. A value that is less than or equal to 0 means
+                                             that the system will use all the samples from the input target raster
+                                             or feature layer to train the regression model.
+                                             The default value is 100,000.
+    ------------------------------------     --------------------------------------------------------------------
+    average_points_per_cell                  Optional String. Specifies whether the average will be calculated when
+                                             multiple training points fall into one cell. This parameter is applicable
+                                             only when the input target is a feature layer.
+                                             Options include:
+
+                                                - "KEEP_ALL_POINTS" — All points will be used when multiple training points fall into a single cell. \
+                                                                      This is the default.
+                                                - "AVERAGE_POINTS_PER_CELL" —The average value of the training points within a cell will be calculated.
+    ------------------------------------     --------------------------------------------------------------------
+    output_scatter_plots_name                Optional String. The name for the output scatterplots includes scatterplots
+                                             of training data, test data, and location test data.
+    ------------------------------------     --------------------------------------------------------------------
+    output_sample_features_name              Optional String. Name of the output feature class containing
+                                             target values and predicted values for training points, test points, and location test points.
+    ------------------------------------     --------------------------------------------------------------------
+    percent_samples_for_testing              Optional Float. Defines the percentage of test points used for error checking.
+                                             The tool checks for three types of errors: errors on training points,
+                                             errors on test points, and errors on test location points.
+                                             The default is 10.
+    ------------------------------------     --------------------------------------------------------------------
+    output_importance_table_name             Optional String. Name of the output feature item or table item to be created.
+                                             This name is to create a table containing information describing the
+                                             importance of each explanatory variable used in the model. A larger
+                                             number indicates the corresponding variable is more correlated to the
+                                             predicted variable and will contribute more in prediction. Values range
+                                             between 0 and 1, and the sum of all the values equals 1.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                                context parameter overwrites values set through arcgis.env parameter
+
+                                                This function has the following settings:
+
+                                                - Cell size (cellSize) - Set the output raster cell size, or resolution
+
+                                                - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                                - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ====================================     ====================================================================
+
+    :return: Dictionary
+
+    .. code-block:: python
+
+        # Usage Example 1:
+
+        my_raster_1 = gis.content.search("raster_1", item_type="Imagery Layer")[0].layers[0]
+        my_raster_2 = gis.content.search("raster_2", item_type="Imagery Layer")[0].layers[0]
+        input_rasters = [my_raster_1, my_raster_2]
+
+        input_target_data = gis.content.search("my_target_data")[0].layers[0]
+
+        train_random_trees_regression_model_op = train_random_trees_regression_model(input_rasters=input_rasters,
+                                                                                     input_target_data=input_target_data,
+                                                                                     gis=gis)
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.train_random_trees_regression_model(
+        input_rasters=input_rasters,
+        input_target_data=input_target_data,
+        target_value_field=target_value_field,
+        target_dimension_field=target_dimension_field,
+        raster_dimension=raster_dimension,
+        max_number_of_trees=max_number_of_trees,
+        max_tree_depth=max_tree_depth,
+        max_number_of_samples=max_number_of_samples,
+        average_points_per_cell=average_points_per_cell,
+        percent_samples_for_testing=percent_samples_for_testing,
+        output_scatter_plots_name=output_scatter_plots_name,
+        output_sample_features_name=output_sample_features_name,
+        output_importance_table_name=output_importance_table_name,
         context=context,
         future=future,
         **kwargs
