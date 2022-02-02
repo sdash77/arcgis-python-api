@@ -1,5 +1,6 @@
 from __future__ import annotations
 from enum import Enum
+import json
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
@@ -2099,6 +2100,8 @@ class Sidecar(object):
     Create an Sidecar immersive object from a pre-existing ``immersive`` node.
 
     A sidecar is composed of slides. Slides are composed of two nodes: a narrative panel and a media node.
+    The media node can be a(n): Image, Video, Embed, Map, or Swipe.
+    The narrative panel can contain mulitple types of content including Image, Video, Embed, Button, Text, Map, and more.
 
     ===============     ====================================================================
     **Argument**        **Description**
@@ -2142,20 +2145,34 @@ class Sidecar(object):
         sidecar_tree = [self.node]
         for slide in self._slides:
             narrative_panel = self._story._properties["nodes"][slide]["children"][0]
-            text = (
-                self._story._properties["nodes"][narrative_panel]["children"][0]
+            children = (
+                self._story._properties["nodes"][narrative_panel]["children"]
                 if "children" in self._story._properties["nodes"][narrative_panel]
                 else ""
             )
-            media_item = self._story._properties["nodes"][slide]["children"][1]
+            narrative_children = {}
+            for child in children:
+                info = self._story._properties["nodes"][child]
+                narrative_children[info["type"]] = child
+            # there will always be a narrative panel node but not always a media node
+            if len(self._story._properties["nodes"][slide]["children"]) > 1:
+                media_item = self._story._properties["nodes"][slide]["children"][1]
+                media_type = self._story._properties["nodes"][media_item]["type"]
+            else:
+                media_item = ""
+                media_type = ""
+
+            # construct tree like structure
             sidecar_tree.append(
                 {
-                    "Slide: "
-                    + slide: [
-                        "Narrative Panel: " + narrative_panel,
-                        "Text: " + text,
-                        "Media Item: " + media_item,
-                    ]
+                    "Slide:"
+                    + slide: {
+                        "narrative_panel": {
+                            "panel": narrative_panel,
+                            "children": narrative_children,
+                        },
+                        "media": {media_type: media_item},
+                    }
                 }
             )
         return sidecar_tree
