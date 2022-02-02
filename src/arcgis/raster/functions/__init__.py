@@ -10303,6 +10303,8 @@ def compute_change(
     define_transition_colors=0,
     extent_type="IntersectionOf",
     cellsize_type="MaxOf",
+    from_class_name_field_name=None,
+    to_class_name_field_name=None,
 ):
 
     """
@@ -10352,6 +10354,16 @@ def compute_change(
     extent_type                              Optional string.  One of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
     ------------------------------------     --------------------------------------------------------------------
     cellsize_type                            Optional string. One of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
+    ------------------------------------     --------------------------------------------------------------------
+    from_class_name_field_name               Optional string. A field that stores class names in the raster1.
+                                             The function automatically searches for CLASSNAME field or CLASS_NAME field to use.
+                                             Use this parameter if the input does not contain these standard field names
+                                             Example: "CLASSES"
+    ------------------------------------     --------------------------------------------------------------------
+    to_class_name_field_name                 Optional string. A field that stores class names in the raster2.
+                                             The function automatically searches for CLASSNAME field or CLASS_NAME field to use.
+                                             Use this parameter if the input does not contain these standard field names
+                                             Example: "CLASSES"
     ====================================     ====================================================================
 
     :return: Raster/ImageryLayer
@@ -10476,6 +10488,16 @@ def compute_change(
         template_dict["rasterFunctionArguments"]["ExtentType"] = in_extent_type
     if in_cellsize_type is not None:
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
+
+    if from_class_name_field_name is not None:
+        template_dict["rasterFunctionArguments"][
+            "FromClassNameFieldName"
+        ] = from_class_name_field_name
+
+    if to_class_name_field_name is not None:
+        template_dict["rasterFunctionArguments"][
+            "ToClassNameFieldName"
+        ] = to_class_name_field_name
 
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
@@ -11890,6 +11912,7 @@ def dimensional_moving_statistics(
     dimension=None,
     backward_window=1,
     forward_window=1,
+    nodata_handling="DATA",
     statistics_type="MEAN",
     percentile_value=90,
     percentile_interpolation_type="AUTO_DETECT",
@@ -11926,6 +11949,19 @@ def dimensional_moving_statistics(
                                          from 1 to 100. The default value is 1.
 
                                          The unit of this parameter is slice.
+    --------------------------------     --------------------------------------------------------------------
+    nodata_handling                      Optional string. Specifies how NoData values will be handled by the 
+                                         statistic calculation.
+
+                                            - DATA - NoData values in the value input will be ignored in the \
+                                            results of the defined window that they fall within. This is the \
+                                            default.
+
+                                            - NODATA - Output values will be NoData if any NoData values are \
+                                            found in the input within the defined window.
+
+                                            - FILL_NODATA - NoData cell values will be replaced using the selected \
+                                            statistic on the values within the defined window.
     --------------------------------     --------------------------------------------------------------------
     statistics_type                      Optional string. Statistic type to be calculated.
 
@@ -11997,7 +12033,7 @@ def dimensional_moving_statistics(
 
         # Usage Example 1: Calculates MEAN statistics over a moving window on multidimensional data along StdTime dimension.
 
-        op = dimensional_moving_statistics(raster, "StdTime")
+        op = dimensional_moving_statistics(raster, dimension="StdTime")
 
     """
     layer, raster, raster_ra = _raster_input(raster)
@@ -12030,11 +12066,11 @@ def dimensional_moving_statistics(
                 + str(statistics_types.keys())
             )
         template_dict["rasterFunctionArguments"]["StatisticsType"] = statistics_types[
-            statistics_type
+            statistics_type.upper()
         ]
 
     if percentile_value is not None:
-        template_dict["rasterFunctionArguments"]["percentile_value"] = percentile_value
+        template_dict["rasterFunctionArguments"]["PercentileValue"] = percentile_value
 
     percentile_interpolation_type_list = ["AUTO_DETECT", "NEAREST", "LINEAR"]
     if percentile_interpolation_type is not None:
@@ -12047,13 +12083,24 @@ def dimensional_moving_statistics(
                 + str(percentile_interpolation_type_list)
             )
         template_dict["rasterFunctionArguments"][
-            "percentile_interpolation_type"
+            "PercentileInterpolationType"
         ] = percentile_interpolation_type
 
     if circular_wrap_value is not None:
         template_dict["rasterFunctionArguments"][
             "CircularWrapValue"
         ] = circular_wrap_value
+
+    nodata_handling_types = {"DATA": -1, "NODATA": 0, "FILL_NODATA": 3}
+    if nodata_handling is not None:
+        if nodata_handling.upper() not in nodata_handling_types.keys():
+            raise RuntimeError(
+                "nodata_handling parameter value should be one of the following "
+                + str(nodata_handling_types.keys())
+            )
+        template_dict["rasterFunctionArguments"][
+            "NoDataHandling"
+        ] = nodata_handling_types[nodata_handling.upper()]
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -12119,6 +12166,220 @@ def mosaic_rasters(rasters, mosaic_type="BLEND"):
         template_dict["rasterFunctionArguments"]["MosaicType"] = in_mosaic_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
+
+def interpolate_raster_by_dimension(
+    raster,
+    interpolation_method="LINEAR",
+    variables=None,
+    dimension_definition=None,
+    dimension_values=None,
+    dimension=None,
+    start_value=None,
+    end_value=None,
+    interval_value=None,
+    interval_unit=None,
+    target_raster=None,
+    ignore_nodata=True,
+):
+
+    """
+
+    Interpolates a multidimensional raster at a specified dimension value using adjacent values.
+    Function available in ArcGIS Image Server 10.9.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    raster                                   Required Raster/ImageryLayer object.
+    ------------------------------------     --------------------------------------------------------------------
+    interpolation_method                     Optional string. Specifies the interpolation method.
+
+                                             Possible values are - LINEAR, NEARESTNEIGHBOR
+
+                                             Default is LINEAR.
+    ------------------------------------     --------------------------------------------------------------------
+    variables                                Optional List. The list of variables that will be included in the interpolation.
+                                             If not specified the function will take all variables by default.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension_definition                     Optional String. Specifies the dimension definition. It can be one of the following:
+
+                                                - BY_VALUES
+                                                - BY_INTERVAL
+                                                - BY_TARGET_RASTER
+    ------------------------------------     --------------------------------------------------------------------
+    dimension_values                         Optional List of Dictionaries. This slices the data based on the dimension name and the value specified.
+                                             This parameter is required when the dimension_definition is set to BY_VALUES.
+                                             If dimension is StdTime, then the value must be specified in
+                                             human readable time format (YYYY-MM-DDTHH:MM:SS).
+
+                                             The input should be specified as:
+                                             [{"dimension":"<dimension_name>", "value":"<dimension_value>"},{"dimension":"<dimension_name>", "value":"<dimension_value>"}]
+
+                                             Example:
+                                                 [{"dimension":"StdTime", "value":"2012-01-15T03:00:00"}]
+    ------------------------------------     --------------------------------------------------------------------
+    dimension                                Optional String. The dimension along which the variables will be interpolated.
+                                             This parameter is required when the dimension_definition is set to BY_INTERVAL.
+    ------------------------------------     --------------------------------------------------------------------
+    start_value                              Optional String. The beginning of the interval.
+                                             This parameter is required when the dimension_definition is set to BY_INTERVAL
+    ------------------------------------     --------------------------------------------------------------------
+    end_value                                Optional String. The end of the interval.
+                                             This parameter is required when the dimension_definition is set to BY_INTERVAL
+    ------------------------------------     --------------------------------------------------------------------
+    interval_value                           Optional Float. The frequency with which the data will be sliced.
+                                             This parameter is required when the dimension_definition is set to BY_INTERVAL
+    ------------------------------------     --------------------------------------------------------------------
+    interval_unit                            Optional String. Specifies the interval unit.
+                                             This parameter is required when the dimension_definition is set to BY_INTERVAL
+                                             and the dimension parameter is set to StdTime.
+
+                                                - HOURS - Uses hours as the specified unit of time.
+                                                - DAYS - Uses days as the specified unit of time.
+                                                - WEEKS - Uses weeks as the specified unit of time.
+                                                - MONTHS - Uses months as the specified unit of time.
+                                                - YEARS -Uses years as the specified unit of time.
+    ------------------------------------     --------------------------------------------------------------------
+    target_raster                            Optional Raster/ImageryLayer object. Parameter used to specify the target raster from which the dimension definition would be taken.
+                                             Required when dimension_definition is set to BY_TARGET_RASTER
+    ------------------------------------     --------------------------------------------------------------------
+    ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored in the interpolation.
+
+                                             - True : Only the cells that are have noData values will be used in interpolation. This is the default.
+                                             - False : The cells that have noData values will be used in interpolation.
+    ====================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Apply the interpolate_raster_by_dimension() on the input raster using BY_VALUES dimension_definition.
+        interpolated_op = interpolate_raster_by_dimension(raster,
+                                                          variables="water_temp",
+                                                          dimension_definition="BY_VALUES",
+                                                          dimension_values=[{"dimension":"StdTime", "value":"2012-01-15T03:00:00"}])
+
+    """
+
+    layer1, raster_1, raster_ra1 = _raster_input(raster)
+
+    layer2 = None
+    if target_raster is not None:
+        layer2, raster_2, raster_ra2 = _raster_input(raster, target_raster)
+
+    template_dict = {
+        "rasterFunction": "InterpolateRasterByDimension",
+        "rasterFunctionArguments": {"Raster": raster_1},
+    }
+
+    dimension_definition_val = dimension_definition
+    if dimension_definition is not None:
+        dimension_definition_allowed_values = [
+            "BY_VALUES",
+            "BY_TARGET_RASTER",
+            "BY_INTERVAL",
+        ]
+        if [element.lower() for element in dimension_definition_allowed_values].count(
+            dimension_definition.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "dimension_definition can only be one of the following: "
+                + str(dimension_definition_allowed_values)
+            )
+
+        for element in dimension_definition_allowed_values:
+            if dimension_definition.upper() == element:
+                dimension_definition_val = element
+
+    interval_unit_val = interval_unit
+    if interval_unit is not None:
+        interval_unit_allowed_values = [
+            "HOURS",
+            "DAYS",
+            "DAILY",
+            "WEEKS",
+            "MONTHS",
+            "YEARS",
+        ]
+        if [element.lower() for element in interval_unit_allowed_values].count(
+            interval_unit.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "interval_unit can only be one of the following: "
+                + str(interval_unit_allowed_values)
+            )
+
+        for element in interval_unit_allowed_values:
+            if interval_unit.upper() == element:
+                interval_unit_val = element
+
+    dimension_definition_dict = {}
+    dimension_definition_dict.update({"definitionType": dimension_definition_val})
+
+    if variables is not None:
+        if isinstance(variables, list):
+            dimension_definition_dict.update({"variables": variables})
+        else:
+            dimension_definition_dict.update({"variables": [variables]})
+
+    if dimension_definition == "BY_INTERVAL":
+        dimension_definition_dict.update(
+            {
+                "dimension": dimension,
+                "startValue": start_value,
+                "endValue": end_value,
+                "stepValue": interval_value,
+            }
+        )
+        if interval_unit is not None:
+            dimension_definition_dict.update({"units": interval_unit})
+
+    elif dimension_definition == "BY_VALUES":
+        dimensions_list = []
+        values_list = []
+        if not isinstance(dimension_values, list):
+            dimension_values = [dimension_values]
+        if isinstance(dimension_values, list):
+            for ele in dimension_values:
+                if isinstance(ele, dict):
+                    values_list.append(ele["value"])
+                    dimensions_list.append(ele["dimension"])
+        dimension_definition_dict.update(
+            {"dimensions": dimensions_list, "values": values_list}
+        )
+
+    elif dimension_definition == "BY_TARGET_RASTER":
+        dimension_definition_dict.update({"target": raster_ra2})
+
+    if dimension_definition is not None:
+        template_dict["rasterFunctionArguments"][
+            "DimensionDefinition"
+        ] = dimension_definition_dict
+
+    if interpolation_method is not None:
+        template_dict["rasterFunctionArguments"][
+            "InterpolationMethod"
+        ] = interpolation_method
+
+    if interpolation_method is not None:
+        interpolation_method_types = {"LINEAR": 0, "NEARESTNEIGHBOR": 1}
+
+        if isinstance(interpolation_method, str):
+            in_interpolation_method = interpolation_method_types[
+                interpolation_method.upper()
+            ]
+        else:
+            in_interpolation_method = interpolation_method
+
+        template_dict["rasterFunctionArguments"][
+            "InterpolationMethod"
+        ] = in_interpolation_method
+
+    if ignore_nodata is not None:
+        template_dict["rasterFunctionArguments"]["IgnoreNoData"] = ignore_nodata
+
+    return _clone_layer(layer1, template_dict, raster_ra1)
 
 
 class RFT:

@@ -12,6 +12,9 @@ from .util import normalize_batch
 try:
     from fastai.vision import *
     import torch
+    from fastai.vision.transform import (
+        dihedral,
+    )
 
     HAS_PYTORCH_FA = True
 
@@ -55,6 +58,7 @@ class ChildObjectDetector:
         # Using arcgis.learn FeatureClassifer from_model function.
         self.cf = FeatureClassifier.from_model(emd_path=model)
         self.model = self.cf.learn.model
+        self.model = self.cf.learn.model.to(self.device)
         self.model.eval()
 
     def getParameterInfo(self, required_parameters):
@@ -72,6 +76,19 @@ class ChildObjectDetector:
                     "description": "Confidence score threshold value [0.0, 1.0]",
                 }
             )
+        # add tta in the parameters
+        required_parameters.append(
+            {
+                "name": "test_time_augmentation",
+                "dataType": "string",
+                "required": False,
+                "value": "False"
+                if "test_time_augmentation" not in self.emd
+                else str(self.emd["test_time_augmentation"]),
+                "displayName": "Perform test time augmentation while predicting",
+                "description": "If True, will merge predictions from flipped and rotated images.",
+            }
+        )
         return required_parameters
 
     def getConfiguration(self, **scalars):
@@ -86,6 +103,14 @@ class ChildObjectDetector:
         self.thresh = float(
             scalars.get("score_threshold", 0.5)
         )  # Default 0.5 threshold
+
+        self.use_tta = scalars.get("test_time_augmentation", "false").lower() in [
+            "true",
+            "1",
+            "t",
+            "y",
+            "yes",
+        ]  # Default value True
 
         return {
             # CropSizeFixed is a boolean value parameter (1 or 0) in the emd file, representing whether the size of
@@ -106,7 +131,34 @@ class ChildObjectDetector:
             "tx": self.emd["ImageWidth"],
             "ty": self.emd["ImageHeight"],
             "batch_size": self.batch_size,
+            "test_time_augmentation": self.use_tta,
         }
+
+    def tta_predict(self, normalized_image_tensor):
+        # Get normalized image and apply test time augmentation on image
+        if self.emd["ImageSpaceUsed"] == "MAP_SPACE":
+            aug_tfms = list(range(8))
+        else:
+            aug_tfms = [
+                0,
+                2,
+            ]  # no vertical flips for pixel space (oriented imagery)
+        tta_pred_combined = []
+        for tfm in aug_tfms:
+            tta_batch_images = []
+            for tensorimage in normalized_image_tensor:
+                out = dihedral(Image(tensorimage), tfm)
+                tta_batch_images.append(out.data)
+            tta_batch = torch.stack(tta_batch_images)
+            tta_pred = self.cf.learn.pred_batch(
+                batch=(
+                    tta_batch.to(self.device),
+                    torch.tensor([40]).to(self.device),
+                )
+            )
+            tta_pred_combined.append(tta_pred)
+
+        return torch.stack(tta_pred_combined).mean(0)
 
     def vectorize(self, **pixelBlocks):
 
@@ -130,14 +182,21 @@ class ChildObjectDetector:
                 0, 3, 1, 2
             )
 
-        # Convert to torch tensor, set device and convert to float
-        batch_images = torch.tensor(batch_images).to(self.device).float()
+        if self.use_tta:
+            # Convert to torch tensor, set device and convert to float
+            batch_images = torch.tensor(batch_images).float()
 
-        # the second element in the passed tuple is hardcoded to make fastai's pred_batch work
-        predictions = self.cf.learn.pred_batch(
-            batch=(batch_images, torch.tensor([40]).to(self.device))
-        )
-        # predictions: torch.tensor(B,C), where B is the batch size and C is the number of classes
+            predictions = self.tta_predict(batch_images)
+            # predictions: torch.tensor(B,C), where B is the batch size and C is the number of classe
+        else:
+            # Convert to torch tensor, set device and convert to float
+            batch_images = torch.tensor(batch_images).to(self.device).float()
+
+            # the second element in the passed tuple is hardcoded to make fastai's pred_batch work
+            predictions = self.cf.learn.pred_batch(
+                batch=(batch_images, torch.tensor([40]).to(self.device))
+            )
+            # predictions: torch.tensor(B,C), where B is the batch size and C is the number of classes
 
         # Using emd to map the class
         class_map = [c["Name"] for c in self.emd["Classes"]]

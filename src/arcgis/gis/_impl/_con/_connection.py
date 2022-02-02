@@ -341,7 +341,7 @@ class Connection(object):
                 s.auth = self._custom_auth
             parsed = self._parsed(url)
             root = (
-                fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+                rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             )
             params = {"f": "json"}
             results = []
@@ -1671,7 +1671,7 @@ class Connection(object):
             # Brute Force Method
             parsed = urlparse(baseurl)
             root = (
-                fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+                rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             )
             parts = ["/info", "/rest/services", "/rest/info", "/sharing/rest/info"]
             params = {"f": "json"}
