@@ -80,7 +80,9 @@ except Exception as e:
 
 HAS_ARCPY = True
 try:
-    import arcpy
+    from arcgis.auth.tools import LazyLoader
+
+    arcpy = LazyLoader("arcpy")
 except Exception:
     HAS_ARCPY = False
 
@@ -195,7 +197,7 @@ class FeatureClassifier(ArcGISModel):
 
                 class MultLabelFbetaModified(MultiLabelFbeta):
                     def fbeta_score(self, precision, recall):
-                        beta2 = self.beta ** 2
+                        beta2 = self.beta**2
                         fbeta = (
                             (1 + beta2)
                             * (precision * recall)
@@ -316,7 +318,7 @@ class FeatureClassifier(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        image_path              Required. Path to the image file to make the
+        img_path                Required. Path to the image file to make the
                                 predictions on.
         visualize               Optional: Set this parameter to True to
                                 visualize the image being predicted.
@@ -332,7 +334,7 @@ class FeatureClassifier(ArcGISModel):
         img = open_image(img_path)
         pred = self.learn.predict(img)
         if visualize == True:
-            gradCam = self.gradCAM(img, pred[0], grad_vis=gradcam)
+            gradCam = self._gradCAM(img, pred[0], grad_vis=gradcam)
         return pred
 
     def _predict_batch(self, imagetensor_batch):
@@ -370,10 +372,11 @@ class FeatureClassifier(ArcGISModel):
         _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["CropSizeFixed"] = int(
-            self._data._emd.get("CropTileMode", "Fixed_Size") == "Fixed_Size"
+            getattr(self._data, "_emd", {}).get("CropTileMode", "Fixed_Size")
+            == "Fixed_Size"
         )
         _emd_template["BlackenAroundFeature"] = int(
-            self._data._emd.get("BlackenAroundFeature", False)
+            getattr(self._data, "_emd", {}).get("BlackenAroundFeature", False)
         )
         _emd_template["ImageSpaceUsed"] = "MAP_SPACE"
         _emd_template["Classes"] = []
@@ -497,7 +500,14 @@ class FeatureClassifier(ArcGISModel):
     def plot_confusion_matrix(self, **kwargs):
         """
         Plots a confusion matrix of the model predictions to evaluate accuracy
-        kwargs: 'thresh' - confidence score threshold for multilabel predictions, defaults to 0.5
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        thresh                  confidence score threshold for multilabel predictions,
+                                defaults to 0.5
+        =====================   ===========================================
         """
         self._check_requisites()
         if self._data._dataset_type == "MultiLabeled_Tiles":
@@ -973,9 +983,10 @@ class FeatureClassifier(ArcGISModel):
     ):
 
         """
+        Deprecated in ArcGIS version 1.9.1 and later: Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
+
         Classifies the exported images and updates the feature layer with the prediction results in the ``output_label_field``.
         Works with RGB images only.
-        Deprecated since version 1.9.1: Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -1550,12 +1561,21 @@ class FeatureClassifier(ArcGISModel):
             del update_cursor
         return True
 
-    def gradCAM(
+    def _gradCAM(
         self, im, cl, heatmap_thresh: int = 16, image: bool = True, grad_vis=False
     ):
         if isinstance(cl, fastai.core.MultiCategory):
-            cat = cl.raw  # Handles MuliCategory types
-            cat1 = cat[0]
+            if not cl.raw:  # If the predictions are all 0, including for None class
+                xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
+                xb, _ = self._data.one_item(im, detach=False, denorm=False)
+                xb_im = Image(xb[0])
+                xb_im_denorm = Image(xb_norm[0])
+                _, ax = plt.subplots(figsize=(6, 6))
+                xb_im_denorm.show(ax, title=f"Predicted class: None")
+                return
+            else:
+                cat = cl.raw  # Handles MuliCategory types
+                cat1 = cat[0]
         else:
             cat1 = int(cl)
         m = self.learn.model.eval()
@@ -1580,8 +1600,8 @@ class FeatureClassifier(ArcGISModel):
                 sz = list(xb_im.shape[-2:])
                 if grad_vis == True:
                     _, ax = plt.subplots(nrows=1, ncols=2, figsize=(12, 12))
-                    xb_im_denorm.show(ax[0], title=f"pred. class: {cl}")
-                    xb_im_denorm.show(ax[1], title=f"pred. class: {cl}")
+                    xb_im_denorm.show(ax[0], title=f"Predicted class: {cl}")
+                    xb_im_denorm.show(ax[1], title=f"Predicted class: {cl}")
                     ax[1].imshow(
                         mult,
                         alpha=0.4,
@@ -1591,7 +1611,7 @@ class FeatureClassifier(ArcGISModel):
                     )
                 else:
                     _, ax = plt.subplots(figsize=(6, 6))
-                    xb_im_denorm.show(ax, title=f"pred. class: {cl}")
+                    xb_im_denorm.show(ax, title=f"Predicted class: {cl}")
             return mult
 
     @deprecated(

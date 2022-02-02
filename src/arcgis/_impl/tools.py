@@ -32,6 +32,7 @@ from ._async.jobs import GeometryJob
 from arcgis.raster._util import _set_context as _set_raster_context
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing._job import RAJob
+from functools import lru_cache
 
 _log = logging.getLogger(__name__)
 
@@ -210,6 +211,18 @@ class BaseAnalytics(object):
         if isinstance(input_layer, arcgis.gis.Item):
             if input_layer.type.lower() == "feature service":
                 input_param = input_layer.layers[0]._lyr_dict
+                try:
+                    input_layer_url = input_param.get("url", "")
+                    if (
+                        isinstance(input_param, dict)
+                        and "serviceToken" not in input_param.keys()
+                    ):
+                        token = input_layer.layers[0]._gis._con._create_token(
+                            input_layer_url
+                        )
+                        input_param.update({"serviceToken": token})
+                except:
+                    pass
             elif input_layer.type.lower() == "feature collection":
                 fcdict = input_layer.get_data()
                 fc = arcgis.features.FeatureCollection(fcdict["layers"][0])
@@ -231,6 +244,16 @@ class BaseAnalytics(object):
                 input_param = input_layer.layer
         elif isinstance(input_layer, arcgis.gis.Layer):
             input_param = input_layer._lyr_dict
+            try:
+                input_layer_url = input_param.get("url", "")
+                if (
+                    isinstance(input_param, dict)
+                    and "serviceToken" not in input_param.keys()
+                ):
+                    token = input_layer._gis._con._create_token(input_layer_url)
+                    input_param.update({"serviceToken": token})
+            except:
+                pass
 
         elif isinstance(
             input_layer, tuple
@@ -327,7 +350,7 @@ class _GISService(object):
                     and self._con._auth.lower() != "anon"
                 ):
                     try:
-                        self._token = self._con.generate_portal_server_token(url)
+                        self._token = self._gis._con._create_token(url)
                     except Exception as e:  # GUESSED Auth Wrong, try anonymously
                         if (
                             str(e).find(
@@ -758,6 +781,27 @@ class _FeatureAnalysisTools(BaseAnalytics):
         return self.properties.tasks
 
     # ----------------------------------------------------------------------
+    def _output_name_dict(self, output_name, overwrite):
+        if output_name and isinstance(output_name, str):
+            output_name = {"serviceProperties": {"name": output_name}}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId": output_name.properties.serviceItemId,
+                    "overwrite": overwrite,
+                }
+            output_name = _lyr_dict
+        else:
+            output_name = None
+        return output_name
+
+    # ----------------------------------------------------------------------
     def aggregate_points(
         self,
         point_layer,
@@ -796,8 +840,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage count of points for each unique groupByField value is calculated.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional bool
             Returns the estimated number of credits for the current task.
         bin_type: Optional string
@@ -815,7 +859,6 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
 
         task = "AggregatePoints"
-
         if polygon_layer is None and bin_size is None and bin_size_unit is None:
             raise Exception(
                 "User must provide either the `polygon_layer` or binning information to use this tool."
@@ -826,21 +869,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         point_layer = self._feature_input(point_layer)
         if polygon_layer:
             polygon_layer = self._feature_input(polygon_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params = {}
@@ -941,21 +971,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             required_facilities_layer = self._feature_input(required_facilities_layer)
         if candidate_facilities_layer:
             candidate_facilities_layer = self._feature_input(candidate_facilities_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
         if line_barrier_layer:
@@ -1097,8 +1114,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             Determines if the value specified for timeOfDay is specified in UTC or in a time zone that is local to the location of the origins.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
 
         Returns
         -------
@@ -1110,21 +1127,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "ConnectOriginsToDestinations"
         origins_layer = self._feature_input(origins_layer)
         destinations_layer = self._feature_input(destinations_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
         if line_barrier_layer:
@@ -1231,8 +1235,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference and overwrite.
 
         Returns
         -------
@@ -1243,21 +1247,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CreateDriveTimeAreas"
 
         input_layer = self._feature_input(input_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
         if polygon_barrier_layer:
@@ -1351,40 +1342,17 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name: Optional dict
 
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference and overwrite.
+
         Returns
         -------
         route_layers : list (items)
         """
         if route_data_item:
             route_data_item = {"itemId": route_data_item.itemid}
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params = {}
@@ -1452,8 +1420,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             The shape of the buffer at the end of buffered line features.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
 
         Returns
         -------
@@ -1462,21 +1430,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         task = "CreateBuffers"
         input_layer = self._feature_input(input_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
         if estimate:
             params = {}
 
@@ -1569,8 +1524,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classificationType parameter.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
 
@@ -1582,8 +1537,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CalculateDensity"
 
         params = {}
-        if output_name is not None and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
@@ -1690,7 +1645,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
 
-        context : Optional string
+        context: Optional dict
 
         estimate: Optional Boolean. Returns the number of credit for the operation.
 
@@ -1700,20 +1655,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         task = "CreateViewshed"
         input_layer = self._feature_input(input_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params = {}
@@ -1798,7 +1741,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
 
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -1811,20 +1754,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -1883,8 +1814,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             A list of expressions. Each expression should be a dictionary that includes an operator (and/or), the index of layer in input_layers, and either a 'where' clause or a spatial relationship. Please refer documentation at http://developers.arcgis.com for more information on expressions.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
         future: optional boolean
@@ -1901,20 +1832,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["inputLayers"] = input_layers_param
@@ -1965,8 +1884,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             A list of field names and statistical types that will be used to summarize the output. Supported statistics include: Sum, Mean, Min, Max, and Stddev.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
         Returns
@@ -1975,20 +1894,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
 
         input_layer = self._feature_input(input_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             task = "DissolveBoundaries"
@@ -2062,8 +1969,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             The unit (eg. Miles, Minutes) to be used with the distance value(s) specified in the distance parameter to calculate the area.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
 
@@ -2077,20 +1984,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
 
         input_layer = self._feature_input(input_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -2162,7 +2057,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             Format of the data that will be extracted and downloaded.  Layer packages will always include file geodatabases. eg CSV, SHAPEFILE
         output_name : Optional string
             Additional properties such as output name of the item
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent and output spatial reference.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
@@ -2254,7 +2149,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
 
-        context : Optional string
+        context: Optional dict
 
         estimate: Optional Boolean. Returns the number of credit for the operation.
 
@@ -2267,20 +2162,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -2339,7 +2222,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         ----------------  ---------------------------------------------------------------
         output_name       Optional String. Output feature service name.
         ----------------  ---------------------------------------------------------------
-        context           Optional String. Additional settings such as processing extent and output spatial reference.
+        context           Optional String. Additional settings such as processing extent, output spatial reference, and overwrite.
         ----------------  ---------------------------------------------------------------
         estimate          Optional Boolean. Returns the number of credit for the operation.
         ================  ===============================================================
@@ -2351,20 +2234,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -2419,8 +2290,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             A list of expressions. Each expression should be a dictionary that includes an operator (and/or), the index of layer in input_layers, and either a 'where' clause or a spatial relationship. Please refer documentation at http://developers.arcgis.com for more information on creating expressions.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
 
@@ -2436,20 +2307,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             from arcgis.features._credits import _estimate_credits
@@ -2511,8 +2370,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             When the AnalysisLayer contains points and no AnalysisField is specified, you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the credit usage for the current task.
         shape_type : optional string, The shape of the polygon mesh the input features will be aggregated into.
@@ -2532,20 +2391,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         task = "FindHotSpots"
 
@@ -2645,8 +2492,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
             Additional properties such as output feature service name
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
 
         Returns
         -------
@@ -2668,20 +2515,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             line_barrier_layer = self._feature_input(line_barrier_layer)
         if polygon_barrier_layer:
             polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["measurementType"] = measurement_type
@@ -2786,8 +2621,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
           Values: Miles | Feet | Kilometers | Meters
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
 
         Returns
         -------
@@ -2806,20 +2641,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["analysisLayer"] = analysis_layer
@@ -2914,7 +2737,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                 feature service name.
         --------------------    ---------------------------------------------------------
         context                 Optional string. Additional settings such as processing
-                                extent and output spatial reference.
+                                extent, output spatial reference, and overwrite.
         --------------------    ---------------------------------------------------------
         estimate                Optional Boolean.  Returns the estimated number of
                                 credits for the current task.
@@ -2929,20 +2752,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["analysisLayer"] = analysis_layer
@@ -3003,7 +2814,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
 
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -3016,20 +2827,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "FindSimilarLocations"
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params = {}
@@ -3095,7 +2894,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
            output_name: outputName (str). Optional parameter.  Additional properties such as output feature service name.
 
-           context: context (str). Optional parameter.  Additional settings such as processing extent and output spatial reference.
+           context: context (str). Optional parameter.  Additional settings such as processing extent, output spatial reference, and overwrite.
 
            gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
@@ -3109,20 +2908,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         if extent_layer:
             extent_layer = self._feature_input(extent_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             task = "GenerateTessellations"
@@ -3201,7 +2988,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             An optional layer specifying point locations to calculate prediction values. This allows you to make predictions at specific locations of interest.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent and output spatial reference.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
@@ -3222,20 +3009,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if predict_at_point_layer:
             predict_at_point_layer = self._feature_input(predict_at_point_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -3337,8 +3112,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         output_name : Optional string
             Additional properties such as output feature service name.
 
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
 
         estimate: Optional bool
             Returns the estimated number of credits for the current task.
@@ -3353,20 +3128,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         target_layer = self._feature_input(target_layer)
         join_layer = self._feature_input(join_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["targetLayer"] = target_layer
@@ -3441,8 +3204,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             An array of values that describe how fields from the mergeLayer are to be modified.  By default all fields from both inputs will be carried across to the output.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
 
@@ -3455,21 +3218,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         input_layer = self._feature_input(input_layer)
         merge_layer = self._feature_input(merge_layer)
-
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params = {}
@@ -3532,8 +3282,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             The minimum distance separating all feature coordinates (nodes and vertices) as well as the distance a coordinate can move in X or Y (or both).
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
 
         Returns
         -------
@@ -3545,20 +3295,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         overlay_layer = self._feature_input(overlay_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -3652,7 +3390,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
 
-        context : Optional string
+        context: Optional dict
 
         point_barrier_layer: Optional FeatureSet/FeatureLayer
 
@@ -3676,20 +3414,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             start_layer = self._feature_input(start_layer)
         if end_layer:
             end_layer = self._feature_input(end_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
@@ -3832,20 +3558,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["analysisLayer"] = analysis_layer
@@ -3922,7 +3636,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage of shape (eg. length for lines) for each unique groupByField value is calculated.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent and output spatial reference.
         estimate: Optional bool
             Returns the estimated number of credits for the operation.
@@ -3946,20 +3660,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if sum_within_layer:
             sum_within_layer = self._feature_input(sum_within_layer)
         summary_layer = self._feature_input(summary_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["sumWithinLayer"] = sum_within_layer
@@ -4050,7 +3752,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
 
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -4064,20 +3766,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -4178,8 +3868,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage of shape (eg. length for lines) for each unique groupByField value is calculated.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
-            Additional settings such as processing extent and output spatial reference.
+        context: Optional dict
+            Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional bool
             Returns the estimated number of credits for the operation.
 
@@ -4194,21 +3884,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         sum_nearby_layer = self._feature_input(sum_nearby_layer)
         summary_layer = self._feature_input(summary_layer)
-
-        if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
-        elif output_name and isinstance(output_name, FeatureLayer):
-            _lyr_dict = {
-                "serviceProperties": {
-                    "name": output_name.properties.name,
-                    "serviceUrl": output_name.container.url,
-                }
-            }
-            if "serviceItemId" in output_name.properties:
-                _lyr_dict["itemProperties"] = {
-                    "itemId": output_name.properties.serviceItemId,
-                }
-            output_name = _lyr_dict
+        overwrite = context.pop("overwrite", False) if context else False
+        output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params = {}
@@ -6280,12 +5957,24 @@ class _RasterAnalysisTools(BaseAnalytics):
         if isinstance(input_layer, Raster):
             if hasattr(input_layer, "_engine_obj"):
                 input_layer = input_layer._engine_obj
-        if isinstance(input_layer, arcgis.gis.Item):
+        if isinstance(input_layer, Item):
             if input_layer.type == "Image Collection":
                 input_param = {"itemId": input_layer.itemid}
             else:
                 if "layers" in input_layer:
                     input_param = input_layer.layers[0]._lyr_dict
+                    try:
+                        if (
+                            isinstance(input_param, dict)
+                            and "url" in input_param.keys()
+                        ):
+                            url = input_param["url"]
+                            if "token" not in url:
+                                token = input_layer._gis._con._create_token(url)
+                                url = input_param["url"] + "?token=" + token
+                                input_param.update({"url": url})
+                    except:
+                        pass
                 else:
                     raise TypeError("No layers in input layer Item")
 
@@ -6313,6 +6002,16 @@ class _RasterAnalysisTools(BaseAnalytics):
                     if "imageServiceParameters" in layer_options:
                         # get renderingRule and mosaicRule
                         input_param.update(layer_options["imageServiceParameters"])
+
+                try:
+                    if isinstance(input_param, dict) and "url" in input_param.keys():
+                        url = input_param["url"]
+                        if "token" not in url:
+                            token = input_layer._gis._con._create_token(url)
+                            url = input_param["url"] + "?token=" + token
+                            input_param.update({"url": url})
+                except:
+                    pass
 
         elif isinstance(input_layer, dict):
             input_param = input_layer
@@ -6706,7 +6405,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                     else:
                         uri_list.append(item)
                 elif isinstance(item, ImageryLayer):
-                    url_list.append(item.url)
+                    url = item.url
+                    try:
+                        if "token" not in url:
+                            token = item._gis._con._create_token(url)
+                            url = url + "?token=" + token
+                    except:
+                        pass
+                    url_list.append(url)
 
             if len(item_id_list) > 0:
                 input_rasters_dict = {"itemIds": item_id_list}
@@ -13664,6 +13370,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         to_classes=None,
         filter_method="CHANGED_PIXELS_ONLY",
         transition_class_colors="AVERAGE",
+        from_classname_field=None,
+        to_classname_field=None,
         output_name=None,
         context=None,
         future=False,
@@ -13759,19 +13467,38 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_name=output_name, task=task, output_properties=kwargs
         )
 
-        gpjob = self._tbx.compute_change_raster(
-            input_from_raster=input_from_raster,
-            input_to_raster=input_to_raster,
-            compute_change_method=compute_change_method,
-            from_classes=from_classes,
-            to_classes=to_classes,
-            filter_method=filter_method,
-            transition_class_colors=transition_class_colors,
-            output_name=output_raster,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (current_version is not None) and current_version < 10.91:
+                gpjob = self._tbx.compute_change_raster(
+                    input_from_raster=input_from_raster,
+                    input_to_raster=input_to_raster,
+                    compute_change_method=compute_change_method,
+                    from_classes=from_classes,
+                    to_classes=to_classes,
+                    filter_method=filter_method,
+                    transition_class_colors=transition_class_colors,
+                    output_name=output_raster,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
+            elif (current_version is not None) and current_version >= 10.91:
+                gpjob = self._tbx.compute_change_raster(
+                    input_from_raster=input_from_raster,
+                    input_to_raster=input_to_raster,
+                    compute_change_method=compute_change_method,
+                    from_classes=from_classes,
+                    to_classes=to_classes,
+                    filter_method=filter_method,
+                    transition_class_colors=transition_class_colors,
+                    from_classname_field=from_classname_field,
+                    to_classname_field=to_classname_field,
+                    output_name=output_raster,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -14001,6 +13728,348 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob)
         return RAJob(gpjob).result()
 
+    def summarize_categorical_raster(
+        self,
+        input_categorical_raster,
+        dimension=None,
+        area_of_interest=None,
+        area_of_interest_id_field=None,
+        output_summary_table_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
+        """
+        Generates a table containing the pixel count for each class, in each slice of an input categorical raster.
+        Function available in ArcGIS Image Server 10.9.1 and higher.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_from_raster                        Required ImageryLayer object. The multidimensional, categorical raster to be summarized.
+        ------------------------------------     --------------------------------------------------------------------
+        dimension                                Optional string. The name of the dimension to use for the summary. If
+                                                 there is more than one dimension and no value is specified, all slices
+                                                 will be summarized using all combinations of dimension values.
+        ------------------------------------     --------------------------------------------------------------------
+        area_of_interest                         Optional FeatureLayer. The polygon feature layer containing the area
+                                                 or areas of interest to use when calculating the pixel count per category.
+                                                 If no area of interest is specified, the entire raster dataset will be
+                                                 included in the analysis.
+        ------------------------------------     --------------------------------------------------------------------
+        area_of_interest_id_field                Optional string/integer. The field in the polygon feature layer that
+                                                 defines each area of interest.
+        ------------------------------------     --------------------------------------------------------------------
+        output_summary_table_name                Optional string. Name of the output feature item or table item to be created
+                                                 If not provided, a random name is generated by the method and used as
+                                                 the output name.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Context contains additional settings that affect task execution.
+
+                                                 context parameter overwrites values set through arcgis.env parameter
+
+                                                 This function has the following settings:
+
+                                                 - Extent (extent): A bounding box that defines the analysis area.
+
+                                                    Example:
+                                                        {"extent": {"xmin": -122.68,
+                                                        "ymin": 45.53,
+                                                        "xmax": -122.45,
+                                                        "ymax": 45.6,
+                                                        "spatialReference": {"wkid": 4326}}}
+
+                                                 - Output Spatial Reference (outSR): The output raster will be
+                                                    projected into the output spatial reference.
+
+                                                    Example:
+                                                        {"outSR": {spatial reference}}
+
+                                                 - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                    Raster Processing (CPU) service instances.
+
+                                                    Example:
+                                                        Syntax example with a specified number of processing instances:
+
+                                                        {"parallelProcessingFactor": "2"}
+
+                                                        Syntax example with a specified percentage of total
+                                                        processing instances:
+
+                                                        {"parallelProcessingFactor": "60%"}
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
+                                                 results will be returned asynchronously.
+        ------------------------------------     --------------------------------------------------------------------
+        folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                                 not exist, with the given folder name and persists the output in this folder.
+                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                                 Example:
+                                                    {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+        ====================================     ====================================================================
+
+        :return: Feature Layer
+
+        """
+
+        task = "SummarizeCategoricalRaster"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_categorical_raster = self._layer_input(
+            input_layer=input_categorical_raster
+        )
+
+        if area_of_interest is not None:
+            area_of_interest = self._feature_input(input_layer=area_of_interest)
+
+        folder = None
+        folderId = None
+
+        if output_summary_table_name is None:
+            output_summary_table_name = str(task) + "_" + _id_generator()
+
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder = folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+            output_summary_table_name = json.dumps(
+                {
+                    "serviceProperties": {"name": output_summary_table_name},
+                    "itemProperties": {"folderId": folderId},
+                }
+            )
+        else:
+            output_summary_table_name = json.dumps(
+                {"serviceProperties": {"name": output_summary_table_name}}
+            )
+
+        gpjob = self._tbx.summarize_categorical_raster(
+            input_categorical_raster=input_categorical_raster,
+            dimension=dimension,
+            area_of_interest=area_of_interest,
+            area_of_interest_id_field=area_of_interest_id_field,
+            output_summary_table_name=output_summary_table_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
+
+    def train_random_trees_regression_model(
+        self,
+        input_rasters,
+        input_target_data,
+        target_value_field=None,
+        target_dimension_field=None,
+        raster_dimension=None,
+        max_number_of_trees=50,
+        max_tree_depth=30,
+        max_number_of_samples=100000,
+        average_points_per_cell="KEEP_ALL_POINTS",
+        percent_samples_for_testing=10,
+        output_scatter_plots_name=None,
+        output_sample_features_name=None,
+        output_importance_table_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
+        """
+        Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
+        Function available in ArcGIS Image Server 10.9.1 and higher.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_rasters                            Required ImageryLayer object. The single-band, multidimensional, or
+                                                 multiband raster datasets, or mosaic datasets, containing explanatory variables.
+        ------------------------------------     --------------------------------------------------------------------
+        input_target_data                        Required FeatureLayer or ImageryLayer. The raster or point feature class
+                                                 containing the target variable (dependant variable) data.
+        ------------------------------------     --------------------------------------------------------------------
+        target_value_field                       Optional string. The field name of the information to model in the target
+                                                 point feature class or raster dataset.
+        ------------------------------------     --------------------------------------------------------------------
+        target_dimension                         Optional string. A date field or numeric field in the input point feature
+                                                 class that defines the dimension values.
+        ------------------------------------     --------------------------------------------------------------------
+        raster_dimension                         Optional string. The dimension name of the input multidimensional raster
+                                                 (explanatory variables) that links to the dimension in the target data.
+        ------------------------------------     --------------------------------------------------------------------
+        max_number_of_trees                      Optional integer. The maximum number of trees in the forest. Increasing
+                                                 the number of trees will lead to higher accuracy rates, although this
+                                                 improvement will level off. The number of trees increases the processing time linearly.
+                                                 The default is 50.
+        ------------------------------------     --------------------------------------------------------------------
+        max_tree_depth                           Optional integer. The maximum depth of each tree in the forest. Depth
+                                                 determines the number of rules each tree can create, resulting in a decision.
+                                                 Trees will not grow any deeper than this setting.
+                                                 The default is 30.
+        ------------------------------------     --------------------------------------------------------------------
+        max_number_of_samples                    Optional integer. The maximum number of samples that will be used for
+                                                 the regression analysis. A value that is less than or equal to 0 means
+                                                 that the system will use all the samples from the input target raster
+                                                 or point feature class to train the regression model.
+                                                 The default value is 10,000.
+        ------------------------------------     --------------------------------------------------------------------
+        average_points_per_cell                  Optional string. Specifies whether the average will be calculated when
+                                                 multiple training points fall into one cell. This parameter is applicable
+                                                 only when the input target is a point feature class.
+                                                 Options include:
+                                                 - "KEEP_ALL_POINTS" — All points will be used when multiple training points fall into a single cell.
+                                                                       This is the default.
+                                                 - "AVERAGE_POINTS_PER_CELL" —The average value of the training points within a cell will be calculated.
+        ------------------------------------     --------------------------------------------------------------------
+        output_scatter_plots_name                Optional string. The name for the output scatterplots includes scatterplots
+                                                 of training data, test data, and location test data.
+        ------------------------------------     --------------------------------------------------------------------
+        output_sample_features_name              Optional string. Name of the output feature item a feature class containing
+                                                 target values and predicted values for training points, test points, and location test points.
+        ------------------------------------     --------------------------------------------------------------------
+        percent_samples_for_testing              Optional float. Defines the percentage of test points used for error checking.
+                                                 The tool checks for three types of errors: errors on training points,
+                                                 errors on test points, and errors on test location points.
+                                                 The default is 10.
+        ------------------------------------     --------------------------------------------------------------------
+        output_importance_table_name             Optional string. Name of the output feature item or table item to be created.
+                                                 This name is to create a table containing information describing the
+                                                 importance of each explanatory variable used in the model. A larger
+                                                 number indicates the corresponding variable is more correlated to the
+                                                 predicted variable and will contribute more in prediction. Values range
+                                                 between 0 and 1, and the sum of all the values equals 1.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Context contains additional settings that affect task execution.
+
+                                                 context parameter overwrites values set through arcgis.env parameter
+
+                                                 This function has the following settings:
+
+                                                 - Cell size (cellSize) - Set the output raster cell size, or resolution
+
+                                                 - Extent (extent): A bounding box that defines the analysis area.
+
+                                                    Example:
+                                                        {"extent": {"xmin": -122.68,
+                                                        "ymin": 45.53,
+                                                        "xmax": -122.45,
+                                                        "ymax": 45.6,
+                                                        "spatialReference": {"wkid": 4326}}}
+
+                                                 - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                    Raster Processing (CPU) service instances.
+
+                                                    Example:
+                                                        Syntax example with a specified number of processing instances:
+
+                                                        {"parallelProcessingFactor": "2"}
+
+                                                        Syntax example with a specified percentage of total
+                                                        processing instances:
+
+                                                        {"parallelProcessingFactor": "60%"}
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
+                                                 results will be returned asynchronously.
+        ------------------------------------     --------------------------------------------------------------------
+        folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                                 not exist, with the given folder name and persists the output in this folder.
+                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                                 Example:
+                                                    {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+        ====================================     ====================================================================
+
+        :return: Dictionary
+
+        """
+
+        task = "TrainRandomTreesRegressionModel"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_rasters = self._set_multiple_raster_inputs(input_rasters=input_rasters)
+
+        if isinstance(input_target_data, _FEATURE_INPUTS):
+            input_target_data = self._feature_input(input_target_data)
+        elif isinstance(input_target_data, Item):
+            input_target_data = {"itemId": input_target_data.itemid}
+        else:
+            input_target_data = self._layer_input(input_target_data)
+
+        if output_scatter_plots_name is not None:
+            if isinstance(output_scatter_plots_name, str):
+                if (
+                    "/fileShares/" in output_scatter_plots_name
+                    or "/rasterStores/" in output_scatter_plots_name
+                ):
+                    output_scatter_plots_name = {"uri": output_scatter_plots_name}
+                else:
+                    output_scatter_plots_name = {"name": output_scatter_plots_name}
+
+        if output_sample_features_name is not None:
+            output_sample_features_name = json.dumps(
+                {"serviceProperties": {"name": output_sample_features_name}}
+            )
+
+        if output_importance_table_name is not None:
+            output_importance_table_name = json.dumps(
+                {"serviceProperties": {"name": output_importance_table_name}}
+            )
+
+        gpjob = self._tbx.train_random_trees_regression_model(
+            input_rasters=input_rasters,
+            input_target_data=input_target_data,
+            target_value_field=target_value_field,
+            target_dimension_field=target_dimension_field,
+            raster_dimension=raster_dimension,
+            output_importance_table_name=output_importance_table_name,
+            max_number_of_trees=max_number_of_trees,
+            max_tree_depth=max_tree_depth,
+            max_number_of_samples=max_number_of_samples,
+            average_points_per_cell=average_points_per_cell,
+            output_scatter_plots_name=output_scatter_plots_name,
+            output_sample_features_name=output_sample_features_name,
+            percent_samples_for_testing=percent_samples_for_testing,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+
+        gpjob._is_ra = (True,)
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
+
 
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):
@@ -14218,7 +14287,7 @@ class _GeoanalyticsTools(_AsyncService):
 
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -14971,7 +15040,7 @@ class _GeoanalyticsTools(_AsyncService):
 
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -15056,7 +15125,7 @@ class _GeoanalyticsTools(_AsyncService):
 
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -15126,7 +15195,7 @@ class _GeoanalyticsTools(_AsyncService):
 
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -15195,7 +15264,7 @@ class _GeoanalyticsTools(_AsyncService):
 
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -17260,6 +17329,7 @@ class _Tools(object):
         self._orthomapping = None
         self._packaging = None
 
+    @lru_cache(maxsize=255)
     def _validate_url(self, url):
         res = self._gis._private_service_url(url)
         if "privateServiceUrl" in res:
@@ -17269,6 +17339,7 @@ class _Tools(object):
         return url
 
     @property
+    @lru_cache(maxsize=255)
     def geocoders(self):
         """the geocoders, if available and configured"""
         if self._geocoders is not None:
@@ -17293,6 +17364,7 @@ class _Tools(object):
         return self._geocoders
 
     @property
+    @lru_cache(maxsize=255)
     def geometry(self):
         """the portal's geometry  tools, if available and configured"""
         if self._geometry is not None:
@@ -17310,6 +17382,7 @@ class _Tools(object):
             return None
 
     @property
+    @lru_cache(maxsize=255)
     def rasteranalysis(self):
         """the portal's raster analysis tools, if available and configured"""
         if self._raster_analysis is not None:
@@ -17334,6 +17407,7 @@ class _Tools(object):
             return None
 
     @property
+    @lru_cache(maxsize=255)
     def geoanalytics(self):
         """the portal's bigdata analytics tools, if available and configured"""
         if self._geoanalytics is not None:
@@ -17353,6 +17427,7 @@ class _Tools(object):
             return None
 
     @property
+    @lru_cache(maxsize=255)
     def featureanalysis(self):
         """the portal's spatial analysis tools, if available and configured"""
         if self._analysis is not None:
@@ -17375,6 +17450,7 @@ class _Tools(object):
             return None
 
     @property
+    @lru_cache(maxsize=255)
     def packaging(self):
         """The Portal's Packaging Tools"""
         if self._packaging is not None:
@@ -17396,6 +17472,7 @@ class _Tools(object):
         return None
 
     @property
+    @lru_cache(maxsize=255)
     def orthomapping(self):
         """the portal's Ortho-Mapping tools, if available and configured"""
         if self._analysis is not None:

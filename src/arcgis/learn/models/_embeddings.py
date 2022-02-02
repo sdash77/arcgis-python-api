@@ -14,14 +14,16 @@ HAS_BEAUTIFULSOUP = True
 
 
 try:
-    import cv2
     import torch
-    import h5py
     import pandas as pd
     from PIL import Image as PIL_Image
     from pathlib import Path
-    import plotly.express as px
-    import plotly.graph_objs as go
+    from arcgis.auth.tools import LazyLoader
+
+    cv2 = LazyLoader("cv2")
+    h5py = LazyLoader("h5py")
+    px = LazyLoader("plotly.express")
+    go = LazyLoader("plotly.graph_objs")
     from torchvision import models
     from sklearn.cluster import DBSCAN, KMeans
     from sklearn.decomposition import PCA
@@ -55,11 +57,6 @@ except Exception as e:
     HAS_BEAUTIFULSOUP = False
 else:
     warnings.filterwarnings("ignore", category=UserWarning, module="bs4")
-
-try:
-    from transformers import AutoTokenizer, AutoModel
-except Exception as e:
-    HAS_TRANSFORMER = False
 
 max_token_length = 512
 allowed_text_extensions = ["csv", "txt", "json"]
@@ -296,6 +293,10 @@ class Embeddings:
         return model.eval()
 
     def _load_text_model(self, backbone=None):
+        try:
+            from transformers import AutoTokenizer, AutoModel
+        except Exception as e:
+            HAS_TRANSFORMER = False
         if not HAS_TRANSFORMER:
             raise Exception("This module requires transformers library.")
         if backbone is None:

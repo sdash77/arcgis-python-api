@@ -1,6 +1,7 @@
 """
 This contains an API to work with and manage the Kubernetes Sharing API
 """
+import io
 import os
 import copy
 import json
@@ -17,7 +18,7 @@ from arcgis._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "1.9.1"
+__version__ = "2.0.0"
 
 _log = logging.getLogger(__name__)
 
@@ -55,6 +56,7 @@ class KbertnetesPy(object):
         client_secret = kwargs.get("client_secret", None)
         trust_env = kwargs.get("trust_env", None)
         self._timeout = kwargs.pop("timeout", 600)
+        custom_adapter = kwargs.pop("custom_adapter", None)
         url = url.strip()  # be permissive in accepting home app urls
         homepos = url.find("/home")
         if homepos != -1:
@@ -68,7 +70,12 @@ class KbertnetesPy(object):
                 url = arcpy.GetActivePortalURL()
                 self.url = url
             except ImportError:
-                raise ImportError("Could not import arcpy")
+                raise ImportError(
+                    (
+                        "The login failed because the arcpy library could not be found in your Python environment. "
+                        "Try logging in with a different set of credentials."
+                    )
+                )
             except:
                 raise ValueError("Could not use Pro authentication.")
         else:
@@ -132,6 +139,7 @@ class KbertnetesPy(object):
                     token=token,
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
                 )
             else:
                 self.con = Connection(
@@ -154,6 +162,7 @@ class KbertnetesPy(object):
                     token=token,
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
+                    custom_adapter=custom_adapter,
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -1403,12 +1412,27 @@ class KbertnetesPy(object):
         # Build the files list (tuples)
         files = []
         if data:
-            if _is_http_url(data):
+            if isinstance(data, (io.BytesIO, io.StringIO)) == False and _is_http_url(
+                data
+            ):
                 data = request.urlretrieve(data)[0]
-            else:
+            elif isinstance(data, (io.BytesIO, io.StringIO)) == False:
                 if not os.path.isfile(os.path.abspath(data)):
                     raise RuntimeError("File(" + data + ") not found.")
-            files.append(("file", data, os.path.basename(data)))
+            if isinstance(data, (io.BytesIO, io.StringIO)):
+
+                fn = item_properties.get("fileName", None)
+                if fn is None:
+                    raise ValueError(
+                        (
+                            "When using BytesIO or StringIO, a file name must be given in "
+                            "the item_properties as item_properties['fileName'] = 'mydata.<extension>'"
+                        )
+                    )
+                data.seek(0)
+                files.append(("file", data, fn))
+            else:
+                files.append(("file", data, os.path.basename(data)))
         if metadata:
             if _is_http_url(metadata):
                 metadata = request.urlretrieve(metadata)[0]
@@ -1884,8 +1908,11 @@ class KbertnetesPy(object):
         if data:
             if isinstance(data, dict):
                 postdata["text"] = data  # json.dumps(data)
+            elif isinstance(data, (io.BytesIO, io.StringIO)):
+                files.append(("file", data, item_properties.get("fileName", None)))
             elif _is_http_url(data):
                 data = request.urlretrieve(data)[0]
+
             elif isinstance(data, str) and (len(data) < 32767) and os.path.isfile(data):
                 files.append(("file", data, os.path.basename(data)))
             else:

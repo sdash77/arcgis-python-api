@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 from ._arcgis_model import _EmptyData, _change_tail, ArcGISModel, _get_device
-from ._codetemplate import code, image_classifier_prf
+from ._codetemplate import code, image_classifier_prf, panoptic_segmenter_prf
 import warnings
 import arcgis
 import sys, os, importlib
@@ -12,7 +12,6 @@ logger = logging.getLogger()
 
 HAS_OPENCV = True
 HAS_FASTAI = True
-HAS_ARCPY = True
 
 try:
     import torch
@@ -64,11 +63,6 @@ try:
     import cv2
 except Exception:
     HAS_OPENCV = False
-
-try:
-    import arcpy
-except Exception:
-    HAS_ARCPY = False
 
 
 class ModelExtension(ArcGISModel):
@@ -166,6 +160,10 @@ class ModelExtension(ArcGISModel):
 
                 self.learn.metrics = [accuracy]
             self._code = image_classifier_prf
+        elif self._data.dataset_type == "Panoptic":
+            self._code = panoptic_segmenter_prf
+            self._kwargs["n_masks"] = self._data.K
+            self._kwargs["instance_classes"] = self._data.instance_classes
         else:
             self._code = code
         self._arcgis_init_callback()  # make first conv weights learnable
@@ -216,6 +214,18 @@ class ModelExtension(ArcGISModel):
             _emd_template["IsEdgeDetection"] = getattr(
                 self, "_is_edge_detection", False
             )
+            _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
+
+        elif self._data.dataset_type == "Panoptic":
+            _emd_template["ModelType"] = "PanopticSegmenter"
+            if save_inference_file:
+                _emd_template["InferenceFunction"] = "ArcGISPanopticSegmenter.py"
+            else:
+                _emd_template[
+                    "InferenceFunction"
+                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISPanopticSegmenter.py"
+            _emd_template["ModelConfiguration"] = "_panoptic_inferencing"
+
         else:
             _emd_template["ModelType"] = "ObjectDetection"
             if save_inference_file:
@@ -224,7 +234,7 @@ class ModelExtension(ArcGISModel):
                 _emd_template[
                     "InferenceFunction"
                 ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
-        _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
+            _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["Classes"] = []
         _emd_template["ModelConfigurationFile"] = "ModelConfiguration.py"
@@ -286,10 +296,11 @@ class ModelExtension(ArcGISModel):
 
         modelconfclass = emd["ModelFileConfigurationClass"]
 
-        sys.path.append(os.path.dirname(modelconf))
-        model_configuration = getattr(
-            importlib.import_module("{}".format(modelconf.name[0:-3])), modelconfclass
-        )
+        spec = importlib.util.spec_from_file_location(modelconfclass, modelconf)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        model_configuration = getattr(module, modelconfclass)
 
         backbone = emd["ModelParameters"].get("backbone", None)
 
@@ -348,7 +359,9 @@ class ModelExtension(ArcGISModel):
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
-
+            if dataset_type == "Panoptic":
+                data.K = emd["Kwargs"]["n_masks"]
+                data.instance_classes = emd["Kwargs"]["instance_classes"]
         data.resize_to = resize_to
         mextnsn = cls(
             data,
@@ -368,6 +381,9 @@ class ModelExtension(ArcGISModel):
     def _model_metrics(self):
         if self._data.dataset_type == "Classified_Tiles":
             return {"accuracy": "{0:1.4e}".format(self._get_model_metrics())}
+        elif self._data.dataset_type == "Panoptic":
+            pq = self.panoptic_quality(show_progress=False)
+            return {"panoptic_quality": "{:.4f}".format(pq)}
         else:
             return {
                 "average_precision_score": self.average_precision_score(
@@ -426,6 +442,11 @@ class ModelExtension(ArcGISModel):
                 self.mIOU = self._mIOU
                 self.per_class_metrics = self._per_class_metrics
                 self.accuracy = self._accuracy
+
+        elif self._data.dataset_type == "Panoptic":
+            self.show_results = self._show_results_panoptic
+            self.panoptic_quality = self._panoptic_quality
+
         else:
             if self._is_multispectral:
                 self.show_results = self._show_results_multispectral
@@ -436,6 +457,9 @@ class ModelExtension(ArcGISModel):
             self.predict_video = self._predict_video
 
     def _accuracy(self):
+        """
+        Returns accuracy of the model.
+        """
         try:
             return self.learn.validate()[1].tolist()
         except Exception as e:
@@ -533,6 +557,45 @@ class ModelExtension(ArcGISModel):
 
         self._show_results_modified(rows=rows, thresh=thresh, model=self, **kwargs)
 
+    def _show_results_panoptic(self, rows=5, thresh=0.5, **kwargs):
+
+        """
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional Integer. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
+        thresh                  Optional Float. The probability above which
+                                a detection will be considered valid.
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        alpha                   Optional Float. Default value is 0.5.
+                                Opacity of the lables for the corresponding
+                                images. Values range between 0 and 1, where
+                                1 means opaque.
+        ---------------------   -------------------------------------------
+        random_colors           Optional Boolean. Default value is False.
+                                Assigns randomized colors to each class and
+                                instance.
+        =====================   ===========================================
+        """
+        self._check_requisites()
+        # Limit the number of rows to validation dataset length
+        if rows > len(self._data.valid_ds):
+            rows = len(self._data.valid_ds)
+
+        from ._max_deeplab_utils import show_results_panoptic
+
+        show_results_panoptic(self, rows=rows, thresh=thresh, **kwargs)
+
     def _show_results_edge_detection(self, rows=5, thresh=0.5, thinning=True, **kwargs):
 
         """
@@ -594,7 +657,7 @@ class ModelExtension(ArcGISModel):
             rows = len(self._data.valid_ds)
 
         ds_type = DatasetType.Valid
-        n_items = rows ** 2 if self.learn.data.train_ds.x._square_show_res else rows
+        n_items = rows**2 if self.learn.data.train_ds.x._square_show_res else rows
         if self.learn.dl(ds_type).batch_size < n_items:
             n_items = self.learn.dl(ds_type).batch_size
         ds = self.learn.dl(ds_type).dataset
@@ -748,6 +811,25 @@ class ModelExtension(ArcGISModel):
             show_progress=show_progress,
         )
         return acc
+
+    def _panoptic_quality(self, show_progress=True, **kwargs):
+        """
+        Computes the Panoptic Quality metric for panoptic segmentation.
+
+         =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        show_progress           Optional bool. Displays the progress bar if
+                                True.
+        =====================   ===========================================
+
+        :return: `float`
+
+        """
+        from ._max_deeplab_utils import compute_panoptic_quality
+
+        pq = compute_panoptic_quality(self, show_progress, **kwargs)
+        return pq
 
     def _predict(
         self,

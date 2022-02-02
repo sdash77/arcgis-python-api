@@ -548,6 +548,15 @@ class PointCNN(ArcGISModel):
                                 folder in input path.
         =====================   ===========================================
 
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        batch_size              Optional integer. The number of blocks to process
+                                in one batch. Default is set to 1.
+        =====================   ===========================================
+
         :return: Path where files are dumped.
         """
 

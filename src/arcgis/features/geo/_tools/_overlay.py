@@ -173,7 +173,7 @@ def _erase(df1, df2):
             [geom] + list(df2.geometry.iloc[neighbours]),
         )
         new_g.append(new)
-    differences = GeoSeries(new_g, index=df1.index)
+    differences = pd.Series(new_g, index=df1.index)
     geom_diff = differences[~differences.is_empty].copy()
     dfdiff = df1[~differences.is_empty].copy()
     dfdiff[dfdiff._geometry_column_name] = geom_diff

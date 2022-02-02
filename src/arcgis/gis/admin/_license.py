@@ -248,11 +248,32 @@ class Bundle(object):
     @property
     def users(self):
         """returns a list of users assigned the application bundle"""
-        if self._users is None:
-            self._users = self._gis.users.search(
-                "appbundle:%s" % self.properties.appBundleItemId
-            )
-        return self._users
+        url = f"{self._gis._portal.resturl}/portals/self/users/search"
+        params = {
+            "f": "json",
+            "sortField": "fullname",
+            "sortOrder": "asc",
+            "q": f"appbundle: {self.properties.appBundleItemId}",
+            "start": 1,
+            "num": 60,
+            "total": 0,
+            "nextStart": -1,
+        }
+        res = self._con.get(url, params)
+        final = dict(res)
+        while res["nextStart"] > 0:
+            params["start"] = res["nextStart"]
+            res = self._con.get(url, params)
+            final["results"].extend(res["results"])
+            if res["nextStart"] == -1:
+                break
+        from arcgis.gis import User
+
+        users = [
+            User(gis=self._gis, username=user["username"], userdict=None)
+            for user in final["results"]
+        ]
+        return users
 
     # ----------------------------------------------------------------------
     def __len__(self):
@@ -261,12 +282,12 @@ class Bundle(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         """ """
-        return "<AppBundle: %s >" % self.properties["name"]
+        return "<AppBundle: %s>" % self.properties["name"]
 
     # ----------------------------------------------------------------------
     def __repr__(self):
         """ """
-        return "<AppBundle: %s >" % self.properties["name"]
+        return "<AppBundle: %s>" % self.properties["name"]
 
     # ----------------------------------------------------------------------
     def assign(self, users):
@@ -545,7 +566,7 @@ class License(object):
         return {}
 
     # ----------------------------------------------------------------------
-    def assign(self, username, entitlements, suppress_email=True):
+    def assign(self, username, entitlements, suppress_email=True, overwrite=True):
         """
         grants a user an entitlement.
 
@@ -555,12 +576,15 @@ class License(object):
         username            required string, the name of the user you wish to
                             assign an entitlement to.
         ---------------     ----------------------------------------------------
-        entitlments         required list, a list of entitlements values
+        entitlements        required list, a list of entitlements values
         ---------------     ----------------------------------------------------
-        suppress_email       optional boolean, if True, the org will not notify
+        suppress_email      optional boolean, if True, the org will not notify
                             a user that their entitlements has changed (default)
                             If False, the org will send an email notifying a
                             user that their entitlements have changed.
+        ---------------     ----------------------------------------------------
+        overwrite           optional boolean, if True, existing entitlements
+                            for the user are dropped
         ===============     ====================================================
 
         :return:
@@ -569,6 +593,15 @@ class License(object):
         item_id = self.properties["listing"]["itemId"]
         if isinstance(entitlements, str):
             entitlements = entitlements.split(",")
+
+        if not overwrite:
+            existing = self.user_entitlement(username)
+            if existing and "entitlements" in existing:
+                entitlement_set = set(existing["entitlements"])
+                for e in entitlements:
+                    entitlement_set.add(e)
+                entitlements = list(entitlement_set)
+
         params = {
             "f": "json",
             "userEntitlements": {"users": [username], "entitlements": entitlements},

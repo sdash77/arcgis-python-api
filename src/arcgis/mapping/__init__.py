@@ -10,8 +10,10 @@ from ._types import (
     WebScene,
     MapImageLayer,
     MapImageLayerManager,
+    EnterpriseMapImageLayerManager,
     VectorTileLayer,
     VectorTileLayerManager,
+    EnterpriseVectorTileLayerManager,
     OfflineMapAreaManager,
     PackagingJob,
 )
@@ -24,8 +26,16 @@ from .forms import (
     FormElement,
     FormCollection,
 )
-from arcgis.mapping._scenelyrs import Object3DLayer, IntegratedMeshLayer, Point3DLayer
+from arcgis.mapping._scenelyrs import (
+    Object3DLayer,
+    IntegratedMeshLayer,
+    Point3DLayer,
+)
 from arcgis.mapping._scenelyrs import PointCloudLayer, BuildingLayer
+from arcgis.mapping._scenelyrs import (
+    SceneLayerManager,
+    EnterpriseSceneLayerManager,
+)
 from arcgis.mapping._msl import (
     MapServiceLayer,
     MapFeatureLayer,
@@ -41,10 +51,14 @@ __all__ = [
     "WebScene",
     "MapImageLayer",
     "MapImageLayerManager",
+    "EnterpriseMapImageLayerManager",
     "VectorTileLayer",
     "VectorTileLayerManager",
+    "EnterpriseVectorTileLayerManager",
     "export_map",
     "get_layout_templates",
     "OfflineMapAreaManager",
     "SceneLayer",
+    "SceneLayerManager",
+    "EnterpriseSceneLayerManager",
 ]

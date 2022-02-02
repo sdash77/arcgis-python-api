@@ -9,49 +9,33 @@ import math
 import time
 from pathlib import Path
 import traceback
-
 import arcgis
 from arcgis.features import FeatureLayer
 
-HAS_SK_LEARN = True
-HAS_AUTOML = True
-HAS_FASTAI = True
-HAS_NUMPY = True
+
+HAS_AUTO_ML_DEPS = True
 import_exception = None
 
 try:
     from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
     from arcgis.learn._utils.tabular_data import TabularDataObject
     from arcgis.learn._utils.common import _get_emd_path
+
+    HAS_FASTAI = True
 except:
     import_exception = traceback.format_exc()
     HAS_FASTAI = False
 
 try:
-    from supervised.automl import AutoML as base_AutoML
-except Exception as e:
-    import_exception = "\n".join(
-        traceback.format_exception(type(e), e, e.__traceback__)
-    )
-    HAS_AUTOML = False
-
-try:
+    import sklearn
+    from sklearn import *
     import numpy as np
     import pandas as pd
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
     )
-    HAS_NUMPY = False
-
-try:
-    import sklearn
-    from sklearn import *
-except Exception as e:
-    import_exception = "\n".join(
-        traceback.format_exception(type(e), e, e.__traceback__)
-    )
-    HAS_SK_LEARN = False
+    HAS_AUTO_ML_DEPS = False
 
 HAS_FAST_PROGRESS = True
 try:
@@ -116,9 +100,18 @@ class AutoML(object):
                             Possible values are:
                             For binary classification - logloss (default), auc, f1, average_precision,
                             accuracy.
-                            For mutliclass classification - logloss (default), f1, accuracy
+                            For multiclass classification - logloss (default), f1, accuracy
                             For regression - rmse (default), mse, mae, r2, mape, spearman, pearson
 
+                            Note - If there are only 2 unique values in the target, then
+                            binary classification is performed,
+                            If number of unique values in the target is between 2 and 20 (included), then
+                            multiclass classification is performed,
+                            In all other cases, regression is performed on the dataset.
+    ---------------------   -------------------------------------------
+    n_jobs                  Optional. Int.
+                            Number of CPU cores to be used. By default, it is set to -1 which uses
+                            all processes.
     =====================   ===========================================
 
     :return: `AutoML` Object
@@ -131,18 +124,32 @@ class AutoML(object):
         mode="Explain",
         algorithms=None,
         eval_metric="auto",
+        n_jobs=-1,
     ):
-        if not HAS_SK_LEARN:
+        try:
+            from supervised.automl import AutoML as base_AutoML
+        except Exception as e:
+            import_exception = "\n".join(
+                traceback.format_exception(type(e), e, e.__traceback__)
+            )
             _raise_fastai_import_error(import_exception=import_exception)
-        if not HAS_AUTOML:
+
+        if not HAS_AUTO_ML_DEPS:
             _raise_fastai_import_error(import_exception=import_exception)
-        if not HAS_NUMPY:
-            _raise_fastai_import_error(import_exception=import_exception)
+
         self._data = data
         if getattr(self._data, "_is_unsupervised", False):
             raise Exception(
                 "Auto ML feature is currently only available for Supervised learning."
             )
+        if getattr(self._data, "_is_not_empty", False):
+            if (len(data._training_indexes) < 20) & (
+                eval_metric in ["r2", "rmse", "mse", "mape", "spearman", "pearson"]
+            ):
+                warnings.warn(
+                    "The eval metric you have passed, is not valid for a classification usecase. If the use case is regression, then ensure that your dataset has atleast 22 records"
+                )
+                return
 
         if algorithms:
             algorithms = algorithms
@@ -180,10 +187,10 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            # if mode == "Explain":
-            #    explain_level = 2
-            # else:
-            explain_level = 2
+            if mode == "Explain":
+                explain_level = 2
+            else:
+                explain_level = 0  # Setting explain level to 0 in case of Perform and Compete as EDA seems to be creating memory issues
             self._model = base_AutoML(
                 mode=mode,
                 algorithms=algorithms,
@@ -191,6 +198,8 @@ class AutoML(object):
                 golden_features=False,
                 explain_level=explain_level,
                 eval_metric=eval_metric,
+                n_jobs=n_jobs,
+                kmeans_features=False,
             )
         else:
             result_path = self._data.path
@@ -244,8 +253,11 @@ class AutoML(object):
         # validation_data_batch_df = pd.DataFrame(validation_data_batch,
         # columns=self._data._continuous_variables + self._data._categorical_variables)
         sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
-        output_labels = self._predict(validation_data_batch)
-        df = self._data._dataframe.loc[
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            output_labels = self._predict(validation_data_batch)
+        pd.options.mode.chained_assignment = None
+        df = self._data._dataframe.iloc[
             sample_indexes
         ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
 
@@ -280,7 +292,7 @@ class AutoML(object):
 
     def predict_proba(self):
         """
-        :returns output from AutoML's model.predict_proba()
+        :returns output from AutoML's model.predict_proba() with prediction probability for the training data
         """
         if (self._data._is_classification == "classification") or (
             self._data._is_classification == True
@@ -290,7 +302,11 @@ class AutoML(object):
                     "This method is not available when the model is initiated for prediction"
                 )
             else:
-                return self._model.predict_proba(self._data._dataframe)
+                cols = (
+                    self._data._continuous_variables + self._data._categorical_variables
+                )
+                data_df = pd.DataFrame(self._data._ml_data[0], columns=cols)
+                return self._model.predict_proba(data_df)
         else:
             raise Exception("This method is applicable only for classification models.")
 
@@ -412,9 +428,11 @@ class AutoML(object):
 
         :return: `AutoML` Object
         """
+        if not HAS_FASTAI:
+            _raise_fastai_import_error(import_exception=import_exception)
         emd_path = _get_emd_path(emd_path)
-        if not HAS_SK_LEARN:
-            raise Exception("This module requires scikit-learn.")
+        if not HAS_AUTO_ML_DEPS:
+            _raise_fastai_import_error(import_exception=import_exception)
 
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")
@@ -630,6 +648,8 @@ class AutoML(object):
                 raster_columns.append((raster, categorical))
 
         with warnings.catch_warnings():
+            if not HAS_FASTAI:
+                _raise_fastai_import_error(import_exception=import_exception)
             warnings.simplefilter("ignore", UserWarning)
             (
                 processed_dataframe,

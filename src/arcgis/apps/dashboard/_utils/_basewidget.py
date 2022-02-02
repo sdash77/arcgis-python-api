@@ -201,7 +201,11 @@ class Legend(object):
 class NoDataProperties(object):
     @classmethod
     def _nodata_init(
-        cls, text="No Data", alignment="middle", show_title=True, show_description=True
+        cls,
+        text="No Data",
+        alignment="middle",
+        show_title=True,
+        show_description=True,
     ):
 
         nodata = NoDataProperties()
@@ -344,17 +348,17 @@ def add_row(elements, height=1):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    elements                    Required List. Widgets that have to be part
-                                of the row.
+    elements                    Required List. Widgets that will be added
+                                to the row in the dashboard layout.
     -------------------------   -------------------------------------------
     height                      Optional int. Height of the row.
     =========================   ===========================================
     """
 
-    elements = _auto_calculate_width(elements)
+    elements = _auto_calculate_height(elements)
     json = {
         "type": "stackLayoutElement",
-        "orientation": "col",
+        "orientation": "row",
         "elements": [],
         "width": 1,
         "height": height,
@@ -387,17 +391,17 @@ def add_column(elements, width=1):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    elements                    Required List. Widgets that have to be part
-                                of the row.
+    elements                    Required List. Widgets that will be added to
+                                the column in the dashboard layout.
     -------------------------   -------------------------------------------
     width                       Optional int. Width of the Column.
     =========================   ===========================================
     """
 
-    elements = _auto_calculate_height(elements)
+    elements = _auto_calculate_width(elements)
     json = {
         "type": "stackLayoutElement",
-        "orientation": "row",
+        "orientation": "col",
         "elements": [],
         "width": width,
         "height": 1,
