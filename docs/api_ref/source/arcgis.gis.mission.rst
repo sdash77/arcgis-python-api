@@ -63,7 +63,7 @@ SecurityManager
 
 SiteManager
 ----------------
-.. autoclass:: arcgis.gis.mission._security.SiteManager
+.. autoclass:: arcgis.gis.mission._site.SiteManager
     :members:
     :undoc-members:
 

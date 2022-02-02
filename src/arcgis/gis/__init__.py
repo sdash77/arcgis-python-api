@@ -2908,6 +2908,7 @@ class UserManager(object):
                            - Members assigned the ``viewer`` role cannot create or share content, or perform analysis, and the ``viewer`` role is compatible with all user types.
                            - The Data Editor role ``viewplusedit`` is compatible with all user types except ``viewer``.
                            - The ``org_user``, ``org_publisher``, and ``org_admin`` roles are compatible with the Creator, GIS Professional, Storyteller, and Insights Analyst user types.
+                           - A complete list of `user_type` values can be obtained from the `license_types` property on the `UserManager`.
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
                           which means unlimited. (10.7+)

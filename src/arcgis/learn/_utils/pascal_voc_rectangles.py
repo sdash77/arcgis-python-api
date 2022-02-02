@@ -119,7 +119,7 @@ def show_batch_object_detection(
     x, y = self.one_batch(ds_type, True, True)
     if reverse:
         x, y = x.flip(0), (y[0].flip(0), y[1].flip(0))
-    n_items = rows ** 2 if self.train_ds.x._square_show else rows
+    n_items = rows**2 if self.train_ds.x._square_show else rows
     if self.dl(ds_type).batch_size < n_items:
         n_items = self.dl(ds_type).batch_size
     xs = [self.train_ds.x.reconstruct(grab_idx(x, i)) for i in range(n_items)]
