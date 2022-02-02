@@ -6,7 +6,6 @@ from arcgis.learn import (
     MLModel,
     FasterRCNN,
     SuperResolution,
-    EntityRecognizer,
     PointCNN,
     SingleShotDetector,
     UnetClassifier,
@@ -35,7 +34,7 @@ from arcgis.learn import (
     MLModel,
 )
 import json
-from arcgis.learn.text import SequenceToSequence
+from arcgis.learn.text import EntityRecognizer, SequenceToSequence
 
 if os.environ["run_nightly"] == "1":
     data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_regression"

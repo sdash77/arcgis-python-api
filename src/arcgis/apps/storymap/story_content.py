@@ -227,10 +227,10 @@ class Image(object):
             "type": "image",
             "data": {
                 "image": self.resource_node,
-                "caption": caption,
-                "alt": alt_text,
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
             },
-            "config": {"size": display},
+            "config": {"size": "" if display is None else display},
         }
 
         # Create resource node. Different if file path or url
@@ -562,8 +562,8 @@ class Video(object):
                 "type": "video",
                 "data": {
                     "video": self.resource_node,
-                    "caption": caption,
-                    "alt": alt_text,
+                    "caption": "" if caption is None else caption,
+                    "alt": "" if alt_text is None else alt_text,
                 },
                 "config": {
                     "size": display,
@@ -586,8 +586,8 @@ class Video(object):
                 "data": {
                     "url": self._path,
                     "embedType": "video",
-                    "caption": caption,
-                    "alt": alt_text,
+                    "caption": "" if caption is None else caption,
+                    "alt": "" if alt_text is None else alt_text,
                     "display": "inline",
                     "aspectRatio": 1.778,
                     "addedAsEmbedCode": True,
@@ -819,8 +819,8 @@ class Audio(object):
     # ----------------------------------------------------------------------
     def _add_audio(
         self,
-        caption="",
-        alt_text="",
+        caption=None,
+        alt_text=None,
         display=None,
         story=None,
     ):
@@ -832,8 +832,8 @@ class Audio(object):
             "type": "audio",
             "data": {
                 "audio": self.resource_node,
-                "caption": caption,
-                "alt": alt_text,
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
             },
             "config": {"size": display},
         }
@@ -1034,9 +1034,9 @@ class Embed(object):
                 "url": self._path,
                 "embedType": "link",
                 "title": sections.netloc,
-                "description": caption,
+                "description": "" if caption is None else caption,
                 "providerUrl": sections.netloc,
-                "alt": alt_text,
+                "alt": "" if alt_text is None else alt_text,
                 "display": display,
             },
         }
@@ -1325,8 +1325,8 @@ class Map(object):
             "type": "webmap",
             "data": {
                 "map": self.resource_node,
-                "caption": caption,
-                "alt": alt_text,
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
                 "extent": self._extent,
                 "center": self._center,
                 "zoom": 2,
@@ -1524,25 +1524,7 @@ class Text(object):
     @property
     def properties(self):
         """
-        Get/Set the properties for the text.
-
-        ==================  ==================================================
-        **Argument**        **Description**
-        ------------------  --------------------------------------------------
-        text                Dictionary. Holds new values for the text
-                            node.
-
-                            .. code-block:: python
-
-                                Must resemble this structure:
-                                {
-                                    "type": "text",
-                                    "data": {
-                                        "type": <value of TextStyles Class>,
-                                        "text": <text>,
-                                        "customTextColors": <Optional colors as an array>
-                                }  }
-        ==================  ==================================================
+        Get the properties for the text.
 
         :return:
             The Text dictionary for the node.
@@ -1554,12 +1536,30 @@ class Text(object):
             }
 
     # ----------------------------------------------------------------------
-    @properties.setter
-    def properties(self, text):
-        # Set with new dictionary
+    @property
+    def text(self):
+        """
+        Get/Set the text itself for the text node.
+
+        ==================  ==================================================
+        **Argument**        **Description**
+        ------------------  --------------------------------------------------
+        text                Optional String. The new text to be displayed.
+        ==================  ==================================================
+
+        :return:
+            The text for the node.
+            If nothing is returned, make sure the content is part of the story.
+        """
         if self._check_node() is True:
-            self._story._properties["nodes"][self.node] = text
-            return self.properties
+            return self._story._properties["nodes"][self.node]["data"]["text"]
+
+    # ----------------------------------------------------------------------
+    @text.setter
+    def text(self, text):
+        if self._check_node() is True:
+            self._story._properties["nodes"][self.node]["data"]["text"] = text
+            return self.text
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -1632,23 +1632,7 @@ class Button(object):
     @property
     def properties(self):
         """
-        Get/Set the properties for the button.
-
-        ==================  ==================================================
-        **Argument**        **Description**
-        ------------------  --------------------------------------------------
-        button              Dictionary. Holds new values for the button node.
-
-                            .. code-block:: python
-
-                                Must resemble this structure:
-                                {
-                                    "type": "button",
-                                    "data": {
-                                        "text": <button text>,
-                                        "link": <button link>
-                                }   }
-        ==================  ==================================================
+        Get the properties for the button.
 
         :return:
             The Button dictionary for the node.
@@ -1658,12 +1642,56 @@ class Button(object):
             return {"node_dict": self._story._properties["nodes"][self.node]}
 
     # ----------------------------------------------------------------------
-    @properties.setter
-    def properties(self, button):
-        # Add new button dictionary
+    @property
+    def text(self):
+        """
+        Get/Set the text for the button.
+
+        ==================  ==================================================
+        **Argument**        **Description**
+        ------------------  --------------------------------------------------
+        text                Optional String. The new text to be displayed.
+        ==================  ==================================================
+
+        :return:
+            The text for the node.
+            If nothing is returned, make sure the content is part of the story.
+        """
         if self._check_node() is True:
-            self._story._properties["nodes"][self.node] = button
-            return self.properties
+            return self._story._properties["nodes"][self.node]["data"]["text"]
+
+    # ----------------------------------------------------------------------
+    @text.setter
+    def text(self, text):
+        if self._check_node() is True:
+            self._story._properties["nodes"][self.node]["data"]["text"] = text
+            return self.text
+
+    # ----------------------------------------------------------------------
+    @property
+    def link(self):
+        """
+        Get/Set the link for the button.
+
+        ==================  ==================================================
+        **Argument**        **Description**
+        ------------------  --------------------------------------------------
+        link                Optional String. The new path for the button.
+        ==================  ==================================================
+
+        :return:
+            The link being used.
+            If nothing is returned, make sure the content is part of the story.
+        """
+        if self._check_node() is True:
+            return self._story._properties["nodes"][self.node]["data"]["link"]
+
+    # ----------------------------------------------------------------------
+    @link.setter
+    def link(self, link):
+        if self._check_node() is True:
+            self._story._properties["nodes"][self.node]["data"]["link"] = link
+            return self.link
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -1706,7 +1734,7 @@ class Gallery(object):
         >>> image2 = Image(<url or path>)
         >>> image3 = Image(<url or path>)
 
-        # Create a gallery and add
+        # Create a gallery and add to story before adding images to it.
         >>> gallery = Gallery()
         >>> my_story.add(gallery)
         >>> gallery.add([image1, image2, image3])
@@ -1896,8 +1924,8 @@ class Gallery(object):
             "type": "gallery",
             "data": {
                 "galleryLayout": display if display is not None else "jigsaw",
-                "caption": caption,
-                "alt": alt_text,
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
             },
             "children": self._children,
         }
@@ -2114,14 +2142,18 @@ class Sidecar(object):
         sidecar_tree = [self.node]
         for slide in self._slides:
             narrative_panel = self._story._properties["nodes"][slide]["children"][0]
-            text = self._story._properties["nodes"][narrative_panel]["children"]
+            text = (
+                self._story._properties["nodes"][narrative_panel]["children"][0]
+                if "children" in self._story._properties["nodes"][narrative_panel]
+                else ""
+            )
             media_item = self._story._properties["nodes"][slide]["children"][1]
             sidecar_tree.append(
                 {
                     "Slide: "
                     + slide: [
                         "Narrative Panel: " + narrative_panel,
-                        "Text: " + text[0],
+                        "Text: " + text,
                         "Media Item: " + media_item,
                     ]
                 }
@@ -2219,7 +2251,7 @@ class Sidecar(object):
             if media_item:
                 self._story._delete(media_item)
                 self._story._properties["nodes"][slide]["children"].pop(1)
-            self._story._properties["nodes"][slide].insert(1, content.node)
+            self._story._properties["nodes"][slide]["children"].insert(1, content.node)
 
     # ----------------------------------------------------------------------
     def remove_slide(self, slide: str):
