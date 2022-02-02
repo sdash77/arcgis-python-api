@@ -174,7 +174,7 @@ class DataStoreManager(BaseServer):
         if path[0] != "/":
             path = "/%s" % path
         params = {"f": "json", "itemPath": path}
-        url = "%s/federateDataItem"
+        url = "%s/federateDataItem" % self._url
         res = self._con.post(url, params)
         if "success" in res:
             return res["success"]
@@ -246,16 +246,14 @@ class DataStoreManager(BaseServer):
         return
 
     # ----------------------------------------------------------------------
-    def add(self, name, item):
+    def add(self, item):
         """
         Registers a new data item with the data store.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        name                   Required string. The name of the new data item.
-        ------------------     --------------------------------------------------------------------
-        item                   Required string. The dictionary representing the data item.
+        item                   Required String, Dict. The dictionary representing the data item.
                                See https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm
         ==================     ====================================================================
 
@@ -268,8 +266,8 @@ class DataStoreManager(BaseServer):
 
             return Datastore(self, item["path"])
         else:
-            # print(str(res))
-            return None
+
+            return res
 
     # ----------------------------------------------------------------------
     def add_bigdata(self, name, server_path=None, connection_type="fileShare"):

@@ -37,7 +37,8 @@ class Pix2Pix(ArcGISModel):
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    data                    Required fastai Databunch. Returned data object from
+    data                    Required fastai Databunch with image chip sizes
+                            in multiples of 256. Returned data object from
                             `prepare_data` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
@@ -55,38 +56,42 @@ class Pix2Pix(ArcGISModel):
     ):
         super().__init__(data)
         self._check_dataset_support(data)
-        pix2pix_gan = pix2pix_model(
-            self._data.n_channel, self._data.n_channel, perceptual_loss
-        )
-        if perceptual_loss:
-            self.learn = Learner(
-                data,
-                pix2pix_gan,
-                loss_func=Pix2PixPerceptualLoss(pix2pix_gan),
-                opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
-                callback_fns=[Pix2PixPerceptualTrainer],
+        if self._data.chip_size % 256 == 0:
+            pix2pix_gan = pix2pix_model(
+                self._data.n_channel, self._data.n_channel, perceptual_loss
             )
+            if perceptual_loss:
+                self.learn = Learner(
+                    data,
+                    pix2pix_gan,
+                    loss_func=Pix2PixPerceptualLoss(pix2pix_gan),
+                    opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
+                    callback_fns=[Pix2PixPerceptualTrainer],
+                )
+            else:
+                self.learn = Learner(
+                    data,
+                    pix2pix_gan,
+                    loss_func=pix2pixLoss(pix2pix_gan),
+                    opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
+                    callback_fns=[pix2pixTrainer],
+                )
+
+            self.learn.model = self.learn.model.to(self._device)
+            self._slice_lr = False
+            self.perceptual_loss = perceptual_loss
+            if pretrained_path is not None:
+                self.load(pretrained_path)
+            self._code = image_translation_prf
+
+            def __str__(self):
+                return self.__repr__()
+
+            def __repr__(self):
+                return "<%s>" % (type(self).__name__)
+
         else:
-            self.learn = Learner(
-                data,
-                pix2pix_gan,
-                loss_func=pix2pixLoss(pix2pix_gan),
-                opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
-                callback_fns=[pix2pixTrainer],
-            )
-
-        self.learn.model = self.learn.model.to(self._device)
-        self._slice_lr = False
-        self.perceptual_loss = perceptual_loss
-        if pretrained_path is not None:
-            self.load(pretrained_path)
-        self._code = image_translation_prf
-
-        def __str__(self):
-            return self.__repr__()
-
-        def __repr__(self):
-            return "<%s>" % (type(self).__name__)
+            raise Exception("Image chip sizes should be in multiples of 256")
 
     @staticmethod
     def _available_metrics():
@@ -200,7 +205,15 @@ class Pix2Pix(ArcGISModel):
 
     def show_results(self, rows=2, **kwargs):
         """
-        Displays the results of a trained model on the validation set.
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
         """
         show_results(self, rows, **kwargs)
 

@@ -11,7 +11,6 @@ from zipfile import ZipFile
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
-from arcgis.raster.analytics import copy_raster
 from .._utils.tabular_data import TabularDataObject, explain_prediction
 
 
@@ -331,8 +330,10 @@ class MLModel(object):
             _create_zip(Path(path).name, str(path))
 
         if publish:
+            file_name = os.path.basename(path) + ".dlpk"
+            dlpk_path = Path(os.path.join(path, file_name))
             self._publish_dlpk(
-                (Path(path) / Path(path).stem).with_suffix(".dlpk"),
+                dlpk_path,
                 gis=gis,
                 overwrite=kwargs.get("overwrite", False),
             )
@@ -1171,6 +1172,8 @@ class MLModel(object):
         )
         processed_raster.save(output_folder_path)
         if output_layer_name:
+            from arcgis.raster.analytics import copy_raster
+
             copy_raster_op = copy_raster(
                 input_raster=output_folder_path,
                 output_name=output_layer_name.replace(" ", ""),
