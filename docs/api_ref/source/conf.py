@@ -26,12 +26,13 @@ import sphinx_rtd_theme
 copyright = "2016-2022, Esri"
 
 # Bump both versions. The short X.Y version.
-version = "2.0.0"
+version = "2.0.1"
 # The full version, including alpha/beta/rc tags.
-release = "2.0.0"
+release = "2.0.1"
 
 # Add currently public version to this list - this is needed for the picker UI
 versions = [
+    "2.0.0",
     "1.9.1",
     "1.9.0",
     "1.8.5",
@@ -114,6 +115,10 @@ author = "Esri"
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
 language = None
+
+
+# This value controls how to represent typehints.
+autodoc_typehints = "none"
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:

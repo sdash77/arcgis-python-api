@@ -9,7 +9,7 @@ from ._ref import reference
 from arcgis._impl.common._deprecate import deprecated
 
 
-@deprecated(deprecated_in="2.0.0", removed_in=None, current_version="2.0.0")
+@deprecated(deprecated_in="2.0.0", removed_in=None, current_version="2.0.1")
 class JournalStoryMap(object):
     """
     Represents a Journal Story Map
