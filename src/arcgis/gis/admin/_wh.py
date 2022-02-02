@@ -112,7 +112,14 @@ class WebhookManager(object):
 
     # ----------------------------------------------------------------------
     def create(
-        self, name, url, events="ALL", number_of_failures=5, days_in_past=5, secret=None
+        self,
+        name,
+        url,
+        events="ALL",
+        number_of_failures=5,
+        days_in_past=5,
+        secret=None,
+        properties=None,
     ):
         """
         Creates a WebHook to monitor REST endpoints and report activities
@@ -208,6 +215,8 @@ class WebhookManager(object):
         ---------------------------------  -------------------------------------------------------------------------------
         secret                             Optional String. Add a Secret to your payload that can be used to authenticate
                                            the message on your receiver.
+        ---------------------------------  -------------------------------------------------------------------------------
+        properties                         Optional Dict. At 10.9.1+ users can provide additional configuration properties.
         =================================  ===============================================================================
 
         :returns a :class:`WebHook<arcgis.gis.admin.Webhook>` instance
@@ -232,15 +241,20 @@ class WebhookManager(object):
         if secret is None:
             secret = ""
         purl = "%s/createWebhook" % self._url
+        config = {
+            "deactivationPolicy": {
+                "numberOfFailures": number_of_failures,
+                "daysInPast": days_in_past,
+            }
+        }
+        if properties:
+            config["properties"] = properties
         params = {
             "f": "json",
             "name": name,
             "url": url,
             "secret": secret,
-            "configuration": {
-                "numberOfFailures": number_of_failures,
-                "daysInPast": days_in_past,
-            },
+            "config": config,
         }
         if str(events).lower() == "all":
             params["changes"] = "allChanges"
@@ -468,14 +482,19 @@ class Webhook(object):
                                             | Enable a specific user's account                   | /users/<username>/enable  |
                                             +----------------------------------------------------+---------------------------+
 
-                                           Example Syntax: ['/users', '/groups/abcd1234....']
+                                           .. code-block:: python
+
+                                               #Example Usage:
+
+                                               >>> events = ['/users', '/groups/abcd1234....']
 
         ---------------------------------  -------------------------------------------------------------------------------
-        number_of_failures                 Optional Integer. The number of failures to allow before the service
+        number_of_failures                 Optional Integer. The number of failures to allow before the webhook is
+                                           deactivated.
         ---------------------------------  -------------------------------------------------------------------------------
         days_in_past                       Option Integer. The number of days to report back on.
         ---------------------------------  -------------------------------------------------------------------------------
-        secret                             Optional String. Add a Secret to your payload that can be used to authenticate
+        secret                             Optional String. Add a secret to your payload that can be used to authenticate
                                            the message on your receiver.
         =================================  ===============================================================================
 

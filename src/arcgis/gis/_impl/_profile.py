@@ -1020,29 +1020,3 @@ class ProfileManager(object):
 
             password = self._securely_get_password(profile)
         return url, username, password, key_file, cert_file, client_id
-
-
-if __name__ == "__main__":
-    from arcgis.gis.server import ServicesDirectory
-    from arcgis.gis import GIS
-
-    gis = GIS(profile="your_enterprise_profile")
-    sd = ServicesDirectory(
-        url="https://pythonapi.playground.esri.com/server",
-        username=gis._username,
-        password=gis._password,
-        verify_cert=False,
-    )
-    print(sd.list())
-    print()
-    # spm = ServerProfileManager()
-    # spm.create(
-    # profile='test_server',
-    # url="https://pythonapi.playground.esri.com/server",
-    # username='andrew',
-    # password='fujifuji1',
-    # key_file=None,
-    # cert_file=None,
-    # client_id=None,
-    # )
-    # print(spm.list())

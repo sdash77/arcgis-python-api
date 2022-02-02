@@ -176,22 +176,25 @@ class MMSegmentationConfig:
             if self.cfg.model.type == "CascadeEncoderDecoder":
                 losses = 0.0
                 for i in range(self.cfg.model.num_stages):
-                    losses += self.model.decode_head[i].losses(
+                    _losses = self.model.decode_head[i].losses(
                         model_output, model_target[0]
-                    )["loss_seg"]
+                    )
+                    losses += _losses.get("loss_ce", _losses.get("loss_seg"))
                 return losses
 
-            return self.model.decode_head.losses(model_output, model_target[0])[
-                "loss_seg"
-            ]
+            _losses = self.model.decode_head.losses(model_output, model_target[0])
+            return _losses.get("loss_ce", _losses.get("loss_seg"))
 
         return model_output["loss"]
 
-    def post_process(self, pred, thres=0.5, thinning=True):
+    def post_process(self, pred, thres=0.5, thinning=True, prob_raster=False):
         """
         In this function you have to return list with appended output for each image in the batch with shape [C=1,H,W]!
         """
-        pred = self.torch.unsqueeze(pred.argmax(dim=1), dim=1)
+        if prob_raster:
+            return pred
+        else:
+            pred = self.torch.unsqueeze(pred.argmax(dim=1), dim=1)
         return pred
 
 

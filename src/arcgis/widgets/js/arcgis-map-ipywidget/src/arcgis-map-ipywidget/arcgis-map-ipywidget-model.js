@@ -89,7 +89,7 @@ var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
         _username: "",
         _custom_msg: "",
         hide_mode_switch: false,
-        _trigger_interactive_draw_mode_for: "",
+        _trigger_interactive_draw_mode_for: {},
         _trigger_new_jlab_window_with_args: {},
         jupyter_target: "",
         ready: false,

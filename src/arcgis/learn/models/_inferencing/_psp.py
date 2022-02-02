@@ -1,18 +1,17 @@
 try:
-    import os, sys, json
+    import os, json
     import numpy as np
     import torch
-    import torch.nn as nn
     import math
+    from arcgis.learn._utils.common import load_model
     from . import util
+    from .util import variable_tile_size_check
 
     HAS_TORCH = True
-
-except Exception as e:
+except Exception:
     HAS_TORCH = False
 
 import arcgis
-from arcgis.learn import PSPNetClassifier
 
 try:
     import arcpy
@@ -151,8 +150,8 @@ class ChildImageClassifier:
                 os.path.join(os.path.dirname(model), model_path)
             )
 
-        self.psp = PSPNetClassifier.from_model(data=None, emd_path=model)
-        self.model = self.psp.learn.model.to(self.device)
+        self.model_instance = load_model(model)
+        self.model = self.model_instance.learn.model.to(self.device)
         self.model.eval()
 
     def getParameterInfo(self, required_parameters):
@@ -182,13 +181,27 @@ class ChildImageClassifier:
                     "displayName": "Predict Background",
                     "description": "If False, will never predict the background/NoData Class.",
                 },
+                {
+                    "name": "test_time_augmentation",
+                    "dataType": "string",
+                    "required": False,
+                    "value": "False"
+                    if "test_time_augmentation" not in self.json_info
+                    else str(self.json_info["test_time_augmentation"]),
+                    "displayName": "Perform test time augmentation while predicting",
+                    "description": "If True, will merge predictions from flipped and rotated images.",
+                },
             ]
+        )
+        required_parameters = variable_tile_size_check(
+            self.json_info, required_parameters
         )
         return required_parameters
 
     def getConfiguration(self, **scalars):
+        self.tytx = int(scalars.get("tile_size", self.json_info["ImageHeight"]))
         self.padding = int(
-            scalars.get("padding", self.json_info["ImageHeight"] // 4)
+            scalars.get("padding", self.tytx // 4)
         )  ## Default padding Imageheight//4.
         self.batch_size = (
             int(math.sqrt(int(scalars.get("batch_size", 4)))) ** 2
@@ -206,12 +219,20 @@ class ChildImageClassifier:
             self.rectangle_width,
         ) = calculate_rectangle_size_from_batch_size(self.batch_size)
         ty, tx = get_tile_size(
-            self.json_info["ImageHeight"],
-            self.json_info["ImageWidth"],
+            self.tytx,
+            self.tytx,
             self.padding,
             self.rectangle_height,
             self.rectangle_width,
         )
+
+        self.use_tta = scalars.get("test_time_augmentation", "false").lower() in [
+            "true",
+            "1",
+            "t",
+            "y",
+            "yes",
+        ]  # Default value True
 
         return {
             "extractBands": tuple(self.json_info["ExtractBands"]),
@@ -219,14 +240,15 @@ class ChildImageClassifier:
             "tx": tx,
             "ty": ty,
             "fixedTileSize": 1,
+            "test_time_augmentation": self.use_tta,
         }
 
     def updatePixels(self, tlc, shape, props, **pixelBlocks):  # 8 x 224 x 224 x 3
         input_image = pixelBlocks["raster_pixels"].astype(np.float32)
         batch, batch_height, batch_width = tile_to_batch(
             input_image,
-            self.json_info["ImageHeight"],
-            self.json_info["ImageWidth"],
+            self.tytx,
+            self.tytx,
             self.padding,
             fixed_tile_size=True,
             batch_height=self.rectangle_height,
@@ -247,3 +269,6 @@ class ChildImageClassifier:
             batch_width,
         )
         return semantic_predictions
+
+    def updatePixelsTTA(self, tlc, shape, props, **pixelBlocks):  # 8 x 224 x 224 x 3
+        return util.update_pixels_tta(self, tlc, shape, props, **pixelBlocks)
