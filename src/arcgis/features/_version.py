@@ -684,7 +684,7 @@ class Version(object):
 
                                Values: `byObject` | `byAttribute`
 
-        --------------------   --------------------------------------------------------------------
+        ------------------     --------------------------------------------------------------------
         future                 Optional boolean. If true, the request is processed as an asynchronous
                                job and a URL is returned that points a location displaying the status
                                of the job.
