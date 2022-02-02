@@ -5,6 +5,7 @@ import platform
 import configparser
 from typing import Optional
 from arcgis.gis import GIS
+from functools import lru_cache
 
 _log = logging.getLogger(__name__)
 ###########################################################################
@@ -23,6 +24,24 @@ class ServerProfileManager(object):
         self._os = platform.system()
         self._cfg_file_path = os.path.expanduser("~") + "/.agsprofile"
         self._cfg_exists = os.path.isfile(self._cfg_file_path)
+
+    # ----------------------------------------------------------------------
+    @lru_cache(maxsize=255)
+    def _keyring_version(self):
+        """returns the keyring version number"""
+        try:
+            # python 3.8+
+            from importlib.metadata import version
+
+            return [int(i) for i in version("keyring").split(".")]
+        except:
+            # python < 3.8
+            import pkg_resources
+
+            return [
+                int(i)
+                for i in pkg_resources.get_distribution("keyring").version.split(".")
+            ]
 
     # ----------------------------------------------------------------------
     def _config_is_in_new_format(self, config):
@@ -106,7 +125,18 @@ class ServerProfileManager(object):
 
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
-            password = keyring.get_password(self._profile_name, profile)
+
+            if self._keyring_version() >= [23]:
+
+                password = keyring.get_credential(
+                    "arcgis_python_api_profile_passwords", profile
+                )
+
+                password = getattr(password, "password", None)
+            else:
+                password = keyring.get_password(
+                    "arcgis_python_api_profile_passwords", profile
+                )
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
@@ -530,6 +560,24 @@ class ProfileManager(object):
         self._cfg_exists = os.path.isfile(self._cfg_file_path)
 
     # ----------------------------------------------------------------------
+    @lru_cache(maxsize=255)
+    def _keyring_version(self):
+        """returns the keyring version number"""
+        try:
+            # python 3.8+
+            from importlib.metadata import version
+
+            return [int(i) for i in version("keyring").split(".")]
+        except:
+            # python < 3.8
+            import pkg_resources
+
+            return [
+                int(i)
+                for i in pkg_resources.get_distribution("keyring").version.split(".")
+            ]
+
+    # ----------------------------------------------------------------------
     def _config_is_in_new_format(self, config):
         """Any version <= 1.3.0 of the API used a different config file
         formatting that, among other things, did not store the last time
@@ -613,9 +661,18 @@ class ProfileManager(object):
 
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
-            password = keyring.get_password(
-                "arcgis_python_api_profile_passwords", profile
-            )
+
+            if self._keyring_version() >= [23]:
+
+                password = keyring.get_credential(
+                    "arcgis_python_api_profile_passwords", profile
+                )
+
+                password = getattr(password, "password", None)
+            else:
+                password = keyring.get_password(
+                    "arcgis_python_api_profile_passwords", profile
+                )
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
@@ -659,13 +716,17 @@ class ProfileManager(object):
         """
         import keyring
 
-        supported_keyrings = [
-            keyring.backends.OS_X.Keyring,
-            keyring.backends.SecretService.Keyring,
-            keyring.backends.Windows.WinVaultKeyring,
-            keyring.backends.kwallet.DBusKeyring,
-            keyring.backends.chainer.ChainerBackend,
-        ]
+        if self._keyring_version() >= [23, 0, 0]:
+            supported_keyrings = [type(r) for r in keyring.backend.get_all_keyring()]
+        else:
+
+            supported_keyrings = [
+                keyring.backends.OS_X.Keyring,
+                keyring.backends.SecretService.Keyring,
+                keyring.backends.Windows.WinVaultKeyring,
+                keyring.backends.kwallet.DBusKeyring,
+                keyring.backends.chainer.ChainerBackend,
+            ]
         current_keyring = type(keyring.get_keyring())
         return current_keyring in supported_keyrings
 
