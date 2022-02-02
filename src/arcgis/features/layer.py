@@ -210,7 +210,7 @@ class FeatureLayer(Layer):
         updating its definition.
 
         :return:
-            A :class:`~arcgis.feature.FeatureLayerManager`
+            A :class:`~arcgis.features.managers.FeatureLayerManager`
 
         .. code-block:: python
 
@@ -2515,8 +2515,8 @@ class FeatureLayer(Layer):
     def estimates(self) -> Dict[str, Any]:
         """
         Returns up-to-date approximations of layer information, such as row count
-        and extent. Layers that support the `estimates` will include an
-        `infoInEstimates` information in the `properties`.
+        and extent. Layers that support this property will include
+        `infoInEstimates` information in the layer's :attr:`~arcgis.features.FeatureLayer.properties`.
 
         :returns: Dict[str, Any]
 
@@ -4171,11 +4171,21 @@ class FeatureLayerCollection(_GISResource):
                 res = self._con.get(surl, params)
                 status = res["status"]
                 if status.lower() == "completed":
-                    return self._con.get(res["resultUrl"])
+                    res = self._con.get(res["resultUrl"])
+                    break
                 elif status.lower() == "failed":
                     return None
                 else:
                     time.sleep(0.5)
+            if "status" in res and res["status"].lower() == "completed":
+                res = self._con.get(res["resultUrl"])
+        if (
+            isinstance(res, str)
+            and os.path.isfile(res)
+            and str(data_format).lower() == "json"
+        ):
+            with open(res, "r") as reader:
+                return json.loads(reader.read())
         return res
 
     def query(

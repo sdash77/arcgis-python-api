@@ -847,7 +847,10 @@ class GIS(object):
                     self._utoken = json_data["token"]
                 self._expiration = json_data.get("expiration", None)
                 if "encryptedToken" in json_data:
-                    from arcgis.gis._impl._decrypt_nbauth import get_token
+                    try:
+                        from arcgis.gis._impl._decrypt_nbauth import get_token
+                    except ImportError as ie:
+                        from arcgis.gis._impl.nbauth import get_token
 
                     self._utoken = get_token(nb_auth_file_path)
 
@@ -2905,6 +2908,7 @@ class UserManager(object):
                            - Members assigned the ``viewer`` role cannot create or share content, or perform analysis, and the ``viewer`` role is compatible with all user types.
                            - The Data Editor role ``viewplusedit`` is compatible with all user types except ``viewer``.
                            - The ``org_user``, ``org_publisher``, and ``org_admin`` roles are compatible with the Creator, GIS Professional, Storyteller, and Insights Analyst user types.
+                           - A complete list of `user_type` values can be obtained from the `license_types` property on the `UserManager`.
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
                           which means unlimited. (10.7+)

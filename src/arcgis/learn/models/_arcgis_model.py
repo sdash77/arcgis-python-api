@@ -1328,6 +1328,10 @@ class ArcGISModel(object):
             <p><b>FID A:</b> {emd_template.get('FID_A')}</p>
             <p><b>FID B:</b> {emd_template.get('FID_B')}</p>
         """
+        if emd_template.get("panoptic_quality"):
+            model_analysis = f"""
+            <p><b>Panoptic Quality:</b> {emd_template.get('panoptic_quality')}</p>
+        """
 
         if model_analysis:
             HTML_TEMPLATE += f"""
@@ -1608,7 +1612,7 @@ class ArcGISModel(object):
 
         if publish:
             self._publish_dlpk(
-                (saved_path.parent / saved_path.stem).with_suffix(".dlpk"),
+                (saved_path.parent / os.path.basename(saved_path)).with_suffix(".dlpk"),
                 gis=gis,
                 overwrite=kwargs.get("overwrite", False),
             )

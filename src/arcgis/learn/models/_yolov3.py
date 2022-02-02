@@ -284,7 +284,7 @@ class YOLOv3(ArcGISModel):
         image_path              Required. Path to the image file to make the
                                 predictions on.
         ---------------------   -------------------------------------------
-        thresh                  Optional float. The probability above which
+        threshold               Optional float. The probability above which
                                 a detection will be considered valid.
                                 Defaults to 0.1. To be modified according
                                 to the dataset and training.

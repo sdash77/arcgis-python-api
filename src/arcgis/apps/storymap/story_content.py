@@ -227,10 +227,10 @@ class Image(object):
             "type": "image",
             "data": {
                 "image": self.resource_node,
-                "caption": caption,
-                "alt": alt_text,
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
             },
-            "config": {"size": display},
+            "config": {"size": "" if display is None else display},
         }
 
         # Create resource node. Different if file path or url
@@ -562,8 +562,8 @@ class Video(object):
                 "type": "video",
                 "data": {
                     "video": self.resource_node,
-                    "caption": caption,
-                    "alt": alt_text,
+                    "caption": "" if caption is None else caption,
+                    "alt": "" if alt_text is None else alt_text,
                 },
                 "config": {
                     "size": display,
@@ -586,8 +586,8 @@ class Video(object):
                 "data": {
                     "url": self._path,
                     "embedType": "video",
-                    "caption": caption,
-                    "alt": alt_text,
+                    "caption": "" if caption is None else caption,
+                    "alt": "" if alt_text is None else alt_text,
                     "display": "inline",
                     "aspectRatio": 1.778,
                     "addedAsEmbedCode": True,
@@ -819,8 +819,8 @@ class Audio(object):
     # ----------------------------------------------------------------------
     def _add_audio(
         self,
-        caption="",
-        alt_text="",
+        caption=None,
+        alt_text=None,
         display=None,
         story=None,
     ):
@@ -832,8 +832,8 @@ class Audio(object):
             "type": "audio",
             "data": {
                 "audio": self.resource_node,
-                "caption": caption,
-                "alt": alt_text,
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
             },
             "config": {"size": display},
         }
@@ -1034,9 +1034,9 @@ class Embed(object):
                 "url": self._path,
                 "embedType": "link",
                 "title": sections.netloc,
-                "description": caption,
+                "description": "" if caption is None else caption,
                 "providerUrl": sections.netloc,
-                "alt": alt_text,
+                "alt": "" if alt_text is None else alt_text,
                 "display": display,
             },
         }
@@ -1325,8 +1325,8 @@ class Map(object):
             "type": "webmap",
             "data": {
                 "map": self.resource_node,
-                "caption": caption,
-                "alt": alt_text,
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
                 "extent": self._extent,
                 "center": self._center,
                 "zoom": 2,
@@ -1924,8 +1924,8 @@ class Gallery(object):
             "type": "gallery",
             "data": {
                 "galleryLayout": display if display is not None else "jigsaw",
-                "caption": caption,
-                "alt": alt_text,
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
             },
             "children": self._children,
         }
