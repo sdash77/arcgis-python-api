@@ -2857,6 +2857,7 @@ class Transform3d(object):
     """
     Creates a 3D transformation that can be used in `prepare_data`
     to apply data augmentation to blocks, with a 50 % probability.
+    Applicable only for dataset_type=’PointCloud’.
 
     =====================   ===========================================
     **Argument**            **Description**
