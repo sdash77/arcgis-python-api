@@ -78,7 +78,7 @@ class ImageryLayerCacheManager(_GISResource):
         """
         url = self._url + "/refresh"
         params = {"f": "json"}
-        res = self._con.post(self._url, params, timeout=None)
+        res = self._con.post(url, params, timeout=None)
         if "success" in res:
             return res["success"]
         return res

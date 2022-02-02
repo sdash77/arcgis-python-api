@@ -1398,7 +1398,7 @@ class FeatureLayer(Layer):
                                                     datetime.date, datetime.datetime or timestamp in
                                                     milliseconds
         -------------------------------     --------------------------------------------------------------------
-        geometry_filter                     Optional from arcgis.geometry.filter. Allows for the information to
+        geometry_filter                     Optional from :attr:`~arcgis.geometry.filters`. Allows for the information to
                                             be filtered on spatial relationship with another geometry.
         -------------------------------     --------------------------------------------------------------------
         max_allowable_offset                Optional float. This option can be used to specify the
@@ -1456,7 +1456,7 @@ class FeatureLayer(Layer):
                                             be grouped for calculating the statistics.
                                             example: STATE_NAME, GENDER
         -------------------------------     --------------------------------------------------------------------
-        out_statistics                      Optional string. The definitions for one or more field-based
+        out_statistics                      Optional list of dictionaries. The definitions for one or more field-based
                                             statistics to be calculated.
 
                                             Syntax:
