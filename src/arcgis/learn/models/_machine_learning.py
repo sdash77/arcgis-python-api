@@ -330,8 +330,10 @@ class MLModel(object):
             _create_zip(Path(path).name, str(path))
 
         if publish:
+            file_name = os.path.basename(path) + ".dlpk"
+            dlpk_path = Path(os.path.join(path, file_name))
             self._publish_dlpk(
-                (Path(path) / Path(path).stem).with_suffix(".dlpk"),
+                dlpk_path,
                 gis=gis,
                 overwrite=kwargs.get("overwrite", False),
             )

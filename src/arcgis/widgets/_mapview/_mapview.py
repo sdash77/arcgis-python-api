@@ -1256,7 +1256,10 @@ class MapView(widgets.DOMWidget):
             copy_gallery = dict(self._gallery_basemaps)
             self._gallery_basemaps = {}
             self._gallery_basemaps = copy_gallery
-        elif "defaultBasemap" in self.gis.properties:
+        elif (
+            "defaultBasemap" in self.gis.org_settings
+            and self.gis.org_settings["defaultBasemap"]
+        ):
             self._gallery_basemaps["default"] = self.gis.org_settings["defaultBasemap"]
             self._basemap = "default"
             # Add to text property so default is recorded

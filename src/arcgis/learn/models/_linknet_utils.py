@@ -315,7 +315,7 @@ def miou(prediction, *target, ignore_mapped_class=[], smooth=1e-8):
 
     def fast_hist(a, b, n):
         k = (a >= 0) & (a < n)
-        return np.bincount(n * a[k].astype(int) + b[k], minlength=n ** 2).reshape(n, n)
+        return np.bincount(n * a[k].astype(int) + b[k], minlength=n**2).reshape(n, n)
 
     target = target.squeeze(1).long()
     batch_size = prediction.size(0)
@@ -351,7 +351,7 @@ def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_clas
 
     def fast_hist(a, b, n):
         k = (a >= 0) & (a < n)
-        return np.bincount(n * a[k].astype(int) + b[k], minlength=n ** 2).reshape(n, n)
+        return np.bincount(n * a[k].astype(int) + b[k], minlength=n**2).reshape(n, n)
 
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
