@@ -134,13 +134,16 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                     server_url + "/rest/info?f=json",
                     auth=self.auth,
                     verify=self.verify_cert,
+                    proxies=self.proxies,
                 ).json()
                 token_url = info["authInfo"]["tokenServicesUrl"]
                 self._server_log[parsed.netloc] = token_url
             if server_url in self._tokens:
                 token_str = self._tokens[server_url]
             else:
-                token = requests.post(token_url, data=postdata, auth=self.auth)
+                token = requests.post(
+                    token_url, data=postdata, auth=self.auth, proxies=self.proxies
+                )
                 token_str = token.json().get("token", None)
                 if token_str is None:
                     return r
@@ -197,6 +200,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             raise ImportError(
                 "requests_kerberos is required to use this authentication handler."
             )
+        self.proxies = kwargs.pop("proxies", None)
         self.legacy = kwargs.pop("legacy", False)
         self._server_log = {}
         self._tokens = {}
@@ -257,6 +261,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
                     server_url + "/rest/info?f=json",
                     auth=self.auth,
                     verify=self.verify_cert,
+                    proxies=self.proxies,
                 ).json()
                 token_url = info["authInfo"]["tokenServicesUrl"]
                 self._server_log[parsed.netloc] = token_url
@@ -268,6 +273,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
                     data=postdata,
                     auth=self.auth,
                     verify=self.verify_cert,
+                    proxies=self.proxies,
                 )
                 token_str = token.json().get("token", None)
                 if token_str is None:

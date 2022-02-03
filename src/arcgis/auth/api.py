@@ -430,7 +430,13 @@ class EsriSession:
             redirects = kwargs.pop("allow_redirects")
         else:
             redirects = self.allow_redirects
-        return self._session.get(url, allow_redirects=redirects, **kwargs)
+        if 'proxies' in kwargs:
+            proxies = kwargs.pop('proxies')
+        else:
+            proxies = self.proxies
+        return self._session.get(
+            url, allow_redirects=redirects, proxies=proxies, **kwargs
+        )
 
     # ----------------------------------------------------------------------
     def options(self, url, **kwargs) -> "requests.Response":
@@ -440,8 +446,11 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
-
-        return self._session.options(url, **kwargs)
+        if 'proxies' in kwargs:
+            proxies = kwargs.pop('proxies')
+        else:
+            proxies = self.proxies
+        return self._session.options(url, proxies=proxies, **kwargs)
 
     # ----------------------------------------------------------------------
     def head(self, url, **kwargs) -> "requests.Response":
@@ -451,7 +460,11 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
-        return self._session.head(url, **kwargs)
+        if 'proxies' in kwargs:
+            proxies = kwargs.pop('proxies')
+        else:
+            proxies = self.proxies
+        return self._session.head(url, proxies=proxies, **kwargs)
 
     # ----------------------------------------------------------------------
     def post(self, url, data=None, json=None, **kwargs) -> "requests.Response":
@@ -464,12 +477,21 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
+        if 'proxies' in kwargs:
+            proxies = kwargs.pop('proxies')
+        else:
+            proxies = self.proxies
         if "allow_redirects" in kwargs:
             redirects = kwargs.pop("allow_redirects")
         else:
             redirects = self.allow_redirects
         return self._session.post(
-            url, data=data, json=json, allow_redirects=redirects, **kwargs
+            url,
+            data=data,
+            json=json,
+            allow_redirects=redirects,
+            proxies=proxies,
+            **kwargs,
         )
 
     # ----------------------------------------------------------------------
@@ -482,8 +504,11 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
-
-        return self._session.put(url, data=data, **kwargs)
+        if 'proxies' in kwargs:
+            proxies = kwargs.pop('proxies')
+        else:
+            proxies = self.proxies
+        return self._session.put(url, data=data, proxies=proxies, **kwargs)
 
     # ----------------------------------------------------------------------
     def patch(self, url, data=None, **kwargs) -> "requests.Response":
@@ -495,8 +520,11 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
-
-        return self._session.patch(url, data=data, **kwargs)
+        if 'proxies' in kwargs:
+            proxies = kwargs.pop('proxies')
+        else:
+            proxies = self.proxies
+        return self._session.patch(url, data=data, proxies=proxies, **kwargs)
 
     # ----------------------------------------------------------------------
     def delete(self, url, **kwargs) -> "requests.Response":
@@ -506,5 +534,8 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
-
-        return self._session.delete(url, **kwargs)
+        if 'proxies' in kwargs:
+            proxies = kwargs.pop('proxies')
+        else:
+            proxies = self.proxies
+        return self._session.delete(url, proxies=proxies, **kwargs)
