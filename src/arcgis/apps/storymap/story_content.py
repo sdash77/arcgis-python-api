@@ -2172,11 +2172,11 @@ class Sidecar(object):
     @property
     def properties(self):
         """
-        List all slides and their children
+        List all slides and their children for a Sidecar node.
 
         :return:
             A list where the first item is the node id for the sidecar. Next
-            items are dictionary of slides and their children.
+            items are slides with the dictionary their children.
         """
         sidecar_tree = [self.node]
         for slide in self._slides:
@@ -2201,8 +2201,7 @@ class Sidecar(object):
             # construct tree like structure
             sidecar_tree.append(
                 {
-                    "Slide:"
-                    + slide: {
+                    slide: {
                         "narrative_panel": {
                             "panel": narrative_panel,
                             "children": narrative_children,
@@ -2214,21 +2213,21 @@ class Sidecar(object):
         return sidecar_tree
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.0.1", removed_in=None, current_version="2.0.0")
     def edit(
         self,
-        content: Union[Image, Video, Map, Text, Embed],
+        content: Union[Image, Video, Map, Embed],
         slide_number: int,
     ):
         """
-        Edit method can be used to edit the media of a sidecar. By specifying the slide number and the content
-        to be added. The media can only be of type: Image, Video, Map, or Embed.
+        Edit method can be used to edit the type of media in a slide of the Sidecar. 
+        This is done by specifying the slide number and the media content to be added. 
+        The media can only be of type: Image, Video, Map, or Embed.
 
         .. note::
             This method should not be used to edit the narrative panel of the Sidecar. To better edit both
-            the media and the narrative panel, it is recommended to use the :func:`~Sidecar.get` method in the Sidecar class.
-            This method is deprecated due to limited edit use.
-
+            the media and the narrative panel, it is recommended to use the :func:`~Sidecar.get` method 
+            in the Sidecar class. The `get` method can be used to change media if the content is of the same
+            type as what is currently present.
 
         ==================      =======================================================================
         **Argument**            **Description**
@@ -2238,11 +2237,32 @@ class Sidecar(object):
         ------------------      -----------------------------------------------------------------------
         slide_number            Required Integer. The slide that will be edited. First slide is 1.
         ==================      =======================================================================
+
+        .. code-block:: python
+            # Get sidecar from story and see the properties
+            sc = story.get(<sidecar_node_id>)
+            sc.properties
+            >> returns a dictionary structure of the sidecar
+
+            # If a slide 2 contains a map and you want to change it to an image
+            im = Image(<img_url_or_path>)
+            sc.edit(im, 2)
+            sc.properties
+            >> notice slide 2 now has an image
+
+            # If I want to update the image then 2 methods:
+            # OPTION 1
+            im2 = Image(<img_url_or_path>)
+            sc.edit(im2, 2)
+
+            # OPTION 2 (only applicable if content is of same type as existing)
+            im2 = sc.get(im.node_id)
+            im2.image = <img_url_or_path>
+            
         """
-        # Find children nodes
+        # Find media child
         slide = self._slides[slide_number - 1]
         slide_node = self._story._properties["nodes"][slide]
-        narrative_panel = slide_node["children"][0]
         media_item = None
         if len(slide_node["children"]) == 2:
             media_item = slide_node["children"][1]
@@ -2251,21 +2271,10 @@ class Sidecar(object):
         if content.node not in self._story._properties["nodes"]:
             self._add_item_story(content)
 
-        # Insert new content
-        if isinstance(content, Text):
-            # If content is text then update the narrative panel by removing old text and adding new
-            old_text_node = narrative_panel["children"][0]
-            self._story._properties["nodes"][narrative_panel]["children"].pop(0)
-            self._story._delete(old_text_node)
-            self._story._properties["nodes"][narrative_panel]["children"].insert(
-                0, content.node
-            )
-        else:
-            # Remove current media content and add new content as media
-            if media_item:
-                self._story._delete(media_item)
-                self._story._properties["nodes"][slide]["children"].pop(1)
-            self._story._properties["nodes"][slide]["children"].insert(1, content.node)
+        if media_item:
+            self._story._delete(media_item)
+            self._story._properties["nodes"][slide]["children"].pop(1)
+        self._story._properties["nodes"][slide]["children"].insert(1, content.node)
 
     # ----------------------------------------------------------------------
     def get(self, node_id: str):
