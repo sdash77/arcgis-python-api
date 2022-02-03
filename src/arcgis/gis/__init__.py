@@ -14255,6 +14255,43 @@ class Item(dict):
         except:
             return {}
 
+    # ----------------------------------------------------------------------
+    def export_to_tile_package(
+        self,
+        title=None,
+        future=False,
+    ):
+        """
+
+        Exports an Imagery Layer to tile package.
+
+        .. note::
+            Currently supported only on ArcGIS online. The ImageryLayer should be a tilesOnly Image service.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        title               Optional String. Name of the exported tile package item.
+        ---------------     --------------------------------------------------------------------
+        future              Optional Boolean. If True, the result will be a GPJob object and
+                            results will be returned asynchronously.
+        ===============     ====================================================================
+
+        :return: The exported tile package item
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.export_to_tile_package(title = "exported_tile_package")
+
+        """
+
+        gis = self._gis
+        return gis._tools.rasteranalysis.export_to_tile_package(
+            input_imagery_layer=self, output_tile_package=title, future=future
+        )
+
 
 ########################################################################
 class ItemDependency(object):

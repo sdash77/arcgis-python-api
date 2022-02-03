@@ -14070,25 +14070,25 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob)
         return RAJob(gpjob).result()
 
-
-    def export_to_tile_package(self,
-                               input_imagery_layer, 
-                               output_tile_package=None,
-                                context=None,
-                                future=False,
-                                **kwargs
-                            ):
+    def export_to_tile_package(
+        self,
+        input_imagery_layer,
+        output_tile_package=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-       input_imagery_layer: inputImageryLayer (str). Required parameter.  
+        input_imagery_layer: inputImageryLayer (str). Required parameter.
 
-       output_tile_package: outputTilePackage (str). Required parameter.  
+        output_tile_package: outputTilePackage (str). Required parameter.
 
-        context: context (str). Optional parameter.
+         context: context (str). Optional parameter.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -14102,14 +14102,20 @@ class _RasterAnalysisTools(BaseAnalytics):
             context = context_param["context"]
 
         if isinstance(input_imagery_layer, Item):
-            url = "%s/sharing/rest/content/items/%s" % (input_imagery_layer._portal.url, input_imagery_layer.id)
-            input_imagery_layer = {"itemId": input_imagery_layer.itemid, "url":url}
-        elif (isinstance(input_imagery_layer, str)) and ("http:" in input_imagery_layer or "https:" in input_imagery_layer):
+            url = "%s/sharing/rest/content/items/%s" % (
+                input_imagery_layer._portal.url,
+                input_imagery_layer.id,
+            )
+            token = input_imagery_layer._gis._con._create_token(url)
+            if token is not None:
+                url = url + "?token=" + token
+            input_imagery_layer = {"itemId": input_imagery_layer.itemid, "url": url}
+        elif (isinstance(input_imagery_layer, str)) and (
+            "http:" in input_imagery_layer or "https:" in input_imagery_layer
+        ):
             input_imagery_layer = {"url": input_imagery_layer}
         else:
-            raise RuntimeError(
-                "Invalid value for input_imagery_layer parameter"
-            )
+            raise RuntimeError("Invalid value for input_imagery_layer parameter")
 
         if output_tile_package is None:
             output_tile_package = str(task) + "_" + _id_generator()
@@ -14126,6 +14132,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob)
 
         return RAJob(gpjob).result()
+
 
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):

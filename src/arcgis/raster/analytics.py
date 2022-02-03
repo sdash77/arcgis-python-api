@@ -9082,3 +9082,41 @@ def train_random_trees_regression_model(
         future=future,
         **kwargs
     )
+
+
+def export_to_tile_package(
+    input_data, output_name=None, *, gis=None, future=False, **kwargs
+):
+    """
+
+    Exports an Imagery Layer to tile package.
+
+    .. note::
+        Currently supported only on ArcGIS online. The ImageryLayer should be a tilesOnly Image service.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    title               Optional String. Name of the exported tile package portal item.
+    ---------------     --------------------------------------------------------------------
+    future              Optional Boolean. If True, the result will be a GPJob object and
+                        results will be returned asynchronously.
+    ===============     ====================================================================
+
+    :return: The exported tile package item
+
+    .. code-block:: python
+
+        # Usage Example
+
+        >>> exported_item = export_to_tile_package(input_data = item, output_name = "exported_tile_package")
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.export_to_tile_package(
+        input_imagery_layer=input_data,
+        output_tile_package=output_name,
+        future=future,
+        **kwargs
+    )
