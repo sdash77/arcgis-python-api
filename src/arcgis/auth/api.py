@@ -430,8 +430,8 @@ class EsriSession:
             redirects = kwargs.pop("allow_redirects")
         else:
             redirects = self.allow_redirects
-        if 'proxies' in kwargs:
-            proxies = kwargs.pop('proxies')
+        if "proxies" in kwargs:
+            proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
         return self._session.get(
@@ -446,8 +446,8 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
-        if 'proxies' in kwargs:
-            proxies = kwargs.pop('proxies')
+        if "proxies" in kwargs:
+            proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
         return self._session.options(url, proxies=proxies, **kwargs)
@@ -460,8 +460,8 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
-        if 'proxies' in kwargs:
-            proxies = kwargs.pop('proxies')
+        if "proxies" in kwargs:
+            proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
         return self._session.head(url, proxies=proxies, **kwargs)
@@ -477,8 +477,8 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
-        if 'proxies' in kwargs:
-            proxies = kwargs.pop('proxies')
+        if "proxies" in kwargs:
+            proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
         if "allow_redirects" in kwargs:
@@ -504,8 +504,8 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
-        if 'proxies' in kwargs:
-            proxies = kwargs.pop('proxies')
+        if "proxies" in kwargs:
+            proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
         return self._session.put(url, data=data, proxies=proxies, **kwargs)
@@ -520,8 +520,8 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
-        if 'proxies' in kwargs:
-            proxies = kwargs.pop('proxies')
+        if "proxies" in kwargs:
+            proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
         return self._session.patch(url, data=data, proxies=proxies, **kwargs)
@@ -534,8 +534,8 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
-        if 'proxies' in kwargs:
-            proxies = kwargs.pop('proxies')
+        if "proxies" in kwargs:
+            proxies = kwargs.pop("proxies")
         else:
             proxies = self.proxies
         return self._session.delete(url, proxies=proxies, **kwargs)
