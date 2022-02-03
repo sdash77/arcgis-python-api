@@ -83,46 +83,40 @@ class StoryMap(object):
             # set item properties
             self._item = item
             self._itemid = self._item.itemid
-            self._properties = self._item.get_data()
             self._resources = self._item.resources.list()
-            if (
-                self._properties == {}
-                or "unpublished" in self._properties
-                and self._properties["unpublished"] is True
-            ):
-                # If story is a draft, get properties from resource file.
-                # Can have multiple drafts so need to account for this.
-                # Draft file will be of form: draft_{13 digit timestamp}.json or draft.json
-                saved_drafts = []
-                for resource in self._resources:
-                    for key, val in resource.items():
-                        if key == "resource" and (
-                            re.match("draft_\d{13}.json", val)
-                            or re.match("draft.json", val)
-                        ):
-                            saved_drafts.append(val)
-                if len(saved_drafts) == 1:
-                    # Only one draft saved
-                    # Open JSON draft file for properties
-                    data = self._item.resources.get(saved_drafts[0], try_json=True)
-                    self._properties = data
-                else:
-                    # multiple drafts saved
-                    # remove draft.json because oldest one
-                    if "draft.json" in saved_drafts:
-                        idx = saved_drafts.index("draft.json")
-                        del saved_drafts[idx]
-                    # check remaining to find most recent
-                    start = saved_drafts[0][6:19]  # get only timestamp
-                    current = saved_drafts[0]
-                    for draft in saved_drafts:
-                        compare = draft[6:19]
-                        if start < compare:
-                            start = compare
-                            current = draft
-                    # Open most recent JSON draft file for properties
-                    data = self._item.resources.get(current, try_json=True)
-                    self._properties = data
+            # Get properties from most recent resource file.
+            # Can have multiple drafts so need to account for this.
+            # Draft file will be of form: draft_{13 digit timestamp}.json or draft.json
+            saved_drafts = []
+            for resource in self._resources:
+                for key, val in resource.items():
+                    if key == "resource" and (
+                        re.match("draft_\d{13}.json", val)
+                        or re.match("draft.json", val)
+                    ):
+                        saved_drafts.append(val)
+            if len(saved_drafts) == 1:
+                # Only one draft saved
+                # Open JSON draft file for properties
+                data = self._item.resources.get(saved_drafts[0], try_json=True)
+                self._properties = data
+            else:
+                # multiple drafts saved
+                # remove draft.json because oldest one
+                if "draft.json" in saved_drafts:
+                    idx = saved_drafts.index("draft.json")
+                    del saved_drafts[idx]
+                # check remaining to find most recent
+                start = saved_drafts[0][6:19]  # get only timestamp
+                current = saved_drafts[0]
+                for draft in saved_drafts:
+                    compare = draft[6:19]
+                    if start < compare:
+                        start = compare
+                        current = draft
+                # Open most recent JSON draft file for properties
+                data = self._item.resources.get(current, try_json=True)
+                self._properties = data
         elif (
             item
             and isinstance(item, arcgis.gis.Item)
