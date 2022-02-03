@@ -1733,7 +1733,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         if value in [0, "0", False, "false"]:
             self._pop_ups = False
 
-    def configure_pop_ups(self, layer_title: str, field_name: str, visibility: bool):
+    def configure_pop_ups(self, layer_title: str, field_names: list, visibility: bool):
         """
         This method can be used to change the visibility of a field for a layer on the Web Map.
 
@@ -1747,7 +1747,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ------------------     --------------------------------------------------------------------
         layer_title            Required string. The name of the layer.
         ------------------     --------------------------------------------------------------------
-        field_name             Required string. The name of the field to change the visibility of.
+        field_names            Required list of strings. The name of the field to change the visibility of.
         ------------------     --------------------------------------------------------------------
         visibility             Required bool. True if the field should be visible on the pop up for
                                the layer, else False.
@@ -1755,11 +1755,12 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
         layer = self.get_layer(title=layer_title)
 
-        idx = 0
-        for field in layer.popupInfo.fieldInfos:
-            if field["fieldName"] == field_name:
-                layer.popupInfo.fieldInfos[idx].visible = visibility
-            idx += 1
+        for field_name in field_names:
+            idx = 0
+            for field in layer.popupInfo.fieldInfos:
+                if field["fieldName"] == field_name:
+                    layer.popupInfo.fieldInfos[idx].visible = visibility
+                idx += 1
         return self.get_layer(title=layer_title)
 
     @property
