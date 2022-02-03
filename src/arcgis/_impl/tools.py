@@ -14096,6 +14096,14 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         gis = self._gis
 
+        if (
+            gis._con._product != "AGOL"
+            or "rasterAnalytics" not in gis.properties.helperServices
+        ):
+            raise RuntimeError(
+                "Export to tile package functionality is supported only on ArcGIS Online environment that has Raster Analysis capabilties"
+            )
+
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
