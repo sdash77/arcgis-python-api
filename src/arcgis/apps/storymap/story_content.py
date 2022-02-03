@@ -4,6 +4,7 @@ import json
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
+from arcgis._impl.common._deprecate import deprecated
 
 arcgis = LazyLoader("arcgis")
 urllib3 = LazyLoader("urllib3")
@@ -2211,21 +2212,27 @@ class Sidecar(object):
         return sidecar_tree
 
     # ----------------------------------------------------------------------
+    @deprecated(deprecated_in="2.0.1", removed_in=None, current_version="2.0.0")
     def edit(
         self,
         content: Union[Image, Video, Map, Text, Embed],
         slide_number: int,
     ):
         """
-        Edit method is used to edit the items found in the Sidecar. A Sidecar is comprised of slides and 
-        each slide is composed of two main nodes: Narrative Panel and Media. 
+        Edit method can be used to edit the media of a sidecar. By specifying the slide number and the content
+        to be added. The media can only be of type: Image, Video, Map, or Embed.
+
+        .. note::
+            This method should not be used to edit the narrative panel of the Sidecar. To better edit both
+            the media and the narrative panel, it is recommended to use the :func:`~Sidecar.get` method in the Sidecar class.
+            This method is deprecated due to limited edit use.
+
 
         ==================      =======================================================================
         **Argument**            **Description**
         ------------------      -----------------------------------------------------------------------
         content                 Required item that is a story content item.
                                 Item type for the media node can be: Image, Video, Map, Embed, or Swipe.
-                                Item type for the narrative panel node can be any StoryMap Content.
         ------------------      -----------------------------------------------------------------------
         slide_number            Required Integer. The slide that will be edited. First slide is 1.
         ==================      =======================================================================
