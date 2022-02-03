@@ -1109,9 +1109,12 @@ class StoryMap(object):
         # Remove node from any immersive nodes.
         # A node can belong to an immersive narrative panel or an immersive slide
         for node in self._properties["nodes"]:
-            if "immersive" in self._properties["nodes"][node]["type"] and "children" in self._properties["nodes"][node]:
+            if (
+                "immersive" in self._properties["nodes"][node]["type"]
+                and "children" in self._properties["nodes"][node]
+            ):
                 for child in self._properties["nodes"][node]["children"]:
-                    #iterate through children to see if node is part of it
+                    # iterate through children to see if node is part of it
                     if child == node_id:
                         self._properties["nodes"][node]["children"].remove(node_id)
 

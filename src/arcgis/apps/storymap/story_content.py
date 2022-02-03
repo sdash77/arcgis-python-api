@@ -1630,7 +1630,7 @@ class Button(object):
         self, link: Optional[str] = None, text: Optional[str] = None, **kwargs
     ):
         # Can be created from scratch or already exist in story
-        # Button is not an immersive node        
+        # Button is not an immersive node
         self._story = kwargs.pop("story", None)
         self._type = "button"
         self.node = kwargs.pop("node_id", None)
@@ -1995,11 +1995,13 @@ class Swipe(object):
         self._type = "swipe"
         # Find the type of media that the swipe supports.
         # Both contents are of the same type so only need to look at one.
-        if "data" in self._story._properties["nodes"][self.node] :
-            self._slides = self._story._properties["nodes"][self.node]["data"]["contents"]
-            media_node = self._story._properties["nodes"][self.node]["data"]["contents"][
-                "0"
+        if "data" in self._story._properties["nodes"][self.node]:
+            self._slides = self._story._properties["nodes"][self.node]["data"][
+                "contents"
             ]
+            media_node = self._story._properties["nodes"][self.node]["data"][
+                "contents"
+            ]["0"]
             self._media_type = story._properties["nodes"][media_node]["type"]
         else:
             # Empty swipe node
@@ -2266,7 +2268,7 @@ class Sidecar(object):
             self._story._properties["nodes"][slide]["children"].insert(1, content.node)
 
     # ----------------------------------------------------------------------
-    def get(self, node_id:str):
+    def get(self, node_id: str):
         """
         The get method is used to get the node that will be edited. Use `sidecar.properties` to
         find all nodes associated with the sidecar.
