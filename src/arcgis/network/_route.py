@@ -1,8 +1,10 @@
 import logging as _logging
+from typing import Optional
 import arcgis
 from datetime import datetime
 from arcgis.geoprocessing import import_toolbox
 from arcgis.features import FeatureSet
+from arcgis.gis import GIS
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
@@ -543,40 +545,40 @@ default_tolerance = {"distance": 10, "units": "esriMeters"}
 
 
 def find_routes(
-    stops,
-    measurement_units="Minutes",
-    analysis_region=None,
-    reorder_stops_to_find_optimal_routes=False,
-    preserve_terminal_stops="Preserve First",
-    return_to_start=False,
-    use_time_windows=False,
-    time_of_day=None,
-    time_zone_for_time_of_day="Geographically Local",
-    uturn_at_junctions="Allowed Only at Intersections and Dead Ends",
-    point_barriers=None,
-    line_barriers=None,
-    polygon_barriers=None,
-    use_hierarchy=True,
-    restrictions=None,
-    attribute_parameter_values=None,
-    route_shape="True Shape",
-    route_line_simplification_tolerance=None,
-    populate_route_edges=False,
-    populate_directions=True,
-    directions_language="en",
-    directions_distance_units="Miles",
-    directions_style_name="NA Desktop",
-    travel_mode="Custom",
-    impedance="Drive Time",
-    overrides=None,
-    time_impedance="TravelTime",
-    save_route_data=False,
-    distance_impedance="Kilometers",
-    output_format="Feature Set",
-    save_output_na_layer=False,
-    time_zone_for_time_windows="Geographically Local",
-    gis=None,
-    future=False,
+    stops: FeatureSet,
+    measurement_units: str = "Minutes",
+    analysis_region: Optional[str] = None,
+    reorder_stops_to_find_optimal_routes: bool = False,
+    preserve_terminal_stops: str = "Preserve First",
+    return_to_start: bool = False,
+    use_time_windows: bool = False,
+    time_of_day: Optional[datetime] = None,
+    time_zone_for_time_of_day: str = "Geographically Local",
+    uturn_at_junctions: str = "Allowed Only at Intersections and Dead Ends",
+    point_barriers: Optional[FeatureSet] = None,
+    line_barriers: Optional[FeatureSet] = None,
+    polygon_barriers: Optional[FeatureSet] = None,
+    use_hierarchy: bool = True,
+    restrictions: Optional[str] = None,
+    attribute_parameter_values: Optional[FeatureSet] = None,
+    route_shape: str = "True Shape",
+    route_line_simplification_tolerance: Optional[LinearUnit] = None,
+    populate_route_edges: bool = False,
+    populate_directions: bool = True,
+    directions_language: str = "en",
+    directions_distance_units: str = "Miles",
+    directions_style_name: str = "NA Desktop",
+    travel_mode: str = "Custom",
+    impedance: str = "Drive Time",
+    overrides: Optional[dict] = None,
+    time_impedance: str = "TravelTime",
+    save_route_data: bool = False,
+    distance_impedance: str = "Kilometers",
+    output_format: str = "Feature Set",
+    save_output_na_layer: bool = False,
+    time_zone_for_time_windows: str = "Geographically Local",
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
 

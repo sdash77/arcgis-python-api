@@ -4,9 +4,13 @@ These functions help you use hydrology analysis.
 """
 
 import logging as _logging
+from typing import Optional, Union
+
 import arcgis
+from arcgis.features.feature import FeatureCollection
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.features import FeatureSet
+from arcgis.gis import GIS
 from .._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 
@@ -52,11 +56,11 @@ def _evaluate_spatial_input(input_points):
 
 def trace_downstream(
     input_points,
-    point_id_field=None,
-    source_database="Finest",
-    generalize=False,
-    gis=None,
-    future=False,
+    point_id_field: Optional[str] = None,
+    source_database: str = "Finest",
+    generalize: bool = False,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
 
@@ -177,14 +181,14 @@ def trace_downstream(
 
 def watershed(
     input_points,
-    point_id_field=None,
-    snap_distance=10,
-    snap_distance_units="Meters",
-    source_database="Finest",
-    generalize=False,
-    gis=None,
-    return_snapped_points=True,
-    future=False,
+    point_id_field: Optional[str] = None,
+    snap_distance: float = 10,
+    snap_distance_units: str = "Meters",
+    source_database: str = "Finest",
+    generalize: bool = False,
+    gis: Optional[GIS] = None,
+    return_snapped_points: bool = True,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/create_watersheds/create_watersheds.png

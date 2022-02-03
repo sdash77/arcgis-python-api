@@ -7,17 +7,18 @@ reconstruct_tracks calculates statistics about points or polygons that belong to
 summarize_attributes calculates statistics about feature or tabular data that share attributes.
 summarize_within calculates statistics for area features and attributes that overlap each other.
 """
-
+from __future__ import annotations
 import json as _json
-import datetime
-from datetime import datetime as _datetime
+from datetime import datetime
 import logging as _logging
+from typing import Any, Optional, Union
 import arcgis as _arcgis
-from arcgis.features import FeatureSet as _FeatureSet
-from arcgis.features import Table as _Table
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing import DataFile
+from arcgis.gis import GIS, Item
 from ._util import (
     _id_generator,
     _feature_input,
@@ -32,15 +33,22 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 # --------------------------------------------------------------------------
 def summarize_center_and_dispersion(
-    input_layer,
-    summary_type,
-    ellipse_size=None,
-    weight_field=None,
-    group_fields=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    summary_type: str,
+    ellipse_size: Optional[int] = None,
+    weight_field: Optional[str] = None,
+    group_fields: Optional[str] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     The `summarize_center_and_dispersion` task finds central features and directional
@@ -165,15 +173,22 @@ def summarize_center_and_dispersion(
 
 # --------------------------------------------------------------------------
 def build_multivariable_grid(
-    input_layers,
-    variable_calculations,
-    bin_size,
-    bin_unit="Meters",
-    bin_type="Square",
-    output_name=None,
-    gis=None,
-    future=False,
-    context=None,
+    input_layers: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    variable_calculations: list[dict[str, Any]],
+    bin_size: float,
+    bin_unit: str = "Meters",
+    bin_type: str = "Square",
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    context: Optional[dict[str, Any]] = None,
 ):
     """
 
@@ -444,21 +459,37 @@ def build_multivariable_grid(
 
 # --------------------------------------------------------------------------
 def aggregate_points(
-    point_layer,
-    bin_type=None,
-    bin_size=None,
-    bin_size_unit=None,
-    polygon_layer=None,
-    time_step_interval=None,
-    time_step_interval_unit=None,
-    time_step_repeat_interval=None,
-    time_step_repeat_interval_unit=None,
-    time_step_reference=None,
-    summary_fields=None,
-    output_name=None,
-    gis=None,
-    future=False,
-    context=None,
+    point_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    bin_type: Optional[str] = None,
+    bin_size: Optional[float] = None,
+    bin_size_unit: Optional[str] = None,
+    polygon_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    time_step_interval: Optional[int] = None,
+    time_step_interval_unit: Optional[str] = None,
+    time_step_repeat_interval: Optional[int] = None,
+    time_step_repeat_interval_unit: Optional[str] = None,
+    time_step_reference: Optional[datetime] = None,
+    summary_fields: Optional[list[dict[str, Any]]] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    context: Optional[dict[str, Any]] = None,
 ):
     """
     .. image:: _static/images/aggregate_points/aggregate_points.png
@@ -686,14 +717,21 @@ def aggregate_points(
 
 # --------------------------------------------------------------------------
 def describe_dataset(
-    input_layer,
-    extent_output=False,
-    sample_size=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    return_tuple=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    extent_output: bool = False,
+    sample_size: Optional[int] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    return_tuple: bool = False,
 ):
     """
     .. image:: _static/images/describe_dataset/describe_dataset.png
@@ -845,24 +883,38 @@ def describe_dataset(
 
 # --------------------------------------------------------------------------
 def join_features(
-    target_layer,
-    join_layer,
-    join_operation="JoinOneToOne",
-    join_fields=None,
-    summary_fields=None,
-    spatial_relationship=None,
-    spatial_near_distance=None,
-    spatial_near_distance_unit=None,
-    temporal_relationship=None,
-    temporal_near_distance=None,
-    temporal_near_distance_unit=None,
-    attribute_relationship=None,
-    join_condition=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    keep_target=None,
+    target_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    join_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    join_operation: str = "JoinOneToOne",
+    join_fields: Optional[list[dict[str, str]]] = None,
+    summary_fields: Optional[list[dict[str, Any]]] = None,
+    spatial_relationship: Optional[str] = None,
+    spatial_near_distance: Optional[float] = None,
+    spatial_near_distance_unit: Optional[str] = None,
+    temporal_relationship: Optional[str] = None,
+    temporal_near_distance: Optional[int] = None,
+    temporal_near_distance_unit: Optional[str] = None,
+    attribute_relationship: Optional[list[dict[str, str]]] = None,
+    join_condition: Optional[str] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    keep_target: Optional[bool] = None,
 ):
     """
     .. image:: _static/images/join_features_geo/join_features_geo.png
@@ -1121,24 +1173,31 @@ def join_features(
 
 # --------------------------------------------------------------------------
 def reconstruct_tracks(
-    input_layer,
-    track_fields,
-    method="Planar",
-    buffer_field=None,
-    summary_fields=None,
-    distance_split=None,
-    distance_split_unit=None,
-    time_boundary_split=None,
-    time_boundary_split_unit=None,
-    time_boundary_reference=None,
-    output_name=None,
-    gis=None,
-    time_split=None,
-    time_split_unit=None,
-    context=None,
-    future=False,
-    arcade_split=None,
-    split_boundary=None,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    track_fields: str,
+    method: str = "Planar",
+    buffer_field: Optional[str] = None,
+    summary_fields: Optional[list[dict[str, Any]]] = None,
+    distance_split: Optional[int] = None,
+    distance_split_unit: Optional[str] = None,
+    time_boundary_split: Optional[int] = None,
+    time_boundary_split_unit: Optional[str] = None,
+    time_boundary_reference: Optional[datetime] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    time_split: Optional[int] = None,
+    time_split_unit: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    arcade_split: Optional[str] = None,
+    split_boundary: Optional[str] = None,
 ):
     """
     .. image:: _static/images/reconstruct_tracks/reconstruct_tracks.png
@@ -1386,18 +1445,25 @@ def reconstruct_tracks(
 
 # --------------------------------------------------------------------------
 def summarize_attributes(
-    input_layer,
-    fields=None,
-    summary_fields=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    time_step_interval=None,
-    time_step_interval_unit=None,
-    time_step_repeat_interval=None,
-    time_step_repeat_interval_unit=None,
-    time_step_reference=None,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    fields: Optional[str] = None,
+    summary_fields: Optional[list[dict[str, Any]]] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    time_step_interval: Optional[int] = None,
+    time_step_interval_unit: Optional[str] = None,
+    time_step_repeat_interval: Optional[int] = None,
+    time_step_repeat_interval_unit: Optional[str] = None,
+    time_step_reference: Optional[datetime] = None,
 ):
     """
     .. image:: _static/images/summarize_attributes/summarize_attributes.png
@@ -1567,22 +1633,38 @@ def summarize_attributes(
 
 # --------------------------------------------------------------------------
 def summarize_within(
-    summarized_layer,
-    summary_polygons=None,
-    bin_type=None,
-    bin_size=None,
-    bin_size_unit=None,
-    standard_summary_fields=None,
-    weighted_summary_fields=None,
-    sum_shape=True,
-    shape_units=None,
-    group_by_field=None,
-    minority_majority=False,
-    percent_shape=False,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    summarized_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    summary_polygons: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    bin_type: Optional[str] = None,
+    bin_size: Optional[float] = None,
+    bin_size_unit: Optional[str] = None,
+    standard_summary_fields: Optional[list[dict[str, Any]]] = None,
+    weighted_summary_fields: Optional[list[dict[str, Any]]] = None,
+    sum_shape: bool = True,
+    shape_units: Optional[str] = None,
+    group_by_field: Optional[str] = None,
+    minority_majority: bool = False,
+    percent_shape: bool = False,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/summarize_within_geo/summarize_within_geo.png
