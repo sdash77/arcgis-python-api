@@ -46,6 +46,8 @@ class Image(object):
     """
 
     def __init__(self, path: Optional[str] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        # Image is not an immersive node
         self._story = kwargs.pop("story", None)
         self._type = "image"
         # Keep track if URL since different representation style in story dictionary
@@ -363,6 +365,8 @@ class Video(object):
     """
 
     def __init__(self, path: Optional[str] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        # Video is not an immersive node
         # Get properties if provided
         self._story = kwargs.pop("story", None)
         self._type = "video"
@@ -661,6 +665,8 @@ class Audio(object):
     """
 
     def __init__(self, path: Optional[str] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        # Audio is not an immersive node
         if _parse.urlparse(path).scheme == "https":
             # Audio cannot be added by Url at this time.
             raise ValueError(
@@ -890,6 +896,8 @@ class Embed(object):
     """
 
     def __init__(self, path: Optional[str] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        # Embed is not an immersive node
         self._story = kwargs.pop("story", None)
         self._type = "embed"
         self.node = kwargs.pop("node_id", None)
@@ -1080,6 +1088,8 @@ class Map(object):
     """
 
     def __init__(self, item: Optional[arcgis.gis.Item] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        # Map is not an immersive node
         self._story = kwargs.pop("story", None)
         self.node = kwargs.pop("node_id", None)
         # Check if node exists else create new instance
@@ -1496,6 +1506,8 @@ class Text(object):
         color: str = "000",
         **kwargs,
     ):
+        # Can be created from scratch or already exist in story
+        # Text is not an immersive node
         self._story = kwargs.pop("story", None)
         self._type = "text"
         self.node = kwargs.pop("node_id", None)
@@ -1616,6 +1628,8 @@ class Button(object):
     def __init__(
         self, link: Optional[str] = None, text: Optional[str] = None, **kwargs
     ):
+        # Can be created from scratch or already exist in story
+        # Button is not an immersive node        
         self._story = kwargs.pop("story", None)
         self._type = "button"
         self.node = kwargs.pop("node_id", None)
@@ -1742,7 +1756,8 @@ class Gallery(object):
     """
 
     def __init__(self, **kwargs):
-        """ """
+        # Can be created from scratch or already exist in story
+        # Gallery is not an immersive node
         self._story = kwargs.pop("story", None)
         self._type = "gallery"
         self.node = kwargs.pop("node_id", None)
@@ -1899,11 +1914,16 @@ class Gallery(object):
     # ----------------------------------------------------------------------
     def delete_image(self, image: str):
         """
+        The delete_image method is used to delete one image from the gallery. To see a list of images
+        used in the gallery, use the `gallery.images` property.
+
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         image                   Required String. The node id for the image to be removed from the gallery.
         ==================      ====================================================================
+
+        :return: The current list of images in the gallery.
         """
         if image in self.images:
             # Remove from the gallery list
@@ -1968,6 +1988,7 @@ class Swipe(object):
 
     def __init__(self, story, node: str):
         # Content must already exist in story
+        # Swipe is not an immersive node
         self.node = node
         self._story = story
         self._type = "swipe"
@@ -2135,6 +2156,7 @@ class Sidecar(object):
 
     def __init__(self, story, node: str):
         # Content must already exist in the story
+        # Sidecar is an immersive node
         self._story = story
         self.node = node
         self._type = story._properties["nodes"][node]["data"]["type"]
@@ -2198,14 +2220,6 @@ class Sidecar(object):
         Edit method is used to edit the items found in the Sidecar. A Sidecar is comprised of slides and 
         each slide is composed of two main nodes: Narrative Panel and Media. 
 
-        The media node has one child of type: Image, Video, Map, Embed, or Swipe.
-        The narrative panel node has zero to many children of any story content type. (i.e. Text, Image, Embed, Button, etc)
-
-        Editing a slide is done by indicating the slide number, the new content that will be added and where it is expected.
-        You should specify if you want to edit the media node or the narrative panel node. If it is the media node then the content
-        will replace existing content if there is any. If it is the narrative panel node, then specify the node that you want to replace
-        in the narrative panel node. If none is specified the content will be added to the narrative panel without deleting or replacing anything.
-
         ==================      =======================================================================
         **Argument**            **Description**
         ------------------      -----------------------------------------------------------------------
@@ -2214,15 +2228,6 @@ class Sidecar(object):
                                 Item type for the narrative panel node can be any StoryMap Content.
         ------------------      -----------------------------------------------------------------------
         slide_number            Required Integer. The slide that will be edited. First slide is 1.
-        ------------------      -----------------------------------------------------------------------
-        media_or_narrative      *Should this be str or bool ??????* Either: str saying 'media' or 'narrative'
-                                or call it: change_media and make it a bool where if false then we are changing narrative.
-        ------------------      -----------------------------------------------------------------------
-        narrative_item          Optional String. The node id for the narrative panel child that will be
-                                replaced. By specifying this parameter, the current node will be deleted
-                                and replaced with the new content.
-                                If no node is specified, then the new content is appended to the narrative
-                                panel without deleting or replacing anything.
         ==================      =======================================================================
         """
         # Find children nodes
@@ -2252,6 +2257,36 @@ class Sidecar(object):
                 self._story._delete(media_item)
                 self._story._properties["nodes"][slide]["children"].pop(1)
             self._story._properties["nodes"][slide]["children"].insert(1, content.node)
+
+    # ----------------------------------------------------------------------
+    def get(self, node_id:str):
+        """
+        The get method is used to get the node that will be edited. Use `sidecar.properties` to
+        find all nodes associated with the sidecar.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        node_id             Required String. The node id for the content that will be returned.
+        ===============     ====================================================================
+
+        :return: An class instance of the node type.
+
+        .. code-block:: python
+            # Find the nodes associated with the sidecar
+            sc = story.get(<sidecar_node_id>)
+            sc.properties
+            >> returns a dictionary structure of the sidecar
+
+            # Get a node associated with the sidecar, in this example an image, and change the image
+            im = sc.get(<node_id>)
+            im.image = <new_image_path>
+
+            # Save the story to see changes applied in Story Map builder
+            story.save()
+
+        """
+        return self._story._assign_node_class(node_id)
 
     # ----------------------------------------------------------------------
     def remove_slide(self, slide: str):
@@ -2348,6 +2383,7 @@ class Timeline(object):
 
     def __init__(self, story, node: str):
         # Content must already exist in the story
+        # Timeline is not an immersive node
         self._story = story
         self.node = node
         self._type = story._properties["nodes"][node]["type"]

@@ -1106,6 +1106,14 @@ class StoryMap(object):
             self._properties["nodes"][root_id]["children"].remove(node_id)
         # Remove from nodes dictionary
         del self._properties["nodes"][node_id]
+        # Remove node from any immersive nodes.
+        # A node can belong to an immersive narrative panel or an immersive slide
+        for node in self._properties["nodes"]:
+            if "immersive" in self._properties["nodes"][node]["type"] and "children" in self._properties["nodes"][node]:
+                for child in self._properties["nodes"][node]["children"]:
+                    #iterate through children to see if node is part of it
+                    if child == node_id:
+                        self._properties["nodes"][node]["children"].remove(node_id)
 
         # Remove from resources dictionary
         # Note: not all keys are in resources
