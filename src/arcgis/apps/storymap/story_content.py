@@ -1,10 +1,8 @@
 from __future__ import annotations
 from enum import Enum
-import json
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
-from arcgis._impl.common._deprecate import deprecated
 
 arcgis = LazyLoader("arcgis")
 urllib3 = LazyLoader("urllib3")

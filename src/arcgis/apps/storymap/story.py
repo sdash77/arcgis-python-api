@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Optional, Union
 import uuid
 from enum import Enum
-import warnings
 from arcgis.auth.tools import LazyLoader
 import re
 
