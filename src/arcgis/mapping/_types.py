@@ -4276,8 +4276,20 @@ class VectorTileLayer(arcgis.gis.Layer):
          The ``tile_fonts`` method retrieves glyphs in
          `protocol buffer format. <https://developers.google.com/protocol-buffers/>`_
 
-         .. note::
-            The template url for this fonts resource is represented in Vector Tile Style resource.
+
+
+        ============================    ===================================================================================================================
+        **Argument**                    **Description**
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        fontstack                       Required string.
+
+                                        .. note::
+                                            The template url for this fonts resource is represented in the
+                                            'Vector Tile Style <https://developers.arcgis.com/rest/services-reference/enterprise/vector-tile-style.htm>'_
+                                            resource.
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        stack_range                     Required string that depict a range. Ex: "0-255"
+        ============================    ===================================================================================================================
 
         :return:
             Glyphs in PBF format
@@ -4297,7 +4309,19 @@ class VectorTileLayer(arcgis.gis.Layer):
             The bytes for the tile at the specified level, row and column are
             returned in PBF format. If a tile is not found, an error is returned.
 
-        :return:
+        ============================    ================================================
+        **Argument**                    **Description**
+        ----------------------------    ------------------------------------------------
+        level                           Required string. A level number as a string.
+        ----------------------------    ------------------------------------------------
+        row                             Required string. Number of the row that the tile
+                                        belongs to.
+        ----------------------------    ------------------------------------------------
+        column                          Required string. Number of the column that tile
+                                        belongs to.
+        ============================    ================================================
+
+        :returns:
             Bytes in PBF format
         """
         url = "{url}/tile/{level}/{row}/{column}.pbf".format(
@@ -4310,6 +4334,12 @@ class VectorTileLayer(arcgis.gis.Layer):
     def tile_sprite(self, out_format: str = "sprite.json"):
         """
         The ``tile_sprite`` resource retrieves sprite images and metadata
+
+        ============================    ================================================
+        **Argument**                    **Description**
+        ----------------------------    ------------------------------------------------
+        out_format                      Optional string. Default is "sprite.json"
+        ============================    ================================================
 
         :return:
             Sprite image and metadata.
@@ -5232,8 +5262,8 @@ class MapImageLayer(arcgis.gis.Layer):
             The legend symbols include the base64 encoded imageData as well as
             a url that could be used to retrieve the image from the server.
 
-        :return:
-            Legend information
+        :returns:
+            Dictionary of legend information
         """
         url = "%s/legend" % self._url
         return self._con.get(path=url, params={"f": "json"})
@@ -5277,7 +5307,7 @@ class MapImageLayer(arcgis.gis.Layer):
         self,
         geometry: Union[Geometry, list],
         map_extent: str,
-        image_display: str,
+        image_display: Optional[str] = None,
         geometry_type: str = "Point",
         sr: Optional[Union[dict[str, Any], str, SpatialReference]] = None,
         layer_defs: Optional[dict[str, Any]] = None,
@@ -5324,7 +5354,7 @@ class MapImageLayer(arcgis.gis.Layer):
         geometry_type          Required string.The type of geometry specified by the geometry
                                parameter. The geometry type could be a point, line, polygon, or an
                                envelope.
-                               Values: Point,Multipoint,Polyline,Polygon,Envelope
+                               Values: "Point" | "Multipoint" | "Polyline" | "Polygon" | "Envelope"
         ------------------     --------------------------------------------------------------------
         map_extent             Required string. The extent or bounding box of the map currently
                                being viewed.
@@ -5915,7 +5945,7 @@ class MapImageLayer(arcgis.gis.Layer):
             >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
             >>> map_image_item.export_map(bbox="-104,35.6,-94.32,41",
                                           bbox_sr = 4326,
-                                          image_format ="png,
+                                          image_format ="png",
                                           layers = "include",
                                           transparent = True,
                                           scale = 40.0,
@@ -6017,12 +6047,13 @@ class MapImageLayer(arcgis.gis.Layer):
         export_by              Required string. The criteria that will be used to select the tile
                                service levels to export. The values can be Level IDs, cache scales
                                or the Resolution (in the case of image services).
-                               Values: LevelID, Resolution, Scale
+                               Values: "LevelID" | "Resolution" | "Scale"
         ------------------     --------------------------------------------------------------------
         levels                 Required string. Specify the tiled service levels for which you want
                                to get the estimates. The values should correspond to Level IDs,
                                cache scales or the Resolution as specified in export_by parameter.
                                The values can be comma separated values or a range.
+
                                Example 1: 1,2,3,4,5,6,7,8,9
                                Example 2: 1-4,7-9
         ------------------     --------------------------------------------------------------------
@@ -6079,7 +6110,6 @@ class MapImageLayer(arcgis.gis.Layer):
         else:
             exportJob = self._con.get(url, params)
 
-            job_id = exportJob["jobId"]
             path = "%s/jobs/%s" % (url, exportJob["jobId"])
 
             params = {"f": "json"}
@@ -6247,7 +6277,6 @@ class MapImageLayer(arcgis.gis.Layer):
         else:
             exportJob = self._con.get(path=url, params=params)
 
-            job_id = exportJob["jobId"]
             path = "%s/jobs/%s" % (url, exportJob["jobId"])
 
             params = {"f": "json"}

@@ -119,7 +119,7 @@ def aggregate_points(
 
                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
 
@@ -409,7 +409,7 @@ def summarize_nearby(
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                     .. code-block:: python
 
@@ -554,7 +554,7 @@ def summarize_center_and_dispersion(
 
                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                 .. code-block:: python
 
@@ -717,7 +717,7 @@ def summarize_within(
 
                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
 
@@ -903,7 +903,7 @@ def join_features(
 
                                                                                                     - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                                                     - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                                                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                                                                         .. code-block:: python
 

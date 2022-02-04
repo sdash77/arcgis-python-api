@@ -4,7 +4,7 @@ import sys
 import unittest
 from arcgis.gis import GIS
 
-PROFILES = ['your_online_profile', 'your_enterprise_profile']
+PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
 
 class TestBuiltIn(unittest.TestCase):

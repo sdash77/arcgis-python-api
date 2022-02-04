@@ -820,42 +820,114 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Aggregate Points task allows you to aggregate or count the total number of points that are distributed within specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation calculations for attributes of the point layer to understand the general characteristics of aggregated points.
+        The Aggregate Points task works with a layer of point features and a layer of polygon features. It first figures out which points fall within each polygon's area.
+        After determining this point-in-polygon spatial relationship, statistics about all points in the polygon are calculated and assigned to the area. The most basic statistic is the count of the number of points within the polygon, but you can get other statistics as well.
 
-        Parameters
-        ----------
-        point_layer : Required layer (see Feature Input in documentation)
-            Point layer to be aggregated
-        polygon_layer : Optional layer (see Feature Input in documentation)
-            Polygon layer to which the points should be aggregated.  Required if the bin_type, bin_size, and bin_size_unit are not specified.
-        keep_boundaries_with_no_points : Optional bool
-            Specify whether the polygons without any points should be returned in the output.
-        summary_fields : Optional list of strings
-            A list of field names and summary type. Example ['fieldName1 summaryType1','fieldName2 summaryType2'].
-        group_by_field : Optional string
-            A field name from point_layer based on which the points will be grouped.
-        minority_majority : Optional bool
-            This boolean parameter is applicable only when a groupByField is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will be calculated.
-        percent_points : Optional bool
-            This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage count of points for each unique groupByField value is calculated.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
-        estimate: Optional bool
-            Returns the estimated number of credits for the current task.
-        bin_type: Optional string
-            The type of bin that will be generated and points will be aggregated into if no polygon_layer is provided. One of the following: ['SQUARE', 'HEXAGON']
-        bin_size : Optional float
-            The distance for the bins of type bin_type.
-        bin_size_unit: Optional string
-            The linear unit for bin_size. One of the following: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'Nautical Miles']
+        For example, if your points represented coffee shops and each point has a TOTAL_SALES attribute, you can get statistics like the sum of all TOTAL_SALES within the polygon, or the minimum or maximum TOTAL_SALES value, or the standard deviation of all sales within the polygon.
 
-        Returns
-        -------
-        dict with the following keys:
-           "aggregated_layer" : layer (FeatureCollection)
-           "group_summary" : layer (FeatureCollection)
+        ====================================    ====================================================================
+        **Parameter**                           **Description**
+        ------------------------------------    --------------------------------------------------------------------
+        point_layer                             Required point layer. The point features that will be aggregated
+                                                into the polygons in the polygon_layer. See :ref:`Feature Input<FeatureInput>`.
+        ------------------------------------    --------------------------------------------------------------------
+        polygon_layer                           Optional polygon layer. The polygon features (areas) into which the input points will be aggregated. See :ref:`Feature Input<FeatureInput>`. The `polygon_layer` is **required** if the `bin_type`, `bin_size` and `bin_size_unit` are not specified.
+        ------------------------------------    --------------------------------------------------------------------
+        keep_boundaries_with_no_points          Optional boolean. A Boolean value that specifies whether the polygons that have no points within them should be returned in the output. The default is true.
+        ------------------------------------    --------------------------------------------------------------------
+        summary_fields                          Optional list of strings. A list of field names and statistical summary type that you wish to calculate for all points within each polygon.
+                                                Note that the count of points within each polygon is always returned.
+                                                summary type is one of the following:
+
+                                                * Sum - Adds the total value of all the points in each polygon
+                                                * Mean - Calculates the average of all the points in each polygon.
+                                                * Min - Finds the smallest value of all the points in each polygon.
+                                                * Max - Finds the largest value of all the points in each polygon.
+                                                * Stddev - Finds the standard deviation of all the points in each polygon.
+
+                                                Example [fieldName1 summaryType1,fieldName2 summaryType2].
+        ------------------------------------    --------------------------------------------------------------------
+        group_by_field                          Optional string. A field name in the point_layer. Points that have
+                                                the same value for the group by field will have their own counts and
+                                                summary field statistics. You can create statistical groups using an
+                                                attribute in the analysis layer.
+                                                For example, if you are aggregating crimes to neighborhood boundaries,
+                                                you may have an attribute Crime_type with five different crime types.
+                                                Each unique crime type forms a group, and the statistics you choose will
+                                                be calculated for each unique value of Crime_type. When you choose
+                                                a grouping attribute, two results are created: the result layer and a
+                                                related table containing the statistics.
+        ------------------------------------    --------------------------------------------------------------------
+        minority_majority                       Optional boolean. This boolean parameter is applicable only when a
+                                                group_by_field is specified. If true, the minority (least dominant) or
+                                                the majority (most dominant) attribute values for each group field
+                                                within each boundary are calculated. Two new fields are added to the
+                                                aggregated_layer prefixed with Majority_ and Minority_.
+                                                The default is false.
+        ------------------------------------    --------------------------------------------------------------------
+        percent_points                          Optional boolean. This boolean parameter is applicable only when a
+                                                group_by_field is specified. If set to true, the percentage count of
+                                                points for each unique group_by_field value is calculated.
+                                                A new field is added to the group summary output table containing the
+                                                percentages of each attribute value within each group.
+
+                                                If minority_majority is true, two additional fields are added to the
+                                                aggregated_layer containing the percentages of the minority and majority
+                                                attribute values within each group.
+        ------------------------------------    --------------------------------------------------------------------
+        output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                feature layer will cause the new layer to be appended to the Feature Service.
+                                                If overwrite is True in context, new layer will overwrite existing layer.
+                                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        ------------------------------------    --------------------------------------------------------------------
+        context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                For aggregate_points, there are three settings.
+
+                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                                    .. code-block:: python
+
+                                                        # Example Usage
+                                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                            "ymin": -9187921.892449,
+                                                                            "xmax": 3174104.927313,
+                                                                            "ymax": -9175500.875353,
+                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                    "outSR": {"wkid": 3857},
+                                                                    "overwrite": True}
+        ------------------------------------    --------------------------------------------------------------------
+        gis                                     Optional, the GIS on which this tool runs.
+                                                If not specified, the active GIS is used.
+        ------------------------------------    --------------------------------------------------------------------
+        estimate                                Optional Boolean. If True, the number of credits to run the operation
+                                                will be returned.
+        ------------------------------------    --------------------------------------------------------------------
+        future                                  Optional Boolean. When True, the task will be performed asynchronously.
+        ------------------------------------    --------------------------------------------------------------------
+        bin_type                                Optional String. The type of bin that will be generated and points
+                                                will be aggregated into. Bin options are as follows: Hexagon and Square.
+                                                Square is the Default. When generating bins, for Square, the number and
+                                                units specified determine the height and length of the square.
+                                                For Hexagon, the number and units specified determine the distance
+                                                between parallel sides. Either `bin_type` or `polygon_layer` must be
+                                                specified. If `bin_type` is chosen, then `bin_size` and `bin_size_unit`
+                                                specifying the size of the bins must be included.
+        ------------------------------------    --------------------------------------------------------------------
+        bin_size                                Optional Float. The distance for the bins of type
+                                                `bin_type` that the `point_layer` will be aggregated into.
+                                                When generating bins for `Square` the number and units specified determine
+                                                the height and length of the square. For `Hexagon`, the number and units
+                                                specified determine the distance between parallel sides.
+        ------------------------------------    --------------------------------------------------------------------
+        bin_size_unit                           Optional String. The linear unit to be used with the distance value
+                                                specified in `bin_size`.
+                                                Values: `Meters, Kilometers, Feet, Miles, NauticalMiles, or Yards`
+        ====================================    ====================================================================
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+
         """
 
         task = "AggregatePoints"
@@ -869,7 +941,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
         point_layer = self._feature_input(point_layer)
         if polygon_layer:
             polygon_layer = self._feature_input(polygon_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -956,6 +1033,246 @@ class _FeatureAnalysisTools(BaseAnalytics):
         polygon_barrier_layer=None,
         future=False,
     ):
+        """
+        The ``choose_best_facilities`` method finds the set of facilities that will best serve demand from surrounding areas.
+
+        Facilities might be public institutions that offer a service, such as fire stations, schools, or libraries,
+        or they might be commercial ones such as drug stores or distribution centers for a parcel delivery service.
+        Demand represents the need for a service that the facilities can meet. Demand is associated with point locations,
+        with each location representing a given amount of demand.
+
+        =====================================    =========================================================
+        **Argument**                             **Description**
+        -------------------------------------    ---------------------------------------------------------
+        goal                                     Required string. Specify the goal that must be satisfied when allocating
+                                                demand locations to facilities.
+
+                                                Choice list:['Allocate', 'MinimizeImpedance', 'MaximizeCoverage', 'MaximizeCapacitatedCoverage', 'PercentCoverage']
+
+                                                Default value is 'Allocate'.
+
+        -------------------------------------    ---------------------------------------------------------
+        demand_locations_layer                   Required point feature layer. A point layer specifying the locations
+                                                that have demand for facilities. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------    ---------------------------------------------------------
+        demand                                   Optional float. The amount of demand available at every demand locations.
+
+                                                The default value is 1.0.
+        -------------------------------------    ---------------------------------------------------------
+        demand_field                             Optional string. A numeric field on the ``demand_locations_layer``
+                                                representing the amount of demand available at each demand location.
+                                                If specified, the ``demand`` parameter is ignored.
+        -------------------------------------    ---------------------------------------------------------
+        max_travel_range                         Optional float. Specify the maximum travel time or distance allowed
+                                                between a demand location and the facility it is allocated to.
+
+                                                The default is unlimited (2,147,483,647.0).
+        -------------------------------------    ---------------------------------------------------------
+        max_travel_range_field                   Optional string. A numeric field on the ``demand_locations_layer`` specifying the maximum
+                                                travel time or distance allowed between a demand location
+                                                and the facility it is allocated to. If specified, the ``max_travel_range`` parameter is ignored.
+        -------------------------------------    ---------------------------------------------------------
+        max_travel_range_units                   Optional string. The units for the maximum travel time or distance allowed
+                                                between a demand location and the facility it is allocated to.
+
+                                                Choice list:['Seconds', 'Minutes', 'Hours', 'Days', 'Meters', 'Kilometers', 'Feet', 'Yards', 'Miles'].
+
+                                                The default is 'Minutes'.
+        -------------------------------------    ---------------------------------------------------------
+        travel_mode                              Specify the mode of transportation for the analysis.
+
+                                                Choice list: ['Driving Distance', 'Driving Time', 'Rural Driving Distance',
+                                                            'Rural Driving Time', 'Trucking Distance', 'Trucking Time',
+                                                            'Walking Distance', 'Walking Time']
+
+        -------------------------------------    ---------------------------------------------------------
+        time_of_day                              Optional datetime.datetime. Specify whether travel times
+                                                should consider traffic conditions. To use traffic in the
+                                                analysis, set travel_mode to a travel mode object whose
+                                                impedance_attribute_name property is set to travel_time and
+                                                assign a value to time_of_day. (A travel mode with other
+                                                impedance_attribute_name values don't support traffic.)
+                                                The ``time_of_day`` value represents the time at which travel
+                                                begins, or departs, from the origin points. The time is
+                                                specified as datetime.datetime.
+
+                                                The service supports two kinds of traffic: ty
+                                                pical and live.
+                                                Typical traffic references travel speeds that are made up of
+                                                historical averages for each five-minute interval spanning a week.
+                                                Live traffic retrieves speeds from a traffic feed that processes
+                                                phone probe records, sensors, and other data sources to record
+                                                actual travel speeds and predict speeds for the near future.
+
+                                                The `data coverage <http://www.arcgis.com/home/webmap/viewer.html?webmap=b7a893e8e1e04311bd925ea25cb8d7c7>`_ page shows the countries Esri currently provides traffic data for.
+
+                                                Typical Traffic:
+
+                                                To ensure the task uses typical traffic in locations where it
+                                                is available, choose a time and day of the week, and then convert
+                                                the day of the week to one of the following dates from 1990:
+
+                                                * Monday - 1/1/1990
+                                                * Tuesday - 1/2/1990
+                                                * Wednesday - 1/3/1990
+                                                * Thursday - 1/4/1990
+                                                * Friday - 1/5/1990
+                                                * Saturday - 1/6/1990
+                                                * Sunday - 1/7/1990
+
+                                                Set the time and date as datetime.datetime.
+
+                                                For example, to solve for 1:03 p.m. on Thursdays, set the
+                                                time and date to 1:03 p.m., 4 January 1990; and convert to
+                                                datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
+
+                                                Live Traffic:
+
+                                                To use live traffic when and where it is available,
+                                                choose a time and date and convert to datetime.
+
+                                                Esri saves live traffic data for 12 hours and references
+                                                predictive data extending 12 hours into the future. If the
+                                                time and date you specify for this parameter is outside the
+                                                24-hour time window, or the travel time in the analysis
+                                                continues past the predictive data window, the task falls
+                                                back to typical traffic speeds.
+
+                                                Examples:
+                                                from datetime import datetime
+
+                                                * "time_of_day": datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
+                                                * "time_of_day": datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
+                                                * "time_of_day": datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014, live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+                                                * "time_of_day": datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015, live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+        -------------------------------------    ---------------------------------------------------------
+        time_zone_for_time_of_day                Optional string. Specify the time zone or zones of the time_of_day parameter.
+
+                                                Choice list: ['GeoLocal', 'UTC']
+
+                                                GeoLocal-refers to the time zone in which the origins_layer points are located.
+
+                                                UTC-refers to Coordinated Universal Time.
+        -------------------------------------    ---------------------------------------------------------
+        travel_direction                         Optional string. Specify whether to measure travel times or distances
+                                                from facilities to demand locations or from demand locations to facilities.
+
+                                                Choice list: ['FacilityToDemand', 'DemandToFacility']
+
+        -------------------------------------    ---------------------------------------------------------
+        required_facilities_layer                Optional point feature layer. A point layer specifying one or more locations that act as facilities
+                                                by providing some kind of service. Facilities specified by this parameter
+                                                are required to be part of the output solution and will be used before any
+                                                facilities from the ``candidate_facilities_layer`` when allocating demand locations.
+        -------------------------------------    ---------------------------------------------------------
+        required_facilities_capacity             Optional float. Specify how much demand every facility in the ``required_facilities_layer``
+                                                is capable of supplying.
+
+                                                The default value is unlimited (2,147,483,647).
+
+        -------------------------------------    ---------------------------------------------------------
+        required_facilities_capacity_field       Optional string. A field on the required_facilities_layer
+                                                representing how much demand each facility in the
+                                                ``required_facilities_layer`` is capable of supplying. This
+                                                parameter takes precedence when ``required_facilities_capacity``
+                                                parameter is also specified.
+        -------------------------------------    ---------------------------------------------------------
+        candidate_facilities_layer               Optional point layer. A point layer specifying one or more
+                                                locations that act as facilities by providing some kind of
+                                                service. Facilities specified by this parameter are not
+                                                required to be part of the output solution and will be used
+                                                only after all the facilities from the
+                                                ``candidate_facilities_layer`` have been used when
+                                                allocating demand locations.
+
+        -------------------------------------    ---------------------------------------------------------
+        candidate_count                          Optional integer. The number of candidate facilities to
+                                                choose when allocating demand locations. Note that the sum
+                                                of the features in the ``required_facilities_capacity``
+                                                and the value specified for ``candidate_count`` cannot
+                                                exceed 100.
+
+                                                The default value is 1.
+
+        -------------------------------------    ---------------------------------------------------------
+        candidate_facilities_capacity            Optional float. Specify how much demand every facility in
+                                                the ``candidate_facilities_layer`` is capable of supplying.
+
+                                                The default value is unlimited (2,147,483,647.0).
+
+        -------------------------------------    ---------------------------------------------------------
+        candidate_facilities_capacity_field      Optional string. A field on the ``candidate_facilities_layer``
+                                                representing how much demand each facility in the
+                                                ``candidate_facilities_layer`` is capable of supplying. This
+                                                parameter takes precedence when ``candidate_facilities_capacity``
+                                                parameter is also specified.
+        -------------------------------------    ---------------------------------------------------------
+        percent_demand_coverage                  Optional float. Specify the percentage of the total demand
+                                                that you want the chosen and required facilities to capture.
+
+                                                The default value is 100.
+        -------------------------------------    ---------------------------------------------------------
+        output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                feature layer will cause the new layer to be appended to the Feature Service.
+                                                If overwrite is True in context, new layer will overwrite existing layer.
+                                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------------------    ---------------------------------------------------------
+        context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                For choose_best_facilities, there are three settings.
+
+                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                                    .. code-block:: python
+
+                                                        # Example Usage
+                                                            context = {"extent": {"xmin": 3164569.408035,
+                                                                                "ymin": -9187921.892449,
+                                                                                "xmax": 3174104.927313,
+                                                                                "ymax": -9175500.875353,
+                                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                        "outSR": {"wkid": 3857},
+                                                                        "overwrite": True}
+        -------------------------------------    ---------------------------------------------------------
+        gis                                      Optional, the GIS on which this tool runs. If not
+                                                specified, the active GIS is used.
+        -------------------------------------    ---------------------------------------------------------
+        estimate                                 Optional boolean. Is true, the number of credits needed
+                                                to run the operation will be returned as a float.
+        -------------------------------------    ---------------------------------------------------------
+        point_barrier_layer                      Optional layer. Specify one or more point features that
+                                                act as temporary restrictions (in other words, barriers)
+                                                when traveling on the underlying streets.
+
+                                                A point barrier can model a fallen tree, an accident, a
+                                                downed electrical line, or anything that completely blocks
+                                                traffic at a specific position along the street. Travel is
+                                                permitted on the street but not through the barrier.
+                                                See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------    ---------------------------------------------------------
+        line_barrier_layer                       Optional layer. Specify one or more line features that prohibit travel anywhere the lines intersect the streets.
+
+                                                A line barrier prohibits travel anywhere the barrier intersects the streets. For example, a parade or protest that blocks traffic across several street
+                                                segments can be modeled with a line barrier. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------    ---------------------------------------------------------
+        polygon_barrier_layer                    Optional string. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
+
+                                                One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------    ---------------------------------------------------------
+        future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =====================================    =========================================================
+
+
+        :return: When an output_name is specified, a :class:`~arcgis.features.FeatureCollection` with 3 layers is returned (see dictionary below for details), else a dict with the following keys:
+
+        "allocated_demand_locations_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
+        "allocation_lines_layer"  : layer (:class:`~arcgis.features.FeatureCollection`)
+
+        "assigned_facilities_layer"   : layer (:class:`~arcgis.features.FeatureCollection`)
+
+        """
         task = "ChooseBestFacilities"
         if isinstance(travel_mode, str):
             route_service = arcgis.network.RouteLayer(
@@ -971,7 +1288,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
             required_facilities_layer = self._feature_input(required_facilities_layer)
         if candidate_facilities_layer:
             candidate_facilities_layer = self._feature_input(candidate_facilities_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
@@ -1094,40 +1416,240 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        Calculates routes between pairs of points.
+        The Connect Origins to Destinations task measures the travel time or distance between pairs of points. Using this tool, you can
 
-        Parameters
-        ----------
-        origins_layer : Required layer (see Feature Input in documentation)
-            The routes start from points in the origins layer.
-        destinations_layer : Required layer (see Feature Input in documentation)
-            The routes end at points in the destinations layer.
-        measurement_type : Required string
-            The routes can be determined by measuring travel distance or travel time along street network using different travel modes or by measuring straight line distance.
-        origins_layer_route_id_field : Optional string
-            The field in the origins layer containing the IDs that are used to match an origin with a destination.
-        destinations_layer_route_id_field : Optional string
-            The field in the destinations layer containing the IDs that are used to match an origin with a destination.
-        time_of_day : Optional datetime.date
-            When measurementType is DrivingTime, this value specifies the time of day to be used for driving time calculations based on traffic. WalkingTime and TruckingTime measurementType do not support calculations based on traffic.
-        time_zone_for_time_of_day : Optional string
-            Determines if the value specified for timeOfDay is specified in UTC or in a time zone that is local to the location of the origins.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
+        * Calculate the total distance or time commuters travel on their home-to-work trips.
+        * Measure how far customers are traveling to shop at your stores. Use this information to define your market reach, especially when targeting advertising campaigns or choosing new store locations.
+        * Calculate the expected trip mileage for your fleet of vehicles. Afterward, run the Summarize Within tool to report mileage by state or other region.
 
-        Returns
-        -------
-        dict with the following keys:
-           "routes_layer" : layer (FeatureCollection)
-           "unassigned_origins_layer" : layer (FeatureCollection)
-           "unassigned_destinations_layer" : layer (FeatureCollection)
+        You provide starting and ending points, and the tool returns a layer containing route lines, including measurements, between the
+        paired origins and destinations.
+
+        ===================================     ===============================================================
+        **Argument**                            **Description**
+        -----------------------------------     ---------------------------------------------------------------
+        origins_layer                           Required layer. The starting point or points of the
+                                                routes to be generated. See :ref:`Feature Input<FeatureInput>`.
+        -----------------------------------     ---------------------------------------------------------------
+        destinations_layer                      Required layer. The routes end at points in the
+                                                destinations layer. See :ref:`Feature Input<FeatureInput>`.
+        -----------------------------------     ---------------------------------------------------------------
+        measurement_type                        Required string. The origins and destinations can be connected by measuring straight-line distance,
+                                                or by measuring travel time or travel distance along a street network using various modes of transportation known as travel modes.
+
+                                                Valid values are a string, StraightLine, which indicates Euclidean distance to be used as distance measure or a Python dictionary representing settings for a travel mode.
+
+                                                When using a travel mode for the measurement_type, you need to specify a dictionary
+                                                containing the settings for a travel mode supported by your organization. The code in the example section below generates
+                                                a valid Python dictionary and then passes it as the value for the measurement_type parameter.
+
+                                                Supported travel modes: ['Driving Distance', 'Driving Time', 'Rural Driving Distance', 'Rural Driving Time',
+                                                'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+        -----------------------------------     ---------------------------------------------------------------
+        origins_layer_route_id_field            Optional string. Specify the field in the origins layer
+                                                containing the IDs that pair origins with destinations.
+
+                                                * The ID values must uniquely identify points in the origins layer
+
+                                                * Each ID value must also correspond with exactly one route ID value in the destinations layer.
+                                                Route IDs that match across the layers create origin-destination pairs, which the tool connects
+                                                together.
+
+                                                * Specifying origins_layer_route_id_field is optional when there is exactly one point feature in
+                                                the origins or destinations layer. The tool will connect all origins to the one destination or the
+                                                one origin to all destinations, depending on which layer contains one point.
+
+        -----------------------------------     ---------------------------------------------------------------
+        destinations_layer_route_id_field       Optional string. Specify the field in the destinations layer containing the IDs that pair origins
+                                                with destinations.
+
+                                                * The ID values must uniquely identify points in the destinations layer.
+
+                                                * Each ID value must also correspond with exactly one route ID value in the origins layer. Route
+                                                IDs that match across the layers create origin-destination pairs, which the tool connects together.
+
+                                                * Specifying destinations_layer_route_id_field is optional when there is exactly one point
+                                                feature in the origins or destinations layer. The tool will connect all origins to the one
+                                                destination or the one origin to all destinations, depending on which layer contains one point.
+        -----------------------------------     ---------------------------------------------------------------
+        time_of_day                             Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use
+                                                traffic in the analysis,
+                                                set measurement_type to a travel mode object whose impedance_attribute_name property is set to
+                                                travel_time and assign a value
+                                                to time_of_day. (A travel mode with other impedance_attribute_name values don't support traffic.) The time_of_day value represents
+                                                the time at which travel begins, or departs, from the origin points. The time is specified as datetime.datetime.
+
+                                                The service supports two kinds of traffic: typical and live. Typical traffic references travel speeds that are made up of historical
+                                                averages for each five-minute interval spanning a week. Live traffic retrieves speeds from a traffic feed that processes phone probe
+                                                records, sensors, and other data sources to record actual travel speeds and predict speeds for the near future.
+
+                                                The `data coverage <http://www.arcgis.com/home/webmap/viewer.html?webmap=b7a893e8e1e04311bd925ea25cb8d7c7>`_ page shows the countries
+                                                Esri currently provides traffic data for.
+
+                                                Typical Traffic:
+
+                                                To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day
+                                                of the week to one of the following dates from 1990:
+
+                                                * Monday - 1/1/1990
+                                                * Tuesday - 1/2/1990
+                                                * Wednesday - 1/3/1990
+                                                * Thursday - 1/4/1990
+                                                * Friday - 1/5/1990
+                                                * Saturday - 1/6/1990
+                                                * Sunday - 1/7/1990
+                                                Set the time and date as datetime.datetime.
+
+                                                For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to
+                                                datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
+
+                                                Live Traffic:
+
+                                                To use live traffic when and where it is available, choose a time and date and convert to datetime.
+
+                                                Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                                specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
+
+                                                # Examples:
+                                                from datetime import datetime
+
+                                                * "time_of_day": datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on
+                                                Thursdays at 1:03 p.m.
+                                                * "time_of_day": datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at
+                                                5:00 p.m.
+                                                * "time_of_day": datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is
+                                                between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014,
+                                                live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are
+                                                referenced.
+                                                * "time_of_day": datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is
+                                                between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015, live traffic speeds are
+                                                referenced in the analysis; otherwise, typical traffic speeds are referenced.
+        -----------------------------------     ---------------------------------------------------------------
+        time_zone_for_time_of_day               Optional string. Specify the time zone or zones of the timeOfDay parameter.
+                                                Choice list: ['GeoLocal', 'UTC']
+
+                                                GeoLocal-refers to the time zone in which the originsLayer points are located.
+
+                                                UTC-refers to Coordinated Universal Time.
+        -----------------------------------     ---------------------------------------------------------------
+        include_route_layers                    Optional Boolean. When include_route_layers is set to True,
+                                                each route from the result is also saved as a route layer item.
+                                                A route layer includes all the information for a particular route
+                                                such as the stops assigned to the route as well as the travel directions.
+                                                Creating route layers is useful if you want to share individual
+                                                routes with other members in your organization.
+                                                The route layers use the output feature service name provided in the ```output_name```
+                                                parameter as a prefix and the route name generated as part of the analysis is added to create a
+                                                unique name for each route layer.
+
+                                                Caution: Route layers cannot be created when the output is a feature collection.
+                                                The task will raise an error if output_name is not specified
+                                                (which indicates feature collection output) and include_route_layers is True.
+
+                                                The maximum number of route layers that can be created is 1,000.
+                                                If the result contains more than 1,000 routes and include_route_layers is True,
+                                                the task will only create the output feature service.
+        -----------------------------------     ---------------------------------------------------------------
+        output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                feature layer will cause the new layer to be appended to the Feature Service.
+                                                If overwrite is True in context, new layer will overwrite existing layer.
+                                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -----------------------------------     ---------------------------------------------------------------
+        context                                 Optional dict. Additional settings such as processing extent
+                                                and output spatial reference.
+                                                For connect_origins_to_destinations, there are three settings.
+
+                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the
+                                                input_layer that intersect the bounding box will be analyzed.
+                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to
+                                                by the `wkid`.
+                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new
+                                                feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                                    .. code-block:: python
+
+                                                        # Example Usage
+                                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                            "ymin": -9187921.892449,
+                                                                            "xmax": 3174104.927313,
+                                                                            "ymax": -9175500.875353,
+                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                    "outSR": {"wkid": 3857},
+                                                                    "overwrite": True}
+        -----------------------------------     ---------------------------------------------------------------
+        gis                                     Optional, the GIS on which this tool runs. If not specified,
+                                                the active GIS is used.
+        -----------------------------------     ---------------------------------------------------------------
+        estimate                                Optional Boolean. Is True, the number of credits needed
+                                                to run the operation will be returned as a float.
+        -----------------------------------     ---------------------------------------------------------------
+        point_barrier_layer                     Optional layer. Specify one or more point features that
+                                                act as temporary restrictions (in other words, barriers) when
+                                                traveling on the underlying streets.
+
+                                                A point barrier can model a fallen tree, an accident, a downed
+                                                electrical line, or anything that completely blocks traffic at
+                                                a specific position along the street. Travel is permitted on the
+                                                street but not through the barrier. See :ref:`Feature Input<FeatureInput>`.
+        -----------------------------------     ---------------------------------------------------------------
+        line_barrier_layer                      Optional layer. Specify one or more line features that prohibit
+                                                travel anywhere the lines intersect the streets.
+
+                                                A line barrier prohibits travel anywhere the barrier intersects the
+                                                streets. For example, a parade or protest that blocks traffic across
+                                                several street
+                                                segments can be modeled with a line barrier.
+                                                See :ref:`Feature Input<FeatureInput>`.
+        -----------------------------------     ---------------------------------------------------------------
+        polygon_barrier_layer                   Optional string. Specify one or more polygon features
+                                                that completely restrict travel on the streets intersected
+                                                by the polygons.
+
+                                                One use of this type of barrier is to model floods covering
+                                                areas of the street network and making road travel there impossible.
+                                                See :ref:`Feature Input<FeatureInput>`.
+        -----------------------------------     ---------------------------------------------------------------
+        future                                  Optional boolean. If True, the result will be a GPJob object
+                                                and results will be returned asynchronously.
+        -----------------------------------     ---------------------------------------------------------------
+        route_shape                             Optional String. Specify the shape of the route that connects
+                                                each origin to it's destination when using a travel mode.
+
+                                                Values: FollowStreets or StraightLine
+
+                                                Default: FollowStreets
+
+                                                + FollowStreets - The shape is based on the underlying street network.
+                                                    This option is best when you want to generate the routes between
+                                                    origins and destinations. This is the default value when using a
+                                                    travel mode.
+                                                + StraightLine - The shape is a straight line connecting
+                                                    the origin-destination pair. This option is best when you want to g
+                                                    enerate spider diagrams or desire lines (for example, to show which
+                                                    stores customers are visiting). This is the default value when not using
+                                                    a travel mode.
+
+                                                The best route between an origin and it's matched destination is always calculated based on the travel mode, regardless of which route shape is chosen.
+        ===================================     ===============================================================
+
+
+        :return: A dictionary with the following keys:
+
+            "routes_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
+            "unassigned_origins_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
+            "unassigned_destinations_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         """
         task = "ConnectOriginsToDestinations"
         origins_layer = self._feature_input(origins_layer)
         destinations_layer = self._feature_input(destinations_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
@@ -1215,39 +1737,201 @@ class _FeatureAnalysisTools(BaseAnalytics):
         include_reachable_streets=False,
     ):
         """
+        The ``create_drive_time_areas`` method creates areas that can be reached within a
+        given drive time or drive distance. It can help you answer questions such as:
 
+        * How far can I drive from here in five minutes?
+        * What areas are covered within a three-mile drive distance of my stores?
+        * What areas are within four minutes of our fire stations?
 
-        Parameters
-        ----------
-        input_layer : Required layer (see Feature Input in documentation)
+        See `Create Drive-Time Areas <https://developers.arcgis.com/rest/analysis/api-reference/create-drivetime.htm>`_
+        for details on the `Spatial Analysis Service <https://developers.arcgis.com/rest/analysis/api-reference/getting-started.htm>`_
+        that runs this task.
 
-        break_values : Optional list of floats
+        =========================    =========================================================
+        **Parameter**                **Description**
+        -------------------------    ---------------------------------------------------------
+        input_layer                  Required point feature layer. The points around which travel areas
+                                    based on a mode of transportation will be drawn.
+                                    See :ref:`Feature Input<FeatureInput>`.
+        -------------------------    ---------------------------------------------------------
+        travel_mode                  Optional string or dict. Specify the mode of transportation for the analysis.
 
-        break_units : Optional string
+                                    Choice list: ['Driving Distance', 'Driving Time', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
 
-        travel_mode : Optional string
+                                    The default is 'Driving Time'.
+        -------------------------    ---------------------------------------------------------
+        break_values                 Optional list of floats. The size of the polygons to create.
+                                    The units for break_values is specified with the break_units parameter.
 
-        overlap_policy : Optional string
+                                    By setting many unique values in the list, polygons of different sizes are generated around each input location.
 
-        time_of_day : Optional datetime.date
+                                    The default is [5, 10, 15].
+        -------------------------    ---------------------------------------------------------
+        break_units                  Optional string. The units of the break_values parameter.
 
-        time_zone_for_time_of_day : Optional string
+                                    To create areas showing how far you can go along roads or walkways within a given time, specify a time unit.
+                                    Alternatively, specify a distance unit to generate areas bounded by a maximum travel distance.
 
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference and overwrite.
+                                    When the travel_mode is time based, a time unit should be specified for the break_units. When the
+                                    travel_mode is distance based, a distance unit should be specified for the break_units.
 
-        Returns
-        -------
-        drive_time_areas_layer : layer (FeatureCollection)
+                                    Choice list: ['Seconds', 'Minutes', Hours', 'Feet', 'Meters', 'Kilometers', 'Feet', 'Miles', 'Yards']
+
+                                    The default is 'Minutes'.
+        -------------------------    ---------------------------------------------------------
+        overlap_policy               Optional string. Determines how overlapping areas are processed.
+
+                                    Choice list: ['Overlap', 'Dissolve', 'Split']
+
+                                    +---------------+-----------------------------------------------------------------------------------------------------+
+                                    | |Overlap|     | ``Overlap``-Overlapping areas are kept. This is the default.                                        |
+                                    +---------------+-----------------------------------------------------------------------------------------------------+
+                                    | |Dissolve|    | ``Dissolve``-Overlapping areas are combined by break value. Because the areas are dissolved,        |
+                                    |               | use this option when you need to know the areas that can be reached within a                        |
+                                    |               | given time or distance, but you don't need to know which input points are nearest.                  |
+                                    +---------------+-----------------------------------------------------------------------------------------------------+
+                                    | |Split|       | ``Split``-Overlapping areas are split in the middle. Use this option when you need to know          |
+                                    |               | the one nearest input location to the covered area.                                                 |
+                                    +---------------+-----------------------------------------------------------------------------------------------------+
+
+                                    The default is 'Overlap'
+
+        -------------------------    ---------------------------------------------------------
+        time_of_day                  Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use traffic in the analysis,
+                                    set measurement_type to a travel mode object whose impedance_attribute_name property is set to travel_time and assign a value
+                                    to time_of_day. (A travel mode with other impedance_attribute_name values don't support traffic.) The time_of_day value represents
+                                    the time at which travel begins, or departs, from the origin points. The time is specified as datetime.datetime.
+
+                                    The service supports two kinds of traffic: typical and live. Typical traffic references travel speeds that are made up of historical
+                                    averages for each five-minute interval spanning a week. Live traffic retrieves speeds from a traffic feed that processes phone probe
+                                    records, sensors, and other data sources to record actual travel speeds and predict speeds for the near future.
+
+                                    The `data coverage <http://www.arcgis.com/home/webmap/viewer.html?webmap=b7a893e8e1e04311bd925ea25cb8d7c7>`_ page shows the countries
+                                    Esri currently provides traffic data for.
+
+                                    Typical Traffic:
+
+                                    To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day
+                                    of the week to one of the following dates from 1990:
+
+                                    * Monday - 1/1/1990
+                                    * Tuesday - 1/2/1990
+                                    * Wednesday - 1/3/1990
+                                    * Thursday - 1/4/1990
+                                    * Friday - 1/5/1990
+                                    * Saturday - 1/6/1990
+                                    * Sunday - 1/7/1990
+                                    Set the time and date as datetime.datetime.
+
+                                    For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to
+                                    datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
+
+                                    Live Traffic:
+
+                                    To use live traffic when and where it is available, choose a time and date and convert to datetime.
+
+                                    Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                    specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
+
+                                    Examples:
+                                    from datetime import datetime
+
+                                    * "time_of_day": datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
+                                    * "time_of_day": datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
+                                    * "time_of_day": datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014,
+                                    live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+                                    * "time_of_day": datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015,
+                                    live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+        -------------------------    ---------------------------------------------------------
+        time_zone_for_time_of_day    Optional string. Specify the time zone or zones of the time_of_day parameter.
+
+                                    Choice list: ['GeoLocal', 'UTC']
+
+                                    GeoLocal-refers to the time zone in which the originsLayer points are located.
+
+                                    UTC-refers to Coordinated Universal Time.
+
+                                    The default is 'GeoLocal'.
+        -------------------------    ---------------------------------------------------------
+        output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------    ---------------------------------------------------------
+        context                      Optional dict. Additional settings such as processing extent
+                                    and output spatial reference.
+                                    For create_drive_time_areas, there are three settings.
+
+                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                    .. code-block:: python
+
+                                        # Example Usage
+                                            context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857},
+                                                        "overwrite": True}
+        -------------------------    ---------------------------------------------------------
+        gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------    ---------------------------------------------------------
+        estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+        -------------------------    ---------------------------------------------------------
+        point_barrier_layer          Optional layer. Specify one or more point features that act as temporary restrictions (in other words, barriers)
+                                    when traveling on the underlying streets.
+
+                                    A point barrier can model a fallen tree, an accident, a downed electrical line, or anything that completely blocks
+                                    traffic at a specific position along the street. Travel is permitted on the street but not through the barrier. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------    ---------------------------------------------------------
+        line_barrier_layer           Optional layer. Specify one or more line features that prohibit travel anywhere the lines intersect the streets.
+
+                                    A line barrier prohibits travel anywhere the barrier intersects the streets. For example, a parade or protest that blocks traffic across several street
+                                    segments can be modeled with a line barrier. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------    ---------------------------------------------------------
+        polygon_barrier_layer        Optional string. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
+
+                                    One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------    ---------------------------------------------------------
+        future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        -------------------------    ---------------------------------------------------------
+        travel_direction             Optiona String. Specify whether the direction of travel used to generate the travel areas is toward or away from the input locations.
+
+                                    Values: AwayFromFacility or TowardsFacility
+
+                                    The travel direction can influence how the areas are generated. CreateDriveTimeAreas will obey one-way streets, avoid illegal turns, and follow other rules based on the direction of travel. You should select the direction of travel based on the type of input locations and the context of your analysis. For example, the drive-time area for a pizza delivery store should be created away from the facility, whereas the drive-time area for a hospital should be created toward the facility.
+        -------------------------    ---------------------------------------------------------
+        show_holes                   Optional boolean. When set to true, the output areas will include holes if some streets couldn't be reached without exceeding the cutoff or due to travel restrictions imposed by the travel mode.
+        -------------------------    ---------------------------------------------------------
+        include_reachable_streets    Optional string. Only applicable if :attr:`output_name` is specified.
+                                    When `True` (and :attr:`output_name` is specified), a second layer named
+                                    `Reachable Streets` is created in the output :class:`Feature Layer<arcgis.features.FeatureLayerCollection>`.
+
+                                    This layer contains the streets that were used to define the drive time
+                                    area polygons. Set this to true if you want a potentially more accurate
+                                    result of which streets are actually covered within a specific travel
+                                    distance than what the drive-time areas would contain.
+        =========================    =========================================================
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else Feature Collection.
+
         """
+
         # kwargs = locals()
         params = {}
         task = "CreateDriveTimeAreas"
 
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
@@ -1332,26 +2016,60 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
+        The ``create_route_layers`` method creates route layer items on the portal from the input route data.
+
+        A route layer includes all the information for a particular route such as the stops assigned to
+        the route as well as the travel directions. Creating route layers is useful if you want to share
+        individual routes with other members in your organization.
 
 
-        Parameters
-        ----------
-        route_data_item : Required item
+        =========================    =========================================================
+        **Parameter**                **Description**
+        -------------------------    ---------------------------------------------------------
+        route_data                   Required item. The item id for the route data item that is used to create route layer items.
+                                    Before running this task, the route data must be added to your portal as an item.
+        -------------------------    ---------------------------------------------------------
+        delete_route_data_item       Required boolean. Indicates if the input route data item should be deleted. You may want to
+                                    delete the route data in case it is no longer required after the route layers have been created from it.
 
-        delete_route_data_item : Required boolean
+                                    When ``delete_route_data_item`` is set to true and the task fails to delete the route data item,
+                                    it will return a warning message but still continue execution.
 
-        output_name: Optional dict
+                                    The default value is False.
+        -------------------------    ---------------------------------------------------------
+        tags                         Optional string. Tags used to describe and identify the route layer items.
+                                    Individual tags are separated using a comma. The route name is always
+                                    added as a tag even when a value for this argument is not specified.
+        -------------------------    ---------------------------------------------------------
+        summary                      Optional string. The summary displayed as part of the item information for the route layer item.
+                                    If a value for this argument is not specified, a default summary text "Route and directions for <Route Name>" is used.
+        -------------------------    ---------------------------------------------------------
+        route_name_prefix            Optional string. A qualifier added to the title of every route layer item. This can be used to designate all routes that are shared for a
+                                    specific purpose to have the same prefix in the title. The name of the route is always appended after this qualifier.
+                                    If a value for the route_name_prefix is not specified, the title for the route layer item is created using only the route name.
+        -------------------------    ---------------------------------------------------------
+        folder_name                  Optional string. The folder within your personal online workspace (My Content in your ArcGIS Online or Portal for ArcGIS organization) where the
+                                    route layer items will be created. If a folder with the specified name does not exist, a new folder will be created.
+                                    If a folder with the specified name exists, the items will be created in the existing folder.
+                                    If a value for folder_name is not specified, the route layer items are created in the root folder of your online workspace.
+        -------------------------    ---------------------------------------------------------
+        gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------    ---------------------------------------------------------
+        estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+        -------------------------    ---------------------------------------------------------
+        future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================    =========================================================
 
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference and overwrite.
-
-        Returns
-        -------
-        route_layers : list (items)
+        :return: result_layer : A list (items) or an :class:`~arcgis.gis.Item`
         """
         if route_data_item:
             route_data_item = {"itemId": route_data_item.itemid}
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -1398,39 +2116,140 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        Creates buffer polygon(s) around input features.
+        The ``create_buffers`` task creates polygons that cover a given distance from a point,
+        line, or polygon feature. Buffers are typically used to create areas that can be
+        further analyzed using a tool such as ``overlay_layers``. For example, if the question
+        is "What buildings are within one mile of the school?", the answer can be found by
+        creating a one-mile buffer around the school and overlaying the buffer with the layer
+        containing building footprints. The end result is a layer of those buildings within
+        one mile of the school.
 
-        Parameters
-        ----------
-        input_layer : Required layer (see Feature Input in documentation)
-            The input to be buffered.
-        distances : Optional list of floats
-            The distance(s) that will be buffered.
-        field : Optional string
-            Buffers will be created using field values.
-        units : Optional string
-            The linear unit to be used with the distance value(s).
-        dissolve_type : Optional string
-            Specifies the dissolve to be performed to remove buffer overlap.
-        ring_type : Optional string
-            The ring type.
-        side_type : Optional string
-            The side(s) of the input that will be buffered.
-        end_type : Optional string
-            The shape of the buffer at the end of buffered line features.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
+        =========================    =========================================================
+        **Parameter**                **Description**
+        -------------------------    ---------------------------------------------------------
+        input_layer                  Required point, line or polygon feature layer. The input features to be buffered. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------    ---------------------------------------------------------
+        distances                    Optional list of floats to buffer the input features. The distance(s) that will be buffered. You must supply values
+                                    for either the ``distances`` or ``field`` parameter. You can enter a single distance value or multiple values.
+                                    The units of the distance values is suppied by the units parameter.
+        -------------------------    ---------------------------------------------------------
+        field                        Optional string. A field on the ``input_layer`` containing a buffer distance. Buffers will be created using field values.
+                                    Unlike the ``distances`` parameter, multiple distances are not supported on field input.
+        -------------------------    ---------------------------------------------------------
+        units                        Optional string. The linear unit to be used with the distance value(s) specified in distances or contained in the field value.
 
-        Returns
-        -------
-        buffer_layer : layer (FeatureCollection)
+                                    Choice list: ['Meters', 'Kilometers', 'Feet', 'Miles', 'NauticalMiles', 'Yards']
+
+                                    The default is 'Meters'.
+        -------------------------    ---------------------------------------------------------
+        dissolve_type                Optional string. Determines how overlapping buffers are processed.
+
+                                    Choice list: ['None', 'Dissolve']
+
+                                    +------------+---------------------------------------------------------------------------------+
+                                    | |None|     | ``None``-Overlapping areas are kept. This is the default.                       |
+                                    +------------+---------------------------------------------------------------------------------+
+                                    | |Dissolve| | ``Dissolve``-Overlapping areas are combined.                                    |
+                                    +------------+---------------------------------------------------------------------------------+
+
+        -------------------------    ---------------------------------------------------------
+        ring_type                    Optional string. Determines how multiple-distance buffers are processed.
+
+                                    Choice list: ['Disks', 'Rings']
+
+                                    +-----------+--------------------------------------------------------------------------------------------------+
+                                    | |Disks|   | ``Disks``-buffers are concentric and will overlap. For example, if your distances are 10 and 14, |
+                                    |           | the result will be two buffers, one from 0 to 10 and one from 0 to 14. This is the default.      |
+                                    +-----------+--------------------------------------------------------------------------------------------------+
+                                    | |Rings|   | ``Rings`` buffers will not overlap. For example, if your distances are 10 and 14, the result will|
+                                    |           | be two buffers, one from 0 to 10 and one from 10 to 14.                                          |
+                                    +-----------+--------------------------------------------------------------------------------------------------+
+
+        -------------------------    ---------------------------------------------------------
+        side_type                    Optional string. When buffering line features, you can choose which side of the line to buffer.
+
+                                    Typically, you choose both sides (Full, which is the default). Left and right are determined as
+                                    if you were walking from the first x,y coordinate of the line (the start coordinate) to the last
+                                    x,y coordinate of the line (the end coordinate). Choosing left or right usually means you know
+                                    that your line features were created and stored in a particular direction (for example, upstream
+                                    or downstream in a river network).
+
+                                    When buffering polygon features, you can choose whether the buffer includes or excludes the polygon
+                                    being buffered.
+
+                                    Choice list: ['Full', 'Left', 'Right', 'Outside']
+
+                                    +---------------+----------------------------------------------------------------------------------------------------+
+                                    | |Full|        | ``Full``-both sides of the line will be buffered. This is the default for line featuress.          |
+                                    |               |                                                                                                    |
+                                    +---------------+----------------------------------------------------------------------------------------------------+
+                                    | |Left|        | ``Left``-only the right side of the line will be buffered.                                         |
+                                    +---------------+----------------------------------------------------------------------------------------------------+
+                                    | |Right|       | ``Right``-only the right side of the line will be buffered.                                        |
+                                    +---------------+----------------------------------------------------------------------------------------------------+
+                                    | |Outside|     | ``Outside`` when buffering a polygon, the polygon being buffered is excluded in the result buffer. |
+                                    +---------------+----------------------------------------------------------------------------------------------------+
+                                    | |Unspecified| | If ``side_type`` not supplied, the polygon being buffered is included in the result buffer.        |
+                                    |               | This is the  default for polygon features.                                                         |
+                                    +---------------+----------------------------------------------------------------------------------------------------+
+
+        -------------------------    ---------------------------------------------------------
+        end_type                     Optional string. The shape of the buffer at the end of line input features. This parameter is not
+                                    valid for polygon input features. At the ends of lines the buffer can be rounded (Round) or be
+                                    straight across (Flat).
+
+                                    Choice list: ['Round', 'Flat']
+
+                                    +---------+-------------------------------------------------------------------------------+
+                                    | |Round| | ``Round``-buffers will be rounded at the ends of lines. This is the default.  |
+                                    +---------+-------------------------------------------------------------------------------+
+                                    | |Flat|  | ``Flat``-buffers will be flat at the ends of lines.                           |
+                                    +---------+-------------------------------------------------------------------------------+
+
+        -------------------------    ---------------------------------------------------------
+        output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------    ---------------------------------------------------------
+        context                      Optional dict. Additional settings such as processing extent
+                                    and output spatial reference.
+                                    For create_buffers, there are three settings.
+
+                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                        .. code-block:: python
+
+                                            # Example Usage
+                                            context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857},
+                                                        "overwrite": True}
+        -------------------------    ---------------------------------------------------------
+        gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------    ---------------------------------------------------------
+        estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+        -------------------------    ---------------------------------------------------------
+        future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================    =========================================================
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+
         """
 
         task = "CreateBuffers"
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
         if estimate:
             params = {}
@@ -1498,46 +2317,97 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Calculate Density task creates a density map from point or line features by spreading known quantities of some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas classified from least dense to most dense.
+        The calculate_density function creates a density map from point or line features by spreading known quantities of
+        some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas
+        classified from least dense to most dense.
 
-        Parameters
-        ----------
-        input_layer : Required layer (see Feature Input in documentation)
-            The point or line features from which to calculate density.
-        field : Optional string
-            A numeric field name specifying the number of incidents at each location. If not specified, each location will be assumed to represent a single count.
-        cell_size : Optional float
-            This value is used to create a mesh of points where density values are calculated. The default is approximately 1/1000th of the smaller of the width and height of the analysis extent as defined in the context parameter.
-        cell_size_units : Optional string
-            The units of the cellSize value
-        radius : Optional float
-            A distance specifying how far to search to find point or line features when calculating density values.
-        radius_units : Optional string
-            The units of the radius parameter.
-        bounding_polygon_layer : Optional layer (see Feature Input in documentation)
-            A layer specifying the polygon(s) where you want densities to be calculated.
-        area_units : Optional string
-            The units of the calculated density values.
-        classification_type : Optional string
-            Determines how density values will be classified into polygons.
-        num_classes : Optional int
-            This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classificationType parameter.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
-        estimate: Optional Boolean
-            Returns the number of credit for the operation.
+        For point input, each point should represent the location of some event	or incident, and the result layer represents
+        a count of the incident per unit area. A higher density value in a new location means that there are more points near
+        that location. In many cases, the result layer can be interpreted as a risk surface for future events. For example,
+        if the input points represent locations of lightning strikes, the result layer can be interpreted as a risk surface
+        for future lightning strikes.
 
-        Returns
-        -------
-        result_layer : layer (FeatureCollection)
+        For line input, the line density surface represents the total amount of line that is near each location. The units of
+        the calculated density values are the length of line per unit area. For example, if the lines represent rivers, the
+        result layer will represent the total length of rivers that are within the search radius. This result can be used to
+        identify areas that are hospitable to grazing animals.
+
+        =========================    =========================================================
+        **Argument**                 **Description**
+        -------------------------    ---------------------------------------------------------
+        input_layer                  Required layer. The point or line features from which to calculate density. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------    ---------------------------------------------------------
+        field                        Optional string. A numeric field name specifying the number of incidents at each location.  For example, if you have points that represent cities, you can use a field representing the population of the city as the count field, and the resulting population density layer will calculate larger population densities near cities with larger populations. If not specified, each location will be assumed to represent a single count.
+        -------------------------    ---------------------------------------------------------
+        cell_size                    Optional float. This value is used to create a mesh of points where density values are calculated. The default is approximately 1/1000th of the smaller of the width and height of the analysis extent as defined in the context parameter. The smaller the value, the smoother the polygon boundaries will be. Conversely, with larger values, the polygon boundaries will be more coarse and jagged.
+        -------------------------    ---------------------------------------------------------
+        cell_size_units              Optional string. The units of the cell_size value.
+                                    Choice list: ['Miles', 'Feet', 'Kilometers',  'Meters']
+        -------------------------    ---------------------------------------------------------
+        radius                       Optional float. A distance specifying how far to search to find point or line features when calculating density values.
+        -------------------------    ---------------------------------------------------------
+        radius_units                 Optional string. The units of the radius parameter. If no distance is provided, a default will be calculated that is based on the locations of the input features and the values in the count field (if a count field is provided).
+                                    Choice list: ['Miles', 'Feet', 'Kilometers',  'Meters']
+        -------------------------    ---------------------------------------------------------
+        bounding_polygon_layer       Optional layer. A layer specifying the polygon(s) where you want densities to be calculated. For example, if you are interpolating densities of fish within a lake, you can use the boundary of the lake in this parameter and the output will only draw within the boundary of the lake. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------    ---------------------------------------------------------
+        area_units                   Optional string. The units of the calculated density values.
+                                    Choice list: ['areaUnits', 'SquareMiles']
+        -------------------------    ---------------------------------------------------------
+        classification_type          Optional string. Determines how density values will be classified into polygons.
+                                    Choice list: ['EqualInterval', 'GeometricInterval', 'NaturalBreaks', 'EqualArea', 'StandardDeviation']
+                                        * EqualInterval - Polygons are created such that the range of density values is equal for each area.
+                                        * GeometricInterval - Polygons are based on class intervals that have a geometric series. This method ensures that each class range has approximately the same number of values within each class and that the change between intervals is consistent.
+                                        * NaturalBreaks - Class intervals for polygons are based on natural groupings of the data. Class break values are identified that best group similar values and that maximize the differences between classes.
+                                        * EqualArea - Polygons are created such that the size of each area is equal. For example, if the result has more high density values than low density values, more polygons will be created for high densities.
+                                        * StandardDeviation - Polygons are created based upon the standard deviation of the predicted density values.
+        -------------------------    ---------------------------------------------------------
+        num_classes                  Optional int. This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classification_type parameter.
+        -------------------------    ---------------------------------------------------------
+        output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------    ---------------------------------------------------------
+        context                      Optional dict. Additional settings such as processing extent and output spatial reference.
+                                    For calculate_density, there are three settings.
+
+                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                        .. code-block:: python
+
+                                            # Example Usage
+                                            context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857},
+                                                        "overwrite": True}
+        -------------------------    ---------------------------------------------------------
+        gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------    ---------------------------------------------------------
+        estimate                     Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+        -------------------------    ---------------------------------------------------------
+        future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================    =========================================================
+
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+
         """
 
         task = "CalculateDensity"
 
         params = {}
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
@@ -1621,41 +2491,124 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
+        The create_viewshed method identifies visible areas based on the observer locations you provide.
+        The results are areas where the observers can see the observed objects (and the observed objects can see the observers).
 
+        =========================    =========================================================
+        **Parameter**                **Description**
+        -------------------------    ---------------------------------------------------------
+        input_layer                  Required point feature layer. The features to use as the observer locations. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------    ---------------------------------------------------------
+        dem_resolution               Optional string. The approximate spatial resolution (cell size) of the source elevation data used for the calculation.
 
-        Parameters
-        ----------
-        input_layer : Required layer (see Feature Input in documentation)
+                                    The resolution values are an approximation of the spatial resolution of the digital elevation model.
+                                    While many elevation sources are distributed in units of arc seconds, the keyword is an approximation
+                                    of those resolutions in meters for easier understanding.
 
-        dem_resolution : Optional string
+                                    Choice list: ['FINEST', '10m', '24m', '30m', '90m']
 
-        maximum_distance : Optional float
+                                    The default is the finest resolution available.
+        -------------------------    ---------------------------------------------------------
+        maximum_distance             Optional float. This is a cutoff distance where the computation of visible areas stops. Beyond this distance, it is unknown whether the analysis points and the other objects can see each other.
 
-        max_distance_units : Optional string
+                                    It is useful for modeling current weather conditions or a given time of day, such as dusk. Large values increase computation time.
 
-        observer_height : Optional float
+                                    Unless specified, a default maximum distance will be computed based on the resolution and extent of the source DEM. The allowed maximum value is 50 kilometers.
+                                    Use max_distance_units to set the units for maximum_distance.
+        -------------------------    ---------------------------------------------------------
+        max_distance_units           Optional string. The units for the maximum_distance parameter.
 
-        observer_height_units : Optional string
+                                    Choice list: ['Meters', 'Kilometers', 'Feet', 'Miles', 'Yards']
 
-        target_height : Optional float
+                                    The default is 'Meters'.
+        -------------------------    ---------------------------------------------------------
+        observer_height              Optional float. This is the height above the ground of the observer locations.
 
-        target_height_units : Optional string
+                                    The default is 1.75 meters, which is approximately the average height of a person. If you are looking from an elevated location, such as an observation tower or a tall building, use that height instead.
 
-        generalize : Optional bool
+                                    Use observer_height_units to set the units for observer_height.
 
-        output_name : Optional string
+        -------------------------    ---------------------------------------------------------
+        observer_height_units        Optional string. The units for the observer_height parameter.
 
-        context: Optional dict
+                                    Choice list: ['Meters', 'Kilometers', 'Feet', 'Miles', 'Yards']
 
-        estimate: Optional Boolean. Returns the number of credit for the operation.
+                                    The default is 'Meters'.
+        -------------------------    ---------------------------------------------------------
+        target_height                Optional float. This is the height of structures or people on the ground used to
+                                    establish visibility. The result viewshed are those areas where an input point can see these other objects.
+                                    The converse is also true; the other objects can see an input point.
 
-        Returns
-        -------
-        viewshed_layer : layer (FeatureCollection)
+                                    * If your input points represent wind turbines and you want to determine where people standing on the
+                                    ground can see the turbines, enter the average height of a person (approximately 6 feet).
+                                    The result is those areas where a person standing on the ground can see the wind turbines.
+                                    * If your input points represent fire lookout towers and you want to determine which lookout
+                                    towers can see a smoke plume 20 feet high or higher, enter 20 feet for the height. The result
+                                    is those areas where a fire lookout tower can see a smoke plume at least 20 feet high.
+                                    * If your input points represent scenic overlooks along roads and trails and you want to determine
+                                    where wind turbines 400 feet high or higher can be seen, enter 400 feet for the height. The result
+                                    is those areas where a person standing at a scenic overlook can see a wind turbine at least 400 feet high.
+                                    * If your input points represent scenic overlooks and you want to determine how much area on the ground
+                                    people standing at the overlook can see, enter zero. The result is those areas that can be seen from the scenic overlook.
+
+                                    Use target_height_units to set the units for target_height.
+
+        -------------------------    ---------------------------------------------------------
+        target_height_units          Optional string. The units for the target_height parameter.
+
+                                    Choice list: ['Meters', 'Kilometers', 'Feet', 'Miles', 'Yards']
+
+                                    The default is 'Meters'.
+        -------------------------    ---------------------------------------------------------
+        generalize                   Optional boolean. Determines whether or not the viewshed polygons are to be generalized.
+
+                                    The viewshed calculation is based on a raster elevation model that creates a result with stair-stepped edges.
+                                    To create a more pleasing appearance and improve performance, the default behavior is to generalize the polygons.
+                                    The generalization process smooths the boundary of the visible areas and may remove some single-cell visible areas.
+
+                                    The default value is True.
+        -------------------------    ---------------------------------------------------------
+        output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------    ---------------------------------------------------------
+        context                      Optional dict. Additional settings such as processing extent and output spatial reference.
+                                    For create_viewshed, there are three settings.
+
+                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                        .. code-block:: python
+
+                                            # Example Usage
+                                            context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857},
+                                                        "overwrite": True}
+        -------------------------    ---------------------------------------------------------
+        gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------    ---------------------------------------------------------
+        estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+        -------------------------    ---------------------------------------------------------
+        future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================    =========================================================
+
+        :returns result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+
         """
         task = "CreateViewshed"
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -1725,36 +2678,99 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
+        The ``create_watersheds`` method determines the watershed, or upstream contributing area, for each point
+        in your analysis layer. For example, suppose you have point features representing locations
+        of waterborne contamination, and you want to find the likely sources of the contamination.
+        Since the source of the contamination must be somewhere within the watershed upstream of the
+        point, you would use this tool to define the watersheds containing the sources of the contaminant.
 
 
-        Parameters
-        ----------
-        input_layer : Required layer (see Feature Input in documentation)
+        =========================    =========================================================
+        **Parameter**                **Description**
+        -------------------------    ---------------------------------------------------------
+        input_layer                  Required point feature layer. The point features used for calculating watersheds.
+                                    These are referred to as pour points, because it is the location at which water pours out of the watershed.
+                                    See :ref:`Feature Input<FeatureInput>`.
+        -------------------------    ---------------------------------------------------------
+        search_distance              Optional float. The maximum distance to move the location of an input point.
+                                    Use search_units to set the units for search_distance.
 
-        search_distance : Optional float
+                                    If your input points are located away from a drainage line, the resulting watersheds
+                                    are likely to be very small and not of much use in determining the upstream source of
+                                    contamination. In most cases, you want your input points to snap to the nearest drainage
+                                    line in order to find the watersheds that flows to a point located on the drainage line.
+                                    To find the closest drainage line, specify a search distance. If you do not specify a
+                                    search distance, the tool will compute and use a conservative search distance.
 
-        search_units : Optional string
+                                    To use the exact location of your input point, specify a search distance of zero.
 
-        source_database : Optional string
+                                    For analysis purposes, drainage lines have been precomputed by Esri using standard
+                                    hydrologic models. If there is no drainage line within the search distance, the location
+                                    containing the highest flow accumulation within the search distance is used.
+        -------------------------    ---------------------------------------------------------
+        search_units                 Optional string. The linear units specified for the search distance.
 
-        generalize : Optional bool
+                                    Choice list: ['Meters', 'Kilometers', 'Feet', 'Miles', 'Yards']
+        -------------------------    ---------------------------------------------------------
+        source_database              Optional string. Keyword indicating the data source resolution that will be used in the analysis.
 
-        output_name : Optional string
+                                    Choice list: ['Finest', '30m', '90m']
 
-        context: Optional dict
+                                    * Finest (Default): Finest resolution available at each location from all possible data sources.
+                                    * 30m: The hydrologic source was built from 1 arc second - approximately 30 meter resolution, elevation data.
+                                    * 90m: The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data.
+        -------------------------    ---------------------------------------------------------
+        generalize                   Optional boolean. Determines if the output watersheds will be smoothed into simpler shapes or conform
+                                    to the cell edges of the original DEM.
 
+                                    * True: The polygons will be smoothed into simpler shapes. This is the default.
+                                    * False: The edge of the polygons will conform to the edges of the original DEM.
 
-        Returns
-        -------
-        dict with the following keys:
-           "snap_pour_pts_layer" : layer (FeatureCollection)
-           "watershed_layer" : layer (FeatureCollection)
+                                    The default value is True.
+        -------------------------    ---------------------------------------------------------
+        output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------    ---------------------------------------------------------
+        context                      Optional dict. Additional settings such as processing extent and output spatial reference.
+                                    For create_watersheds, there are three settings.
+
+                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                        .. code-block:: python
+
+                                            # Example Usage
+                                            context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857},
+                                                        "overwrite": True}
+        -------------------------    ---------------------------------------------------------
+        gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------    ---------------------------------------------------------
+        estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+        -------------------------    ---------------------------------------------------------
+        future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================    =========================================================
+
+        :returns result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+
         """
         task = "CreateWatersheds"
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -1804,25 +2820,240 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Derive New Locations task derives new features from an input layer at the locations that meet a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).The Derive New Locations task is very similar to the Find Existing Locations task, the main difference is that the result of Derive New Locations can contain partial features. In both tasks, the attribute expression where and the spatial relationships within and contains return the same result. This is because these relationships return entire features. When intersects or withinDistance is used, Derive New Locations creates new features in the result. For example, when intersecting a parcel feature and a flood zone area that partially overlap each other, Find Existing Locations will return the entire parcel whereas Derive New Locations will return just the portion of the parcel that is within the flood zone.
+        The ``derive_new_locations`` method derives new features from the input layers that meet a query you specify. A query is
+        made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an
+        attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer
+        (STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain
+        distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
 
-        Parameters
-        ----------
-        input_layers : Required list of Feature Layers
-            A list of layers that will be used in the expressions parameter.
-        expressions : Required string
-            A list of expressions. Each expression should be a dictionary that includes an operator (and/or), the index of layer in input_layers, and either a 'where' clause or a spatial relationship. Please refer documentation at http://developers.arcgis.com for more information on expressions.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
-        estimate: Optional Boolean
-            Returns the number of credit for the operation.
-        future: optional boolean
-            Returns a GPJob and performs the job asynchronous
-        Returns
-        -------
-        result_layer : layer (FeatureCollection)
+        The ``derive_new_locations`` method is very similar to the ``find_existing_locations`` method, the main difference is that
+        the result of ``derive_new_locations`` can contain partial features.
+
+        * In both methods, the attribute expression  ``where`` and the spatial relationships within and contains return the same result.
+        This is because these relationships return entire features.
+        * When ``intersects`` or ``within_distance`` is used, ``derive_new_locations`` creates new features
+        in the result. For example, when intersecting a parcel feature and a flood zone area that partially overlap each other,
+        ``find_existing_locations`` will return the entire parcel whereas ``derive_new_locations`` will return just the portion of
+        the parcel that is within the flood zone.
+
+        =====================================    ======================================================================================================
+        **Argument**                             **Description**
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        input_layers                             Required list of feature layers. A list of layers that will be used in the expressions parameter.
+                                                Each layer in the list can be:
+
+                                                * a feature service layer with an optional filter to select specific features, or
+                                                * a feature collection
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        expressions                              Required dict. There are two types of expressions, attribute and spatial.
+
+                                                Example attribute expression:
+
+                                                {
+                                                    "operator": "and",
+                                                    "layer": 0,
+                                                    "where": "STATUS = 'VACANT'"
+                                                }
+
+                                                **Note**
+                                                * operator can be either ``and`` or ``or``
+                                                * layer is the index of the layer in the ``input_layers`` parameter.
+                                                * The where clause must be surrounded by double quotes.
+                                                * When dealing with text fields, values must be single-quoted ('VACANT').
+                                                * Date fields support all queries except LIKE. Dates are strings in YYYY:MM:DD hh:mm:ss format. Here's an example using the date field ObsDate:
+                                                "where": "ObsDate >= '1998-04-30 13:30:00' "
+
+                                                +----------+------------------------------------------------------------------+
+                                                | =        | Equal                                                            |
+                                                +----------+------------------------------------------------------------------+
+                                                | >        | Greater than                                                     |
+                                                +----------+------------------------------------------------------------------+
+                                                | <        | Less than                                                        |
+                                                +----------+------------------------------------------------------------------+
+                                                | >=       | Greater than or equal to                                         |
+                                                +----------+------------------------------------------------------------------+
+                                                | <=       | Less than or equal to                                            |
+                                                +----------+------------------------------------------------------------------+
+                                                | <>       | Not equal                                                        |
+                                                +----------+------------------------------------------------------------------+
+                                                | LIKE '%  | A percent symbol (%) signifies a wildcard, meaning that          |
+                                                | <string>'| anything is acceptable in its place-one character, a             |
+                                                |          | hundred characters, or no character. This expression             |
+                                                |          | would select Mississippi and Missouri among USA                  |
+                                                |          | state names: STATE_NAME LIKE 'Miss%'                             |
+                                                +----------+------------------------------------------------------------------+
+                                                | BETWEEN  | Selects a record if it has a value greater than or equal         |
+                                                | <value1> | to <value1> and less than or equal to <value2>.                  |
+                                                | AND      | For example, this expression selects all records with            |
+                                                | <value2> | an HHSIZE value greater than or equal to 3 and less              |
+                                                |          | than or equal to 10:                                             |
+                                                |          |                                                                  |
+                                                |          | HHSIZE BETWEEN 3 AND 10                                          |
+                                                |          |                                                                  |
+                                                |          | The above is equivalent to:                                      |
+                                                |          |                                                                  |
+                                                |          | HHSIZE >= 3 AND HHSIZE <= 10                                     |
+                                                |          | This operator applies to numeric or date fields.                 |
+                                                |          | Here is an example of a date query on the field ObsDate:         |
+                                                |          |                                                                  |
+                                                |          | ObsDate BETWEEN '1998-04-30 00:00:00' AND '1998-04-30 23:59:59'  |
+                                                |          |                                                                  |
+                                                |          | Time is optional.                                                |
+                                                +----------+------------------------------------------------------------------+
+                                                | NOT      | Selects a record if it has a value outside the range between     |
+                                                | BETWEEN  | <value1> and less than or equal to <value2>.                     |
+                                                | <value1> | For example, this expression selects all records whose           |
+                                                | AND      | HHSIZE value is less than 5 and greater than 7.                  |
+                                                | <value2> |                                                                  |
+                                                |          | HHSIZE NOT BETWEEN 5 AND 7                                       |
+                                                |          |                                                                  |
+                                                |          | The above is equivalent to:                                      |
+                                                |          |                                                                  |
+                                                |          | HHSIZE < 5 OR HHSIZE > 7                                         |
+                                                |          | This operator applies to numeric or date fields.                 |
+                                                |          |                                                                  |
+                                                |          | **Note**                                                         |
+                                                |          |                                                                  |
+                                                |          | You can use the contains relationship with points and lines.     |
+                                                |          | For example, you have a layer of street centerlines (lines) and  |
+                                                |          | a layer of manhole covers (points), and you want to find streets |
+                                                |          | that contain a manhole cover. You could use contains to find     |
+                                                |          | streets that contain manhole covers, but in order for a line to  |
+                                                |          | contain a point, the point must be exactly on the line (that is, |
+                                                |          | in GIS terms, they are snapped to each other). If there is any   |
+                                                |          | doubt about this, use the withinDistance relationship with a     |
+                                                |          | suitable distance value.                                         |
+                                                +----------+------------------------------------------------------------------+
+
+                                                Example spatial expression:
+                                                {
+                                                    "operator": "and",
+                                                    "layer": 0,
+                                                    "spatialRel": "withinDistance",
+                                                    "selectingLayer": 1,
+                                                    "distance": 10,
+                                                    "units": "miles"
+                                                }
+
+                                                * operator can be either ``and`` or ``or``
+                                                * layer is the index of the layer in ``the input_layers`` parameter. The result of the expression is features in this layer.
+                                                * spatialRel is the spatial relationship. There are nine spatial relationships.
+                                                * distance is the distance to use for the withinDistance and notWithinDistance spatial relationship.
+                                                * units is the units for distance.
+
+                                                +-------------------+----------------------------------------------------------------------------------------+
+                                                | spatialRel        | Description                                                                            |
+                                                +-------------------+----------------------------------------------------------------------------------------+
+                                                | intersects        | |intersect|                                                                            |
+                                                |                   |                                                                                        |
+                                                |                   | A feature in layer passes the intersect test if it overlaps                            |
+                                                | notIntersects     | any part of a feature in selectingLayer, including touches                             |
+                                                |                   | (where features share a common point).                                                 |
+                                                |                   |                                                                                        |
+                                                |                   | * intersects-If a feature in layer intersects a feature in                             |
+                                                |                   |   selectingLayer, the portion of the feature in layer that                             |
+                                                |                   |   intersects the feature in selectingLayer is included in                              |
+                                                |                   |   the output.                                                                          |
+                                                |                   | * notintersects-If a feature in layer intersects a feature in                          |
+                                                |                   |   selectingLayer, the portion of the feature in layer that                             |
+                                                |                   |   intersects the feature in selectingLayer is excluded from                            |
+                                                |                   |   the output.                                                                          |
+                                                +-------------------+----------------------------------------------------------------------------------------+
+                                                | withinDistance    | |distance|                                                                             |
+                                                |                   |                                                                                        |
+                                                |                   | The within a distance relationship uses the straight-line                              |
+                                                | notWithinDistance | distance between features in layer to those in selectingLayer.                         |
+                                                |                   | withinDistance-The portion of the feature in layer that is                             |
+                                                |                   | within the specified distance of a feature in selectingLayer                           |
+                                                |                   | is included in the output.                                                             |
+                                                |                   | notwithinDistance-The portion of the feature in layer that is                          |
+                                                |                   | within the specified distance of a feature in selectingLayer is                        |
+                                                |                   | excluded from output. You can think of this relationship as                            |
+                                                |                   | "is farther away than".                                                                |
+                                                +-------------------+----------------------------------------------------------------------------------------+
+                                                | contains          | |intersect|                                                                            |
+                                                |                   |                                                                                        |
+                                                |                   | A feature in layer passes this test if it completely                                   |
+                                                | notContains       | surrounds a feature in selectingLayer. No portion of the                               |
+                                                |                   | containing feature; however, the contained feature is allowed                          |
+                                                |                   | to touch the containing feature (that is, share a common                               |
+                                                |                   | point along its boundary).                                                             |
+                                                |                   |                                                                                        |
+                                                |                   | contains-If a feature in layer contains a feature in                                   |
+                                                |                   | selectingLayer, the feature in layer is included in the output.                        |
+                                                |                   | notcontains-If a feature in layer contains a feature in                                |
+                                                |                   | selectingLayer, the feature in the first layer is excluded                             |
+                                                +-------------------+----------------------------------------------------------------------------------------+
+                                                | within            | |within|                                                                               |
+                                                |                   |                                                                                        |
+                                                |                   | A feature in layer passes this test if it is completely                                |
+                                                | notWithin         | surrounded by a feature in selectingLayer. The entire feature                          |
+                                                |                   | layer must be within the containing feature; however, the two                          |
+                                                |                   | features are allowed to touch (that is, share a common point                           |
+                                                |                   | along its boundary).                                                                   |
+                                                |                   |                                                                                        |
+                                                |                   | * within-If a feature in layer is completely within a feature in                       |
+                                                |                   |   selectingLayer, the feature in layer is included in the output.                      |
+                                                |                   | * notwithin-If a feature in layer is completely within a feature                       |
+                                                |                   |   in selectingLayer, the feature in layer is excluded from the                         |
+                                                |                   |   output.                                                                              |
+                                                |                   |                                                                                        |
+                                                |                   | **Note:**                                                                              |
+                                                |                   |                                                                                        |
+                                                |                   | can use the within relationship for points and lines, just as                          |
+                                                |                   | you can with the contains relationship. For example, your first                        |
+                                                |                   | layer contains points representing manhole covers and you want                         |
+                                                |                   | to find the manholes that are on street centerlines (as opposed                        |
+                                                |                   | to parking lots or other non-street features). You could use                           |
+                                                |                   | within to find manhole points within street centerlines, but                           |
+                                                |                   | in order for a point to contain a line, the point must be exactly                      |
+                                                |                   | on the line (that is, in GIS terms, they are snapped to each                           |
+                                                |                   | other). If there is any doubt about this, use the withinDistance                       |
+                                                |                   | relationship with a suitable distance value.                                           |
+                                                +-------------------+----------------------------------------------------------------------------------------+
+                                                | nearest           | |nearest|                                                                              |
+                                                |                   |                                                                                        |
+                                                |                   | feature in the first layer passes this test if it is nearest                           |
+                                                |                   | to a feature in the second layer.                                                      |
+                                                |                   |                                                                                        |
+                                                |                   | * nearest-If a feature in the first layer is nearest to a                              |
+                                                |                   |   feature in the second layer, the feature in the first layer                          |
+                                                |                   |   is included in the output.                                                           |
+                                                +-------------------+----------------------------------------------------------------------------------------+
+
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                feature layer will cause the new layer to be appended to the Feature Service.
+                                                If overwrite is True in context, new layer will overwrite existing layer.
+                                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                For derive_new_locations, there are three settings.
+
+                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                                    .. code-block:: python
+
+                                                        # Example Usage
+                                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                            "ymin": -9187921.892449,
+                                                                            "xmax": 3174104.927313,
+                                                                            "ymax": -9175500.875353,
+                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                    "outSR": {"wkid": 3857},
+                                                                    "overwrite": True}
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        estimate                                 Optional boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =====================================    ======================================================================================================
+
+        :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+
         """
 
         task = "DeriveNewLocations"
@@ -1832,7 +3063,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -1872,29 +3108,110 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        Dissolve features based on specified fields.
+        The dissolve_boundaries method finds polygons that overlap or share a common boundary and merges them together to form a single polygon.
 
-        Parameters
-        ----------
-        input_layer : Required layer (see Feature Input in documentation)
-            The layer containing polygon features that will be dissolved.
-        dissolve_fields : Optional list of strings
-            One or more fields from the input that control which polygons are merged. If no fields are supplied, all polygons that overlap or shared a common border will be dissolved into one polygon.
-        summary_fields : Optional list of strings
-            A list of field names and statistical types that will be used to summarize the output. Supported statistics include: Sum, Mean, Min, Max, and Stddev.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
-        estimate: Optional Boolean
-            Returns the number of credit for the operation.
-        Returns
-        -------
-        dissolved_layer : layer (FeatureCollection)
+        You can control which boundaries are merged by specifying a field. For example, if you have a layer of counties, and each county
+        has a State_Name attribute, you can dissolve boundaries using the State_Name attribute. Adjacent counties will be merged together
+        if they have the same value for State_Name. The end result is a layer of state boundaries.
+
+        ====================================     =====================================================================================
+        **Parameter**                            **Description**
+        ------------------------------------     -------------------------------------------------------------------------------------
+        input_layer                              Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<FeatureInput>`.
+        ------------------------------------     -------------------------------------------------------------------------------------
+        dissolve_fields                          Optional list of strings. One or more fields on the input_layer that control which polygons
+                                                are merged. If you don't supply dissolve_fields , or you supply an empty list of fields, polygons
+                                                that share a common border (that is, they are adjacent) or polygon areas that overlap will be dissolved into one polygon.
+
+                                                If you do supply values for the dissolve_fields parameter, polygons that share a common border
+                                                and contain the same value in one or more fields will be dissolved. For example, if you have a layer of counties,
+                                                and each county has a State_Name attribute, you can dissolve boundaries using the State_Name attribute.
+                                                Adjacent counties will be merged together if they have the same value for State_Name. The end result is a layer of
+                                                state boundaries.If two or more fields are specified, the values in these fields must be the same for the boundary to be dissolved.
+        ------------------------------------     -------------------------------------------------------------------------------------
+        summary_fields                           | Optional list of strings.
+                                                A list of field names and statistical summary types that you
+                                                wish to calculate from the polygons that are dissolved together:
+
+                                                | *["fieldName summary type", "fieldName2 summaryType"]*
+
+                                                `fieldName` is the name of one of the numeric fields found in the
+                                                input_layer.
+                                                `summary type` is one of the following:
+
+                                                * ``Sum`` - Adds the total value of all the points in each polygon
+                                                * ``Mean`` - Calculates the average of all the points in each polygon.
+                                                * ``Min`` - Finds the smallest value of all the points in each polygon.
+                                                * ``Max`` - Finds the largest value of all the points in each polygon.
+                                                * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
+
+                                                For example, if you are dissolving counties based on `State_Name`, and each
+                                                county has a `Population` field, you can sum the `Population` for all the
+                                                counties sharing the same `State_Name` attribute. The result would be a
+                                                layer of state boundaries with total population.
+
+                                                .. code-block:: python
+                                                    :emphasize-lines: 5
+
+                                                    # Usage Example
+
+                                                    >>> dissolve_boundaries(input_layer="US_Counties",
+                                                                            dissolve_fields="State_Name",
+                                                                            summary_fields=["Population Sum"],
+                                                                            output_name="US_States")
+        ------------------------------------     -------------------------------------------------------------------------------------
+        output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                feature layer will cause the new layer to be appended to the Feature Service.
+                                                If overwrite is True in context, new layer will overwrite existing layer.
+                                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        ------------------------------------     -------------------------------------------------------------------------------------
+        context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                For calculate_density, there are three settings.
+
+                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                                    .. code-block:: python
+
+                                                        # Example Usage
+                                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                            "ymin": -9187921.892449,
+                                                                            "xmax": 3174104.927313,
+                                                                            "ymax": -9175500.875353,
+                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                    "outSR": {"wkid": 3857},
+                                                                    "overwrite": True}
+        ------------------------------------     -------------------------------------------------------------------------------------
+        gis                                      Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
+        ------------------------------------     -------------------------------------------------------------------------------------
+        estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
+        ------------------------------------     -------------------------------------------------------------------------------------
+        multi_part_features                      Optional boolean. Specifies whether multipart features (i.e. features which
+                                                share a common attribute table but are not visibly connected) are allowed in
+                                                the output feature class.
+
+                                                | Choice list: [``True``, ``False``]
+
+                                                * ``True``: Specifies multipart features are allowed.
+                                                * ``False``: Specifies multipart features are not allowed. Instead of creating multipart features, individual features will be created for each part.
+
+                                                The default value is ``True``.
+        ------------------------------------     -------------------------------------------------------------------------------------
+        future                                   Optional boolean. If True, the result will be a :class:`~arcgis.geoprocessing.GPJob` object and results will be returned asynchronously.
+        ====================================     =====================================================================================
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+
         """
 
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -1949,34 +3266,88 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Enrich Layer task enriches your data by getting facts about the people, places, and businesses that surround your data locations. For example: What kind of people live here? What do people like to do in this area? What are their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
+        The ``enrich_layer`` method enriches your data by getting facts about the people, places, and businesses that surround
+        your data locations. For example: What kind of people live here? What do people like to do in this area? What are
+        their habits and lifestyles? What kind of businesses are there in this area?
 
-        Parameters
-        ----------
-        input_layer : Required layer (see Feature Input in documentation)
-            Feature layer to enrich with new data
-        data_collections : Optional list of strings
-            Data collections you wish to add to your features.
-        analysis_variables : Optional list of strings
-            A subset of specific variables instead of dataCollections.
-        country : Optional string
-            The two character country code that specifies the country of the input features. Eg. US (United States),  FR (France), GB (United Kingdom) etc.
-        buffer_type : Optional string
-            Area to be created around the point or line features for enrichment. Default is 1 Mile straight-line buffer radius.
-        distance : Optional float
-            A double value that defines the straight-line distance or time (when drivingTime is used).
-        units : Optional string
-            The unit (eg. Miles, Minutes) to be used with the distance value(s) specified in the distance parameter to calculate the area.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
-        estimate: Optional Boolean
-            Returns the number of credit for the operation.
+        The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
 
-        Returns
-        -------
-        enriched_layer : layer (FeatureCollection)
+        =====================================================================     ====================================================================
+        **Parameter**                                                             **Description**
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        input_layer                                                               Required layer. The features to enrich with new data. See :ref:`Feature Input<FeatureInput>`.
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        data_collections                                                          Optional list of strings. This optional parameter defines the collections of data you want to use to enrich your features.
+                                                                                Its value is a list of strings. If you don't provide this parameter, you must provide the analysis_variables parameter.
+
+                                                                                For more information about data collections and the values for this parameter, visit the `Esri Demographics site <http://doc.arcgis.com/en/esri-demographics/data/data-browser.htm>`_.
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        analysis_variables                                                        Optional list of strings. The parameter defines the specific variables within a data collection you want to use to
+                                                                                your features. Its value is a list of strings in the form of "dataCollection.VariableName". If you don't provide
+                                                                                this parameter, you must provide the dataCollections parameter. You can provide both parameters.
+                                                                                For example, if you want all variables in the KeyGlobalFacts data collection, specify it in the dataCollections
+                                                                                parameter and use this parameter for specific variables in other collections.
+
+                                                                                For more information about variables in data collections, visit the `Esri Demographics site <http://doc.arcgis.com/en/esri-demographics/data/data-browser.htm>`_. Each data collection
+                                                                                has a PDF file describing variables and their names.
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        country                                                                   Optional string. This optional parameter further defines what is returned from data collection.
+                                                                                For example, your input features may be countries in Western Europe, and you want to enrich them with the
+                                                                                KeyWEFacts data collection. However, you only want data for France, not every country in your input layer.
+                                                                                The value is the two-character country code.
+
+                                                                                For more information about data collections and the values for this parameter, visit the `Esri Demographics site <http://doc.arcgis.com/en/esri-demographics/data/data-browser.htm>`_.
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        buffer_type (Required if input_layer contains point or line features)     Optional string. If your input features are points or lines, you must define an area around your features that you want to enrich. Features that are within (or equal to) the distances you enter will be enriched.
+
+                                                                                Choice list: ['StraightLine', 'Driving Distance', 'Driving Time ', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        distance (Required if input_layer contains point or line features)        Optional float. A value that defines the search distance or time. The units of the distance value is supplied by the units parameter.
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        units                                                                     Optional string. The linear unit to be used with the distance value(s) specified in the distance parameter.
+
+                                                                                Choice list: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'Seconds', 'Minutes'. 'Hours']
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        output_name                                                               Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                                                feature layer will cause the new layer to be appended to the Feature Service.
+                                                                                If overwrite is True in context, new layer will overwrite existing layer.
+                                                                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        context                                                                   Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                                                For enrich_layer, there are three settings.
+
+                                                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+
+                                                                                .. code-block:: python
+                                                                                    # Example Usage
+
+                                                                                                            "ymin": -9187921.892449,
+                                                                                                            "xmax": 3174104.927313,
+                                                                                                            "ymax": -9175500.875353,
+                                                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                                                    "outSR": {"wkid": 3857},
+                                                                                                    "overwrite": True}
+
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        gis                                                                       Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        return_boundaries                                                         Optional boolean. Applies only for point and line input features. If True, a result layer of areas is returned.
+                                                                                The returned areas are defined by the specified buffer_type. For example, if using a buffer_type of StraightLine with
+                                                                                a distance of 5 miles, your result will contain areas with a 5 mile radius around the input features and requested
+                                                                                analysis_variables variables. If False, the resulting layer will return the same features as the input layer with
+                                                                                analysis_variables variables.
+
+                                                                                The default value is False.
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        future                                                                    Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =====================================================================     ====================================================================
+
+        :returns :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+
         """
 
         task = "EnrichLayer"
@@ -1984,7 +3355,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
 
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2043,28 +3419,62 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        Select and download data for a specified area of interest. Layers that you select will be added to a zip file or layer package.
+        The ``extract_data`` method is used to extract data from one or more layers within a given extent.
+        The extracted data format can be a file geodatabase, shapefiles, csv, or kml.
+        File geodatabases and shapefiles are added to a zip file that can be downloaded.
 
-        Parameters
-        ----------
-        input_layers : Required list of Feature Layers
-            The layers from which you can extract features.
-        extent : Optional Feature Layer
-            The area that defines which features will be included in the output zip file or layer package.
-        clip : Optional bool
-            Select features that intersect the extent or clip features within the extent.
-        data_format : Optional string
-            Format of the data that will be extracted and downloaded.  Layer packages will always include file geodatabases. eg CSV, SHAPEFILE
-        output_name : Optional string
-            Additional properties such as output name of the item
-        context: Optional dict
-            Additional settings such as processing extent and output spatial reference.
-        estimate: Optional Boolean
-            Returns the number of credit for the operation.
+        ===================================    =========================================================
+        **Argument**                           **Description**
+        -----------------------------------    ---------------------------------------------------------
+        input_layers                           Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
+        -----------------------------------    ---------------------------------------------------------
+        extent                                 Optional layer. The extent is the area of interest used to extract the input features. If not specified, all features from each input layer are extracted. See :ref:`Feature Input<FeatureInput>`.
+        -----------------------------------    ---------------------------------------------------------
+        clip                                   Optional boolean. A Boolean value that specifies whether the features within the input layer are clipped
+                                            within the extent. By default, features are not clipped and all features intersecting the extent are returned.
 
-        Returns
-        -------
-        an item in the GIS
+                                            The default is false.
+        -----------------------------------    ---------------------------------------------------------
+        data_format                            Optional string. A keyword defining the output data format for your extracted data.
+
+                                            Choice list: ``['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']``
+
+                                            The default is 'CSV'.
+
+                                            If *FileGeodatase* is specified *and* the input layer has `attachments: <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_
+
+                                                * if *clip=False*, the attachments will be extracted to the output file
+                                                * if *clip=True*, the attachments will not be extracted
+        -----------------------------------    ---------------------------------------------------------
+        output_name                            Optional string or dict.
+
+                                            When ``output_name`` is a string, the output item in your My contents page
+                                            will be named by the value. Other item properties will receive default values.
+
+                                            .. code-block:: python
+
+                                                output_name = "my_extracted_item"
+
+                                            To explicitly provide other item properties, use a dict with the following Syntax.
+
+                                            .. code-block:: python
+
+                                                output_name = {"title": "<title>",
+                                                                "tag": "<tags>",
+                                                                "snippet": "<snippet>",
+                                                                "description": "<description>"}
+
+                                            For more information on these and other item properties, see the Item resource page in the `ArcGIS REST API. <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
+        -----------------------------------    ---------------------------------------------------------
+        gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -----------------------------------    ---------------------------------------------------------
+        estimate                               Optional boolean. If True, the number of credits to run the operation will be returned.
+        -----------------------------------    ---------------------------------------------------------
+        future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ===================================    =========================================================
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+
         """
 
         task = "ExtractData"
@@ -2162,7 +3572,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2199,42 +3614,63 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Find Centroids task that finds and generates points from the representative center (centroid) of each input multipoint, line, or area feature. Finding the centroid of a feature is very common for many analytical workflows where the resulting points can then be used in other analytic workflows.
+        The ``find_centroids`` method that finds and generates points from the representative center (centroid) of
+        each input multipoint, line, or area feature. Finding the centroid of a feature is very common for many analytical
+        workflows where the resulting points can then be used in other analytic workflows.
 
         For example, polygon features that contain demographic data can be converted to centroids that can be used in network analysis.
 
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        input_layer       Required :class:`~arcgis.features.FeatureLayer`.
-                          The multipoint, line, or polygon features that will be used to
-                          generate centroid point features.
-        ----------------  ---------------------------------------------------------------
-        point_location    Optional Boolean. A Boolean value that determines the output location of the points.
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        input_layer         Required feature layer. The multipoint, line, or polygon features that will be used to generate centroid point features. See :ref:`Feature Input<FeatureInput>`.
+        ----------------    ---------------------------------------------------------------
+        point_location      Optional boolean. A Boolean value that determines the output location of the points.
 
+                            + True - Output points will be the nearest point to the actual centroid, but located inside or contained by the bounds of the input feature.
+                            + False - Output point locations will be determined by the calculated geometric center of each input feature. This is the default.
+        ----------------    ---------------------------------------------------------------
+        output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                            feature layer will cause the new layer to be appended to the Feature Service.
+                            If overwrite is True in context, new layer will overwrite existing layer.
+                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        ----------------    ---------------------------------------------------------------
+        context             Optional dict. Additional settings such as processing extent and output spatial reference.
+                            For find_centroids, there are three settings.
 
-                          + true - Output points will be the nearest point to the actual centroid,
-                            but located inside or contained by the bounds of the input feature.
-                          + false - Output point locations will be determined by the calculated geometric
-                            center of each input feature. This is the default.
+                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
+                                .. code-block:: python
 
-        ----------------  ---------------------------------------------------------------
-        output_name       Optional String. Output feature service name.
-        ----------------  ---------------------------------------------------------------
-        context           Optional String. Additional settings such as processing extent, output spatial reference, and overwrite.
-        ----------------  ---------------------------------------------------------------
-        estimate          Optional Boolean. Returns the number of credit for the operation.
-        ================  ===============================================================
+                                    # Example Usage
+                                    context = {"extent": {"xmin": 3164569.408035,
+                                                        "ymin": -9187921.892449,
+                                                        "xmax": 3174104.927313,
+                                                        "ymax": -9175500.875353,
+                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                "outSR": {"wkid": 3857},
+                                                "overwrite": True}
+        ----------------    ---------------------------------------------------------------
+        estimate            Optional boolean. If True, the number of credits to run the operation will be returned.
+        ----------------    ---------------------------------------------------------------
+        future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ================    ===============================================================
 
-        :return: output_layer - :class:`~arcgis.features.FeatureLayer` or :class:`~arcgis.features.FeatureCollection`
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
 
         """
         task = "FindCentroids"
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2280,24 +3716,241 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Find Existing Locations task selects features in an input layer where at least part of the feature meets a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
+        The ``find_existing_locations`` method selects features in the input layer that meet a query you specify.
+        A query is made up of one or more expressions. There are two types of expressions: attribute and spatial.
+        An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT').
+        An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
 
-        Parameters
-        ----------
-        input_layers : Required list of Feature Layers
-            A list of layers that will be used in the expressions parameter.
-        expressions : Required string
-            A list of expressions. Each expression should be a dictionary that includes an operator (and/or), the index of layer in input_layers, and either a 'where' clause or a spatial relationship. Please refer documentation at http://developers.arcgis.com for more information on creating expressions.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
-        estimate: Optional Boolean
-            Returns the number of credit for the operation.
+        =====================================    ======================================================================================================
+        **Argument**                             **Description**
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        input_layers                             Required list of feature layers. A list of layers that will be used in the expressions parameter.
+                                                    Each layer in the list can be:
 
-        Returns
-        -------
-        result_layer : layer (FeatureCollection)
+                                                    * a feature service layer with an optional filter to select specific features, or
+                                                    * a feature collection
+
+                                                    See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        expressions                              Required dict. There are two types of expressions, attribute and spatial.
+
+                                                    Example attribute expression:
+
+                                                    {
+                                                    "operator": "and",
+                                                    "layer": 0,
+                                                    "where": "STATUS = 'VACANT'"
+                                                    }
+
+                                                    **Note**
+
+                                                    * operator can be either ``and`` or ``or``
+                                                    * layer is the index of the layer in the ``input_layers`` parameter.
+                                                    * The where clause must be surrounded by double quotes.
+                                                    * When dealing with text fields, values must be single-quoted ('VACANT').
+                                                    * Date fields support all queries except LIKE. Dates are strings in YYYY:MM:DD hh:mm:ss format.
+                                                    Here's an example using the date field ObsDate:
+
+                                                    "where": "ObsDate >= '1998-04-30 13:30:00' "
+
+                                                    +----------+------------------------------------------------------------------+
+                                                    | =        | Equal                                                            |
+                                                    +----------+------------------------------------------------------------------+
+                                                    | >        | Greater than                                                     |
+                                                    +----------+------------------------------------------------------------------+
+                                                    | <        | Less than                                                        |
+                                                    +----------+------------------------------------------------------------------+
+                                                    | >=       | Greater than or equal to                                         |
+                                                    +----------+------------------------------------------------------------------+
+                                                    | <=       | Less than or equal to                                            |
+                                                    +----------+------------------------------------------------------------------+
+                                                    | <>       | Not equal                                                        |
+                                                    +----------+------------------------------------------------------------------+
+                                                    | LIKE '%  | A percent symbol (%) signifies a wildcard, meaning that          |
+                                                    | <string>'| anything is acceptable in its place-one character, a             |
+                                                    |          | hundred characters, or no character. This expression             |
+                                                    |          | would select Mississippi and Missouri among USA                  |
+                                                    |          | state names: STATE_NAME LIKE 'Miss%'                             |
+                                                    +----------+------------------------------------------------------------------+
+                                                    | BETWEEN  | Selects a record if it has a value greater than or equal         |
+                                                    | <value1> | to <value1> and less than or equal to <value2>.                  |
+                                                    | AND      | For example, this expression selects all records with            |
+                                                    | <value2> | an HHSIZE value greater than or equal to 3 and less              |
+                                                    |          | than or equal to 10:                                             |
+                                                    |          |                                                                  |
+                                                    |          | HHSIZE BETWEEN 3 AND 10                                          |
+                                                    |          |                                                                  |
+                                                    |          | The above is equivalent to:                                      |
+                                                    |          |                                                                  |
+                                                    |          | HHSIZE >= 3 AND HHSIZE <= 10                                     |
+                                                    |          | This operator applies to numeric or date fields.                 |
+                                                    |          | Here is an example of a date query on the field ObsDate:         |
+                                                    |          |                                                                  |
+                                                    |          | ObsDate BETWEEN '1998-04-30 00:00:00' AND '1998-04-30 23:59:59'  |
+                                                    |          |                                                                  |
+                                                    |          | Time is optional.                                                |
+                                                    +----------+------------------------------------------------------------------+
+                                                    | NOT      | Selects a record if it has a value outside the range between     |
+                                                    | BETWEEN  | <value1> and less than or equal to <value2>.                     |
+                                                    | <value1> | For example, this expression selects all records whose           |
+                                                    | AND      | HHSIZE value is less than 5 and greater than 7.                  |
+                                                    | <value2> |                                                                  |
+                                                    |          | HHSIZE NOT BETWEEN 5 AND 7                                       |
+                                                    |          |                                                                  |
+                                                    |          | The above is equivalent to:                                      |
+                                                    |          |                                                                  |
+                                                    |          | HHSIZE < 5 OR HHSIZE > 7                                         |
+                                                    |          | This operator applies to numeric or date fields.                 |
+                                                    |          |                                                                  |
+                                                    |          | **Note**                                                         |
+                                                    |          |                                                                  |
+                                                    |          | You can use the contains relationship with points and lines.     |
+                                                    |          | For example, you have a layer of street centerlines (lines) and  |
+                                                    |          | a layer of manhole covers (points), and you want to find streets |
+                                                    |          | that contain a manhole cover. You could use contains to find     |
+                                                    |          | streets that contain manhole covers, but in order for a line to  |
+                                                    |          | contain a point, the point must be exactly on the line (that is, |
+                                                    |          | in GIS terms, they are snapped to each other). If there is any   |
+                                                    |          | doubt about this, use the withinDistance relationship with a     |
+                                                    |          | suitable distance value.                                         |
+                                                    +----------+------------------------------------------------------------------+
+
+                                                    Example spatial expression:
+                                                    {
+                                                    "operator": "and",
+                                                    "layer": 0,
+                                                    "spatialRel": "withinDistance",
+                                                    "selectingLayer": 1,
+                                                    "distance": 10,
+                                                    "units": "miles"
+                                                    }
+
+                                                    * operator can be either ``and`` or ``or``
+                                                    * layer is the index of the layer in ``the input_layers`` parameter. The result of the expression is features in this layer.
+                                                    * spatialRel is the spatial relationship. There are nine spatial relationships.
+                                                    * distance is the distance to use for the withinDistance and notWithinDistance spatial relationship.
+                                                    * units is the units for distance.
+
+                                                    +-------------------+----------------------------------------------------------------------------------------+
+                                                    | spatialRel        | Description                                                                            |
+                                                    +-------------------+----------------------------------------------------------------------------------------+
+                                                    | intersects        | |intersect|                                                                            |
+                                                    |                   |                                                                                        |
+                                                    |                   | A feature in layer passes the intersect test if it overlaps                            |
+                                                    | notIntersects     | any part of a feature in selectingLayer, including touches                             |
+                                                    |                   | (where features share a common point).                                                 |
+                                                    |                   |                                                                                        |
+                                                    |                   | * intersects-If a feature in layer intersects a feature in                             |
+                                                    |                   |   selectingLayer, the portion of the feature in layer that                             |
+                                                    |                   |   intersects the feature in selectingLayer is included in                              |
+                                                    |                   |   the output.                                                                          |
+                                                    |                   | * notintersects-If a feature in layer intersects a feature in                          |
+                                                    |                   |   selectingLayer, the portion of the feature in layer that                             |
+                                                    |                   |   intersects the feature in selectingLayer is excluded from                            |
+                                                    |                   |   the output.                                                                          |
+                                                    +-------------------+----------------------------------------------------------------------------------------+
+                                                    | withinDistance    | |distance|                                                                             |
+                                                    |                   |                                                                                        |
+                                                    |                   | The within a distance relationship uses the straight-line                              |
+                                                    | notWithinDistance | distance between features in layer to those in selectingLayer.                         |
+                                                    |                   | withinDistance-The portion of the feature in layer that is                             |
+                                                    |                   | within the specified distance of a feature in selectingLayer                           |
+                                                    |                   | is included in the output.                                                             |
+                                                    |                   | notwithinDistance-The portion of the feature in layer that is                          |
+                                                    |                   | within the specified distance of a feature in selectingLayer is                        |
+                                                    |                   | excluded from output. You can think of this relationship as                            |
+                                                    |                   | "is farther away than".                                                                |
+                                                    +-------------------+----------------------------------------------------------------------------------------+
+                                                    | contains          | |intersect|                                                                            |
+                                                    |                   |                                                                                        |
+                                                    |                   | A feature in layer passes this test if it completely                                   |
+                                                    | notContains       | surrounds a feature in selectingLayer. No portion of the                               |
+                                                    |                   | containing feature; however, the contained feature is allowed                          |
+                                                    |                   | to touch the containing feature (that is, share a common                               |
+                                                    |                   | point along its boundary).                                                             |
+                                                    |                   |                                                                                        |
+                                                    |                   | contains-If a feature in layer contains a feature in                                   |
+                                                    |                   | selectingLayer, the feature in layer is included in the output.                        |
+                                                    |                   | notcontains-If a feature in layer contains a feature in                                |
+                                                    |                   | selectingLayer, the feature in the first layer is excluded                             |
+                                                    +-------------------+----------------------------------------------------------------------------------------+
+                                                    | within            | |within|                                                                               |
+                                                    |                   |                                                                                        |
+                                                    |                   | A feature in layer passes this test if it is completely                                |
+                                                    | notWithin         | surrounded by a feature in selectingLayer. The entire feature                          |
+                                                    |                   | layer must be within the containing feature; however, the two                          |
+                                                    |                   | features are allowed to touch (that is, share a common point                           |
+                                                    |                   | along its boundary).                                                                   |
+                                                    |                   |                                                                                        |
+                                                    |                   | * within-If a feature in layer is completely within a feature in                       |
+                                                    |                   |   selectingLayer, the feature in layer is included in the output.                      |
+                                                    |                   | * notwithin-If a feature in layer is completely within a feature                       |
+                                                    |                   |   in selectingLayer, the feature in layer is excluded from the                         |
+                                                    |                   |   output.                                                                              |
+                                                    |                   |                                                                                        |
+                                                    |                   | **Note:**                                                                              |
+                                                    |                   |                                                                                        |
+                                                    |                   | can use the within relationship for points and lines, just as                          |
+                                                    |                   | you can with the contains relationship. For example, your first                        |
+                                                    |                   | layer contains points representing manhole covers and you want                         |
+                                                    |                   | to find the manholes that are on street centerlines (as opposed                        |
+                                                    |                   | to parking lots or other non-street features). You could use                           |
+                                                    |                   | within to find manhole points within street centerlines, but                           |
+                                                    |                   | in order for a point to contain a line, the point must be exactly                      |
+                                                    |                   | on the line (that is, in GIS terms, they are snapped to each                           |
+                                                    |                   | other). If there is any doubt about this, use the withinDistance                       |
+                                                    |                   | relationship with a suitable distance value.                                           |
+                                                    +-------------------+----------------------------------------------------------------------------------------+
+                                                    | nearest           | |nearest|                                                                              |
+                                                    |                   |                                                                                        |
+                                                    |                   | feature in the first layer passes this test if it is nearest                           |
+                                                    |                   | to a feature in the second layer.                                                      |
+                                                    |                   |                                                                                        |
+                                                    |                   | * nearest-If a feature in the first layer is nearest to a                              |
+                                                    |                   |   feature in the second layer, the feature in the first layer                          |
+                                                    |                   |   is included in the output.                                                           |
+                                                    +-------------------+----------------------------------------------------------------------------------------+
+
+                                                    * ``distance`` is the distance to use for the withinDistance and notWithinDistance spatial relationship.
+                                                    * ``units`` is the units for distance.
+
+                                                    Choice list: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+
+                                                    An expression may be a list, which denotes a group. The first operator in the group indicates how the group expression
+                                                    is added to the previous expression. Grouping expressions is only necessary when you need to create two or more distinct
+                                                    sets of features from the same layer. One way to think of grouping is that without grouping, you would have to execute
+                                                    ``find_existing_locations`` multiple times and merge the results.
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                    For find_existing_locations, there are three settings.
+
+                                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                                    .. code-block:: python
+
+                                                        # Example Usage
+                                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                            "ymin": -9187921.892449,
+                                                                            "xmax": 3174104.927313,
+                                                                            "ymax": -9175500.875353,
+                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                    "outSR": {"wkid": 3857},
+                                                                    "overwrite": True}
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------    ------------------------------------------------------------------------------------------------------
+        estimate                                 Optional boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+        =====================================    ======================================================================================================
+
+        :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+
         """
         if input_layers is None:
             input_layers = []
@@ -2307,7 +3960,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2354,44 +4012,106 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Find Hot Spots task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
+        The ``find_hot_spots`` method analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with
+        points or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically
+        significant spatial clusters of high values (hot spots) and low values (cold spots). For point data when no field is specified, hot spots
+        are locations with lots of points and cold spots are locations with very few points.
 
-        Parameters
-        ----------
-        analysis_layer : Required layer (see Feature Input in documentation)
-            The point or polygon feature layer for which hot spots will be calculated.
-        analysis_field : Optional string
-            The numeric field in the AnalysisLayer that will be analyzed.
-        divided_by_field : Optional string
+        The result map layer shows hot spots in red and cold spots in blue. The darkest red features indicate the strongest clustering of high values
+        or point densities; you can be 99 percent confident that the clustering associated with these features could not be the result of random chance.
+        Similarly, the darkest blue features are associated with the strongest spatial clustering of low values or the lowest point densities.
+        Features that are beige are not part of a statistically significant cluster; the spatial pattern associated with these features could very likely
+        be the result of random processes and random chance.
 
-        bounding_polygon_layer : Optional layer (see Feature Input in documentation)
-            When the analysis layer is points and no AnalysisField is specified, you can provide polygons features that define where incidents could have occurred.
-        aggregation_polygon_layer : Optional layer (see Feature Input in documentation)
-            When the AnalysisLayer contains points and no AnalysisField is specified, you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
-        estimate: Optional Boolean
-            Returns the credit usage for the current task.
-        shape_type : optional string, The shape of the polygon mesh the input features will be aggregated into.
+        ===================================================================     =========================================================
+        **Argument**                                                            **Description**
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        analysis_layer (Required if the analysis_layer contains polygons)       Required layer. The point or polygon feature layer for which hot spots will be calculated. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        analysis_field                                                          Optional string. The numeric field that will be analyzed. The field you select might represent:
 
-          - Fishnet - The input features will be aggregated into a grid of square (fishnet) cells.
-          - Hexagon - The input features will be aggregated into a grid of hexagonal cells.
+                                                                                    + counts (such as the number of traffic accidents)
+                                                                                    + rates (such as the number of crimes per square mile)
+                                                                                    + averages (such as the mean math test score)
+                                                                                    + indices (such as a customer satisfaction score)
 
+                                                                                If an ``analysis_field`` is not supplied, hot spot results are based on point densities only.
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        divided_by_field                                                        Optional string. The numeric field in the ``analysis_layer`` that will be used to normalize your data.
+                                                                                For example, if your points represent crimes, dividing by total population would result in an analysis of crimes per capita rather than raw crime counts.
 
-        Returns
-        -------
-        dict with the following keys:
-           "hot_spots_result_layer" : layer (FeatureCollection)
-           "process_info" : list of messages
+                                                                                You can use esriPopulation to geoenrich each area feature with the most recent population values, which will then be
+                                                                                used as the attribute to divide by. This option will use credits.
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        bounding_polygon_layer                                                  Optional layer. When the analysis layer is points and no ``analysis_field`` is specified, you can provide polygons features that define where incidents could have occurred.
+                                                                                For example, if you are analyzing boating accidents in a harbor, the outline of the harbor might provide a good boundary for where accidents could occur.
+                                                                                When no bounding areas are provided, only locations with at least one point will be included in the analysis. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        aggregation_polygon_layer                                               Optional layer. When the ``analysis_layer`` contains points and no ``analysis_field`` is specified,
+                                                                                you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
+                                                                                The number of points that fall within each polygon are counted, and the point count in each polygon is analyzed. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        output_name                                                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                                                feature layer will cause the new layer to be appended to the Feature Service.
+                                                                                If overwrite is True in context, new layer will overwrite existing layer.
+                                                                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        context                                                                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                                                For find_hot_spots, there are three settings.
+
+                                                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                                                                    .. code-block:: python
+
+                                                                                        # Example Usage
+                                                                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                                                            "ymin": -9187921.892449,
+                                                                                                            "xmax": 3174104.927313,
+                                                                                                            "ymax": -9175500.875353,
+                                                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                                                    "outSR": {"wkid": 3857},
+                                                                                                    "overwrite": True}
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        gis                                                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        estimate                                                                Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        shape_type                                                              Optional string. The shape of the polygon mesh the input features will be aggregated into.
+
+                                                                                * ``Fishnet``-The input features will be aggregated into a grid of square (fishnet) cells.
+                                                                                * ``Hexagon``-The input features will be aggregated into a grid of hexagonal cells.
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        cell_size                                                               Optional float. The size of the grid cells used to aggregate your features.
+                                                                                When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        cell_size_unit                                                          Optional string. The units of the ``cell_size`` value. You must provide a value if ``cell_size`` has been set.
+
+                                                                                Choice list: ['Meters', 'Miles', 'Feet', 'Kilometers']
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        distance_band                                                           Optional float. The spatial extent of the analysis neighborhood. This value determines which features are analyzed together
+                                                                                in order to assess local clustering.
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        distance_band_unit                                                      Optional string. The units of the ``distance_band`` value. You must provide a value if ``distance_band`` has been set.
+        -------------------------------------------------------------------     ---------------------------------------------------------
+        future                                                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ===================================================================     =========================================================
+
+        :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else a dictionary with a :class:`~arcgis.features.FeatureCollection` and processing messages.
+
         """
         analysis_layer = self._feature_input(analysis_layer)
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         task = "FindHotSpots"
@@ -2470,36 +4190,160 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        Measures the straight-line distance, driving distance, or driving time from features in the analysis layer to features in the near layer, and copies the nearest features in the near layer to a new layer. Returns a layer containing the nearest features and a line layer that links the start locations to their nearest locations.
+        The ``find_nearest`` method measures the straight-line distance, driving distance, or driving time from
+        features in the analysis layer to features in the near layer, and copies the nearest features in the near
+        layer to a new layer. Connecting lines showing the measured path are returned as well. ``find_nearest`` also
+        reports the measurement and relative rank of each nearest feature. There are options to limit the number
+        of nearest features to find or the search range in which to find them. The results from this method can help
+        you answer the following kinds of questions:
 
-        Parameters
-        ----------
-        analysis_layer : Required layer (see Feature Input in documentation)
-            For each feature in this layer, the task finds the nearest features from the nearLayer.
-        near_layer : Required layer (see Feature Input in documentation)
-            The features from which the nearest locations are found.
-        measurement_type : Required string
-            The nearest locations can be determined by measuring straight-line distance, driving distance, or driving time
-        max_count : Optional int
-            The maximum number of near locations to find for each feature in analysisLayer.
-        search_cutoff : Optional float
-            Limits the search range to this value
-        search_cutoff_units : Optional string
-            The units for the value specified as searchCutoff
-        time_of_day : Optional datetime.date
-            When measurementType is DrivingTime, this value specifies the time of day to be used for driving time calculations based on traffic.
-        time_zone_for_time_of_day : Optional string
+        * What is the nearest park from here?
+        * Which hospital can I reach in the shortest drive time? And how long would the trip take on a Tuesday at 5:30 p.m. during rush hour?
+        * What are the road distances between major European cities?
+        * Which of these patients reside within two miles of these chemical plants?
 
-        output_name : Optional string
-            Additional properties such as output feature service name
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
+        Find Nearest returns a layer containing the nearest features and a line layer that links the start locations to their nearest locations.
+        The connecting line layer contains information about the start and nearest locations and the distances between.
 
-        Returns
-        -------
-        dict with the following keys:
-           "nearest_layer" : layer (FeatureCollection)
-           "connecting_lines_layer" : layer (FeatureCollection)
+        =========================    =========================================================
+        **Parameter**                **Description**
+        -------------------------    ---------------------------------------------------------
+        analysis_layer               Required layer. The features from which the nearest locations are found. This layer can have point, line, or polygon features. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------    ---------------------------------------------------------
+        near_layer                   Required layer. The nearest features are chosen from this layer. This layer can have point, line, or polygon features. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------    ---------------------------------------------------------
+        measurement_type             Required string. Specify the mode of transportation for the analysis.
+
+                                    Choice list: ['StraightLine', 'Driving Distance', 'Driving Time ', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+
+                                    The default is 'StraightLine'.
+        -------------------------    ---------------------------------------------------------
+        max_count                    Optional string. The maximum number of nearest locations to find for each feature in ``analysis_layer``. The default is the maximum cutoff allowed by the service, which is 100.
+
+                                    Note that setting a maxCount for this parameter doesn't guarantee that many features will be found. The ``search_cutoff`` and other constraints may also reduce the number of features found.
+        -------------------------    ---------------------------------------------------------
+        search_cutoff                Optional float. The maximum range to search for nearest locations from each feature in the ``analysis_layer``.
+                                    The units for this parameter is always minutes when ``measurement_type`` is set to a time based travel mode;
+                                    otherwise the units are set in the ``search_cutoff_units`` parameter.
+
+                                    The default is to search without bounds.
+        -------------------------    ---------------------------------------------------------
+        search_cutoff_units          The units of the ``search_cutoff`` parameter. This parameter is ignored when ``measurement_type`` is set to a time based travel
+                                    mode because the units for ``search_cutoff`` are always minutes in those cases. If ``measurement_type`` is set to StraightLine or another distance-based travel mode, and a value for ``search_cutoff`` is specified, set the cutoff units using this parameter.
+
+                                    Choice list: ['Kilometers', 'Meters', 'Miles', 'Feet', '']
+
+                                    The default value is null, which causes the service to choose either miles or kilometers according to the units property of the user making the request.
+        -------------------------    ---------------------------------------------------------
+        time_of_day                  Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use traffic in the analysis, set ``measurement_type`` to a travel mode object whose impedance_attribute_name property is set to travel_time and assign a value to ``time_of_day``. (A travel mode with other impedance_attribute_name values don't support traffic.) The ``time_of_day`` value represents the time at which travel begins, or departs, from the origin points. The time is specified as datetime.datetime.
+
+                                    The service supports two kinds of traffic: typical and live. Typical traffic references travel speeds that are made up of historical averages for each five-minute interval spanning a week. Live traffic retrieves speeds from a traffic feed that processes phone probe records, sensors, and other data sources to record actual travel speeds and predict speeds for the near future.
+
+                                    The `data coverage <http://www.arcgis.com/home/webmap/viewer.html?webmap=b7a893e8e1e04311bd925ea25cb8d7c7>`_ page shows the countries Esri currently provides traffic data for.
+
+                                    Typical Traffic:
+
+                                    To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day of the week to one of the following dates from 1990:
+
+                                    * Monday - 1/1/1990
+                                    * Tuesday - 1/2/1990
+                                    * Wednesday - 1/3/1990
+                                    * Thursday - 1/4/1990
+                                    * Friday - 1/5/1990
+                                    * Saturday - 1/6/1990
+                                    * Sunday - 1/7/1990
+                                    Set the time and date as datetime.datetime.
+
+                                    For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
+
+                                    Live Traffic:
+
+                                    To use live traffic when and where it is available, choose a time and date and convert to datetime.
+
+                                    Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
+
+                                    Examples:
+                                    from datetime import datetime
+
+                                    * "time_of_day": datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
+                                    * "time_of_day": datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
+                                    * "time_of_day": datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014, live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+                                    * "time_of_day": datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015, live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+
+        -------------------------    ---------------------------------------------------------
+        time_zone_for_time_of_day    Optional string. Specify the time zone or zones of the ``time_of_day`` parameter.
+
+                                    Choice list: ['GeoLocal', 'UTC']
+
+                                    ``GeoLocal``-refers to the time zone in which the origins_layer points are located.
+
+                                    ``UTC``-refers to Coordinated Universal Time.
+        -------------------------    ---------------------------------------------------------
+        include_route_layers         Optional boolean. When ``include_route_layers`` is set to True, each route from the result is also saved as a route layer item.
+                                    A route layer includes all the information for a particular route such as the stops assigned to the route as well
+                                    as the travel directions. Creating route layers is useful if you want to share individual routes with other members in your organization.
+                                    The route layers use the output feature service name provided in the ``output_name`` parameter as a prefix and the route name generated as part
+                                    of the analysis is added to create a unique name for each route layer.
+
+                                    **Caution:**
+
+                                    Route layers cannot be created when the output is a feature collection. The task will raise an error if ``output_name`` is not
+                                    specified (which indicates feature collection output) and ``include_route_layers`` is True.
+
+                                    The maximum number of route layers that can be created is 1,000. If the result contains more than 1,000 routes
+                                    and ``include_route_layers`` is True, the task will only create the output feature service.
+        -------------------------    ---------------------------------------------------------
+        point_barrier_layer          Optional layer. Specify one or more point features that act as temporary restrictions (in other words, barriers) when traveling on the underlying streets.
+
+                                    A point barrier can model a fallen tree, an accident, a downed electrical line, or anything that completely blocks traffic at a specific
+                                    position along the street. Travel is permitted on the street but not through the barrier.
+        -------------------------    ---------------------------------------------------------
+        line_barrier_layer           Optional layer. Specify one or more line features that prohibit travel anywhere the lines intersect the streets.
+
+                                    A line barrier prohibits travel anywhere the barrier intersects the streets. For example, a parade or protest that blocks traffic across
+                                    several street segments can be modeled with a line barrier.
+        -------------------------    ---------------------------------------------------------
+        polygon_barrier_layer        Optional layer. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
+
+                                    One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible.
+        -------------------------    ---------------------------------------------------------
+        output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------    ---------------------------------------------------------
+        context                      Optional dict. Additional settings such as processing extent
+                                    and output spatial reference.
+                                    For find_nearest, there are three settings.
+
+                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                        .. code-block:: python
+
+                                            # Example Usage
+                                            context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857},
+                                                        "overwrite": True}
+        -------------------------    ---------------------------------------------------------
+        gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------    ---------------------------------------------------------
+        estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+        -------------------------    ---------------------------------------------------------
+        future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================    =========================================================
+
+        :return: A dictionary with the following keys:
+
+        "nearest_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
+        "connecting_lines_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
         """
 
         task = "FindNearest"
@@ -2515,7 +4359,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
             line_barrier_layer = self._feature_input(line_barrier_layer)
         if polygon_barrier_layer:
             polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2588,48 +4437,105 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Find Outliers task analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with points or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically significant spatial clusters of high values and low values and statistically significant high or low spatial outliers within those clusters.
+        The ``find_outliers`` method analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with points
+        or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically significant
+        spatial clusters of high values and low values and statistically significant high or low spatial outliers within those clusters.
 
-        The result map layer shows high outliers in red and low outliers in dark blue. Clusters of high values appear pink and clusters of low values appear light blue. Features that are beige are not a statistically significant outlier and not part of a statistically significant cluster; the spatial pattern associated with these features could very likely be the result of random processes and random chance.
+        The result map layer shows high outliers in red and low outliers in dark blue. Clusters of high values appear pink and clusters of low values
+        appear light blue. Features that are beige are not a statistically significant outlier and not part of a statistically significant cluster; the
+        spatial pattern associated with these features could very likely be the result of random processes and random chance.
 
-        Parameters
-        ----------
-        analysis_layer : Required layer (see Feature Input in documentation)
-            The point or polygon feature layer for which outliers will be calculated.
-        analysis_field : Optional string
-            The numeric field that will be analyzed.
-        divided_by_field : Optional string, The numeric field in the analysis_layer that will be used to normalize your data.
-        bounding_polygon_layer : Optional layer (see Feature Input in documentation)
-            When the analysis layer is points and no analysisField is specified, you can provide polygon features that define where incidents could have occurred.
-        aggregation_polygon_layer : Optional layer (see Feature Input in documentation)
-            When the AnalysisLayer contains points and no AnalysisField is specified, you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
-        permutations : Permutations are used to determine how likely it would be to find the actual spatial distribution of the values you are analyzing. Choosing the number of permutations is a balance between precision and increased processing time. A lower number of permutations can be used when first exploring a problem, but it is best practice to increase the permutations to the highest number feasible for final results.
+        ==================================================================  ===============================================================
+        **Argument**                                                        **Description**
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        analysis_layer                                                      Required feature layer. The point or polygon feature layer for which outliers will be calculated. See :ref:`Feature Input<FeatureInput>`.
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        analysis_field (Required if the analysis_layer contains polygons)   Optional string. The numeric field that will be analyzed. The field you select might represent:
 
-           - Speed implements 199 permutations and results in p-values with a precision of 0.01.
-           - Balance implements 499 permutations and results in p-values with a precision of 0.002.
-           - Precision implements 999 permutations and results in p-values with a precision of 0.001.
-           Values: Speed | Balance | Precision
-        shape_type : optional string, The shape of the polygon mesh the input features will be aggregated into.
+                                                                            * counts (such as the number of traffic accidents)
+                                                                            * rates (such as the number of crimes per square mile)
+                                                                            * averages (such as the mean math test score)
+                                                                            * indices (such as a customer satisfaction score)
 
-          - Fishnet - The input features will be aggregated into a grid of square (fishnet) cells.
-          - Hexagon - The input features will be aggregated into a grid of hexagonal cells.
-        cell_size : The size of the grid cells used to aggregate your features. When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.
-        cell_units : The units of the cellSize value. You must provide a value if cellSize has been set.
-          Values: Miles | Feet | Kilometers | Meters
-        distance_band : The spatial extent of the analysis neighborhood. This value determines which features are analyzed together in order to assess local clustering.
-        band_units : The units of the distanceBand value. You must provide a value if distanceBand has been set.
-          Values: Miles | Feet | Kilometers | Meters
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
+                                                                            If an ``analysis_field`` is not supplied, hot spot results are based on point densities only.
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        divided_by_field                                                    Optional string. The numeric field in the ``analysis_layer`` that will be used to normalize your data.
+                                                                            For example, if your points represent crimes, dividing by total population would result in an analysis
+                                                                            of crimes per capita rather than raw crime counts.
 
-        Returns
-        -------
-        Item it output_name is set.
-        dict with the following keys:
-           "find_outliers_result_layer" : layer (FeatureCollection)
-           "process_info" : list of messages
+                                                                            You can use esriPopulation to geoenrich each area feature with the most recent population values,
+                                                                            which will then be used as the attribute to divide by. This option will use credits.
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        bounding_polygon_layer                                              Optional layer. When the analysis layer is points and no ``analysis_field`` is specified, you can provide polygon features that define where incidents could have occurred.
+                                                                            For example, if you are analyzing boating accidents in a harbor, the outline of the harbor might provide a good boundary for where accidents could occur.
+                                                                            When no bounding areas are provided, only locations with at least one point will be included in the analysis. See :ref:`Feature Input<FeatureInput>`.
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        aggregation_polygon_layer                                           Optional layer. When the ``analysis_layer`` contains points and no ``analysis_field`` is specified, you can provide polygon features into which the
+                                                                            points will be aggregated and analyzed, such as administrative units. The number of points that fall within each polygon
+                                                                            are counted, and the point count in each polygon is analyzed. See :ref:`Feature Input<FeatureInput>`.
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        permutations                                                        Optional string. Permutations are used to determine how likely it would be to find the actual spatial distribution of the values you are analyzing.
+                                                                            Choosing the number of permutations is a balance between precision and increased processing time. A lower number of permutations
+                                                                            can be used when first exploring a problem, but it is best practice to increase the permutations to the highest number feasible for final results.
+
+                                                                            Choice list: ['Speed', 'Balance', 'Presision']
+
+                                                                            * ``Speed`` - implements 199 permutations and results in p-values with a precision of 0.01.
+                                                                            * ``Balance`` - implements 499 permutations and results in p-values with a precision of 0.002.
+                                                                            * ``Precision`` - implements 999 permutations and results in p-values with a precision of 0.001.
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        shape_type                                                          Optional string. The shape of the polygon mesh the input features will be aggregated into.
+
+                                                                            * ``Fishnet`` - The input features will be aggregated into a grid of square (fishnet) cells.
+                                                                            * ``Hexagon`` -  The input features will be aggregated into a grid of hexagonal cells.
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        cell_size                                                           Optional float. The size of the grid cells used to aggregate your features. When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        cell_units                                                          Optional string. The units of the ``cell_size`` value. You must provide a value if ``cell_size`` has been set.
+
+                                                                            Choice list: ['Meters', 'Miles', 'Feet', 'Kilometers']
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        distance_band                                                       Optional float. The spatial extent of the analysis neighborhood. This value determines which features are analyzed together
+                                                                            in order to assess local clustering.
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        band_units                                                          Optional string. The units of the ``distance_band`` value. You must provide a value if ``distance_band`` has been set.
+
+                                                                            Choice list: ['Meters', 'Miles', 'Feet', 'Kilometers']
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        output_name                                                         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                                            feature layer will cause the new layer to be appended to the Feature Service.
+                                                                            If overwrite is True in context, new layer will overwrite existing layer.
+                                                                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        context                                                             Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                                            For find_outliers, there are three settings.
+
+                                                                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                                                                .. code-block:: python
+
+                                                                                    # Example Usage
+                                                                                    context = {"extent": {"xmin": 3164569.408035,
+                                                                                                        "ymin": -9187921.892449,
+                                                                                                        "xmax": 3174104.927313,
+                                                                                                        "ymax": -9175500.875353,
+                                                                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                                                "outSR": {"wkid": 3857},
+                                                                                                "overwrite": True}
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        estimate                                                            Optional boolean. Returns the number of credit for the operation.
+        ------------------------------------------------------------------  ---------------------------------------------------------------
+        future                                                              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ==================================================================  ===============================================================
+
+        :return:
+            :class:`~arcgis.features.FeatureLayer` if output_name is set. else results in a dict with the following keys:
+
+            "find_outliers_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
+            "process_info" : list of messages
 
         """
 
@@ -2641,7 +4547,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2708,21 +4619,36 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Find Point Clusters task finds clusters of point features in surrounding
-        noise based on their spatial distribution. Output is a layer containing records
-        assigned to a cluster or noise.
+        The ``find_point_clusters`` method finds clusters of point features within surrounding
+        noise based on their spatial distribution.
+
+        This method uses unsupervised machine learning clustering algorithms to detect
+        patterns of point features based purely on spatial location and, optionally,
+        the distance to a specified number of features.
+
+        The result map shows each cluster identified as well as features considered
+        noise. Multiple clusters will be assigned each color. Colors will be assigned
+        and repeated so that each cluster is visually distinct from its neighboring clusters.
+
+        This method utilizes two related algorithms. By default the HDBSCAN algorithm is
+        used to find clusters. If a ``search_distance`` is specified, the DBSCAN algorithm
+        is used. DBSCAN is only appropriate if there is a very clear search distance to use
+        for your analysis and will return clusters with similar densities. When
+        no ``search_distance`` is specified, HDBSCAN will use a range of distances to separate clusters
+        of varying densities from sparser noise resulting in more data-driven clusters.
 
         ====================    =========================================================
         **Argument**            **Description**
         --------------------    ---------------------------------------------------------
         analysis_layer          Required layer. The point feature layer for which
                                 density-based clustering will be calculated.
+                                See :ref:`Feature Input<FeatureInput>`.
         --------------------    ---------------------------------------------------------
         min_features_cluster    Required integer. The minimum number of features to be
                                 considered a cluster. Any cluster with fewer features
                                 than the number provided will be considered noise.
         --------------------    ---------------------------------------------------------
-        search_distance         Optional double. The maximum distance to consider. The
+        search_distance         Optional float. The maximum distance to consider. The
                                 Minimum Features per Cluster specified must be found
                                 within this distance for cluster membership. Individual
                                 clusters will be separated by at least this distance. If
@@ -2730,29 +4656,59 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                 next closest feature in the cluster, it will not be
                                 included in the cluster.
         --------------------    ---------------------------------------------------------
-        search_distance_unit    Optional string. The linear unit to be used for the
-                                search distance parameter.
+        search_distance_unit    Optional string. The linear unit to be used with the distance
+                                value specified for ``search_distance``. You must provide a
+                                value if ``search_distance`` has been set.
+
+                                Choice list: ['Feet', 'Miles', 'Meters', 'Kilometers']
+
+                                The default is 'Miles'.
         --------------------    ---------------------------------------------------------
-        output_name             Optional string. Additional properties such as output
-                                feature service name.
+        output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                feature layer will cause the new layer to be appended to the Feature Service.
+                                If overwrite is True in context, new layer will overwrite existing layer.
+                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
         --------------------    ---------------------------------------------------------
-        context                 Optional string. Additional settings such as processing
-                                extent, output spatial reference, and overwrite.
+        context                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                For find_point_clusters, there are three settings.
+
+                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                    .. code-block:: python
+
+                                        # Example Usage
+                                        context = {"extent": {"xmin": 3164569.408035,
+                                                            "ymin": -9187921.892449,
+                                                            "xmax": 3174104.927313,
+                                                            "ymax": -9175500.875353,
+                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                    "outSR": {"wkid": 3857},
+                                                    "overwrite": True}
         --------------------    ---------------------------------------------------------
-        estimate                Optional Boolean.  Returns the estimated number of
-                                credits for the current task.
+        gis                     Optional, the GIS on which this tool runs. If not
+                                specified, the active GIS is used.
+        --------------------    ---------------------------------------------------------
+        estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
+        --------------------    ---------------------------------------------------------
+        future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         ====================    =========================================================
 
-        :return: Python dictionary with the following keys:
-            "point_clusters_result_layer" : layer (FeatureCollection)
-            "process_info" : list of messages
+        :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
+
         """
 
         task = "FindPointClusters"
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2798,36 +4754,113 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
+        The ``find_similar_locations`` method measures the similarity of candidate locations to one or more reference locations.
 
+        Based on criteria you specify, Find ``find_similar_locations`` can answer questions such as the following:
 
-        Parameters
-        ----------
-        input_layer : Required layer (see Feature Input in documentation)
+        Which of your stores are most similar to your top performers with regard to customer profiles?
+        Based on characteristics of villages hardest hit by the disease, which other villages are high risk?
+        To answer questions such as these, you provide the reference locations (the ``input_layer`` parameter), the candidate
+        locations (the ``search_layer`` parameter), and the fields representing the criteria you want to match. For example,
+        the ``input_layer`` might be a layer containing your top performing stores or the villages hardest hit by the disease.
+        The ``search_layer`` contains your candidate locations to search. This might be all of your stores or all other villages.
+        Finally, you supply a list of fields to use for measuring similarity. ``find_similar_locations`` will rank all of the
+        candidate locations by how closely they match your reference locations across all of the fields you have selected.
 
-        search_layer : Required layer (see Feature Input in documentation)
+        =======================     ===========================================================================================
+        **Argument**                **Description**
+        -----------------------     -------------------------------------------------------------------------------------------
+        input_layer                 Required feature layer. The ``input_layer`` contains one or more
+                                    reference locations against which features in the ``search_layer``
+                                    will be evaluated for similarity. For example, the ``input_layer``
+                                    might contain your top performing stores or the villages hardest
+                                    hit by a disease.
+                                    It is not uncommon that the ``input_layer`` and ``search_layer`` are the
+                                    same feature service. For example, the feature service contains
+                                    locations of all stores, one of which is your top performing store.
+                                    If you want to rank the remaining stores from most to least similar
+                                    to your top performing store, you can provide a filter for both the
+                                    inputLayer and the ``search_layer``. The filter on the ``input_layer`` would
+                                    select the top performing store while the filter on the ``search_layer``
+                                    would select all stores except for the top performing store. You can
+                                    also use the optional ``input_query`` parameter to specify reference locations.
 
-        analysis_fields : Required list of strings
+                                    If there is more than one reference location, similarity will be based
+                                    on averages for the fields you specify in the ``analysis_fields`` parameter.
+                                    So, for example, if there are two reference locations and you are
+                                    interested in matching population, the task will look for candidate
+                                    locations in the ``search_layer`` with populations that are most like the
+                                    average population for both reference locations. If the values for the
+                                    reference locations are 100 and 102, for example, the method will look
+                                    for candidate locations with populations near 101. Consequently, you
+                                    will want to use fields for the reference locations fields that have
+                                    similar values. If, for example, the population values for one reference
+                                    location is 100 and the other is 100,000, the tool will look for candidate
+                                    locations with population values near the average of those two values: 50,050.
+                                    Notice that this averaged value is nothing like the population for either
+                                    of the reference locations. See :ref:`Feature Input<FeatureInput>`.
+        -----------------------     -------------------------------------------------------------------------------------------
+        search_layer                Required feature layer. The layer containing candidate locations that
+                                    will be evaluated against the reference locations. See :ref:`Feature Input<FeatureInput>`.
+        -----------------------     -------------------------------------------------------------------------------------------
+        analysis_fields             Required list of strings. A list of fields whose values are used to determine similarity.
+                                    They must be numeric fields and the fields must exist on both the ``input_layer`` and
+                                    the ``search_layer``. The method will find features in the ``search_layer`` that have field
+                                    values closest to those of the features in your ``input_layer``.
+        -----------------------     -------------------------------------------------------------------------------------------
+        input_query                 Optional string. In the situation where the ``input_layer`` and the ``search_layer`` are the same feature service,
+                                    this parameter allows you to input a query on the ``input_layer`` to specify which features are the reference locations.
+                                    The reference locations specified by this query will not be analyzed as candidates.
+                                    The syntax of ``input_query`` is the same as a filter.
+        -----------------------     -------------------------------------------------------------------------------------------
+        number_of_results           Optional int. The number of ranked candidate locations output to the ``similar_result_layer``.
+                                    If ``number_of_results`` is not specified, or set to zero, all candidate locations will be ranked and output.
+        -----------------------     -------------------------------------------------------------------------------------------
+        output_name                 Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -----------------------     -------------------------------------------------------------------------------------------
+        context                     Optional dict. Additional settings such as processing extent and output spatial reference.
+                                    For find_similar_locations, there are three settings.
 
-        input_query : Optional string
+                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
-        number_of_results : Optional int
+                                        .. code-block:: python
 
-        output_name : Optional string
+                                            # Example Usage
+                                            context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857},
+                                                        "overwrite": True}
+        -----------------------     -------------------------------------------------------------------------------------------
+        estimate                    Optional boolean. If True, the number of credits to run the operation will be returned.
+        -----------------------     -------------------------------------------------------------------------------------------
+        future                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =======================     ===========================================================================================
 
-        context: Optional dict
+        :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
 
+            "similar_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        Returns
-        -------
-        dict with the following keys:
-           "similar_result_layer" : layer (FeatureCollection)
-           "process_info" : layer (FeatureCollection)
+            "process_info" : list of message
+
         """
 
         task = "FindSimilarLocations"
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2878,37 +4911,72 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         Generates a tessellated grid of regular polygons.
 
-        Parameters:
+        ====================================     ====================================================================
+        **Parameter**                            **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        extent_layer                             Optional layer. A layer defining the processing extent.
+        ------------------------------------     --------------------------------------------------------------------
+        bin_size                                 Optional Float. The size of each individual shape that makes up the tessellation.
+        ------------------------------------     --------------------------------------------------------------------
+        bin_size_unit                            Optional String. Size unit of each individual shape. The allowed
+                                                values are: 'SquareKilometers', 'Hectares', 'SquareMeters',
+                                                'SquareMiles', 'Acres', 'SquareYards', 'SquareFeet', 'SquareInches',
+                                                'Miles', 'Yards', 'Feet', 'Kilometers', 'Meters', and
+                                                'NauticalMiles'.
+        ------------------------------------     --------------------------------------------------------------------
+        bin_type                                 Optional String. The type of shape to tessellate.
+                                                Allowed values are: 'SQUARE', 'HEXAGON', 'TRIANGLE', 'DIAMOND', or
+                                                'TRANSVERSEHEXAGON'.
+        ------------------------------------     --------------------------------------------------------------------
+        intersect_study_area                     Optional Boolean. A boolean defines whether to keep only tessellations intersect with the study area.
 
-           bin_type: binType (str). Required parameter.  The type of shape to tessellate.
-              Choice list:['SQUARE', 'HEXAGON', 'TRIANGLE', 'DIAMOND', 'TRANSVERSEHEXAGON']
+        ------------------------------------     --------------------------------------------------------------------
+        output_name                              Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                feature layer will cause the new layer to be appended to the Feature Service.
+                                                If overwrite is True in context, new layer will overwrite existing layer.
+                                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                For calculate_density, there are three settings.
 
-           bin_size: binSize (float). Optional parameter.  The size of each individual shape that makes up the tessellation.
+                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
-           bin_size_unit: binSizeUnit (str). Optional parameter.  Size unit of each individual shape.
-              Choice list:['SquareKilometers', 'Hectares', 'SquareMeters', 'SquareMiles', 'Acres', 'SquareYards', 'SquareFeet', 'SquareInches', 'Miles', 'Yards', 'Feet', 'Kilometers', 'Meters', 'NauticalMiles']
+                                                    .. code-block:: python
 
-           extent_layer: extentLayer (FeatureSet). Optional parameter.  A layer defining the processing extent.
+                                                        # Example Usage
+                                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                            "ymin": -9187921.892449,
+                                                                            "xmax": 3174104.927313,
+                                                                            "ymax": -9175500.875353,
+                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                    "outSR": {"wkid": 3857},
+                                                                    "overwrite": True}
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        ------------------------------------     --------------------------------------------------------------------
+        estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ====================================     ====================================================================
 
-           intersect_study_area: intersectStudyArea (bool). Optional parameter.  A boolean defines whether to keep only tessellations intersect with the study area.
+        .. note::
+                The tool requires either an 'extent' given in the `context` or an `extent_layer`.
 
-           output_name: outputName (str). Optional parameter.  Additional properties such as output feature service name.
-
-           context: context (str). Optional parameter.  Additional settings such as processing extent, output spatial reference, and overwrite.
-
-           gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-           future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
-
-
-        Returns:
-           tessellation_layer - FeatureLayer or Feature Layer Collection
+        :return:
+            :class:`~arcgis.features.FeatureLayer` if out_put name specified or
+            a :class:`~arcgis.features.FeatureLayerCollection`
 
         """
         if extent_layer:
             extent_layer = self._feature_input(extent_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2964,41 +5032,159 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Interpolate Points task allows you to predict values at new locations based on measurements from a collection of points. The task takes point data with values at each point and returns areas classified by predicted values.
+        The ``interpolate_points`` method allows you to predict values at new locations based on measurements
+        from a collection of points. The method takes point data with values at each point and returns
+        areas classified by predicted values. For example:
 
-        Parameters
-        ----------
-        input_layer : Required layer (see Feature Input in documentation)
-            The point layer whose features will be interpolated.
-        field : Required string
-            Name of the numeric field containing the values you wish to interpolate.
-        interpolate_option : Optional string
-            Integer value declaring your preference for speed versus accuracy, from 1 (fastest) to 9 (most accurate). More accurate predictions take longer to calculate.
-        output_prediction_error : Optional bool
-            If True, a polygon layer of standard errors for the interpolation predictions will be returned in the predictionError output parameter.
-        classification_type : Optional string
-            Determines how predicted values will be classified into areas.
-        num_classes : Optional int
-            This value is used to divide the range of interpolated values into distinct classes. The range of values in each class is determined by the classificationType parameter. Each class defines the boundaries of the result polygons.
-        class_breaks : Optional list of floats
-            If classificationType is Manual, supply desired class break values separated by spaces. These values define the upper limit of each class, so the number of classes will equal the number of entered values. Areas will not be created for any locations with predicted values above the largest entered break value. You must enter at least two values and no more than 32.
-        bounding_polygon_layer : Optional layer (see Feature Input in documentation)
-            A layer specifying the polygon(s) where you want values to be interpolated.
-        predict_at_point_layer : Optional layer (see Feature Input in documentation)
-            An optional layer specifying point locations to calculate prediction values. This allows you to make predictions at specific locations of interest.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent and output spatial reference.
-        estimate: Optional Boolean
-            Returns the number of credit for the operation.
+        * An air quality management district has sensors that measure pollution levels.
+        ``interpolate_points`` can be used to predict pollution levels at locations that don't have sensors,
+        such as locations with at-risk populations, schools, or hospitals, for example.
+        * Predict heavy metal concentrations in crops based on samples taken from individual plants.
+        * Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other
+        indicators (such as electrical conductivity) in order to study their relationships to crop yield
+        and prescribe precise amounts of fertilizer for each location in the field.
+        * Meteorological applications include prediction of temperatures, rainfall,
+        and associated variables (such as acid rain).
 
-        Returns
-        -------
-        dict with the following keys:
-           "result_layer" : layer (FeatureCollection)
-           "prediction_error" : layer (FeatureCollection)
-           "predicted_point_layer" : layer (FeatureCollection)
+        ``interpolate_points`` uses the `Empirical Bayesian
+        Kriging <http://desktop.arcgis.com/en/arcmap/latest/tools/geostatistical-analyst-toolbox/empirical-bayesian-kriging.htm>`_
+        geoprocessing tool to perform the interpolation. The parameters that are supplied to
+        the Empirical Bayesian Kriging tool are controlled by the ``interpolate_option`` request parameter.
+
+        If a value of 1 is provided for ``interpolate_option``, empirical Bayesian kriging will
+        use the following parameters:
+
+        * transformation_type - NONE
+        * semivariogram_model_type - POWER
+        * max_local_points - 50
+        * overlap_factor - 1
+        * number_semivariograms - 30
+        * nbrMin - 8
+        * nbrMax - 8
+
+        If a value of 5 is provided for ``interpolate_option``, empirical Bayesian kriging
+        will use the following parameters:
+
+        * transformation_type - NONE
+        * semivariogram_model_type - POWER
+        * max_local_points 75
+        * overlap_factor - 1.5
+        * number_semivariograms - 100
+        * nbrMin - 10
+        * nbrMax - 10
+
+        If a value of 9 is provided for ``interpolate_option``, empirical Bayesian kriging
+        will use the following parameters:
+
+        * transformation_type - EMPIRICAL
+        * semivariogram_model_type - K_BESSEL
+        * max_local_points - 200
+        * overlap_factor - 3
+        * number_semivariograms - 200
+        * nbrMin - 15
+        * nbrMax - 15
+
+        ===========================  ===========================================================================================
+        **Argument**                 **Description**
+        ---------------------------  -------------------------------------------------------------------------------------------
+        input_layer                  Required layer. The point layer whose features will be interpolated. See :ref:`Feature Input<FeatureInput>`.
+        ---------------------------  -------------------------------------------------------------------------------------------
+        field                        Required string. Name of the numeric field containing the values you wish to interpolate.
+        ---------------------------  -------------------------------------------------------------------------------------------
+        interpolate_option           Optional integer. Integer value declaring your preference for speed versus accuracy, from 1 (fastest) to 9 (most accurate).
+                                    More accurate predictions take longer to calculate.
+
+                                    Choice list: [1, 5, 9].
+
+                                    The default is 5.
+        ---------------------------  -------------------------------------------------------------------------------------------
+        output_prediction_error      Optional boolean. If True, a polygon layer of standard errors for the interpolation
+                                    predictions will be returned in the ``prediction_error`` output parameter.
+
+                                    Standard errors are useful because they provide information about the reliability of the predicted values.
+                                    A simple rule of thumb is that the true value will fall within two standard errors of the predicted
+                                    value 95 percent of the time. For example, suppose a new location gets a predicted value of 50 with a
+                                    standard error of 5. This means that this task's best guess is that the true value at that location is 50,
+                                    but it reasonably could be as low as 40 or as high as 60. To calculate this range of reasonable values,
+                                    multiply the standard error by 2, add this value to the predicted value to get the upper end of the range,
+                                    and subtract it from the predicted value to get the lower end of the range.
+        ---------------------------  -------------------------------------------------------------------------------------------
+        classification_type          Optional string. Determines how predicted values will be classified into areas.
+
+                                    * ``EqualArea`` - Polygons are created such that the number of data values in each area is equal.
+                                    For example, if the data has more large values than small values, more areas will be created for large values.
+                                    * ``EqualInterval`` - Polygons are created such that the range of predicted values is equal for each area.
+                                    * ``GeometricInterval`` - Polygons are based on class intervals that have a geometrical series.
+                                    This method ensures that each class range has approximately the same number of values within
+                                    each class and that the change between intervals is consistent.
+                                    * ``Manual`` - You to define your own range of values for areas. These values will be entered in
+                                    the ``class_breaks`` parameter below.
+
+                                    Choice list: ['EqualArea', 'EqualInterval', 'GeometricInterval', 'Manual']
+
+                                    The default is 'GeometricInterval'.
+        ---------------------------  -------------------------------------------------------------------------------------------
+        num_classes                  Optional integer. This value is used to divide the range of interpolated values into distinct classes.
+                                    The range of values in each class is determined by the ``classification_type`` parameter.
+                                    Each class defines the boundaries of the result polygons.
+
+                                    The default is 10. The maximum value is 32.
+        ---------------------------  -------------------------------------------------------------------------------------------
+        class_breaks                 Optional list of floats. If ``classification_type`` is Manual, supply desired class break values separated by spaces.
+                                    These values define the upper limit of each class, so the number of classes will equal the number of entered values.
+                                    Areas will not be created for any locations with predicted values above the largest entered break value.
+                                    You must enter at least two values and no more than 32.
+        ---------------------------  -------------------------------------------------------------------------------------------
+        bounding_polygon_layer       Optional layer. A layer specifying the polygon(s) where you want values to be interpolated.  For example,
+                                    if you are interpolating densities of fish within a lake, you can use the boundary of the lake in this
+                                    parameter and the output will only contain polygons within the boundary of the lake. See :ref:`Feature Input<FeatureInput>`.
+        ---------------------------  -------------------------------------------------------------------------------------------
+        predict_at_point_layer       Optional layer. An optional layer specifying point locations to calculate prediction values.
+                                    This allows you to make predictions at specific locations of interest. For example, if the ``input_layer`` represents
+                                    measurements of pollution levels, you can use this parameter to predict the pollution levels of locations with large
+                                    at-risk populations, such as schools or hospitals. You can then use this information to give recommendations to health
+                                    officials in those locations.
+
+                                    If supplied, the output ``predicted_point_layer`` will contain predictions at the specified locations. See :ref:`Feature Input<FeatureInput>`.
+        ---------------------------  -------------------------------------------------------------------------------------------
+        output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------    ---------------------------------------------------------
+        context                      Optional dict. Additional settings such as processing extent and output spatial reference.
+                                    For interpolate_points, there are three settings.
+
+                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                        .. code-block:: python
+
+                                            # Example Usage
+                                            context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857},
+                                                        "overwrite": True}
+        ---------------------------  -------------------------------------------------------------------------------------------
+        gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        ---------------------------  -------------------------------------------------------------------------------------------
+        estimate                     Optional boolean. If True, the number of credits to run the operation will be returned.
+        ---------------------------  -------------------------------------------------------------------------------------------
+        future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ===========================  ===========================================================================================
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
+
+            "result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
+            "prediction_error" : layer (:class:`~arcgis.features.FeatureCollection`)
+
+            "predicted_point_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
         """
 
         task = "InterpolatePoints"
@@ -3009,7 +5195,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if predict_at_point_layer:
             predict_at_point_layer = self._feature_input(predict_at_point_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3075,60 +5266,114 @@ class _FeatureAnalysisTools(BaseAnalytics):
         join_type=None,
     ):
         """
-        The Join Features task works with two layers and joins the attributes from the join layer to the target layer based on spatial and/or attribute relationships.
+        The ``join_features`` method works with two layers and joins the attributes
+        from one feature to another based on spatial and attribute relationships.
 
-        Parameters
-        ----------
-        target_layer : Required FeatureSet. The point, line, polygon, or table layer that will have attributes from the join_layer appended to its table.
+        ============================================================================================    =================================================================================================================================
+        **Parameter**                                                                                   **Description**
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        target_layer                                                                                    Required layer. The point, line, polygon or table layer that will have attributes from
+                                                                                                        the ``join_layer`` appended to its table. See :ref:`Feature Input<FeatureInput>`.
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        join_layer                                                                                      Required layer. The point, line, polygon or table layer that will be joined to the ``target_layer``. See :ref:`Feature Input<FeatureInput>`.
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        spatial_relationship                                                                            Required string. Defines the spatial relationship used to spatially join features.
 
-        join_layer : Required FeatureSet. The point, line, polygon, or table layer whose attributes will be joined to the target_layer.
+                                                                                                        Choice list: ['identicalto', 'intersects', 'completelycontains', 'completelywithin', 'withindistance']
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        spatial_relationship_distance                                                                   Optional float. A float value used for the search distance to determine if the target features are near or within a
+        (Required if ``spatial_relationship`` is withindistance)                                        specified distance of the join features.
+                                                                                                        This is only applied if Within a distance of is the selected ``spatial_relationship``.
+                                                                                                        You can only enter a single distance value. The units of the distance values are supplied by the
+                                                                                                        ``spatial_relationship_distance_units`` parameter.
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        spatial_relationship_distance_units                                                             Optional string. The linear unit to be used with the distance value specified in ``spatial_relationship_distance``.
+        (Required if ``spatial_relationship`` is withindistance)                                        Choice list: ['Miles', 'Yards', 'Feet', 'NauticalMiles', 'Meters', 'Kilometers']
 
-        join_operation : Required string
-            Determines the response if multiple records in the join_layer have the same relationship with a single target feature. One of the following: [‘JoinOneToOne’, ‘JoinOneToMany’]
+                                                                                                        The default is 'Miles'.
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        attribute_relationship                                                                          Optional list of dicts. Defines an attribute relationship used to join features. Features are matched when the field
+                                                                                                        values in the join layer are equal to field values in the target layer.
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        join_operation                                                                                  Optional string. A string representing the type of join that will be applied.
 
-        attribute_relationship: Optional list of strings
-            A list of dictionaries that define an attribute relationship used to join features. Features are matched when the field values in the join_layer are equal to field values in the target_layer.
-            Example: [{"targetField":"target fieldname","operator":"equal","joinField":"join fieldname"}]
+                                                                                                        Choice list: ['JoinOneToOne', 'JoinOneToMany']
 
-        spatial_relationship : Optional string
-            Defines the spatial relationship that determines which records to join. One of the following: [‘identicalto’, ‘intersects’, ‘completelycontains’, ‘completelywithin’, ‘withindistance’]
+                                                                                                        * ``JoinOneToOne`` - If multiple join features are found that have the same relationships with a
+                                                                                                            single target feature, the attributes from the multiple join features will be aggregated using
+                                                                                                            the specified summary statistics. For example, if a point target feature is found within two
+                                                                                                            separate polygon join features, the attributes from the two polygons will be aggregated before
+                                                                                                            being transferred to the output point feature class. If one polygon has an attribute value of
+                                                                                                            3 and the other has a value of 7, and a SummaryField of sum is selected, the aggregated value
+                                                                                                            in the output feature class will be 10. There will always be a Count field calculated, with a
+                                                                                                            value of 2, for the number of features specified. This is the default.
 
-        spatial_relationship_distance : Optional float
-            Sets the distance if the spatial_relationship is ‘withindistance’
+                                                                                                        * ``JoinOneToMany`` - If multiple join features are found that have the same relationship with
+                                                                                                            a single target feature, the output feature class will contain multiple copies (records) of
+                                                                                                            the target feature. For example, if a single point target feature is found within two separate
+                                                                                                            polygon join features, the output feature class will contain two copies of the target feature:
+                                                                                                            one record with the attributes of the first polygon, and another record with the attributes of
+                                                                                                            the second polygon. There are no summary statistics calculated with this method.
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        summary_fields                                                                                  Optional list of dicts. A list of field names and statistical summary types that you want to calculate.
+                                                                                                        Note that the count is always returned by default.
 
-        spatial_relationship_distance_units : Optional string
-            Sets the distance unit if the spatial_relationship is ‘withindistance’. One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
+                                                                                                        fieldName is the name of one of the numeric fields found in the input join layer.
 
-        summary_fields : Optional list of strings
-            A list of dictionaries of field names and summary type ex. [{"statisticType": "summaryType1", "onStatisticField": "fieldName1"}]
+                                                                                                        statisticType is one of the following:
 
-        records_to_match: Optional string
-            Defines which records are joined when multiple records in the join_layer match a single target feature
-            Example: {"groupByFields":"","orderByFields":"joinField1 ASC","topCount":1}
+                                                                                                        * ``SUM`` - Adds the total value of all the points in each polygon
+                                                                                                        * ``MEAN`` - Calculates the average of all the points in each polygon
+                                                                                                        * ``MIN`` - Finds the smallest value of all the points in each polygon
+                                                                                                        * ``MAX`` - Finds the largest value of all the points in each polygon
+                                                                                                        * ``STDDEV`` - Finds the standard deviation of all the points in each polygon
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        output_name                                                                                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                                                                        feature layer will cause the new layer to be appended to the Feature Service.
+                                                                                                        If overwrite is True in context, new layer will overwrite existing layer.
+                                                                                                        If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        context                                                                                         Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                                                                        For join_features, there are three settings.
 
-        join_type: Optional string.
-            One of the following: ['INNER', 'LEFT']. Inner means only target features that match one or more join features are returned, while Left returns all target features.
+                                                                                                        - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                                                                        - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                                                                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
-        output_name : Optional string
-            Additional properties such as output feature service name.
+                                                                                                            .. code-block:: python
 
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
+                                                                                                                # Example Usage
+                                                                                                                context = {"extent": {"xmin": 3164569.408035,
+                                                                                                                                    "ymin": -9187921.892449,
+                                                                                                                                    "xmax": 3174104.927313,
+                                                                                                                                    "ymax": -9175500.875353,
+                                                                                                                                    "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                                                                            "outSR": {"wkid": 3857},
+                                                                                                                            "overwrite": True}
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        estimate                                                                                        Optional boolean. If True, the number of credits to run the operation will be returned.
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        future                                                                                          Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        join_type                                                                                       Optional String.  Determines the type of join performed on the datasets.  The allowed values are INNER or LEFT.
+        --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
+        records_to_match                                                                                Optional Dict. Defines how two features are joined.
+                                                                                                        Example: {"groupByFields":"","orderByFields":"objectid ASC","topCount":1}
+        ============================================================================================    =================================================================================================================================
 
-        estimate: Optional bool
-            Returns the estimated number of credits for the current task.
-
-
-        Returns
-        -------
-        result_layer : layer (Feature Service item)
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
         """
         task = "JoinFeatures"
         params = {}
         target_layer = self._feature_input(target_layer)
         join_layer = self._feature_input(join_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3192,33 +5437,89 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        Combines two inputs of the same feature data type into a new output.
+        The ``merge_layers`` method copies features from two layers into a new layer.
+        The layers to be merged must all contain the same feature types (points, lines, or polygons).
+        You can control how the fields from the input layers are joined and copied. For example:
 
-        Parameters
-        ----------
-        input_layer : Required layer (see Feature Input in documentation)
-             The point, line, or polygon  features to merge with the mergeLayer.
-        merge_layer : Required layer (see Feature Input in documentation)
-            The point, line or polygon features to merge with inputLayer.  mergeLayer must contain the same feature type (point, line, or polygon) as the inputLayer.
-        merging_attributes : Optional list of strings
-            An array of values that describe how fields from the mergeLayer are to be modified.  By default all fields from both inputs will be carried across to the output.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
-        estimate: Optional Boolean
-            Returns the number of credit for the operation.
+        * I have three layers for England, Wales, and Scotland and I want a single layer of Great Britain.
+        * I have two layers containing parcel information for contiguous townships. I want to join them together into a single layer, keeping only the fields that have the same name and type on the two layers.
 
-        Returns
-        -------
-        merged_layer : layer (FeatureCollection)
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        input_layer         Required feature layer. The point, line or polygon features with the ``merge_layer``. See :ref:`Feature Input<FeatureInput>`.
+        ----------------    ---------------------------------------------------------------
+        merge_layer         Required feature layer. The point, line, or polygon features to merge with the ``input_layer``.
+                            The ``merge_layer`` must contain the same feature type (point, line, or polygon) as the ``input_layer``. See :ref:`Feature Input<FeatureInput>`.
+        ----------------    ---------------------------------------------------------------
+        merge_attributes    Optional list. Defines how the fields in ``merge_layer`` will be
+                            modified. By default, all fields from both inputs will be
+                            included in the output layer.
+
+                            If a field exists in one layer but not the other, the output
+                            layer will still contain the field. The output field will
+                            contain null values for the input features that did not have the
+                            field. For example, if the ``input_layer`` contains a field named
+                            TYPE but the ``merge_layer`` does not contain TYPE, the output will
+                            contain TYPE, but its values will be null for all the features
+                            copied from the ``merge_layer``.
+
+                            You can control how fields in the ``merge_layer`` are written to the
+                            output layer using the following merge types that operate on a
+                            specified ``merge_layer`` field:
+
+                            + ``Remove`` - The field in the ``merge_layer`` will be removed from the output layer.
+                            + ``Rename`` - The field in the ``merge_layer`` will be renamed in the output layer.
+                                You cannot rename a field in the ``merge_layer`` to a field in the ``input_layer``. If you want to make field names equivalent, use Match.
+                            + ``Match`` - A field in the ``merge_layer`` is made equivalent to a field in the ``input_layer`` specified by merge value.
+                                For example, the ``input_layer`` has a field named CODE and the ``merge_layer`` has a field named STATUS.
+                                You can match STATUS to CODE, and the output will contain the CODE field with values of the STATUS field used for features copied from the ``merge_layer``.
+                                Type casting is supported (for example, float to integer, integer to string) except for string to numeric.
+        ----------------    ---------------------------------------------------------------
+        output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                            feature layer will cause the new layer to be appended to the Feature Service.
+                            If overwrite is True in context, new layer will overwrite existing layer.
+                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        ----------------    ---------------------------------------------------------------
+        context             Optional dict. Additional settings such as processing extent and output spatial reference.
+                            For calculate_density, there are three settings.
+
+                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                .. code-block:: python
+
+                                    # Example Usage
+                                    context = {"extent": {"xmin": 3164569.408035,
+                                                        "ymin": -9187921.892449,
+                                                        "xmax": 3174104.927313,
+                                                        "ymax": -9175500.875353,
+                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                "outSR": {"wkid": 3857},
+                                                "overwrite": True}
+        ----------------    ---------------------------------------------------------------
+        gis                 Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        ----------------    ---------------------------------------------------------------
+        estimate            Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+        ----------------    ---------------------------------------------------------------
+        future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ================    ===============================================================
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Feature Collection.
+
         """
 
         task = "MergeLayers"
 
         input_layer = self._feature_input(input_layer)
         merge_layer = self._feature_input(merge_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3264,30 +5565,97 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        Overlays the input layer with the overlay layer. Overlay operations supported are Intersect, Union, and Erase.
+        The ``overlay_layers`` method combines two or more layers into one single layer.
+        You can think of overlay as peering through a stack of maps and creating a single map containing
+        all the information found in the stack. In fact, before the advent of GIS, cartographers would
+        literally copy maps onto clear acetate sheets, overlay these sheets on a light table, and hand
+        draw a new map from the overlaid data. Overlay is much more than a merging of line work; all the
+        attributes of the features taking part in the overlay are carried through to the final product.
+        Overlay is used to answer one of the most basic questions of geography, "what is on top of what?" For example:
 
-        Parameters
-        ----------
-        input_layer : Required layer (see Feature Input in documentation)
-            The input analysis layer.
-        overlay_layer : Required layer (see Feature Input in documentation)
-            The layer to be overlaid with the analysis layer.
-        overlay_type : Optional string
-            The overlay type (INTERSECT, UNION, or ERASE) defines how the analysis layer and the overlay layer are combined.
-        snap_to_input : Optional bool
-            When the distance between features is less than the tolerance, the features in the overlay layer will snap to the features in the input layer.
-        output_type : Optional string
-            The type of intersection (INPUT, LINE, POINT).
-        tolerance : Optional float
-            The minimum distance separating all feature coordinates (nodes and vertices) as well as the distance a coordinate can move in X or Y (or both).
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
+        + What parcels are within the 100-year floodplain? (Within is just another way of saying on top of.)
+        + What roads are within what counties?
+        + What land use is on top of what soil type?
+        + What wells are within abandoned military bases?
 
-        Returns
-        -------
-        output_layer : layer (FeatureCollection)
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        input_layer         Required layer. The point, line, or polygon features that will be
+                            overlayed with the ``overlay_layer``. See :ref:`Feature Input<FeatureInput>`.
+        ----------------    ---------------------------------------------------------------
+        overlay_layer       Required layer. The features that will be overlaid with the ``input_layer`` features. See :ref:`Feature Input<FeatureInput>`.
+        ----------------    ---------------------------------------------------------------
+        overlay_type        Optional string. The type of overlay to be performed.
+
+                            Choice list: ['Intersect', 'Union', 'Erase']
+
+                            +--------------+--------------------------------------------------------------------------------------------------------+
+                            | |Intersect|  | ``Intersect``-Computes a geometric intersection of the input layers. Features or portions of           |
+                            |              | features which overlap in both the ``input_layer`` and ``overlay_layer`` layer will be written         |
+                            |              | to the output layer. This is the default.                                                              |
+                            +--------------+--------------------------------------------------------------------------------------------------------+
+                            | |Union|      | ``Union``-Computes a geometric union of the input layers. All features and their attributes will       |
+                            |              | be written to the output layer. This option is only valid if both the ``input_layer`` and              |
+                            |              | the ``overlay_layer`` contain polygon features.                                                        |
+                            +--------------+--------------------------------------------------------------------------------------------------------+
+                            | |Erase|      | ``Erase``-Only those features or portions of features in the ``overlay_layer`` that are not within the |
+                            |              | features in the ``input_layer`` layer are written to the output.                                       |
+                            +--------------+--------------------------------------------------------------------------------------------------------+
+
+                            The default value is 'Intersect'.
+
+        ----------------    ---------------------------------------------------------------
+        snap_to_input       Optional boolean. A Boolean value indicating if feature vertices in the ``input_layer`` are allowed to move.
+                            The default is false and means if the distance between features is less than the ``tolerance`` value, all features from both
+                            layers can move to allow snapping to each other. When set to true, only features in ``overlay_layer`` can move to snap to the ``input_layer`` features.
+        ----------------    ---------------------------------------------------------------
+        output_type         Optional string. The type of intersection you want to find.
+                            This parameter is only valid when the ``overlay_type`` is Intersect.
+
+                            Choice list: ['Input', 'Line', 'Point']
+
+                                *  ``Input`` - The features returned will be the same geometry type as
+                                the ``input_layer`` or ``overlay_layer`` with the lowest dimension geometry.
+                                If all inputs are polygons, the output will contain polygons. If one or more of
+                                the inputs are lines and none of the inputs are points, the output will be line.
+                                If one or more of the inputs are points, the output will contain points. This is the default.
+                                *  ``Line`` - Line intersections will be returned. This is only valid if none of the inputs are points.
+                                *  ``Point`` - Point intersections will be returned. If the inputs are line or polygon, the output will be a multipoint layer.
+        ----------------    ---------------------------------------------------------------
+        tolerance           Optional float. A float value of the minimum distance separating all feature coordinates
+                            as well as the distance a coordinate can move in X or Y (or both). The units of tolerance are the same as the units of the ``input_layer``.
+        ----------------    ---------------------------------------------------------------
+        output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                            feature layer will cause the new layer to be appended to the Feature Service.
+                            If overwrite is True in context, new layer will overwrite existing layer.
+                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        ----------------    ---------------------------------------------------------------
+        context             Optional dict. Additional settings such as processing extent and output spatial reference.
+                            For calculate_density, there are three settings.
+
+                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                .. code-block:: python
+
+                                    # Example Usage
+                                    context = {"extent": {"xmin": 3164569.408035,
+                                                        "ymin": -9187921.892449,
+                                                        "xmax": 3174104.927313,
+                                                        "ymax": -9175500.875353,
+                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                "outSR": {"wkid": 3857},
+                                                "overwrite": True}
+        ----------------    ---------------------------------------------------------------
+        gis                 Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        ----------------    ---------------------------------------------------------------
+        future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ================    ===============================================================
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Feature Collection.
+
         """
 
         task = "OverlayLayers"
@@ -3295,7 +5663,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         overlay_layer = self._feature_input(overlay_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3358,52 +5731,251 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
+        The ``plan_routes`` method determines how to efficiently divide tasks among a mobile workforce.
+
+        You provide the input, which includes a set of stops and the number of vehicles available to
+        visit the stops, and the tool assigns the stops to vehicles and returns routes showing how each
+        vehicle can reach their assigned stops in the least amount of time.
+
+        With ``plan_routes``, mobile workforces reach more jobsites in less time, which increases
+        productivity and improves customer service. Organizations often use ``plan_routes`` to:
+
+        * Inspect homes, restaurants, and construction sites
+        * Provide repair, installation, and technical services
+        * Deliver items and small packages
+        * Make sales calls
+        * Provide van transportation from spectators' homes to events
+
+        The output from ``plan_routes`` includes a layer of routes showing the shortest paths to visit
+        the stops; a layer of the stops assigned to routes, as well as any stops that couldn't be reached
+        due to the given parameter settings; and a layer of directions containing the travel itinerary for each route.
+
+        ============================    ==================================================================================================
+        **Parameter**                   **Description**
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        stops_layer                     Required feature layer. The points that the vehicles, drivers, or routes, should visit.
+                                        The fields on the input stops are included in the output stops, so if your input
+                                        layer has a field such as Name, Address, or ProductDescription, that information
+                                        will be available in the results. See :ref:`Feature Input<FeatureInput>`.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        route_count                     Required integer. The number of vehicles that are available to visit the stops.
+                                        The method supports up to 100 vehicles.
+
+                                        The default value is 0.
+
+                                        The method may be able to find and return a solution that uses fewer vehicles than
+                                        the number you specify for this parameter. The number of vehicles returned also
+                                        depends on four other parameters: the total number of stops in ``stops_layer``, the
+                                        number of stops per vehicle you allow (``max_stops_per_route``), the travel time between
+                                        stops, the time spent at each stop (``stop_service_time``), and any limit you set on the
+                                        total route time per vehicle (``max_route_time``).
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        max_stops_per_route             Required integer. The maximum number of stops a route, or vehicle, is allowed to visit.
+                                        The largest value you can specify is 200. The default value is zero.
+
+                                        This is one of two parameters that balance the overall workload across routes.
+                                        The other is ``max_route_time``.
+
+                                        By lowering the maximum number of stops that can be assigned to each vehicle, the vehicles
+                                        are more likely to have an equal number of stops assigned to them. This helps
+                                        balance workloads among drivers. The drawback, however, is that it may result in a
+                                        solution that is less efficient.
+
+                                        By increasing the stops per vehicle, the tool has more freedom to find more efficient solutions;
+                                        however, the workload may be unevenly distributed among drivers and vehicles. Note that you can
+                                        balance workloads by time instead of number of stops by specifying a value for the ``max_route_time`` parameter.
+
+                                        The following examples demonstrate the effects of limiting the maximum stops per vehicle or the
+                                        total time per vehicle. In all of these examples, two routes start at the same location
+                                        and visit a total of six stops.
+
+                                        +----------------------------+----------------------------------------------------------------------------------------------------------+
+                                        | |balanced|                 | Balanced travel times and stops per route:                                                               |
+                                        |                            |                                                                                                          |
+                                        |                            | The stops are more or less uniformly spread apart, so setting ``max_stops_per_route``=3 to evenly        |
+                                        |                            | distribute the workload results in routes that are roughly the same duration.                            |
+                                        |                            |                                                                                                          |
+                                        +----------------------------+----------------------------------------------------------------------------------------------------------+
+                                        | |partially_balanced|       | Balanced stops per route but unbalanced travel times:                                                    |
+                                        |                            |                                                                                                          |
+                                        |                            | Five of the six stops are clustered near the starting location, but one stop is set apart                |
+                                        |                            | and requires a much longer drive to be reached. Dividing the stops equally between the two               |
+                                        |                            | routes (``max_stops_per_route``=3) causes unbalanced travel times.                                       |
+                                        +----------------------------+----------------------------------------------------------------------------------------------------------+
+                                        | |unbalanced|               | Unbalanced stops per route but balanced travel times:                                                    |
+                                        |                            |                                                                                                          |
+                                        |                            | The stops are in the same location as the previous graphic. By increasing the value of                   |
+                                        |                            | ``max_stops_per_route`` to 4, and limiting the total travel time per vehicle (``max_route_time``),       |
+                                        |                            | the travel times are balanced even though one route visits more stops.                                   |
+                                        +----------------------------+----------------------------------------------------------------------------------------------------------+
+
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        route_start_time                Required datetime.datetime. Specify when the vehicles or people start their routes.
+                                        The time is specified as datetime.
+                                        The starting time value is the same for all routes; that is, all routes start at the same time.
+
+                                        Time zones affect what value you assign to ``route_start_time``. The time zone for the start time is
+                                        based on the time zone in which the starting point is geographically located. For instance,
+                                        if you have one route starting location and it is located in Pacific Standard Time (PST),
+                                        the time you specify for ``route_start_time`` is in PST.
+
+                                        There are a couple of scenarios to beware of given that starting times are based on where
+                                        the starting points are located. One situation to be careful of is when you are located in
+                                        one time zone but your starting locations are in another times zone. For instance, assume
+                                        you are in Pacific Standard Time (UTC-8:00) and the vehicles you are routing are stationed
+                                        in Mountain Standard Time (UTC-7:00). If it is currently 9:30 a.m. PST (10:30 a.m. MST)
+                                        and your vehicles need to begin their routes in 30 minutes, you would set the start time
+                                        to 11:00 a.m. That is, the starting locations for the routes are in the Mountain time zone,
+                                        and it is currently 10:30 a.m. there, therefore, a starting time of 30 minutes from now is 11:00 a.m.
+                                        Make sure you set the parameter according to the proper time zone.
+
+                                        The other situation that requires caution is where starting locations are spread across
+                                        multiple time zones. The time you set for ``route_start_time`` is specific to the time zone in
+                                        which the starting location is regardless of whether there are one or more starting locations
+                                        in the problem you submit. For instance, if one route starts from a point in PST and another
+                                        route starts from MST, and you enter 11:00 a.m. as the start time, the route in PST will start
+                                        at 11:00 a.m. PST and the route in MST will start at 11:00 a.m. MST a one-hour difference. The
+                                        starting times are the same in local time, but offset in actual time, or UTC.
+
+                                        The service automatically determines the time zones of the input starting locations (``start_layer``) for you.
+
+                                        Examples:
+
+                                        * datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. Routes will depart their
+                                        starting locations at 8:00 a.m., 22 October. Any routes with starting points in Mountain
+                                        Standard Time start at 8:00 a.m., 22 October 2014 MST; any routes with starting points in
+                                        Pacific Standard Time start at 8:00 a.m. 22 October 2014 PST, and so on.
+                                        * datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        start_layer                     Required feature layer. Provide the locations where the people or vehicles start their routes.
+                                        You can specify one or many starting locations.
+
+                                        If specifying one, all routes will start from the one location. If specifying many starting
+                                        locations, each route needs exactly one predefined starting location, and the following criteria must be met:
+
+                                        The number of routes (``route_count``) must equal the number of points in ``start_layer``. (However,
+                                        when only one point is included in ``start_layer``, it is assumed that all routes start from
+                                        the same location, and the two numbers can be different.)
+                                        The starting location for each route must be identified with the ``start_layer_route_id_field``
+                                        parameter. This implies that the input points in ``start_layer`` have a unique identifier.
+                                        Bear in mind that if you also have many ending locations, those locations need to be
+                                        predetermined as well. The predetermined start and end locations of each route are
+                                        paired together by matching route ID values.
+                                        See the the section of this topic entitled Starting and ending locations of
+                                        routes to learn more. See :ref:`Feature Input<FeatureInput>`.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        start_layer_route_id_field      Optional string. Choose a field that uniquely identifies points in start_layer.
+                                        This parameter is required when ``start_layer`` has more than one point; it is ignored otherwise.
+
+                                        The ``start_layer_route_id_field`` parameter helps identify where routes begin and
+                                        indicates the names of the output routes.
+
+                                        See the the section of this topic entitled Starting and ending locations
+                                        of routes to learn more.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        return_to_start                 Optional boolean. A True value indicates each route must end its trip at the same place where
+                                        it started. The starting location is defined by the ``start_layer`` and ``start_layer_route_id_field`` parameters.
+
+                                        The default value is True.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        end_layer                       Optional layer. Provide the locations where the people or vehicles end their routes.
+
+                                        If ``end_layer`` is not specified, ``return_to_start`` must be set to True.
+
+                                        You can specify one or many ending locations.
+
+                                        If specifying one, all routes will end at the one location. If specifying many ending
+                                        locations, each route needs exactly one predefined ending location, and the following criteria must be met:
+
+                                        + The number of routes (``route_count``) must equal the number of points in ``end_layer``.
+                                        (However, when only one point is included in ``end_layer``, it is assumed that all routes
+                                        end at the same location, and the two numbers can be different.)
+                                        + The ending location for each route must be identified with the ``start_layer_route_id_field``
+                                        parameter. This implies that the input points in endLayer have a unique identifier.
+                                        Bear in mind that if you also have many starting locations, those locations need to be
+                                        predetermined as well. The predetermined start and end locations of each route are paired
+                                        together by matching route ID values. See :ref:`Feature Input<FeatureInput>`.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        end_layer_route_id_field        Optional string. Choose a field that uniquely identifies points in ``end_layer``.
+                                        This parameter is required when ``end_layer`` has more than one point; it is ignored
+                                        if there is one point or if ``return_to_start`` is True.
+
+                                        The ``end_layer_route_id_field`` parameter helps identify where routes end and indicates the names of the output routes.
+
+                                        See the the section of this topic entitled Starting and ending locations of routes to learn more.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        travel_mode                     Optional string. Optional string. Specify the mode of transportation for the analysis.
+
+                                        Choice list: ['Driving Distance', 'Driving Time', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        stop_service_time               Optional float. Indicates how much time, in minutes, is spent at each stop.
+                                        The units are minutes. All stops are assinged the same service duration from
+                                        this parameter unique values for individual stops cannot be specified with this service.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        max_route_time                  Optional float. The amount of time you specify here limits the maximum duration of each route.
+                                        The maximum route time is an accumulation of travel time and the total service time at visited
+                                        stops (``stop_service_time``). This parameter is commonly used to prevent drivers from working
+                                        too many hours or to balance workloads across routes or drivers.
+
+                                        The units are 'minutes'. The default value, which is also the maximum value, is 525600 minutes, or one year.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        include_route_layers            Optional boolean. When ``include_route_layers`` is set to True, each route from the result is also
+                                        saved as a route layer item. A route layer includes all the information for a particular route such as the stops assigned to
+                                        the route as well as the travel directions. Creating route layers is useful if you want to share individual routes with other
+                                        members in your organization. The route layers use the output feature service name provided in the ``output_name`` parameter as a
+                                        prefix and the route name generated as part of the analysis is added to create a unique name for each route layer.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        output_name                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                        feature layer will cause the new layer to be appended to the Feature Service.
+                                        If overwrite is True in context, new layer will overwrite existing layer.
+                                        If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        context                         Optional dict. Additional settings such as processing extent and output spatial reference.
+                                        For plan_routes, there are three settings.
+
+                                        - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                        - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                            .. code-block:: python
+
+                                                # Example Usage
+                                                context = {"extent": {"xmin": 3164569.408035,
+                                                                    "ymin": -9187921.892449,
+                                                                    "xmax": 3174104.927313,
+                                                                    "ymax": -9175500.875353,
+                                                                    "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                            "outSR": {"wkid": 3857},
+                                                            "overwrite": True}
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        gis                             Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        estimate                        Optional boolean. If True, the number of credits to run the operation will be returned.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        point_barrier_layer             Optional feature layer. Specify one or more point features that act as temporary restrictions (in other words, barriers) when traveling on the underlying streets.
+
+                                        A point barrier can model a fallen tree, an accident, a downed electrical line, or anything that completely blocks traffic at a specific position along the street. Travel is permitted on the street but not through the barrier. See :ref:`Feature Input<FeatureInput>`.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        line_barrier_layer              Optional feature layer. Specify one or more line features that prohibit travel anywhere the lines intersect the streets.
+
+                                        A line barrier prohibits travel anywhere the barrier intersects the streets. For example, a parade or protest that blocks traffic across several street segments can be modeled with a line barrier. See :ref:`Feature Input<FeatureInput>`.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        polygon_barrier_layer           Optional feature layer. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
+
+                                        One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
+        ----------------------------    --------------------------------------------------------------------------------------------------
+        future                          Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ============================    ==================================================================================================
+
+        :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else dict with the following keys:
 
 
-        Parameters
-        ----------
-        stops_layer : Required layer (see Feature Input in documentation)
+            "routes_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        route_count : Required int
+            "assigned_stops_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        max_stops_per_route : Required int
+            "unassigned_stops_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        route_start_time : Required datetime.date
-
-        start_layer : Required layer (see Feature Input in documentation)
-
-        start_layer_route_id_field : Optional string
-
-        return_to_start : Optional bool
-
-        end_layer : Optional layer (see Feature Input in documentation)
-
-        end_layer_route_id_field : Optional string
-
-        travel_mode : Optional string
-
-        stop_service_time : Optional float
-
-        max_route_time : Optional float
-
-        include_route_layers : Optional bool
-
-        output_name : Optional string
-
-        context: Optional dict
-
-        point_barrier_layer: Optional FeatureSet/FeatureLayer
-
-        line_barrier_layer: Optional FeatureSet/FeatureLayer
-
-        polygon_barrier_layer: Optional FeatureSet/FeatureLayer
-
-        Returns
-        -------
-        dict with the following keys:
-           "routes_layer" : layer (FeatureCollection)
-           "assigned_stops_layer" : layer (FeatureCollection)
-           "unassigned_stops_layer" : layer (FeatureCollection)
         """
 
         task = "PlanRoutes"
@@ -3414,9 +5986,13 @@ class _FeatureAnalysisTools(BaseAnalytics):
             start_layer = self._feature_input(start_layer)
         if end_layer:
             end_layer = self._feature_input(end_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
-
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
         if line_barrier_layer:
@@ -3499,66 +6075,81 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Summarize Center and Dispersion task finds central features and directional distributions.
+        The ``summarize_center_and_dispersion`` method finds central features and directional distributions. It can be used to answer questions such as:
+
+        * Where is the center?
+        * Which feature is the most accessible from all other features?
+        * How dispersed, compact, or integrated are the features?
+        * Are there directional trends?s
 
         ====================    =========================================================
         **Argument**            **Description**
         --------------------    ---------------------------------------------------------
-        analysis_layer          The point, line, or polygon features to be analyzed. This
-                                parameter can be a URL to a feature service layer with an
-                                optional filter to select specific feaures, or a feature
-                                collection
+        analysis_layer          Required frature layer. The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
         --------------------    ---------------------------------------------------------
-        summarize_type          The method with which to summarize the analysis_layer.
-                                Choice List:
-                                ["CentralFeature", "MeanCenter", "MedianCenter",
-                                "Ellipse"]
-                                Example: "CentralFeature"
+        summarize_type          Required list of strings. The method with which to summarize the ``analysis_layer``.
+
+                                Choice list: ["CentralFeature", "MeanCenter", "MedianCenter", "Ellipse"]
         --------------------    ---------------------------------------------------------
-        ellipse_size            The size of the output ellipse in standard deviations.
-                                The default ellipse size is 1. Valid choices are 1, 2, or
-                                3 standard deviations.
-                                Choice List: [1, 2, 3]
-                                Examples:
-                                "1"
-                                [1, 2, 3]
+        ellipse_size            Optional string. The size of the output ellipse in standard deviations.
+
+                                Choice list: ['1 standard deviations', '2 standard deviations', '3 standard deviations']
+
+                                The default ellipse size is '1 standard deviations'.
         --------------------    ---------------------------------------------------------
-        weight_field            A numeric field in the analysis_layer to be used to
+        weight_field            Optional field. A numeric field in the ``analysis_layer`` to be used to
                                 weight locations according to their relative importance.
         --------------------    ---------------------------------------------------------
-        group_field             The field used to group features for separate directional
-                                distribution calculations. The group_field can be of
+        group_field             Optional field. The field used to group features for separate directional
+                                distribution calculations. The ``group_field`` can be of
                                 integer, date, or string type.
         --------------------    ---------------------------------------------------------
-        output_name             Optional string. Additional properties such as output
-                                feature service name.
+        output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                feature layer will cause the new layer to be appended to the Feature Service.
+                                If overwrite is True in context, new layer will overwrite existing layer.
+                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
         --------------------    ---------------------------------------------------------
-        context                 Optional string. Additional settings such as processing
-                                extent and output spatial reference.
+        context                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                For summarize_center_and_dispersion, there are three settings.
+
+                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                    .. code-block:: python
+
+                                        # Example Usage
+                                        context = {"extent": {"xmin": 3164569.408035,
+                                                            "ymin": -9187921.892449,
+                                                            "xmax": 3174104.927313,
+                                                            "ymax": -9175500.875353,
+                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                    "outSR": {"wkid": 3857},
+                                                    "overwrite": True}
         --------------------    ---------------------------------------------------------
-        gis                     Optional, the GIS on which this tool runs. If not
-                                specified, the active GIS is used.
+        estimate                Optional boolean. If True, the number of credits to run the operation will be returned.
         --------------------    ---------------------------------------------------------
-        estimate                Optional Boolean.  Returns the estimated number of
-                                credits for the current task.
+        future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         ====================    =========================================================
 
-        :return:
-        If an output_name is provided, a
+        :return: list of items if ``output_name`` is supplied else, a Python dictionary with the following keys:
+            "central_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+            "mean_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+            "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+            "ellipse_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-        Python dictionary with the following keys:
-          "central_feature_result_layer" : layer (FeatureCollection)
-          "mean_feature_result_layer" : layer (FeatureCollection)
-          "median_feature_result_layer" : layer (FeatureCollection)
-          "ellipse_feature_result_layer" : layer (FeatureCollection)
-          "process_info" : list of messages
         """
 
         task = "SummarizeCenterAndDispersion"
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3614,44 +6205,117 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Summarize Within task helps you summarize and find statistics on the point, line, or polygon features (or portions of these features) that are within the boundaries of polygons in another layer. For example: Given a layer of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use type for each watershed.
+        The ``summarize_within`` method finds the point, line, or polygon features (or portions of these features)
+        that are within the boundaries of polygons in another layer. For example:
 
-        Parameters
-        ----------
-        summary_layer : Required layer (see Feature Input in documentation)
-            Point, line, or polygon features that will be summarized for each bin or polygon in the sum_within_layer.
-        sum_within_layer : Optional layer (see Feature Input in documentation)
-            Optional polygon layer. Features, or portions of features, in the summary_layer that fall within the boundaries of these polygons will be summarized. The sum_within_layer is required if the bin_type, bin_size, and bin_size_unit are not specified.
-        sum_shape : Optional bool
-            A boolean value that instructs the task to calculate count of points, length of lines, or areas of polygons of the summary_layer within each summary polygon.
-        shape_units : Optional string
-            Specify units to summarize the length or areas when sum_shape is set to true. Units are not required to summarize points. When summary_layer contains polygons, options are: [Acres, Hectares, SquareMeters, SquareKilometers, SquareFeet, SquareYards, SquareMiles]. When summary_layer contains lines, options are: [Meters, Kilometers, Feet, Yards, Miles]
-        summary_fields : Optional list of strings
-            A list of field names and statistical summary type that you wish to calculate for features in the summary_layer. Ex: ["fieldname1 summaryType1", "fieldname2 summaryType2"]
-        group_by_field : Optional string
-            A field from the summary_layer based on which to calculate statistics separately for each unique attribute value.
-        minority_majority : Optional bool
-            This boolean parameter is applicable only when a groupByField is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will be calculated.
-        percent_shape : Optional bool
-            This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage of shape (eg. length for lines) for each unique groupByField value is calculated.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent and output spatial reference.
-        estimate: Optional bool
-            Returns the estimated number of credits for the operation.
-        bin_type: Optional string
-            The type of bin that will be generated, into which features or portions of features from the summary_layer will be summarized if no sum_within_layer is provided. One of the following: ['SQUARE', 'HEXAGON']
-        bin_size : Optional float
-            The distance for the bins of type bin_type.
-        bin_size_unit: Optional string
-            The linear unit for bin_size. One of the following: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'Nautical Miles']
+            * Given a layer of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use type for each watershed.
+            * Given a layer of parcels in a county and a layer of city boundaries, summarize the average value of vacant parcels within each city boundary.
+            * Given a layer of counties and a layer of roads, summarize the total mileage of roads by road type within each county.
 
-        Returns
-        -------
-        dict with the following keys:
-           "result_layer" : layer (FeatureCollection)
-           "group_by_summary" : layer (FeatureCollection)
+        You can think of ``summarize_within`` as taking two layers and stacking them on top of each other.
+        One of the layers, the ``sum_within_layer`` must be a polygon layer, and imagine that these polygon
+        boundaries are all colored red. The other layer, the ``summary_layer``, can be any feature type point,
+        line, or polygon. After stacking these layers on top of each other, you peer down through the stack
+        and count the number of features in the ``summary_layer`` that fall within the polygons with the red
+        boundaries (the ``sum_within_layer``). Not only can you count the number of features, you can calculate
+        simple statistics about the attributes of the features in the ``summary_layer``, such as sum, mean, minimum, maximum, and so on.
+
+        =====================================   =========================================================
+        **Argument**                            **Description**
+        -------------------------------------   ---------------------------------------------------------
+        sum_within_layer                        Required feature layer. The polygon features. Features, or
+                                                portions of features, in the ``summary_layer`` (below) that fall within
+                                                the boundaries of these polygons will be summarized. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------   ---------------------------------------------------------
+        summary_layer                           Required feature layer. Point, line, or polygon features that will be summarized for each polygon in the ``sum_within_layer``.
+                                                See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------   ---------------------------------------------------------
+        sum_shape                               Optional boolean. A boolean value that instructs the task to calculate statistics
+                                                based on shape type of the ``summary_layer``, such as the length of lines or areas of
+                                                polygons of the ``summary_layer`` within each polygon in ``sum_within_layer``.
+
+                                                The default is True.
+        -------------------------------------   ---------------------------------------------------------
+        shape_units                             Optional string. Specify units to summarize the length or areas when ``sum_shape`` is set to true. Units is not required to summarize
+                                                points.
+
+                                                * When ``summary_layer`` contains polygons: ['Acres', 'Hectares', 'SquareMeters', 'SquareKilometers', 'SquareMiles', 'SquareYards', 'SquareFeet']
+
+                                                * When ``summary_layer`` contains lines: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+        -------------------------------------   ---------------------------------------------------------
+        summary_fields                          Optional list of strings. A list of field names and statistical summary type that you wish
+                                                to calculate for all features in the ``summary_layer`` that are within each polygon in the ``sum_within_layer`` .
+
+                                                Example: ["fieldname1 summary", "fieldname2 summary"]
+        -------------------------------------   ---------------------------------------------------------
+        group_by_field                          Optional string. This is a field of the ``summary_layer`` features that you can use to calculate statistics separately
+                                                for each unique attribute value. For example, suppose the ``sum_within_layer`` contains city boundaries and
+                                                the ``summary_layer`` features are parcels. One of the fields of the parcels is Status which contains
+                                                two values: VACANT and OCCUPIED. To calculate the total area of vacant and occupied parcels within the
+                                                boundaries of cities, use Status as the ``group_by_field`` field.
+        -------------------------------------   ---------------------------------------------------------
+        minority_majority                       Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified.
+                                                If true, the minority (least dominant) or the majority (most dominant) attribute values for each group
+                                                field are calculated. Two new fields are added to the ``result_layer`` prefixed with Majority_ and Minority_.
+
+                                                The default is False.
+        -------------------------------------   ---------------------------------------------------------
+        percent_shape                           Optional boolean. This Boolean parameter is applicable only when a ``group_by_field`` is specified.
+                                                If set to true, the percentage of each unique ``group_by_field`` value is calculated for
+                                                each ``sum_within_layer`` polygon.
+
+                                                The default is False.
+        -------------------------------------   ---------------------------------------------------------
+        output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                feature layer will cause the new layer to be appended to the Feature Service.
+                                                If overwrite is True in context, new layer will overwrite existing layer.
+                                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------------------   ---------------------------------------------------------
+        context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                For summarize_within, there are three settings.
+
+                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                                    .. code-block:: python
+
+                                                        # Example Usage
+                                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                            "ymin": -9187921.892449,
+                                                                            "xmax": 3174104.927313,
+                                                                            "ymax": -9175500.875353,
+                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                    "outSR": {"wkid": 3857},
+                                                                    "overwrite": True}
+        -------------------------------------   ---------------------------------------------------------
+        estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
+        -------------------------------------   ---------------------------------------------------------
+        future                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        -------------------------------------   ---------------------------------------------------------
+        bin_type                                Required string. The type of bin used to calculate density.
+
+                                                Choice list: ['Hexagon', 'Square'].
+        -------------------------------------   ---------------------------------------------------------
+        bin_size                                Required float. The distance for the bins that the ``input_layer`` will be analyzed using.
+                                                When generating bins, for Square, the number and units specified determine the
+                                                height and length of the square. For ``Hexagon``, the number and units specified
+                                                determine the distance between parallel sides.
+        -------------------------------------   ---------------------------------------------------------
+        bin_size_unit                           Required string. The distance unit for the bins for which the density will be calculated.
+                                                The linear unit to be used with the value specified in ``bin_size``.
+
+                                                The default is 'Meters'.
+        =====================================   =========================================================
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
+
+            dict with the following keys:
+
+                "result_layer" : layer (FeatureCollection)
+
+                "group_by_summary" : layer (FeatureCollection)
+
         """
 
         task = "SummarizeWithin"
@@ -3660,7 +6324,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if sum_within_layer:
             sum_within_layer = self._feature_input(sum_within_layer)
         summary_layer = self._feature_input(summary_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3730,34 +6399,89 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
+        The ``trace_downstream`` method determines the trace, or flow path, in a downstream direction from the points in your analysis layer.
 
+        For example, suppose you have point features representing sources of contamination and you want to determine where in your study
+        area the contamination will flow. You can use ``trace_downstream`` to identify the path the contamination will take. This trace
+        can also be divided into individual line segments by specifying a distance value and units. The line being returned can be the
+        total length of the flow path, a specified maximum trace length, or clipped to area features such as your study area. In many
+        cases, if the total length of the trace path is returned, it will be from the source all the way to the ocean.
 
-        Parameters
-        ----------
-        input_layer : Required layer (see Feature Input in documentation)
+        =====================================   =========================================================
+        **Argument**                            **Description**
+        -------------------------------------   ---------------------------------------------------------
+        input_layer                             Required feature layer. The point features used for the starting location of a downstream trace.
+                                                See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------   ---------------------------------------------------------
+        split_distance                          Optional float. The trace line will be split into multiple lines where each line is of the specified length.
+                                                The resulting trace will have multiple line segments, each with fields FromDistance and ToDistance.
+        -------------------------------------   ---------------------------------------------------------
+        split_units                             Optional string. The units used to specify split distance.
 
-        split_distance : Optional float
+                                                Choice list: ['Meters', 'Kilometers', 'Feet' 'Yards', 'Miles'].
 
-        split_units : Optional string
+                                                The default is 'Kilometers'.
+        -------------------------------------   ---------------------------------------------------------
+        max_distance                            Optional float. Determines the total length of the line that will be returned. If you provide a
+                                                ``bounding_polygon_layer`` to clip the trace, the result will be clipped to the features in ``bounding_polygon_layer``,
+                                                regardless of the distance you enter here.
+        -------------------------------------   ---------------------------------------------------------
+        max_distance_units                      Optional string. The units used to specify maximum distance.
 
-        max_distance : Optional float
+                                                Choice list: ['Meters', 'Kilometers', 'Feet' 'Yards', 'Miles'].
 
-        max_distance_units : Optional string
+                                                The default is 'Kilometers'.
+        -------------------------------------   ---------------------------------------------------------
+        bounding_polygon_layer                  Optional feature layer. A polygon layer specifying the area(s) where you want the trace
+                                                downstreams to be calculated in. For example, if you only want to calculate the trace downstream
+                                                with in a county polygon, provide a layer containing the county polygon and the resulting trace
+                                                lines will be clipped to the county boundary. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------------------   ---------------------------------------------------------
+        source_database                         Optional string. Keyword indicating the data source resolution that will be used in the analysis.
 
-        bounding_polygon_layer : Optional layer (see Feature Input in documentation)
+                                                Choice list: ['Finest', '30m', '90m'].
 
-        source_database : Optional string
+                                                * Finest: Finest resolution available at each location from all possible data sources.
 
-        generalize : Optional bool
+                                                * 30m: The hydrologic source was built from 1 arc second - approximately 30 meter resolution, elevation data.
 
-        output_name : Optional string
+                                                * 90m: The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data.
 
-        context: Optional dict
+                                                The default is 'Finest'.
+        -------------------------------------   ---------------------------------------------------------
+        generalize                              Optional boolean. Determines if the output trace downstream lines will be smoothed
+                                                into simpler lines or conform to the cell edges of the original DEM.
+        -------------------------------------   ---------------------------------------------------------
+        output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                                feature layer will cause the new layer to be appended to the Feature Service.
+                                                If overwrite is True in context, new layer will overwrite existing layer.
+                                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------------------   ---------------------------------------------------------
+        context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                For trace_downstream, there are three settings.
 
+                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
-        Returns
-        -------
-        trace_layer : layer (FeatureCollection)
+                                                    .. code-block:: python
+
+                                                        # Example Usage
+                                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                            "ymin": -9187921.892449,
+                                                                            "xmax": 3174104.927313,
+                                                                            "ymax": -9175500.875353,
+                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                    "outSR": {"wkid": 3857},
+                                                                    "overwrite": True}
+        -------------------------------------   ---------------------------------------------------------
+        estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
+        -------------------------------------   ---------------------------------------------------------
+        future                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =====================================   =========================================================
+
+        :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is set, else :class:`~arcgis.features.FeatureCollection`.
+
         """
 
         task = "TraceDownstream"
@@ -3766,7 +6490,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3834,57 +6563,211 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Summarize Nearby task finds features that are within a specified distance of features in the input layer. Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example: Calculate the total population within five minutes of driving time of a proposed new store location.
+        The ``summarize_nearby`` method finds features that are within a specified distance of features in the input layer.
+        Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a
+        drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example:
 
-        Parameters
-        ----------
-        sum_nearby_layer : Required layer (see Feature Input in documentation)
-            Point, line, or polygon features from which distances will be measured to features in the summary_layer.
-        summary_layer : Required layer (see Feature Input in documentation)
-            Point, line, or polygon features. Features in this layer that are within the specified distance to features in the sum_nearby_layer will be summarized.
-        near_type : Optional string
-            Defines what kind of distance measurement you want to use to create areas around the sum_nearby_layer features.
-        distances : Required list of floats
-            An array of double values that defines the distance(s) around the sum_nearby_layer features within which summary_layer features will be summarized.
-        units : Optional string
-            The linear unit for distances parameter. One of : [Meters, Kilometers, Feet, Yards, Miles, Seconds, Minutes, Hours]
-        time_of_day : Optional datetime.date
-            When specified and if relevant for the near_type parameter, the traffic conditions during the time of the day will be considered. Set the time and day according to the number of milliseconds elapsed since the Unix epoc (January 1, 1970 UTC).
-        time_zone_for_time_of_day : Optional string
-            Determines if the value specified for time_of_day is specified in UTC or in the time zone of features in the sum_nearby_layer. Use one of: [‘GeoLocal’, ‘UTC’]
-        return_boundaries : Optional bool
-            Determines whether the result layer will return the summary areas defined by the specified near_type (true) or the same features as the input sum_nearby features (false).
-        sum_shape : Optional bool
-            A boolean value that instructs the task to calculate the count of points, length of lines, or areas of polygons of the summary_layer within the specified distance of each sum_nearby_layer feature.
-        shape_units : Optional string
-            Specify units to summarize the length or areas when sum_shape is set to true. Units are not required to summarize points. When summary_layer contains polygons, options are: [Acres, Hectares, SquareMeters, SquareKilometers, SquareFeet, SquareYards, SquareMiles]. When summary_layer contains lines, options are: [Meters, Kilometers, Feet, Yards, Miles]
-        summary_fields : Optional list of strings
-            A list of field names and statistical summary type that you wish to calculate for features in the summary_layer. Ex: ["fieldname1 summaryType1", "fieldname2 summaryType2"]
-        group_by_field : Optional string
-            A field from the summary_layer based on which to calculate statistics separately for each unique attribute value.
-        minority_majority : Optional bool
-            This boolean parameter is applicable only when a groupByField is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will be calculated.
-        percent_shape : Optional bool
-            This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage of shape (eg. length for lines) for each unique groupByField value is calculated.
-        output_name : Optional string
-            Additional properties such as output feature service name.
-        context: Optional dict
-            Additional settings such as processing extent, output spatial reference, and overwrite.
-        estimate: Optional bool
-            Returns the estimated number of credits for the operation.
+        * Calculate the total population within five minutes of driving time of a proposed new store location.
+        * Calculate the number of freeway access ramps within a one-mile driving distance of a proposed new store location to use as a measure of
+        store accessibility.
 
-        Returns
-        -------
-        dict with the following keys:
-           "result_layer" : layer (FeatureCollection)
-           "group_by_summary" : layer (FeatureCollection)
+        =========================   ====================================================================================================================
+        **Parameter**               **Description**
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        sum_nearby_layer            Required feature layer. Point, line, or polygon features from which distances will be measured to features in the ``summary_layer``. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        summary_layer               Required layer. Point, line, or polygon features. Features in this layer that are within the specified distance to features in the ``sum_nearby_layer`` will be summarized. See :ref:`Feature Input<FeatureInput>`.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        near_type                   Optional string.
+                                    Defines what kind of distance measurement you want to use, either straight-line distance, travel
+                                    time or travel distance along a street network using various modes of transportation known as travel modes.
+                                    The default is ``StraightLine``.
+
+                                    Choice list:
+
+                                    * ``StraightLine``,
+                                    * ``Driving Distance``,
+                                    * ``Driving Time``,
+                                    * ``Rural Driving Distance``,
+                                    * ``Rural Driving Time``,
+                                    * ``Trucking Distance``,
+                                    * ``Trucking Time``,
+                                    * ``Walking Distance``,
+                                    * ``Walking Time``
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        distances                   Optional list of float values. Defines the search distance for 'StraightLine' and distance-based travel modes, or time
+                                    duration for time-based travel modes. You can enter single or multiple values, separating each value with a space.
+                                    Features that are within (or equal to) the distances you enter will be summarized. The unit for `distances` is
+                                    supplied by the units parameter.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        units                       Optional string. If :attr:`near_type` is `StraightLine` or a distance-based travel mode, this is the linear unit to be
+                                    used with the distance value(s) specified in distances.
+
+                                    Choice list:
+                                    | [``Meters``, ``Kilometers``, ``Feet``, ``Yards``, ``Miles``]
+
+                                    If ``near_type`` is a time-based travel mode, the following values can be used as units:
+
+                                    Choice list:
+
+                                    | [``Seconds``, ``Minutes``, ``Hours``]
+
+                                    The default is 'Meters'.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        time_of_day                 Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use traffic in the analysis,
+                                    set ``near_type`` to a travel mode object whose impedance_attribute_name property is set to travel_time and assign a value
+                                    to ``time_of_day``. (A travel mode with other impedance_attribute_name values don't support traffic.) The ``time_of_day`` value represents
+                                    the time at which travel begins, or departs, from the origin points. The time is specified as datetime.datetime.
+
+                                    The service supports two kinds of traffic: typical and live. Typical traffic references travel speeds that are made up of historical
+                                    averages for each five-minute interval spanning a week. Live traffic retrieves speeds from a traffic feed that processes phone probe
+                                    records, sensors, and other data sources to record actual travel speeds and predict speeds for the near future.
+
+                                    The `data coverage <http://www.arcgis.com/home/webmap/viewer.html?webmap=b7a893e8e1e04311bd925ea25cb8d7c7>`_ page shows the countries
+                                    Esri currently provides traffic data for.
+
+                                    Typical Traffic:
+
+                                    To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day
+                                    of the week to one of the following dates from 1990:
+
+                                    * Monday - 1/1/1990
+                                    * Tuesday - 1/2/1990
+                                    * Wednesday - 1/3/1990
+                                    * Thursday - 1/4/1990
+                                    * Friday - 1/5/1990
+                                    * Saturday - 1/6/1990
+                                    * Sunday - 1/7/1990
+                                    Set the time and date as datetime.datetime.
+
+                                    For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to
+                                    datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
+
+                                    Live Traffic:
+
+                                    To use live traffic when and where it is available, choose a time and date and convert to datetime.
+
+                                    Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                    specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window,
+                                    the task falls back to typical traffic speeds.
+
+                                    Examples:
+                                    from datetime import datetime
+
+                                    * ``time_of_day``- datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
+                                    * ``time_of_day``- datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
+                                    * ``time_of_day``- datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014,
+                                    live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+                                    * ``time_of_day``- datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015,
+                                    live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        time_zone_for_time_of_day   Optional string. Specify the time zone or zones of the ``time_of_day`` parameter.
+
+                                    Choice list: ['GeoLocal', 'UTC']
+
+                                    GeoLocal-refers to the time zone in which the originsLayer points are located.
+
+                                    UTC-refers to Coordinated Universal Time.
+
+                                    The default is 'GeoLocal'.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        return_boundaries           Optional boolean. If true, the ``result_layer`` will contain areas defined by the specified ``near_type``. For example, if using 'StraightLine' of 5 miles,
+                                    the ``result_layer`` will contain areas with a 5 mile radius around the input ``sum_nearby_layer`` features.
+
+                                    If False, the ``result_ayer`` will contain the same features as the ``sum_nearby_layer``.
+
+                                    The default is True.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        sum_shape                   Optional boolean. A boolean value that instructs the task to calculate statistics based on shape type of the ``summary_layer``,
+                                    such as the length of lines or areas of polygons of the ``summary_layer`` within each polygon in ``sum_within_layer``.
+
+                                    The default is True.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        shape_units                 Optional string. If ``sum_shape`` is true, you must specify the units of the shape summary.
+                                    Values:
+
+                                    * When ``summary_layer`` contains polygons: Values: ['Acres', 'Hectares', 'SquareMeters', 'SquareKilometers', 'SquareFeet', 'SquareYards', 'SquareMiles']
+                                    * When ``summary_layer`` contains lines: Values: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        summary_fields              Optional list of strings.A list of field names and statistical summary types that you want to calculate.
+                                    Note that the count is always returned by default.
+
+                                    fieldName is the name of one of the numeric fields found in the input join layer.
+
+                                    statisticType is one of the following:
+
+                                    * ``SUM``-Adds the total value of all the points in each polygon
+                                    * ``MEAN``-Calculates the average of all the points in each polygon
+                                    * ``MIN``-Finds the smallest value of all the points in each polygon
+                                    * ``MAX``-Finds the largest value of all the points in each polygon
+                                    * ``STDDEV``-Finds the standard deviation of all the points in each polygon
+
+                                    Example: ["fieldName summaryType","fieldName summaryType", ...]
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        group_by_field              Optional string. This is a field of the ``summary_layer`` features that you can use to calculate statistics separately for each unique attribute value.
+                                    For example, suppose the ``summary_layer`` contains point locations of businesses that store hazardous materials, and one of the fields is HazardClass
+                                    containing codes that describe the type of hazardous material stored. To calculate summaries by each unique value of HazardClass, use HazardClass as
+                                    the ``group_by_field`` field.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        minority_majority           Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified. If true, the minority (least dominant) or the
+                                    majority (most dominant) attribute values for each group field within each nearby area are calculated. Two new fields are added to
+                                    the ``result_layer`` prefixed with Majority_ and Minority_.
+
+                                    The default is False.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        percent_shape               Optional boolean. This Boolean parameter is applicable only when a ``group_by_field`` is specified. If set to true,
+                                    the percentage of each unique ``group_by_field`` value is calculated for each ``sum_nearby_layer`` feature.
+
+                                    The default is False.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        output_name                 Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        context                     Optional dict. Additional settings such as processing extent and output spatial reference.
+                                    For summarize_nearby, there are three settings.
+
+                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+
+                                        .. code-block:: python
+
+                                            # Example Usage
+                                            context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857},
+                                                        "overwrite": True}
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        estimate                    Optional boolean. Returns the number of credit for the operation.
+        -------------------------   --------------------------------------------------------------------------------------------------------------------
+        future                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================   ====================================================================================================================
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
+
+            dict with the following keys:
+
+                "result_layer" : layer (FeatureCollection)
+
+                "group_by_summary" : layer (FeatureCollection)
+
         """
 
         task = "SummarizeNearby"
 
         sum_nearby_layer = self._feature_input(sum_nearby_layer)
         summary_layer = self._feature_input(summary_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        if self._gis.version > [9, 2] or self._gis.is_agol:
+            overwrite = context.pop("overwrite", False) if context else False
+        else:
+            # Remove if in context but default to False in all cases.
+            overwrite = context.pop("overwrite", False) if context else False
+            overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:

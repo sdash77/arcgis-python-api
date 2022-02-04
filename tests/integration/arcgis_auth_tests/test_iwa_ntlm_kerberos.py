@@ -11,25 +11,25 @@ except:
     from ._utils import get_config_parser
 
 
-if 'iwa' in get_config_parser():
+if "iwa" in get_config_parser():
     SKIP_IWA = False
-    iwa_url = get_config_parser()['iwa']['url']
-    iwa_user = get_config_parser()['iwa']['username']
-    iwa_pw = get_config_parser()['iwa']['password']
+    iwa_url = get_config_parser()["iwa"]["url"]
+    iwa_user = get_config_parser()["iwa"]["username"]
+    iwa_pw = get_config_parser()["iwa"]["password"]
 else:
     SKIP_IWA = True
 
-if 'kerberos' in get_config_parser():
+if "kerberos" in get_config_parser():
     SKIP_KERBEROS = False
-    ker_url = get_config_parser()['kerberos']['url']
+    ker_url = get_config_parser()["kerberos"]["url"]
 else:
     SKIP_KERBEROS = True
 
-if 'ldap' in get_config_parser():
+if "ldap" in get_config_parser():
     SKIP_LDAP = False
-    ldap_url = get_config_parser()['ldap']['url']
-    ldap_user = get_config_parser()['ldap']['username']
-    ldap_pw = get_config_parser()['ldap']['password']
+    ldap_url = get_config_parser()["ldap"]["url"]
+    ldap_user = get_config_parser()["ldap"]["username"]
+    ldap_pw = get_config_parser()["ldap"]["password"]
 else:
     SKIP_LDAP = True
 

@@ -234,7 +234,7 @@ def connect_origins_to_destinations(
                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to
                                               by the `wkid`.
                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new
-                                              feature layer.
+                                              feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
 
@@ -532,7 +532,7 @@ def create_buffers(
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                      .. code-block:: python
 
@@ -780,7 +780,7 @@ def create_drive_time_areas(
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                  .. code-block:: python
 
@@ -846,7 +846,8 @@ def create_drive_time_areas(
                                        overlap_policy='Split',
                                        time_of_day=datetime(2019, 5, 13, 7, 52),
                                        output_name='create_drive_time_areas',
-                                       context={"extent":{"xmin":-11134400.655784884,"ymin":3368261.7800108367,"xmax":-10682810.692676282,"ymax":3630899.409198575,"spatialReference":{"wkid":102100,"latestWkid":3857}}})"""
+                                       context={"extent":{"xmin":-11134400.655784884,"ymin":3368261.7800108367,"xmax":-10682810.692676282,"ymax":3630899.409198575,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
+    """
 
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
@@ -1090,7 +1091,7 @@ def find_nearest(
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                      .. code-block:: python
 
@@ -1466,7 +1467,7 @@ def plan_routes(
 
                                     - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                     - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                         .. code-block:: python
 
