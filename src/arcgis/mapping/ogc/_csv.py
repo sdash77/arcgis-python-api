@@ -207,7 +207,7 @@ class CSVLayer(BaseOpenData):
 
     # ----------------------------------------------------------------------
     @delimiter.setter
-    def delimiter(self, value):
+    def delimiter(self, value: str):
         """
         See main ``delimiter`` property docstring
         """

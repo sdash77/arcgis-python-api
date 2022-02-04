@@ -11,14 +11,14 @@ except:
 
 from arcgis.gis import GIS
 
-if 'oauth' in get_config_parser():
-    base_url = get_config_parser()['oauth']['base_url']
-    client_id = get_config_parser()['oauth']['client_id']
-    client_secret = get_config_parser()['oauth']['client_secret']
-    username = get_config_parser()['oauth']['username']
-    password = get_config_parser()['oauth']['password']
+if "oauth" in get_config_parser():
+    base_url = get_config_parser()["oauth"]["base_url"]
+    client_id = get_config_parser()["oauth"]["client_id"]
+    client_secret = get_config_parser()["oauth"]["client_secret"]
+    username = get_config_parser()["oauth"]["username"]
+    password = get_config_parser()["oauth"]["password"]
     SKIPME = False
-    msg = 'all good'
+    msg = "all good"
 else:
     SKIPME = True
     msg = "Configuration file not found."
@@ -43,7 +43,11 @@ class TestOAuth2Workflow(unittest.TestCase):
         Tests the client/secret workflow
         """
 
-        gis = GIS(url=base_url, client_id=client_id, client_secret=client_secret,)
+        gis = GIS(
+            url=base_url,
+            client_id=client_id,
+            client_secret=client_secret,
+        )
         assert gis.properties["appInfo"]["appOwner"]
 
     def test_client_id_username_pw(self):
@@ -52,7 +56,10 @@ class TestOAuth2Workflow(unittest.TestCase):
         """
 
         gis = GIS(
-            url=base_url, client_id=client_id, username=username, password=password,
+            url=base_url,
+            client_id=client_id,
+            username=username,
+            password=password,
         )
 
         assert gis.properties["appInfo"]["appOwner"]

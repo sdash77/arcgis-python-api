@@ -94,11 +94,11 @@ accuracy_values = {
         "texttranslator": 0,
         "textgenerator": 0,
         "fillmask": 0,
-        "deepsort":0,
-        "mmsegmentation":0,
-        "mmdetection":0,
-        "mlmodel":0,
-        "automl":0
+        "deepsort": 0,
+        "mmsegmentation": 0,
+        "mmdetection": 0,
+        "mlmodel": 0,
+        "automl": 0,
     }
 }
 
@@ -157,13 +157,17 @@ def updateModelStats():
     data.edit_features(adds=[success_stat])
 
 
-
-def CommonTestUsingDF(query, model_type, prepare_tabular_data, regression_parameter,
+def CommonTestUsingDF(
+    query,
+    model_type,
+    prepare_tabular_data,
+    regression_parameter,
     regression_test_score,
     model_name,
     data_path,
     model_test,
-    data_folder_path):
+    data_folder_path,
+):
     from sklearn.preprocessing import MinMaxScaler
     import pandas as pd
     from sklearn.model_selection import train_test_split
@@ -172,28 +176,59 @@ def CommonTestUsingDF(query, model_type, prepare_tabular_data, regression_parame
 
     data_df = pd.read_csv(prepare_tabular_data["path"])
     test_size = 0.10
-    sdf_train_base, sdf_test_base = train_test_split(data_df, test_size = test_size, random_state=42)
+    sdf_train_base, sdf_test_base = train_test_split(
+        data_df, test_size=test_size, random_state=42
+    )
     result = 0.0
 
+    X = [
+        ("county", True),
+        ("state", True),
+        "gender_med",
+        "householdi",
+        "electronic",
+        "raceandhis",
+        ("voter_laws", True),
+        "educationa",
+        "educatio_1",
+    ]
+    preprocessors = [
+        (
+            "county",
+            "state",
+            "gender_med",
+            "householdi",
+            "electronic",
+            "raceandhis",
+            "voter_laws",
+            "educationa",
+            "educatio_1",
+            MinMaxScaler(),
+        )
+    ]
 
-    X =[('county',True), ('state',True),'gender_med', 'householdi', 'electronic', 'raceandhis',
-       ('voter_laws',True), 'educationa', 'educatio_1']
-    preprocessors = [('county', 'state','gender_med', 'householdi', 'electronic', 'raceandhis',
-       'voter_laws', 'educationa', 'educatio_1', MinMaxScaler())]
-    
-    data_base_model = prepare_tabulardata(sdf_train_base,
-                           variable_predict='voter_turn',
-                           explanatory_variables=X, 
-                           preprocessors=preprocessors)
-    
+    data_base_model = prepare_tabulardata(
+        sdf_train_base,
+        variable_predict="voter_turn",
+        explanatory_variables=X,
+        preprocessors=preprocessors,
+    )
 
     if model_name == "mlmodel":
-        model_object = model_type(data_base_model,
-        'sklearn.ensemble.RandomForestRegressor', 
-        n_estimators=500, random_state=43)
+        model_object = model_type(
+            data_base_model,
+            "sklearn.ensemble.RandomForestRegressor",
+            n_estimators=500,
+            random_state=43,
+        )
     else:
-        model_object = model_type(data_base_model, eval_metric='r2',
-        mode='Explain', total_time_limit=300, algorithms=["Linear"])
+        model_object = model_type(
+            data_base_model,
+            eval_metric="r2",
+            mode="Explain",
+            total_time_limit=300,
+            algorithms=["Linear"],
+        )
 
     model_object.fit()
     model_object.save(f"{os.path.join(data_folder_path, data_path, model_test)}")
@@ -208,9 +243,9 @@ def CommonTestUsingDF(query, model_type, prepare_tabular_data, regression_parame
             result = 0.0
 
         accuracy_values["attributes"][model_name] = result
-        assert(
-                result >= regression_test_score
-            ), "Model accuracy is lower than the threshold value. Please check."
+        assert (
+            result >= regression_test_score
+        ), "Model accuracy is lower than the threshold value. Please check."
 
     if model_name == "mlmodel":
         model_object.load(f"{os.path.join(data_folder_path, data_path, model_test)}")
@@ -219,6 +254,7 @@ def CommonTestUsingDF(query, model_type, prepare_tabular_data, regression_parame
     model_object = model_type.from_model(
         os.path.join(data_folder_path, data_path, f"{model_test}/{model_test}.emd")
     )
+
 
 def CommonTestUsingFL(
     query,
@@ -358,7 +394,8 @@ def commonTestCases(
     elif model_test == "mmsegmentation_test" or model_test == "mmdetection_test":
         all_models = model_type.supported_models
         import random
-        random_number = random.randint(0,len(all_models))
+
+        random_number = random.randint(0, len(all_models))
         model_object = model_type(data, model=all_models[random_number])
     else:
         model_object = model_type(data)
@@ -437,8 +474,8 @@ def commonTestCases(
                 result = model_object.compute_precision_recall()["Precision"]
             elif regression_parameter == "precision_recall_score":
                 result = model_object.precision_recall_score()["Change"]["precision"]
-            elif  regression_parameter == "per_class_metrics":
-                result = model_object.per_class_metrics().iloc[0,0]
+            elif regression_parameter == "per_class_metrics":
+                result = model_object.per_class_metrics().iloc[0, 0]
             elif regression_parameter == "r2_score":
                 sdf_forecasted = model_object.predict(
                     train, prediction_type="dataframe", number_of_predictions=test_size
@@ -731,7 +768,11 @@ def update_parameter_ms():
 
 def update_parameter_fl():
     for key, val in data.items():
-        if val["should_test"] and val["test_feature_layer"] and not val["model_name"] in ["automl", "mlmodel"]:
+        if (
+            val["should_test"]
+            and val["test_feature_layer"]
+            and not val["model_name"] in ["automl", "mlmodel"]
+        ):
             parameter_fl.append(
                 [
                     key,
@@ -748,6 +789,7 @@ def update_parameter_fl():
                 ]
             )
     return parameter_fl
+
 
 def update_parameter_df():
     for key, val in data.items():
@@ -766,6 +808,7 @@ def update_parameter_df():
                 ]
             )
     return parameter_df
+
 
 def text_models():
     for key, val in data_inference_only.items():
@@ -833,7 +876,7 @@ class TestTraining(unittest.TestCase):
                 "mmsegmentation",
                 "mmdetection",
                 "automl",
-                "mlmodel"
+                "mlmodel",
             ]:
                 success_stat["attributes"]["others"] = (
                     success_stat["attributes"]["others"] + 1
@@ -958,7 +1001,19 @@ class TestTraining(unittest.TestCase):
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_df, skip_on_empty=True)
-    def test_automl(self,
+    def test_automl(
+        self,
+        query,
+        model_type,
+        prepare_tabular_data,
+        regression_parameter,
+        regression_test_score,
+        model_name,
+        data_path,
+        model_test,
+        data_folder_path,
+    ):
+        CommonTestUsingDF(
             query,
             model_type,
             prepare_tabular_data,
@@ -967,16 +1022,8 @@ class TestTraining(unittest.TestCase):
             model_name,
             data_path,
             model_test,
-            data_folder_path,):
-        CommonTestUsingDF(query,
-            model_type,
-            prepare_tabular_data,
-            regression_parameter,
-            regression_test_score,
-            model_name,
-            data_path,
-            model_test,
-            data_folder_path,)
+            data_folder_path,
+        )
 
     @classmethod
     def tearDownClass(cls):

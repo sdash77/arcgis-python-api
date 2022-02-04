@@ -42,6 +42,18 @@ Indicator
     :members:
     :undoc-members:
 
+IndicatorData
+--------------------------
+.. autoclass:: arcgis.apps.dashboard.IndicatorData
+    :members:
+    :undoc-members:
+
+ReferenceData
+--------------------------
+.. autoclass:: arcgis.apps.dashboard.ReferenceData
+    :members:
+    :undoc-members:
+    
 List
 --------------------------
 .. autoclass:: arcgis.apps.dashboard.List

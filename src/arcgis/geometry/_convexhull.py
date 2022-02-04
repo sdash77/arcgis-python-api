@@ -2,8 +2,10 @@
 Chan's Convex Hull O(n log h)
 https://en.wikipedia.org/wiki/Chan%27s_algorithm
 """
+from __future__ import annotations
 from functools import reduce
 import sys
+from typing import Union
 from scipy.spatial import distance
 
 if sys.version_info.major == 3:
@@ -13,12 +15,16 @@ TURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)
 import math
 
 
-def cmp_to_symbol(val, other_val):
+def cmp_to_symbol(val: int, other_val: int):
     """returns the symbol representing the relationship between two values"""
     return "=><"[(val > other_val) - (val < other_val)]
 
 
-def turn(p, q, r):
+def turn(
+    p: Union[list[int], list[float]],
+    q: Union[list[int], list[float]],
+    r: Union[list[int], list[float]],
+):
     """Returns -1, 0, 1 if p,q,r forms a right, straight, or left turn."""
     a = (q[0] - p[0]) * (r[1] - p[1]) - (r[0] - p[0]) * (q[1] - p[1])
     b = 0
@@ -101,7 +107,7 @@ def _next_hull_pt_pair(hulls, pair):
 # """calculates the euclidean distance"""
 
 
-def convex_hull(pts):
+def convex_hull(pts: Union[list[int], list[float]]):
     """Returns the points on the convex hull of pts in CCW order."""
     for m in (1 << (1 << t) for t in xrange(len(pts))):
         hulls = [_graham_scan(pts[i : i + m]) for i in xrange(0, len(pts), m)]
@@ -114,7 +120,7 @@ def convex_hull(pts):
     return hull
 
 
-def convex_hull_GS(points):
+def convex_hull_GS(points: Union[list[int], list[float]]):
     """
     Returns points on convex hull in CCW order according to Graham's scan algorithm.
     """
