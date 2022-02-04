@@ -2213,21 +2213,23 @@ class Sidecar(object):
         return sidecar_tree
 
     # ----------------------------------------------------------------------
+    # Can we create an alias name called: change_media
     def edit(
         self,
         content: Union[Image, Video, Map, Embed],
         slide_number: int,
     ):
         """
-        Edit method can be used to edit the type of media in a slide of the Sidecar. 
-        This is done by specifying the slide number and the media content to be added. 
+        Edit method can be used to edit the type of media in a slide of the Sidecar.
+        This is done by specifying the slide number and the media content to be added.
         The media can only be of type: Image, Video, Map, or Embed.
 
         .. note::
             This method should not be used to edit the narrative panel of the Sidecar. To better edit both
-            the media and the narrative panel, it is recommended to use the :func:`~Sidecar.get` method 
+            the media and the narrative panel, it is recommended to use the :func:`~Sidecar.get` method
             in the Sidecar class. The `get` method can be used to change media if the content is of the same
-            type as what is currently present.
+            type as what is currently present and preserve the node_id.
+
 
         ==================      =======================================================================
         **Argument**            **Description**
@@ -2258,7 +2260,7 @@ class Sidecar(object):
             # OPTION 2 (only applicable if content is of same type as existing)
             im2 = sc.get(im.node_id)
             im2.image = <img_url_or_path>
-            
+
         """
         # Find media child
         slide = self.properties[slide_number]

@@ -1197,6 +1197,7 @@ class StoryMap(object):
         except:
             # Resource cannot be found. Should not throw error
             return True
+
     # ----------------------------------------------------------------------
     def _assign_node_class(self, node_id):
         # Find the node type to assign to correct class
