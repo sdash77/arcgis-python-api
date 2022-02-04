@@ -47,7 +47,7 @@ if conda_install_mode:
     dependencies = []
 else:
     dependencies = [
-        "urllib3 >=1.25.10,<1.26.0",
+        "urllib3",
         "cachetools",
         "six",
         "lxml",
@@ -65,7 +65,7 @@ else:
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
-        "requests",
+        "requests >=1.27.1",
         "requests-oauthlib",
         "requests_toolbelt",
         "requests_ntlm",
