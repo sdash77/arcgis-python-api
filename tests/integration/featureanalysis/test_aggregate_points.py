@@ -1,11 +1,12 @@
 import sys
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7042\src")
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+import datetime
 import unittest
 import pandas as pd
-import datetime as _dt
-from arcgis.gis import GIS
-from arcgis.features import analyze_patterns
+from arcgis.gis import GIS, Item
+from arcgis.features import FeatureLayer
+from arcgis.features.analysis import aggregate_points
 from arcgis.gis import ProfileManager
 
 profile_list = ProfileManager().list()
@@ -17,7 +18,6 @@ if not "ent11" in profile_list:
         password="esri.agp",
         profile="ent11",
     )  # create enterprise 11 connection
-
 
 data = [
     {
@@ -1798,29 +1798,70 @@ data = [
     },
 ]
 
+# download shapefile and upload to respective portal if not already present
+polygon_data = "https://earthworks.stanford.edu/catalog/stanford-dc841dq9031"
 
-class TestReplaceSpacesInFeatureAnalysis(unittest.TestCase):
-    def test_removing_spaces_logic(self):
-        """tests that any space in the output name is replaced with an _"""
-        d = _dt.datetime.now()
-        output_name = "This has Spaces %s" % d.microsecond
-        result = None
-        sdf = pd.DataFrame(data)
-        sdf.spatial.set_geometry("SHAPE")
-        gis = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
-        try:
-            result = analyze_patterns.find_point_clusters(
-                sdf, min_features_cluster=2, output_name=output_name
+
+profiles = ["your_online_profile", "ent11"]  # enterprise must be 10.9.1+
+
+
+class TestAggregatePoints(unittest.TestCase):
+    def test_overwrite(self):
+        """tests overwriting an Item layer using the context param"""
+        for profile in profiles:
+            # establish gis connection
+            gis = GIS(profile=profile, verify_cert=False)
+            print("User: ", gis.users.me.username)
+            # add point layer to portal
+            sdf = pd.DataFrame(data)
+            fs = gis.content.import_data(sdf)
+            # gather layers
+            point_item = gis.content.get(fs.id)
+            if gis._is_agol:
+                polygon_item = gis.content.get("1ac6896bcafc4dccb29c70f45c442b00")
+            else:
+                polygon_item = gis.content.get("070c78e3d52e4b97aa2d36a5fb9845fe")
+            assert isinstance(point_item, Item)
+            assert isinstance(polygon_item, Item)
+            point_layer = point_item.layers[0]
+            polygon_layer = polygon_item.layers[0]
+            assert isinstance(point_layer, FeatureLayer)
+            assert isinstance(polygon_layer, FeatureLayer)
+
+            # create layer that will be overwritten
+            test_id = str(datetime.datetime.now().microsecond)
+            output_name = "overwrite_test_agg_" + test_id
+            target_item = aggregate_points(
+                point_layer=point_layer,
+                polygon_layer=polygon_layer,
+                keep_boundaries_with_no_points=False,
+                group_by_field="TYPE",
+                output_name=output_name,
             )
-            assert result.title == output_name
-        except Exception as e:
-            print(e)
-            raise e
+            assert isinstance(target_item, Item)
+            target_layer = target_item.layers[0]
+            new_polygon_layer = polygon_item.layers[0]
+            assert isinstance(target_layer, FeatureLayer)
+            assert isinstance(new_polygon_layer, FeatureLayer)
 
-        finally:
-            if result:
-                result.delete()
-            del gis, sdf
+            # perform overwrite
+            overwrite = aggregate_points(
+                point_layer=point_layer,
+                polygon_layer=new_polygon_layer,
+                keep_boundaries_with_no_points=False,
+                group_by_field="TYPE",  # creates a table that will also be overwritten
+                output_name=target_layer,
+                context={"overwrite": True},
+            )
+            assert isinstance(overwrite, Item)
+            assert target_item.id == overwrite.id
+            # overwrite should not append. Only one layer and one table should be present
+            assert len(target_item.layers) == 1
+            assert len(target_item.tables) == 1
+
+            # delete items that were added for test purpose
+            assert target_item.delete()
+            assert fs.delete()
 
 
 if __name__ == "__main__":

@@ -842,7 +842,7 @@ def join_features(
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     join_layer                                                                                      Required layer. The point, line, polygon or table layer that will be joined to the ``target_layer``. See :ref:`Feature Input<FeatureInput>`.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
-    spatial_relationship                                                                            Required string. Defines the spatial relationship used to spatially join features.
+    spatial_relationship                                                                            Required string if not table layers. Defines the spatial relationship used to spatially join features.
 
                                                                                                     Choice list: ['identicalto', 'intersects', 'completelycontains', 'completelywithin', 'withindistance']
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
