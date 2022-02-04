@@ -2261,20 +2261,17 @@ class Sidecar(object):
             
         """
         # Find media child
-        slide = self._slides[slide_number - 1]
-        slide_node = self._story._properties["nodes"][slide]
-        media_item = None
-        if len(slide_node["children"]) == 2:
-            media_item = slide_node["children"][1]
+        slide = self.properties[slide_number]
+        slide_node = list(slide.keys())[0]
+        media_node = list(slide[slide_node]["media"].values())[0]
 
         # Check to see if content has been added to node properties
         if content.node not in self._story._properties["nodes"]:
             self._add_item_story(content)
 
-        if media_item:
-            self._story._delete(media_item)
-            self._story._properties["nodes"][slide]["children"].pop(1)
-        self._story._properties["nodes"][slide]["children"].insert(1, content.node)
+        if media_node:
+            self._story._delete(media_node)
+        self._story._properties["nodes"][slide_node]["children"].insert(1, content.node)
 
     # ----------------------------------------------------------------------
     def get(self, node_id: str):

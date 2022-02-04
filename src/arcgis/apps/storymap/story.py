@@ -1189,11 +1189,14 @@ class StoryMap(object):
         """
         See :class:`~arcgis.gis.ResourceManager`
         """
-        resource_manager = arcgis.gis.ResourceManager(self._item, self._gis)
-        resp = resource_manager.remove(file=file)
-        self._resources = self._item.resources.list()
-        return resp
-
+        try:
+            resource_manager = arcgis.gis.ResourceManager(self._item, self._gis)
+            resp = resource_manager.remove(file=file)
+            self._resources = self._item.resources.list()
+            return resp
+        except:
+            # Resource cannot be found. Should not throw error
+            return True
     # ----------------------------------------------------------------------
     def _assign_node_class(self, node_id):
         # Find the node type to assign to correct class
