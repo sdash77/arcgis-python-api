@@ -465,10 +465,11 @@ class StoryMap(object):
 
         # set the cover image
         if image is not None:
-            if image.node not in self._properties["nodes"]:
-                # must be added to story resources
-                image._add_image(story=self)
-            self._properties["nodes"][story_cover_node]["children"] = [image.node]
+            if isinstance(image, Content.Image):
+                if image.node not in self._properties["nodes"]:
+                    # must be added to story resources
+                    image._add_image(story=self)
+                self._properties["nodes"][story_cover_node]["children"] = [image.node]
         else:
             # get original image
             if "children" in self._properties["nodes"][story_cover_node]:
