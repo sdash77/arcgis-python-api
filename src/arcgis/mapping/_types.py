@@ -5115,9 +5115,7 @@ class MapImageLayer(arcgis.gis.Layer):
         self._populate_layers()
         self._admin = None
         try:
-            from arcgis.gis.server._service._adminfactory import (
-                AdminServiceGen,
-            )
+            from arcgis.gis.server._service._adminfactory import AdminServiceGen
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:

@@ -517,9 +517,10 @@ def compute_ap_score(tps, p_scores, clas, n_gts, n_classes):
     tps, fps, clas = tps[idx], fps[idx], clas[idx]
     aps = []
     for cls in range(1, n_classes + 1):
-        tps_cls, fps_cls = tps[clas == cls].float().cumsum(0), fps[
-            clas == cls
-        ].float().cumsum(0)
+        tps_cls, fps_cls = (
+            tps[clas == cls].float().cumsum(0),
+            fps[clas == cls].float().cumsum(0),
+        )
         if tps_cls.numel() != 0 and tps_cls[-1] != 0:
             precision = tps_cls / (tps_cls + fps_cls + 1e-8)
             recall = tps_cls / (n_gts[cls - 1] + 1e-8)

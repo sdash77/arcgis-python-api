@@ -73,7 +73,9 @@ class VersionManager(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    def create(self, name: str, permission: str = "public", description: str = ""):
+    def create(
+        self, name: str, permission: str = "public", description: str = ""
+    ) -> dict:
         """
         Create the named version off of DEFAULT. The version is associated
         with the specified feature service. During creation, the description
@@ -93,7 +95,7 @@ class VersionManager(object):
         ===============     ====================================================================
 
 
-        :return: Boolean. True if successful else False.
+        :return: Dictionary with Version Information
 
         """
         params = {
@@ -106,7 +108,7 @@ class VersionManager(object):
         res = self._con.post(url, params)
         self._versions = None
         if "success" in res:
-            return res["success"]
+            return res
         else:
             return res
 
