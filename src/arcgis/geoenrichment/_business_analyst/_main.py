@@ -96,7 +96,6 @@ class AOI(object):
 
     def _enrich_variables_gis(self):
         """GIS implementation of enrich_variables property."""
-
         # if the AOI has an iso3 property, then is a Country, and should be added as part of the request
         iso3 = self.__dict__["iso3"] if hasattr(self, "iso3") else None
 
@@ -370,7 +369,7 @@ class Country(AOI):
             )
 
             # ensure analysis uses correct data source
-            self._set_local_ba_analysis_sources(properties)
+            self._set_local_ba_analysis_source(properties)
 
         # convert the properties to a namedtuple and set as property of object
         self.properties = namedtuple("properties", properties.index)(*properties)
@@ -399,7 +398,7 @@ class Country(AOI):
         return src_pth
 
     @staticmethod
-    def _set_local_ba_analysis_sources(properties) -> None:
+    def _set_local_ba_analysis_source(properties) -> None:
         """Ensure analysis uses the correct data source."""
         import arcpy
 
@@ -408,6 +407,9 @@ class Country(AOI):
 
     def _enrich_variables_local(self) -> pd.DataFrame:
         """Local implementation of enrich_variables property and only available by iso3 currently."""
+        # ensure using correct data sources
+        self._set_local_ba_analysis_source(self.properties)
+
         # lazy load
         from arcpy._ba import ListVariables
 
@@ -447,7 +449,7 @@ class Country(AOI):
         import arcpy
 
         # ensure using correct data sources
-        self._set_local_ba_analysis_sources(self.properties)
+        self._set_local_ba_analysis_source(self.properties)
 
         # get a dataframe of level properties for the country
         geo_lvl_df = pd.DataFrame.from_records(
@@ -546,6 +548,9 @@ class Country(AOI):
 
     def _travel_modes_local(self):
         """Local implementation of travel modes."""
+        # ensure using correct data sources
+        self._set_local_ba_analysis_source(self.properties)
+
         # get a list of useful information about each travel mode
         mode_lst = [
             [
@@ -614,6 +619,9 @@ class Country(AOI):
         **kwargs,
     ) -> pd.DataFrame:
         """Local enrich method implementation."""
+        # ensure using correct data sources
+        self._set_local_ba_analysis_source(self.properties)
+
         enrich_res = self._ba.enrich(
             geographies=geographies,
             enrich_variables=enrich_variables,
