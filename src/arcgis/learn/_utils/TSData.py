@@ -238,9 +238,10 @@ class TSPreProcessor(PreProcessor):
         self.ds = ds
 
     def process(self, ds: ItemList):
-        ds.features, ds.seq_len = self.ds.get(0).data.size(-2), self.ds.get(
-            0
-        ).data.size(-1)
+        ds.features, ds.seq_len = (
+            self.ds.get(0).data.size(-2),
+            self.ds.get(0).data.size(-1),
+        )
         ds.f = ds.features
         ds.s = ds.seq_len
 
