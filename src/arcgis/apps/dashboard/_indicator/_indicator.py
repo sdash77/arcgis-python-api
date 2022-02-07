@@ -350,11 +350,11 @@ class IndicatorData(object):
 
     def add_filter(self, field, join, condition, **kwargs):
         """
-        Add filters associated with widget. The filters are applied to the 
-        layer used    in the initialization of the Indicator widget. Please 
+        Add filters associated with widget. The filters are applied to the
+        layer used    in the initialization of the Indicator widget. Please
         see `Filter data <https://doc.arcgis.com/en/dashboards/get-started/filter-data.htm>`_
         for detailed description of how filtering works with dashboard elements.
-        
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
@@ -364,17 +364,17 @@ class IndicatorData(object):
         join                Specify `AND` or `OR` to indicate whether there
                             will be one or multiple filter conditions.
         ---------------     ----------------------------------------------------
-        condition           The operator used to evaluate the attributes and 
-                            return the subset of results. The operators 
-                            available change depending upon the type of the 
-                            attribute field. See 
+        condition           The operator used to evaluate the attributes and
+                            return the subset of results. The operators
+                            available change depending upon the type of the
+                            attribute field. See
                             `Filter condition components <https://doc.arcgis.com/en/dashboards/get-started/filter-data.htm>`_
-                            for details on what conditions apply to an 
+                            for details on what conditions apply to an
                             attribute field based on its contents.
         ===============     ====================================================
-        
-        In addition to explicitly named parameters, 
-        the :meth:`~arcgis.apps.dashboard.IndicatorData.add_filter` method supports an 
+
+        In addition to explicitly named parameters,
+        the :meth:`~arcgis.apps.dashboard.IndicatorData.add_filter` method supports an
         optional key word argument when the condition is `equal`, `not  equal`
         `greater than`, `greater than or equal`, `less than`, or
         `less than or equal`
@@ -385,9 +385,9 @@ class IndicatorData(object):
         value               The specific value or values to use to determine
                             which subset of layer or table rows to include.
         ================    ====================================================
-        
+
         .. code-block:: python
-        
+
             # Usage Example
             >>> indicator1 = Indicator(item=flyr_item)
             # Set attribute field to use for default statistic of `count`
@@ -397,12 +397,12 @@ class IndicatorData(object):
                                            join="AND",
                                            condition="greater than",
                                            value=1500)
-            
+
             >>> new_dash = Dashboard()
             # Set the dashboard layour to include the widget
             >>> new_dash.layout = add_row([indicator1])
             >>> saved_dash = new_dash.save(title="Dashboard with Indicator",
-                                            description="Dashboard with indicator widget based 
+                                            description="Dashboard with indicator widget based
                                                          "on a hosted feature layer with one"
                                                          "layer",
                                             summary="Single layer indicator created in API.",

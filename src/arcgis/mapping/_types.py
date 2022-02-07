@@ -1771,6 +1771,81 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
+        value                  Required list of dictionaries. The new bookmarks to be used.
+                               This will replace current bookmarks with the ones passed into the list.
+        ==================     ====================================================================
+
+        :return: Bookmarks in the WebMap item.
+
+        .. code-block:: python
+            from arcgis.mapping import WebMap
+            from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            gis = GIS(url, username, password)
+            wm_item = gis.content.get('1234abcd_web map item id')
+
+            # create a WebMap object from the existing web map item
+            wm = WebMap(wm_item)
+
+            # get current bookmarks
+            my_bookmarks = wm.bookmarks
+
+            # create new bookmarks to replace others
+            bookmark1 = {'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                        'xmin': -8425179.029160742,
+                        'ymin': 4189089.021381017,
+                        'xmax': -8409834.295732513,
+                        'ymax': 4203784.040068822},
+                        'name': 'Updated Bookmark 1',
+                        'thumbnail': {'url': <url for thumbnail>},
+                        'viewpoint': {'rotation': 30,
+                        'scale': 7222.3819286,
+                        'targetGeometry': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                        'xmin': -8425179.029160742,
+                        'ymin': 4189089.021381017,
+                        'xmax': -8409834.295732513,
+                        'ymax': 4203784.040068822}}}
+            bookmark2 = {'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                        'xmin': -83200.034567,
+                        'ymin': 3127089.021381017,
+                        'xmax': -813434.295732513,
+                        'ymax': 4203784.040068822},
+                        'name': 'Updated Bookmark 2',
+                        'thumbnail': {'url': <url for thumbnail>},
+                        'viewpoint': {'rotation': 30,
+                        'scale': 7222.3819286,
+                        'targetGeometry': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                        'xmin': -8425179.029160742,
+                        'ymin': 4189089.021381017,
+                        'xmax': -8409834.295732513,
+                        'ymax': 4203784.040068822}}}
+
+            # set new bookmark
+            wm.bookmarks = [bookmark1, bookmark2]
+
+        """
+        if "bookmarks" not in self._webmapdict:
+            self._webmapdict["bookmarks"] = []
+        return self._webmapdict["bookmarks"]
+
+    @bookmarks.setter
+    def bookmarks(self, value: list):
+        """
+        See main ``bookmarks`` property docstring.
+        """
+        if isinstance(value, list):
+            self.definition.bookmarks = value
+            self._webmapdict["bookmarks"] = value
+
+    @property
+    def view_bookmarks(self):
+        """
+        Get/Set whether bookmarks are enabled for the dashboard widget.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
@@ -1778,10 +1853,10 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
         return self._bookmarks
 
-    @bookmarks.setter
-    def bookmarks(self, value: bool):
+    @view_bookmarks.setter
+    def view_bookmarks(self, value):
         """
-        See main ``bookmarks`` property docstring.
+        See main ``view_bookmarks`` property docstring.
         """
         self._bookmarks = value
         if value in [0, "0", False, "false"]:
