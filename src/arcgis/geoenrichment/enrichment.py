@@ -1192,7 +1192,7 @@ def _enrich_gis(
         with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
             for idx, chunk in enumerate(_chunks(l=areas, n=100)):
                 f = executor.submit(
-                    fn=ge.enrich,
+                    ge.enrich,
                     **{
                         "study_areas": chunk.copy(),
                         "data_collections": data_collections,
