@@ -2056,7 +2056,9 @@ def prepare_data(
             if images_df is not None:
                 src = ObjectDetectionItemList.from_df(images_df, "images")
                 src.items = images_df[images_df.columns[0]].values
-                src = src.split_by_rand_pct(val_split_pct, seed=seed).label_from_func(get_y_func)
+                src = src.split_by_rand_pct(val_split_pct, seed=seed).label_from_func(
+                    get_y_func
+                )
             else:
                 # MultiFolder Training
                 imageslist = []

@@ -44,7 +44,7 @@ pushing upstream.
 
 Use the following steps to maintain an updated working branch. Make sure
 you have activated the `geosaurus_dev_env` so you have access to
-the `sphinx` software and `sphinx-rtd-theme` used the API for Python 
+the `sphinx` software and `sphinx-rtd-theme` used by the API for Python 
 api reference:
 ```bash
 conda activate geosaurus_dev_env
@@ -80,7 +80,7 @@ git merge upstream/master
 ```git
 git checkout new-working-branch
 ```
-6. Edit the docstrings you intend to change and save them.
+6. Edit the docstrings you intend to change and save them
 7. Add the changes to your branch
 ```git
 git add paths_to_files_if_necessary
@@ -113,7 +113,7 @@ proper rendering. If something has gone wrong, you will be working with
 a smaller amount of changes to debug.
 
 3.  The search command on your IDE is integral to finding the right methods 
-and properties in the source code to verify how and wher they render in the 
+and properties in the source code to verify how and where they render in the 
 live document at `https://developers.arcgis.com/python/api-reference`.
 
 4.  When dealing with properties, there are often two similar entries
@@ -313,7 +313,7 @@ yet.
 
            ![xref meth output](./source/_static/images/api_ref_style_guide/meth_output.png)
 
-       * Leaving off the \~ directly following the second colon in the directive syntax renders the entire path rather than just the last component.
+       * Leaving off the \~ directly following the first \` \(backtick\) in the directive syntax renders the entire path rather than just the last component.
 
 6.  **Tables**
   * Tables are helpful for organizing explanations of parameters for functions and class initialization. Sphinx uses `rST` formatting in Python docstrings for creating tables. There are 2 formats for creating [tables](https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#tables), [Grid Tables](https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#grid-tables]) and [Simple Tables](https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#simple-tables). Given the cumbersome nature of creating grid tables, the ArcGIS API for Python API Reference employs the simple table structure in docstrings.
@@ -321,7 +321,7 @@ yet.
     * Basic instructions
       * To create the top and bottom horizontal borders of a table, use “=” character. 
       * To delimit rows of the table, use the “-“ (hyphen-minus) character.
-      * To designate the start of a new column, use one or more blank spaces. Two or more spaces are recommended. The Python API Reference docstrings typically use 4 or 5 spaces between column boundaries. There MUST be at least 2 two columns in a table.
+      * To designate the start of a new column, use one or more blank spaces. Two or more spaces are recommended. The Python API Reference docstrings typically use 4 or 5 spaces between column boundaries. There **MUST** be at least 2 two columns in a table.
       * The column spacing **MUST** align throughout the whole table or the table will not render. (See red rectangle below.)
       * **ALL** text **SHOULD** align exactly with the column boundaries. Although the rightmost column is unbounded so if text
       bleeds beyond the boundary the table will still render, it is strongly encouraged to start a new line if text will bleed. (See green rectangle below.)

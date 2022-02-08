@@ -78,7 +78,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)
@@ -212,7 +212,7 @@ class Connection(object):
         if self._is_hosted_nb_home:
             auth_check = [""]
         elif self._key_file is None and self._cert_file is None:
-            auth_check = self._auth_check(baseurl)
+            auth_check = self._auth_check(baseurl, proxies=self._assemble_proxy())
         else:
             auth_check = [""]
         if self._is_hosted_nb_home:
@@ -311,7 +311,7 @@ class Connection(object):
         return urlparse(url)
 
     # ----------------------------------------------------------------------
-    def _auth_check(self, url):
+    def _auth_check(self, url, proxies=None):
         import requests
 
         if str(url).lower() == "pro":
@@ -341,7 +341,7 @@ class Connection(object):
                 s.auth = self._custom_auth
             parsed = self._parsed(url)
             root = (
-                fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+                rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             )
             params = {"f": "json"}
             results = []
@@ -352,6 +352,7 @@ class Connection(object):
                         root + pt,
                         params=params,
                         verify=self._verify_cert,
+                        proxies=proxies,
                     ).headers.get("www-authenticate", "")
                     results.append(www_auth)
                 except:
@@ -390,10 +391,10 @@ class Connection(object):
         return url
 
     # ----------------------------------------------------------------------
-    def _create_session(self):
+    def _assemble_proxy(self):
         if self._proxy and isinstance(self._proxy, dict):
-            proxies = self._proxy
-        if self._proxy_port and self._proxy_url:
+            return self._proxy
+        elif self._proxy_port and self._proxy_url:
             url = "%s:%s" % (self._proxy_url, self._proxy_port)
             if self._proxy_password and self._proxy_username:
                 proxies = {
@@ -404,6 +405,26 @@ class Connection(object):
                 }
             else:
                 proxies = {"http": "http://%s" % url, "https": "https://%s" % url}
+            return proxies
+        return
+
+    # ----------------------------------------------------------------------
+    def _create_session(self):
+        if self._proxy and isinstance(self._proxy, dict):
+            proxies = self._proxy
+            self._proxy = proxies
+        elif self._proxy_port and self._proxy_url:
+            url = "%s:%s" % (self._proxy_url, self._proxy_port)
+            if self._proxy_password and self._proxy_username:
+                proxies = {
+                    "http": "http://%s:%s@%s"
+                    % (self._proxy_username, self._proxy_password, url),
+                    "https": "https://%s:%s@%s"
+                    % (self._proxy_username, self._proxy_password, url),
+                }
+            else:
+                proxies = {"http": "http://%s" % url, "https": "https://%s" % url}
+            self._proxy = proxies
         else:
             proxies = None
 
@@ -422,7 +443,9 @@ class Connection(object):
         else:
             cert = None
 
-        self._session = EsriSession(cert=cert, verify_cert=self._verify_cert)
+        self._session = EsriSession(
+            cert=cert, verify_cert=self._verify_cert, proxies=proxies
+        )
         self._session.verify = self._verify_cert
         self._session.stream = True
         self._session.trust_env = self.trust_env
@@ -504,6 +527,7 @@ class Connection(object):
                     time_out=self._timeout,
                     verify_cert=self._verify_cert,
                     legacy=self.legacy,
+                    proxies=proxies,
                 )
             else:
                 if self._use_gen_token:
@@ -516,6 +540,7 @@ class Connection(object):
                         time_out=1440,
                         verify_cert=self._verify_cert,
                         legacy=self.legacy,
+                        proxies=proxies,
                     )
                 else:
                     self._session.auth = EsriBuiltInAuth(
@@ -526,6 +551,7 @@ class Connection(object):
                         legacy=False,
                         verify_cert=self._verify_cert,
                         referer=self._referer,
+                        proxies=proxies,
                     )
         elif self._auth.lower() == "user_token":
             self._session.auth = EsriUserTokenAuth(
@@ -548,6 +574,7 @@ class Connection(object):
                 password=self._password,
                 verify_cert=self._verify_cert,
                 legacy=False,
+                proxies=self._proxy,
             )
         elif self._auth.lower() == "pro":
 
@@ -561,14 +588,16 @@ class Connection(object):
             if HAS_SSPI:
                 try:
                     self._session.auth = EsriWindowsAuth(
-                        verify_cert=self._verify_cert, legacy=False
+                        verify_cert=self._verify_cert,
+                        legacy=False,
+                        proxies=self._proxy,
                     )
                 except:
                     ...
             elif HAS_KERBEROS:
                 try:
                     self._session.auth = EsriKerberosAuth(
-                        verify_cert=self._verify_cert, legacy=False
+                        verify_cert=self._verify_cert, legacy=False, proxies=self._proxy
                     )
                 except:
                     ...
@@ -1671,7 +1700,7 @@ class Connection(object):
             # Brute Force Method
             parsed = urlparse(baseurl)
             root = (
-                fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+                rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             )
             parts = ["/info", "/rest/services", "/rest/info", "/sharing/rest/info"]
             params = {"f": "json"}

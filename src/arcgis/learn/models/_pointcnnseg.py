@@ -394,6 +394,11 @@ class PointCNN(ArcGISModel):
             class_data["Color"] = np.array(color).astype(int).tolist()
             _emd_template["Classes"].append(class_data.copy())
 
+        if hasattr(self.learn.data, "statistics") and self.learn.data.statistics.get(
+            "blockShape", False
+        ):
+            _emd_template["blockShape"] = self.learn.data.statistics.get("blockShape")
+
         return _emd_template
 
     def show_results(self, rows=2, **kwargs):

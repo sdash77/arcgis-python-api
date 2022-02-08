@@ -171,6 +171,13 @@ MMSegmentation
     :inherited-members:
     :undoc-members:
 
+MaXDeepLab
+^^^^^^^^^^
+.. autoclass:: arcgis.learn.MaXDeepLab
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Image Translation Models
 ------------------------
 CycleGAN

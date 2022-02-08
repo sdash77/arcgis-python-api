@@ -5,17 +5,21 @@ Users create, import, export, analyze, edit, and visualize features, i.e. entiti
 
 A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 """
+from __future__ import annotations
+from datetime import datetime
 import json
 import os
-from re import search
+from re import S, search
+import six
 import time
 import concurrent.futures
-import six
+from typing import Any, Optional, Union
 from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import (
     StatisticFilter,
-    TimeFilter,
     GeometryFilter,
+    TimeFilter,
+    LayerDefinitionFilter,
 )
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
@@ -28,9 +32,8 @@ from .managers import (
     FeatureLayerManager,
 )
 from .feature import Feature, FeatureSet
-from arcgis.geometry import SpatialReference
-from arcgis.gis import Layer, _GISResource
-from typing import Dict, Any
+from arcgis.gis import Item, Layer, _GISResource
+from arcgis.geometry import Geometry, SpatialReference
 
 
 class FeatureLayer(Layer):
@@ -97,7 +100,7 @@ class FeatureLayer(Layer):
         return self._time_filter
 
     @time_filter.setter
-    def time_filter(self, value):
+    def time_filter(self, value: Optional[Union[datetime, list[datetime]]]):
         """
         See main ``time_filter`` property docstring
         """
@@ -150,7 +153,7 @@ class FeatureLayer(Layer):
         return self._renderer
 
     @renderer.setter
-    def renderer(self, value):
+    def renderer(self, value: Optional[dict]):
         """
         See main ``renderer`` property docstring
         """
@@ -166,7 +169,7 @@ class FeatureLayer(Layer):
             self._renderer = value
 
     @classmethod
-    def fromitem(cls, item, layer_id=0):
+    def fromitem(cls, item: Item, layer_id: int = 0):
         """
         The ``fromitem`` method creates a :class:`~arcgis.features.FeatureLayer` from an :class:`~arcgis.gis.Item`
         object.
@@ -210,7 +213,7 @@ class FeatureLayer(Layer):
         updating its definition.
 
         :return:
-            A :class:`~arcgis.feature.FeatureLayerManager`
+            A :class:`~arcgis.features.managers.FeatureLayerManager`
 
         .. code-block:: python
 
@@ -272,7 +275,7 @@ class FeatureLayer(Layer):
         )
 
     # ----------------------------------------------------------------------
-    def update_metadata(self, file_path):
+    def update_metadata(self, file_path: str):
         """
         The ``update_metadata`` updates a :class:`~arcgis.features.FeatureLayer` metadata from an xml file.
 
@@ -344,13 +347,13 @@ class FeatureLayer(Layer):
         return self._storage
 
     @container.setter
-    def container(self, value):
+    def container(self, value: Optional[FeatureLayerCollection]):
         """
         See main ``container`` property docstring
         """
         self._storage = value
 
-    def export_attachments(self, output_folder, label_field=None):
+    def export_attachments(self, output_folder: str, label_field: Optional[str] = None):
         """
         Exports attachments from the :class:`~arcgis.features.FeatureLayer` in Imagenet
         format using the ``output_label_field``.
@@ -441,7 +444,7 @@ class FeatureLayer(Layer):
         file.close()
 
     # ----------------------------------------------------------------------
-    def generate_renderer(self, definition, where=None):
+    def generate_renderer(self, definition: dict, where: Optional[str] = None):
         """
         Groups data using the supplied definition (classification definition) and an optional where clause. The
         result is a renderer object.
@@ -616,7 +619,7 @@ class FeatureLayer(Layer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def get_unique_values(self, attribute, query_string="1=1"):
+    def get_unique_values(self, attribute: str, query_string: str = "1=1"):
         """
         Retrieves a list of unique values for a given attribute in the
         :class:`~arcgis.features.FeatureLayer`.
@@ -662,25 +665,25 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def query_top_features(
         self,
-        top_filter=None,
-        where=None,
-        objectids=None,
-        start_time=None,
-        end_time=None,
-        geometry_filter=None,
-        out_fields="*",
-        return_geometry=True,
-        return_centroid=False,
-        max_allowable_offset=None,
-        out_sr=None,
-        geometry_precision=None,
-        return_ids_only=False,
-        return_extents_only=False,
-        order_by_field=None,
-        return_z=False,
-        return_m=False,
-        result_type=None,
-        as_df=True,
+        top_filter: Optional[dict[str, str]] = None,
+        where: Optional[str] = None,
+        objectids: Optional[list[str]] = None,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+        geometry_filter: Optional[GeometryFilter] = None,
+        out_fields: str = "*",
+        return_geometry: bool = True,
+        return_centroid: bool = False,
+        max_allowable_offset: Optional[float] = None,
+        out_sr: Optional[Union[str, dict[str, int]]] = None,
+        geometry_precision: Optional[int] = None,
+        return_ids_only: bool = False,
+        return_extents_only: bool = False,
+        order_by_field: Optional[str] = None,
+        return_z: bool = False,
+        return_m: bool = False,
+        result_type: Optional[str] = None,
+        as_df: bool = True,
     ):
         """
         The ``query_top_features`` is performed on a :class:`~arcgis.features.FeatureLayer`. This operation returns a
@@ -1042,21 +1045,21 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def query_analytics(
         self,
-        out_analytics,  #
-        where="1=1",  #
-        out_fields="*",  #
-        analytic_where=None,  #
-        geometry_filter=None,  #
-        out_sr=None,  #
-        return_geometry=True,
-        order_by=None,
-        result_type=None,
-        cache_hint=None,
-        result_offset=None,
-        result_record_count=None,
-        quantization_param=None,
-        sql_format=None,
-        future=True,
+        out_analytics: list[dict],  #
+        where: str = "1=1",  #
+        out_fields: Union[str, list[str]] = "*",  #
+        analytic_where: Optional[str] = None,  #
+        geometry_filter: Optional[GeometryFilter] = None,  #
+        out_sr: Optional[Union[dict[str, int], str]] = None,  #
+        return_geometry: bool = True,
+        order_by: Optional[str] = None,
+        result_type: Optional[str] = None,
+        cache_hint: Optional[str] = None,
+        result_offset: Optional[int] = None,
+        result_record_count: Optional[int] = None,
+        quantization_param: Optional[dict[str, Any]] = None,
+        sql_format: Optional[str] = None,
+        future: bool = True,
         **kwargs,
     ):
         """
@@ -1323,41 +1326,41 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def query(
         self,
-        where="1=1",
-        out_fields="*",
-        time_filter=None,
-        geometry_filter=None,
-        return_geometry=True,
-        return_count_only=False,
-        return_ids_only=False,
-        return_distinct_values=False,
-        return_extent_only=False,
-        group_by_fields_for_statistics=None,
-        statistic_filter=None,
-        result_offset=None,
-        result_record_count=None,
-        object_ids=None,
-        distance=None,
-        units=None,
-        max_allowable_offset=None,
-        out_sr=None,
-        geometry_precision=None,
-        gdb_version=None,
-        order_by_fields=None,
-        out_statistics=None,
-        return_z=False,
-        return_m=False,
-        multipatch_option=None,
-        quantization_parameters=None,
-        return_centroid=False,
-        return_all_records=True,
-        result_type=None,
-        historic_moment=None,
-        sql_format=None,
-        return_true_curves=False,
-        return_exceeded_limit_features=None,
-        as_df=False,
-        datum_transformation=None,
+        where: str = "1=1",
+        out_fields: Union[str, list[str]] = "*",
+        time_filter: Optional[list[datetime]] = None,
+        geometry_filter: Optional[GeometryFilter] = None,
+        return_geometry: bool = True,
+        return_count_only: bool = False,
+        return_ids_only: bool = False,
+        return_distinct_values: bool = False,
+        return_extent_only: bool = False,
+        group_by_fields_for_statistics: Optional[str] = None,
+        statistic_filter: Optional[StatisticFilter] = None,
+        result_offset: Optional[int] = None,
+        result_record_count: Optional[int] = None,
+        object_ids: Optional[list[str]] = None,
+        distance: Optional[int] = None,
+        units: Optional[str] = None,
+        max_allowable_offset: Optional[int] = None,
+        out_sr: Optional[Union[dict[str, int], str]] = None,
+        geometry_precision: Optional[int] = None,
+        gdb_version: Optional[str] = None,
+        order_by_fields: Optional[str] = None,
+        out_statistics: Optional[list[dict[str, Any]]] = None,
+        return_z: bool = False,
+        return_m: bool = False,
+        multipatch_option: tuple = None,
+        quantization_parameters: Optional[dict[str, Any]] = None,
+        return_centroid: bool = False,
+        return_all_records: bool = True,
+        result_type: Optional[str] = None,
+        historic_moment: Optional[Union[int, datetime]] = None,
+        sql_format: Optional[str] = None,
+        return_true_curves: bool = False,
+        return_exceeded_limit_features: Optional[bool] = None,
+        as_df: bool = False,
+        datum_transformation: Optional[Union[int, dict[str, Any]]] = None,
         **kwargs,
     ):
         """
@@ -1395,7 +1398,7 @@ class FeatureLayer(Layer):
                                                     datetime.date, datetime.datetime or timestamp in
                                                     milliseconds
         -------------------------------     --------------------------------------------------------------------
-        geometry_filter                     Optional from arcgis.geometry.filter. Allows for the information to
+        geometry_filter                     Optional from :attr:`~arcgis.geometry.filters`. Allows for the information to
                                             be filtered on spatial relationship with another geometry.
         -------------------------------     --------------------------------------------------------------------
         max_allowable_offset                Optional float. This option can be used to specify the
@@ -1453,7 +1456,7 @@ class FeatureLayer(Layer):
                                             be grouped for calculating the statistics.
                                             example: STATE_NAME, GENDER
         -------------------------------     --------------------------------------------------------------------
-        out_statistics                      Optional string. The definitions for one or more field-based
+        out_statistics                      Optional list of dictionaries. The definitions for one or more field-based
                                             statistics to be calculated.
 
                                             Syntax:
@@ -1933,7 +1936,7 @@ class FeatureLayer(Layer):
         return result
 
     # ----------------------------------------------------------------------
-    def validate_sql(self, sql, sql_type="where"):
+    def validate_sql(self, sql: str, sql_type: str = "where"):
         """
         The ``validate_sql`` operation validates an ``SQL-92`` expression or WHERE
         clause.
@@ -1994,19 +1997,19 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def query_related_records(
         self,
-        object_ids,
-        relationship_id,
-        out_fields="*",
-        definition_expression=None,
-        return_geometry=True,
-        max_allowable_offset=None,
-        geometry_precision=None,
-        out_wkid=None,
-        gdb_version=None,
-        return_z=False,
-        return_m=False,
-        historic_moment=None,
-        return_true_curve=False,
+        object_ids: str,
+        relationship_id: str,
+        out_fields: str = "*",
+        definition_expression: Optional[str] = None,
+        return_geometry: bool = True,
+        max_allowable_offset: Optional[float] = None,
+        geometry_precision: Optional[int] = None,
+        out_wkid: Optional[int] = None,
+        gdb_version: Optional[str] = None,
+        return_z: bool = False,
+        return_m: bool = False,
+        historic_moment: Optional[Union[int, datetime]] = None,
+        return_true_curve: bool = False,
     ):
         """
         The ``query_related_records`` operation is performed on a :class:`~arcgis.features.FeatureLayer`
@@ -2136,7 +2139,7 @@ class FeatureLayer(Layer):
         return self._con.post(path=qrr_url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def get_html_popup(self, oid):
+    def get_html_popup(self, oid: Optional[str]):
         """
         The ``get_html_popup`` method provides details about the HTML pop-up
         authored by the :class:`~arcgis.gis.User` using ArcGIS Pro or ArcGIS Desktop.
@@ -2161,24 +2164,24 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def append(
         self,
-        item_id=None,
-        upload_format="featureCollection",
-        source_table_name=None,
-        field_mappings=None,
-        edits=None,
-        source_info=None,
-        upsert=False,
-        skip_updates=False,
-        use_globalids=False,
-        update_geometry=True,
-        append_fields=None,
-        rollback=False,
-        skip_inserts=None,
-        upsert_matching_field=None,
-        upload_id=None,
+        item_id: Optional[str] = None,
+        upload_format: str = "featureCollection",
+        source_table_name: Optional[str] = None,
+        field_mappings: Optional[list[dict[str, str]]] = None,
+        edits: Optional[str] = None,
+        source_info: Optional[dict] = None,
+        upsert: bool = False,
+        skip_updates: bool = False,
+        use_globalids: bool = False,
+        update_geometry: bool = True,
+        append_fields: Optional[list[str]] = None,
+        rollback: bool = False,
+        skip_inserts: Optional[bool] = None,
+        upsert_matching_field: Optional[str] = None,
+        upload_id: Optional[str] = None,
         *,
-        return_messages=None,
-        future=False,
+        return_messages: Optional[bool] = None,
+        future: bool = False,
     ):
         """
         The ``append`` method is used to update an existing hosted :class:`~arcgis.features.FeatureLayer` object.
@@ -2301,8 +2304,6 @@ class FeatureLayer(Layer):
             hasattr(self._gis, "_portal") and self._gis._portal.is_logged_in == False
         ) or (hasattr(self._gis, "is_logged_in") and self._gis.is_logged_in == False):
             raise Exception("Authentication required to perform append.")
-        if self._gis._portal.is_arcgisonline == False:
-            raise Exception("Append only available on ArcGIS Online.")
         if self.properties.supportsAppend == False:
             raise Exception(
                 "Append is not supported on this layer, please "
@@ -2377,13 +2378,13 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def delete_features(
         self,
-        deletes=None,
-        where=None,
-        geometry_filter=None,
-        gdb_version=None,
-        rollback_on_failure=True,
-        return_delete_results=True,
-        future=False,
+        deletes: Optional[str] = None,
+        where: Optional[str] = None,
+        geometry_filter: Optional[GeometryFilter] = None,
+        gdb_version: Optional[str] = None,
+        rollback_on_failure: bool = True,
+        return_delete_results: bool = True,
+        future: bool = False,
     ):
         """
         Deletes features in a :class:`~arcgis.features.FeatureLayer` or
@@ -2512,7 +2513,7 @@ class FeatureLayer(Layer):
             return future
 
     @property
-    def estimates(self) -> Dict[str, Any]:
+    def estimates(self) -> dict[str, Any]:
         """
         Returns up-to-date approximations of layer information, such as row count
         and extent. Layers that support this property will include
@@ -2570,19 +2571,19 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def edit_features(
         self,
-        adds=None,
-        updates=None,
-        deletes=None,
-        gdb_version=None,
-        use_global_ids=False,
-        rollback_on_failure=True,
-        return_edit_moment=False,
-        attachments=None,
-        true_curve_client=False,
-        session_id=None,
-        use_previous_moment=False,
-        datum_transformation=None,
-        future=False,
+        adds: Optional[list[FeatureSet]] = None,
+        updates: Optional[list[FeatureSet]] = None,
+        deletes: Optional[list[FeatureSet]] = None,
+        gdb_version: Optional[str] = None,
+        use_global_ids: bool = False,
+        rollback_on_failure: bool = True,
+        return_edit_moment: bool = False,
+        attachments: Optional[dict[str, list[Any]]] = None,
+        true_curve_client: bool = False,
+        session_id: Optional[str] = None,
+        use_previous_moment: bool = False,
+        datum_transformation: Optional[Union[int, dict[str, Any]]] = None,
+        future: bool = False,
     ):
         """
         Adds, updates, and deletes features to the
@@ -2887,13 +2888,13 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def calculate(
         self,
-        where,
-        calc_expression,
-        sql_format="standard",
-        version=None,
-        sessionid=None,
-        return_edit_moment=None,
-        future=False,
+        where: str,
+        calc_expression: list[dict[str, Any]],
+        sql_format: str = "standard",
+        version: Optional[str] = None,
+        sessionid: Optional[str] = None,
+        return_edit_moment: Optional[bool] = None,
+        future: bool = False,
     ):
         """
         The ``calculate`` operation is performed on a :class:`~arcgis.features.FeatureLayer`
@@ -3104,7 +3105,6 @@ class FeatureLayer(Layer):
     def _query_df(self, url, params, **kwargs):
         """returns results of a query as a pd.DataFrame"""
         import pandas as pd
-        from arcgis.features import GeoAccessor, GeoSeriesAccessor
         import numpy as np
 
         if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
@@ -3146,8 +3146,6 @@ class FeatureLayer(Layer):
 
         def feature_to_row(feature, sr):
             """:return: a feature from a dict"""
-            from arcgis.geometry import Geometry
-
             geom = feature["geometry"] if "geometry" in feature else None
             attribs = feature["attributes"] if "attributes" in feature else {}
             if "centroid" in feature:
@@ -3273,7 +3271,7 @@ class Table(FeatureLayer):
     """
 
     @classmethod
-    def fromitem(cls, item, table_id=0):
+    def fromitem(cls, item: Item, table_id: int = 0):
         """
         The ``fromitem`` method creates a :class:`~arcgis.features.Table` from a :class:`~arcgis.gis.Item` object.
         The table_id is the id of the table in :class:`~arcgis.features.FeatureLayerCollection` (feature service).
@@ -3297,26 +3295,26 @@ class Table(FeatureLayer):
 
     def query(
         self,
-        where="1=1",
-        out_fields="*",
-        time_filter=None,
-        return_count_only=False,
-        return_ids_only=False,
-        return_distinct_values=False,
-        group_by_fields_for_statistics=None,
-        statistic_filter=None,
-        result_offset=None,
-        result_record_count=None,
-        object_ids=None,
-        gdb_version=None,
-        order_by_fields=None,
-        out_statistics=None,
-        return_all_records=True,
-        historic_moment=None,
-        sql_format=None,
-        return_exceeded_limit_features=None,
-        as_df=False,
-        having=None,
+        where: str = "1=1",
+        out_fields: Union[str, list[str]] = "*",
+        time_filter: list[datetime] = None,
+        return_count_only: bool = False,
+        return_ids_only: bool = False,
+        return_distinct_values: bool = False,
+        group_by_fields_for_statistics: Optional[str] = None,
+        statistic_filter: Optional[StatisticFilter] = None,
+        result_offset: Optional[int] = None,
+        result_record_count: Optional[int] = None,
+        object_ids: Optional[str] = None,
+        gdb_version: Optional[str] = None,
+        order_by_fields: Optional[str] = None,
+        out_statistics: Optional[list[dict[str, Any]]] = None,
+        return_all_records: bool = True,
+        historic_moment: Optional[Union[int, datetime]] = None,
+        sql_format: Optional[str] = None,
+        return_exceeded_limit_features: Optional[bool] = None,
+        as_df: bool = False,
+        having: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -3794,9 +3792,7 @@ class FeatureLayerCollection(_GISResource):
         self._populate_layers()
         self._admin = None
         try:
-            from arcgis.gis.server._service._adminfactory import (
-                AdminServiceGen,
-            )
+            from arcgis.gis.server._service._adminfactory import AdminServiceGen
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:
@@ -3893,7 +3889,7 @@ class FeatureLayerCollection(_GISResource):
         return None
 
     # ----------------------------------------------------------------------
-    def query_domains(self, layers):
+    def query_domains(self, layers: Union[tuple, list[int]]):
         """
         Returns full domain information for the domains
         referenced by the layers in the :class:`~arcgis.features.FeatureLayerCollection`. This
@@ -3933,23 +3929,23 @@ class FeatureLayerCollection(_GISResource):
     # ----------------------------------------------------------------------
     def extract_changes(
         self,
-        layers,
-        servergen,
-        queries=None,
-        geometry=None,
-        geometry_type=None,
-        in_sr=None,
-        version=None,
-        return_inserts=False,
-        return_updates=False,
-        return_deletes=False,
-        return_ids_only=False,
-        return_extent_only=False,
-        return_attachments=False,
-        attachments_by_url=False,
-        data_format="json",
-        change_extent_grid_cell=None,
-        return_geometry_updates=None,
+        layers: list[int],
+        servergen: list[dict[str, Any]],
+        queries: Optional[dict[str, Any]] = None,
+        geometry: Optional[Union[Geometry, dict[str, int]]] = None,
+        geometry_type: Optional[str] = None,
+        in_sr: Optional[Union[dict[str, Any], int]] = None,
+        version: Optional[str] = None,
+        return_inserts: bool = False,
+        return_updates: bool = False,
+        return_deletes: bool = False,
+        return_ids_only: bool = False,
+        return_extent_only: bool = False,
+        return_attachments: bool = False,
+        attachments_by_url: bool = False,
+        data_format: str = "json",
+        change_extent_grid_cell: Optional[str] = None,
+        return_geometry_updates: Optional[bool] = None,
     ):
         """
         A change tracking mechanism for applications. Applications can use ``extract_changes`` to
@@ -4171,24 +4167,34 @@ class FeatureLayerCollection(_GISResource):
                 res = self._con.get(surl, params)
                 status = res["status"]
                 if status.lower() == "completed":
-                    return self._con.get(res["resultUrl"])
+                    res = self._con.get(res["resultUrl"])
+                    break
                 elif status.lower() == "failed":
                     return None
                 else:
                     time.sleep(0.5)
+            if "status" in res and res["status"].lower() == "completed":
+                res = self._con.get(res["resultUrl"])
+        if (
+            isinstance(res, str)
+            and os.path.isfile(res)
+            and str(data_format).lower() == "json"
+        ):
+            with open(res, "r") as reader:
+                return json.loads(reader.read())
         return res
 
     def query(
         self,
-        layer_defs_filter=None,
-        geometry_filter=None,
-        time_filter=None,
-        return_geometry=True,
-        return_ids_only=False,
-        return_count_only=False,
-        return_z=False,
-        return_m=False,
-        out_sr=None,
+        layer_defs_filter: Optional[LayerDefinitionFilter] = None,
+        geometry_filter: Optional[GeometryFilter] = None,
+        time_filter: Optional[TimeFilter] = None,
+        return_geometry: bool = True,
+        return_ids_only: bool = False,
+        return_count_only: bool = False,
+        return_z: bool = False,
+        return_m: bool = False,
+        out_sr: Optional[int] = None,
     ):
         """
          Queries the current :class:`~arcgis.features.FeatureLayerCollection` based on ``sql``
@@ -4276,17 +4282,17 @@ class FeatureLayerCollection(_GISResource):
     # ----------------------------------------------------------------------
     def query_related_records(
         self,
-        object_ids,
-        relationship_id,
-        out_fields="*",
-        definition_expression=None,
-        return_geometry=True,
-        max_allowable_offset=None,
-        geometry_precision=None,
-        out_wkid=None,
-        gdb_version=None,
-        return_z=False,
-        return_m=False,
+        object_ids: str,
+        relationship_id: str,
+        out_fields: Union[str, list[str]] = "*",
+        definition_expression: Optional[str] = None,
+        return_geometry: bool = True,
+        max_allowable_offset: Optional[float] = None,
+        geometry_precision: Optional[int] = None,
+        out_wkid: Optional[int] = None,
+        gdb_version: Optional[str] = None,
+        return_z: bool = False,
+        return_m: bool = False,
     ):
         """
         The ``query_related_records`` operation is performed on a :class:`~arcgis.features.FeatureLayerCollection`
@@ -5006,7 +5012,12 @@ class FeatureLayerCollection(_GISResource):
             return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def upload(self, path, description=None, upload_size=None):
+    def upload(
+        self,
+        path: Optional[str],
+        description: Optional[str] = None,
+        upload_size: Optional[int] = None,
+    ):
         """
         The ``upload`` method uploads a new item to the server.
 

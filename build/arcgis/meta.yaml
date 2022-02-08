@@ -7,7 +7,7 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 2.0.0
+  version: 2.0.1
 requirements:
   build:
   - python
@@ -18,13 +18,12 @@ requirements:
   - notebook
   - ipywidgets >=7
   - widgetsnbextension >=3
-  - pandas >=1
+  - pandas >=1.3.5
   - numpy >=1.16.2
   - matplotlib
-  - keyring >=19, <21.8.0
-  - pytest
+  - keyring >=23.0.0
   - pyshp >=2
-  - requests
+  - requests >=1.27.1
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
@@ -43,13 +42,13 @@ requirements:
   - notebook
   - ipywidgets >=7
   - widgetsnbextension >=3
-  - pandas >=1
+  - pandas >=1.3.5
   - ujson >=3
   - numpy >=1.16.2
   - pyshp >=2
   - matplotlib
-  - keyring >=19, <21.8.0
-  - requests
+  - keyring >=23.0.0
+  - requests >=1.27.1
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib

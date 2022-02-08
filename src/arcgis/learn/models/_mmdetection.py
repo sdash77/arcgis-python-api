@@ -70,8 +70,9 @@ class MMDetectionConfig:
         ):
             if hasattr(cfg.model.neck, "rfp_backbone"):
                 cfg.model.neck.rfp_backbone.in_channels = len(data._extract_bands)
-        
+
         import warnings
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             model = mmdet.models.build_detector(cfg.model)

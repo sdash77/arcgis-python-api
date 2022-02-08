@@ -1,6 +1,9 @@
+from __future__ import annotations
 import os
 import time
+from typing import Any, Optional, Union
 import uuid
+from arcgis.features.feature import FeatureSet
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features import FeatureLayerCollection, FeatureLayer
@@ -70,7 +73,9 @@ class VersionManager(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    def create(self, name, permission="public", description=""):
+    def create(
+        self, name: str, permission: str = "public", description: str = ""
+    ) -> dict:
         """
         Create the named version off of DEFAULT. The version is associated
         with the specified feature service. During creation, the description
@@ -90,7 +95,7 @@ class VersionManager(object):
         ===============     ====================================================================
 
 
-        :return: Boolean. True if successful else False.
+        :return: Dictionary with Version Information
 
         """
         params = {
@@ -103,12 +108,12 @@ class VersionManager(object):
         res = self._con.post(url, params)
         self._versions = None
         if "success" in res:
-            return res["success"]
+            return res
         else:
             return res
 
     # ----------------------------------------------------------------------
-    def purge(self, version, owner=None):
+    def purge(self, version: str, owner: Optional[str] = None):
         """
         Removes a lock from a version
 
@@ -169,7 +174,7 @@ class VersionManager(object):
         return self._versions
 
     # ----------------------------------------------------------------------
-    def search(self, owner=None, show_hidden=False):
+    def search(self, owner: Optional[str] = None, show_hidden: bool = False):
         """
         For the specified feature service, return the info of all versions
         that the client has access to. If the client is the service owner
@@ -193,7 +198,7 @@ class VersionManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def get(self, version, mode=None):
+    def get(self, version: str, mode: Optional[str] = None):
         """
         Finds and Locations a Version by it's name
 
@@ -412,7 +417,7 @@ class Version(object):
 
     # ----------------------------------------------------------------------
     @mode.setter
-    def mode(self, value):
+    def mode(self, value: Optional[str]):
         """
         The `mode` allows versoin editors to start and stop edit, read, or
         view mode.
@@ -501,7 +506,7 @@ class Version(object):
 
     # ----------------------------------------------------------------------
     @save_edits.setter
-    def save_edits(self, value):
+    def save_edits(self, value: Optional[bool]):
         """
         Get/Set the Property to Save the Changes.
 
@@ -540,7 +545,7 @@ class Version(object):
         return False
 
     # ----------------------------------------------------------------------
-    def stop_editing(self, save=None):
+    def stop_editing(self, save: Optional[bool] = None):
         """
         Starts an edit session for the current user.
 
@@ -617,7 +622,7 @@ class Version(object):
             return False
 
     # ----------------------------------------------------------------------
-    def delete_forward_edits(self, moment):
+    def delete_forward_edits(self, moment: str):
         """
         If the input moment does not match a specific moment (a moment
         corresponding to an edit operation), the call will return an error.
@@ -649,10 +654,10 @@ class Version(object):
     # ----------------------------------------------------------------------
     def reconcile(
         self,
-        end_with_conflict=False,
-        with_post=False,
-        conflict_detection="byObject",
-        future=False,
+        end_with_conflict: bool = False,
+        with_post: bool = False,
+        conflict_detection: str = "byObject",
+        future: bool = False,
     ):
         """
         Reconcile a version against the DEFAULT version. The reconcile
@@ -684,7 +689,7 @@ class Version(object):
 
                                Values: `byObject` | `byAttribute`
 
-        --------------------   --------------------------------------------------------------------
+        ------------------     --------------------------------------------------------------------
         future                 Optional boolean. If true, the request is processed as an asynchronous
                                job and a URL is returned that points a location displaying the status
                                of the job.
@@ -725,7 +730,7 @@ class Version(object):
                 return res
 
     # ----------------------------------------------------------------------
-    def restore(self, rows):
+    def restore(self, rows: list[dict[str, Any]]):
         """
         The `restore` method allows users to restore rows from a common
         ancestor version.  This method is intended to be used when a
@@ -765,7 +770,13 @@ class Version(object):
         return res
 
     # ----------------------------------------------------------------------
-    def alter(self, owner=None, version=None, description=None, permission=None):
+    def alter(
+        self,
+        owner: Optional[str] = None,
+        version: Optional[str] = None,
+        description: Optional[str] = None,
+        permission: Optional[str] = None,
+    ):
         """
         The ```alter``` operation changes the geodatabase version's name,
         description, and access permissions.
@@ -805,7 +816,7 @@ class Version(object):
         return False
 
     # ----------------------------------------------------------------------
-    def differences(self, result_type="objectIds", moment=None):
+    def differences(self, result_type: str = "objectIds", moment: Optional[str] = None):
         """
         The ```differences``` operation allows you to view differences between
         the current version and the default version. The two versions can
@@ -851,7 +862,12 @@ class Version(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def inspect(self, conflicts, inspect_all=False, set_inspected=False):
+    def inspect(
+        self,
+        conflicts: list[dict[str, Any]],
+        inspect_all: bool = False,
+        set_inspected: bool = False,
+    ):
         """
         The ```inspect``` operation allows the client to annotate conflicts
         from the conflict set that was obtained during the last reconcile
@@ -952,8 +968,8 @@ class Version(object):
     # ----------------------------------------------------------------------
     def edit(
         self,
-        layer,
-        adds=None,
+        layer: FeatureLayer,
+        adds: Optional[Union[FeatureSet, list]] = None,
         updates=None,
         deletes=None,
         use_global_ids=False,

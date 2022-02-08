@@ -230,6 +230,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         url = _parse_arcgis_url(url=url)
         self.legacy = legacy
         self._verify_cert = verify_cert
+        self.proxies = kwargs.pop("proxies", {})
         self._base_url = url
         self._auth_url = f"{url}/sharing/rest/oauth2/authorize"
         self._token_url = f"{url}/sharing/rest/oauth2/token"
@@ -280,7 +281,12 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             return True
         try:
             return (
-                requests.post(self._token_url, data=params, verify=self._verify_cert)
+                requests.post(
+                    self._token_url,
+                    data=params,
+                    verify=self._verify_cert,
+                    proxies=self.proxies,
+                )
                 .json()
                 .get("success", False)
             )
@@ -300,7 +306,9 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         )
         self._authorization_url = authorization_url
         self._state = state
-        content = requests.get(self._authorization_url, verify=self._verify_cert).text
+        content = requests.get(
+            self._authorization_url, verify=self._verify_cert, proxies=self.proxies
+        ).text
 
         pattern = self._re_expressions["step-1a"]
         if len(pattern.findall(content)) == 0:
@@ -329,6 +337,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             signin_params,
             verify=self._verify_cert,
             allow_redirects=True,
+            proxies=self.proxies,
         )
         matches = pattern.findall(signin_resp.text)
         if len(matches) > 0:
@@ -359,7 +368,11 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
             params = {"oauth_state": oauth_state, "acceptTermsAndConditions": True}
             signin_resp = requests.post(
-                url, params, verify=self._verify_cert, allow_redirects=True
+                url,
+                params,
+                verify=self._verify_cert,
+                allow_redirects=True,
+                proxies=self.proxies,
             )
             resp_text = signin_resp.text
             exp = r"<title>SUCCESS code=(.*?)</title>"
@@ -396,6 +409,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 params,
                 verify=self._verify_cert,
                 allow_redirects=True,
+                proxies=self.proxies,
             )
             self._password = new_password
             oauth_state = json.loads(pattern.findall(resp_text)[0].replace(" ", ""))[
@@ -415,6 +429,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 params,
                 verify=self._verify_cert,
                 allow_redirects=True,
+                proxies=self.proxies,
             )
             self._init_token_auth_handshake()
         else:
@@ -427,6 +442,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             code=code,
             verify=self._verify_cert,
             include_client_id=True,
+            proxies=self.proxies,
             **{"expiration": 20160},
         )
         if "expires_at" in self._auth_token:

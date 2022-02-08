@@ -19,6 +19,9 @@ Note: GeoAnalytics operations use the following context parameters defined in th
         =========================     ====================================================================
 """
 
+from typing import Optional, Union
+
+from arcgis.gis import GIS, Datastore
 from . import (
     summarize_data,
     analyze_patterns,
@@ -29,7 +32,7 @@ from . import (
 )
 
 
-def get_datastores(gis=None):
+def get_datastores(gis: Optional[GIS] = None):
     """
     Returns a helper object to manage geoanalytics datastores in the GIS.
     If a gis isn't specified, returns datastore manager of arcgis.env.active_gis
@@ -45,7 +48,9 @@ def get_datastores(gis=None):
     return None
 
 
-def define_output_datastore(datastore=None, template=None):
+def define_output_datastore(
+    datastore: Optional[Union[str, Datastore]] = None, template: Optional[str] = None
+):
     """
     Sets the `arcgis.env.output_datastore` by providing the datastore and template name
     to this method. If datastore is None, the `arcgis.env.output_datastore` will reset
@@ -106,7 +111,7 @@ def define_output_datastore(datastore=None, template=None):
         return True
 
 
-def is_supported(gis=None):
+def is_supported(gis: Optional[GIS] = None):
     """
     Returns True if the GIS supports geoanalytics. If a gis isn't specified,
     checks if arcgis.env.active_gis supports geoanalytics
