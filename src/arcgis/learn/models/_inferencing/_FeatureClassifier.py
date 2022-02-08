@@ -12,9 +12,7 @@ from .util import normalize_batch
 try:
     from fastai.vision import *
     import torch
-    from fastai.vision.transform import (
-        dihedral,
-    )
+    from fastai.vision.transform import dihedral
 
     HAS_PYTORCH_FA = True
 

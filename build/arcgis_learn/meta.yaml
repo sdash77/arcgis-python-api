@@ -1,5 +1,5 @@
 {% set name = "arcgis_learn" %}
-{% set version = "2.0.0" %}
+{% set version = "2.0.1" %}
 
 package:
   name: {{ name | lower }}
@@ -13,7 +13,7 @@ requirements:
     - python
 
   run:
-    - arcgis>=2.0.0
+    - arcgis>=2.0.1
     - boost=1.73
     - einops 0.3.2
     - ensemble-boxes 1.0.8

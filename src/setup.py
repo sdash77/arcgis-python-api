@@ -47,17 +47,17 @@ if conda_install_mode:
     dependencies = []
 else:
     dependencies = [
-        "urllib3 >=1.25.10,<1.26.0",
+        "urllib3",
         "cachetools",
         "six",
         "lxml",
         "cryptography",
         "ipywidgets >=7",
         "widgetsnbextension >=3",
-        "pandas >=1",
+        "pandas >=1.3.5",
         "numpy >=1.16.2",
         "matplotlib",
-        "keyring >=19,<=21.8.*",
+        "keyring >=23.3.*",
         "lerc",
         "ujson >=3",
         "jupyterlab",
@@ -65,7 +65,7 @@ else:
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
-        "requests",
+        "requests >=1.27.1",
         "requests-oauthlib",
         "requests_toolbelt",
         "requests_ntlm",
@@ -216,11 +216,11 @@ def get_version():
         def __path(filename):
             return os.path.join(os.path.dirname(__file__), filename)
 
-        MICRO = "0"
+        MICRO = "1"
         if os.path.exists(__path("build.info")):
             MICRO = open(__path("build.info")).read().strip()
     except:
-        MICRO = "0"
+        MICRO = "1"
     return f"{MAJOR}.{MINOR}.{MICRO}"
 
 

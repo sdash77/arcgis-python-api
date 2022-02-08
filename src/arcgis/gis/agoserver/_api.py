@@ -86,6 +86,14 @@ class AGOLServicesDirectory:
         self._url = url
 
     # ---------------------------------------------------------------------
+    def __str__(self):
+        return f"<AGOLServicesDirectory @ {self._url}>"
+
+    # ---------------------------------------------------------------------
+    def __repr__(self):
+        return f"<AGOLServicesDirectory @ {self._url}>"
+
+    # ---------------------------------------------------------------------
     @functools.lru_cache(maxsize=255)
     def _org_id(self, gis: GIS) -> str:
         return gis.properties.id
