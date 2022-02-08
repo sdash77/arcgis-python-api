@@ -54,7 +54,7 @@ else:
         "cryptography",
         "ipywidgets >=7",
         "widgetsnbextension >=3",
-        "pandas >=1",
+        "pandas >=1.3.5",
         "numpy >=1.16.2",
         "matplotlib",
         "keyring >=23.3.*",
