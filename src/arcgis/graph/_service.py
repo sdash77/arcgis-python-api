@@ -49,9 +49,25 @@ class KnowledgeGraph:
 
     def search(self, query: str, category: str = "both") -> List[dict]:
         """
-        category allowed values: both, entity, relationship
+        Allows for the searching of the properties of both entities and
+        relationships in the graph using a full-text index.
+
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        query               Required String. Allows you to return the entities and
+                            relationships in a graph, as well as the properties of those
+                            entities and relationships, by providing an open cypher query.
+        ----------------    ---------------------------------------------------------------
+        category            Optional String.  The category is the location of the full
+                            text search.  This can be isolated to either the `entities` or
+                            the `relationships`.  The default is to look in `both`.
+
+                            The allowed values are: both, entities, relationships
+        ================    ===============================================================
 
         :return: List[dict]
+
         """
         url = self._url + "/graph/search"
         cat_lu = {
