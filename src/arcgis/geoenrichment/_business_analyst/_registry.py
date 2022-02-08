@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Union
 import winreg
 
 import numpy as np
@@ -64,7 +65,7 @@ def get_first_child_key_str(key_path, pattern) -> str:
 
 
 def get_ba_country_key_str(
-    three_letter_country_code: str, year: [int, str] = None
+    three_letter_country_code: str, year: Union[int, str] = None
 ) -> str:
     """Lookup the country registry key by three letter country identifier and year."""
     cntry_cd = three_letter_country_code.upper()
@@ -99,7 +100,9 @@ def get_ba_country_key_str(
 
 
 def get_ba_key_value(
-    locator_key, three_letter_country_identifier: str = "USA", year: [int, str] = None
+    locator_key,
+    three_letter_country_identifier: str = "USA",
+    year: Union[int, str] = None,
 ) -> Path:
     """
     In the Business Analyst key, get the value corresponding to the provided locator key.

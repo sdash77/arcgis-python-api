@@ -39,6 +39,14 @@ class AGOLServerManager:
         self._url = url
         self._gis = gis
 
+    # ---------------------------------------------------------------------
+    def __str__(self):
+        return f"<AGOLServerManager @ {self._url}>"
+
+    # ---------------------------------------------------------------------
+    def __repr__(self):
+        return f"<AGOLServerManager @ {self._url}>"
+
     @property
     @lru_cache(maxsize=100)
     def is_tile_server(self) -> bool:

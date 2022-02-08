@@ -2050,12 +2050,15 @@ def prepare_data(
                 ObjectDetectionItemList.from_folder(path / "images")
                 .filter_by_func(remove_image_without_label)
                 .split_by_rand_pct(val_split_pct, seed=seed)
+                .label_from_func(get_y_func)
             )
         else:
             if images_df is not None:
                 src = ObjectDetectionItemList.from_df(images_df, "images")
                 src.items = images_df[images_df.columns[0]].values
-                src = src.split_by_rand_pct(val_split_pct, seed=seed)
+                src = src.split_by_rand_pct(val_split_pct, seed=seed).label_from_func(
+                    get_y_func
+                )
             else:
                 # MultiFolder Training
                 imageslist = []
@@ -2069,50 +2072,9 @@ def prepare_data(
                     ObjectDetectionItemList(np.concatenate(imageslist))
                     .filter_by_func(remove_image_without_label)
                     .split_by_rand_pct(val_split_pct, seed=seed)
+                    .label_from_func(get_y_func)
                 )
             data = src
-        #
-        #
-        image_files = [*data.train.items, *data.valid.items]
-        argslist = [
-            {
-                "imagefile": im,
-                "class_mapping": class_mapping,
-                "height_width": height_width,
-                "dataset_type": dataset_type,
-            }
-            for im in image_files
-        ]
-        label_store = {}
-        from . import _utils
-
-        temp_folder = os.path.dirname(_utils.__file__)
-        from multiprocessing import Pool, cpu_count
-
-        sys.path.append(temp_folder)
-        from pascal_voc_rectangles_reader import _get_bbox_lbls_helper
-
-        pool = Pool(cpu_count(), initargs={"PYTHONPATH": temp_folder})
-        res = pool.imap(_get_bbox_lbls_helper, argslist)
-        for i, y in enumerate(res):
-            label_store[image_files[i]] = y
-        pool.close()
-        pool.join()
-        del pool
-        sys.path.remove(temp_folder)
-        data = data.label_from_func(label_store.get)
-        #
-        _bboxes = []
-        for x in label_store.values():
-            _bboxes.extend(x[0])
-        _bboxes = np.array(_bboxes, dtype=np.float32)
-        height_width = np.stack(
-            [
-                (_bboxes[:, 3] - _bboxes[:, 1]) * 1.25,
-                (_bboxes[:, 2] - _bboxes[:, 0]) * 1.25,
-            ],
-            -1,
-        ).tolist()
         #
         _show_batch_multispectral = show_batch_pascal_voc_rectangles
 

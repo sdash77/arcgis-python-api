@@ -78,7 +78,7 @@ class ImageryLayerCacheManager(_GISResource):
         """
         url = self._url + "/refresh"
         params = {"f": "json"}
-        res = self._con.post(self._url, params, timeout=None)
+        res = self._con.post(url, params, timeout=None)
         if "success" in res:
             return res["success"]
         return res
@@ -519,9 +519,9 @@ class ImageryLayer(Layer):
     """
 
     The ``ImageryLayer`` class can be used to represent an image service resource as a layer.
-    An ``ImageryLayer`` object retrieves and
-    displays data from image services. ``ImageryLayer`` allows you to and apply server defined or client-defined raster
-    functions (e.g. remap, colormap), and mosaic rules.
+
+    An ``ImageryLayer`` object retrieves and displays data from image services. ``ImageryLayer``
+    allows you to apply server-defined or client-defined raster functions (e.g. remap, colormap), and mosaic rules.
 
     ``ImageryLayer`` objects can also be created using raster datasets or raster products present in datastores registered with the server/active GIS
     (types: ``fileShares``, ``cloudStores``, ``rasterStores``).
@@ -552,7 +552,7 @@ class ImageryLayer(Layer):
                                                 should be enabled in the active GIS connection
 
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional. :class:`~arcgis.gis.GIS` of the ImageryLayer object.
+    gis                                      Optional GIS. :class:`~arcgis.gis.GIS` of the ImageryLayer object.
     ====================================     ====================================================================
 
     .. code-block:: python
@@ -7015,7 +7015,7 @@ class Raster:
 
                                                 - "image_server" : Use the Image Server engine for processing.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional. :class:`~arcgis.gis.GIS` of the Raster object.
+    gis                                      Optional GIS. :class:`~arcgis.gis.GIS` of the Raster object.
     ====================================     ====================================================================
 
     .. code-block:: python

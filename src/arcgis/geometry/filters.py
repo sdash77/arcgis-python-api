@@ -4,7 +4,10 @@ The ``Filters`` modules contain functions to filter query results by a spatial r
 layers.
 """
 
-from . import Geometry
+from inspect import GEN_CLOSED
+from typing import Union
+from arcgis.geometry._types import Geometry, SpatialReference
+
 
 # esriSpatialRelIntersects | esriSpatialRelContains | esriSpatialRelCrosses | esriSpatialRelEnvelopeIntersects | \
 # esriSpatialRelIndexIntersects | esriSpatialRelOverlaps | esriSpatialRelTouches | esriSpatialRelWithin
@@ -38,7 +41,7 @@ def _filter(geometry, sr, rel):
     return filter
 
 
-def intersects(geometry, sr=None):
+def intersects(geometry: Geometry, sr: Union[SpatialReference, dict, None] = None):
     """
     The ``intersects`` method filters results whose geometry intersects with the specified
     :class:`~arcgis.geometry.Geometry` object.
@@ -70,7 +73,7 @@ def intersects(geometry, sr=None):
     return _filter(geometry, sr, "esriSpatialRelIntersects")
 
 
-def contains(geometry, sr=None):
+def contains(geometry: Geometry, sr: Union[SpatialReference, dict, None] = None):
     """
     The ``contains`` method returns a feature if its shape is wholly contained within the search
     :class:`~arcgis.geometry.Geometry` object.
@@ -84,7 +87,7 @@ def contains(geometry, sr=None):
     return _filter(geometry, sr, "esriSpatialRelContains")
 
 
-def crosses(geometry, sr=None):
+def crosses(geometry: Geometry, sr: Union[SpatialReference, dict, None] = None):
     """
     The ``crosses`` method retrieves a feature if the intersection of the interiors of the two shapes is not empty
     **and** has a lower dimension than the maximum dimension of the two shapes. Two lines that share an endpoint in
@@ -100,7 +103,9 @@ def crosses(geometry, sr=None):
     return _filter(geometry, sr, "esriSpatialRelCrosses")
 
 
-def envelope_intersects(geometry, sr=None):
+def envelope_intersects(
+    geometry: Geometry, sr: Union[SpatialReference, dict, None] = None
+):
     """
     The ``envelope_intersects`` retrieves features if the :class:`~arcgis.geometry.Envelope` of the two shapes
     intersects.
@@ -111,7 +116,9 @@ def envelope_intersects(geometry, sr=None):
     return _filter(geometry, sr, "esriSpatialRelEnvelopeIntersects")
 
 
-def index_intersects(geometry, sr=None):
+def index_intersects(
+    geometry: Geometry, sr: Union[SpatialReference, dict, None] = None
+):
     """
     The ``index_intersects`` method retrieves a feature if the :class:`~arcgis.geometry.Envelope` of the query
     :class:`~arcgis.geometry.Geometry` intersects the index entry for the target geometry.
@@ -122,7 +129,7 @@ def index_intersects(geometry, sr=None):
     return _filter(geometry, sr, "esriSpatialRelIndexIntersects")
 
 
-def overlaps(geometry, sr=None):
+def overlaps(geometry: Geometry, sr: Union[SpatialReference, dict, None] = None):
     """
     The ``overlaps`` method retrieves a feature if the intersection of the two shapes results in an object of the same
     dimension, but different from both of the shapes.
@@ -136,7 +143,7 @@ def overlaps(geometry, sr=None):
     return _filter(geometry, sr, "esriSpatialRelOverlaps")
 
 
-def touches(geometry, sr=None):
+def touches(geometry: Geometry, sr: Union[SpatialReference, dict, None] = None):
     """
     The ``touches`` method retrieves a feature if the two shapes share a common boundary. However, the intersection of
     the interiors of the two shapes must be empty.
@@ -151,7 +158,7 @@ def touches(geometry, sr=None):
     return _filter(geometry, sr, "esriSpatialRelTouches")
 
 
-def within(geometry, sr=None):
+def within(geometry: Geometry, sr: Union[SpatialReference, dict, None] = None):
     """
      The ``within`` method retrieves a feature if its shape wholly contains the search
      :class:`~arcgis.geometry.Geometry`.

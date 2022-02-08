@@ -35,6 +35,7 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
         self.auth = None
         self.pos = None
         self._try_auth_count = 0
+        self.proxies = kwargs.pop("proxies", {})
         self._legacy = kwargs.pop("legacy", True)
 
     def _handle_basic_auth_401(self, r, kwargs):
@@ -78,7 +79,7 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
         return self.auth.response_hook(r, **kwargs)
 
     def _handle_kerb_auth_401(self, r, kwargs):
-        self.auth = EsriKerberosAuth()
+        self.auth = EsriKerberosAuth(proxies=self.proxies)
         try:
             self.auth.init_per_thread_state()
         except AttributeError:
@@ -132,11 +133,15 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
             if self._try_auth_count == 0:
                 self._try_auth_count += 1
                 self.auth = EsriWindowsAuth(
-                    self.username, self.password, verify_cert=False, legacy=self._legacy
+                    self.username,
+                    self.password,
+                    verify_cert=False,
+                    legacy=self._legacy,
+                    proxies=self.proxies,
                 )
                 return self._handle_ntlm_auth_401(r, kwargs)
             elif self._try_auth_count == 1 and HAS_KERBEROS:
-                self.auth = EsriKerberosAuth()
+                self.auth = EsriKerberosAuth(self.proxies)
                 self._try_auth_count += 1
                 return self._handle_kerb_auth_401(r, kwargs)
             else:
@@ -149,6 +154,7 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
                     password=self.password,
                     verify_cert=False,
                     legacy=self._legacy,
+                    proxies=self.proxies,
                 )
             else:
                 self.auth = EsriWindowsAuth(
@@ -156,6 +162,7 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
                     password=self.password,
                     verify_cert=False,
                     legacy=self._legacy,
+                    proxies=self.proxies,
                 )
 
     def __call__(self, request):

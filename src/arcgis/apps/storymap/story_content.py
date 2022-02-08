@@ -45,6 +45,8 @@ class Image(object):
     """
 
     def __init__(self, path: Optional[str] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        # Image is not an immersive node
         self._story = kwargs.pop("story", None)
         self._type = "image"
         # Keep track if URL since different representation style in story dictionary
@@ -362,6 +364,8 @@ class Video(object):
     """
 
     def __init__(self, path: Optional[str] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        # Video is not an immersive node
         # Get properties if provided
         self._story = kwargs.pop("story", None)
         self._type = "video"
@@ -660,6 +664,8 @@ class Audio(object):
     """
 
     def __init__(self, path: Optional[str] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        # Audio is not an immersive node
         if _parse.urlparse(path).scheme == "https":
             # Audio cannot be added by Url at this time.
             raise ValueError(
@@ -889,6 +895,8 @@ class Embed(object):
     """
 
     def __init__(self, path: Optional[str] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        # Embed is not an immersive node
         self._story = kwargs.pop("story", None)
         self._type = "embed"
         self.node = kwargs.pop("node_id", None)
@@ -1079,6 +1087,8 @@ class Map(object):
     """
 
     def __init__(self, item: Optional[arcgis.gis.Item] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        # Map is not an immersive node
         self._story = kwargs.pop("story", None)
         self.node = kwargs.pop("node_id", None)
         # Check if node exists else create new instance
@@ -1430,6 +1440,9 @@ class Text(object):
                                 <a href=\"https://www.google.com\" rel=\"noopener noreferrer\"
                                 target=\"_blank\">hyperlink</a> and a
                                 <span class=\"sm-text-color-080\">custom color</span>"
+
+                                Example for a numbered list:
+                                "<li>List Item1</li> <li>List Item2</li> <li>List Item3</li>"
     ------------------      --------------------------------------------------------------------
     style                   Optional TextStyles type. There are 7 different styles of text that can be
                             added to a story.
@@ -1495,6 +1508,8 @@ class Text(object):
         color: str = "000",
         **kwargs,
     ):
+        # Can be created from scratch or already exist in story
+        # Text is not an immersive node
         self._story = kwargs.pop("story", None)
         self._type = "text"
         self.node = kwargs.pop("node_id", None)
@@ -1615,6 +1630,8 @@ class Button(object):
     def __init__(
         self, link: Optional[str] = None, text: Optional[str] = None, **kwargs
     ):
+        # Can be created from scratch or already exist in story
+        # Button is not an immersive node
         self._story = kwargs.pop("story", None)
         self._type = "button"
         self.node = kwargs.pop("node_id", None)
@@ -1741,7 +1758,8 @@ class Gallery(object):
     """
 
     def __init__(self, **kwargs):
-        """ """
+        # Can be created from scratch or already exist in story
+        # Gallery is not an immersive node
         self._story = kwargs.pop("story", None)
         self._type = "gallery"
         self.node = kwargs.pop("node_id", None)
@@ -1898,11 +1916,16 @@ class Gallery(object):
     # ----------------------------------------------------------------------
     def delete_image(self, image: str):
         """
+        The delete_image method is used to delete one image from the gallery. To see a list of images
+        used in the gallery, use the `gallery.images` property.
+
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         image                   Required String. The node id for the image to be removed from the gallery.
         ==================      ====================================================================
+
+        :return: The current list of images in the gallery.
         """
         if image in self.images:
             # Remove from the gallery list
@@ -1967,16 +1990,25 @@ class Swipe(object):
 
     def __init__(self, story, node: str):
         # Content must already exist in story
+        # Swipe is not an immersive node
         self.node = node
         self._story = story
         self._type = "swipe"
-        self._slides = self._story._properties["nodes"][self.node]["data"]["contents"]
         # Find the type of media that the swipe supports.
         # Both contents are of the same type so only need to look at one.
-        media_node = self._story._properties["nodes"][self.node]["data"]["contents"][
-            "0"
-        ]
-        self._media_type = story._properties["nodes"][media_node]["type"]
+        if "data" in self._story._properties["nodes"][self.node]:
+            self._slides = self._story._properties["nodes"][self.node]["data"][
+                "contents"
+            ]
+            media_node = self._story._properties["nodes"][self.node]["data"][
+                "contents"
+            ]["0"]
+            self._media_type = story._properties["nodes"][media_node]["type"]
+        else:
+            # Empty swipe node
+            self._slides = []
+            media_node = None
+            self._media_type = ""
 
     # ----------------------------------------------------------------------
     @property
@@ -1987,10 +2019,9 @@ class Swipe(object):
         :return:
             A dictionary depicting the node in the story.
         """
-        if self._check_node() is True:
-            return {
-                "node_dict": self._story._properties["nodes"][self.node],
-            }
+        return {
+            "node_dict": self._story._properties["nodes"][self.node],
+        }
 
     # ----------------------------------------------------------------------
     @property
@@ -2046,12 +2077,14 @@ class Swipe(object):
         position: str = "right",
     ):
         """
-        Edit the media content of a Swipe item.
+        Edit the media content of a Swipe item. To save your edits and see them
+        in the StoryMap's builder, make sure to save the story.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        content             Required story content of type: Image or Map.
+        content             Required story content of type: Image or Map. Must be the same media
+                            on both panels.
         ---------------     --------------------------------------------------------------------
         position            Optional String. Either "right" or "left". Default is "right" so content
                             will be added to right panel.
@@ -2071,15 +2104,19 @@ class Swipe(object):
             # If user has created the content but not added to the story yet.
             if isinstance(content, Image):
                 content._add_image(story=self._story)
+                self._media_type = "image"
             elif isinstance(content, Map):
                 content._add_map(story=self._story)
+                self._media_type = "webmap"
+        if "data" not in self._story._properties["nodes"][self.node]:
+            self._story._properties["nodes"][self.node]["data"] = {"contents": {}}
         # Add to content in position wanted
         if position == "left":
-            self._story._properties["nodes"][self.node]["data"]["content"][
+            self._story._properties["nodes"][self.node]["data"]["contents"][
                 "0"
             ] = content.node
         else:
-            self._story._properties["nodes"][self.node]["data"]["content"][
+            self._story._properties["nodes"][self.node]["data"]["contents"][
                 "1"
             ] = content.node
 
@@ -2099,6 +2136,8 @@ class Sidecar(object):
     Create an Sidecar immersive object from a pre-existing ``immersive`` node.
 
     A sidecar is composed of slides. Slides are composed of two nodes: a narrative panel and a media node.
+    The media node can be a(n): Image, Video, Embed, Map, or Swipe.
+    The narrative panel can contain mulitple types of content including Image, Video, Embed, Button, Text, Map, and more.
 
     ===============     ====================================================================
     **Argument**        **Description**
@@ -2121,6 +2160,7 @@ class Sidecar(object):
 
     def __init__(self, story, node: str):
         # Content must already exist in the story
+        # Sidecar is an immersive node
         self._story = story
         self.node = node
         self._type = story._properties["nodes"][node]["data"]["type"]
@@ -2133,125 +2173,138 @@ class Sidecar(object):
     @property
     def properties(self):
         """
-        List all slides and their children
+        List all slides and their children for a Sidecar node.
 
         :return:
             A list where the first item is the node id for the sidecar. Next
-            items are dictionary of slides and their children.
+            items are slides with the dictionary their children.
         """
         sidecar_tree = [self.node]
         for slide in self._slides:
             narrative_panel = self._story._properties["nodes"][slide]["children"][0]
-            text = (
-                self._story._properties["nodes"][narrative_panel]["children"][0]
+            children = (
+                self._story._properties["nodes"][narrative_panel]["children"]
                 if "children" in self._story._properties["nodes"][narrative_panel]
                 else ""
             )
-            media_item = self._story._properties["nodes"][slide]["children"][1]
+            narrative_children = {}
+            for child in children:
+                info = self._story._properties["nodes"][child]
+                narrative_children[info["type"]] = child
+            # there will always be a narrative panel node but not always a media node
+            if len(self._story._properties["nodes"][slide]["children"]) == 2:
+                media_item = self._story._properties["nodes"][slide]["children"][1]
+                media_type = self._story._properties["nodes"][media_item]["type"]
+            else:
+                media_item = ""
+                media_type = ""
+
+            # construct tree like structure
             sidecar_tree.append(
                 {
-                    "Slide: "
-                    + slide: [
-                        "Narrative Panel: " + narrative_panel,
-                        "Text: " + text,
-                        "Media Item: " + media_item,
-                    ]
+                    slide: {
+                        "narrative_panel": {
+                            "panel": narrative_panel,
+                            "children": narrative_children,
+                        },
+                        "media": {media_type: media_item},
+                    }
                 }
             )
         return sidecar_tree
 
     # ----------------------------------------------------------------------
-    @property
-    def caption(self):
-        """
-        Get/Set the caption property for the sidecar.
-
-        ==================  ========================================
-        **Argument**        **Description**
-        ------------------  ----------------------------------------
-        caption             String. The new caption for the Sidecar.
-        ==================  ========================================
-
-        :return:
-            The caption that is being used.
-        """
-        return self._story._properties["nodes"][self.node]["data"]["caption"]
-
-    # ----------------------------------------------------------------------
-    @caption.setter
-    def caption(self, caption):
-        if isinstance(caption, str):
-            self._story._properties["nodes"][self.node]["data"]["caption"] = caption
-        return self.caption
-
-    # ----------------------------------------------------------------------
-    @property
-    def alt_text(self):
-        """
-        Get/Set the alternte text property for the sidecar.
-
-        ==================  ========================================
-        **Argument**        **Description**
-        ------------------  ----------------------------------------
-        alt_text            String. The new alt_text for the Sidecar.
-        ==================  ========================================
-
-        :return:
-            The alternate text that is being used.
-        """
-        return self._story._properties["nodes"][self.node]["data"]["alt"]
-
-    # ----------------------------------------------------------------------
-    @alt_text.setter
-    def alt_text(self, alt_text):
-        self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
-        return self.alt_text
-
-    # ----------------------------------------------------------------------
+    # Can we create an alias name called: change_media
     def edit(
         self,
-        content: Union[Image, Video, Map, Text, Embed],
+        content: Union[Image, Video, Map, Embed],
         slide_number: int,
     ):
         """
-        Edit slide text or media content. Media Content can be of type Image, Video, Map, or Embed.
+        Edit method can be used to edit the type of media in a slide of the Sidecar.
+        This is done by specifying the slide number and the media content to be added.
+        The media can only be of type: Image, Video, Map, or Embed.
 
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        content             Required content to replace current media content.
-                            Item type can be Image, Video, Map, Embed or Text.
-        ---------------     --------------------------------------------------------------------
-        slide_number        Required Integer. The slide that will be edited. First slide is 1.
-        ===============     ====================================================================
+        .. note::
+            This method should not be used to edit the narrative panel of the Sidecar. To better edit both
+            the media and the narrative panel, it is recommended to use the :func:`~Sidecar.get` method
+            in the Sidecar class. The `get` method can be used to change media if the content is of the same
+            type as what is currently present and preserve the node_id.
+
+
+        ==================      =======================================================================
+        **Argument**            **Description**
+        ------------------      -----------------------------------------------------------------------
+        content                 Required item that is a story content item.
+                                Item type for the media node can be: Image, Video, Map, Embed, or Swipe.
+        ------------------      -----------------------------------------------------------------------
+        slide_number            Required Integer. The slide that will be edited. First slide is 1.
+        ==================      =======================================================================
+
+        .. code-block:: python
+            # Get sidecar from story and see the properties
+            sc = story.get(<sidecar_node_id>)
+            sc.properties
+            >> returns a dictionary structure of the sidecar
+
+            # If a slide 2 contains a map and you want to change it to an image
+            im = Image(<img_url_or_path>)
+            sc.edit(im, 2)
+            sc.properties
+            >> notice slide 2 now has an image
+
+            # If I want to update the image then 2 methods:
+            # OPTION 1
+            im2 = Image(<img_url_or_path>)
+            sc.edit(im2, 2)
+
+            # OPTION 2 (only applicable if content is of same type as existing)
+            im2 = sc.get(im.node_id)
+            im2.image = <img_url_or_path>
+
         """
-        # Find children nodes
-        slide = self._slides[slide_number - 1]
-        slide_node = self._story._properties["nodes"][slide]
-        narrative_panel = slide_node["children"][0]
-        media_item = None
-        if len(slide_node["children"]) == 2:
-            media_item = slide_node["children"][1]
+        # Find media child
+        slide = self.properties[slide_number]
+        slide_node = list(slide.keys())[0]
+        media_node = list(slide[slide_node]["media"].values())[0]
 
         # Check to see if content has been added to node properties
         if content.node not in self._story._properties["nodes"]:
             self._add_item_story(content)
 
-        # Insert new content
-        if isinstance(content, Text):
-            # If content is text then update the narrative panel by removing old text and adding new
-            old_text_node = narrative_panel["children"][0]
-            self._story._properties["nodes"][narrative_panel]["children"].pop(0)
-            self._story._delete(old_text_node)
-            self._story._properties["nodes"][narrative_panel]["children"].insert(
-                0, content.node
-            )
-        else:
-            # Remove current media content and add new content as media
-            if media_item:
-                self._story._delete(media_item)
-                self._story._properties["nodes"][slide]["children"].pop(1)
-            self._story._properties["nodes"][slide]["children"].insert(1, content.node)
+        if media_node:
+            self._story._delete(media_node)
+        self._story._properties["nodes"][slide_node]["children"].insert(1, content.node)
+
+    # ----------------------------------------------------------------------
+    def get(self, node_id: str):
+        """
+        The get method is used to get the node that will be edited. Use `sidecar.properties` to
+        find all nodes associated with the sidecar.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        node_id             Required String. The node id for the content that will be returned.
+        ===============     ====================================================================
+
+        :return: An class instance of the node type.
+
+        .. code-block:: python
+            # Find the nodes associated with the sidecar
+            sc = story.get(<sidecar_node_id>)
+            sc.properties
+            >> returns a dictionary structure of the sidecar
+
+            # Get a node associated with the sidecar, in this example an image, and change the image
+            im = sc.get(<node_id>)
+            im.image = <new_image_path>
+
+            # Save the story to see changes applied in Story Map builder
+            story.save()
+
+        """
+        return self._story._assign_node_class(node_id)
 
     # ----------------------------------------------------------------------
     def remove_slide(self, slide: str):
@@ -2348,6 +2401,7 @@ class Timeline(object):
 
     def __init__(self, story, node: str):
         # Content must already exist in the story
+        # Timeline is not an immersive node
         self._story = story
         self.node = node
         self._type = story._properties["nodes"][node]["type"]
@@ -2393,53 +2447,6 @@ class Timeline(object):
     def style(self, style):
         self._story._properties["nodes"][self.node]["data"]["type"] = style
         return self.style
-
-    # ----------------------------------------------------------------------
-    @property
-    def caption(self):
-        """
-        Get/Set the caption property for the timeline.
-
-        ==================  ========================================
-        **Argument**        **Description**
-        ------------------  ----------------------------------------
-        caption             String. The new caption for the Timeline.
-        ==================  ========================================
-
-        :return:
-            The caption that is being used.
-        """
-        return self._story._properties["nodes"][self.node]["data"]["caption"]
-
-    # ----------------------------------------------------------------------
-    @caption.setter
-    def caption(self, caption):
-        if isinstance(caption, str):
-            self._story._properties["nodes"][self.node]["data"]["caption"] = caption
-        return self.caption
-
-    # ----------------------------------------------------------------------
-    @property
-    def alt_text(self):
-        """
-        Get/Set the alternte text property for the timeline.
-
-        ==================  ========================================
-        **Argument**        **Description**
-        ------------------  ----------------------------------------
-        alt_text            String. The new alt_text for the Timeline.
-        ==================  ========================================
-
-        :return:
-            The alternate text that is being used.
-        """
-        return self._story._properties["nodes"][self.node]["data"]["alt"]
-
-    # ----------------------------------------------------------------------
-    @alt_text.setter
-    def alt_text(self, alt_text):
-        self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
-        return self.alt_text
 
     # ----------------------------------------------------------------------
     def edit(

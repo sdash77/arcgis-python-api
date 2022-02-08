@@ -1,18 +1,20 @@
 import sys, os
 import unittest
 from arcgis.auth import EsriAPIKeyAuth, EsriSession, EsriKerberosAuth
+
 try:
     from _config_utils import get_config_parser
 except:
     from ._config_utils import get_config_parser
 
-    
-if 'api_key' in get_config_parser():
+
+if "api_key" in get_config_parser():
     SKIPME = False
-    SITE_URL = get_config_parser()['api_key']['url']
-    API_KEY = get_config_parser()['api_key']['api_key']
+    SITE_URL = get_config_parser()["api_key"]["url"]
+    API_KEY = get_config_parser()["api_key"]["api_key"]
 else:
     SKIPME = True
+
 
 @unittest.skipIf(SKIPME == True, "configuration file not found")
 class TestMultiAuth(unittest.TestCase):
@@ -34,6 +36,7 @@ class TestMultiAuth(unittest.TestCase):
         auth2 = EsriAPIKeyAuth(api_key=API_KEY, referer="") & auth
         assert auth
         assert auth2
+
 
 @unittest.skipIf(SKIPME, "configuration file not found")
 class TestAPIKey(unittest.TestCase):

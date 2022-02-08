@@ -46,6 +46,8 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         AutoML,
         DeepSort,
         Pix2PixHD,
+        AutoDL,
+        ImageryModel,
         MaXDeepLab,
         WNet_cGAN,
     )
@@ -245,6 +247,8 @@ def detect_objects(
     Function can be used to generate feature service that contains polygons on detected objects
     found in the imagery data using the designated deep learning model. Note that the deep learning
     library needs to be installed separately, in addition to the server's built in Python 3.x library.
+    .. note::
+            This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -430,6 +434,8 @@ def classify_pixels(
     Function to classify input imagery data using a deep learning model.
     Note that the deep learning library needs to be installed separately,
     in addition to the server's built in Python 3.x library.
+    .. note::
+            This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -574,6 +580,8 @@ def export_training_data(
     Function is designed to generate training sample image chips from the input imagery data with
     labeled vector data or classified images. The output of this service tool is the data store string
     where the output image chips, labels and metadata files are going to be stored.
+    .. note::
+            This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -844,6 +852,8 @@ def export_training_data(
 def list_models(*, gis=None, future=False, **kwargs):
     """
     Function is used to list all the installed deep learning models.
+    .. note::
+            This function is supported with ArcGIS Enterprise (Image Server)
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -910,6 +920,8 @@ def classify_objects(
     """
     Function can be used to output feature service with assigned class label for each feature based on
     information from overlapped imagery data using the designated deep learning model.
+    .. note::
+            This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -1154,6 +1166,8 @@ def train_model(
     export_training_data function.
     It generates the deep learning model package (*.dlpk) and adds it to your enterprise portal.
     train_model function performs the training using the Raster Analytics server.
+    .. note::
+            This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
     **Argument**                             **Description**
