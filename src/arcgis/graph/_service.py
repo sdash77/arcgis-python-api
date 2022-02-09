@@ -96,6 +96,7 @@ class KnowledgeGraph:
         )
         rows = []
         query_dec = _kgparser.GraphQueryDecoder()
+        query_dec.data_model = self._datamodel
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
             count = 0
@@ -131,10 +132,32 @@ class KnowledgeGraph:
         buffer_dm = data.content
         gqd = _kgparser.GraphQueryDecoder()
         gqd.push_buffer(buffer_dm)
+        gqd.data_model = self._datamodel
         rows = []
         while gqd.next_row():
-            rows.append(gqd.get_current_row())
+            r = gqd.get_current_row()
+            if isinstance(r, dict):
+                rows.append(r)
+            elif isinstance(r, list):
+                rows.extend(r)
         return rows
+
+    @property
+    def _datamodel(self) -> object:
+        """
+        Returns the datamodel for the Knowledge Graph Service
+        """
+        self._validate_import()
+        url = f"{self._url}/dataModel/queryDataModel"
+        params = {
+            "f": "pbf",
+        }
+        r_dm = self._gis._con.get(
+            url, params=params, return_raw_response=True, try_json=False
+        )
+        buffer_dm = r_dm.content
+        dm = _kgparser.decode_data_model_from_protocol_buffer(buffer_dm)
+        return dm
 
     @property
     def datamodel(self) -> dict:
