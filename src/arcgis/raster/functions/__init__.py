@@ -13369,7 +13369,7 @@ class RFT:
                         G.edge(
                             str(dict_arg.get(k_check)),
                             str(childnode),
-                            color="silver",
+                            color="#BEBEBE",
                             arrowsize="0.9",
                             penwidth="1",
                         )
@@ -13389,7 +13389,7 @@ class RFT:
                 G.edge(
                     str(nodenumber),
                     str(childnode),
-                    color="silver",
+                    color="#BEBEBE",
                     arrowsize="0.9",
                     penwidth="1",
                 )
@@ -13425,7 +13425,7 @@ class RFT:
                             G.edge(
                                 str(nodenumber),
                                 str(childnode),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -13447,7 +13447,7 @@ class RFT:
                             G.edge(
                                 str(nodenumber),
                                 str(childnode),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -13477,7 +13477,7 @@ class RFT:
                             G.edge(
                                 str(nodenumber),
                                 str(childnode),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -13504,7 +13504,7 @@ class RFT:
                             G.edge(
                                 str(nodenumber),
                                 str(childnode),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -13524,7 +13524,7 @@ class RFT:
                             G.edge(
                                 str(nodenumber),
                                 str(childnode),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -13554,7 +13554,7 @@ class RFT:
                                 G.edge(
                                     str(nodenumber),
                                     str(childnode),
-                                    color="silver",
+                                    color="#BEBEBE",
                                     arrowsize="0.9",
                                     penwidth="1",
                                 )
@@ -13574,7 +13574,7 @@ class RFT:
                     G.edge(
                         str(nodenumber),
                         str(childnode),
-                        color="silver",
+                        color="#BEBEBE",
                         arrowsize="0.9",
                         penwidth="1",
                     )
@@ -13594,7 +13594,7 @@ class RFT:
                 G.edge(
                     str(nodenumber),
                     str(childnode),
-                    color="silver",
+                    color="#BEBEBE",
                     arrowsize="0.9",
                     penwidth="1",
                 )
@@ -13614,7 +13614,7 @@ class RFT:
                 G.edge(
                     str(nodenumber),
                     str(childnode),
-                    color="silver",
+                    color="#BEBEBE",
                     arrowsize="0.9",
                     penwidth="1",
                 )
@@ -13664,7 +13664,7 @@ class RFT:
                                 G.edge(
                                     str(nodenumber),
                                     str(childnode),
-                                    color="silver",
+                                    color="#BEBEBE",
                                     arrowsize="0.9",
                                     penwidth="1",
                                 )
