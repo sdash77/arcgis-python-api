@@ -3,7 +3,7 @@ Tests the functionality of the knowledge graph
 """
 import sys
 
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7538\src")
+# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
 from arcgis.gis import GIS
 
@@ -42,10 +42,11 @@ class TestKGMethods(unittest.TestCase):
     """tests the methods"""
 
     def test_simple_query(self):
-        result = kg.query(query="MATCH (n) RETURN n LIMIT 10")
+        q = """MATCH (n) RETURN n.objectid, n.geometry, n LIMIT 10"""
+        result = kg.query(query=q)  # "MATCH (n) RETURN n LIMIT 10")
         assert isinstance(result, (list, tuple))
         if len(result) > 0:
-            assert isinstance(result[0], dict)
+            assert isinstance(result[0], list)
 
     def test_search(self):
         search = kg.search("China")

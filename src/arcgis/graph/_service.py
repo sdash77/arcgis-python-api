@@ -101,7 +101,7 @@ class KnowledgeGraph:
             did_push = query_dec.push_buffer(chunk)
             count = 0
             while query_dec.next_row():
-                rows.extend(query_dec.get_current_row())
+                rows.append(query_dec.get_current_row())
                 count += 1
         return rows
 
@@ -136,10 +136,7 @@ class KnowledgeGraph:
         rows = []
         while gqd.next_row():
             r = gqd.get_current_row()
-            if isinstance(r, dict):
-                rows.append(r)
-            elif isinstance(r, list):
-                rows.extend(r)
+            rows.append(r)
         return rows
 
     @property
