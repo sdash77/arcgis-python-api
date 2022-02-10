@@ -286,15 +286,15 @@ class GIS(object):
     # oauth = None
     def __init__(
         self,
-        url=None,
-        username=None,
-        password=None,
-        key_file=None,
-        cert_file=None,
-        verify_cert=True,
-        set_active=True,
-        client_id=None,
-        profile=None,
+        url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        key_file: Optional[str] = None,
+        cert_file: Optional[str] = None,
+        verify_cert: bool = True,
+        set_active: bool = True,
+        client_id: Optional[str] = None,
+        profile: Optional[str] = None,
         **kwargs,
     ):
         """
