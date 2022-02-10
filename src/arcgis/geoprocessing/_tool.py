@@ -577,7 +577,7 @@ _log = _logging.getLogger(__name__)
 
             for task in tbx.properties.tasks:
                 # _generate_fn(task, tbx)
-                f = executor.submit(fn=_generate_fn, **{"task": task, "tbx": tbx})
+                f = executor.submit(_generate_fn, **{"task": task, "tbx": tbx})
                 source.append(f)
         for fnsrc in source:
             fn_src, choice_list, func_name = fnsrc.result()

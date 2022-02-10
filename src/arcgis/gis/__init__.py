@@ -5350,6 +5350,9 @@ class ContentManager(object):
         before making the call to :attr:`~arcgis.gis.ContentManager.generate` or ``publish``.
 
         .. note::
+            The maximum upload size for shapefiles is now 2 Mb and 10 Mb for all other supported file types.
+
+        .. note::
             If the file to be analyzed currently exists in the portal as an item, callers can pass in its itemId.
             Callers can also directly post the file.
             In this case, the request must be a multipart post request pursuant to IETF RFC1867.
@@ -6281,6 +6284,9 @@ class ContentManager(object):
         """
         The ``generate`` method helps a client generate features from a CSV file, shapefile,
         GPX, or GeoJson file types.
+
+        .. note::
+            The maximum upload size for shapefiles is now 2 Mb and 10 Mb for all other supported file types.
 
         ===================  ==========================================================================
         **Argument**         **Description**

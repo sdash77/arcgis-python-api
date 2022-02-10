@@ -192,7 +192,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ArcGIS Online or Enterprise.
         """
 
-        # Dashboard items.
+        # Viewer items.
         self._id = str(uuid4())
         self.type = "mapWidget"
 
@@ -209,7 +209,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         self._height = 1
         self._width = 1
-        # Dashboard items end here.
+        # Viewer items end here.
 
         from arcgis.widgets import MapView
 
@@ -1356,7 +1356,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required string. What basemap you would like to apply to the map
-                               (‘topo’, ‘national-geographic’, etc.).
+                               ('topo', 'national-geographic', etc.).
                                See :attr:`~arcgis.mapping.WebMap.basemaps` and
                                :attr:`~arcgis.mapping.WebMap.gallery_basemaps` for a full list.
         ==================     ====================================================================
@@ -1712,7 +1712,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def pop_ups(self):
         """
-        Get/Set whether popups are enabled for the dashboard widget.
+        Get/Set whether pop ups are enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1720,7 +1720,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if popups are enabled for dashboard widget, False otherwise.
+        :return: True if popups are enabled for viewer widget, False otherwise.
         """
         return self._pop_ups
 
@@ -1733,8 +1733,113 @@ class WebMap(HasTraits, collections.OrderedDict):
         if value in [0, "0", False, "false"]:
             self._pop_ups = False
 
+    def configure_pop_ups(self, layer_title: str, field_names: list, visibility: bool):
+        """
+        This method can be used to change the visibility of a field for a layer on the Web Map.
+
+        .. note::
+            Changes will not be seen on the Web Map viewer until the Web Map is saved or updated using
+            the ``save`` or ``update`` method. Once this is done, reload the Web Map to see changes or view
+            on the Portal Web Map Viewer.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        layer_title            Required string. The name of the layer.
+        ------------------     --------------------------------------------------------------------
+        field_names            Required list of strings. The name of the field to change the visibility of.
+        ------------------     --------------------------------------------------------------------
+        visibility             Required bool. True if the field should be visible on the pop up for
+                               the layer, else False.
+        ==================     ====================================================================
+        """
+        layer = self.get_layer(title=layer_title)
+
+        for field_name in field_names:
+            idx = 0
+            for field in layer.popupInfo.fieldInfos:
+                if field["fieldName"] == field_name:
+                    layer.popupInfo.fieldInfos[idx].visible = visibility
+                idx += 1
+        return self.get_layer(title=layer_title)
+
     @property
     def bookmarks(self):
+        """
+        Get/Set whether bookmarks are enabled for the viewer widget.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Required list of dictionaries. The new bookmarks to be used.
+                               This will replace current bookmarks with the ones passed into the list.
+        ==================     ====================================================================
+
+        :return: Bookmarks in the WebMap item.
+
+        .. code-block:: python
+            from arcgis.mapping import WebMap
+            from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            gis = GIS(url, username, password)
+            wm_item = gis.content.get('1234abcd_web map item id')
+
+            # create a WebMap object from the existing web map item
+            wm = WebMap(wm_item)
+
+            # get current bookmarks
+            my_bookmarks = wm.bookmarks
+
+            # create new bookmarks to replace others
+            bookmark1 = {'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                        'xmin': -8425179.029160742,
+                        'ymin': 4189089.021381017,
+                        'xmax': -8409834.295732513,
+                        'ymax': 4203784.040068822},
+                        'name': 'Updated Bookmark 1',
+                        'thumbnail': {'url': <url for thumbnail>},
+                        'viewpoint': {'rotation': 30,
+                        'scale': 7222.3819286,
+                        'targetGeometry': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                        'xmin': -8425179.029160742,
+                        'ymin': 4189089.021381017,
+                        'xmax': -8409834.295732513,
+                        'ymax': 4203784.040068822}}}
+            bookmark2 = {'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                        'xmin': -83200.034567,
+                        'ymin': 3127089.021381017,
+                        'xmax': -813434.295732513,
+                        'ymax': 4203784.040068822},
+                        'name': 'Updated Bookmark 2',
+                        'thumbnail': {'url': <url for thumbnail>},
+                        'viewpoint': {'rotation': 30,
+                        'scale': 7222.3819286,
+                        'targetGeometry': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                        'xmin': -8425179.029160742,
+                        'ymin': 4189089.021381017,
+                        'xmax': -8409834.295732513,
+                        'ymax': 4203784.040068822}}}
+
+            # set new bookmark
+            wm.bookmarks = [bookmark1, bookmark2]
+
+        """
+        if "bookmarks" not in self._webmapdict:
+            self._webmapdict["bookmarks"] = []
+        return self._webmapdict["bookmarks"]
+
+    @bookmarks.setter
+    def bookmarks(self, value: list):
+        """
+        See main ``bookmarks`` property docstring.
+        """
+        if isinstance(value, list):
+            self.definition.bookmarks = value
+            self._webmapdict["bookmarks"] = value
+
+    @property
+    def view_bookmarks(self):
         """
         Get/Set whether bookmarks are enabled for the dashboard widget.
 
@@ -1744,14 +1849,14 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if bookmarks are enabled for dashboard widget, False otherwise.
+        :return: True if bookmarks are enabled for viewer widget, False otherwise.
         """
         return self._bookmarks
 
-    @bookmarks.setter
-    def bookmarks(self, value: bool):
+    @view_bookmarks.setter
+    def view_bookmarks(self, value):
         """
-        See main ``bookmarks`` property docstring.
+        See main ``view_bookmarks`` property docstring.
         """
         self._bookmarks = value
         if value in [0, "0", False, "false"]:
@@ -1760,7 +1865,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def legend(self):
         """
-        Get/Set whether legend visibility is enabled for the dashboard widget.
+        Get/Set whether legend visibility is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1768,7 +1873,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if legend visibility is enabled for dashboard widget, False otherwise.
+        :return: True if legend visibility is enabled for viewer widget, False otherwise.
         """
         return self._legend
 
@@ -1784,7 +1889,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def layer_visibility(self):
         """
-        Get/Set whether layer visibility is enabled for the dashboard widget.
+        Get/Set whether layer visibility is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1792,7 +1897,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if layer visibility is enabled for dashboard widget, False otherwise.
+        :return: True if layer visibility is enabled for viewer widget, False otherwise.
         """
         return self._layer_visibility
 
@@ -1833,7 +1938,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def search(self):
         """
-        Get/Set whether search is enabled for the dashboard widget.
+        Get/Set whether search is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1841,7 +1946,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if search is enabled for dashboard widget, False otherwise.
+        :return: True if search is enabled for viewer widget, False otherwise.
         """
         return self._search
 
@@ -1857,7 +1962,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def zoom(self):
         """
-        Get/Set whether zoom is enabled for the dashboard widget.
+        Get/Set whether zoom is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1865,7 +1970,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if zoom is enabled for dashboard widget, False otherwise.
+        :return: True if zoom is enabled for viewer widget, False otherwise.
         """
         return self._zoom
 
@@ -1881,7 +1986,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def navigation(self):
         """
-        Get/Set whether navigation is enabled for the dashboard widget.
+        Get/Set whether navigation is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1889,7 +1994,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if navigation is enabled for dashboard widget, False otherwise.
+        :return: True if navigation is enabled for viewer widget, False otherwise.
         """
         return self._navigation
 
@@ -1905,7 +2010,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def scale_bar(self):
         """
-        Get/Set the scale bar type for the dashboard widget.
+        Get/Set the scale bar type for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1957,7 +2062,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def width(self):
         """
-        Get/Set the width of the dashboard widget.
+        Get/Set the width of the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -5010,9 +5115,7 @@ class MapImageLayer(arcgis.gis.Layer):
         self._populate_layers()
         self._admin = None
         try:
-            from arcgis.gis.server._service._adminfactory import (
-                AdminServiceGen,
-            )
+            from arcgis.gis.server._service._adminfactory import AdminServiceGen
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:

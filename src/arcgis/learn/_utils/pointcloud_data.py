@@ -763,7 +763,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
 
         if sampled_pc.shape[0] == 0:
             file_idx = self._file_indexes[f_idx]
-            f_idx = (f_idx + 1 )%len(self._file_indexes)
+            f_idx = (f_idx + 1) % len(self._file_indexes)
             continue
 
         if apply_tfms:
@@ -825,7 +825,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
             break
         idx += 1
         file_idx = self._file_indexes[f_idx]
-        f_idx = (f_idx + 1 )%len(self._file_indexes)
+        f_idx = (f_idx + 1) % len(self._file_indexes)
 
 
 def filter_pc(pc):

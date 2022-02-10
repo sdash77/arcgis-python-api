@@ -47,14 +47,14 @@ if conda_install_mode:
     dependencies = []
 else:
     dependencies = [
-        "urllib3 >=1.25.10,<1.26.0",
+        "urllib3",
         "cachetools",
         "six",
         "lxml",
         "cryptography",
         "ipywidgets >=7",
         "widgetsnbextension >=3",
-        "pandas >=1",
+        "pandas >=1.3.5",
         "numpy >=1.16.2",
         "matplotlib",
         "keyring >=23.3.*",
@@ -65,7 +65,7 @@ else:
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
-        "requests",
+        "requests >=1.27.1",
         "requests-oauthlib",
         "requests_toolbelt",
         "requests_ntlm",
@@ -326,6 +326,7 @@ kwargs = {
             "learn/_mmdetection_config/**/**/*.py",
             "learn/_mmseg_config/*.py",
             "gis/_impl/*.pyd",
+            "graph/*.pyd",
             "gis/_impl/*.so",
         ],
     },

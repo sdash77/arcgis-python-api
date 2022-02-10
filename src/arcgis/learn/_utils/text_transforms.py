@@ -241,10 +241,13 @@ def collate_func(
 
     # res_y is added in the list as the model has the ability to return the loss if the labels are provided
     if token_type_ids is not None:
-        return [input_ids, attention_masks, token_type_ids, res_y], [
-            res_y,
-            attention_masks,
-        ]
+        return (
+            [input_ids, attention_masks, token_type_ids, res_y],
+            [
+                res_y,
+                attention_masks,
+            ],
+        )
     else:
         return [input_ids, attention_masks, res_y], [res_y, attention_masks]
 

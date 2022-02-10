@@ -210,8 +210,9 @@ class AuxPSUnet(nn.Module):
             aux_l = self.aux_logits(self.hook.stored)
             ## Remove hook to free up memory
             self.hook.remove()
-            return out, F.interpolate(
-                aux_l, x.shape[2:], mode="bilinear", align_corners=True
+            return (
+                out,
+                F.interpolate(aux_l, x.shape[2:], mode="bilinear", align_corners=True),
             )
         else:
             return out
