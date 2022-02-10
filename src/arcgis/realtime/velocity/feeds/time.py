@@ -111,12 +111,13 @@ class _HasTime:
 
             is_success = False
             for field in self._fields["attributes"]:
-                if field["name"] == time.time_field:
+                if field["name"] == time.time_field or field["toField"] == time.time_field:
                     field["tags"] = [_START_TIME_TAG]
 
                     self._fields["time"] = {"timeType": "Instant"}
                     is_success = True
-                    break
+                elif _START_TIME_TAG in field["tags"]:
+                    field["tags"] = []
 
             if not is_success:
                 raise ValueError(f"invalid time_field: '{time.time_field}'")
@@ -130,12 +131,16 @@ class _HasTime:
             is_success_1 = False
             is_success_2 = False
             for field in self._fields["attributes"]:
-                if field["name"] == time.interval_start_field:
+                if field["name"] == time.interval_start_field or field["toField"] == time.interval_start_field:
                     field["tags"] = [_START_TIME_TAG]
                     is_success_1 = True
-                elif field["name"] == time.interval_end_field:
+                elif field["name"] == time.interval_end_field or field["toField"] == time.interval_end_field:
                     field["tags"] = [_END_TIME_TAG]
                     is_success_2 = True
+                elif any(elem in [_START_TIME_TAG, _END_TIME_TAG] for elem in field["tags"]):
+                    # if a user had previously assigned _START_TIME_TAG or _END_TIME_TAG tags to other fields
+                    # it should be cleared
+                    field["tags"] = []
 
             if not is_success_1:
                 raise ValueError(

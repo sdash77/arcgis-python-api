@@ -195,12 +195,13 @@ class _FeedTemplate:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        field_name             str. Name of the track-id field.
+        field_name             str. Name of the track-id field. Either the original name or renamed
+                               field name can be used to specify the track id.
         ==================     ====================================================================
         """
         is_success = False
         for field in self._fields["attributes"]:
-            if field["name"] == field_name:
+            if field["name"] == field_name or field["toField"] == field_name:
                 field["tags"] = [_TRACK_ID_TAG]
                 is_success = True
             elif _TRACK_ID_TAG in field["tags"]:
