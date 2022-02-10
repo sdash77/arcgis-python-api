@@ -1393,6 +1393,9 @@ class Map(object):
         self._story._properties["resources"][new_map.resource_node]["data"][
             "itemId"
         ] = new_map._path.id
+        self._story._properties["resources"][new_map.resource_node]["data"][
+            "mapLayers"
+        ] = new_map._map_layers
         # Update path to resource node
         self._story._properties["nodes"][self.node]["data"][
             "map"
