@@ -218,7 +218,6 @@ class VersionManager(object):
                                 - None - no mode is started.  This is default.
         ===============     ====================================================================
 
-
         """
         for v in self.all:
             if version.lower() == v.properties["versionName"].lower():
@@ -226,49 +225,6 @@ class VersionManager(object):
                     v.mode = mode
                 return v
         return
-
-    # ----------------------------------------------------------------------
-   
-    def _run_async(self, fn, **inputs):
-        """runs the inputs asynchronously"""
-        import concurrent.futures
-
-        tp = concurrent.futures.ThreadPoolExecutor(1)
-        future = tp.submit(fn=fn, **inputs)
-        tp.shutdown(False)
-        return future
-
-    # ----------------------------------------------------------------------
-
-    def _status_via_url(self, con, url, params):
-        """
-        performs the asynchronous check to see if the operation finishes
-        """
-        status_allowed = [
-            "esriJobSubmitted",
-            "esriJobWaiting",
-            "esriJobExecuting",
-            "esriJobSucceeded",
-            "esriJobFailed",
-            "esriJobTimedOut",
-            "esriJobCancelling",
-            "esriJobCancelled",
-        ]
-        status = con.get(url, params)
-        while (
-            status["status"] in status_allowed
-            and status["status"] != "esriJobSucceeded"
-        ):
-            if status["status"] == "esriJobSucceeded":
-                return status
-            elif status["status"] in [
-                "esriJobFailed",
-                "esriJobTimedOut",
-                "esriJobCancelled",
-            ]:
-                break
-            status = con.get(url, params)
-        return status
     
 ########################################################################
 class Version(object):
