@@ -30,9 +30,9 @@ class _FeedTemplate:
     # abstract methods to be implemented by all Feeds
     def _build(self) -> dict:
         """
-        Build the feed configuration object from the current state of this object. This feed configuration can be posted to api endpoint.
+        Build the feed configuration object from the current state of this object. This feed configuration can be posted to the API endpoint.
         To be implemented by concrete classes.
-        for example:
+        For example:
 
         :return: Feed configuration
         """
@@ -50,7 +50,7 @@ class _FeedTemplate:
     def _generate_schema_transformation(self) -> dict:
         """
         Builds the final Schema-transformation dictionary object from the current state of _fields object in the format that can be used
-        to create POST request to velocity.
+        to create POST request to ArcGIS Velocity.
 
         :return: Dictionary object that contains the schema-transformation properties.
         """
@@ -90,7 +90,7 @@ class _FeedTemplate:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        feature_schema         dict. the sample_messages_response["featureSchema"] json/dict object.
+        feature_schema         dict. The sample_messages_response["featureSchema"] json/dict object.
         ==================     ====================================================================
         """
         self._fields = feature_schema
@@ -105,7 +105,7 @@ class _FeedTemplate:
 
     def rename_field(self, current_name: str, new_name: str) -> bool:
         """
-        Rename a schema field
+        Rename a field.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -136,14 +136,14 @@ class _FeedTemplate:
 
     def change_field_data_type(self, name, new_data_type) -> bool:
         """
-        Used to specify the expected data-type of a field
+        Used to specify the expected data type of a field.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        name                   str. field name.
+        name                   str. Field name.
         ------------------     --------------------------------------------------------------------
-        new_data_type          str. new data type for the field.
+        new_data_type          str. New data type for the field.
         ==================     ====================================================================
 
         :return: Boolean - True if data type change was successful
@@ -165,12 +165,12 @@ class _FeedTemplate:
 
     def remove_field(self, name: str) -> bool:
         """
-        Remove a field from the Schema
+        Remove a field from the schema.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        name                   str. Field to be removed from schema.
+        name                   str. Field to be removed from the schema.
         ==================     ====================================================================
 
         :return: Boolean - True if a field is removed, False otherwise
@@ -190,13 +190,13 @@ class _FeedTemplate:
 
     def set_track_id(self, field_name: str):
         """
-         Set track id field for the feed
+         Set the track ID field for the feed.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        field_name             str. Name of the track-id field. Either the original name or renamed
-                               field name can be used to specify the track id.
+        field_name             str. Name of the track ID field. Either the original name or renamed
+                               field name can be used to specify the track ID.
         ==================     ====================================================================
         """
         is_success = False
@@ -225,7 +225,7 @@ class _FeedTemplate:
         ------------------     --------------------------------------------------------------------
         dct                    str. Dict onto which the merge is executed.
         ------------------     --------------------------------------------------------------------
-        merge_dct               str. This dict will be into dct.
+        merge_dct               str. This dict will be merged into dct.
         ==================     ====================================================================
         """
         # Future enhancement - Move this to a util?

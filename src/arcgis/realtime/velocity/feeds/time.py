@@ -10,14 +10,14 @@ class TimeInstant:
     =====================      ====================================================================
     **Argument**               **Description**
     ---------------------      --------------------------------------------------------------------
-    time_field                 str. Time field name
+    time_field                 str. Time field name.
     =====================      ====================================================================
 
     =====================      ====================================================================
     **Optional Argument**      **Description**
     ---------------------      --------------------------------------------------------------------
-    date_format                str. If the field does not contain epoch value a date format can be
-                               defined for the time field
+    date_format                str. If the field does not contain epoch values, a date format can be
+                               defined for the time field.
     =====================      ====================================================================
 
     :return: boolean `True` if the operation is a success
@@ -42,16 +42,16 @@ class TimeInterval:
     =====================     ====================================================================
     **Argument**              **Description**
     ---------------------     --------------------------------------------------------------------
-    interval_start_field      str. Start-time field name for the time interval
+    interval_start_field      str. Start-time field name for the time interval.
     ---------------------     --------------------------------------------------------------------
-    interval_end_field        str. End-time field name for the time interval
+    interval_end_field        str. End-time field name for the time interval.
     =====================     ====================================================================
 
     =====================     ====================================================================
     **Optional Argument**     **Description**
     ---------------------     --------------------------------------------------------------------
-    date_format               str. If the field does not contain epoch value a date format can be
-                              defined for the time field
+    date_format               str. If the field does not contain epoch values, a date format can be
+                              defined for the time field.
     =====================     ====================================================================
 
     :return: boolean `True` if the operation is a success
@@ -92,7 +92,7 @@ class _HasTime:
         **Argument**            **Description**
         ---------------         --------------------------------------------------------------------
         time                    Union[TimeInstant, TimeInterval].
-                                Time object used to configure the feed
+                                Time object used to configure the feed.
         ===============         ====================================================================
 
         :return: boolean `True` if the operation is a success

@@ -11,16 +11,15 @@ class RunInterval:
     ===============     ================================================================================================
     **Argument**        **Description**
     ---------------     ------------------------------------------------------------------------------------------------
-    cron_expression     str. Default value - if nothing is specified following expression will be used to configure the
-                        feed:
-                        example - "0 * * ? * * *" - Runs every minute
-
-                        Cron Expression that specifies the run interval. Please use the
-                        following link to generate the cron expression:
+    cron_expression     str. Cron expression that specifies the run interval. You can use the cron generator at the
+                        following link to generate a cron expression: `Cron Expression Generator & Explainer
+                        <https://www.freeformatter.com/cron-expression-generator-quartz.html`>. The default is every one minute,
+                        represented by the following expression: "0 * * ? * * *"
     ---------------     ------------------------------------------------------------------------------------------------
-    timezone            str. Default value - "America/Los_Angeles"
-                        Run interval timezone to use.
-                        refer: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for strings
+    timezone            str. Run interval timezone to use. The default is: "America/Los_Angeles"
+                        .. note::
+                            To learn more about time zones, see
+                            `List of tz database time zones <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>` page on Wikipedia.
     ===============     ================================================================================================
 
     :return: `True` if the operation is a success
