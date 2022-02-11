@@ -1,6 +1,8 @@
 """
 Entry point to working with local enterprise GIS functions
 """
+from datetime import datetime
+from typing import Optional
 from ...gis._impl._con import Connection
 from ...gis import GIS, Item, User
 from ._resources import PortalResourceManager
@@ -165,10 +167,10 @@ class PortalAdminManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
     def scheduled_tasks(
         self,
-        item: Item = None,
-        active: bool = None,
-        user: User = None,
-        types: str = None,
+        item: Optional[Item] = None,
+        active: Optional[bool] = None,
+        user: Optional[User] = None,
+        types: Optional[str] = None,
     ):
         """
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
@@ -395,7 +397,9 @@ class PortalAdminManager(BasePortalAdmin):
             raise RuntimeError(res)
 
     # ----------------------------------------------------------------------
-    def history(self, start_date, num=100, save_folder=None):
+    def history(
+        self, start_date: datetime, num: int = 100, save_folder: Optional[str] = None
+    ):
         """
         Returns a CSV file containing the login history from a start_date to the present.
 

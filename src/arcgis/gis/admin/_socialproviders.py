@@ -99,7 +99,7 @@ class SocialProviders(object):
 
     # ----------------------------------------------------------------------
     @configuration.setter
-    def configuration(self, value):
+    def configuration(self, value: dict):
         """
         See main ``configuration`` property docstring
         """

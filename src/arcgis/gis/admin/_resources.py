@@ -4,6 +4,7 @@ Provides class, methods and functions to manage resources for a given GIS.
 import os
 import json
 import tempfile
+from typing import Optional
 
 
 class PortalResourceManager(object):
@@ -28,7 +29,13 @@ class PortalResourceManager(object):
         self._is_portal = self._gis.properties.isPortal
         self._workdir = tempfile.gettempdir()
 
-    def add(self, key=None, path=None, text=None, **kwargs):
+    def add(
+        self,
+        key: Optional[str] = None,
+        path: Optional[str] = None,
+        text: Optional[str] = None,
+        **kwargs
+    ):
         """
         The add resource operation allows the administrator to add a file
         resource, for example, the organization's logo or custom banner.
@@ -91,7 +98,7 @@ class PortalResourceManager(object):
             return resp["success"]
         return resp
 
-    def delete(self, key):
+    def delete(self, key: str):
         """
         The Remove Resource operation allows the administrator to remove
         a file resource.
@@ -115,7 +122,7 @@ class PortalResourceManager(object):
         return resp
 
     # ----------------------------------------------------------------------
-    def list(self, start=1, num=100):
+    def list(self, start: int = 1, num: int = 100):
         """
         returns a list of resources uploaded to portal.  The items can be
         images, files and other content used to stylize and modify a
@@ -141,7 +148,7 @@ class PortalResourceManager(object):
             return resp["resources"]
         return resp
 
-    def get(self, resource_name, download_path=None):
+    def get(self, resource_name: str, download_path: Optional[str] = None):
         """
         Download or get a portal resource item
 
