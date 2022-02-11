@@ -213,11 +213,10 @@ class VersionManager(object):
 
                             Values:
 
-                                - edit - starts editting mode
+                                - edit - starts editing mode
                                 - read - starts reading mode
                                 - None - no mode is started.  This is default.
         ===============     ====================================================================
-
 
         """
         for v in self.all:
@@ -226,8 +225,7 @@ class VersionManager(object):
                     v.mode = mode
                 return v
         return
-
-
+    
 ########################################################################
 class Version(object):
     """
@@ -378,6 +376,12 @@ class Version(object):
 
     # ----------------------------------------------------------------------
     @property
+    def tables(self):
+        """returns the tables in the FeatureLayerCollection"""
+        return self._flc.tables
+
+    # ----------------------------------------------------------------------
+    @property
     def mode(self):
         """
         The `mode` allows versoin editors to start and stop edit, read, or
@@ -476,12 +480,12 @@ class Version(object):
         params = {
             "f": "json",
             "versionName": self.properties.versionName,
-            "sessionID": self._guid,
+            "sessionId": self._guid,
         }
         try:
             res = self._con.post(url, params)
         except:
-            params.pop("sessionID")
+            params.pop("sessionId")
             res = self._con.post(url, params)
         if "success" in res:
             return res["success"]
@@ -526,13 +530,9 @@ class Version(object):
             "isBeingEdited" in self.properties
             and self.properties.isBeingEdited == False
         ):
-            if (
-                "isBeingRead" in self.properties
-                and self.properties.isBeingRead == False
-            ):
-                self.start_reading()
-                self._properties = None
-            params = {"f": "json", "sessionID": self._guid}
+            self._properties = None
+            params = {"f": "json", "sessionId": self._guid}
+            self.start_reading()
             url = "%s/startEditing" % self._url
             res = self._con.post(url, params)
             if res["success"]:
@@ -541,8 +541,10 @@ class Version(object):
             self._properties = None
             return res["success"]
         elif "isBeingEdited" in self.properties and self.properties.isBeingEdited:
-            return True
-        return False
+            raise Exception("Version already in edit mode. Only one user can be "
+                            "editing a branch version.")
+        else:
+            return False
 
     # ----------------------------------------------------------------------
     def stop_editing(self, save: Optional[bool] = None):
@@ -565,7 +567,7 @@ class Version(object):
             self._mode = None
             if save is None:
                 save = self.save_edits
-            params = {"f": "json", "sessionID": self._guid, "saveEdits": save}
+            params = {"f": "json", "sessionId": self._guid, "saveEdits": save}
             url = "%s/stopEditing" % self._url
             res = self._con.post(url, params)
             if res["success"]:
@@ -590,7 +592,7 @@ class Version(object):
 
         """
         self._properties = None
-        params = {"f": "json", "sessionID": self._guid}
+        params = {"f": "json", "sessionId": self._guid}
         url = "%s/startReading" % self._url
         res = self._con.post(url, params)
         if res["success"]:
@@ -609,7 +611,7 @@ class Version(object):
 
         """
         self._properties = None
-        params = {"f": "json", "sessionID": self._guid}
+        params = {"f": "json", "sessionId": self._guid}
         url = "%s/stopReading" % self._url
         res = self._con.post(url, params)
         if res["success"]:
@@ -645,7 +647,7 @@ class Version(object):
 
         """
         url = "%s/deleteForwardEdits" % self._url
-        params = {"f": "json", "sessionID": self._guid, "moment": moment}
+        params = {"f": "json", "sessionId": self._guid, "moment": moment}
         res = self._con.post(url, params)
         if "success" in res:
             return res["success"]
@@ -690,14 +692,14 @@ class Version(object):
                                Values: `byObject` | `byAttribute`
 
         ------------------     --------------------------------------------------------------------
-        future                 Optional boolean. If true, the request is processed as an asynchronous
+        future                 Optional boolean. If `True`, the request is processed as an asynchronous
                                job and a URL is returned that points a location displaying the status
                                of the job.
 
                                .. note::
                                    This parameter was introduced at ArcGIS Enterprise 10.9.1
 
-                               The default is False.
+                               The default is `False`.
         ==================     ====================================================================
 
         :returns: Boolean
@@ -713,16 +715,15 @@ class Version(object):
                 "async": future,
             }
             url = "%s/reconcile" % self._url
-
             if future:
                 res = self._con.post(path=url, postdata=params)
-                future = self._run_async(
+                f = self._run_async(
                     self._status_via_url,
                     con=self._con,
                     url=res["statusUrl"],
                     params={"f": "json"},
                 )
-                return future
+                return f
             else:
                 res = self._con.post(url, params)
                 if "success" in res:
@@ -761,7 +762,7 @@ class Version(object):
 
         """
         url = "%s/restoreRows" % self._url
-        params = {"f": "json", "sessionID": self._guid, "rows": rows}
+        params = {"f": "json", "sessionId": self._guid, "rows": rows}
 
         res = self._con.post(url, params)
 
@@ -816,7 +817,15 @@ class Version(object):
         return False
 
     # ----------------------------------------------------------------------
-    def differences(self, result_type: str = "objectIds", moment: Optional[str] = None):
+    def differences(
+        self,
+        result_type="objectIds",
+        moment=None,
+        from_moment=None,
+        layers=None,
+        future=False,
+    ):
+
         """
         The ```differences``` operation allows you to view differences between
         the current version and the default version. The two versions can
@@ -837,17 +846,69 @@ class Version(object):
 
                             Values : `objectIds` or `features`
         ---------------     --------------------------------------------------------------------
-        moment              Required String. Moment used to compare current version with default.
+        moment              Required String. Moment used to compare current version with
+                            default.
+        ---------------     --------------------------------------------------------------------
+        from_moment         Optional string. Time epoch value in milliseconds specifying the
+                            time from which to obtain the differences between this value
+                            and the specific `moment` argument.
+        ---------------     --------------------------------------------------------------------
+        layers              Optional list. The layer id values for which differences should
+                            be returned. If not specified, the differences for all layers will
+                            be returned.
+        ---------------     --------------------------------------------------------------------
+        future              Optional boolean. If `True`, the method runs as an asynchronous
+                            job returning a _URL_ value to inspect the status of the job. The
+                            default value is `False`.
         ===============     ====================================================================
 
 
-        :return: Dictionary indicating 'success' or 'error'
+        :return: 
+            Dictionary with a `differences` key indicating the various `inserts`, `updates`,
+            or `deletes` for each layer.
 
         """
         url = "%s/differences" % self._url
-        params = {"f": "json", "sessionID": self._guid, "resultType": result_type}
-        return self._con.post(url, params)
-
+        if from_moment:
+            if not "DEFAULT" in self.properties.versionName:
+                raise (
+                    "The from_moment parameter is only available for the DEFAULT version."
+                )
+        import json
+        params = {
+            "f": "json",
+            "sessionId": self._guid,
+            "resultType": result_type,
+            "fromMoment": from_moment,
+            "moment": moment,
+            "layers": layers,
+            "async": future,
+        }        
+        if future:
+            res = self._con.post(path=url, postdata=params)   
+            n=1
+            if "statusUrl" in res:
+                time.sleep(1)
+                surl = res["statusUrl"]
+                sres = self._con.get(path=surl, params={"f": "json"})
+                while sres["status"].lower() != "completed":
+                    sres = self._con.get(path=surl, params={"f": "json"})
+                    if sres["status"].lower() in "failed":
+                        if "return_messages" in sres:
+                            return (False, sres)
+                        return False
+                    if n >= 40:
+                        n = 40
+                    time.sleep(0.5 * n)
+                    n += 1
+                else:
+                    return sres
+        else:
+            res = self._con.post(url, params)
+            if "success" in res:
+                return res
+            return res            
+                        
     # ----------------------------------------------------------------------
     def conflicts(self):
         """
@@ -857,9 +918,13 @@ class Version(object):
         are in conflicts will also be returned as they existed in the branch,
         ancestor, and default versions.
         """
-        params = {"f": "json", "sessionID": self._guid}
+        self.start_reading()
+        params = {"f": "json", "sessionId": self._guid}
         url = "%s/conflicts" % self._url
-        return self._con.post(url, params)
+        resp = self._con.post(url, params)
+        if resp:
+            self.stop_reading()
+        return resp
 
     # ----------------------------------------------------------------------
     def inspect(
@@ -922,7 +987,7 @@ class Version(object):
         return res["success"]
 
     # ----------------------------------------------------------------------
-    def post(self):
+    def post(self, rows=None, future=False):
         """
         The Post operation allows the client to post the changes in their
         branch to the default version. The client can only post changes if
@@ -930,16 +995,59 @@ class Version(object):
         If the default version has been modified in the interim, the client
         will have to reconcile again before posting.
 
-        :return: Boolean. True if successful else False.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        rows                Optional List of dictionaries representing the features or objects
+                            for posting a subset of edits in the current version. The 
+                            `objectIds` specified must be edits contained within the current
+                            version, which can be obtained from the
+                            :meth:`~arcgis.features._version.Version.differences` method. The
+                            posted edits will no longer exist in the current version, another
+                            :meth:`~arcgis.features._version.Version.reconcile` is necessary
+                            to see the posted features.
+                            
+                            .. code-block:: python
+                            
+                                rows = [
+                                        {"layerId": 0,
+                                         "objectIds": [14,15,17,20]
+                                        },
+                                        {"layerId": 1},
+                                         "objectIds": [123]
+                                        }
+                                       ]
+        ---------------     --------------------------------------------------------------------
+        future              Optional Boolean. If `True", the operation runs as an asynchronous
+                            job. The results are returned as a Url pointing to a location that 
+                            indicates the status of the job.
+        ===============     ====================================================================               
+        
+        :return: 
+            Boolean. `True` or a job URL if successful, else `False`.
 
         """
         if self._mode == "edit":
             url = "%s/post" % self._url
-            params = {"f": "json", "sessionID": self._guid}
-            res = self._con.post(url, params)
-            return res["success"]
-        return False
-
+            params = {"f": "json", 
+                     "sessionId": self._guid,
+                     "rows": rows,
+                     "async": future
+            }
+            if future:
+                res = self._con.post(path=url, postdata=params)
+                f = self._run_async(
+                    self._status_via_url,
+                    con=self._con,
+                    url=res["statusUrl"],
+                    params={"f": "json"},
+                )
+                return f
+            else:        
+                res = self._con.post(url, params)
+                return res["success"]
+        else:
+            raise ("Version must be in edit mode to run post.")
     # ----------------------------------------------------------------------
     def __enter__(self):
         if self._mode == "edit":
@@ -1028,7 +1136,6 @@ class Version(object):
             )
         return None
 
-    # ----------------------------------------------------------------------
     def _run_async(self, fn, **inputs):
         """runs the inputs asynchronously"""
         import concurrent.futures
@@ -1039,30 +1146,33 @@ class Version(object):
         return future
 
     # ----------------------------------------------------------------------
+
     def _status_via_url(self, con, url, params):
         """
         performs the asynchronous check to see if the operation finishes
         """
         status_allowed = [
-            v.lower()
-            for v in [
-                "Executing",
-                "Pending",
-                "InProgress",
-                "Completed",
-                "CompletedWithErrors",
-            ]
+            "esriJobSubmitted",
+            "esriJobWaiting",
+            "esriJobExecuting",
+            "esriJobSucceeded",
+            "esriJobFailed",
+            "esriJobTimedOut",
+            "esriJobCancelling",
+            "esriJobCancelled"
         ]
         status = con.get(url, params)
         while (
-            status["status"].lower() in status_allowed
-            and status["status"].lower() != "completed"
+            status["status"] in status_allowed
+            and status["status"] != "esriJobSucceeded"
         ):
-            if status["status"].lower() == "completed":
+            if status["status"] == "esriJobSucceeded":
                 return status
-            elif "fail" in status["status"].lower():
+            elif status["status"] in [
+                "esriJobFailed",
+                "esriJobTimedOut",
+                "esriJobCancelled",
+            ]:
                 break
-            elif "error" in status["status"].lower():
-                break
-            status = con.get(url, {"f": "json"})
+            status = con.get(url, params)
         return status
