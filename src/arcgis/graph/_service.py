@@ -14,6 +14,27 @@ import platform
 
 
 class KnowledgeGraph:
+    """
+    Provides access to a Knowledge Graph's datamodel and properties, as well as
+    the ability to search and query the graph.
+    
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Knowledge Graph URL
+    ------------------     --------------------------------------------------------------------
+    gis                    an authenticated :class:`arcigs.gis.GIS` object.
+    ==================     ====================================================================
+    
+    .. code-block:: python
+
+        # Connect to a Knowledge Graph:
+
+        gis = GIS(url="url",username="username",password="password")
+
+        knowledge_graph = KnowledgeGraph(url, gis=gis)
+        
+    """
     _gis = None
     _url = None
     _properties = None
