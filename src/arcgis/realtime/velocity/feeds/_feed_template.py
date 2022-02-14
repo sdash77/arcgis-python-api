@@ -2,6 +2,8 @@ from collections import abc
 from dataclasses import dataclass, field
 from typing import ClassVar, Any
 
+from .time import _START_TIME_TAG, _END_TIME_TAG
+
 _TRACK_ID_TAG: str = "TRACK_ID"
 
 
@@ -180,7 +182,16 @@ class _FeedTemplate:
             fields = self._fields["attributes"]
             for field in fields:
                 if field["name"] == name:
+                    # flag the field for removal from schema by clearing the `toField` value
                     field["toField"] = None
+                    if _TRACK_ID_TAG in field["tags"]:
+                        field["tags"].clear()
+                    elif any(
+                        elem in [_START_TIME_TAG, _END_TIME_TAG]
+                        for elem in field["tags"]
+                    ):
+                        self.reset_time_config()
+
                     is_success = True
 
         if is_success:
@@ -205,7 +216,7 @@ class _FeedTemplate:
                 field["tags"] = [_TRACK_ID_TAG]
                 is_success = True
             elif _TRACK_ID_TAG in field["tags"]:
-                field["tags"] = []
+                field["tags"].clear()
 
         if is_success:
             if self.track_id_field is None:
