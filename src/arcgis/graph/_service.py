@@ -16,7 +16,7 @@ import platform
 class KnowledgeGraph:
     """
     Provides access to a Knowledge Graph's datamodel and properties, as well as
-    the ability to search and query the graph.
+    methods to search and query the graph.
     
     ==================     ====================================================================
     **Argument**           **Description**
