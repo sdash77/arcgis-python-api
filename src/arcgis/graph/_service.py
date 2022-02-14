@@ -72,6 +72,7 @@ class KnowledgeGraph:
         """
         Allows for the searching of the properties of entities,
         relationships, or both in the graph using a full-text index.
+        
         `Learn more about searching a knowledge graph <https://pro.arcgis.com/en/pro-app/latest/help/data/knowledge/search-the-knowledge-graph.htm>`_
 
         ================    ===============================================================
@@ -128,6 +129,7 @@ class KnowledgeGraph:
     def query(self, query: str) -> List[dict]:
         """
         Queries the Knowledge Graph using openCypher
+        
         `Learn more about querying a knowledge graph <https://pro.arcgis.com/en/pro-app/latest/help/data/knowledge/query-the-contents-of-a-knowledge-graph.htm>`_
 
         ================    ===============================================================
