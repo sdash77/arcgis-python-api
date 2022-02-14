@@ -49,15 +49,14 @@ class KnowledgeGraph:
 
     def search(self, query: str, category: str = "both") -> List[dict]:
         """
-        Allows for the searching of the properties of both entities and
-        relationships in the graph using a full-text index.
+        Allows for the searching of the properties of entities,
+        relationships, or both in the graph using a full-text index.
+        `Learn more about searching a knowledge graph <https://pro.arcgis.com/en/pro-app/latest/help/data/knowledge/search-the-knowledge-graph.htm>`_
 
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
-        query               Required String. Allows you to return the entities and
-                            relationships in a graph, as well as the properties of those
-                            entities and relationships, by providing an open cypher query.
+        search              Required String. The search to perform on the knowledge graph.
         ----------------    ---------------------------------------------------------------
         category            Optional String.  The category is the location of the full
                             text search.  This can be isolated to either the `entities` or
@@ -107,14 +106,15 @@ class KnowledgeGraph:
 
     def query(self, query: str) -> List[dict]:
         """
-        Queries the Knowledge Graph
+        Queries the Knowledge Graph using openCypher
+        `Learn more about querying a knowledge graph <https://pro.arcgis.com/en/pro-app/latest/help/data/knowledge/query-the-contents-of-a-knowledge-graph.htm>`_
 
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
         query               Required String. Allows you to return the entities and
                             relationships in a graph, as well as the properties of those
-                            entities and relationships, by providing an open cypher query.
+                            entities and relationships, by providing an openCypher query.
         ================    ===============================================================
 
         :return: List[dict]
