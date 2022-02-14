@@ -47,7 +47,7 @@ class KnowledgeGraph:
             self._properties = _isd.InsensitiveDict(resp)
         return self._properties
 
-    def search(self, query: str, category: str = "both") -> List[dict]:
+    def search(self, search: str, category: str = "both") -> List[dict]:
         """
         Allows for the searching of the properties of entities,
         relationships, or both in the graph using a full-text index.
@@ -76,7 +76,7 @@ class KnowledgeGraph:
         }
         assert str(category).lower() in cat_lu.keys()
         r_enc = _kgparser.GraphSearchRequestEncoder()
-        r_enc.search_query = query
+        r_enc.search_query = search
         r_enc.return_geometry = True
         r_enc.max_num_results = self.properties["maxRecordCount"]
         r_enc.type_category_filter = cat_lu[category.lower()]
