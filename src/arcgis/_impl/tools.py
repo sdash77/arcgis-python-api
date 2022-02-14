@@ -16418,7 +16418,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        input_folder                             Required string. This is the input location for the training sample data.
+        in_folder                                Required string. This is the input location for the training sample data.
                                                  It can be the path of output location on the file share raster data store or a
                                                  shared file system path.
                                                  The training sample data folder needs to be the output of export_training_data function,
@@ -16542,6 +16542,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if isinstance(in_folder, arcgis.gis.Datastore):
             in_folder = in_folder.datapath
+        elif isinstance(in_folder, list):
+            in_folder = [folder.datapath if isinstance(folder, arcgis.gis.Datastore) else str(folder) for folder in in_folder]
+            in_folder =",".join(in_folder)
 
         if pretrained_model is not None:
             pretrained_model = self._set_param(pretrained_model)
