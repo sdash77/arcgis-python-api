@@ -52,6 +52,7 @@ class KbertnetesPy(object):
         client_id: str = None,
         custom_auth: "requests.AuthBase" = None,
         token: str = None,
+        api_key: str = None,
         **kwargs,
     ):
         """The Portal constructor. Requires URL and optionally username/password."""
@@ -59,6 +60,7 @@ class KbertnetesPy(object):
         trust_env = kwargs.get("trust_env", None)
         self._timeout = kwargs.pop("timeout", 600)
         custom_adapter = kwargs.pop("custom_adapter", None)
+        self._api_key = api_key
         url = url.strip()  # be permissive in accepting home app urls
         homepos = url.find("/home")
         if homepos != -1:
@@ -122,6 +124,8 @@ class KbertnetesPy(object):
         if not connection:
             _log.debug("Connecting to portal: " + self.hostname)
             if self._is_arcpy:
+                if token == api_key:
+                    token = None
                 self.con = Connection(
                     baseurl="pro",
                     tokenurl=tokenurl,
@@ -139,11 +143,14 @@ class KbertnetesPy(object):
                     client_id=client_id,
                     client_secret=client_secret,
                     token=token,
+                    api_key=self._api_key,
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
                 )
             else:
+                if token == api_key:
+                    token = None
                 self.con = Connection(
                     baseurl=self.resturl,
                     tokenurl=tokenurl,
@@ -162,6 +169,7 @@ class KbertnetesPy(object):
                     trust_env=trust_env,
                     custom_auth=custom_auth,
                     token=token,
+                    api_key=self._api_key,
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,

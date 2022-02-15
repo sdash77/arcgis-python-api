@@ -422,11 +422,13 @@ class GIS(object):
         self._datastores_list = None
         self._utoken = kwargs.pop("token", None)
         client_secret = kwargs.pop("client_secret", None)
+        self._api_key = None
         if self._username is None:
             if "ESRI_API_KEY" in os.environ and self._utoken is None:
                 self._utoken = os.environ.get("ESRI_API_KEY", None)
             elif self._utoken is None and not "ESRI_API_KEY" in os.environ:
                 self._utoken = kwargs.pop("api_key", None)
+            self._api_key = self._utoken
 
         if self._url.lower() == "home" and not os.getenv("NB_AUTH_FILE", None) is None:
             # configuring for hosted notebooks need to happen before portalpy
@@ -458,6 +460,7 @@ class GIS(object):
                 proxy=kwargs.get("proxy", None),
                 custom_adapter=custom_adapter,
                 token=self._utoken,
+                api_key=self._api_key,
                 is_hosted_nb_home=self._is_hosted_nb_home,
                 use_gen_token=self._use_gen_token,
             )
@@ -482,6 +485,7 @@ class GIS(object):
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
                     token=self._utoken,
+                    api_key=self._api_key,
                     is_hosted_nb_home=self._is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
                 )
@@ -549,6 +553,7 @@ class GIS(object):
                         proxy=kwargs.get("proxy", None),
                         custom_adapter=custom_adapter,
                         token=self._utoken,
+                        api_key=self._api_key,
                         is_hosted_nb_home=self._is_hosted_nb_home,
                         use_gen_token=self._use_gen_token,
                     )

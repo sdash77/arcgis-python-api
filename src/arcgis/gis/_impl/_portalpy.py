@@ -108,6 +108,7 @@ class Portal(object):
         trust_env = kwargs.get("trust_env", None)
         custom_adapter = kwargs.pop("custom_adapter", None)
         is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
+        api_key = kwargs.pop("api_key", None)
         if homepos != -1:
             url = url[:homepos]
 
@@ -171,6 +172,8 @@ class Portal(object):
         if not connection:
             _log.debug("Connecting to portal: " + self.hostname)
             if self._is_arcpy:
+                if token == api_key:
+                    token = None
                 self.con = Connection(
                     baseurl="pro",
                     tokenurl=tokenurl,
@@ -186,6 +189,7 @@ class Portal(object):
                     verify_cert=verify_cert,
                     custom_auth=custom_auth,
                     token=token,
+                    api_key=api_key,
                     trust_env=trust_env,
                     timeout=kwargs.get("timeout", 600),
                     proxy=kwargs.get("proxy", None),
@@ -194,6 +198,8 @@ class Portal(object):
                     use_gen_token=self._use_gen_token,
                 )
             else:
+                if token == api_key:
+                    token = None
                 self.con = Connection(
                     baseurl=self.resturl,
                     tokenurl=tokenurl,
@@ -211,6 +217,7 @@ class Portal(object):
                     client_secret=kwargs.pop("client_secret", None),
                     custom_auth=custom_auth,
                     token=token,
+                    api_key=api_key,
                     trust_env=trust_env,
                     timeout=kwargs.get("timeout", 600),
                     proxy=kwargs.get("proxy", None),
