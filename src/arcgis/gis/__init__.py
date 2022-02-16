@@ -9493,11 +9493,18 @@ class User(dict):
             "includeExpired": True,
         }
         res = self._portal.con.post(url, params)
-        provs = res["provisionedListings"]
+        provs = [
+            Item(gis=self._gis, itemid=i["itemId"]) for i in res["provisionedListings"]
+        ]
         while res["nextStart"] > -1:
             params["start"] = res["nextStart"]
             res = self._portal.con.post(url, params)
-            provs.extend(res["provisionedListings"])
+            provs.extend(
+                [
+                    Item(gis=self._gis, itemid=i["itemId"])
+                    for i in res["provisionedListings"]
+                ]
+            )
         return provs
 
     # ----------------------------------------------------------------------
