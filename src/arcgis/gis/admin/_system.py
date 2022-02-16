@@ -1,6 +1,7 @@
 """
 Modifies a local portal's system settings.
 """
+from typing import Optional
 from .._impl._con import Connection
 from .. import GIS
 from ._base import BasePortalAdmin
@@ -120,7 +121,7 @@ class EmailManager(BasePortalAdmin):
             self._properties = PropertyMap({})
 
     # ----------------------------------------------------------------------
-    def test(self, email):
+    def test(self, email: str):
         """
         Sends a test email to a provided email account to ensure the
         configuration is correct.
@@ -143,14 +144,14 @@ class EmailManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
     def update(
         self,
-        server,
-        from_email,
-        require_auth,
-        email_label=None,
-        port=25,
-        encryption="SSL",
-        username=None,
-        password=None,
+        server: str,
+        from_email: str,
+        require_auth: bool,
+        email_label: Optional[str] = None,
+        port: int = 25,
+        encryption: str = "SSL",
+        username: Optional[str] = None,
+        password: Optional[str] = None,
     ):
         """
         Configures the Email Server for Portal
@@ -508,7 +509,7 @@ class System(BasePortalAdmin):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def reindex(self, mode="FULL", includes=None):
+    def reindex(self, mode: str = "FULL", includes: Optional[str] = None):
         """
         This operation allows you to generate or update the indexes for
         content; such as users, groups, and items stored in the database
@@ -556,7 +557,7 @@ class System(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @languages.setter
-    def languages(self, value):
+    def languages(self, value: str):
         """
         This resource gets/sets which languages will appear in portal
         content search results. Use the Update languages operation to
@@ -598,7 +599,7 @@ class System(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @content_discovery.setter
-    def content_discovery(self, value):
+    def content_discovery(self, value: bool):
         """
         See main ``content_discovery`` property docstring
         """
@@ -714,7 +715,7 @@ class WebAdaptors(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @configuration.setter
-    def configuration(self, shared_key):
+    def configuration(self, shared_key: str):
         """
         See main ``configuration`` property docstring
         """
@@ -885,7 +886,7 @@ class PortalLicense(BasePortalAdmin):
             self._init(self._gis)
 
     # ----------------------------------------------------------------------
-    def import_license(self, file):
+    def import_license(self, file: str):
         """
         The `import_license` operation is used to import a new license
         file. The portal license file contains your Enterprise portal's
@@ -937,7 +938,7 @@ class PortalLicense(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
-    def release_license(self, username):
+    def release_license(self, username: str):
         """
         If a user checks out an ArcGIS Pro license for offline or
         disconnected use, this operation releases the license for the
@@ -954,7 +955,7 @@ class PortalLicense(BasePortalAdmin):
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        username	                Required String. The user name of the account.
+        username	                    Required String. The user name of the account.
         ===========================     ====================================================================
 
         :return: Boolean. True if successful else False.
@@ -971,7 +972,7 @@ class PortalLicense(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
-    def update(self, info):
+    def update(self, info: dict):
         """
         ArcGIS License Server Administrator works with your portal and
         enforces licenses for ArcGIS Pro. This operation allows you to
@@ -1028,7 +1029,7 @@ class PortalLicense(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
-    def validate(self, file, list_ut=False):
+    def validate(self, file: str, list_ut: bool = False):
         """
         The `validate` operation is used to validate an input license file.
         Only valid license files can be imported into the Enterprise
@@ -1095,7 +1096,7 @@ class Licenses(BasePortalAdmin):
             self._init(self._gis)
 
     # ----------------------------------------------------------------------
-    def entitlements(self, app="arcgisprodesktop"):
+    def entitlements(self, app: str = "arcgisprodesktop"):
         """
         This operation returns the currently queued entitlements for a
         product, such as ArcGIS Pro or Navigator for ArcGIS, and applies
@@ -1134,7 +1135,7 @@ class Licenses(BasePortalAdmin):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def remove_entitlement(self, app="arcgisprodesktop"):
+    def remove_entitlement(self, app: str = "arcgisprodesktop"):
         """
         deletes an entitlement from a site
 
@@ -1168,7 +1169,7 @@ class Licenses(BasePortalAdmin):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def update_license_manager(self, info):
+    def update_license_manager(self, info: str):
         """
         ArcGIS License Server Administrator works with your portal and
         enforces licenses for ArcGIS Pro. This operation allows you to
@@ -1201,7 +1202,7 @@ class Licenses(BasePortalAdmin):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def import_entitlements(self, file, application):
+    def import_entitlements(self, file: str, application: str):
         """
         This operation allows you to import entitlements for ArcGIS Pro and
         additional products such as Navigator for ArcGIS into your
@@ -1237,7 +1238,7 @@ class Licenses(BasePortalAdmin):
         return self._con.post(path=url, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
-    def remove_all(self, application):
+    def remove_all(self, application: str):
         """
         This operation removes all entitlements from the portal for ArcGIS
         Pro or additional products such as Navigator for ArcGIS and revokes
@@ -1253,7 +1254,7 @@ class Licenses(BasePortalAdmin):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def release_license(self, username):
+    def release_license(self, username: str):
         """
         If a user checks out an ArcGIS Pro license for offline or
         disconnected use, this operation releases the license for the

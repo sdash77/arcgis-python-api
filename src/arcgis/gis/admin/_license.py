@@ -56,7 +56,7 @@ class LicenseManager(BasePortalAdmin):
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def get(self, name):
+    def get(self, name: str):
         """
         Retrieves a license by it's name (title)
 
@@ -161,7 +161,7 @@ class LicenseManager(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @offline_pro.setter
-    def offline_pro(self, value):
+    def offline_pro(self, value: bool):
         """
         See main ``offline_pro`` property docstring
         """
@@ -290,7 +290,7 @@ class Bundle(object):
         return "<AppBundle: %s>" % self.properties["name"]
 
     # ----------------------------------------------------------------------
-    def assign(self, users):
+    def assign(self, users: list):
         """
         Assigns the current application bundle to a list of users
 
@@ -326,7 +326,7 @@ class Bundle(object):
         return res
 
     # ----------------------------------------------------------------------
-    def revoke(self, users):
+    def revoke(self, users: list):
         """
         Revokes the current application bundle to a list of users
 
@@ -490,7 +490,7 @@ class License(object):
         return user_entitlements
 
     # ----------------------------------------------------------------------
-    def check(self, user) -> list:
+    def check(self, user: str) -> list:
         """
         Checks if the entitlement is assigned or not.
 
@@ -528,7 +528,7 @@ class License(object):
         return []
 
     # ----------------------------------------------------------------------
-    def user_entitlement(self, username):
+    def user_entitlement(self, username: str):
         """
         checks if a user has the entitlement assigned to them
 
@@ -566,7 +566,13 @@ class License(object):
         return {}
 
     # ----------------------------------------------------------------------
-    def assign(self, username, entitlements, suppress_email=True, overwrite=True):
+    def assign(
+        self,
+        username: str,
+        entitlements: list,
+        suppress_email: bool = True,
+        overwrite: bool = True,
+    ):
         """
         grants a user an entitlement.
 
@@ -618,7 +624,7 @@ class License(object):
         return res
 
     # ----------------------------------------------------------------------
-    def revoke(self, username, entitlements, suppress_email=True):
+    def revoke(self, username: str, entitlements: list, suppress_email: bool = True):
         """
         removes a specific license from a given entitlement
 

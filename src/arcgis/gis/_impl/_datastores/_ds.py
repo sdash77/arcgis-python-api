@@ -1,4 +1,5 @@
 import time as _time
+from typing import Union
 import uuid
 from arcgis.gis import GIS
 from .._con import Connection
@@ -313,7 +314,12 @@ class PortalDataStore(object):
 
     # ----------------------------------------------------------------------
     def publish(
-        self, config: dict, server_id, folder=None, description=None, tags: list = None
+        self,
+        config: dict,
+        server_id,
+        folder=None,
+        description=None,
+        tags: Union[list, str] = None,
     ):
         """
         The ``publish`` operation is used to publish scene layers by reference to data in a

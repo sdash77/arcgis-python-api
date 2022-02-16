@@ -37,7 +37,7 @@ class KubeServiceDirectory(_BaseKube):
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def report(self, as_html=True, folder=None):
+    def report(self, as_html: bool = True, folder: Optional[str] = None):
         """
         Generates a table of Services in the given folder, as a Pandas dataframe.
 
@@ -76,7 +76,7 @@ class KubeServiceDirectory(_BaseKube):
             return df
 
     # ----------------------------------------------------------------------
-    def get(self, name, folder=None):
+    def get(self, name: str, folder: Optional[str] = None):
         """returns a single service in a folder"""
         if folder is None:
             url = self._url
@@ -95,7 +95,7 @@ class KubeServiceDirectory(_BaseKube):
         return None
 
     # ----------------------------------------------------------------------
-    def list(self, folder=None):
+    def list(self, folder: Optional[str] = None):
         """
         returns a list of services at the given folder
         """
@@ -124,7 +124,7 @@ class KubeServiceDirectory(_BaseKube):
         return services
 
     # ----------------------------------------------------------------------
-    def find(self, service_name, folder=None):
+    def find(self, service_name: str, folder: Optional[str] = None):
         """
         finds a service based on it's name in a given folder
         """
@@ -144,7 +144,7 @@ class KubeServiceDirectory(_BaseKube):
         return []
 
     # ----------------------------------------------------------------------
-    def publish_sd(self, sd_file, folder=None):
+    def publish_sd(self, sd_file: str, folder: Optional[str] = None):
         """
         Publishes a service definition file to ArcGIS Server.
 

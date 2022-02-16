@@ -1,5 +1,6 @@
 import ssl
 import logging
+from typing import Optional
 from urllib.parse import urlparse
 from ._common import BaseServer
 from .._impl._con import Connection
@@ -233,7 +234,7 @@ class ServicesDirectory(BaseServer):
         return "<%s at %s>" % (type(self).__name__, self.url)
 
     # ----------------------------------------------------------------------
-    def report(self, as_html=True, folder=None):
+    def report(self, as_html: bool = True, folder: Optional[str] = None):
         """
         Generates a table of Services in the given folder, as a Pandas dataframe.
 
@@ -270,7 +271,7 @@ class ServicesDirectory(BaseServer):
             return df
 
     # ----------------------------------------------------------------------
-    def get(self, name, folder=None):
+    def get(self, name: str, folder: Optional[str] = None):
         """returns a single service in a folder"""
         if folder is None:
             res = self._con.get(self._url, {"f": "json"})
@@ -287,7 +288,7 @@ class ServicesDirectory(BaseServer):
         return None
 
     # ----------------------------------------------------------------------
-    def list(self, folder=None):
+    def list(self, folder: Optional[str] = None):
         """
         The ``list`` method returns a list of services at the given folder.
         The objects will vary in type according to the type of service. For
@@ -329,7 +330,7 @@ class ServicesDirectory(BaseServer):
         return services
 
     # ----------------------------------------------------------------------
-    def find(self, service_name, folder=None):
+    def find(self, service_name: str, folder: Optional[str] = None):
         """
         finds a service based on it's name in a given folder
         """

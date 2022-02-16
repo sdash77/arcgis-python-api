@@ -3,6 +3,8 @@ import logging
 import datetime as _datetime
 import platform
 import configparser
+from typing import Optional
+from arcgis.gis import GIS
 from functools import lru_cache
 
 _log = logging.getLogger(__name__)
@@ -746,7 +748,7 @@ class ProfileManager(object):
         )
 
     # ----------------------------------------------------------------------
-    def list(self, as_df=False):
+    def list(self, as_df: bool = False):
         """
         The ``list`` method retrieves a list of profile names in the configuration file
 
@@ -773,7 +775,7 @@ class ProfileManager(object):
         return []
 
     # --------------------------------------------------------------------------
-    def get(self, profile):
+    def get(self, profile: str):
         """
         The ``get`` method retrieves the profile information for a given entry.
 
@@ -818,7 +820,7 @@ class ProfileManager(object):
         return None
 
     # --------------------------------------------------------------------------
-    def delete(self, profile):
+    def delete(self, profile: str):
         """
         The ``delete`` method deletes a profile permanently from the .arcgisprofile file
 
@@ -866,13 +868,13 @@ class ProfileManager(object):
     # ----------------------------------------------------------------------
     def update(
         self,
-        profile,
-        url=None,
-        username=None,
-        password=None,
-        key_file=None,
-        cert_file=None,
-        client_id=None,
+        profile: str,
+        url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        key_file: Optional[str] = None,
+        cert_file: Optional[str] = None,
+        client_id: Optional[str] = None,
     ):
         """
         The ``update`` method updates an existing profile in the credential manager.
@@ -921,13 +923,13 @@ class ProfileManager(object):
     # ----------------------------------------------------------------------
     def create(
         self,
-        profile,
-        url=None,
-        username=None,
-        password=None,
-        key_file=None,
-        cert_file=None,
-        client_id=None,
+        profile: str,
+        url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        key_file: Optional[str] = None,
+        cert_file: Optional[str] = None,
+        client_id: Optional[str] = None,
     ):
         """
         The ``create`` method adds a new entry into the Profile Store.
@@ -992,7 +994,7 @@ class ProfileManager(object):
             return False
 
     # ----------------------------------------------------------------------
-    def save_as(self, profile, gis):
+    def save_as(self, profile: str, gis: GIS):
         """
 
         The ``save_as`` method saves and adds the provided :class:`~arcgis.gis.GIS` object to the profile.
@@ -1016,7 +1018,6 @@ class ProfileManager(object):
 
 
         """
-        from arcgis.gis import GIS
 
         url = gis._url
         u = gis._username
