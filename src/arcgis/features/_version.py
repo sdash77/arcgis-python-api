@@ -225,7 +225,8 @@ class VersionManager(object):
                     v.mode = mode
                 return v
         return
-    
+
+
 ########################################################################
 class Version(object):
     """
@@ -541,8 +542,10 @@ class Version(object):
             self._properties = None
             return res["success"]
         elif "isBeingEdited" in self.properties and self.properties.isBeingEdited:
-            raise Exception("Version already in edit mode. Only one user can be "
-                            "editing a branch version.")
+            raise Exception(
+                "Version already in edit mode. Only one user can be "
+                "editing a branch version."
+            )
         else:
             return False
 
@@ -863,7 +866,7 @@ class Version(object):
         ===============     ====================================================================
 
 
-        :return: 
+        :return:
             Dictionary with a `differences` key indicating the various `inserts`, `updates`,
             or `deletes` for each layer.
 
@@ -875,6 +878,7 @@ class Version(object):
                     "The from_moment parameter is only available for the DEFAULT version."
                 )
         import json
+
         params = {
             "f": "json",
             "sessionId": self._guid,
@@ -883,10 +887,10 @@ class Version(object):
             "moment": moment,
             "layers": layers,
             "async": future,
-        }        
+        }
         if future:
-            res = self._con.post(path=url, postdata=params)   
-            n=1
+            res = self._con.post(path=url, postdata=params)
+            n = 1
             if "statusUrl" in res:
                 time.sleep(1)
                 surl = res["statusUrl"]
@@ -907,8 +911,8 @@ class Version(object):
             res = self._con.post(url, params)
             if "success" in res:
                 return res
-            return res            
-                        
+            return res
+
     # ----------------------------------------------------------------------
     def conflicts(self):
         """
@@ -999,16 +1003,16 @@ class Version(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         rows                Optional List of dictionaries representing the features or objects
-                            for posting a subset of edits in the current version. The 
+                            for posting a subset of edits in the current version. The
                             `objectIds` specified must be edits contained within the current
                             version, which can be obtained from the
                             :meth:`~arcgis.features._version.Version.differences` method. The
                             posted edits will no longer exist in the current version, another
                             :meth:`~arcgis.features._version.Version.reconcile` is necessary
                             to see the posted features.
-                            
+
                             .. code-block:: python
-                            
+
                                 rows = [
                                         {"layerId": 0,
                                          "objectIds": [14,15,17,20]
@@ -1019,20 +1023,21 @@ class Version(object):
                                        ]
         ---------------     --------------------------------------------------------------------
         future              Optional Boolean. If `True", the operation runs as an asynchronous
-                            job. The results are returned as a Url pointing to a location that 
+                            job. The results are returned as a Url pointing to a location that
                             indicates the status of the job.
-        ===============     ====================================================================               
-        
-        :return: 
+        ===============     ====================================================================
+
+        :return:
             Boolean. `True` or a job URL if successful, else `False`.
 
         """
         if self._mode == "edit":
             url = "%s/post" % self._url
-            params = {"f": "json", 
-                     "sessionId": self._guid,
-                     "rows": rows,
-                     "async": future
+            params = {
+                "f": "json",
+                "sessionId": self._guid,
+                "rows": rows,
+                "async": future,
             }
             if future:
                 res = self._con.post(path=url, postdata=params)
@@ -1043,11 +1048,12 @@ class Version(object):
                     params={"f": "json"},
                 )
                 return f
-            else:        
+            else:
                 res = self._con.post(url, params)
                 return res["success"]
         else:
             raise ("Version must be in edit mode to run post.")
+
     # ----------------------------------------------------------------------
     def __enter__(self):
         if self._mode == "edit":
@@ -1159,7 +1165,7 @@ class Version(object):
             "esriJobFailed",
             "esriJobTimedOut",
             "esriJobCancelling",
-            "esriJobCancelled"
+            "esriJobCancelled",
         ]
         status = con.get(url, params)
         while (
