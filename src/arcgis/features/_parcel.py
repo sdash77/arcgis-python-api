@@ -844,7 +844,8 @@ class ParcelFabricManager(object):
 
                                         If None, the method will analyze the entire parcel fabric.
         ----------------------------    --------------------------------------------------------------------
-        future                          Optional boolean. If `True`, the request is processed as an asynchronous job and a URL is returned that points a location
+        future                          Optional boolean. If `True`, the request is processed as an
+                                        asynchronous job and a URL is returned that points a location
                                         displaying the status of the job.
 
                                         The default is `False`.

@@ -1,4 +1,6 @@
 import os
+from typing import Optional
+
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
@@ -165,18 +167,18 @@ class Machine(object):
     # ----------------------------------------------------------------------
     def create_self_signed_cert(
         self,
-        alias,
-        keysize,
-        common_name,
-        org_unit,
-        organization,
-        city,
-        state,
-        country,
-        keyalg="RSA",
-        sigalg="SHA1withRSA",
-        validity=90,
-        san=None,
+        alias: str,
+        keysize: str,
+        common_name: str,
+        org_unit: str,
+        organization: str,
+        city: str,
+        state: str,
+        country: str,
+        keyalg: str = "RSA",
+        sigalg: str = "SHA1withRSA",
+        validity: int = 90,
+        san: Optional[str] = None,
     ):
         """
         Use this operation to create a self-signed certificate or as a
@@ -315,7 +317,7 @@ class Machine(object):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def ssl_certificate(self, certificate):
+    def ssl_certificate(self, certificate: str):
         """
         Provides the self-signed certificate object.
 
@@ -340,7 +342,7 @@ class Machine(object):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def delete_certificate(self, certificate):
+    def delete_certificate(self, certificate: str):
         """
         Deletes a SSL certificate using the certificate alias.
 
@@ -362,7 +364,7 @@ class Machine(object):
             return res
 
     # ----------------------------------------------------------------------
-    def export_certificate(self, certificate):
+    def export_certificate(self, certificate: str):
         """
         Downloads an SSL certificate. The file returned by the
         server is an X.509 certificate. The downloaded certificate can then
@@ -384,7 +386,7 @@ class Machine(object):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def generate_CSR(self, certificate):
+    def generate_CSR(self, certificate: str):
         """
         Generates a certificate signing request (CSR) for a
         self-signed certificate. A CSR is required by a CA to create a
@@ -405,7 +407,9 @@ class Machine(object):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def import_CA_signed_certificate(self, certificate, ca_signed_certificate):
+    def import_CA_signed_certificate(
+        self, certificate: str, ca_signed_certificate: str
+    ):
         """
         Imports a certificate authority (CA)-signed SSL certificate into the key store.
 
@@ -431,7 +435,9 @@ class Machine(object):
         return self._con.post(path=url, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
-    def import_existing_server_certificate(self, alias, cert_password, cert_file):
+    def import_existing_server_certificate(
+        self, alias: str, cert_password: str, cert_file: str
+    ):
         """
         Imports an existing server certificate, stored in
         the PKCS #12 format, into the keystore.
@@ -461,7 +467,7 @@ class Machine(object):
         return self._con.post(path=url, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
-    def import_root_certificate(self, alias, root_CA_certificate):
+    def import_root_certificate(self, alias: str, root_CA_certificate: str):
         """
         Imports a certificate authority's (CA) root and intermediate
         certificates into the keystore.

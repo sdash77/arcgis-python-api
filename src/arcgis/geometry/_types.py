@@ -18,13 +18,14 @@ from functools import partial, lru_cache
 _number_type = (int, float)
 _empty_value = [None, "NaN"]
 
-_HASARCPY = True
 try:
     arcpy = LazyLoader("arcpy", strict=True)
+    _HASARCPY = True
 except:
     _HASARCPY = False
 try:
     shapely = LazyLoader("shapely", strict=True)
+    _HASSHAPELY = True
 except:
     _HASSHAPELY = False
 

@@ -1,6 +1,7 @@
 """
 class to work with the living atlas
 """
+from typing import Optional
 from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
 from ...gis import GIS
@@ -172,7 +173,7 @@ class LivingAtlas(BasePortalAdmin):
         return all(results)
 
     # ----------------------------------------------------------------------
-    def status(self, group):
+    def status(self, group: str):
         """
         Returns information about the sharing status of the Living
         Atlas with the group.
@@ -238,7 +239,7 @@ class LivingAtlas(BasePortalAdmin):
             return False
 
     # ----------------------------------------------------------------------
-    def update_subscriber_account(self, username, password):
+    def update_subscriber_account(self, username: str, password: str):
         """
         Updates the Username/Password for the Living Atlas Subscriber User.
         The account must be an ArcGIS Online account.
@@ -273,7 +274,7 @@ class LivingAtlas(BasePortalAdmin):
         return all(r)
 
     # ----------------------------------------------------------------------
-    def update_premium_account(self, username, password):
+    def update_premium_account(self, username: str, password: str):
         """
         Updates the Username/Password for the Living Atlas Premium User.
         The account must be an ArcGIS Online account.
@@ -316,7 +317,9 @@ class LivingAtlas(BasePortalAdmin):
         return self._groups
 
     # ----------------------------------------------------------------------
-    def validate_credentials(self, username, password, online_url=None):
+    def validate_credentials(
+        self, username: str, password: str, online_url: Optional[str] = None
+    ):
         """
         Ensures the arguments contain valid credentials to access an active
         ArcGIS Online Organization.
@@ -349,7 +352,7 @@ class LivingAtlas(BasePortalAdmin):
         return res["status"] == "success"
 
     # ----------------------------------------------------------------------
-    def enable_premium_atlas(self, username, password):
+    def enable_premium_atlas(self, username: str, password: str):
         """
         Enables the Premium Living Atlas Content for a local portal.
 
@@ -443,7 +446,7 @@ class LivingAtlas(BasePortalAdmin):
         return
 
     # ----------------------------------------------------------------------
-    def enable_subscriber_atlas(self, username, password):
+    def enable_subscriber_atlas(self, username: str, password: str):
         """
         Enables the Subscriber level Living Atlas Content for an ArcGIS Enterprise portal.
 

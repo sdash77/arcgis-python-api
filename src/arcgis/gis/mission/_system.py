@@ -212,7 +212,7 @@ class DirectoryManager(object):
         return val["directories"]
 
     # ----------------------------------------------------------------------
-    def register(self, name, path, directory_type):
+    def register(self, name: str, path: str, directory_type: str):
         """
         This operation registers a new data directory from your local
         machine with the ArcGIS Mission Server site. Registering a local
@@ -240,7 +240,7 @@ class DirectoryManager(object):
         return res
 
     # ----------------------------------------------------------------------
-    def unregister(self, directory_id):
+    def unregister(self, directory_id: str):
         """
         This operation unregisters an existing directory from the ArcGIS
         Mission Server site.
@@ -309,7 +309,15 @@ class WebAdaptorManager(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    def register(self, name, ip, webadapter_url, http_port, https_port, description=""):
+    def register(
+        self,
+        name: str,
+        ip: str,
+        webadapter_url: str,
+        http_port: int,
+        https_port: int,
+        description: str = "",
+    ):
         """
         Registers a new web adapter.
 
@@ -336,7 +344,7 @@ class WebAdaptorManager(object):
             "f": "json",
             "machineName": name,
             "machineIP": ip,
-            "webAdaptorURL": webadaptor_url,
+            "webAdaptorURL": webadapter_url,
             "description": description,
             "httpPort": http_port,
             "httpsPort": https_port,

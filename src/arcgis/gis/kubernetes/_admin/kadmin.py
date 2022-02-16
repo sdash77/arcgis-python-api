@@ -1,3 +1,4 @@
+from typing import Optional
 from urllib.request import HTTPError
 from arcgis._impl.common._isd import InsensitiveDict
 from ._base import _BaseKube
@@ -192,10 +193,10 @@ class KubernetesAdmin(_BaseKube):
     # ----------------------------------------------------------------------
     def scheduled_tasks(
         self,
-        item: Item = None,
-        active: bool = None,
-        user: User = None,
-        types: str = None,
+        item: Optional[Item] = None,
+        active: Optional[bool] = None,
+        user: Optional[User] = None,
+        types: Optional[str] = None,
     ):
         """
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
