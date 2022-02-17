@@ -9495,26 +9495,21 @@ class User(dict):
             "f": "json",
             "start": 1,
             "num": 100,
-            "returnAppClientIds": True,
-            "returnAllProvisions": True,
+            "includeExpired": True,
         }
         res = self._portal.con.post(url, params)
         provs = [
             Item(gis=self._gis, itemid=i["itemId"]) for i in res["provisionedListings"]
         ]
         while res["nextStart"] > -1:
-            params = {
-                "f": "json",
-                "start": res["nextStart"],
-                "num": 100,
-                "returnAppClientIds": True,
-                "returnAllProvisions": True,
-            }
+            params["start"] = res["nextStart"]
             res = self._portal.con.post(url, params)
-            provs += [
-                Item(gis=self._gis, itemid=i["itemId"])
-                for i in res["provisionedListings"]
-            ]
+            provs.extend(
+                [
+                    Item(gis=self._gis, itemid=i["itemId"])
+                    for i in res["provisionedListings"]
+                ]
+            )
         return provs
 
     # ----------------------------------------------------------------------
