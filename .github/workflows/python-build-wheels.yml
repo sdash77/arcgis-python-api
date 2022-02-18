@@ -7,7 +7,7 @@
 # documentation.
 
 name: Build Python Wheels
-on: []
+on: workflow_dispatch
 jobs:
   build:
     runs-on: ${{ matrix.os }}
