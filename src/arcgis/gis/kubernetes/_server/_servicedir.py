@@ -3,6 +3,7 @@ from arcgis.gis import GIS
 
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from arcgis.gis.server._service import Service
+from typing import Optional
 
 _log = logging.getLogger()
 

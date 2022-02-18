@@ -39,6 +39,7 @@ class KubernetesAdmin(_BaseKube):
     _organizations = None
     _category_schema = None
     _jobs = None
+    _collaborations = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
@@ -335,6 +336,19 @@ class KubernetesAdmin(_BaseKube):
             url = self._url + "/security"
             self._security = KubeSecurity(url=url, gis=self._gis)
         return self._security
+
+    # ----------------------------------------------------------------------
+    @property
+    def collaborations(self):
+        """
+        The collaborations resource lists all collaborations in which a
+        portal participates
+        """
+        if self._collaborations is None:
+            from arcgis.gis.admin._collaboration import CollaborationManager
+
+            self._collaborations = CollaborationManager(gis=self._gis)
+        return self._collaborations
 
     # ----------------------------------------------------------------------
     @property
