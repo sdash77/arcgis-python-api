@@ -116,7 +116,7 @@ class ImageryLayerCacheManager(_GISResource):
         return self._con.post(url, params, timeout=None)
 
     # ----------------------------------------------------------------------
-    def swap(self, target_service_name):
+    def swap(self, target_service_name: str):
         """
         The swap operation replaces the current service cache with an existing one.
 
@@ -613,7 +613,7 @@ class ImageryLayer(Layer):
     _ilm = None
     _rendering_service_object = None
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url: str, gis: Optional[GIS] = None):
         self._datastore_raster = False
         self._uri = None
         if isinstance(url, bytes):
@@ -951,13 +951,13 @@ class ImageryLayer(Layer):
             |  "size":256,
             |  "min":560,
             |  "max":24568,
-            |  "counts": [10,99,56,42200,125,....] #length of this list corresponds ‘size’
+            |  "counts": [10,99,56,42200,125,....] #length of this list corresponds 'size'
             |  },
             |  {#band 2
             |  "size":256,
             |  "min":8000,
             |  "max":15668,
-            |  "counts": [45,9,690,86580,857,....] #length of this list corresponds ‘size’
+            |  "counts": [45,9,690,86580,857,....] #length of this list corresponds 'size'
             |  }
             | ]
 
@@ -1577,7 +1577,7 @@ class ImageryLayer(Layer):
     def set_filter(
         self,
         where: Optional[str] = None,
-        geometry=None,
+        geometry: Optional[dict] = None,
         time: Optional[Union[datetime.datetime, datetime.date, list[int], str]] = None,
         lock_rasters: bool = False,
         clear_filters: bool = False,
@@ -1661,7 +1661,7 @@ class ImageryLayer(Layer):
     def filter_by(
         self,
         where: Optional[str] = None,
-        geometry=None,
+        geometry: Optional[dict] = None,
         time: Optional[Union[datetime.datetime, datetime.date, list[int], str]] = None,
         lock_rasters: bool = True,
     ):
@@ -2231,7 +2231,7 @@ class ImageryLayer(Layer):
         time_filter: Optional[
             Union[datetime.date, datetime.datetime, list[int], str]
         ] = None,
-        geometry_filter=None,
+        geometry_filter: Optional[dict] = None,
         return_geometry: bool = True,
         return_ids_only: bool = False,
         return_count_only: bool = False,
@@ -4056,7 +4056,7 @@ class ImageryLayer(Layer):
         asc: bool = True,
         where: Optional[str] = None,
         fids: Optional[list[int]] = None,
-        muldidef=None,
+        muldidef: Optional[list] = None,
         op: str = "first",
         item_rendering_rule: Optional[str] = None,
     ):
@@ -4226,7 +4226,7 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
-    def compute_cache_info(self, out_sr=None):
+    def compute_cache_info(self, out_sr: Optional[int] = None):
         """
         The ``compute_cache_info`` method computes and generates new image service tile cache
         schemes for image services.
@@ -4268,7 +4268,11 @@ class ImageryLayer(Layer):
         return self._con.post(path=url, postdata=params, timeout=None)
 
     def compute_angles(
-        self, raster_id, point=None, angle_name=None, spatial_reference=None
+        self,
+        raster_id: int,
+        point: Optional[Union[dict, Point]] = None,
+        angle_name: Optional[str] = None,
+        spatial_reference: Optional[dict] = None,
     ):
         """
         The ``compute_angles`` method computes the rotation angle of a raster for a user-specified
@@ -7141,13 +7145,13 @@ class Raster:
 
     def __init__(
         self,
-        path,
-        is_multidimensional=False,
-        extent=None,
-        cmap=None,
-        opacity=None,
-        engine=None,
-        gis=None,
+        path: str,
+        is_multidimensional: bool = False,
+        extent: Optional[dict] = None,
+        cmap: Optional[str] = None,
+        opacity: Optional[float] = None,
+        engine: Optional[str] = None,
+        gis: Optional[GIS] = None,
     ):
         self._engine_obj = None
         if not isinstance(is_multidimensional, bool):
@@ -7232,7 +7236,7 @@ class Raster:
         return self._engine_obj.extent
 
     @extent.setter
-    def extent(self, value):
+    def extent(self, value: dict):
         self._engine_obj.extent = value
 
     _cmap = None
@@ -8422,7 +8426,7 @@ class Raster:
 
         return self._engine_obj.set_histograms(histogram_obj, variable_name)
 
-    def append_slices(self, md_raster=None):
+    def append_slices(self, md_raster: Optional[Raster] = None):
         """
         The ``append_slices`` method appends the slices from another multidimensional raster.
 
@@ -11767,12 +11771,12 @@ class RasterCollection:
     def __init__(
         self,
         rasters=None,
-        attribute_dict=None,
-        where_clause=None,
-        query_geometry=None,
-        engine=None,
-        gis=None,
-        context=None,
+        attribute_dict: Optional[dict] = None,
+        where_clause: Optional[str] = None,
+        query_geometry: Optional[dict] = None,
+        engine: Optional[str] = None,
+        gis: Optional[GIS] = None,
+        context: Optional[dict] = None,
     ):
         # self._remote = raster.use_server_engine
         # super().__init__(rasters, gis)
@@ -11876,7 +11880,7 @@ class RasterCollection:
                         context=context,
                     )
 
-    def set_engine(self, engine):
+    def set_engine(self, engine: str):
         """
         The ``set_engine`` method can be used to change the back end engine of the
         :class:`~arcgis.raster.RasterCollection`.
@@ -11953,7 +11957,7 @@ class RasterCollection:
                                     "https://earth-search.aws.element84.com/v0"
         -----------------     --------------------------------------------------------------------
         query                 Optional dictionary. The GET/POST request query dictionary that can be
-                              used to query a STAC API’s search endpoint. (keys/values would depend
+                              used to query a STAC API's search endpoint. (keys/values would depend
                               on the specification of the STAC API in use and the request_method
                               parameter value).
 
@@ -11990,9 +11994,9 @@ class RasterCollection:
                                     | }
 
                               .. note::
-                                If ‘Geometry’ is not specified in the ``attribute_dict`` then it would
+                                If 'Geometry' is not specified in the ``attribute_dict`` then it would
                                 be automatically added for each Raster in the ``RasterCollection`` based
-                                on its STAC Item ‘geometry’ property and would be in
+                                on its STAC Item 'geometry' property and would be in
                                 Spatial reference: ``{'wkid':4326}``.
         -----------------     --------------------------------------------------------------------
         request_method        Optional string. The HTTP request method used with the STAC API for making the search.
@@ -12230,9 +12234,9 @@ class RasterCollection:
                                     | }
 
                               .. note::
-                                If ‘Geometry’ is not specified in the ``attribute_dict`` then it would
+                                If 'Geometry' is not specified in the ``attribute_dict`` then it would
                                 be automatically added for each Raster in the ``RasterCollection`` based
-                                on its STAC Item ‘geometry’ property and would be in
+                                on its STAC Item 'geometry' property and would be in
                                 Spatial reference: ``{'wkid':4326}``.
         -----------------     --------------------------------------------------------------------
         request_params        Optional dictionary. This parameter can be used to set the properties
