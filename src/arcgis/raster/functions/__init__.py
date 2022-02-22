@@ -447,12 +447,12 @@ def _set_multidimensional_rules(function_chain=None, function_chain_ra=None):
 
 
 def arg_statistics(
-    rasters:Union[Raster, ImageryLayer],
-    stat_type: Optional[str]=None,
-    min_value:Optional[float]=None,
-    max_value:Optional[float]=None,
-    undefined_class:Optional[int]=None,
-    astype:Optional[str]=None,
+    rasters: Union[Raster, ImageryLayer],
+    stat_type: Optional[str] = None,
+    min_value: Optional[float] = None,
+    max_value: Optional[float] = None,
+    undefined_class: Optional[int] = None,
+    astype: Optional[str] = None,
 ):
     """
     The arg_statistics function produces an output with a pixel value that represents a statistical metric from all
@@ -511,7 +511,11 @@ def arg_statistics(
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
 
-def arg_max(rasters:Union[Raster, ImageryLayer], undefined_class:Optional[int]=None, astype:Optional[str]=None):
+def arg_max(
+    rasters: Union[Raster, ImageryLayer],
+    undefined_class: Optional[int] = None,
+    astype: Optional[str] = None,
+):
 
     """
     In the ArgMax method, all raster bands from every input raster are assigned a 0-based incremental band index,
@@ -540,7 +544,11 @@ def arg_max(rasters:Union[Raster, ImageryLayer], undefined_class:Optional[int]=N
     )
 
 
-def arg_min(rasters:Union[Raster, ImageryLayer], undefined_class:Optional[int]=None, astype:Optional[str]=None):
+def arg_min(
+    rasters: Union[Raster, ImageryLayer],
+    undefined_class: Optional[int] = None,
+    astype: Optional[str] = None,
+):
 
     """
     ArgMin is the argument of the minimum, which returns the Band index for which the given pixel attains
@@ -569,7 +577,11 @@ def arg_min(rasters:Union[Raster, ImageryLayer], undefined_class:Optional[int]=N
     )
 
 
-def arg_median(rasters:Union[Raster, ImageryLayer], undefined_class:Optional[int]=None, astype:Optional[str]=None):
+def arg_median(
+    rasters: Union[Raster, ImageryLayer],
+    undefined_class: Optional[int] = None,
+    astype: Optional[str] = None,
+):
 
     """
     The ArgMedian method returns the Band index for which the given pixel attains the median value of values
@@ -602,7 +614,11 @@ def arg_median(rasters:Union[Raster, ImageryLayer], undefined_class:Optional[int
 
 
 def duration(
-    rasters:Union[Raster, ImageryLayer], min_value:Optional[int]=None, max_value:Optional[int]=None, undefined_class:Optional[int]=None, astype:Optional[str]=None
+    rasters: Union[Raster, ImageryLayer],
+    min_value: Optional[int] = None,
+    max_value: Optional[int] = None,
+    undefined_class: Optional[int] = None,
+    astype: Optional[str] = None,
 ):
     """
     Returns the duration (number of bands) between a minimum and maximum value.
@@ -637,12 +653,12 @@ def duration(
 
 
 def arithmetic(
-    raster1:Union[Raster, ImageryLayer],
-    raster2:Union[Raster, ImageryLayer],
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    astype:Optional[str]=None,
-    operation_type:int=1,
+    raster1: Union[Raster, ImageryLayer],
+    raster2: Union[Raster, ImageryLayer],
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+    operation_type: int = 1,
 ):
     """
     The arithmetic function performs an arithmetic operation between two rasters or a raster and a scalar, and vice versa.
@@ -742,7 +758,7 @@ def arithmetic(
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
 
-def aspect(raster:Union[Raster, ImageryLayer]):
+def aspect(raster: Union[Raster, ImageryLayer]):
     """
     The aspect function identifies the downslope direction of the maximum rate of change in value from each cell to its neighbors.
     Aspect can be thought of as the slope direction. The values of the output raster will be the compass direction of
@@ -777,7 +793,12 @@ def aspect(raster:Union[Raster, ImageryLayer]):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def band_arithmetic(raster, band_indexes:Optional[Union[str, list]]=None, astype:Optional[str]=None, method:int=0):
+def band_arithmetic(
+    raster,
+    band_indexes: Optional[Union[str, list]] = None,
+    astype: Optional[str] = None,
+    method: int = 0,
+):
     """
     The band_arithmetic function performs an arithmetic operation on the bands of a raster. For more information,
     see Band Arithmetic function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm
@@ -890,7 +911,11 @@ def band_arithmetic(raster, band_indexes:Optional[Union[str, list]]=None, astype
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def ndvi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3", astype:Optional[str]=None):
+def ndvi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "4 3",
+    astype: Optional[str] = None,
+):
 
     """
     Normalized Difference Vegetation Index
@@ -915,7 +940,11 @@ def ndvi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3"
     return band_arithmetic(raster, band_indexes, astype, 1)
 
 
-def savi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3 0.33", astype:Optional[str]=None):
+def savi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "4 3 0.33",
+    astype: Optional[str] = None,
+):
     """
     Soil-Adjusted Vegetation Index
     SAVI = ((NIR - Red) / (NIR + Red + L)) x (1 + L)
@@ -940,7 +969,11 @@ def savi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3 
     return band_arithmetic(raster, band_indexes, astype, 2)
 
 
-def tsavi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3 0.33 0.50 1.50", astype:Optional[str]=None):
+def tsavi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "4 3 0.33 0.50 1.50",
+    astype: Optional[str] = None,
+):
     """
     Transformed Soil Adjusted Vegetation Index
 
@@ -966,7 +999,11 @@ def tsavi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3
     return band_arithmetic(raster, band_indexes, astype, 3)
 
 
-def msavi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3", astype:Optional[str]=None):
+def msavi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "4 3",
+    astype: Optional[str] = None,
+):
     """
     Modified Soil Adjusted Vegetation Index
 
@@ -991,7 +1028,11 @@ def msavi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3
     return band_arithmetic(raster, band_indexes, astype, 4)
 
 
-def gemi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3", astype:Optional[str]=None):
+def gemi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "4 3",
+    astype: Optional[str] = None,
+):
     """
     Global Environmental Monitoring Index
 
@@ -1018,7 +1059,11 @@ def gemi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3"
     return band_arithmetic(raster, band_indexes, astype, 5)
 
 
-def pvi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3 0.3 0.5", astype:Optional[str]=None):
+def pvi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "4 3 0.3 0.5",
+    astype: Optional[str] = None,
+):
     """
     Perpendicular Vegetation Index
     PVI = (NIR-a*Red-b)/(sqrt(1+a^2))
@@ -1043,7 +1088,11 @@ def pvi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3 0
     return band_arithmetic(raster, band_indexes, astype, 6)
 
 
-def gvitm(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="1 2 3 4 5 6", astype:Optional[str]=None):
+def gvitm(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "1 2 3 4 5 6",
+    astype: Optional[str] = None,
+):
     """
     Green Vegetation Index - Landsat TM
 
@@ -1068,7 +1117,11 @@ def gvitm(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="1 2
     return band_arithmetic(raster, band_indexes, astype, 7)
 
 
-def sultan(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="1 2 3 4 5 6", astype:Optional[str]=None):
+def sultan(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "1 2 3 4 5 6",
+    astype: Optional[str] = None,
+):
     """
     Sultan's Formula (transform to 3 band 8 bit image)
 
@@ -1096,7 +1149,11 @@ def sultan(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="1 
     return band_arithmetic(raster, band_indexes, astype, 8)
 
 
-def vari(raster:Union[Raster, ImageryLayer], band_indexes:Union[str,list]="3 2 1", astype:Optional[str]=None):
+def vari(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "3 2 1",
+    astype: Optional[str] = None,
+):
     """
     Visible Atmospherically Resistant Index
 
@@ -1122,7 +1179,11 @@ def vari(raster:Union[Raster, ImageryLayer], band_indexes:Union[str,list]="3 2 1
     return band_arithmetic(raster, band_indexes, astype, 9)
 
 
-def gndvi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 2", astype:Optional[str]=None):
+def gndvi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "4 2",
+    astype: Optional[str] = None,
+):
     """
     Green Normalized Difference Vegetation Index
 
@@ -1147,7 +1208,11 @@ def gndvi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 2
     return band_arithmetic(raster, band_indexes, astype, 10)
 
 
-def sr(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3", astype:Optional[str]=None):
+def sr(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "4 3",
+    astype: Optional[str] = None,
+):
     """
     Simple Ratio (SR)
 
@@ -1172,7 +1237,11 @@ def sr(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 3", 
     return band_arithmetic(raster, band_indexes, astype, 11)
 
 
-def ndvire(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="7 6", astype:Optional[str]=None):
+def ndvire(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "7 6",
+    astype: Optional[str] = None,
+):
     """
     Red-Edge NDVI (NDVIre)
     The Red-Edge NDVI (NDVIre) is a vegetation index for estimating
@@ -1204,7 +1273,11 @@ def ndvire(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="7 
     return band_arithmetic(raster, band_indexes, astype, 12)
 
 
-def srre(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="7 6", astype:Optional[str]=None):
+def srre(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "7 6",
+    astype: Optional[str] = None,
+):
     """
     The Red-Edge Simple Ratio (SRre) is a vegetation index for estimating the
     amount of healthy and stressed vegetation. It is the ratio of light scattered
@@ -1236,7 +1309,11 @@ def srre(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="7 6"
     return band_arithmetic(raster, band_indexes, astype, 13)
 
 
-def mtvi2(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="7 5 3", astype:Optional[str]=None):
+def mtvi2(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "7 5 3",
+    astype: Optional[str] = None,
+):
     """
     The Modified Triangular Vegetation Index (MTVI2) is a vegetation index
     for detecting leaf chlorophyll content at the canopy scale while being
@@ -1264,7 +1341,11 @@ def mtvi2(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="7 5
     return band_arithmetic(raster, band_indexes, astype, 14)
 
 
-def rtvi_core(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="7 6 3", astype:Optional[str]=None):
+def rtvi_core(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "7 6 3",
+    astype: Optional[str] = None,
+):
     """
     The Red-Edge Triangulated Vegetation Index (RTVICore) is a vegetation index
     for estimating leaf area index and biomass. This index uses reflectance
@@ -1292,7 +1373,11 @@ def rtvi_core(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]=
     return band_arithmetic(raster, band_indexes, astype, 15)
 
 
-def cire(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="7 6", astype:Optional[str]=None):
+def cire(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "7 6",
+    astype: Optional[str] = None,
+):
 
     """
     The Chlorophyll Index - Red-Edge (CIre) is a vegetation index for estimating
@@ -1322,7 +1407,11 @@ def cire(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="7 6"
     return band_arithmetic(raster, band_indexes, astype, 16)
 
 
-def cig(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="7 3", astype:Optional[str]=None):
+def cig(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "7 3",
+    astype: Optional[str] = None,
+):
 
     """
     The Chlorophyll Index - Green (CIg) is a vegetation index for estimating
@@ -1352,7 +1441,11 @@ def cig(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="7 3",
     return band_arithmetic(raster, band_indexes, astype, 17)
 
 
-def ndwi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="5 3", astype:Optional[str]=None):
+def ndwi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "5 3",
+    astype: Optional[str] = None,
+):
     """
     The Normalized Difference Water Index (NDWI) is an index for delineating and
     monitoring content changes in surface water. It is computed with the near-infrared
@@ -1380,7 +1473,11 @@ def ndwi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="5 3"
     return band_arithmetic(raster, band_indexes, astype, 18)
 
 
-def evi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="5 4 2", astype:Optional[str]=None):
+def evi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "5 4 2",
+    astype: Optional[str] = None,
+):
     """
     The Enhanced Vegetation Index (EVI) is an optimized vegetation index that accounts
     for atmospheric influences and vegetation background signal. It's similar to NDVI,
@@ -1409,7 +1506,11 @@ def evi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="5 4 2
     return band_arithmetic(raster, band_indexes, astype, 19)
 
 
-def iron_oxide(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 2", astype:Optional[str]=None):
+def iron_oxide(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "4 2",
+    astype: Optional[str] = None,
+):
     """
     The Iron Oxide (IO) ratio is a geological index for identifying rock
     features that have experienced oxidation of iron-bearing sulfides
@@ -1437,7 +1538,11 @@ def iron_oxide(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]
     return band_arithmetic(raster, band_indexes, astype, 20)
 
 
-def ferrous_minerals(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="6 5", astype:Optional[str]=None):
+def ferrous_minerals(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "6 5",
+    astype: Optional[str] = None,
+):
     """
     The Ferrous Minerals (FM) ratio is a geological index for identifying
     rock features containing some quantity of iron-bearing minerals using
@@ -1465,7 +1570,11 @@ def ferrous_minerals(raster:Union[Raster, ImageryLayer], band_indexes:Union[str,
     return band_arithmetic(raster, band_indexes, astype, 21)
 
 
-def clay_minerals(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="6 7", astype:Optional[str]=None):
+def clay_minerals(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "6 7",
+    astype: Optional[str] = None,
+):
 
     """
     The Clay Minerals (CM) ratio is a geological index for identifying
@@ -1495,7 +1604,11 @@ def clay_minerals(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, li
     return band_arithmetic(raster, band_indexes, astype, 22)
 
 
-def wndwi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="2 5 6 0.5", astype:Optional[str]=None):
+def wndwi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "2 5 6 0.5",
+    astype: Optional[str] = None,
+):
     """
     The Weighted Normalized Difference Water Index (WNDWI) is a water index
     developed to reduce error typically encountered in other water indices,
@@ -1525,7 +1638,11 @@ def wndwi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="2 5
     return band_arithmetic(raster, band_indexes, astype, 23)
 
 
-def bai(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="3 4", astype:Optional[str]=None):
+def bai(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "3 4",
+    astype: Optional[str] = None,
+):
 
     """
     The Burn Area Index (BAI) uses the reflectance values in the red and NIR portion of the spectrum to identify
@@ -1553,7 +1670,11 @@ def bai(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="3 4",
     return band_arithmetic(raster, band_indexes, astype, 24)
 
 
-def nbr(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="5 7", astype:Optional[str]=None):
+def nbr(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "5 7",
+    astype: Optional[str] = None,
+):
     """
     The Normalized Burn Ratio Index (NBRI) uses the NIR and SWIR bands to emphasize burned areas,
     while mitigating illumination and atmospheric effects. Your images should be corrected to reflectance values
@@ -1581,7 +1702,11 @@ def nbr(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="5 7",
     return band_arithmetic(raster, band_indexes, astype, 25)
 
 
-def ndbi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="6 5", astype:Optional[str]=None):
+def ndbi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "6 5",
+    astype: Optional[str] = None,
+):
     """
     The Normalized Difference Built-up Index (NDBI) uses the NIR and SWIR bands to emphasize  man-made built-up areas.
     It is ratio based to mitigate the effects of terrain illumination differences as well as atmospheric effects.
@@ -1608,7 +1733,11 @@ def ndbi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="6 5"
     return band_arithmetic(raster, band_indexes, astype, 26)
 
 
-def ndmi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="5 6", astype:Optional[str]=None):
+def ndmi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "5 6",
+    astype: Optional[str] = None,
+):
     """
     The Normalized Difference Moisture Index (NDMI) is sensitive to the moisture levels in vegetation.
     It is used to monitor droughts as well as monitor fuel levels in fire-prone areas. It uses NIR and SWIR bands to
@@ -1636,7 +1765,11 @@ def ndmi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="5 6"
     return band_arithmetic(raster, band_indexes, astype, 27)
 
 
-def ndsi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 6", astype:Optional[str]=None):
+def ndsi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "4 6",
+    astype: Optional[str] = None,
+):
     """
     The Normalized Difference Snow Index (NDSI) is designed to use MODIS (band 4 and band 6) and
     Landsat TM (band 2 and band 5) for identification of snow cover while ignoring cloud cover. Since it is ratio based,
@@ -1664,7 +1797,11 @@ def ndsi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="4 6"
     return band_arithmetic(raster, band_indexes, astype, 28)
 
 
-def mndwi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="3 6", astype:Optional[str]=None):
+def mndwi(
+    raster: Union[Raster, ImageryLayer],
+    band_indexes: Union[str, list] = "3 6",
+    astype: Optional[str] = None,
+):
     """
     The Modified Normalized Difference Water Index (MNDWI) uses green and SWIR bands for the enhancement
     of open water features. It also diminishes built-up area features that are often correlated with open
@@ -1691,7 +1828,11 @@ def mndwi(raster:Union[Raster, ImageryLayer], band_indexes:Union[str, list]="3 6
     return band_arithmetic(raster, band_indexes, astype, 29)
 
 
-def expression(raster:Union[Raster, ImageryLayer], expression:str="(B3 - B1 / B3 + B1)", astype:Optional[str]=None):
+def expression(
+    raster: Union[Raster, ImageryLayer],
+    expression: str = "(B3 - B1 / B3 + B1)",
+    astype: Optional[str] = None,
+):
     """
     Use a single-line algebraic formula to create a single-band output.
 
@@ -1719,7 +1860,12 @@ def expression(raster:Union[Raster, ImageryLayer], expression:str="(B3 - B1 / B3
     return band_arithmetic(raster, expression, astype, 0)
 
 
-def classify(raster1, raster2=None, classifier_definition:Optional[dict]=None, astype:Optional[str]=None):
+def classify(
+    raster1,
+    raster2=None,
+    classifier_definition: Optional[dict] = None,
+    astype: Optional[str] = None,
+):
 
     """
     classifies a segmented raster to a categorical raster.
@@ -1774,7 +1920,12 @@ def classify(raster1, raster2=None, classifier_definition:Optional[dict]=None, a
     return _clone_layer(layer, template_dict, raster_ra1)
 
 
-def clip(raster:Union[Raster, ImageryLayer], geometry=None, clip_outside:bool=True, astype:Optional[str]=None):
+def clip(
+    raster: Union[Raster, ImageryLayer],
+    geometry=None,
+    clip_outside: bool = True,
+    astype: Optional[str] = None,
+):
 
     """
     Clips a raster using a rectangular shape according to the extents defined or will clip a raster to the shape of an
@@ -1814,7 +1965,13 @@ def clip(raster:Union[Raster, ImageryLayer], geometry=None, clip_outside:bool=Tr
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def colormap(raster:Union[Raster, ImageryLayer], colormap_name:Optional[str]=None, colormap:Optional[list]=None, colorramp:Optional[str]=None, astype:Optional[str]=None):
+def colormap(
+    raster: Union[Raster, ImageryLayer],
+    colormap_name: Optional[str] = None,
+    colormap: Optional[list] = None,
+    colorramp: Optional[str] = None,
+    astype: Optional[str] = None,
+):
     """
     The colormap function transforms the pixel values to display the raster data as a color (RGB) image, based on specific colors in
     a color map. For more information, see Colormap function at
@@ -1876,7 +2033,7 @@ def colormap(raster:Union[Raster, ImageryLayer], colormap_name:Optional[str]=Non
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def composite_band(rasters, astype:Optional[str]=None, cellsize_type:str="MaxOf"):
+def composite_band(rasters, astype: Optional[str] = None, cellsize_type: str = "MaxOf"):
 
     """
     Combines multiple images to form a multiband image.
@@ -1930,7 +2087,12 @@ def composite_band(rasters, astype:Optional[str]=None, cellsize_type:str="MaxOf"
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
 
-def contrast_brightness(raster:Union[Raster, ImageryLayer], contrast_offset:float=2, brightness_offset:float=1, astype:Optional[str]=None):
+def contrast_brightness(
+    raster: Union[Raster, ImageryLayer],
+    contrast_offset: float = 2,
+    brightness_offset: float = 1,
+    astype: Optional[str] = None,
+):
     """
     The ContrastBrightness function enhances the appearance of raster data (imagery) by modifying the brightness or
     contrast within the image. This function works on 8-bit input raster only.
@@ -1970,7 +2132,11 @@ def contrast_brightness(raster:Union[Raster, ImageryLayer], contrast_offset:floa
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def convolution(raster:Union[Raster, ImageryLayer], kernel:Optional[_arcgis.raster.kernels]=None, astype:Optional[str]=None):
+def convolution(
+    raster: Union[Raster, ImageryLayer],
+    kernel: Optional[_arcgis.raster.kernels] = None,
+    astype: Optional[str] = None,
+):
     """
     The Convolution function performs filtering on the pixel values in an image, which can be used for sharpening an
     image, blurring an image, detecting edges within an image, or other kernel-based enhancements. For more information,
@@ -2031,7 +2197,12 @@ def convolution(raster:Union[Raster, ImageryLayer], kernel:Optional[_arcgis.rast
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def curvature(raster:Union[Raster, ImageryLayer], curvature_type:str="standard", z_factor:float=1, astype:Optional[str]=None):
+def curvature(
+    raster: Union[Raster, ImageryLayer],
+    curvature_type: str = "standard",
+    z_factor: float = 1,
+    astype: Optional[str] = None,
+):
     """
     The Curvature function displays the shape or curvature of the slope. A part of a surface can be concave or convex;
     you can tell that by looking at the curvature value. The curvature is calculated by computing the second derivative
@@ -2078,7 +2249,12 @@ def curvature(raster:Union[Raster, ImageryLayer], curvature_type:str="standard",
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def NDVI(raster:Union[Raster, ImageryLayer], visible_band:int=2, ir_band:int=1, astype:Optional[str]=None):
+def NDVI(
+    raster: Union[Raster, ImageryLayer],
+    visible_band: int = 2,
+    ir_band: int = 1,
+    astype: Optional[str] = None,
+):
     """
     The Normalized Difference Vegetation Index (ndvi) is a standardized index that allows you to generate an image
     displaying greenness (relative biomass). This index takes advantage of the contrast of the characteristics of
@@ -2127,7 +2303,11 @@ def NDVI(raster:Union[Raster, ImageryLayer], visible_band:int=2, ir_band:int=1, 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def elevation_void_fill(raster:Union[Raster, ImageryLayer], max_void_width:int=0, astype:Optional[str]=None):
+def elevation_void_fill(
+    raster: Union[Raster, ImageryLayer],
+    max_void_width: int = 0,
+    astype: Optional[str] = None,
+):
     """
     The elevation_void_fill function is used to create pixels where holes exist in your elevation. Refer to
     `this conceptual help <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/elevation-void-fill-function.htm>`__
@@ -2168,12 +2348,12 @@ def elevation_void_fill(raster:Union[Raster, ImageryLayer], max_void_width:int=0
 
 def extract_band(
     raster,
-    band_ids:Optional[int]=None,
-    band_names:Optional[str]=None,
-    band_wavelengths:Optional[float]=None,
-    missing_band_action:Optional[int]=None,
-    wavelength_match_tolerance:Optional[float]=None,
-    astype:Optional[str]=None,
+    band_ids: Optional[int] = None,
+    band_names: Optional[str] = None,
+    band_wavelengths: Optional[float] = None,
+    missing_band_action: Optional[int] = None,
+    wavelength_match_tolerance: Optional[float] = None,
+    astype: Optional[str] = None,
 ):
     """
     The extract_band function allows you to extract one or more bands from a raster, or it can reorder the bands in a
@@ -2240,13 +2420,13 @@ def extract_band(
 def geometric(
     raster,
     geodata_transforms=None,
-    append_geodata_xform:Optional[bool]=None,
-    z_factor:Optional[float]=None,
-    z_offset:Optional[float]=None,
-    constant_z:Optional[float]=None,
-    correct_geoid:Optional[bool]=None,
-    astype:Optional[str]=None,
-    tolerance:Optional[float]=None,
+    append_geodata_xform: Optional[bool] = None,
+    z_factor: Optional[float] = None,
+    z_offset: Optional[float] = None,
+    constant_z: Optional[float] = None,
+    correct_geoid: Optional[bool] = None,
+    astype: Optional[str] = None,
+    tolerance: Optional[float] = None,
     dem=None,
 ):
     """
@@ -2320,15 +2500,15 @@ def geometric(
 
 def hillshade(
     dem,
-    azimuth:float=215.0,
-    altitude:float=75.0,
-    z_factor:float=0.3,
-    slope_type:int=1,
-    ps_power:Optional[float]=None,
-    psz_factor:Optional[float]=None,
-    remove_edge_effect:Optional[bool]=None,
-    astype:Optional[str]=None,
-    hillshade_type:int=0,
+    azimuth: float = 215.0,
+    altitude: float = 75.0,
+    z_factor: float = 0.3,
+    slope_type: int = 1,
+    ps_power: Optional[float] = None,
+    psz_factor: Optional[float] = None,
+    remove_edge_effect: Optional[bool] = None,
+    astype: Optional[str] = None,
+    hillshade_type: int = 0,
 ):
     """
     A hillshade is a grayscale 3D model of the surface taking the sun's relative position into account to shade the image.
@@ -2436,13 +2616,13 @@ def hillshade(
 
 def local(
     rasters,
-    operation:Optional[int],
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    astype:Optional[str]=None,
-    process_as_multiband:Optional[bool]=None,
-    percentile_value:float=90,
-    percentile_interpolation_type:str="AUTO_DETECT",
+    operation: Optional[int],
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+    process_as_multiband: Optional[bool] = None,
+    percentile_value: float = 90,
+    percentile_interpolation_type: str = "AUTO_DETECT",
 ):
     """
     The local function allows you to perform bitwise, conditional, logical, mathematical, and statistical operations on
@@ -2589,7 +2769,12 @@ def local(
 ###############################################  LOCAL FUNCTIONS  ######################################################
 
 
-def plus(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def plus(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The plus function adds (sums) the values of two rasters on a cell-by-cell basis.
 
@@ -2646,7 +2831,12 @@ def plus(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype
     )
 
 
-def minus(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def minus(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The minus function subtracts the value of the second input raster from the value of the first input raster on a cell-by-cell basis.
 
@@ -2703,7 +2893,12 @@ def minus(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astyp
     )
 
 
-def times(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def times(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The times function multiplies the values of two rasters on a cell-by-cell basis.
 
@@ -2760,7 +2955,12 @@ def times(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astyp
     )
 
 
-def sqrt(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def sqrt(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The sqrt function calculates the square-root of the pixels in a raster.
 
@@ -2811,7 +3011,12 @@ def sqrt(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype
     )
 
 
-def power(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def power(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The power function raises the cell values in a raster to the power of the values found in another raster.
 
@@ -2868,7 +3073,12 @@ def power(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astyp
     )
 
 
-def acos(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def acos(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The acos operation calculates the inverse cosine of the pixels in a raster.
 
@@ -2919,7 +3129,12 @@ def acos(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype
     )
 
 
-def asin(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def asin(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The asin operation calculates the inverse sine of the pixels in a raster.
 
@@ -2970,7 +3185,12 @@ def asin(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype
     )
 
 
-def atan(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def atan(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The atan function calculates the inverse tangent of the pixels in a raster.
 
@@ -3021,7 +3241,12 @@ def atan(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype
     )
 
 
-def atanh(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def atanh(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The atanh function calculates the inverse hyperbolic tangent of the pixels in a raster.
 
@@ -3072,7 +3297,12 @@ def atanh(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astyp
     )
 
 
-def abs(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def abs(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The abs function calculates the absolute value of the pixels in a raster.
 
@@ -3123,7 +3353,12 @@ def abs(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:
     )
 
 
-def bitwise_and(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def bitwise_and(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The bitwise_and function performs a Bitwise And operation on the binary values of two input rasters.
 
@@ -3177,7 +3412,10 @@ def bitwise_and(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf",
 
 
 def bitwise_left_shift(
-    rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
 ):
     """
     The bitwise_left_shift function performs a Bitwise Left Shift operation on the binary values of two input rasters.
@@ -3236,7 +3474,12 @@ def bitwise_left_shift(
     )
 
 
-def bitwise_not(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def bitwise_not(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The bitwise_not function performs a Bitwise Not operation on the binary values of an input raster.
 
@@ -3287,7 +3530,12 @@ def bitwise_not(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf",
     )
 
 
-def bitwise_or(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def bitwise_or(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The bitwise_or function performs a Bitwise Or operation on the binary values of two input rasters.
 
@@ -3340,7 +3588,10 @@ def bitwise_or(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", 
 
 
 def bitwise_right_shift(
-    rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
 ):
     """
     The bitwise_right_shift function performs a Bitwise Right Shift operation on the binary values of two input rasters.
@@ -3399,7 +3650,12 @@ def bitwise_right_shift(
     )
 
 
-def bitwise_xor(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def bitwise_xor(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The bitwise_xor function performs a Bitwise Xor operation on the binary values of two input rasters.
 
@@ -3451,7 +3707,12 @@ def bitwise_xor(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf",
     )
 
 
-def boolean_and(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def boolean_and(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The boolean_and function performs a Boolean And operation on the pixels of two input rasters.
 
@@ -3509,7 +3770,12 @@ def boolean_and(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf",
     )
 
 
-def boolean_not(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def boolean_not(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The boolean_not function performs a Boolean Not operation on the pixels of an input raster.
 
@@ -3566,7 +3832,12 @@ def boolean_not(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf",
     )
 
 
-def boolean_or(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def boolean_or(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The boolean_or function performs a Boolean Or operation on the pixels of two input rasters.
 
@@ -3624,7 +3895,12 @@ def boolean_or(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", 
     )
 
 
-def boolean_xor(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def boolean_xor(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The boolean_xor function performs a Boolean Xor operation on the pixels of two input rasters.
 
@@ -3683,7 +3959,12 @@ def boolean_xor(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf",
     )
 
 
-def cos(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def cos(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The cos function calculates the cosine of the pixels in a raster.
 
@@ -3734,7 +4015,12 @@ def cos(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:
     )
 
 
-def cosh(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def cosh(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The cosh function calculates the hyperbolic cosine of the pixels in a raster.
 
@@ -3785,7 +4071,12 @@ def cosh(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype
     )
 
 
-def divide(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def divide(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The divide function divides the pixel values of two rasters on a pixel-by-pixel basis.
 
@@ -3843,7 +4134,12 @@ def divide(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", asty
     )
 
 
-def equal_to(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def equal_to(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The equal_to function performs an equal-to operation on two input rasters on a pixel-by-pixel basis.
 
@@ -3900,7 +4196,12 @@ def equal_to(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", as
     )
 
 
-def exp(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def exp(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The exp function calculates base 'e' exponential of the pixels in a raster.
 
@@ -3951,7 +4252,12 @@ def exp(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:
     )
 
 
-def exp10(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def exp10(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The exp10 function calculates base 10 exponential of the pixels in a raster.
 
@@ -4002,7 +4308,12 @@ def exp10(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astyp
     )
 
 
-def exp2(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def exp2(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The exp2 function calculates base 2 exponential of the pixels in a raster.
 
@@ -4053,7 +4364,12 @@ def exp2(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype
     )
 
 
-def greater_than(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def greater_than(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The greater_than function performs a relational greater-than operation on two input rasters on a pixel-by-pixel basis.
 
@@ -4111,7 +4427,10 @@ def greater_than(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf"
 
 
 def greater_than_equal(
-    rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
 ):
     """
     The greater_than_equal function performs a relational greater-than-or-equal-to operation on two inputs on a pixel-by-pixel basis.
@@ -4170,7 +4489,12 @@ def greater_than_equal(
     )
 
 
-def INT(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def INT(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The INT function converts each pixel value of a raster to an integer by truncation.
 
@@ -4222,7 +4546,12 @@ def INT(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:
     )
 
 
-def is_null(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def is_null(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The is_null function determines which values from the input raster are NoData on a pixel-by-pixel basis.
 
@@ -4274,7 +4603,12 @@ def is_null(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", ast
     )
 
 
-def FLOAT(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def FLOAT(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The FLOAT function converts each pixel value of a raster into a floating-point representation.
 
@@ -4326,7 +4660,12 @@ def FLOAT(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astyp
     )
 
 
-def less_than(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def less_than(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The less_than function performs a relational less-than operation on two inputs on a pixel-by-pixel basis.
 
@@ -4384,7 +4723,10 @@ def less_than(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", a
 
 
 def less_than_equal(
-    rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
 ):
     """
     The less_than_equal function performs a relational less-than-or-equal-to operation on two inputs on a pixel-by-pixel basis.
@@ -4443,7 +4785,12 @@ def less_than_equal(
     )
 
 
-def ln(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def ln(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The ln function calculates the natural logarithm of the pixels in a raster.
 
@@ -4494,7 +4841,12 @@ def ln(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:O
     )
 
 
-def log10(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def log10(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The log10 function calculates base 10 logarithm of the pixels in a raster.
 
@@ -4545,7 +4897,12 @@ def log10(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astyp
     )
 
 
-def log2(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def log2(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The log2 function calculates base 2 logarithm of the pixels in a raster.
 
@@ -4598,11 +4955,11 @@ def log2(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype
 
 def majority(
     rasters,
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    ignore_nodata:bool=False,
-    astype:Optional[str]=None,
-    process_as_multiband:Optional[bool]=None,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    ignore_nodata: bool = False,
+    astype: Optional[str] = None,
+    process_as_multiband: Optional[bool] = None,
 ):
     """
     The majority function calculates focal statistics for each pixel of an image based on the majority value, or the value that occurs most frequently, of the pixels within the neighborhood.
@@ -4671,11 +5028,11 @@ def majority(
 
 def max(
     rasters,
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    ignore_nodata:bool=False,
-    astype:Optional[str]=None,
-    process_as_multiband:Optional[bool]=None,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    ignore_nodata: bool = False,
+    astype: Optional[str] = None,
+    process_as_multiband: Optional[bool] = None,
 ):
     """
     The max function calculates focal statistics for each pixel of an image based on the maximum value of the pixels within the neighborhood.
@@ -4749,11 +5106,11 @@ def max(
 
 def mean(
     rasters,
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    ignore_nodata:bool=False,
-    astype:Optional[str]=None,
-    process_as_multiband:Optional[bool]=None,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    ignore_nodata: bool = False,
+    astype: Optional[str] = None,
+    process_as_multiband: Optional[bool] = None,
 ):
     """
     The mean function calculates the average of a raster on a pixel-by-pixel basis.
@@ -4818,12 +5175,12 @@ def mean(
 
 def med(
     rasters,
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    ignore_nodata:bool=False,
-    astype:Optional[str]=None,
-    process_as_multiband:Optional[bool]=None,
-    percentile_interpolation_type:str="AUTO_DETECT",
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    ignore_nodata: bool = False,
+    astype: Optional[str] = None,
+    process_as_multiband: Optional[bool] = None,
+    percentile_interpolation_type: str = "AUTO_DETECT",
 ):
     """
     The med function calculates the middle value of the pixels on a pixel-by-pixel basis.
@@ -4904,11 +5261,11 @@ def med(
 
 def min(
     rasters,
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    ignore_nodata:bool=False,
-    astype:Optional[str]=None,
-    process_as_multiband:Optional[bool]=None,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    ignore_nodata: bool = False,
+    astype: Optional[str] = None,
+    process_as_multiband: Optional[bool] = None,
 ):
     """
     The min function determines the smallest value of the pixels on a pixel-by-pixel basis.
@@ -4972,11 +5329,11 @@ def min(
 
 def minority(
     rasters,
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    ignore_nodata:bool=False,
-    astype:Optional[str]=None,
-    process_as_multiband:Optional[bool]=None,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    ignore_nodata: bool = False,
+    astype: Optional[str] = None,
+    process_as_multiband: Optional[bool] = None,
 ):
     """
     The miniority function determines the value that occurs least often on a pixel-by-pixel basis.
@@ -5043,7 +5400,12 @@ def minority(
     )
 
 
-def mod(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def mod(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The mod function calculates the remainder (modulo) of the first raster when divided by the second raster on a pixel-by-pixel basis.
 
@@ -5100,7 +5462,12 @@ def mod(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:
     )
 
 
-def negate(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def negate(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The negate function changes the sign (multiplies by -1) of the pixel values of the input raster on a pixel-by-pixel basis.
 
@@ -5157,7 +5524,12 @@ def negate(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", asty
     )
 
 
-def not_equal(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def not_equal(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The not_equal function performs a relational not-equal-to operation on two input rasters on a pixel-by-pixel basis.
 
@@ -5216,11 +5588,11 @@ def not_equal(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", a
 
 def cellstats_range(
     rasters,
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    ignore_nodata:bool=False,
-    astype:Optional[str]=None,
-    process_as_multiband:Optional[bool]=None,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    ignore_nodata: bool = False,
+    astype: Optional[str] = None,
+    process_as_multiband: Optional[bool] = None,
 ):
     """
     The cellstats_range function calculates the difference between the largest and the smallest values of a raster on a pixel-by-pixel basis.
@@ -5282,7 +5654,12 @@ def cellstats_range(
     )
 
 
-def round_down(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def round_down(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The round_down function returns the next lower integer, as a floating-point value, for each pixel in a raster.
 
@@ -5333,7 +5710,12 @@ def round_down(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", 
     )
 
 
-def round_up(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def round_up(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The round_up function returns the next higher integer, as a floating-point value, for each pixel in a raster.
 
@@ -5384,7 +5766,12 @@ def round_up(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", as
     )
 
 
-def set_null(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def set_null(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The set_null function sets the identified pixels of a raster to NoData on a pixel by pixel basis.
 
@@ -5445,7 +5832,12 @@ def set_null(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", as
     )
 
 
-def sin(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def sin(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The sin operation calculates the sine of the pixels in a raster.
 
@@ -5496,7 +5888,12 @@ def sin(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:
     )
 
 
-def sinh(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def sinh(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The sinh operation calculates the hyperbolic sine of the pixels in a raster.
 
@@ -5547,7 +5944,12 @@ def sinh(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype
     )
 
 
-def square(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def square(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The square operation calculates the squares of the pixels in a raster.
 
@@ -5600,11 +6002,11 @@ def square(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", asty
 
 def std(
     rasters,
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    ignore_nodata:bool=False,
-    astype:Optional[str]=None,
-    process_as_multiband:Optional[bool]=None,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    ignore_nodata: bool = False,
+    astype: Optional[str] = None,
+    process_as_multiband: Optional[bool] = None,
 ):
     """
     The std function calculates the standard deviation of the pixels of a raster on a pixel-by-pixel basis.
@@ -5669,11 +6071,11 @@ def std(
 
 def sum(
     rasters,
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    ignore_nodata:bool=False,
-    astype:Optional[str]=None,
-    process_as_multiband:Optional[bool]=None,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    ignore_nodata: bool = False,
+    astype: Optional[str] = None,
+    process_as_multiband: Optional[bool] = None,
 ):
     """
     The sum function adds the values of the rasters on a pixel-by-pixel basis.
@@ -5740,7 +6142,12 @@ def sum(
     )
 
 
-def tan(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def tan(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The tan function calculates the tangent of the pixels in a raster.
 
@@ -5791,7 +6198,12 @@ def tan(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:
     )
 
 
-def tanh(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def tanh(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The tanh operation calculates the hyperbolic tangent of the pixels in a raster.
 
@@ -5844,11 +6256,11 @@ def tanh(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype
 
 def variety(
     rasters,
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    ignore_nodata:bool=False,
-    astype:Optional[str]=None,
-    process_as_multiband:Optional[bool]=None,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    ignore_nodata: bool = False,
+    astype: Optional[str] = None,
+    process_as_multiband: Optional[bool] = None,
 ):
     """
     The variety function calculates the number of unique values of a raster on a pixel-by-pixel basis.
@@ -5910,7 +6322,12 @@ def variety(
     )
 
 
-def acosh(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def acosh(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The acosh operation calculates the inverse hyperbolic cosine of the pixels in a raster.
 
@@ -5961,7 +6378,12 @@ def acosh(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astyp
     )
 
 
-def asinh(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def asinh(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The asinh function calculates the inverse hyperbolic sine of the pixels in a raster.
 
@@ -6012,7 +6434,12 @@ def asinh(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astyp
     )
 
 
-def atan2(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def atan2(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The atan2 function calculates the inverse tangent (with quadrant correction) of the pixels in a raster.
 
@@ -6063,7 +6490,12 @@ def atan2(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astyp
     )
 
 
-def float_divide(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def float_divide(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The float_divide function
 
@@ -6114,7 +6546,12 @@ def float_divide(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf"
     )
 
 
-def floor_divide(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def floor_divide(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The floor_divide function
 
@@ -6165,7 +6602,12 @@ def floor_divide(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf"
     )
 
 
-def con(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def con(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The con function performs a conditional if/else evaluation on each of the input cells of an input raster. For more information see, http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/con-.htm
 
@@ -6220,7 +6662,12 @@ def con(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:
     )
 
 
-def _pick(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astype:Optional[str]=None):
+def _pick(
+    rasters,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
+):
     """
     The _pick function assigns output values using one of a list of rasters determined by the value of an input raster.
 
@@ -6273,13 +6720,13 @@ def _pick(rasters, extent_type:str="FirstOf", cellsize_type:str="FirstOf", astyp
 
 def percentile(
     rasters,
-    percentile_value:float=90,
-    percentile_interpolation_type:str="AUTO_DETECT",
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    ignore_nodata:bool=False,
-    astype:Optional[str]=None,
-    process_as_multiband:Optional[bool]=None,
+    percentile_value: float = 90,
+    percentile_interpolation_type: str = "AUTO_DETECT",
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    ignore_nodata: bool = False,
+    astype: Optional[str] = None,
+    process_as_multiband: Optional[bool] = None,
 ):
 
     """
@@ -6367,10 +6814,10 @@ def percentile(
 
 def mask(
     raster,
-    no_data_values:Optional[list[str]]=None,
-    included_ranges:Optional[list[float]]=None,
-    no_data_interpretation:Optional[int]=None,
-    astype:Optional[str]=None,
+    no_data_values: Optional[list[str]] = None,
+    included_ranges: Optional[list[float]] = None,
+    no_data_interpretation: Optional[int] = None,
+    astype: Optional[str] = None,
 ):
     """
     The mask function changes the image by specifying a certain pixel value or a range of pixel values as no data.
@@ -6426,7 +6873,9 @@ def mask(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def ml_classify(raster:Union[Raster, ImageryLayer], signature:str, astype:Optional[str]=None):
+def ml_classify(
+    raster: Union[Raster, ImageryLayer], signature: str, astype: Optional[str] = None
+):
     """
     The ml_classify function allows you to perform a supervised classification using the maximum likelihood classification
     algorithm. The hosting ArcGIS Server needs to have a Spatial Analyst license.LicenseLicense:At 10.5, you must license
@@ -6540,13 +6989,13 @@ def ml_classify(raster:Union[Raster, ImageryLayer], signature:str, astype:Option
 
 def remap(
     raster,
-    input_ranges:Optional[list[float]]=None,
-    output_values:Optional[list[float]]=None,
+    input_ranges: Optional[list[float]] = None,
+    output_values: Optional[list[float]] = None,
     geometry_type=None,
     geometries=None,
-    no_data_ranges:Optional[list[float]]=None,
-    allow_unmatched:Optional[bool]=None,
-    astype:Optional[str]=None,
+    no_data_ranges: Optional[list[float]] = None,
+    allow_unmatched: Optional[bool] = None,
+    astype: Optional[str] = None,
 ):
     """
     The remap function allows you to change or reclassify the pixel values of the raster data. For more information,
@@ -6605,7 +7054,11 @@ def remap(
 
 
 def resample(
-    raster, resampling_type:Optional[str]=None, input_cellsize:Optional[float]=None, output_cellsize:Optional[float]=None, astype:Optional[str]=None
+    raster,
+    resampling_type: Optional[str] = None,
+    input_cellsize: Optional[float] = None,
+    output_cellsize: Optional[float] = None,
+    astype: Optional[str] = None,
 ):
     """
     The resample function resamples pixel values from a given resolution.
@@ -6669,14 +7122,14 @@ def resample(
 
 def segment_mean_shift(
     raster,
-    spectral_detail:Optional[float]=None,
-    spatial_detail:Optional[int]=None,
-    spectral_radius:Optional[float]=None,
-    spatial_radius:Optional[int]=None,
-    min_num_pixels_per_segment:int=20,
-    astype:Optional[str]=None,
-    boundaries_only:bool=False,
-    max_num_pixels_per_segment:int=-1,
+    spectral_detail: Optional[float] = None,
+    spatial_detail: Optional[int] = None,
+    spectral_radius: Optional[float] = None,
+    spatial_radius: Optional[int] = None,
+    min_num_pixels_per_segment: int = 20,
+    astype: Optional[str] = None,
+    boundaries_only: bool = False,
+    max_num_pixels_per_segment: int = -1,
 ):
     """
     The segment_mean_shift function produces a segmented output. Pixel values in the output image represent the
@@ -6799,17 +7252,17 @@ def segment_mean_shift(
 
 def shaded_relief(
     raster,
-    azimuth:Optional[float]=None,
-    altitude:Optional[float]=None,
-    z_factor:Optional[float]=None,
-    colormap:Optional[list]=None,
-    slope_type:Optional[int]=None,
-    ps_power:Optional[float]=None,
-    psz_factor:Optional[float]=None,
-    remove_edge_effect:Optional[bool]=None,
-    astype:Optional[str]=None,
-    colorramp:Optional[str]=None,
-    hillshade_type:int=0,
+    azimuth: Optional[float] = None,
+    altitude: Optional[float] = None,
+    z_factor: Optional[float] = None,
+    colormap: Optional[list] = None,
+    slope_type: Optional[int] = None,
+    ps_power: Optional[float] = None,
+    psz_factor: Optional[float] = None,
+    remove_edge_effect: Optional[bool] = None,
+    astype: Optional[str] = None,
+    colorramp: Optional[str] = None,
+    hillshade_type: int = 0,
 ):
     """
     Shaded relief is a color 3D model of the terrain, created by merging the images from the Elevation-coded and
@@ -6890,12 +7343,12 @@ def shaded_relief(
 
 def slope(
     dem,
-    z_factor:Optional[float]=None,
-    slope_type:Optional[float]=None,
-    ps_power:Optional[float]=None,
-    psz_factor:Optional[float]=None,
-    remove_edge_effect:Optional[bool]=None,
-    astype:Optional[str]=None,
+    z_factor: Optional[float] = None,
+    slope_type: Optional[float] = None,
+    ps_power: Optional[float] = None,
+    psz_factor: Optional[float] = None,
+    remove_edge_effect: Optional[bool] = None,
+    astype: Optional[str] = None,
 ):
     """
     Slope represents the rate of change of elevation for each pixel. For more information, see
@@ -6980,13 +7433,13 @@ def slope(
 
 def focal_statistics(
     raster,
-    kernel_columns:Optional[int]=None,
-    kernel_rows:Optional[int]=None,
-    stat_type:Optional[Union[int, str]]=None,
-    columns:Optional[int]=None,
-    rows:Optional[int]=None,
-    fill_no_data_only:Optional[bool]=None,
-    astype:Optional[str]=None,
+    kernel_columns: Optional[int] = None,
+    kernel_rows: Optional[int] = None,
+    stat_type: Optional[Union[int, str]] = None,
+    columns: Optional[int] = None,
+    rows: Optional[int] = None,
+    fill_no_data_only: Optional[bool] = None,
+    astype: Optional[str] = None,
 ):
     """
     The focal_statistics function calculates focal statistics for each pixel of an image based on a defined focal neighborhood.
@@ -7086,19 +7539,19 @@ def focal_statistics(
 
 def stretch(
     raster,
-    stretch_type:str=0,
-    min:Optional[float]=None,
-    max:Optional[float]=None,
-    num_stddev:Optional[float]=None,
-    statistics:Optional[float]=None,
-    dra:Optional[bool]=None,
-    min_percent:Optional[float]=None,
-    max_percent:Optional[float]=None,
-    gamma:Optional[list[float]]=None,
-    compute_gamma:Optional[bool]=None,
-    sigmoid_strength_level:Optional[int]=None,
-    astype:Optional[str]=None,
-    colorramp:Optional[str]=None,
+    stretch_type: str = 0,
+    min: Optional[float] = None,
+    max: Optional[float] = None,
+    num_stddev: Optional[float] = None,
+    statistics: Optional[float] = None,
+    dra: Optional[bool] = None,
+    min_percent: Optional[float] = None,
+    max_percent: Optional[float] = None,
+    gamma: Optional[list[float]] = None,
+    compute_gamma: Optional[bool] = None,
+    sigmoid_strength_level: Optional[int] = None,
+    astype: Optional[str] = None,
+    colorramp: Optional[str] = None,
 ):
     """
     The stretch function enhances an image through multiple stretch types. For more information, see
@@ -7220,7 +7673,7 @@ def stretch(
         return _clone_layer(layer, template_dict, raster_ra)
 
 
-def threshold(raster:Union[Raster, ImageryLayer], astype:Optional[str]=None):
+def threshold(raster: Union[Raster, ImageryLayer], astype: Optional[str] = None):
     """
     The threshold function produces a binary thresholded image. It uses the Otsu method and assumes the input image to have a bi-modal histogram.
 
@@ -7262,13 +7715,13 @@ def threshold(raster:Union[Raster, ImageryLayer], astype:Optional[str]=None):
 
 
 def transpose_bits(
-    raster:Union[Raster, ImageryLayer],
-    input_bit_positions:Optional[int]=None,
-    output_bit_positions:Optional[int]=None,
-    constant_fill_check:Optional[bool]=None,
-    constant_fill_value:Optional[int]=None,
-    fill_raster:Optional[Raster]=None,
-    astype:Optional[str]=None,
+    raster: Union[Raster, ImageryLayer],
+    input_bit_positions: Optional[int] = None,
+    output_bit_positions: Optional[int] = None,
+    constant_fill_check: Optional[bool] = None,
+    constant_fill_value: Optional[int] = None,
+    fill_raster: Optional[Raster] = None,
+    astype: Optional[str] = None,
 ):
     """
     The transpose_bits function performs a bit operation. It extracts bit values from the source data and assigns them
@@ -7346,7 +7799,12 @@ def transpose_bits(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def unit_conversion(raster:Union[Raster, ImageryLayer], from_unit=None, to_unit=None, astype:Optional[str]=None):
+def unit_conversion(
+    raster: Union[Raster, ImageryLayer],
+    from_unit=None,
+    to_unit=None,
+    astype: Optional[str] = None,
+):
     """
     The unit_conversion function performs unit conversions.
 
@@ -7418,13 +7876,13 @@ def unit_conversion(raster:Union[Raster, ImageryLayer], from_unit=None, to_unit=
 
 
 def vector_field_renderer(
-    raster:Union[Raster, ImageryLayer],
-    is_uv_components:Optional[bool]=None,
-    reference_system:Optional[int]=None,
-    mass_flow_angle_representation:Optional[int]=None,
-    calculation_method:str="Vector Average",
-    symbology_name:str="Single Arrow",
-    astype:Optional[str]=None,
+    raster: Union[Raster, ImageryLayer],
+    is_uv_components: Optional[bool] = None,
+    reference_system: Optional[int] = None,
+    mass_flow_angle_representation: Optional[int] = None,
+    calculation_method: str = "Vector Average",
+    symbology_name: str = "Single Arrow",
+    astype: Optional[str] = None,
 ):
     """
     The vector_field_renderer function symbolizes a U-V or Magnitude-Direction raster.
@@ -7482,7 +7940,7 @@ def vector_field_renderer(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def apply(raster:Union[Raster, ImageryLayer], fn_name, **kwargs):
+def apply(raster: Union[Raster, ImageryLayer], fn_name, **kwargs):
 
     """
     Applies a server side raster function template defined by the imagery layer (image service)
@@ -7555,12 +8013,12 @@ def apply(raster:Union[Raster, ImageryLayer], fn_name, **kwargs):
 
 
 def vector_field(
-    raster_u_mag:Union[Raster, ImageryLayer],
-    raster_v_dir:Union[Raster, ImageryLayer],
-    input_data_type:str="Vector-UV",
-    angle_reference_system:str="Geographic",
-    output_data_type:str="Vector-UV",
-    astype:Optional[str]=None,
+    raster_u_mag: Union[Raster, ImageryLayer],
+    raster_v_dir: Union[Raster, ImageryLayer],
+    input_data_type: str = "Vector-UV",
+    angle_reference_system: str = "Geographic",
+    output_data_type: str = "Vector-UV",
+    astype: Optional[str] = None,
 ):
     """
     The VectorField function is used to composite two single-band rasters (each raster represents U/V or Magnitude/Direction)
@@ -7632,7 +8090,7 @@ def vector_field(
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
 
-def complex(raster:Union[Raster, ImageryLayer]):
+def complex(raster: Union[Raster, ImageryLayer]):
 
     """
     Complex function computes magnitude from complex values. It is used when
@@ -7664,7 +8122,7 @@ def complex(raster:Union[Raster, ImageryLayer]):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def colormap_to_rgb(raster:Union[Raster, ImageryLayer]):
+def colormap_to_rgb(raster: Union[Raster, ImageryLayer]):
 
     """
     The colormap_to_rgb function is designed to work with single band image service that has
@@ -7706,7 +8164,11 @@ def colormap_to_rgb(raster:Union[Raster, ImageryLayer]):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def statistics_histogram(raster:Union[Raster, ImageryLayer], statistics:Optional[list]=None, histograms:Optional[list]=None):
+def statistics_histogram(
+    raster: Union[Raster, ImageryLayer],
+    statistics: Optional[list] = None,
+    histograms: Optional[list] = None,
+):
     """
     The function is used to define the statistics and histogram of a raster.
     It is normally used for control the default display of exported image.
@@ -7745,7 +8207,7 @@ def statistics_histogram(raster:Union[Raster, ImageryLayer], statistics:Optional
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def tasseled_cap(raster:Union[Raster, ImageryLayer]):
+def tasseled_cap(raster: Union[Raster, ImageryLayer]):
     """
     The function is designed to analyze and map vegetation and urban development
     changes detected by various satellite sensor systems. It is known as the
@@ -7787,7 +8249,7 @@ def tasseled_cap(raster:Union[Raster, ImageryLayer]):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def identity(raster:Union[Raster, ImageryLayer]):
+def identity(raster: Union[Raster, ImageryLayer]):
     """
     The function is used to define the source raster as part of the default
     mosaicking behavior of the mosaic dataset. This function is a no-op function
@@ -7817,7 +8279,9 @@ def identity(raster:Union[Raster, ImageryLayer]):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def colorspace_conversion(raster:Union[Raster, ImageryLayer], conversion_type:str="rgb_to_hsv"):
+def colorspace_conversion(
+    raster: Union[Raster, ImageryLayer], conversion_type: str = "rgb_to_hsv"
+):
 
     """
     The ColorspaceConversion function converts the color model of a three-band
@@ -7861,7 +8325,9 @@ def colorspace_conversion(raster:Union[Raster, ImageryLayer], conversion_type:st
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def grayscale(raster:Union[Raster, ImageryLayer], conversion_parameters:Optional[list]=None):
+def grayscale(
+    raster: Union[Raster, ImageryLayer], conversion_parameters: Optional[list] = None
+):
     """
     The Grayscale function converts a multi-band image into a single-band grayscale
     image. Specified weights are applied to each of the input bands, and a
@@ -7903,7 +8369,9 @@ def grayscale(raster:Union[Raster, ImageryLayer], conversion_parameters:Optional
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def spectral_conversion(raster:Union[Raster, ImageryLayer], conversion_matrix:Optional[list[float]]):
+def spectral_conversion(
+    raster: Union[Raster, ImageryLayer], conversion_matrix: Optional[list[float]]
+):
     """
     The SpectralConversion function applies a matrix to a multi-band image to
     affect the spectral values of the output. In the matrix, different weights
@@ -7939,12 +8407,12 @@ def spectral_conversion(raster:Union[Raster, ImageryLayer], conversion_matrix:Op
 
 
 def raster_calculator(
-    rasters:Union[Raster, ImageryLayer],
-    input_names:list[str],
-    expression:str,
-    extent_type:str="FirstOf",
-    cellsize_type:str="FirstOf",
-    astype:Optional[str]=None,
+    rasters: Union[Raster, ImageryLayer],
+    input_names: list[str],
+    expression: str,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+    astype: Optional[str] = None,
 ):
     """
     The RasterCalculator function provides access to all existing math functions
@@ -8022,15 +8490,15 @@ def raster_calculator(
 
 
 def speckle(
-    raster:Union[Raster, ImageryLayer],
-    filter_type:str="Lee",
-    filter_size:str="3x3",
-    noise_model:str="Multiplicative",
-    noise_var:Optional[float]=None,
-    additive_noise_mean:Optional[str]=None,
-    multiplicative_noise_mean:int=1,
-    nlooks:int=1,
-    damp_factor:Optional[float]=None,
+    raster: Union[Raster, ImageryLayer],
+    filter_type: str = "Lee",
+    filter_size: str = "3x3",
+    noise_model: str = "Multiplicative",
+    noise_var: Optional[float] = None,
+    additive_noise_mean: Optional[str] = None,
+    multiplicative_noise_mean: int = 1,
+    nlooks: int = 1,
+    damp_factor: Optional[float] = None,
 ):
     """
     The Speckle function filters the speckled radar dataset to smooth out the
@@ -8105,13 +8573,13 @@ def speckle(
 
 
 def pansharpen(
-    pan_raster:Union[Raster, ImageryLayer],
-    ms_raster:Union[Raster, ImageryLayer],
-    ir_raster:Optional[Union[Raster, ImageryLayer]]=None,
-    fourth_band_of_ms_is_ir:bool=True,
-    weights:list[float]=[0.166, 0.167, 0.167, 0.5],
-    type:str="ESRI",
-    sensor:Optional[str]=None,
+    pan_raster: Union[Raster, ImageryLayer],
+    ms_raster: Union[Raster, ImageryLayer],
+    ir_raster: Optional[Union[Raster, ImageryLayer]] = None,
+    fourth_band_of_ms_is_ir: bool = True,
+    weights: list[float] = [0.166, 0.167, 0.167, 0.5],
+    type: str = "ESRI",
+    sensor: Optional[str] = None,
 ):
     """
     The Pansharpening function uses a higher-resolution panchromatic raster to
@@ -8213,7 +8681,14 @@ def pansharpen(
     return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
 
 
-def weighted_overlay(rasters:Union[Raster, ImageryLayer], fields:list[str], influences:list[float], remaps:list[str], eval_from:int, eval_to:int):
+def weighted_overlay(
+    rasters: Union[Raster, ImageryLayer],
+    fields: list[str],
+    influences: list[float],
+    remaps: list[str],
+    eval_from: int,
+    eval_to: int,
+):
 
     """
     The WeightedOverlay function allows you to overlay several rasters using a common measurement scale and weights each according to its importance. For more information, see
@@ -8259,7 +8734,9 @@ def weighted_overlay(rasters:Union[Raster, ImageryLayer], fields:list[str], infl
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
 
-def weighted_sum(rasters:Union[Raster, ImageryLayer], fields:list[str], weights:list[float]):
+def weighted_sum(
+    rasters: Union[Raster, ImageryLayer], fields: list[str], weights: list[float]
+):
 
     """
     The weighted_sum function allows you to overlay several rasters, multiplying each by their given weight and summing them together. For more information, see
@@ -8297,19 +8774,19 @@ def weighted_sum(rasters:Union[Raster, ImageryLayer], fields:list[str], weights:
 
 
 def focal_stats(
-    raster:Union[Raster, ImageryLayer],
-    neighborhood_type:int=1,
-    width:int=3,
-    height:int=3,
-    inner_radius:int=1,
-    outer_radius:int=3,
-    radius:int=3,
-    start_angle:float=0,
-    end_angle:float=90,
-    neighborhood_values:Optional[list]=None,
-    stat_type:int=3,
-    percentile_value:float=90,
-    ignore_no_data:bool=True,
+    raster: Union[Raster, ImageryLayer],
+    neighborhood_type: int = 1,
+    width: int = 3,
+    height: int = 3,
+    inner_radius: int = 1,
+    outer_radius: int = 3,
+    radius: int = 3,
+    start_angle: float = 0,
+    end_angle: float = 90,
+    neighborhood_values: Optional[list] = None,
+    stat_type: int = 3,
+    percentile_value: float = 90,
+    ignore_no_data: bool = True,
 ):
     """
     Calculates for each input cell location a statistic of the values within a specified neighborhood around it.
@@ -8462,7 +8939,7 @@ def focal_stats(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def lookup(raster:Union[Raster, ImageryLayer], field:Optional[str]=None):
+def lookup(raster: Union[Raster, ImageryLayer], field: Optional[str] = None):
 
     """
     Creates a new raster by looking up values found in another field in the table of the input raster.
@@ -8498,16 +8975,16 @@ def lookup(raster:Union[Raster, ImageryLayer], field:Optional[str]=None):
 
 
 def raster_collection_function(
-    raster:Union[Raster, ImageryLayer],
+    raster: Union[Raster, ImageryLayer],
     item_function=None,
     aggregation_function=None,
     processing_function=None,
-    aggregation_definition_type:str="ALL",
-    dimension:Optional[str]=None,
-    interval_keyword:Optional[str]=None,
-    interval_value:Optional[str]=None,
-    interval_unit:Optional[str]=None,
-    interval_ranges:Optional[list[dict]]=None,
+    aggregation_definition_type: str = "ALL",
+    dimension: Optional[str] = None,
+    interval_keyword: Optional[str] = None,
+    interval_value: Optional[str] = None,
+    interval_unit: Optional[str] = None,
+    interval_ranges: Optional[list[dict]] = None,
 ):
     """
     Creates a new raster by applying item, aggregation and processing function
@@ -8769,7 +9246,12 @@ def raster_collection_function(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def monitor_vegetation(raster:Union[Raster, ImageryLayer], method:str="NDVI", band_indexes=None, astype:Optional[str]=None):
+def monitor_vegetation(
+    raster: Union[Raster, ImageryLayer],
+    method: str = "NDVI",
+    band_indexes=None,
+    astype: Optional[str] = None,
+):
     """
     The monitor_vegetation function performs an arithmetic operation on the bands of a multiband raster layer
     to reveal vegetation coverage information of the study area.
@@ -8840,7 +9322,9 @@ def monitor_vegetation(raster:Union[Raster, ImageryLayer], method:str="NDVI", ba
     return band_arithmetic(raster, band_indexes, astype, method)
 
 
-def constant_raster(constant:list, raster_info:Union[Raster, ImageryLayer], gis:Optional[GIS]=None):
+def constant_raster(
+    constant: list, raster_info: Union[Raster, ImageryLayer], gis: Optional[GIS] = None
+):
 
     """
     Creates a virtual raster with a single pixel value.
@@ -8916,24 +9400,24 @@ def constant_raster(constant:list, raster_info:Union[Raster, ImageryLayer], gis:
 
 
 def random_raster(
-    raster_info:Union[Raster, ImageryLayer],
-    distribution:int=1,
-    min_uniform:float=0.0,
-    max_uniform:float=1.0,
-    min_integer:int=1,
-    max_integer:int=10,
-    normal_mean:float=0.0,
-    std_dev:float=1.0,
-    exp_mean:float=1.0,
-    poisson_mean:float=1.0,
-    alpha:float=1.0,
-    beta:float=1.0,
-    N:int=10,
-    r:int=10,
-    probability:float=0.5,
-    seed:int=1,
-    generator_type:int=2,
-    gis:Optional[GIS]=None,
+    raster_info: Union[Raster, ImageryLayer],
+    distribution: int = 1,
+    min_uniform: float = 0.0,
+    max_uniform: float = 1.0,
+    min_integer: int = 1,
+    max_integer: int = 10,
+    normal_mean: float = 0.0,
+    std_dev: float = 1.0,
+    exp_mean: float = 1.0,
+    poisson_mean: float = 1.0,
+    alpha: float = 1.0,
+    beta: float = 1.0,
+    N: int = 10,
+    r: int = 10,
+    probability: float = 0.5,
+    seed: int = 1,
+    generator_type: int = 2,
+    gis: Optional[GIS] = None,
 ):
     """
     Creates a virtual raster with random values for each cell.
@@ -9122,11 +9606,11 @@ def random_raster(
 
 
 def aggregate_cells(
-    raster:Union[Raster, ImageryLayer],
-    cell_factor:int=2,
-    aggregation_type:int=9,
-    extent_handling:bool=False,
-    ignore_nodata:bool=False,
+    raster: Union[Raster, ImageryLayer],
+    cell_factor: int = 2,
+    aggregation_type: int = 9,
+    extent_handling: bool = False,
+    ignore_nodata: bool = False,
 ):
 
     """
@@ -9222,7 +9706,7 @@ def aggregate_cells(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def _raster_item(raster:Union[Raster, ImageryLayer], raster_id=None):
+def _raster_item(raster: Union[Raster, ImageryLayer], raster_id=None):
     """
     :param raster: the input raster
     :param conversion_parameters: array of double (A length of N array representing weights for each band, where N=band count.)
@@ -9261,18 +9745,18 @@ def _raster_item(raster:Union[Raster, ImageryLayer], raster_id=None):
 
 
 def generate_trend(
-    raster:Union[Raster, ImageryLayer],
-    dimension_name:str,
-    regression_type:Union[int, str]=0,
-    cycle_length:int=1,
-    cycle_unit:str="YEARS",
-    harmonic_frequency:int=1,
-    polynomial_order:int=2,
-    ignore_nodata:bool=True,
-    rmse:bool=True,
-    r2:bool=False,
-    slope_p_value:bool=False,
-    seasonal_period:str="DAYS",
+    raster: Union[Raster, ImageryLayer],
+    dimension_name: str,
+    regression_type: Union[int, str] = 0,
+    cycle_length: int = 1,
+    cycle_unit: str = "YEARS",
+    harmonic_frequency: int = 1,
+    polynomial_order: int = 2,
+    ignore_nodata: bool = True,
+    rmse: bool = True,
+    r2: bool = False,
+    slope_p_value: bool = False,
+    seasonal_period: str = "DAYS",
 ):
     """
     Estimates the trend for each pixel along a dimension for one or more variables in a multidimensional raster.
@@ -9402,13 +9886,13 @@ def generate_trend(
 
 
 def predict_using_trend(
-    raster:Union[Raster, ImageryLayer],
-    dimension_definition_type:Union[int, str]=0,
-    dimension_values:Optional[list]=None,
-    start:Optional[Union[str, int]]=None,
-    end:Optional[Union[str, int]]=None,
-    interval_value:int=1,
-    interval_unit:str="HOURS",
+    raster: Union[Raster, ImageryLayer],
+    dimension_definition_type: Union[int, str] = 0,
+    dimension_values: Optional[list] = None,
+    start: Optional[Union[str, int]] = None,
+    end: Optional[Union[str, int]] = None,
+    interval_value: int = 1,
+    interval_unit: str = "HOURS",
 ):
 
     """
@@ -9505,7 +9989,10 @@ def predict_using_trend(
 
 
 def linear_spectral_unmixing(
-    raster:Union[Raster, ImageryLayer], spectral_profile_def:Optional[dict]=None, non_negative:bool=False, sum_to_one:bool=False
+    raster: Union[Raster, ImageryLayer],
+    spectral_profile_def: Optional[dict] = None,
+    non_negative: bool = False,
+    sum_to_one: bool = False,
 ):
 
     """
@@ -9560,17 +10047,17 @@ def linear_spectral_unmixing(
 
 
 def multidimensional_filter(
-    raster:Union[Raster, ImageryLayer],
-    variables:Optional[list]=None,
-    dimension_definition:str="ALL",
-    dimension:Optional[str]=None,
-    dimension_ranges:Optional[list[dict]]=None,
-    dimension_values:Optional[list[dict]]=None,
-    start_of_first_iteration:Optional[str]=None,
-    end_of_first_iteration:Optional[str]=None,
-    iteration_step:float=3,
-    iteration_unit:Optional[str]=None,
-    dimensionless:bool=False,
+    raster: Union[Raster, ImageryLayer],
+    variables: Optional[list] = None,
+    dimension_definition: str = "ALL",
+    dimension: Optional[str] = None,
+    dimension_ranges: Optional[list[dict]] = None,
+    dimension_values: Optional[list[dict]] = None,
+    start_of_first_iteration: Optional[str] = None,
+    end_of_first_iteration: Optional[str] = None,
+    iteration_step: float = 3,
+    iteration_unit: Optional[str] = None,
+    dimensionless: bool = False,
 ):
     """
     Applies a filter on a multidimensional raster. Function creates a raster layer
@@ -9761,7 +10248,10 @@ def multidimensional_filter(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def s1_radiometric_calibration(raster:Union[Raster, ImageryLayer], calibration_type:Optional[Union[str,int]]=None):
+def s1_radiometric_calibration(
+    raster: Union[Raster, ImageryLayer],
+    calibration_type: Optional[Union[str, int]] = None,
+):
 
     """
     Performs different types of radiometric calibration on Sentinel-1 data.
@@ -9814,7 +10304,7 @@ def s1_radiometric_calibration(raster:Union[Raster, ImageryLayer], calibration_t
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def s1_thermal_noise_removal(raster:Union[Raster, ImageryLayer]):
+def s1_thermal_noise_removal(raster: Union[Raster, ImageryLayer]):
 
     """
     Removes thermal noise from Sentinel-1 data.
@@ -9848,11 +10338,11 @@ def s1_thermal_noise_removal(raster:Union[Raster, ImageryLayer]):
 
 def interpolate_irregular_data(
     point_feature: _FeatureLayer,
-    value_field:Optional[str]=None,
-    cell_size:int=0,
-    interpolation_method:Union[str, int]=0,
-    radius:int=3,
-    gis:Optional[GIS]=None,
+    value_field: Optional[str] = None,
+    cell_size: int = 0,
+    interpolation_method: Union[str, int] = 0,
+    radius: int = 3,
+    gis: Optional[GIS] = None,
 ):
     """
     Interpolates from point clouds or irregular grids. (Supported from 10.8.1)
@@ -9952,7 +10442,7 @@ def interpolate_irregular_data(
     return newlyr
 
 
-def _simple_collection(raster:Union[Raster, ImageryLayer], md_info=None):
+def _simple_collection(raster: Union[Raster, ImageryLayer], md_info=None):
     """ "
     The function is used to define the source raster as part of the default
     mosaicking behavior of the mosaic dataset. This function is a no-op function
@@ -9979,18 +10469,18 @@ def _simple_collection(raster:Union[Raster, ImageryLayer], md_info=None):
 
 
 def aggregate(
-    raster:Union[Raster, ImageryLayer],
-    dimension:Optional[str]=None,
-    aggregation_function:Optional[str]=None,
-    aggregation_definition_type:str="ALL",
-    interval_keyword:Optional[str]=None,
-    interval_value:Optional[str]=None,
-    interval_unit:Optional[str]=None,
-    interval_ranges:Optional[list[dict]]=None,
-    ignore_nodata:bool=False,
-    dimensionless:bool=False,
-    percentile_value:float=90,
-    percentile_interpolation_type:str="NEAREST",
+    raster: Union[Raster, ImageryLayer],
+    dimension: Optional[str] = None,
+    aggregation_function: Optional[str] = None,
+    aggregation_definition_type: str = "ALL",
+    interval_keyword: Optional[str] = None,
+    interval_value: Optional[str] = None,
+    interval_unit: Optional[str] = None,
+    interval_ranges: Optional[list[dict]] = None,
+    ignore_nodata: bool = False,
+    dimensionless: bool = False,
+    percentile_value: float = 90,
+    percentile_interpolation_type: str = "NEAREST",
 ):
     """
     The aggregate function creates a new raster by applying an aggregation function to the input raster.
@@ -10296,17 +10786,17 @@ def aggregate(
 
 
 def compute_change(
-    raster1:Union[Raster, ImageryLayer],
-    raster2:Union[Raster, ImageryLayer],
-    method:Optional[str]=0,
-    from_class_values:list[int]=[],
-    to_class_values:list[int]=[],
-    filter_method:str=1,
-    define_transition_colors:str=0,
-    extent_type:str="IntersectionOf",
-    cellsize_type:str="MaxOf",
-    from_class_name_field_name:Optional[str]=None,
-    to_class_name_field_name:Optional[str]=None,
+    raster1: Union[Raster, ImageryLayer],
+    raster2: Union[Raster, ImageryLayer],
+    method: Optional[str] = 0,
+    from_class_values: list[int] = [],
+    to_class_values: list[int] = [],
+    filter_method: str = 1,
+    define_transition_colors: str = 0,
+    extent_type: str = "IntersectionOf",
+    cellsize_type: str = "MaxOf",
+    from_class_name_field_name: Optional[str] = None,
+    to_class_name_field_name: Optional[str] = None,
 ):
 
     """
@@ -10505,26 +10995,26 @@ def compute_change(
 
 
 def detect_change_using_change_analysis_raster(
-    raster:Union[Raster, ImageryLayer],
-    change_type:str="TIME_OF_LATEST_CHANGE",
-    max_number_of_changes:int=1,
-    segment_date:str="BEGINNING_OF_SEGMENT",
-    change_direction:str="ALL",
-    filter_by_year:bool=False,
-    min_year:Optional[int]=None,
-    max_year:Optional[int]=None,
-    filter_by_duration:bool=False,
-    min_duration:Optional[float]=None,
-    max_duration:Optional[float]=None,
-    filter_by_magnitude:bool=False,
-    min_magnitude:Optional[float]=None,
-    max_magnitude:Optional[float]=None,
-    filter_by_start_value:bool=False,
-    min_start_value:Optional[float]=None,
-    max_start_value:Optional[float]=None,
-    filter_by_end_value:bool=False,
-    min_end_value:Optional[float]=None,
-    max_end_value:Optional[float]=None,
+    raster: Union[Raster, ImageryLayer],
+    change_type: str = "TIME_OF_LATEST_CHANGE",
+    max_number_of_changes: int = 1,
+    segment_date: str = "BEGINNING_OF_SEGMENT",
+    change_direction: str = "ALL",
+    filter_by_year: bool = False,
+    min_year: Optional[int] = None,
+    max_year: Optional[int] = None,
+    filter_by_duration: bool = False,
+    min_duration: Optional[float] = None,
+    max_duration: Optional[float] = None,
+    filter_by_magnitude: bool = False,
+    min_magnitude: Optional[float] = None,
+    max_magnitude: Optional[float] = None,
+    filter_by_start_value: bool = False,
+    min_start_value: Optional[float] = None,
+    max_start_value: Optional[float] = None,
+    filter_by_end_value: bool = False,
+    min_end_value: Optional[float] = None,
+    max_end_value: Optional[float] = None,
 ):
 
     """
@@ -10873,7 +11363,7 @@ def detect_change_using_change_analysis_raster(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def trend_to_rgb(raster:Union[Raster, ImageryLayer], model_type:str=0):
+def trend_to_rgb(raster: Union[Raster, ImageryLayer], model_type: str = 0):
 
     """
     Display the generate trend raster.
@@ -10922,15 +11412,15 @@ def trend_to_rgb(raster:Union[Raster, ImageryLayer], model_type:str=0):
 
 
 def apparent_reflectance(
-    raster:Union[Raster, ImageryLayer],
-    radiance_gain_values:Optional[list]=None,
-    radiance_bias_values:Optional[list]=None,
-    reflectance_gain_values:Optional[list]=None,
-    reflectance_bias_values:Optional[list]=None,
-    sun_elevation:Optional[float]=None,
-    albedo:bool=False,
-    scale_factor:Optional[int]=None,
-    offset:Optional[int]=None,
+    raster: Union[Raster, ImageryLayer],
+    radiance_gain_values: Optional[list] = None,
+    radiance_bias_values: Optional[list] = None,
+    reflectance_gain_values: Optional[list] = None,
+    reflectance_bias_values: Optional[list] = None,
+    sun_elevation: Optional[float] = None,
+    albedo: bool = False,
+    scale_factor: Optional[int] = None,
+    offset: Optional[int] = None,
 ):
 
     """
@@ -11076,7 +11566,7 @@ def apparent_reflectance(
 #    return _clone_layer(layer, template_dict, raster_ra)
 
 
-def buffered(raster:Union[Raster, ImageryLayer]):
+def buffered(raster: Union[Raster, ImageryLayer]):
 
     """
     The Buffered function is used to optimize the performance of complex function chains.
@@ -11107,7 +11597,10 @@ def buffered(raster:Union[Raster, ImageryLayer]):
 
 
 def rasterize_features(
-    raster:Union[Raster, ImageryLayer], feature_class:_FeatureLayer, class_index_field:Optional[str]=None, resolve_overlap_method:Optional[Union[int, str]]=0
+    raster: Union[Raster, ImageryLayer],
+    feature_class: _FeatureLayer,
+    class_index_field: Optional[str] = None,
+    resolve_overlap_method: Optional[Union[int, str]] = 0,
 ):
     """
     Converts features to raster. Features are assigned pixel values based on the feature's OBJECTID (default).
@@ -11246,12 +11739,12 @@ def rasterize_features(
 
 
 def reproject(
-    raster:Union[Raster, ImageryLayer],
-    spatial_reference:Optional[dict]=None,
-    x_cell_size:int=0,
-    y_cell_size:int=0,
-    x_registration_point:int=0,
-    y_registration_point:int=0,
+    raster: Union[Raster, ImageryLayer],
+    spatial_reference: Optional[dict] = None,
+    x_cell_size: int = 0,
+    y_cell_size: int = 0,
+    x_registration_point: int = 0,
+    y_registration_point: int = 0,
 ):
     """
     Modifies the projection of a raster dataset, mosaic dataset, or raster item in a
@@ -11323,10 +11816,10 @@ def reproject(
 
 
 def heat_index(
-    temperature_raster:Union[Raster, ImageryLayer],
+    temperature_raster: Union[Raster, ImageryLayer],
     relative_humidity_raster: Union[Raster, ImageryLayer],
-    temperature_units:str="Fahrenheit",
-    heat_index_units:str="Fahrenheit",
+    temperature_units: str = "Fahrenheit",
+    heat_index_units: str = "Fahrenheit",
 ):
     """
     Calculates apparent temperature based on ambient temperature and relative humidity. The apparent temperature is often described as how hot it feels to the human body.
@@ -11385,11 +11878,11 @@ def heat_index(
 
 
 def wind_chill(
-    temperature_raster:Union[Raster, ImageryLayer],
-    wind_speed_raster:Union[Raster, ImageryLayer],
-    temperature_units:str="Fahrenheit",
-    wind_speed_units:str="mph",
-    wind_chill_units:str="Fahrenheit",
+    temperature_raster: Union[Raster, ImageryLayer],
+    wind_speed_raster: Union[Raster, ImageryLayer],
+    temperature_units: str = "Fahrenheit",
+    wind_speed_units: str = "mph",
+    wind_chill_units: str = "Fahrenheit",
 ):
 
     """
@@ -11462,7 +11955,7 @@ def wind_chill(
     return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
 
 
-def aspect_slope(raster:Union[Raster, ImageryLayer], z_factor:float=1):
+def aspect_slope(raster: Union[Raster, ImageryLayer], z_factor: float = 1):
     """
     The aspect_slope function creates a raster layer that simultaneously displays the aspect and slope of a surface.
 
@@ -11503,14 +11996,14 @@ def aspect_slope(raster:Union[Raster, ImageryLayer], z_factor:float=1):
 
 
 def contour(
-    raster:Union[Raster, ImageryLayer],
-    adaptive_smoothing:float=2.5,
-    contour_type:str="CONTOUR_LINES",
-    z_base:float=0,
-    number_of_contours:int=0,
-    contour_interval:int=100,
-    nth_contour_line_in_bold:int=5,
-    z_factor:float=1,
+    raster: Union[Raster, ImageryLayer],
+    adaptive_smoothing: float = 2.5,
+    contour_type: str = "CONTOUR_LINES",
+    z_base: float = 0,
+    number_of_contours: int = 0,
+    contour_interval: int = 100,
+    nth_contour_line_in_bold: int = 5,
+    z_factor: float = 1,
 ):
     """
     The contour function creates contour lines from the input raster.
@@ -11593,12 +12086,12 @@ def contour(
 
 
 def ccdc_analysis(
-    raster:Union[Raster, ImageryLayer],
-    bands_for_detecting_change:list[int]=[],
-    bands_for_temporal_masking:list[int]=[],
-    chi_squared_threshold:float=0.99,
-    min_anomaly_observations:int=6,
-    update_frequency:float=1,
+    raster: Union[Raster, ImageryLayer],
+    bands_for_detecting_change: list[int] = [],
+    bands_for_temporal_masking: list[int] = [],
+    chi_squared_threshold: float = 0.99,
+    min_anomaly_observations: int = 6,
+    update_frequency: float = 1,
 ):
 
     """
@@ -11701,19 +12194,19 @@ def ccdc_analysis(
 
 
 def landtrendr_analysis(
-    raster:Union[Raster, ImageryLayer],
-    processing_band:Optional[str]=None,
-    snapping_date:str="06-30",
-    max_num_segments:int=5,
-    vertex_count_overshoot:int=2,
-    spike_threshold:float=0.9,
-    recovery_threshold:float=0.25,
-    prevent_one_year_recovery:bool=True,
-    increasing_recovery_trend:bool=True,
-    min_num_observations:int=6,
-    best_model_proportion:float=1.25,
-    pvalue_threshold:float=0.01,
-    output_other_bands:bool=False,
+    raster: Union[Raster, ImageryLayer],
+    processing_band: Optional[str] = None,
+    snapping_date: str = "06-30",
+    max_num_segments: int = 5,
+    vertex_count_overshoot: int = 2,
+    spike_threshold: float = 0.9,
+    recovery_threshold: float = 0.25,
+    prevent_one_year_recovery: bool = True,
+    increasing_recovery_trend: bool = True,
+    min_num_observations: int = 6,
+    best_model_proportion: float = 1.25,
+    pvalue_threshold: float = 0.01,
+    output_other_bands: bool = False,
 ):
 
     """
@@ -11910,15 +12403,15 @@ def landtrendr_analysis(
 
 
 def dimensional_moving_statistics(
-    raster:Union[Raster, ImageryLayer],
-    dimension:Optional[str]=None,
-    backward_window:int=1,
-    forward_window:int=1,
-    nodata_handling:str="DATA",
-    statistics_type:str="MEAN",
-    percentile_value:float=90,
-    percentile_interpolation_type:str="AUTO_DETECT",
-    circular_wrap_value:int=360,
+    raster: Union[Raster, ImageryLayer],
+    dimension: Optional[str] = None,
+    backward_window: int = 1,
+    forward_window: int = 1,
+    nodata_handling: str = "DATA",
+    statistics_type: str = "MEAN",
+    percentile_value: float = 90,
+    percentile_interpolation_type: str = "AUTO_DETECT",
+    circular_wrap_value: int = 360,
 ):
     """
     The dimensional_moving_statistics function calculates statistics over a moving window
@@ -12107,7 +12600,7 @@ def dimensional_moving_statistics(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def mosaic_rasters(rasters:Union[Raster, ImageryLayer], mosaic_type:str="BLEND"):
+def mosaic_rasters(rasters: Union[Raster, ImageryLayer], mosaic_type: str = "BLEND"):
     """
     The mosaic_rasters function creates a single mosaicked image using multiple images.
     When there is overlap between the images, you can choose from several methods to
@@ -12171,18 +12664,18 @@ def mosaic_rasters(rasters:Union[Raster, ImageryLayer], mosaic_type:str="BLEND")
 
 
 def interpolate_raster_by_dimension(
-    raster:Union[Raster, ImageryLayer],
-    interpolation_method:str="LINEAR",
-    variables:Optional[list]=None,
-    dimension_definition:Optional[str]=None,
-    dimension_values:Optional[list[dict]]=None,
-    dimension:Optional[str]=None,
-    start_value:Optional[str]=None,
-    end_value:Optional[str]=None,
-    interval_value:Optional[float]=None,
-    interval_unit:Optional[str]=None,
-    target_raster:Optional[Union[Raster, ImageryLayer]]=None,
-    ignore_nodata:bool=True,
+    raster: Union[Raster, ImageryLayer],
+    interpolation_method: str = "LINEAR",
+    variables: Optional[list] = None,
+    dimension_definition: Optional[str] = None,
+    dimension_values: Optional[list[dict]] = None,
+    dimension: Optional[str] = None,
+    start_value: Optional[str] = None,
+    end_value: Optional[str] = None,
+    interval_value: Optional[float] = None,
+    interval_unit: Optional[str] = None,
+    target_raster: Optional[Union[Raster, ImageryLayer]] = None,
+    ignore_nodata: bool = True,
 ):
 
     """
@@ -12523,7 +13016,7 @@ class RFT:
                 "(Make sure that Raster rendering service is turned on, inorder to display the output dynamically.)"
             )
 
-    def to_json(self, gis:Optional[GIS]=None):
+    def to_json(self, gis: Optional[GIS] = None):
         """
         Converts the raster function template into a dictionary.
 
@@ -13302,7 +13795,9 @@ class RFT:
                         lyr, complete_rft_dict, complete_rft_dict
                     )
 
-    def draw_graph(self, show_attributes:bool=False, graph_size:str="14.25, 15.25"):
+    def draw_graph(
+        self, show_attributes: bool = False, graph_size: str = "14.25, 15.25"
+    ):
 
         """
         Displays a structural representation of the function chain and it's raster input values. If
