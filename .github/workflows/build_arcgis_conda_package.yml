@@ -16,7 +16,7 @@ jobs:
     - name: Update Build YAML file
       uses: fjogeleit/yaml-update-action@master
       with:
-        valueFile: 'build/esri_requests/meta.yaml'
+        valueFile: 'build/arcgis/meta.yaml'
         propertyPath: 'build.number'
         value: "${{ github.run_number }}"
         commitChange: false
@@ -25,7 +25,7 @@ jobs:
       id: package
       uses: juliangruber/read-file-action@v1
       with:
-        path: 'build/esri_requests/meta.yaml'
+        path: 'build/arcgis/meta.yaml'
     - name: Echo meta.yaml
       run: echo "${{ steps.package.outputs.content }}"
     - name: Set up Python
