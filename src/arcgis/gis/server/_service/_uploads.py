@@ -2,6 +2,7 @@
 Controls the Uploads of file to AGS/AGO
 """
 from __future__ import absolute_import
+from typing import Optional
 from urllib.parse import urlparse, urlencode
 import os
 
@@ -40,7 +41,7 @@ class Uploads(object):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def upload(self, filePath, description=None):
+    def upload(self, filePath: str, description: Optional[str] = None):
         """
         This operation uploads an item to the server. Each uploaded item is
         identified by a unique itemID. Since this request uploads a file,
@@ -66,7 +67,7 @@ class Uploads(object):
         return self._con.post(path=url, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
-    def delete(self, itemID):
+    def delete(self, itemID: str):
         """
         This operation deletes an item.
 
@@ -78,7 +79,7 @@ class Uploads(object):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def download(self, itemID, savePath):
+    def download(self, itemID: str, savePath: str):
         """
         downloads an item to local disk
 

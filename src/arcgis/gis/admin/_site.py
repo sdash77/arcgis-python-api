@@ -1,3 +1,4 @@
+from typing import Optional
 from ._base import BasePortalAdmin
 
 ########################################################################
@@ -30,17 +31,17 @@ class Site(BasePortalAdmin):
     @staticmethod
     def create(
         con,
-        url,
-        username,
-        password,
-        full_name,
-        email,
-        content_store,
-        description="",
-        question_idx=None,
-        question_ans=None,
-        license_file=None,
-        user_license=None,
+        url: str,
+        username: str,
+        password: str,
+        full_name: str,
+        email: str,
+        content_store: str,
+        description: str = "",
+        question_idx: Optional[int] = None,
+        question_ans: Optional[str] = None,
+        license_file: Optional[str] = None,
+        user_license: Optional[str] = None,
     ):
         """
         The create site operation initializes and configures Portal for
@@ -121,7 +122,7 @@ class Site(BasePortalAdmin):
         return con.post(url, params, files=license_file)
 
     # ----------------------------------------------------------------------
-    def export_site(self, location):
+    def export_site(self, location: str):
         """
         This operation exports the portal site configuration to a location
         you specify. The exported file includes the following information:
@@ -161,7 +162,7 @@ class Site(BasePortalAdmin):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def import_site(self, location):
+    def import_site(self, location: str):
         """
         The importSite operation lets you restore your site from a backup
         site configuration file that you created using the exportSite
@@ -194,7 +195,7 @@ class Site(BasePortalAdmin):
         return False
 
     # ----------------------------------------------------------------------
-    def join(self, admin_url, username, password):
+    def join(self, admin_url: str, username: str, password: str):
         """
         The joinSite operation connects a portal machine to an existing
         site. You must provide an account with administrative privileges to

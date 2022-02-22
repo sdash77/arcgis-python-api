@@ -9,6 +9,7 @@
 """
 from __future__ import absolute_import
 import tempfile
+from typing import Optional
 from .._common._base import BaseServer
 
 ########################################################################
@@ -33,7 +34,9 @@ class VectorTile(BaseServer):
             self._init(connection)
 
     # ----------------------------------------------------------------------
-    def tile_fonts(self, fontstack, stack_range, out_folder=None):
+    def tile_fonts(
+        self, fontstack: str, stack_range: str, out_folder: Optional[str] = None
+    ):
         """This resource returns glyphs in PBF format. The template url for
         this fonts resource is represented in Vector Tile Style resource."""
         url = "{url}/resources/fonts/{fontstack}/{stack_range}.pbf".format(
@@ -45,7 +48,9 @@ class VectorTile(BaseServer):
         return self._con.get(path=url, params=params, out_folder=out_folder)
 
     # ----------------------------------------------------------------------
-    def vector_tile(self, level, row, column, out_folder=None):
+    def vector_tile(
+        self, level: str, row: str, column: str, out_folder: Optional[str] = None
+    ):
         """This resource represents a single vector tile for the map. The
         bytes for the tile at the specified level, row and column are
         returned in PBF format. If a tile is not found, an HTTP status code
@@ -62,7 +67,9 @@ class VectorTile(BaseServer):
         )
 
     # ----------------------------------------------------------------------
-    def tile_sprite(self, out_format="sprite.json", out_folder=None):
+    def tile_sprite(
+        self, out_format: str = "sprite.json", out_folder: Optional[str] = None
+    ):
         """
         This resource returns sprite image and metadata
         """

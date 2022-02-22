@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Optional, Union
 import uuid
 from enum import Enum
-import warnings
 from arcgis.auth.tools import LazyLoader
 import re
 
@@ -83,46 +82,40 @@ class StoryMap(object):
             # set item properties
             self._item = item
             self._itemid = self._item.itemid
-            self._properties = self._item.get_data()
             self._resources = self._item.resources.list()
-            if (
-                self._properties == {}
-                or "unpublished" in self._properties
-                and self._properties["unpublished"] is True
-            ):
-                # If story is a draft, get properties from resource file.
-                # Can have multiple drafts so need to account for this.
-                # Draft file will be of form: draft_{13 digit timestamp}.json or draft.json
-                saved_drafts = []
-                for resource in self._resources:
-                    for key, val in resource.items():
-                        if key == "resource" and (
-                            re.match("draft_\d{13}.json", val)
-                            or re.match("draft.json", val)
-                        ):
-                            saved_drafts.append(val)
-                if len(saved_drafts) == 1:
-                    # Only one draft saved
-                    # Open JSON draft file for properties
-                    data = self._item.resources.get(saved_drafts[0], try_json=True)
-                    self._properties = data
-                else:
-                    # multiple drafts saved
-                    # remove draft.json because oldest one
-                    if "draft.json" in saved_drafts:
-                        idx = saved_drafts.index("draft.json")
-                        del saved_drafts[idx]
-                    # check remaining to find most recent
-                    start = saved_drafts[0][6:19]  # get only timestamp
-                    current = saved_drafts[0]
-                    for draft in saved_drafts:
-                        compare = draft[6:19]
-                        if start < compare:
-                            start = compare
-                            current = draft
-                    # Open most recent JSON draft file for properties
-                    data = self._item.resources.get(current, try_json=True)
-                    self._properties = data
+            # Get properties from most recent resource file.
+            # Can have multiple drafts so need to account for this.
+            # Draft file will be of form: draft_{13 digit timestamp}.json or draft.json
+            saved_drafts = []
+            for resource in self._resources:
+                for key, val in resource.items():
+                    if key == "resource" and (
+                        re.match("draft_\d{13}.json", val)
+                        or re.match("draft.json", val)
+                    ):
+                        saved_drafts.append(val)
+            if len(saved_drafts) == 1:
+                # Only one draft saved
+                # Open JSON draft file for properties
+                data = self._item.resources.get(saved_drafts[0], try_json=True)
+                self._properties = data
+            else:
+                # multiple drafts saved
+                # remove draft.json because oldest one
+                if "draft.json" in saved_drafts:
+                    idx = saved_drafts.index("draft.json")
+                    del saved_drafts[idx]
+                # check remaining to find most recent
+                start = saved_drafts[0][6:19]  # get only timestamp
+                current = saved_drafts[0]
+                for draft in saved_drafts:
+                    compare = draft[6:19]
+                    if start < compare:
+                        start = compare
+                        current = draft
+                # Open most recent JSON draft file for properties
+                data = self._item.resources.get(current, try_json=True)
+                self._properties = data
         elif (
             item
             and isinstance(item, arcgis.gis.Item)
@@ -472,10 +465,11 @@ class StoryMap(object):
 
         # set the cover image
         if image is not None:
-            if image.node not in self._properties["nodes"]:
-                # must be added to story resources
-                image._add_image(story=self)
-            self._properties["nodes"][story_cover_node]["children"] = [image.node]
+            if isinstance(image, Content.Image):
+                if image.node not in self._properties["nodes"]:
+                    # must be added to story resources
+                    image._add_image(story=self)
+                self._properties["nodes"][story_cover_node]["children"] = [image.node]
         else:
             # get original image
             if "children" in self._properties["nodes"][story_cover_node]:
@@ -1112,6 +1106,17 @@ class StoryMap(object):
             self._properties["nodes"][root_id]["children"].remove(node_id)
         # Remove from nodes dictionary
         del self._properties["nodes"][node_id]
+        # Remove node from any immersive nodes.
+        # A node can belong to an immersive narrative panel or an immersive slide
+        for node in self._properties["nodes"]:
+            if (
+                "immersive" in self._properties["nodes"][node]["type"]
+                and "children" in self._properties["nodes"][node]
+            ):
+                for child in self._properties["nodes"][node]["children"]:
+                    # iterate through children to see if node is part of it
+                    if child == node_id:
+                        self._properties["nodes"][node]["children"].remove(node_id)
 
         # Remove from resources dictionary
         # Note: not all keys are in resources
@@ -1184,10 +1189,14 @@ class StoryMap(object):
         """
         See :class:`~arcgis.gis.ResourceManager`
         """
-        resource_manager = arcgis.gis.ResourceManager(self._item, self._gis)
-        resp = resource_manager.remove(file=file)
-        self._resources = self._item.resources.list()
-        return resp
+        try:
+            resource_manager = arcgis.gis.ResourceManager(self._item, self._gis)
+            resp = resource_manager.remove(file=file)
+            self._resources = self._item.resources.list()
+            return resp
+        except:
+            # Resource cannot be found. Should not throw error
+            return True
 
     # ----------------------------------------------------------------------
     def _assign_node_class(self, node_id):

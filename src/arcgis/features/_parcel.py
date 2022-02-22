@@ -1,4 +1,6 @@
+from __future__ import annotations
 import time
+from typing import Any, Optional
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features import FeatureLayer, FeatureLayerCollection
 from arcgis.features._version import Version, VersionManager
@@ -93,7 +95,13 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def assign_to_record(self, features, record, write_attribute, moment=None):
+    def assign_to_record(
+        self,
+        features: list[dict[str, Any]],
+        record: str,
+        write_attribute: str,
+        moment: Optional[int] = None,
+    ):
         """
         Assigns the specified parcel features to the specified record. If
         parcel polygons are assigned, the record polygon will be updated to
@@ -151,7 +159,13 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def build(self, extent=None, moment=None, return_errors=False, record=None):
+    def build(
+        self,
+        extent: Optional[dict[str, Any]] = None,
+        moment: Optional[str] = None,
+        return_errors: bool = False,
+        record: Optional[str] = None,
+    ):
         """
         A `build` will fix known parcel fabric errors.
 
@@ -830,7 +844,8 @@ class ParcelFabricManager(object):
 
                                         If None, the method will analyze the entire parcel fabric.
         ----------------------------    --------------------------------------------------------------------
-        future                          Optional boolean. If `True`, the request is processed as an asynchronous job and a URL is returned that points a location
+        future                          Optional boolean. If `True`, the request is processed as an
+                                        asynchronous job and a URL is returned that points a location
                                         displaying the status of the job.
 
                                         The default is `False`.

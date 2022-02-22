@@ -1,9 +1,11 @@
 """
 New Geometries Classes
 """
+from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 import copy
 import json
+from typing import Any, Optional, Union
 import ujson as _ujson
 
 try:
@@ -16,13 +18,14 @@ from functools import partial, lru_cache
 _number_type = (int, float)
 _empty_value = [None, "NaN"]
 
-_HASARCPY = True
 try:
     arcpy = LazyLoader("arcpy", strict=True)
+    _HASARCPY = True
 except:
     _HASARCPY = False
 try:
     shapely = LazyLoader("shapely", strict=True)
+    _HASSHAPELY = True
 except:
     _HASSHAPELY = False
 
@@ -649,7 +652,7 @@ class Geometry(BaseGeometry):
 
         return Envelope(env_dict)
 
-    def skew(self, x_angle=0, y_angle=0, inplace=False):
+    def skew(self, x_angle: float = 0, y_angle: float = 0, inplace: bool = False):
         """
         Creates a skew transform along one or both axes.
 
@@ -676,7 +679,7 @@ class Geometry(BaseGeometry):
             self.update(s)
         return s
 
-    def rotate(self, theta, inplace=False):
+    def rotate(self, theta: float, inplace: bool = False):
         """
         Rotates a :class:`~arcgis.geometry.Geometry` object counter-clockwise by a given angle.
 
@@ -702,7 +705,7 @@ class Geometry(BaseGeometry):
             self.update(r)
         return r
 
-    def scale(self, x_scale=1, y_scale=1, inplace=False):
+    def scale(self, x_scale: float = 1, y_scale: float = 1, inplace: bool = False):
         """
         Scales a :class:`~arcgis.geometry.Geometry` object in either the x,y or both directions.
 
@@ -743,7 +746,9 @@ class Geometry(BaseGeometry):
             self.update(s)
         return s
 
-    def translate(self, x_offset=0, y_offset=0, inplace=False):
+    def translate(
+        self, x_offset: float = 0, y_offset: float = 0, inplace: bool = False
+    ):
         """
         Moves a :class:`~arcgis.geometry.Geometry` object in the x and y direction by a given
         distance.
@@ -843,23 +848,27 @@ class Geometry(BaseGeometry):
 
     # ----------------------------------------------------------------------
     @classmethod
-    def from_shapely(cls, shapely_geometry, spatial_reference=None):
+    def from_shapely(
+        cls,
+        shapely_geometry: Geometry,
+        spatial_reference: Optional[dict[str, Any]] = None,
+    ):
         """
         Creates a Python API Geometry object from a Shapely geometry object.
 
         ..note::
             Must have shapely installed
 
-        ===============     ====================================================================
+        =================   ====================================================================
         **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
+        -----------------   --------------------------------------------------------------------
         shapely_geometry    Required Shapely Geometry
                             Single instance of Shapely Geometry to be converted to ArcGIS
                             Python API geometry instance.
-        ---------------     --------------------------------------------------------------------
+        -----------------   --------------------------------------------------------------------
         spatial_reference   Optional SpatialReference
                             Defines the spatial reference for the output geometry.
-        ===============     ====================================================================
+        =================   ====================================================================
 
         :return:
             A :class:`~arcgis.geometry.Geometry` object
@@ -1035,7 +1044,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def _shoelace_area(self, parts):
+    def _shoelace_area(self, parts: Union[list[float], list[int]]):
         """calculates the shoelace area"""
         area = 0.0
         area_parts = []
@@ -1662,7 +1671,7 @@ class Geometry(BaseGeometry):
 
     # Functions#############################################################
     # ----------------------------------------------------------------------
-    def angle_distance_to(self, second_geometry, method="GEODESIC"):
+    def angle_distance_to(self, second_geometry: Geometry, method: str = "GEODESIC"):
         """
         The ``angle_distance_to`` method retrieves a tuple of angle and distance to another
         :class:`~arcgis.geometry.Point` using a measurement type.
@@ -1727,7 +1736,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def buffer(self, distance):
+    def buffer(self, distance: float):
         """
         The buffer method constructs a :class:`~arcgis.geometry.Polygon` at a specified distance from the
         :class:`~arcgis.geometry.Geometry` object.
@@ -1753,7 +1762,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def clip(self, envelope):
+    def clip(self, envelope: tuple(float)):
         """
         The ``clip`` method constructs the intersection of the :class:`~arcgis.geometry.Geometry` object and the
         specified extent.
@@ -1786,7 +1795,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def contains(self, second_geometry, relation=None):
+    def contains(self, second_geometry: Geometry, relation: Optional[str] = None):
         """
         Indicates if the base :class:`~arcgis.geometry.Geometry` object contains the comparison
         :class:`~arcgis.geometry.Geometry` object.
@@ -1910,7 +1919,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def crosses(self, second_geometry):
+    def crosses(self, second_geometry: Geometry):
         """
         Indicates if the two :class:`~arcgis.geometry.Geometry` objects intersect in a
         geometry of a lesser shape type.
@@ -1940,7 +1949,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def cut(self, cutter):
+    def cut(self, cutter: Polyline):
         """
         Splits this :class:`~arcgis.geometry.Geometry` object into a part left of the cutting
         :class:`~arcgis.geometry.Polyline` and a part right of it.
@@ -1965,7 +1974,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def densify(self, method, distance, deviation):
+    def densify(self, method: str, distance: float, deviation: float):
         """
         Creates a new :class:`~arcgis.geometry.Geometry` object with added vertices
 
@@ -2018,7 +2027,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def difference(self, second_geometry):
+    def difference(self, second_geometry: Geometry):
         """
         Constructs the :class:`~arcgis.geometry.Geometry` object that is composed only of the
         region unique to the base geometry but not part of the other geometry.
@@ -2051,7 +2060,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def disjoint(self, second_geometry):
+    def disjoint(self, second_geometry: Geometry):
         """
         Indicates if the base and comparison :class:`~arcgis.geometry.Geometry` objects share no
         :class:`~arcgis.geometry.Point` objects in common.
@@ -2082,7 +2091,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def distance_to(self, second_geometry):
+    def distance_to(self, second_geometry: Geometry):
         """
         Retrieves the minimum distance between two :class:`~arcgis.geometry.Geometry` objects. If the
         geometries intersect, the minimum distance is 0.
@@ -2116,7 +2125,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def equals(self, second_geometry):
+    def equals(self, second_geometry: Geometry):
         """
         Indicates if the base and comparison :class:`~arcgis.geometry.Geometry` objects are of the
         same shape type and define the same set of points in the plane. This is
@@ -2147,7 +2156,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def generalize(self, max_offset):
+    def generalize(self, max_offset: float):
         """
         Creates a new simplified :class:`~arcgis.geometry.Geometry` object using a specified
         maximum offset tolerance.
@@ -2173,7 +2182,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def get_area(self, method, units=None):
+    def get_area(self, method: str, units: Optional[str] = None):
         """
         Retrieves the area of the :class:`~arcgis.geometry.Geometry` using a measurement type.
 
@@ -2206,7 +2215,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def get_length(self, method, units):
+    def get_length(self, method: str, units: str):
         """
         Retrieves the length of the :class:`~arcgis.geometry.Geometry` using a measurement type.
 
@@ -2239,7 +2248,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def get_part(self, index=None):
+    def get_part(self, index: Optional[int] = None):
         """
         Retrieves an array of :class:`~arcgis.geometry.Point` objects for a particular part of
         a :class:`~arcgis.geometry.Geometry` object or an array containing a number of arrays, one for each part.
@@ -2263,7 +2272,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def intersect(self, second_geometry, dimension=1):
+    def intersect(self, second_geometry: Geometry, dimension: int = 1):
         """
         Constructs a :class:`~arcgis.geometry.Geometry` object that is the geometric
         intersection of the two input geometries. Different dimension values can be used to create
@@ -2334,7 +2343,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def measure_on_line(self, second_geometry, as_percentage=False):
+    def measure_on_line(self, second_geometry: Geometry, as_percentage: bool = False):
         """
         Retrieves a measure from the start :class:`~arcgis.geometry.Point` of this line to
         the ``in_point``.
@@ -2377,7 +2386,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def overlaps(self, second_geometry):
+    def overlaps(self, second_geometry: Geometry):
         """
         Indicates if the intersection of the two :class:`~arcgis.geometry.Geometry` objects has
         the same shape type as one of the input geometries and is **not** equivalent to
@@ -2408,7 +2417,9 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def point_from_angle_and_distance(self, angle, distance, method="GEODESCIC"):
+    def point_from_angle_and_distance(
+        self, angle: float, distance: float, method: str = "GEODESCIC"
+    ):
         """
         Retrieves a :class:`~arcgis.geometry.Point` at a given angle and distance,
         in degrees and meters, using the specified measurement type.
@@ -2457,7 +2468,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def position_along_line(self, value, use_percentage=False):
+    def position_along_line(self, value: float, use_percentage: bool = False):
         """
         Retrieves a :class:`~arcgis.geometry.Point` on a line at a specified distance
         from the beginning of the line.
@@ -2500,7 +2511,11 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def project_as(self, spatial_reference, transformation_name=None):
+    def project_as(
+        self,
+        spatial_reference: Union[dict[str, Any], SpatialReference],
+        transformation_name: str = None,
+    ):
         """
         Projects a :class:`~arcgis.geometry.Geometry` object and optionally applies a
         ``geotransformation``.
@@ -2620,7 +2635,9 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def query_point_and_distance(self, second_geometry, use_percentage=False):
+    def query_point_and_distance(
+        self, second_geometry: Geometry, use_percentage: bool = False
+    ):
         """
         Finds the :class:`~arcgis.geometry.Point` on the
         :class:`~arcgis.geometry.Polyline` nearest to the `in_point` and the
@@ -2654,7 +2671,9 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def segment_along_line(self, start_measure, end_measure, use_percentage=False):
+    def segment_along_line(
+        self, start_measure: float, end_measure: float, use_percentage: bool = False
+    ):
         """
         Retrieves a :class:`~arcgis.geometry.Polyline` between ``start`` and ``end``
         measures. ``segment_along_line`` is similar to the :attr:`~arcgis.geometry.Polyline.positionAlongLine` method
@@ -2709,7 +2728,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def snap_to_line(self, second_geometry):
+    def snap_to_line(self, second_geometry: Geometry):
         """
         The ``snap_to_line`` method retrieves a new :class:`~arcgis.geometry.Point` based on `in_point` snapped to this
         :class:`~arcgis.geometry.Geometry` object.
@@ -2735,7 +2754,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def symmetric_difference(self, second_geometry):
+    def symmetric_difference(self, second_geometry: Geometry):
         """
         The ``symmetric_difference`` method constructs a new :class:`~arcgis.geometry.Geometry` object that is the union
         of two geometries minus the intersection of those geometries.
@@ -2774,7 +2793,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def touches(self, second_geometry):
+    def touches(self, second_geometry: Geometry):
         """
         Indicates if the boundaries of the two :class:`~arcgis.geometry.Geometry` objects
         intersect.
@@ -2805,7 +2824,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def union(self, second_geometry):
+    def union(self, second_geometry: Geometry):
         """
         Constructs the :class:`~arcgis.geometry.Geometry` object that is the set-theoretic union
         of the input geometries.
@@ -2836,7 +2855,7 @@ class Geometry(BaseGeometry):
         return None
 
     # ----------------------------------------------------------------------
-    def within(self, second_geometry, relation=None):
+    def within(self, second_geometry: Geometry, relation: Optional[str] = None):
         """
         Indicates if the base :class:`~arcgis.geometry.Geometry` object is within the comparison
         :class:`~arcgis.geometry.Geometry` object.
@@ -2925,7 +2944,7 @@ class MultiPoint(Geometry):
         return self._type
 
     # ----------------------------------------------------------------------
-    def svg(self, scale_factor=1.0, fill_color=None):
+    def svg(self, scale_factor: float = 1.0, fill_color: Optional[str] = None):
         """
         Returns a group of SVG (Scalable Vector Graphic) circle element for the ``MultiPoint`` geometry.
 
@@ -3043,7 +3062,7 @@ class Point(Geometry):
         return self._type
 
     # ----------------------------------------------------------------------
-    def svg(self, scale_factor=1, fill_color=None):
+    def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
         """
         Returns a SVG (Scalable Vector Graphic) circle element for the ``Point`` geometry.
         SVG defines vector-based graphics in XML format.
@@ -3155,7 +3174,7 @@ class Polygon(Geometry):
         self.update(kwargs)
 
     # ----------------------------------------------------------------------
-    def svg(self, scale_factor=1, fill_color=None):
+    def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
         """
         The ``svg`` method retrieves SVG (Scalable Vecotr Graphic) polygon element.
         SVG defines vector-based graphics in XML format.
@@ -3291,7 +3310,7 @@ class Polyline(Geometry):
         self.update(kwargs)
 
     # ----------------------------------------------------------------------
-    def svg(self, scale_factor=1, stroke_color=None):
+    def svg(self, scale_factor: float = 1, stroke_color: Optional[str] = None):
         """
         Retrieves SVG (Scalable Vector Graphic) polyline element for the LineString geometry.
 
@@ -3430,7 +3449,7 @@ class Envelope(Geometry):
     # def __hash__(self):
     #    return hash(json.dumps(dict(self)))
     # ----------------------------------------------------------------------
-    def svg(self, scale_factor=1, fill_color=None):
+    def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
         """
         Returns a SVG (Scalable Vector Graphic) envelope element for the ``Envelope`` geometry.
 
@@ -3665,7 +3684,7 @@ class SpatialReference(BaseGeometry):
     # ----------------------------------------------------------------------
     _repr_svg_ = None
     # ----------------------------------------------------------------------
-    def svg(self, scale_factor=1, fill_color=None):
+    def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
         """
         Retrieves SVG (Scalable Vector Graphic) polygon element for a ``SpatialReference`` field.
 
@@ -3674,7 +3693,7 @@ class SpatialReference(BaseGeometry):
         ----------------  -------------------------------------------------------------------------------
         scale_factor      An optional float. Multiplication factor for the SVG stroke-width.  Default is 1.
         ----------------  -------------------------------------------------------------------------------
-        fill_color      An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+        fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
                           valid, and "#ff3333" if invalid.
         ================  ===============================================================================
 

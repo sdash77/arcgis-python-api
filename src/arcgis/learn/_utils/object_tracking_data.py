@@ -449,9 +449,10 @@ class SubDataSet(object):
             template_frame = random.choice(template_range)
             search_frame = frames[search_frame]
 
-        return self.get_image_anno(
-            video_name, track, template_frame
-        ), self.get_image_anno(video_name, track, search_frame)
+        return (
+            self.get_image_anno(video_name, track, template_frame),
+            self.get_image_anno(video_name, track, search_frame),
+        )
 
     def get_random_target(self, index=-1):
         if index == -1:
@@ -915,16 +916,19 @@ class DataSets(Dataset):
 
         mask = (np.expand_dims(mask, axis=0) > 0.5) * 2 - 1
 
-        return [
-            template,
-            search,
-            cls,
-            delta,
-            delta_weight,
-            np.array(bbox, np.float32),
-            np.array(mask, np.float32),
-            np.array(mask_weight, np.float32),
-        ], [[]]
+        return (
+            [
+                template,
+                search,
+                cls,
+                delta,
+                delta_weight,
+                np.array(bbox, np.float32),
+                np.array(mask, np.float32),
+                np.array(mask_weight, np.float32),
+            ],
+            [[]],
+        )
 
     def show(self, idx, axes=None):
         global image_name_len

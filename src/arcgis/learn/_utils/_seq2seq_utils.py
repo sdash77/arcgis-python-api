@@ -240,8 +240,9 @@ def get_grams(x, n, max_n=5000):
 
 
 def get_correct_ngrams(pred, targ, n, max_n=5000):
-    pred_grams, targ_grams = get_grams(pred, n, max_n=max_n), get_grams(
-        targ, n, max_n=max_n
+    pred_grams, targ_grams = (
+        get_grams(pred, n, max_n=max_n),
+        get_grams(targ, n, max_n=max_n),
     )
     pred_cnt, targ_cnt = Counter(pred_grams), Counter(targ_grams)
     return sum([min(c, targ_cnt[g]) for g, c in pred_cnt.items()]), len(pred_grams)
@@ -302,8 +303,9 @@ def seq2seq_acc(out, targ, pad_idx=1):
 def seq2seq_collate(samples, pad_idx=1, pad_first=True, backwards=False):
     "Function that collect samples and adds padding. Flips token order if needed"
     samples = to_data(samples)
-    max_len_x, max_len_y = max([len(s[0]) for s in samples]), max(
-        [len(s[1]) for s in samples]
+    max_len_x, max_len_y = (
+        max([len(s[0]) for s in samples]),
+        max([len(s[1]) for s in samples]),
     )
     res_x = torch.zeros(len(samples), max_len_x).long() + pad_idx
     res_y = torch.zeros(len(samples), max_len_y).long() + pad_idx
@@ -311,13 +313,15 @@ def seq2seq_collate(samples, pad_idx=1, pad_first=True, backwards=False):
         pad_first = not pad_first
     for i, s in enumerate(samples):
         if pad_first:
-            res_x[i, -len(s[0]) :], res_y[i, -len(s[1]) :] = torch.LongTensor(
-                s[0]
-            ), torch.LongTensor(s[1])
+            res_x[i, -len(s[0]) :], res_y[i, -len(s[1]) :] = (
+                torch.LongTensor(s[0]),
+                torch.LongTensor(s[1]),
+            )
         else:
-            res_x[i, : len(s[0])], res_y[i, : len(s[1])] = torch.LongTensor(
-                s[0]
-            ), torch.LongTensor(s[1])
+            res_x[i, : len(s[0])], res_y[i, : len(s[1])] = (
+                torch.LongTensor(s[0]),
+                torch.LongTensor(s[1]),
+            )
     if backwards:
         res_x, res_y = res_x.flip(1), res_y.flip(1)
     return res_x, res_y
