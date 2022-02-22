@@ -1,7 +1,8 @@
 from collections import abc
 from dataclasses import dataclass, field
-from typing import ClassVar, Any
+from typing import ClassVar
 
+from arcgis.realtime.velocity._reserved_fields import _ReservedFields
 from .time import _START_TIME_TAG, _END_TIME_TAG
 
 _TRACK_ID_TAG: str = "TRACK_ID"
@@ -66,6 +67,10 @@ class _FeedTemplate:
         input_schema = self._fields.copy()
         for field in input_schema["attributes"]:
             if field["toField"]:
+                if _ReservedFields.is_reserved(field["toField"]):
+                    # A toField cannot be one of the reserved names.
+                    raise ValueError(f"'{field['toField']}' is a reserved field name. It must be renamed or dropped")
+
                 field_mappings.append(
                     {
                         "fromField": field["name"],
@@ -121,6 +126,8 @@ class _FeedTemplate:
         """
         if not new_name.strip():
             raise ValueError("new_name cannot be empty")
+        elif _ReservedFields.is_reserved(new_name):
+            raise ValueError(f"'{new_name}' is a reserved field name and cannot be used.")
 
         if self._fields is not None and self._fields["attributes"]:
             attributes = self._fields["attributes"]
