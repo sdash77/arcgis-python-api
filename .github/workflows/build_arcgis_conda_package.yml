@@ -46,7 +46,7 @@ jobs:
         conda install conda-build
         conda update conda
         conda update conda-build
-        conda build --croot ./output_build -c esri -c Esri-build esri_requests
+        conda build --croot ./output_build -c esri -c Esri-build arcgis
     - name: check folder
       run: |
         cd ./build/output_build
