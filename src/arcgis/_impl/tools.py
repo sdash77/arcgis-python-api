@@ -6083,7 +6083,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         ====================    =========================================================
         **Argument**            **Description**
         --------------------    ---------------------------------------------------------
-        analysis_layer          Required frature layer. The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
+        analysis_layer          Required feature layer. The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
         --------------------    ---------------------------------------------------------
         summarize_type          Required list of strings. The method with which to summarize the ``analysis_layer``.
 
