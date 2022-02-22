@@ -588,7 +588,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :return: Boolean. `True` if success else `False`
+        :return: Dictionary indicating 'success' or 'error'
 
 
         """
@@ -604,7 +604,7 @@ class ParcelFabricManager(object):
             "moment": moment,
             "f": "json",
         }
-        return self._con.post(url, params)["success"]
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
