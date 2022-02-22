@@ -3026,14 +3026,14 @@ class GeoAccessor(object):
             ):  # pd.datetime
                 fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
                 date_fields.append(col)
-            elif (
-                isinstance(col_val, (np.int32, np.int16, np.int8))
-                and not col in date_cols
-            ):
+            elif isinstance(col_val, (np.int16, np.int8)) and not col in date_cols:
                 fields.append(
                     {"name": col, "type": "esriFieldTypeSmallInteger", "alias": col}
                 )
-            elif isinstance(col_val, (int, np.int, np.int64)) and not col in date_cols:
+            elif (
+                isinstance(col_val, (int, np.int, np.int64, np.int32))
+                and not col in date_cols
+            ):
                 fields.append(
                     {"name": col, "type": "esriFieldTypeInteger", "alias": col}
                 )

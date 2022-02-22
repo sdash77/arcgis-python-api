@@ -7,6 +7,7 @@ https://github.com/pypa/sampleproject
 # Always prefer setuptools over distutils
 from setuptools import setup
 from setuptools import find_packages
+from setuptools.dist import Distribution
 from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
 from setuptools.command.egg_info import egg_info as _egg_info
@@ -23,6 +24,13 @@ import site
 
 log = logging.getLogger()
 here = path.abspath(path.dirname(__file__))
+
+
+class BinaryDistribution(Distribution):
+    """Distribution which always forces a binary package with platform name"""
+
+    def has_ext_modules(foo):
+        return True
 
 
 def _get_rel_site_packages_dir():
@@ -96,12 +104,13 @@ def _post_install():
         import arcgis
 
         activate_map_widget = True
-    except Exception:
+    except Exception as e:
         log.exception(
             "arcgis/notebook packages don't appear to be installed: "
             "map widget not activated, may not work. The rest of "
             "install is unaffected by this. Exception caught: "
         )
+        log.exception(e)
         activate_map_widget = False
 
     if activate_map_widget:
@@ -118,8 +127,9 @@ def _post_install():
                     "widgetsnbextension", sys_prefix=True, logger=log
                 )
             )
-        except Exception:
+        except Exception as e:
             log.exception("Activating map widget failed: Continuing install..")
+            log.exception(e)
 
     # 2) If the OS is Mac OSX, run the OpenSSL workaround
     platform_is_osx = sys.platform == "darwin"
@@ -204,6 +214,10 @@ if not "darwin" in sys.platform:
             ],
         )
     ]
+    data_files += [
+        "arcgis/graph/_arcgisknowledge.pyd",
+        "arcgis/graph/_arcgisknowledge.so",
+    ]
 
 
 def get_version():
@@ -240,6 +254,7 @@ kwargs = {
     "author_email": "python@esri.com",
     # Choose your license
     "license": "Esri Master License Agreement (MLA) - http://www.esri.com/LEGAL/pdfs/mla_e204_e300/english.pdf",
+    "platforms": ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     "classifiers": [
         # How mature is this project? Common values are
@@ -277,6 +292,7 @@ kwargs = {
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     "packages": find_packages(),
+    "python_requires": ">=3.7",
     "include_package_data": True,
     "data_files": data_files,
     # List run-time dependencies here.  These will be installed by pip when
@@ -303,6 +319,7 @@ kwargs = {
     "extras_require": {
         "gp": ["dill"],
     },
+    "distclass": BinaryDistribution,
     # extras_require={
     #     'dev': ['check-manifest'],
     #     'test': ['coverage'],
@@ -327,6 +344,7 @@ kwargs = {
             "learn/_mmseg_config/*.py",
             "gis/_impl/*.pyd",
             "graph/*.pyd",
+            "graph/*.so",
             "gis/_impl/*.so",
         ],
     },
