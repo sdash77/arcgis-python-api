@@ -7,12 +7,27 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-         os: [ubuntu-latest, macos-latest, windows-latest]
+         os: [ubuntu-latest]
          python-version: ['3.7']
       max-parallel: 5
 
     steps:
     - uses: actions/checkout@v2
+    - name: Update Build YAML file
+      uses: fjogeleit/yaml-update-action@master
+      with:
+        valueFile: 'build/esri_requests/meta.yaml'
+        propertyPath: 'build.number'
+        value: "${{ github.run_number }}"
+        commitChange: false
+        updateFile: true
+    - name: Read Build YAML
+      id: package
+      uses: juliangruber/read-file-action@v1
+      with:
+        path: 'build/esri_requests/meta.yaml'
+    - name: Echo meta.yaml
+      run: echo "${{ steps.package.outputs.content }}"
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -31,7 +46,7 @@ jobs:
         conda install conda-build
         conda update conda
         conda update conda-build
-        conda build --croot ./output_build -c esri -c Esri-build arcgis
+        conda build --croot ./output_build -c esri -c Esri-build esri_requests
     - name: check folder
       run: |
         cd ./build/output_build
