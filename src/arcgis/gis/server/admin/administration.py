@@ -180,7 +180,7 @@ class Server(BaseServer):
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def publish_sd(self, sd_file, folder=None):
+    def publish_sd(self, sd_file, folder=None, service_config=None):
         """
         Publishes a service definition file to ArcGIS Server.
 
@@ -193,6 +193,8 @@ class Server(BaseServer):
                                file to.  If this folder is not present, it will be created.  The
                                default is None in which case the service definition will be published
                                to the System folder.
+        ------------------     --------------------------------------------------------------------
+        service_config         Optional Dict[str, Any]. A set of configuration overwrites that overrides the service definitions defaults.
         ==================     ====================================================================
 
         :return:
@@ -215,8 +217,10 @@ class Server(BaseServer):
         status, res = self._uploads.upload(path=sd_file, description="sd file")
         if status:
             uid = res["item"]["itemID"]
-            if folder:
-                config = self._uploads._service_configuration(uid)
+            config = self._uploads._service_configuration(uid)
+            if folder or service_config:
+                if service_config and isinstance(service_config, dict):
+                    config.update(service_config)
                 if "folderName" in config:
                     config["folderName"] = folder
                 res = service.publish_service_definition(
