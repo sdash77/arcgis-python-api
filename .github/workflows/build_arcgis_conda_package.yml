@@ -21,6 +21,13 @@ jobs:
       run: |
         conda install conda-build python=${{ matrix.python-version }}
         conda install pyyaml
+    - name: Install pyyaml for pip 
+      if: contains(matrix.os, 'macos')
+      run: |
+        echo "Using Pip to install pyyaml"
+        conda install pyyaml
+        pip install pyyaml
+        echo "Finished"
     - name: Update the Meta.yaml File
       run: |
         cd ./build
