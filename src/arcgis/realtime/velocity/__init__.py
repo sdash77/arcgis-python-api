@@ -14,3 +14,4 @@ from .feeds_manager import Feed
 from .realtime_analytics_manager import RealTimeAnalytics
 from .bigdata_analytics_manager import BigDataAnalytics
 from .http_authentication_type import NoAuth, CertificateAuth, BasicAuth
+from ._reserved_fields import _ReservedFields

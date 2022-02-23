@@ -1,11 +1,11 @@
-from typing import ClassVar
+from typing import ClassVar, List
 
 
 class _ReservedFields:
     """
     Field names that are reserved for internal use by Velocity. A user defined field name should not be one of these.
     """
-    _reserved_names_gdb: ClassVar[list[str]] = [
+    _reserved_names_gdb: ClassVar[List[str]] = [
         "ENTITY",
         "NUMPTS",
         "MINX",
@@ -36,7 +36,7 @@ class _ReservedFields:
         "Shape.STLength()",
         "Shape",
     ]
-    _reserved_names_fs: ClassVar[list[str]] = [
+    _reserved_names_fs: ClassVar[List[str]] = [
         "fid",
         "area",
         "len",
@@ -52,12 +52,12 @@ class _ReservedFields:
         "min_measure",
         "max_measure",
     ]
-    _reserved_names_service_query: ClassVar[list[str]] = [
+    _reserved_names_service_query: ClassVar[List[str]] = [
         "shape__area",
         "shape__length",
     ]
-    _reserved_names_es: ClassVar[list[str]] = ["_id"]
-    _all_reserved_names_lower: ClassVar[list[str]] = list(
+    _reserved_names_es: ClassVar[List[str]] = ["_id"]
+    _all_reserved_names_lower: ClassVar[List[str]] = list(
         map(
             str.lower,
             (
