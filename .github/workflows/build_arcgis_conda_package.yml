@@ -13,14 +13,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Update Build YAML file
-      uses: fjogeleit/yaml-update-action@master
-      with:
-        valueFile: 'build/arcgis/meta.yaml'
-        propertyPath: 'build.number'
-        value: "${{ github.run_number }}"
-        commitChange: false
-        updateFile: true
     - name: Read Build YAML
       id: package
       uses: juliangruber/read-file-action@v1
