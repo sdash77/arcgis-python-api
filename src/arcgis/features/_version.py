@@ -1158,27 +1158,25 @@ class Version(object):
         performs the asynchronous check to see if the operation finishes
         """
         status_allowed = [
-            "esriJobSubmitted",
-            "esriJobWaiting",
-            "esriJobExecuting",
-            "esriJobSucceeded",
-            "esriJobFailed",
-            "esriJobTimedOut",
-            "esriJobCancelling",
-            "esriJobCancelled",
+            v.lower()
+            for v in [
+                "Executing",
+                "Pending",
+                "InProgress",
+                "Completed",
+                "CompletedWithErrors",
+            ]
         ]
         status = con.get(url, params)
         while (
-            status["status"] in status_allowed
-            and status["status"] != "esriJobSucceeded"
+            status["status"].lower() in status_allowed
+            and status["status"].lower() != "completed"
         ):
-            if status["status"] == "esriJobSucceeded":
+            if status["status"].lower() == "completed":
                 return status
-            elif status["status"] in [
-                "esriJobFailed",
-                "esriJobTimedOut",
-                "esriJobCancelled",
-            ]:
+            elif "fail" in status["status"].lower():
                 break
-            status = con.get(url, params)
+            elif "error" in status["status"].lower():
+                break
+            status = con.get(url, {"f": "json"})
         return status
