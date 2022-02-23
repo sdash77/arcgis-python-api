@@ -309,9 +309,14 @@ class Image(object):
             ] = w
 
             # Update resource dictionary
-            resource_id = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["resourceId"]
+            resource_id = (
+                self._story._properties["resources"][self.resource_node]["data"][
+                    "resourceId"
+                ]
+                if "resourceId"
+                in self._story._properties["resources"][self.resource_node]["data"]
+                else None
+            )
             # Update where file path is held
             self._story._properties["resources"][self.resource_node]["data"][
                 "resourceId"
@@ -329,7 +334,8 @@ class Image(object):
                 "provider"
             ] = "item-resource"
             # Update the resource by removing old and adding new
-            self._story._remove_resource(resource_id)
+            if resource_id:
+                self._story._remove_resource(resource_id)
             self._story._add_resource(new_image)
         # Set new path
         self._path = new_image
