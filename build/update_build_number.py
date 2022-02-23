@@ -2,7 +2,7 @@ import os
 import yaml, sys
 
 
-def _apply_build_number_to_meta_yaml(build_number: int, meta_path: str):
+def _apply_build_number_to_meta_yaml(build_number, meta_path):
     meta_yaml = {}
     with open(META_YAML_FILE_PATH, "r") as f:
         meta_yaml = yaml.load(f, Loader=yaml.FullLoader)
