@@ -14,18 +14,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Add conda to system path
-      run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        echo $CONDA/bin >> $GITHUB_PATH
+      uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
     - name: Install dependencies using Miniconda
       run: |
         conda install conda-build python=${{ matrix.python-version }}
-        conda update conda
-        conda update conda-build
+        conda install pyyaml
     - name: Update the Meta.yaml File
       run: |
         cd ./build
