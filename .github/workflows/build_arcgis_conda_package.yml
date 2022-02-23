@@ -13,13 +13,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Read Build YAML
-      id: package
-      uses: juliangruber/read-file-action@v1
-      with:
-        path: 'build/arcgis/meta.yaml'
-    - name: Echo meta.yaml
-      run: echo "${{ steps.package.outputs.content }}"
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -30,14 +23,18 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies using Miniconda
       run: |
-        conda env update --file environment.yml --name base
-    - name: Install Conda-Build
-      run: |
-        cd ./build
-        mkdir output_build
         conda install conda-build
         conda update conda
         conda update conda-build
+    - name: Update the Meta.yaml File
+      run: |
+        cd ./build
+        python update_build_number.py "${{ github.run_number }}" "./arcgis/meta.yaml"
+    - name: Install Conda-Build
+      run: |
+        cd ./build
+        ls
+        mkdir output_build
         conda build --croot ./output_build -c esri -c Esri-build arcgis
     - name: check folder
       run: |
