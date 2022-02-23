@@ -269,6 +269,7 @@ class Image(object):
         # Check if new_image is url or path
         if _parse.urlparse(new_image).scheme == "https":
             # New image is a Url
+            self._url = True
             # Update the height and width for the image
             data = requests.get(new_image).content
             im = _Image.open(_io.BytesIO(data))
@@ -299,6 +300,7 @@ class Image(object):
             ] = "uri"
         else:
             # Update the height and width for the image
+            self._url = False
             im = _Image.open(new_image)
             w, h = im.size
             self._story._properties["resources"][self.resource_node]["data"][
