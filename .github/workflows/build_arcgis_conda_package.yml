@@ -23,7 +23,7 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies using Miniconda
       run: |
-        conda install conda-build
+        conda install conda-build python=${{ matrix.python-version }}
         conda update conda
         conda update conda-build
     - name: Update the Meta.yaml File
