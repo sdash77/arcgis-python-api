@@ -1,12 +1,14 @@
 import datetime as _dt
 from arcgis.auth.tools import LazyLoader
 
+
 try:
-    from arcgis.graph import _arcgisknowledge as _kgparser
+    from arcgis.graph._decoder import _arcgisknowledge as _kgparser
 
     HAS_KG = True
 except ImportError as e:
     HAS_KG = False
+
 _gis = LazyLoader("arcgis.gis")
 _isd = LazyLoader("arcgis._impl.common._isd")
 from typing import List
@@ -46,11 +48,11 @@ class KnowledgeGraph:
         self._gis = gis
 
     def _validate_import(self):
-        p = platform.platform().lower().find("windows") > -1
-        if HAS_KG == False and p:
-            raise ImportError("Missing _arcgisknowledge library.")
-        elif HAS_KG == False and p == False:
-            raise ImportError("KnowledgeGraph is currently only supported on Windows.")
+        if HAS_KG == False:
+            raise ImportError(
+                "An error occured with importing the KnowledgeGraph libraries. Please ensure you "
+                "are using Python 3.7,3.8, or 3.9 on Windows or Linux platforms."
+            )
 
     @classmethod
     def fromitem(cls, item):
