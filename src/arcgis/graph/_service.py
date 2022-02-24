@@ -1,12 +1,14 @@
 import datetime as _dt
 from arcgis.auth.tools import LazyLoader
 
+
 try:
-    from arcgis.graph import _arcgisknowledge as _kgparser
+    from arcgis.graph._decoder import _arcgisknowledge as _kgparser
 
     HAS_KG = True
 except ImportError as e:
     HAS_KG = False
+
 _gis = LazyLoader("arcgis.gis")
 _isd = LazyLoader("arcgis._impl.common._isd")
 from typing import List
