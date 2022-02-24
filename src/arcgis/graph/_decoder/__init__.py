@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+
 _py_version = sys.version_info
 
 if _py_version.minor == 7:
