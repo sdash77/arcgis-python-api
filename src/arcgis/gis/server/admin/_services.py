@@ -224,7 +224,7 @@ class ServiceManager(BaseServer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def publish_sd(self, sd_file, folder=None):
+    def publish_sd(self, sd_file, folder=None, service_config=None):
         """
         publishes a service definition file to arcgis server
 
@@ -241,7 +241,7 @@ class ServiceManager(BaseServer):
         :return: boolean
 
         """
-        return self._sm.publish_sd(sd_file, folder)
+        return self._sm.publish_sd(sd_file, folder, service_config=service_config)
 
     # ----------------------------------------------------------------------
     def _find_services(self, service_type="*"):
