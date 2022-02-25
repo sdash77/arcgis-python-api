@@ -10,12 +10,12 @@ _LOGGER = logging.getLogger(__name__)
 
 class RealTimeAnalyticsManager:
     """
-    Use to get real-time analytics item
+    Used to manage real-time analytic items.
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-      url                    velocity org URL
+      url                    URL of the ArcGIS Velocity organization.
     ------------------     --------------------------------------------------------------------
       gis                    an authenticated :class:`arcigs.gis.GIS` object.
     ==================     ====================================================================
@@ -33,7 +33,7 @@ class RealTimeAnalyticsManager:
     @property
     def items(self) -> List[RealTimeAnalytics]:
         """
-        Get all real-time analytics items.
+        Get all real-time analytic items.
 
         :return: returns a collection of all real-time analytics items with id and label.
 
@@ -66,12 +66,12 @@ class RealTimeAnalyticsManager:
 
     def get(self, id) -> RealTimeAnalytics:
         """
-        Get real-time analytics by id
+        Get real-time analytic item by ID.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-          id                     unique id of a real-time analytics
+          id                     Unique ID of a real-time analytic.
         ==================     ====================================================================
 
         :return: endpoint response of real-time analytics for the given id and label

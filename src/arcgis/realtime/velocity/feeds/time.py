@@ -10,14 +10,14 @@ class TimeInstant:
     =====================      ====================================================================
     **Argument**               **Description**
     ---------------------      --------------------------------------------------------------------
-    time_field                 str. Time field name
+    time_field                 str. Time field name.
     =====================      ====================================================================
 
     =====================      ====================================================================
     **Optional Argument**      **Description**
     ---------------------      --------------------------------------------------------------------
-    date_format                str. If the field does not contain epoch value a date format can be
-                               defined for the time field
+    date_format                str. If the field does not contain epoch values, a date format can be
+                               defined for the time field.
     =====================      ====================================================================
 
     :return: boolean `True` if the operation is a success
@@ -42,16 +42,16 @@ class TimeInterval:
     =====================     ====================================================================
     **Argument**              **Description**
     ---------------------     --------------------------------------------------------------------
-    interval_start_field      str. Start-time field name for the time interval
+    interval_start_field      str. Start-time field name for the time interval.
     ---------------------     --------------------------------------------------------------------
-    interval_end_field        str. End-time field name for the time interval
+    interval_end_field        str. End-time field name for the time interval.
     =====================     ====================================================================
 
     =====================     ====================================================================
     **Optional Argument**     **Description**
     ---------------------     --------------------------------------------------------------------
-    date_format               str. If the field does not contain epoch value a date format can be
-                              defined for the time field
+    date_format               str. If the field does not contain epoch values, a date format can be
+                              defined for the time field.
     =====================     ====================================================================
 
     :return: boolean `True` if the operation is a success
@@ -92,7 +92,7 @@ class _HasTime:
         **Argument**            **Description**
         ---------------         --------------------------------------------------------------------
         time                    Union[TimeInstant, TimeInterval].
-                                Time object used to configure the feed
+                                Time object used to configure the feed.
         ===============         ====================================================================
 
         :return: boolean `True` if the operation is a success
@@ -100,7 +100,10 @@ class _HasTime:
         .. code-block:: python
 
             # Usage Example
-
+            time = TimeInterval(
+                interval_start_field="start_field",
+                interval_end_field="end_field"
+            )
             feed.set_time_config(time=time)
 
         """
@@ -111,12 +114,16 @@ class _HasTime:
 
             is_success = False
             for field in self._fields["attributes"]:
-                if field["name"] == time.time_field:
+                if (
+                    field["name"] == time.time_field
+                    or field["toField"] == time.time_field
+                ):
                     field["tags"] = [_START_TIME_TAG]
 
                     self._fields["time"] = {"timeType": "Instant"}
                     is_success = True
-                    break
+                elif _START_TIME_TAG in field["tags"]:
+                    field["tags"].clear()
 
             if not is_success:
                 raise ValueError(f"invalid time_field: '{time.time_field}'")
@@ -130,12 +137,24 @@ class _HasTime:
             is_success_1 = False
             is_success_2 = False
             for field in self._fields["attributes"]:
-                if field["name"] == time.interval_start_field:
+                if (
+                    field["name"] == time.interval_start_field
+                    or field["toField"] == time.interval_start_field
+                ):
                     field["tags"] = [_START_TIME_TAG]
                     is_success_1 = True
-                elif field["name"] == time.interval_end_field:
+                elif (
+                    field["name"] == time.interval_end_field
+                    or field["toField"] == time.interval_end_field
+                ):
                     field["tags"] = [_END_TIME_TAG]
                     is_success_2 = True
+                elif any(
+                    elem in [_START_TIME_TAG, _END_TIME_TAG] for elem in field["tags"]
+                ):
+                    # if a user had previously assigned _START_TIME_TAG or _END_TIME_TAG tags to other fields
+                    # it should be cleared
+                    field["tags"].clear()
 
             if not is_success_1:
                 raise ValueError(
@@ -149,3 +168,23 @@ class _HasTime:
                 self._fields["time"] = {"timeType": "Interval"}
 
                 return True
+
+    def reset_time_config(self) -> bool:
+        """
+        Removes any previously set time configuration from the schema.
+
+        :return: boolean `True` if the operation is a success. `False` if a previously set time configuration was not found.
+        """
+
+        is_success = False
+        # remove time tags from all field attributes
+        for field in self._fields["attributes"]:
+            if any(elem in [_START_TIME_TAG, _END_TIME_TAG] for elem in field["tags"]):
+                field["tags"].clear()
+                is_success = True
+
+        if is_success:
+            # remove the "time": {"timeType": "Instant/Interval"} property from _fields
+            self._fields.pop("time", None)
+
+        return is_success

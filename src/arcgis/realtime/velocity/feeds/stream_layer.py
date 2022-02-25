@@ -9,44 +9,44 @@ from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInter
 @dataclass
 class StreamLayer(_FeedTemplate, _HasTime):
     """
-    Receive features from a Stream Layer. This data class can be used to define the feed configuration and use it to
+    Receive features from a stream layer. This data class can be used to define the feed configuration and to
     create the feed.
 
-    Data format is Esri Layer. Velocity will automatically handle the location for you.
+    Data format is Esri stream layer. ArcGIS Velocity will automatically handle the location for you.
 
     ==================              ====================================================================
     **Argument**                    **Description**
     ------------------              --------------------------------------------------------------------
-    label                           str. Unique label for this feed instance.
+    label                           str. Unique label for the feed instance.
     ------------------              --------------------------------------------------------------------
     description                     str. Feed description.
     ------------------              --------------------------------------------------------------------
-    portal_item_id                  str. Portal item id of the Stream layer
+    portal_item_id                  str. Portal item ID of the stream layer.
     ------------------              --------------------------------------------------------------------
-    query                           str. Stream layer query parameters
-                                    default value - "1=1"
+    query                           str. Stream layer query parameters. The default is: "1=1"
     ------------------              --------------------------------------------------------------------
-    fields                          str. Requested Stream layer output fields. Example - "field1,field2"
-                                    default value - "*"
+    fields                          str. Requested stream layer output fields. For example: "field1,field2"
+                                    The default is: "*".
     ------------------              --------------------------------------------------------------------
-    outSR                           int. Requested output Spatial Reference
-                                    default value - 4326
-                                    Additional information on Projected and Geographic Coordinate system at:
-                                    https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm
+    outSR                           int. Requested output spatial reference. The default is: 4326.
+                                    
+                                    .. note::
+                                        To learm more about projected and geographic coordinate systems, refer to
+                                        `Using spatial references <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`.
     ------------------              --------------------------------------------------------------------
-    data_format                     str. Specify the overall format of your incoming data
+    data_format                     str. Specifies the overall format of the incoming data.
     ==================              ====================================================================
 
     ==========================      ==================================================================================
     **Optional Argument**           **Description**
     ==========================      ==================================================================================
-    WHERE clause                    str. Query to retrieve a subset of features
+    WHERE clause                    str. Query to retrieve a subset of features.
     --------------------------      ----------------------------------------------------------------------------------
-    Out fields                      str. Comma-separated list of fields to use for processing
+    Out fields                      str. Comma-separated list of fields to use for processing.
     --------------------------      ----------------------------------------------------------------------------------
-    Output spatial reference        str. Spatial reference in which queried features should return
+    Output spatial reference        str. Spatial reference in which queried features should return.
     --------------------------      ----------------------------------------------------------------------------------
-    extent                          Dict[str, Any]. JSON representing an Envelope as defined by the ArcGIS
+    extent                          Dict[str, Any]. JSON representing an envelope as defined by the ArcGIS
                                     REST API's JSON geometry schema.
 
                                     .. code-block:: python
@@ -65,10 +65,10 @@ class StreamLayer(_FeedTemplate, _HasTime):
 
     --------------------------      ----------------------------------------------------------------------------------
     track_id_field                  str. Name of the field from the incoming data that should be set as
-                                    track_id.
+                                    track ID.
     --------------------------      ----------------------------------------------------------------------------------
     time                            Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                                    will be used to create time info from the incoming data.
+                                    will be used to create time information from the incoming data.
     ==========================      ==================================================================================
 
     :return: A data class with stream layer feed configuration.

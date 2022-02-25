@@ -12,7 +12,7 @@ class _KafkaAuthenticationType:
 
 @dataclass
 class NoAuth(_KafkaAuthenticationType):
-    """This dataclass is used to specify that no authentication is needed to connect to a Kafka Broker."""
+    """This dataclass is used to specify that no authentication is needed to connect to a Kafka broker."""
 
     _auth_type: ClassVar[str] = "none"
 
@@ -24,14 +24,14 @@ class NoAuth(_KafkaAuthenticationType):
 class SASLPlain(_KafkaAuthenticationType):
     """
     This dataclass is used to specify a SASL/Plain Authentication scenario using username and password for connecting
-    to a Kafka Broker.
+    to a Kafka broker.
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    username               str. Username for basic authentication
+    username               str. Username for basic authentication.
     ------------------     --------------------------------------------------------------------
-    password               str. Password for basic authentication
+    password               str. Password for basic authentication.
     ==================     ====================================================================
     """
 
