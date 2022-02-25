@@ -199,29 +199,6 @@ data_files = [
         ],
     ),
 ]
-if not "darwin" in sys.platform:
-    _get_rel_site_packages_dir() + "arcgis/gis/_impl"
-    data_files += [
-        # (
-        #    _get_rel_site_packages_dir() + "arcgis/gis/_impl",
-        #    [
-        "arcgis/gis/_impl/_decrypt_nbauth.cp37-win_amd64.pyd",
-        "arcgis/gis/_impl/_decrypt_nbauth.cp38-win_amd64.pyd",
-        "arcgis/gis/_impl/_decrypt_nbauth.cp39-win_amd64.pyd",
-        "arcgis/gis/_impl/_decrypt_nbauth.cpython-37m-x86_64-linux-gnu.so",
-        "arcgis/gis/_impl/_decrypt_nbauth.cpython-38-x86_64-linux-gnu.so",
-        "arcgis/gis/_impl/_decrypt_nbauth.cpython-39-x86_64-linux-gnu.so",
-        #    ],
-        # )
-    ]
-    data_files += [
-        "arcgis/graph/_decoder/for_python37/_arcgisknowledge.pyd",
-        "arcgis/graph/_decoder/for_python38/_arcgisknowledge.pyd",
-        "arcgis/graph/_decoder/for_python39/_arcgisknowledge.pyd",
-        "arcgis/graph/_decoder/for_python39/_arcgisknowledge.so",
-        "arcgis/graph/_decoder/for_python38/_arcgisknowledge.so",
-        "arcgis/graph/_decoder/for_python37/_arcgisknowledge.so",
-    ]
 
 
 def get_version():
@@ -336,20 +313,20 @@ kwargs = {
     # },
     "package_data": {
         "arcgis": [
-            "raster/*.dll",
-            "raster/*.so",
+            "gis/_impl/*.pyd",
+            "gis/_impl/*.so",
+            "graph/_decoder/**/*.pyd",
+            "graph/_decoder/**/*.so",
             "learn/*.dll",
             "learn/*.so",
-            "learn/_tracking/*.pyd",
-            "learn/_tracking/*.dll",
             "learn/_mmdetection_config/*.py",
             "learn/_mmdetection_config/**/*.py",
             "learn/_mmdetection_config/**/**/*.py",
             "learn/_mmseg_config/*.py",
-            "gis/_impl/*.pyd",
-            "graph/*.pyd",
-            "graph/*.so",
-            "gis/_impl/*.so",
+            "learn/_tracking/*.pyd",
+            "learn/_tracking/*.dll",
+            "raster/*.dll",
+            "raster/*.so",
         ],
     },
     # Although 'package_data' is the preferred approach, in some case you may
