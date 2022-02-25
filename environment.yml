@@ -23,7 +23,7 @@ dependencies:
 - jupyterlab
 - pytest
 - matplotlib
-- tornado<6
+- tornado
 - scikit-learn
 - scikit-image
 - keras

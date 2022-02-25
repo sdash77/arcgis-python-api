@@ -2298,7 +2298,7 @@ class Geometry(BaseGeometry):
         ===============     ====================================================================
 
         :return:
-            A boolean indicating an intersection (True), or no intersection (False)
+            A `~arcgis.geometry.Geometry` object indicating an intersection, or None for no intersection
 
         .. code-block:: python
 
@@ -2308,9 +2308,8 @@ class Geometry(BaseGeometry):
             >>>               [-97.06326,32.759]]],
             >>>   "spatialReference" : {"wkid" : 4326}
             >>>                 })
-            >>> geom.intersect(second_geometry = geom2,
-                               dimension = 4)
-                True
+            >>> type(geom.intersect(second_geometry = geom2, dimension = 4))
+                arcgis.geometry._types.Polygon
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
