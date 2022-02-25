@@ -92,8 +92,10 @@ class DataStoreManager(BaseServer):
         self._datastores = None
         if self._datastores is None:
             self._datastores = []
-            for item in self.data_items["rootItems"]:
-                for path in self.search(parent_path=item)["items"]:
+            data_items = self.data_items
+            for item in data_items["rootItems"]:
+                items = self.search(parent_path=item)["items"]
+                for path in items:
                     self._datastores.append(
                         Datastore(datastore=self, path=path["path"], datadict=None)
                     )
@@ -841,7 +843,8 @@ class Datastore(BaseServer):
             self._con = datastore._con
         self._datastore = datastore
         self._url = "%s%s" % (datastore._url, path)
-        self._init()
+        if kwargs.pop("initialize", False):
+            self._init()
 
     # ----------------------------------------------------------------------
     def __str__(self):
