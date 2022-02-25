@@ -1341,6 +1341,7 @@ class Collaboration(dict):
         enable_realtime_sync: bool = True,
         copy_feature_service_data: bool = True,
         copy_by_ref_on_fail: bool = True,
+        enable_bidirectional_sync: bool = True,
     ):
         """
         The `update_portal_group_link` operation updates the group linked with a
@@ -1377,14 +1378,15 @@ class Collaboration(dict):
         :return: Dictionary indicating 'success' or 'error'
 
         """
-        data_path = "/workspaces/%s/updatePortalGroupLink" % workspace_id
+
+        data_path = f"{self._basepath}/workspaces/{workspace_id}/updatePortalGroupLink"
         params = {
             "f": "json",
             "portalGroupId": portal_id,
             "enableRealtimeSync": enable_realtime_sync,
             "copyFeatureServiceData": copy_feature_service_data,
             "copyByRefIfCopyFail": copy_by_ref_on_fail,
-            "enableFeatureServiceBidirectionalSync": enable_realtime_sync,
+            "enableFeatureServiceBidirectionalSync": enable_bidirectional_sync,
         }
 
         con = self._portal.con
