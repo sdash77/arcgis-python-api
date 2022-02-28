@@ -358,6 +358,40 @@ class Geometry(BaseGeometry):
             str_item = json.dumps(dict(self))
             return esri.loads(str_item)
 
+    def __sub__(self, other):
+        """
+        Constructs the :class:`~arcgis.geometry.Geometry` that is composed only of the region unique to
+        the base geometry but not part of the other geometry.
+        """
+        return self.difference(other)
+
+    def __xor__(self, other):
+        """
+        Constructs the :class:`~arcgis.geometry.Geometry` that is the union of two geometries minus
+        the instersection of those geometries.
+        """
+        return self.symmetric_difference(other)
+
+    def __or__(self, other):
+        """
+        Constructs the :class:`~arcgis.geometry.Geometry` object that is the set-theoretic union
+        of the input geometries.
+        """
+        return self.union(other)
+
+    def __add__(self, other):
+        """
+        Constructs a geometry that is the geometric intersection of the two
+        input geometries. Different dimension values can be used to create
+        different shape types.
+        """
+        dimension = 1
+        if isinstance(other, Polyline):
+            dimension = 2
+        elif isinstance(other, Polygon):
+            dimension = 4
+        return self.intersect(second_geometry=other, dimension=dimension)
+
     def __hash__(self):
         return hash(frozenset(self.items()))
 
