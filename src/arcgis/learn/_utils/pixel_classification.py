@@ -51,7 +51,7 @@ def analyze_pred_pixel_classification(self, activations):
         if not getattr(self, "_is_model_extension", False):
             if self._ignore_mapped_class != []:
                 for k in self._ignore_mapped_class:
-                    activations[:, k] = -1
+                    activations[:, k] = activations.min()-1
         return activations.max(dim=1)[1].cpu().numpy()
     elif self._backend == "tensorflow":
         if type(activations) == list:
