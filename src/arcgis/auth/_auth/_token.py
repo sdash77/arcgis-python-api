@@ -346,9 +346,25 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             proxies=self.proxies,
             verify=self._verify_cert,
         )
-
-        # After authenticating, Fitbit will redirect you to the URL you specified in your application settings. It contains the access token.
+        #
+        # After authenticating, ArcGIS Online/Enterprise can prompt for a
+        # terms and conditions acceptance.
+        #
         callback_url = response.headers["location"]
+        if callback_url.find("acceptTermsAndConditions") > -1:
+            parsed = parse_url(response.headers["location"])
+            oauth_state = parse_qs(parsed.query)["oauth_state"][0]
+
+            url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+            params = {"oauth_state": oauth_state, "acceptTermsAndConditions": True}
+            response = requests.post(
+                url,
+                params,
+                verify=self._verify_cert,
+                allow_redirects=False,
+                proxies=self.proxies,
+            )
+            callback_url = response.headers["location"]
         self._expiration_time = _dt.datetime.now() + _dt.timedelta(seconds=1440)
 
         # Now we extract the token from the URL to make use of it.
