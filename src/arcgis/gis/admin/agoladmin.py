@@ -1,8 +1,10 @@
 """
 Entry point to working with local enterprise GIS functions
 """
+from datetime import datetime
+from typing import Optional
 from .._impl._con import Connection
-from ...gis import GIS
+from ...gis import GIS, Item, User
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
@@ -91,7 +93,7 @@ class AGOLAdminManager(object):
 
     # ----------------------------------------------------------------------
     @_user_experience_program.setter
-    def _user_experience_program(self, value):
+    def _user_experience_program(self, value: bool):
         """
         See main ``_user_experience_program`` property docstring.
         """
@@ -241,10 +243,10 @@ class AGOLAdminManager(object):
     # ----------------------------------------------------------------------
     def scheduled_tasks(
         self,
-        item: "Item" = None,
-        active: bool = None,
-        user: "User" = None,
-        types: str = None,
+        item: Optional[Item] = None,
+        active: Optional[bool] = None,
+        user: Optional[User] = None,
+        types: Optional[str] = None,
     ):
         """
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
@@ -294,19 +296,19 @@ class AGOLAdminManager(object):
     # ----------------------------------------------------------------------
     def history(
         self,
-        start_date,
-        to_date=None,
-        num=100,
-        all_events=True,
-        event_ids=None,
-        event_types=None,
-        actors=None,
-        owners=None,
-        actions=None,
-        ips=None,
-        sort_order="asc",
-        data_format="csv",
-        save_folder=None,
+        start_date: datetime,
+        to_date: Optional[datetime] = None,
+        num: int = 100,
+        all_events: bool = True,
+        event_ids: Optional[str] = None,
+        event_types: Optional[str] = None,
+        actors: Optional[str] = None,
+        owners: Optional[str] = None,
+        actions: Optional[str] = None,
+        ips: Optional[str] = None,
+        sort_order: str = "asc",
+        data_format: str = "csv",
+        save_folder: Optional[str] = None,
     ):
         """
         Returns a CSV file or Pandas's DataFrame containing the login history from a start_date to the present.

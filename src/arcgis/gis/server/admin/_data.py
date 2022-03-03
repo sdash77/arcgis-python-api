@@ -92,8 +92,10 @@ class DataStoreManager(BaseServer):
         self._datastores = None
         if self._datastores is None:
             self._datastores = []
-            for item in self.data_items["rootItems"]:
-                for path in self.search(parent_path=item)["items"]:
+            data_items = self.data_items
+            for item in data_items["rootItems"]:
+                items = self.search(parent_path=item)["items"]
+                for path in items:
                     self._datastores.append(
                         Datastore(datastore=self, path=path["path"], datadict=None)
                     )
@@ -246,16 +248,14 @@ class DataStoreManager(BaseServer):
         return
 
     # ----------------------------------------------------------------------
-    def add(self, name, item):
+    def add(self, item):
         """
         Registers a new data item with the data store.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        name                   Required string. The name of the new data item.
-        ------------------     --------------------------------------------------------------------
-        item                   Required string. The dictionary representing the data item.
+        item                   Required String, Dict. The dictionary representing the data item.
                                See https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm
         ==================     ====================================================================
 
@@ -268,8 +268,8 @@ class DataStoreManager(BaseServer):
 
             return Datastore(self, item["path"])
         else:
-            # print(str(res))
-            return None
+
+            return res
 
     # ----------------------------------------------------------------------
     def add_bigdata(self, name, server_path=None, connection_type="fileShare"):
@@ -843,7 +843,8 @@ class Datastore(BaseServer):
             self._con = datastore._con
         self._datastore = datastore
         self._url = "%s%s" % (datastore._url, path)
-        self._init()
+        if kwargs.pop("initialize", False):
+            self._init()
 
     # ----------------------------------------------------------------------
     def __str__(self):

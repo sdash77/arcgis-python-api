@@ -11,14 +11,14 @@ try:
 except:
     from ._config_utils import get_config_parser
 
-if 'oauth' in get_config_parser():
-    base_url = get_config_parser()['oauth']['base_url']
-    client_id = get_config_parser()['oauth']['client_id']
-    client_secret = get_config_parser()['oauth']['client_secret']
-    username = get_config_parser()['oauth']['username']
-    password = get_config_parser()['oauth']['password']
+if "oauth" in get_config_parser():
+    base_url = get_config_parser()["oauth"]["base_url"]
+    client_id = get_config_parser()["oauth"]["client_id"]
+    client_secret = get_config_parser()["oauth"]["client_secret"]
+    username = get_config_parser()["oauth"]["username"]
+    password = get_config_parser()["oauth"]["password"]
     SKIPME = False
-    msg = 'all good'
+    msg = "all good"
 else:
     SKIPME = True
     msg = "Configuration file not found."
@@ -36,7 +36,10 @@ class TestOAuth2Workflow(unittest.TestCase):
         Tests the manual workflow for the client_id only workflow
         """
         # client_id = client_id
-        client_oauth = EsriOAuth2Auth(base_url=base_url, client_id=client_id,)
+        client_oauth = EsriOAuth2Auth(
+            base_url=base_url,
+            client_id=client_id,
+        )
         with EsriSession(auth=client_oauth) as session:
             resp = session.get(f"{base_url}/portals/self?f=json")
             data = resp.json()
@@ -48,7 +51,9 @@ class TestOAuth2Workflow(unittest.TestCase):
         """
 
         client_oauth = EsriOAuth2Auth(
-            base_url=base_url, client_id=client_id, client_secret=client_secret,
+            base_url=base_url,
+            client_id=client_id,
+            client_secret=client_secret,
         )
         with EsriSession(auth=client_oauth) as session:
             resp = session.get(f"{base_url}/portals/self?f=json")

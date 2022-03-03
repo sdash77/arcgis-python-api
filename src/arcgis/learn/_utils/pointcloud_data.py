@@ -470,6 +470,7 @@ class PointCloudDataset(Dataset):
             self.masks = f["Masks"][:]
             # centers and scales will be required in viz.
             self.centers = f["Centers"][:]
+            self._file_indexes = list(range(len(files)))
 
             if self.min_points is not None or filter_classes:
                 # We should not filter on valid blocks, currently its happening on both.
@@ -488,9 +489,9 @@ class PointCloudDataset(Dataset):
                 self._skip_block_min_points = skip_block_min_points
                 self._skip_block_COI = skip_block_COI
                 self._total_blocks = len(self.tiles)
-
                 if folder != "val":
-                    files = files[file_indexes]
+                    self._file_indexes = file_indexes
+
                 self.tiles = self.tiles[indexes]
                 if len(self.tiles) == 0:
                     raise Exception(
@@ -741,7 +742,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
     random.shuffle(h5_files)
 
     idx = 0
-    file_idx = 0
+    file_idx = self._file_indexes[0]
+    f_idx = 1
     while idx < rows:
         # file = h5_files[file_idx]
         _pc, labels, pc = self._get_file_blocks(file_idx)
@@ -760,7 +762,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
         sampled_pc = pc[sample_idxs]
 
         if sampled_pc.shape[0] == 0:
-            file_idx += 1
+            file_idx = self._file_indexes[f_idx]
+            f_idx = (f_idx + 1) % len(self._file_indexes)
             continue
 
         if apply_tfms:
@@ -821,7 +824,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
         if idx == rows - 1:
             break
         idx += 1
-        file_idx += 1
+        file_idx = self._file_indexes[f_idx]
+        f_idx = (f_idx + 1) % len(self._file_indexes)
 
 
 def filter_pc(pc):
@@ -2857,6 +2861,7 @@ class Transform3d(object):
     """
     Creates a 3D transformation that can be used in `prepare_data`
     to apply data augmentation to blocks, with a 50 % probability.
+    Applicable only for dataset_type=’PointCloud’.
 
     =====================   ===========================================
     **Argument**            **Description**

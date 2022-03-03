@@ -48,7 +48,7 @@ def _infer_type(df, col):
     not have a dtype assigned to it.
 
     Input:
-     dataframe - spatialdataframe object
+     dataframe - Spatially Enabled DataFrame object
     Ouput:
       field type name
     """

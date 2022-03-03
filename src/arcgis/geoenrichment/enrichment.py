@@ -1184,7 +1184,7 @@ def _enrich_gis(
             areas.append(area_dict)
 
     # chunking if len > 100
-    if isinstance(areas, (SpatialDataFrame, pd.DataFrame, list)) and len(areas) > 100:
+    if isinstance(areas, (pd.DataFrame, list)) and len(areas) > 100:
         import concurrent.futures
 
         parts = []
@@ -1192,7 +1192,7 @@ def _enrich_gis(
         with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
             for idx, chunk in enumerate(_chunks(l=areas, n=100)):
                 f = executor.submit(
-                    fn=ge.enrich,
+                    ge.enrich,
                     **{
                         "study_areas": chunk.copy(),
                         "data_collections": data_collections,
@@ -1217,7 +1217,7 @@ def _enrich_gis(
                 f.exception() for f in futures.done if not f.exception() is None
             ]
             raise Exception(json.dumps(exceptions))
-        if isinstance(areas, (SpatialDataFrame, pd.DataFrame)):
+        if isinstance(areas, pd.DataFrame):
             enrich_res = pd.concat(results)
             if len(enrich_res) != len(study_areas):
                 if "OBJECTID" in enrich_res.columns:

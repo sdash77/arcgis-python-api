@@ -394,6 +394,11 @@ class PointCNN(ArcGISModel):
             class_data["Color"] = np.array(color).astype(int).tolist()
             _emd_template["Classes"].append(class_data.copy())
 
+        if hasattr(self.learn.data, "statistics") and self.learn.data.statistics.get(
+            "blockShape", False
+        ):
+            _emd_template["blockShape"] = self.learn.data.statistics.get("blockShape")
+
         return _emd_template
 
     def show_results(self, rows=2, **kwargs):
@@ -546,6 +551,15 @@ class PointCNN(ArcGISModel):
         output_path             Optional string. The path to folder where to dump
                                 the resulting h5 block files. Defaults to `results`
                                 folder in input path.
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        batch_size              Optional integer. The number of blocks to process
+                                in one batch. Default is set to 1.
         =====================   ===========================================
 
         :return: Path where files are dumped.

@@ -13,7 +13,7 @@ class PieChart(_BaseWidget):
     **Argument**                **Description**
     -------------------------   -------------------------------------------
     item                        Required Portal Item object. Item object can
-                                be a Feature Layer or a MapWidget.
+                                be a Table Layer or a MapWidget.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the pie chart
                                 widget.
