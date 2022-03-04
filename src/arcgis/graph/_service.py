@@ -76,7 +76,7 @@ class KnowledgeGraph:
         Allows for the searching of the properties of entities,
         relationships, or both in the graph using a full-text index.
 
-        `Learn more about searching a knowledge graph <https://pro.arcgis.com/en/pro-app/latest/help/data/knowledge/search-the-knowledge-graph.htm>`_
+        `Learn more about searching a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-graph-search.htm>`_
 
         ================    ===============================================================
         **Argument**        **Description**
@@ -90,7 +90,7 @@ class KnowledgeGraph:
                             The allowed values are: both, entities, relationships
         ================    ===============================================================
 
-        :return: List[dict]
+        :return: List[list]
 
         """
         url = self._url + "/graph/search"
@@ -133,7 +133,7 @@ class KnowledgeGraph:
         """
         Queries the Knowledge Graph using openCypher
 
-        `Learn more about querying a knowledge graph <https://pro.arcgis.com/en/pro-app/latest/help/data/knowledge/query-the-contents-of-a-knowledge-graph.htm>`_
+        `Learn more about querying a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-graph-query.htm>`_
 
         ================    ===============================================================
         **Argument**        **Description**
@@ -143,7 +143,7 @@ class KnowledgeGraph:
                             entities and relationships, by providing an openCypher query.
         ================    ===============================================================
 
-        :return: List[dict]
+        :return: List[list]
 
         """
         self._validate_import()
