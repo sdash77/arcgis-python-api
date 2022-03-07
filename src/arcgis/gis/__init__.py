@@ -1338,8 +1338,6 @@ class GIS(object):
 
             # Geocode the location
             if isinstance(location, str):
-                if mapwidget.extent:
-                    mapwidget.extent = None
                 if geocoder and isinstance(geocoder, Geocoder):
                     locations = geocode(
                         location, out_sr=4326, max_locations=1, geocoder=geocoder
