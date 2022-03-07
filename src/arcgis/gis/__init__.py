@@ -1338,6 +1338,8 @@ class GIS(object):
 
             # Geocode the location
             if isinstance(location, str):
+                if mapwidget.extent:
+                    mapwidget.extent = None
                 if geocoder and isinstance(geocoder, Geocoder):
                     locations = geocode(
                         location, out_sr=4326, max_locations=1, geocoder=geocoder
@@ -1395,6 +1397,11 @@ class GIS(object):
 
         if zoomlevel is not None:
             mapwidget.zoom = zoomlevel
+
+        if not location:
+            # Set up default extent
+            if "defaultExtent" in self.org_settings:
+                mapwidget.extent = self.org_settings["defaultExtent"]
 
         return mapwidget
 
