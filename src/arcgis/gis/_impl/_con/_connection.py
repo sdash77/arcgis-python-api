@@ -951,6 +951,8 @@ class Connection(object):
 
         :returns: data returned from the URL call.
         """
+        import io
+
         timeout = kwargs.pop("timeout", self._timeout)
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
@@ -992,11 +994,22 @@ class Connection(object):
                         )
             elif isinstance(files, (list, tuple)):
                 for key, filePath, fileName in files:
-                    if isinstance(fileName, str):
+                    if (
+                        isinstance(fileName, str)
+                        and isinstance(filePath, (io.StringIO, io.BytesIO)) == False
+                    ):
                         fields[key] = (
                             fileName,
                             open(filePath, "rb"),
                             mimetypes.guess_type(filePath)[0],
+                        )
+                    elif isinstance(fileName, str) and isinstance(
+                        filePath, (io.StringIO, io.BytesIO)
+                    ):
+                        fields[key] = (
+                            fileName,
+                            filePath,
+                            None,
                         )
                     else:
                         fields[key] = v
