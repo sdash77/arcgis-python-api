@@ -4990,7 +4990,7 @@ class ContentManager(object):
             }
             params.update(item_properties)
             res = self._gis._con.post(url, params)
-            if res["success"]:
+            if "success" in res and res["success"]:
                 url = "{base}{path}/items/{itemid}/status".format(
                     base=self._gis._portal.resturl, path=path, itemid=itemid
                 )
