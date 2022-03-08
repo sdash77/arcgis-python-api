@@ -231,7 +231,7 @@ def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_clas
             target = target.squeeze(1)
             if ignore_mapped_class != []:
                 for k in ignore_mapped_class:
-                    pred[:, k] = -1000
+                    pred[:, k] = pred.min() - 1
                 pred = pred.argmax(dim=1)
             else:
                 pred = pred.argmax(dim=1)

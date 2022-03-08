@@ -1,6 +1,8 @@
 import os
 import logging as _logging
+from typing import Any, Optional
 import arcgis
+from arcgis.gis import GIS
 
 
 _log = _logging.getLogger(__name__)
@@ -25,7 +27,11 @@ def _get_list_value(index, array):
 
 
 def export_map(
-    web_map_as_json=None, format="""PDF""", layout_template="""MAP_ONLY""", gis=None
+    web_map_as_json: Optional[dict] = None,
+    format: str = """PDF""",
+    layout_template: str = """MAP_ONLY""",
+    gis: Optional[GIS] = None,
+    **kwargs,
 ):
     """
     The ``export_map`` function takes the state of the ``WebMap`` object (for example, included services, layer visibility
@@ -71,41 +77,33 @@ def export_map(
         A dictionary with URL to download the output file.
     """
 
-    from arcgis.geoprocessing import DataFile
-    from arcgis.geoprocessing._support import _execute_gp_tool
+    from arcgis.geoprocessing import import_toolbox as _import_toolbox
+    from arcgis.geoprocessing._tool import _camelCase_to_underscore
+    from urllib import parse
 
-    param_db = {
-        "web_map_as_json": (str, "Web_Map_as_JSON"),
-        "format": (str, "Format"),
-        "layout_template": (str, "Layout_Template"),
-        "output_file": (DataFile, "Output File"),
-    }
-    return_values = [
-        {"name": "output_file", "display_name": "Output File", "type": DataFile},
-    ]
+    verbose = kwargs.pop("verbose", False)
 
     if gis is None:
         gis = arcgis.env.active_gis
-    kwargs = {
+    params = {
         "web_map_as_json": web_map_as_json,
         "format": format,
         "layout_template": layout_template,
         "gis": gis,
+        "future": False,
     }
+    params.update(kwargs)
+
     url = os.path.dirname(gis.properties.helperServices.printTask.url)
-    return _execute_gp_tool(
-        gis, "Export Web Map Task", kwargs, param_db, return_values, _use_async, url
-    )
+    tbx = _import_toolbox(url, gis=gis, verbose=verbose)
+    basename = os.path.basename(gis.properties.helperServices.printTask.url)
+    basename = _camelCase_to_underscore(parse.unquote_plus(parse.unquote(basename)))
+
+    fn = getattr(tbx, basename)
+    return fn(**params)
 
 
-export_map.__annotations__ = {
-    "web_map_as_json": str,
-    "format": str,
-    "layout_template": str,
-}
-
-
-def get_layout_templates(gis=None):
+def get_layout_templates(gis: Optional[GIS] = None):
     """
 
     The ``get_layout_templates`` method returns the content of the :class:`~arcgis.gis.GIS` object's layout templates.

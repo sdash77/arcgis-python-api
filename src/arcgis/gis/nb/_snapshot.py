@@ -1,6 +1,7 @@
 import os
 import json
 from collections import namedtuple
+from typing import Optional
 from arcgis.gis import GIS, Item
 from arcgis._impl.common._mixins import PropertyMap
 
@@ -42,7 +43,7 @@ class SnapShot(object):
         return self._sm._download(**params)
 
     # ----------------------------------------------------------------------
-    def save_as_item(self, title):
+    def save_as_item(self, title: str):
         """
         Converts a Snapshot to a new notebook `Item`.
 
@@ -59,7 +60,12 @@ class SnapShot(object):
         )
 
     # ----------------------------------------------------------------------
-    def restore(self, preserve=True, description=None):
+    def restore(
+        self,
+        title: Optional[str] = None,
+        preserve: bool = True,
+        description: Optional[str] = None,
+    ):
         """
         Rolls back the notebook to a previous snapshot state
 
@@ -189,7 +195,14 @@ class SnapshotManager(object):
             raise ValueError("`item` must be a Notebook")
 
     # ----------------------------------------------------------------------
-    def create(self, item, name, description=None, notebook_json=None, access=False):
+    def create(
+        self,
+        item: Item,
+        name: str,
+        description: Optional[str] = None,
+        notebook_json: Optional[dict] = None,
+        access: bool = False,
+    ):
         """
         Creates a Snapshot of a Given Item.
 
@@ -228,7 +241,7 @@ class SnapshotManager(object):
             raise ValueError("`item` must be a Notebook")
 
     # ----------------------------------------------------------------------
-    def list(self, item):
+    def list(self, item: Item):
         """
         Returns a list of SnapShots for a notebook item.
 
@@ -264,7 +277,14 @@ class SnapshotManager(object):
             raise ValueError("`item` must be a Notebook")
 
     # ----------------------------------------------------------------------
-    def _restore(self, item, snapshot, preserve=True, description=None, title=None):
+    def _restore(
+        self,
+        item: Item,
+        snapshot: str,
+        preserve: bool = True,
+        description: Optional[str] = None,
+        title: Optional[str] = None,
+    ):
         """
         Rolls back the notebook to a previous snapshot state
 
@@ -300,7 +320,7 @@ class SnapshotManager(object):
             raise ValueError("`item` must be a Notebook")
 
     # ----------------------------------------------------------------------
-    def _delete(self, item, snapshot):
+    def _delete(self, item: Item, snapshot: str):
         """
         Deletes a snapshot associated with the notebook item
 

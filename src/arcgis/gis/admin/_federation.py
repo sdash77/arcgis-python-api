@@ -1,6 +1,7 @@
 """
 Updates the Federation Settings to Portal
 """
+from typing import Optional
 from .. import GIS
 from ._base import BasePortalAdmin
 
@@ -28,7 +29,7 @@ class Federation(BasePortalAdmin):
             raise ValueError("gis object must be of type GIS")
 
     # ----------------------------------------------------------------------
-    def federate(self, url, admin_url, username, password):
+    def federate(self, url: str, admin_url: str, username: str, password: str):
         """
         This operation enables ArcGIS Servers to be federated with Portal
         for ArcGIS.
@@ -89,7 +90,7 @@ class Federation(BasePortalAdmin):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def unfederate(self, server_id):
+    def unfederate(self, server_id: str):
         """
         This operation unfederates an ArcGIS Server from Portal for ArcGIS.
 
@@ -110,7 +111,7 @@ class Federation(BasePortalAdmin):
         return False
 
     # ----------------------------------------------------------------------
-    def update(self, server_id, role, function=None):
+    def update(self, server_id: str, role: str, function: Optional[str] = None):
         """
         This operation allows you to set an ArcGIS Server federated with
         Portal for ArcGIS as the hosting server or to enforce fine-grained
@@ -167,7 +168,7 @@ class Federation(BasePortalAdmin):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def validate(self, server_id):
+    def validate(self, server_id: str):
         """
         This operation provides status information about a specific ArcGIS
         Server federated with Portal for ArcGIS.

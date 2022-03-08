@@ -311,7 +311,6 @@ class(es) {",".join(classes_below_req_intances)} in your data does not meet the 
                 classes = len(set(self._list_of_labels))
                 xlen = len(self._list_of_labels)
                 sample_shortage = math.ceil((classes - xlen * valid_pct) / valid_pct)
-                print(sample_shortage)
                 extra_samples = random.choices(
                     self._idx_label_tuple_list, k=sample_shortage
                 )

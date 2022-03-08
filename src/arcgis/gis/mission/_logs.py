@@ -1,4 +1,5 @@
 import os, csv
+from typing import Optional, Union
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from datetime import datetime as _datetime
@@ -95,7 +96,7 @@ class LogManager(object):
 
     # ----------------------------------------------------------------------
     @settings.setter
-    def settings(self, value):
+    def settings(self, value: dict):
         """
         See main ``settings`` property docstring.
         """
@@ -111,18 +112,18 @@ class LogManager(object):
     # ----------------------------------------------------------------------
     def query(
         self,
-        start_time=None,
-        end_time=None,
-        since_server_start=False,
-        level="WARNING",
-        services="*",
-        machines="*",
-        server="*",
-        codes=None,
-        process_IDs=None,
-        export=False,
-        export_type="CSV",  # CSV or TAB
-        out_path=None,
+        start_time: Optional[Union[str, _datetime]] = None,
+        end_time: Optional[Union[str, _datetime]] = None,
+        since_server_start: bool = False,
+        level: str = "WARNING",
+        services: str = "*",
+        machines: str = "*",
+        server: str = "*",
+        codes: Optional[str] = None,
+        process_IDs: Optional[str] = None,
+        export: bool = False,
+        export_type: str = "CSV",  # CSV or TAB
+        out_path: Optional[str] = None,
     ):
         """
         The query operation on the logs resource provides a way to
@@ -162,7 +163,7 @@ class LogManager(object):
         ------------------     --------------------------------------------------------------------
         process_IDs            Optional string. Query by the machine process ID that logged the event.
         ------------------     --------------------------------------------------------------------
-        export                 Optional string. Boolean indicating whether to export the query
+        export                 Optional bool. Boolean indicating whether to export the query
                                results.  The default is False (don't export).
         ------------------     --------------------------------------------------------------------
         export_type            Optional string. The export file type. CSV or TAB are the choices,

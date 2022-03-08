@@ -18,10 +18,10 @@ try:
     from _utils import get_config_parser
 except:
     from ._utils import get_config_parser
-if 'notebook' in get_config_parser():
+if "notebook" in get_config_parser():
     SKIPME = False
-    SITE_URL = get_config_parser()['notebook']['url']
-    API_KEY = get_config_parser()['notebook']['token']
+    SITE_URL = get_config_parser()["notebook"]["url"]
+    API_KEY = get_config_parser()["notebook"]["token"]
 else:
     SKIPME = True
 

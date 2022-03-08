@@ -16,14 +16,14 @@ try:
 except:
     from ._utils import get_config_parser
 
-if 'pki' in get_config_parser():
+if "pki" in get_config_parser():
     url_pki = (
         "https://rpubs19005.ags.esri.com/portal"  # get_config_parser()['pki']['url']
     )
-    password = get_config_parser()['pki']['password']
-    cert_url = get_config_parser()['pki']['cert']
+    password = get_config_parser()["pki"]["password"]
+    cert_url = get_config_parser()["pki"]["cert"]
     SKIPME = False
-    msg = 'all good'
+    msg = "all good"
 else:
     SKIPME = True
     msg = "Configuration file not found."
@@ -32,14 +32,14 @@ try:
     import requests
 
     resp = requests.get(cert_url)
-    if resp.headers['content-type'] == "text/html":
+    if resp.headers["content-type"] == "text/html":
         1 / 0
     data = resp.content
     cert_file = r"./gisproadv1.pfx"
-    with open(cert_file, 'wb') as writer:
+    with open(cert_file, "wb") as writer:
         writer.write(data)
     SKIP = False
-    msg = 'all good'
+    msg = "all good"
 except:
     SKIP = True
     msg = "COULD NOT DOWNLOAD THE PKI CERTIFICATE"
