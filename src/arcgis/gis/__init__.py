@@ -4870,7 +4870,6 @@ class ContentManager(object):
         params = {"f": "json", "url": url}
         return self._gis._con.get(curl, params, ignore_error_key=True)
 
-    # ----------------------------------------------------------------------
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
     ):
@@ -4900,16 +4899,37 @@ class ContentManager(object):
 
 
         """
-        if size < 5e6:
-            size = 5e6
+        from typing import Union, Iterator, Tuple
+        from io import BytesIO
 
-        def read_in_chunks(file_object, chunk_size=10000000):
-            """Generate file chunks of 10MB"""
-            while True:
-                data = file_object.read(chunk_size)
-                if not data:
-                    break
-                yield data
+        def chunk_by_file_size(
+            fp: str,
+            size: int = None,
+            parameter_name: str = "file",
+            upload_format: bool = False,
+        ) -> Iterator[Union[Tuple[str, BytesIO, str], BytesIO]]:
+            """Splits a File based on a specific bytes size"""
+            if size is None:
+                size = int(2.5e7)  # 25MB
+            i = 1
+            with open(fp, "rb") as reader:
+                while True:
+                    bio = BytesIO()
+                    data = bio.write(reader.read(size))
+                    bio.seek(0)
+                    if not data:
+                        break
+                    if upload_format:
+                        fpath = f"split{i}.split"
+                        yield parameter_name, bio, fpath
+                    else:
+                        yield bio
+                    i += 1
+            return None
+
+        size = int(size)
+        if size < 2.5e7:
+            size = int(2.5e7)
 
         owner_name = owner
         if isinstance(owner, User):
@@ -4928,56 +4948,37 @@ class ContentManager(object):
         url = "{base}{path}/items/{itemid}/addPart".format(
             base=self._gis._portal.resturl, path=path, itemid=itemid
         )
-        file = {"file": None}
-        params = {"f": "json", "partNum": None}
-        messages = []
-        future_files = []
-        with open(file_path, "rb") as f:
-            import copy
-            import uuid
-            import concurrent.futures
+        results = []
+        futures = {}
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=5, thread_name_prefix="upld_"
+        ) as tp:
 
-            nthreads = 5
-            with concurrent.futures.ThreadPoolExecutor(max_workers=nthreads) as tp:
-                future_parts = {}
-                base_file = uuid.uuid4().hex[:4]
-                for part_num, piece in enumerate(read_in_chunks(f), start=1):
-                    params["partNum"] = part_num
-                    temp_file = os.path.join(
-                        tempfile.gettempdir(), "split%s.part%s" % (base_file, part_num)
-                    )
-                    kwargs = {
+            futures = {
+                tp.submit(
+                    self._gis._con.post_multipart,
+                    **{
                         "path": url,
-                        "postdata": copy.copy(params),
-                        "files": {"file": copy.copy(temp_file)},
-                    }
-                    with open(temp_file, "wb") as writer:
-                        writer.write(piece)
-                        del writer
-                    future_parts[tp.submit(self._gis._con.post, **kwargs)] = part_num
-                    future_files.append(copy.copy(temp_file))
-                concurrent.futures.wait(
-                    list(future_parts.keys()), None, concurrent.futures.ALL_COMPLETED
+                        "params": {"f": "json", "partNum": f"{idx + 1}"},
+                        "files": [part],
+                    },
+                ): idx
+                + 1
+                for idx, part in enumerate(
+                    chunk_by_file_size(file_path, size=size, upload_format=True)
                 )
-                for future in concurrent.futures.as_completed(future_parts):
-                    part_num = future_parts[future]
-                    try:
-                        if future.done():
-                            data = future.result()
-                            if "success" in data:
-                                messages.append(data["success"])
-                            else:
-                                messages.append(False)
-                    except Exception as exc:
-                        _log.error("%r generated an exception: %s" % (url, exc))
-                    else:
-                        _log.debug("%r page is %s" % (url, data))
-                for ffile in future_files:
-                    if os.path.isfile(ffile):
-                        os.remove(ffile)
-
-        if all(messages):
-            # commit the addition
+            }
+        messages = []
+        for future in concurrent.futures.as_completed(futures):
+            r = future.result()
+            if "success" in r:
+                results.append(r["success"])
+            elif "status" in r and r["status"] == "success":
+                results.append(True)
+            else:
+                results.append(False)
+            messages.append(r)
+        if all(results):  # Should be True/False list
             url = "{base}{path}/items/{itemid}/commit".format(
                 base=self._gis._portal.resturl, path=path, itemid=itemid
             )
@@ -4989,7 +4990,7 @@ class ContentManager(object):
             }
             params.update(item_properties)
             res = self._gis._con.post(url, params)
-            if "success" in res:
+            if "success" in res and res["success"]:
                 url = "{base}{path}/items/{itemid}/status".format(
                     base=self._gis._portal.resturl, path=path, itemid=itemid
                 )
@@ -5006,6 +5007,7 @@ class ContentManager(object):
                 return res["status"]
             else:
                 return False
+
         return False
 
     # ----------------------------------------------------------------------
@@ -5325,7 +5327,7 @@ class ContentManager(object):
             if kwargs.get("upload_size", 0) >= 1e7:
                 upload_size = kwargs.get("upload_size")
             else:
-                upload_size = 1e7
+                upload_size = int(2.5e7)
 
             status = self._add_by_part(
                 file_path=data,
