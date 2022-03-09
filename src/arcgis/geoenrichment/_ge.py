@@ -1187,8 +1187,6 @@ class _GeoEnrichment(object):
             params["featureLimit"] = 5000
         if self._gis._con.token:
             params["token"] = self._gis._con.token
-        if self._gis._con.token:
-            params["token"] = self._gis._con.token
 
         res = self._gis._con.post(path=url, postdata=params)
         dfs = []
