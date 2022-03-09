@@ -11048,8 +11048,11 @@ class Item(dict):
                 lyr = ImageryLayer(self.url, self._gis)
                 try:
                     item_data = self.get_data()
-                    lyr._fn = item_data.get("renderingRule", None)
-                    lyr._fnra = item_data.get("renderingRule", None)
+                    rendering_rule = item_data.get("renderingRule", None)
+                    if rendering_rule:
+                        lyr._fn = rendering_rule
+                        lyr._fnra = rendering_rule
+                        lyr._rendering_rule_from_item = True
                     lyr._mosaic_rule = item_data.get("mosaicRule", None)
                 except:
                     pass
