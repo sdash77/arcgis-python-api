@@ -199,6 +199,8 @@ class _GeoEnrichment(object):
         if self._countries_dict is None:
             params = {"f": "json"}
             url = self._base_url + "/Geoenrichment/Countries"
+            if self._gis._con.token:
+                params["token"] = self._gis._con.token
             res = self._gis._con.post(url, params)
             self._countries_dict = res["countries"]
         if as_df:
@@ -223,6 +225,8 @@ class _GeoEnrichment(object):
         :return: Pandas' DataFrame or Dictionary (as_dict == True)
         """
         params = {"f": "json"}
+        if self._gis._con.token:
+            params["token"] = self._gis._con.token
         countries = self.countries()
         if len(country) > 2:
             q = self.countries()["Full_Name"].str.upper() == str(country).upper()
@@ -281,6 +285,8 @@ class _GeoEnrichment(object):
         #         raise ValueError("Invalid Country Code: %s" % country)
         #     country = countries[q]['Country_Code'].tolist()[0]
         params = {"f": "json"}
+        if self._gis._con.token:
+            params["token"] = self._gis._con.token
         url = self._base_url + "/Geoenrichment/Reports/%s" % country
         res = self._gis._con.post(url, params)
         meta = []
@@ -314,6 +320,8 @@ class _GeoEnrichment(object):
             country = countries[q]["Country_Code"].tolist()[0]
         params = {"f": "json"}
         url = self._base_url + "/Geoenrichment/Reports/%s/%s" % (country, report_id)
+        if self._gis._con.token:
+            params["token"] = self._gis._con.token
         res = self._gis._con.post(url, params)
         if as_dict == True:
             return res
@@ -370,6 +378,8 @@ class _GeoEnrichment(object):
         import pandas as pd
 
         params = {"f": "json", "langCode": self._langCode}
+        if self._gis._portal.is_arcgisonline and self._gis._con.token:
+            params["token"] = self._gis._con.token
         if variables is not None:
             params["addDerivativeVariables"] = variables
         if out_fields is not None:
@@ -424,6 +434,8 @@ class _GeoEnrichment(object):
         params = {
             "f": "json",
         }
+        if self._gis._portal.is_arcgisonline and self._gis._con.token:
+            params["token"] = self._gis._con.token
         res = self._gis._con.post(path=url, postdata=params)
         if "reports" in res:
             if as_df:
@@ -572,7 +584,8 @@ class _GeoEnrichment(object):
         if analysis_variables is not None:
             params["analysisVariables"] = analysis_variables
         url = "%s%s" % (self._base_url, self._url_enrich_data)
-
+        if self._gis._portal.is_arcgisonline and self._gis._con._session.auth.token:
+            params["token"] = self._gis._con._session.auth.token
         res = self._gis._con.post(path=url, postdata=params)
         if as_featureset == False:
             import pandas as pd
@@ -656,10 +669,14 @@ class _GeoEnrichment(object):
 
         url = "%s%s" % (self._base_url, self._url_getVariables)
         params = {"f": "json", "langCode": self._langCode, "sourceCountry": country}
+        if self._gis._portal.is_arcgisonline and self._gis._con.token:
+            params["token"] = self._gis._con.token
         if not text is None:
             params["searchText"] = text
         if not dataset is None:
             params["optionalCountryDataset"] = dataset
+        if self._gis._portal.is_arcgisonline and self._gis._con._session.auth.token:
+            params["token"] = self._gis._con._session.auth.token
         res = self._gis._con.post(path=url, postdata=params)
         if as_dict == True:
             return res
@@ -760,6 +777,8 @@ class _GeoEnrichment(object):
             params["featureLimit"] = feature_limit
         if type_filters is not None:
             params["businessTypeFilters"] = type_filters
+        if self._gis._portal.is_arcgisonline and self._gis._con._session.auth.token:
+            params["token"] = self._gis._con._session.auth.token
         res = self._gis._con.post(path=url, postdata=params)
         dfs = []
         if as_featureset == False:
@@ -901,6 +920,8 @@ class _GeoEnrichment(object):
             "appID": self._appID,
             "format": export_format,
         }
+        if self._gis._portal.is_arcgisonline and self._gis._con._session.auth.token:
+            params["token"] = self._gis._con._session.auth.token
         if report is not None:
             params["report"] = report
         if report_fields is not None:
@@ -940,6 +961,8 @@ class _GeoEnrichment(object):
             country = countries[q]["Country_Code"].tolist()[0]
         params = {"f": "json"}
         url = self._base_url + "/Geoenrichment/standardgeographylevels/%s" % (country)
+        if self._gis._portal.is_arcgisonline and self._gis._con.token:
+            params["token"] = self._gis._con.token
         res = self._gis._con.post(url, params)
         if as_dict == True:
             return res
@@ -961,10 +984,14 @@ class _GeoEnrichment(object):
                 raise ValueError("Invalid Country Code: %s" % country)
             country = countries[q]["Country_Code"].tolist()[0]
         params = {"f": "json"}
+        if self._gis._portal.is_arcgisonline and self._gis._con.token:
+            params["token"] = self._gis._con.token
         url = self._base_url + "/Geoenrichment/standardgeographylevels/%s/%s" % (
             country,
             hierarchy,
         )
+        if self._gis._con.token:
+            params["token"] = self._gis._con.token
         res = self._gis._con.post(url, params)
         if as_dict == True:
             return res
@@ -1124,6 +1151,8 @@ class _GeoEnrichment(object):
         """
         url = self._base_url + self._url_standard_geography_query_execute
         params = {"f": "json", "langCode": self._langCode}
+        if self._gis._portal.is_arcgisonline and self._gis._con.token:
+            params["token"] = self._gis._con.token
         if not source_country is None:
             params["sourceCountry"] = source_country
         if not country_dataset is None:
@@ -1156,6 +1185,11 @@ class _GeoEnrichment(object):
             params["featureLimit"] = feature_limit
         else:
             params["featureLimit"] = 5000
+        if self._gis._con.token:
+            params["token"] = self._gis._con.token
+        if self._gis._con.token:
+            params["token"] = self._gis._con.token
+
         res = self._gis._con.post(path=url, postdata=params)
         dfs = []
         if as_featureset == False:
