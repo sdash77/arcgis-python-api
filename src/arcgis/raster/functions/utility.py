@@ -385,6 +385,9 @@ def _get_raster_ra_rft(raster):
         if hasattr(raster, "_engine_obj"):
             raster = raster._engine_obj
     if isinstance(raster, (ImageryLayer, Raster)):
+        if raster._rendering_rule_from_item:
+            raster._fn = None
+            raster._fnra = None
         try:
             url = raster._url
             if (
