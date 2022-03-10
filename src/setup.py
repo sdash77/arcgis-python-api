@@ -61,6 +61,7 @@ else:
         "lxml",
         "cryptography",
         "ipywidgets >=7",
+        "jupyter-client <=6.1.12",
         "widgetsnbextension >=3",
         "pandas >=1.3.5",
         "numpy >=1.16.2",
