@@ -6,8 +6,8 @@ from ._util import _Util
 
 class BigDataAnalytics(Task):
     """
-    BigDataAnalytics class implements Task and provides public facing methods to
-    access BigDataAnalytics API endpoints
+    The ``BigDataAnalytics`` class implements Task and provides public facing methods to
+    access BigDataAnalytics API endpoints.
     """
 
     _id = ""
@@ -34,7 +34,7 @@ class BigDataAnalytics(Task):
     # ----------------------------------------------------------------------
     def start(self) -> Dict:
         """
-        Start the Big Data Analytics for the given id
+        Start the Big Data Analytics for the given ID.
 
         :return: response of bigdata_analytics start
 
@@ -51,7 +51,7 @@ class BigDataAnalytics(Task):
     # ----------------------------------------------------------------------
     def stop(self) -> Dict:
         """
-        Stop the Big Data Analytics for the given id
+        Stop the Big Data Analytics for the given ID.
         Return True if the Big Data Analytics was successfully stopped.
 
         :return: boolean
@@ -70,7 +70,7 @@ class BigDataAnalytics(Task):
     @property
     def status(self) -> Dict:
         """
-        Get the status of the running Big Data Analytics for the given id
+        Get the status of the running Big Data Analytics for the given ID.
 
         :return: response of Big Data Analytics status
 
@@ -89,7 +89,7 @@ class BigDataAnalytics(Task):
     @property
     def metrics(self) -> Dict:
         """
-        Get the metrics of the running Big Data Analytics for the given id
+        Get the metrics of the running Big Data Analytics for the given ID.
 
         :return: response of Big Data Analytics metrics
 
@@ -107,7 +107,7 @@ class BigDataAnalytics(Task):
     # ----------------------------------------------------------------------
     def delete(self) -> bool:
         """
-        Deletes an existing Big Data Analytics instance
+        Deletes an existing Big Data Analytics instance.
 
         :return: A boolean containing True (for success) or
          False (for failure) a dictionary with details is returned.

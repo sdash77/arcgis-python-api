@@ -22,60 +22,59 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class RabbitMQ(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    Receive events from a RabbitMQ broker. This data class can be used to define the feed configuration and use it
+    Receive events from a RabbitMQ broker. This data class can be used to define the feed configuration and
     to create the feed.
 
     ==================      ====================================================================
     **Argument**            **Description**
     ------------------      --------------------------------------------------------------------
-    label                   str. Unique label for this feed instance.
+    label                   str. Unique label for the feed instance.
     ------------------      --------------------------------------------------------------------
     description             str. Feed description.
     ------------------      --------------------------------------------------------------------
     host                    str. Host address of the RabbitMQ Server.
 
-                            example - rabbitmqbroker.centralus.cloudapp.azure.com
+                            For example: rabbitmqbroker.centralus.cloudapp.azure.com
     ------------------      --------------------------------------------------------------------
-    port                    int. Port on which the RabbitMQ Server is accessible.
-                            default value - 5672
+    port                    int. Port on which the RabbitMQ Server is accessible. The default is: 
+                            5672.
     ------------------      --------------------------------------------------------------------
-    use_ssl                 bool. Whether or not to use SSL in the connection.
-                            default value - False
+    use_ssl                 bool. Whether or not to use SSL in the connection. The default is: 
+                            False.
     ------------------      --------------------------------------------------------------------
     prefetch_count          int. Prefetch count is used to specify the number of messages
                             RabbitMQ sends. This limits how many messages are received before
-                            acknowledging a message.
-                            default value - 0
+                            acknowledging a message. The default is: 0.
     ==================      ====================================================================
 
     =====================   ====================================================================
     **Optional Argument**   **Description**
     =====================   ====================================================================
     virtual_host            str. Virtual host of the RabbitMQ Server.
-                            example - virtualhost1
+                            For example: virtualhost1
     ---------------------   --------------------------------------------------------------------
     username                str. Username for server authentication.
     ---------------------   --------------------------------------------------------------------
-    password                str. password for server authentication.
+    password                str. Password for server authentication.
     ---------------------   --------------------------------------------------------------------
     queue_name              str. Name of the queue over which messages will be received.
     ---------------------   --------------------------------------------------------------------
     data_format             Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat,
-                            XMLFormat]. An instance that contains the data-format configuration
+                            XMLFormat]. An instance that contains the data format configuration
                             for this feed. Configure only allowed formats. If this is not set
                             right during initialization, a format will be auto-detected and set
                             from a sample of the incoming data. This sample will be fetched from
                             the configuration provided so far in the init.
     ---------------------   --------------------------------------------------------------------
     track_id_field          str. name of the field from the incoming data that should be set as
-                            track_id.
+                            track ID.
     ---------------------   --------------------------------------------------------------------
     geometry                Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry
                             configuration that will be used to create geometry objects from the
                             incoming data.
     ---------------------   --------------------------------------------------------------------
     time                    Union[TimeInstant, TimeInterval]. An instance of time configuration
-                            that will be used to create time info from the incoming data.
+                            that will be used to create time information from the incoming data.
     =====================   ====================================================================
 
     :return: A data class with RabbitMQ feed configuration.

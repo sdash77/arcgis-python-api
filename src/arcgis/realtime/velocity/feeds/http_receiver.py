@@ -22,8 +22,8 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    Receive events via a dedicated HTTP endpoint. This data class can be used to define the feed configuration and use
-    it to create the feed.
+    Receive events via a dedicated HTTP endpoint. This data class can be used to define the feed configuration 
+    and to create the feed.
 
     ====================      ======================================================================
     **Argument**              **Description**
@@ -32,30 +32,30 @@ class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
     --------------------      ----------------------------------------------------------------------
     description               str. Feed description.
     --------------------      ----------------------------------------------------------------------
-    authentication_type       str. Either "none" or "arcgis"
+    authentication_type       str. Authentication type. Options: none or arcgis.
     --------------------      ----------------------------------------------------------------------
-    sample_message            str. Some sample content to auto-detect data format from.
-                              example - "name,age\\nsam,23"
+    sample_message            str. The sample content to auto-detect the data format. For example: 
+                              "name,age\\nsam,23"
     ====================      ======================================================================
 
     =====================     ====================================================================
     **Optional Argument**           **Description**
     =====================     ====================================================================
     data_format               Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
-                              An instance that contains the data-format
+                              An instance that contains the data format
                               configuration for this feed. Configure only allowed formats.
                               If this is not set right during initialization, a format will be
                               auto-detected and set from a sample of the incoming data. This sample
                               will be fetched from the configuration provided so far in the init.
     ---------------------     --------------------------------------------------------------------
-    track_id_field            str. name of the field from the incoming data that should be set as
-                              track_id.
+    track_id_field            str. Name of the field from the incoming data that should be set as
+                              track ID.
     ---------------------     --------------------------------------------------------------------
     geometry                  Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry
                               configuration that will be used to create geometry objects from the incoming data.
     ---------------------     --------------------------------------------------------------------
     time                      Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                              will be used to create time info from the incoming data.
+                              will be used to create time information from the incoming data.
     =====================     ====================================================================
 
     :return: A data class with Http receiver feed configuration.
