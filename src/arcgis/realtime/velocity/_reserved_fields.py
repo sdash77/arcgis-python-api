@@ -5,6 +5,7 @@ class _ReservedFields:
     """
     Field names that are reserved for internal use by Velocity. A user defined field name should not be one of these.
     """
+
     _reserved_names_gdb: ClassVar[List[str]] = [
         "ENTITY",
         "NUMPTS",
@@ -79,8 +80,8 @@ class _ReservedFields:
         --------------     -------------------------------------
         field_name         str. A field name to test
         ==============     =====================================
-        
-        :return: True if field_name is a reserved name 
+
+        :return: True if field_name is a reserved name
         """
         return field_name.lower() in _ReservedFields._all_reserved_names_lower
 

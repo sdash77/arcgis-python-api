@@ -36,10 +36,10 @@ class RabbitMQ(_FeedTemplate, _HasTime, _HasGeometry):
 
                             For example: rabbitmqbroker.centralus.cloudapp.azure.com
     ------------------      --------------------------------------------------------------------
-    port                    int. Port on which the RabbitMQ Server is accessible. The default is: 
+    port                    int. Port on which the RabbitMQ Server is accessible. The default is:
                             5672.
     ------------------      --------------------------------------------------------------------
-    use_ssl                 bool. Whether or not to use SSL in the connection. The default is: 
+    use_ssl                 bool. Whether or not to use SSL in the connection. The default is:
                             False.
     ------------------      --------------------------------------------------------------------
     prefetch_count          int. Prefetch count is used to specify the number of messages
