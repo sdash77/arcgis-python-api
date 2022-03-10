@@ -7,7 +7,7 @@ if platform.platform().lower().find("windows") > -1:
 
         # Login with built-in for a federated server
         built_in_auth = GIS(
-            url="https://rqawiniwa02pt.ags.esri.com/gis",
+            url="https://rqawinbi01pt.ags.esri.com/gis",
             username="gisproadv1",
             password="portalaccount1",
             verify_cert=False,
