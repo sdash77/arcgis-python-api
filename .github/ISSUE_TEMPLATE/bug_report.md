@@ -10,6 +10,12 @@ assignees: ''
 ﻿Your issue may already be reported!
 Please search on the [issue track](https://github.com/ArcGIS/geosaurus/issues) before creating one.
 
+**Provide a Minimal Complete Verifiable Codes** 
+
+- **Do not** provide images/snapshots of code. 
+- Write the code to be as compact as possible
+- Follow these guidelines [here](https://matthewrocklin.com/blog/work/2018/02/28/minimal-bug-reports)
+
 ## Expected Behavior
 *If you're describing a bug, tell us what should happen. If you're suggesting a change/improvement, tell us how it should work.*
 
