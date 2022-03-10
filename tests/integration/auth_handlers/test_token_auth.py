@@ -1,8 +1,13 @@
 import sys, json, uuid
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import unittest
-import requests_mock
+
+try:
+    SKIPME = False
+    import requests_mock
+except:
+    SKIPME = True
 from arcgis.auth import EsriSession
 
 from arcgis.auth._auth._token import _parse_arcgis_url
@@ -50,6 +55,7 @@ from arcgis.auth import (
 )
 
 
+@unittest.skipIf(SKIPME, "Missing requests_mock")
 class TestURLParseLogic(unittest.TestCase):
     """tests the parse logic for the token url"""
 
@@ -94,7 +100,7 @@ class TestURLParseLogic(unittest.TestCase):
         )
 
 
-@unittest.skip("i want to")
+@unittest.skipIf(SKIPME, "Missing requests_mock")
 class TestGenerateTokenAuth(unittest.TestCase):
     """
     Tests the EsriSession GenerateToken Auth
@@ -136,11 +142,13 @@ class TestProTokenAuth(unittest.TestCase):
     Tests the EsriSession Pro Token Auth
     """
 
+    @unittest.skipIf(SKIPME, "Missing requests_mock")
     def test_token(self):
         auth = ArcGISProAuth()
         assert auth.token
 
 
+@unittest.skipIf(SKIPME, "Missing requests_mock")
 class TestArcGISTokenAuth(unittest.TestCase):
     """
     Tests the EsriSession GenerateToken Auth

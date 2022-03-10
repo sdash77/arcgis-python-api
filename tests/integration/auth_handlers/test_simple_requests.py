@@ -1,6 +1,6 @@
 import sys, json
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import unittest
 
 try:
@@ -66,6 +66,7 @@ class TestEsriSessionHTTPVerbs(unittest.TestCase):
             assert EsriSession().delete(mock_url).text == mock_resp
 
 
+@unittest.skipIf(SKIPME, "requests_mock not found.")
 class TestEsriSessionClass(unittest.TestCase):
     """
     Tests the options on the EsriSession class
@@ -86,7 +87,7 @@ class TestEsriSessionClass(unittest.TestCase):
                 es = EsriSession(verify_cert=False)
                 assert es.get(url=mock_url)
 
-    @requests_mock.mock()
+    # @requests_mock.mock()
     def test_headers(self, mock_for_requests):
         """tests the headers and operations"""
         API_URL = "https://someapi.com"
