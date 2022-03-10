@@ -22,7 +22,7 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    Receive events via a dedicated HTTP endpoint. This data class can be used to define the feed configuration 
+    Receive events via a dedicated HTTP endpoint. This data class can be used to define the feed configuration
     and to create the feed.
 
     ====================      ======================================================================
@@ -34,7 +34,7 @@ class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
     --------------------      ----------------------------------------------------------------------
     authentication_type       str. Authentication type. Options: none or arcgis.
     --------------------      ----------------------------------------------------------------------
-    sample_message            str. The sample content to auto-detect the data format. For example: 
+    sample_message            str. The sample content to auto-detect the data format. For example:
                               "name,age\\nsam,23"
     ====================      ======================================================================
 
