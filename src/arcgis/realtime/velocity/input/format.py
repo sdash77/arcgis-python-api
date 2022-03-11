@@ -545,7 +545,7 @@ def _format_from_config(
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    config                 dict. the feed configuration json/dict.
+    config                 dict. The feed configuration json/dict.
     ==================     ====================================================================
     """
     if _FORMAT_NAME_KEY in config:

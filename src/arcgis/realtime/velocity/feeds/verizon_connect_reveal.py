@@ -23,12 +23,12 @@ from arcgis.realtime.velocity.input.format import (
 class VerizonConnectReveal(_FeedTemplate, _HasTime, _HasGeometry):
     """
     Receive messages from Verizon Connect Reveal via a dedicated HTTP endpoint. This data class can be used to define
-    the feed configuration and use it to create the feed.
+    the feed configuration and to create the feed.
 
     ==================        ====================================================================
     **Argument**              **Description**
     ------------------        --------------------------------------------------------------------
-    label                     str. Unique label for this feed instance.
+    label                     str. Unique label for the feed instance.
     ------------------        --------------------------------------------------------------------
     description               str. Feed description.
     ------------------        --------------------------------------------------------------------
@@ -41,20 +41,20 @@ class VerizonConnectReveal(_FeedTemplate, _HasTime, _HasGeometry):
     **Optional Argument**     **Description**
     =====================     ===============================================================================
     data_format               Union[JsonFormat].
-                              An instance that contains the data-format
+                              An instance that contains the data format
                               configuration for this feed. Configure only allowed formats.
                               If this is not set right during initialization, a format will be
                               auto-detected and set from a sample of the incoming data. This sample
                               will be fetched from the configuration provided so far in the init.
     ---------------------     -------------------------------------------------------------------------------
-    track_id_field            str. name of the field from the incoming data that should be set as
-                              track_id.
+    track_id_field            str. Name of the field from the incoming data that should be set as
+                              track ID.
     ---------------------     -------------------------------------------------------------------------------
     geometry                  Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
                               that will be used to create geometry objects from the incoming data.
     ---------------------     -------------------------------------------------------------------------------
     time                      Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                              will be used to create time info from the incoming data.
+                              will be used to create time information from the incoming data.
     =====================     ===============================================================================
 
     :return: A data class with Verizon connection reveal feed configuration.

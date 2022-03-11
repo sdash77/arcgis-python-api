@@ -1396,6 +1396,11 @@ class GIS(object):
         if zoomlevel is not None:
             mapwidget.zoom = zoomlevel
 
+        if not location:
+            # Set up default extent
+            if "defaultExtent" in self.org_settings:
+                mapwidget.extent = self.org_settings["defaultExtent"]
+
         return mapwidget
 
 

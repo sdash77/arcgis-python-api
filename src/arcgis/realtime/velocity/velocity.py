@@ -8,12 +8,12 @@ from ._util import _Util
 
 class Velocity:
     """
-    Provides access to Realtime Analytics, Big data Analytics and Feeds in Velocity
+    Provides access to real-time analytics, big data analytics, and feeds in ArcGIS Velocity.
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    url                    velocity org URL
+    url                    URL of the ArcGIS Velocity organization.
     ------------------     --------------------------------------------------------------------
     gis                    an authenticated :class:`arcigs.gis.GIS` object.
     ==================     ====================================================================
@@ -63,7 +63,7 @@ class Velocity:
     @property
     def feeds(self) -> FeedsManager:
         """
-        Provides access to the resource manager for managing configured Feeds with ArcGIS Velocity.
+        Provides access to the resource manager for managing configured feeds in ArcGIS Velocity.
 
         :return: :class:`~arcgis.realtime.velocity.FeedsManager`
 
@@ -82,7 +82,7 @@ class Velocity:
     @property
     def realtime_analytics(self) -> RealTimeAnalyticsManager:
         """
-         Provides access to  the resource manager for managing configured Real-time analytics tasks with ArcGIS Velocity.
+         Provides access to the resource manager for managing configured real-time analytic tasks in ArcGIS Velocity.
 
         :return: :class:`~arcgis.realtime.velocity.RealTimeAnalyticsManager`
 
@@ -102,7 +102,7 @@ class Velocity:
     @property
     def bigdata_analytics(self) -> BigDataAnalyticsManager:
         """
-        Provides access to the resource manager for managing configured Big data analytics tasks with ArcGIS Velocity.
+        Provides access to the resource manager for managing configured big data analytic tasks in ArcGIS Velocity.
 
         :return: :class:`~arcgis.realtime.velocity.BigDataAnalyticsManager`
 

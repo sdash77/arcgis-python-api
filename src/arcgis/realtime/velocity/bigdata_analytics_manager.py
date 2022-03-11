@@ -11,14 +11,14 @@ _LOGGER = logging.getLogger(__name__)
 
 class BigDataAnalyticsManager:
     """
-    Use to get big data analytics item
+    Used to manage big data analytic items.
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    url                    velocity org URL
+    url                    URL of the ArcGIS Velocity organization.
     ------------------     --------------------------------------------------------------------
-    gis                    an authenticated :class:`arcigs.gis.GIS` object.
+    gis                    An authenticated :class:`arcigs.gis.GIS` object.
     ==================     ====================================================================
 
     """
@@ -34,7 +34,7 @@ class BigDataAnalyticsManager:
     @property
     def items(self) -> List[BigDataAnalytics]:
         """
-        Get all big data analytics items
+        Get all big data analytic items.
 
         :return: returns a collection of all configured Big Data Analytics items
 
@@ -65,12 +65,12 @@ class BigDataAnalyticsManager:
 
     def get(self, id) -> BigDataAnalytics:
         """
-        Get big data analytics by id
+        Get big data analytic items by ID.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        id                  Unique id of a big data task
+        id                  Unique ID of a big data analytic task.
         ===============     ====================================================================
 
         :return: endpoint response of Big Data Analytics for the given id and label
