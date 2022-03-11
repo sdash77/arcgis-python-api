@@ -1764,7 +1764,9 @@ class BusinessAnalyst(object):
             ), "Standard geography levels can only be used with a Country."
 
             # pull the geography level out of the geography levels dataframe
-            geo_lvl = country.geography_levels.iloc[standard_geography_level]['level_id']
+            geo_lvl = country.geography_levels.iloc[standard_geography_level][
+                "level_id"
+            ]
 
             # use the count of features and the max bach size to create a list of param payloads
             for idx in range(0, len(geographies), batch_size):
@@ -1948,20 +1950,19 @@ async def _get_enrich_rest(
                     f"Error: {err['id']}: {err['description']}"
                 )
 
+        # pull out the response feature set
+        fs = r_json["results"][0]["value"]["FeatureSet"]
+        assert (
+            len(fs) > 0
+        ), "No results were returned. Please ensure you are using the correct country."
+
         # if getting geometry back, unpack into spatially enabled dataframe
         if retrieve_geometry:
-            r_df = FeatureSet.from_dict(
-                r_json["results"][0]["value"]["FeatureSet"][0]
-            ).sdf
+            r_df = FeatureSet.from_dict(fs[0]).sdf
 
         # unpack the enriched results - reaching into the FeatureSet for just the attributes - much faster
         else:
-            r_df = pd.DataFrame(
-                [
-                    f["attributes"]
-                    for f in r_json["results"][0]["value"]["FeatureSet"][0]["features"]
-                ]
-            )
+            r_df = pd.DataFrame([f["attributes"] for f in fs["features"]])
 
         # add the dataframe to the list
         enrich_res_itr.append(r_df)
