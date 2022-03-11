@@ -1728,7 +1728,7 @@ class BusinessAnalyst(object):
 
         # if working with a specific country, add this to the payload
         if country is not None:
-            params["useData"] = json.dumps({"sourceCountry": country.properties.iso2})
+            params["useData"] = json.dumps({"sourceCountry": country.properties.iso3})
 
         # get the maximum batch size to ensure is not less than best practices set above
         svc_lmt_url = f'{self.source.properties.helperServices("geoenrichment").url}/Geoenrichment/ServiceLimits'
@@ -1763,10 +1763,8 @@ class BusinessAnalyst(object):
                 country is not None
             ), "Standard geography levels can only be used with a Country."
 
-            # get the geography levels dataframe, and pull out the geography level using the provided index
-            geo_lvl = country.geography_levels.iloc[standard_geography_level][
-                "level_id"
-            ]
+            # pull the geography level out of the geography levels dataframe
+            geo_lvl = country.geography_levels.iloc[standard_geography_level]['level_id']
 
             # use the count of features and the max bach size to create a list of param payloads
             for idx in range(0, len(geographies), batch_size):
@@ -1778,7 +1776,7 @@ class BusinessAnalyst(object):
                 params["studyAreas"] = json.dumps(
                     [
                         {
-                            "sourceCountry": geo_lvl.split(".")[0],
+                            "sourceCountry": country.iso3,
                             "layer": geo_lvl,
                             "ids": batch_id_lst,
                         }
