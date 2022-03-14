@@ -42,5 +42,5 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: build-${{ matrix.os }}-${{matrix.python-version}}-${{ github.sha }}
-          path: src/dist/*.tz
+          path: src/dist/*.gz
           retention-days: 10
