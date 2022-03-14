@@ -358,6 +358,40 @@ class Geometry(BaseGeometry):
             str_item = json.dumps(dict(self))
             return esri.loads(str_item)
 
+    def __sub__(self, other):
+        """
+        Constructs the :class:`~arcgis.geometry.Geometry` that is composed only of the region unique to
+        the base geometry but not part of the other geometry.
+        """
+        return self.difference(other)
+
+    def __xor__(self, other):
+        """
+        Constructs the :class:`~arcgis.geometry.Geometry` that is the union of two geometries minus
+        the instersection of those geometries.
+        """
+        return self.symmetric_difference(other)
+
+    def __or__(self, other):
+        """
+        Constructs the :class:`~arcgis.geometry.Geometry` object that is the set-theoretic union
+        of the input geometries.
+        """
+        return self.union(other)
+
+    def __add__(self, other):
+        """
+        Constructs a geometry that is the geometric intersection of the two
+        input geometries. Different dimension values can be used to create
+        different shape types.
+        """
+        dimension = 1
+        if isinstance(other, Polyline):
+            dimension = 2
+        elif isinstance(other, Polygon):
+            dimension = 4
+        return self.intersect(second_geometry=other, dimension=dimension)
+
     def __hash__(self):
         return hash(frozenset(self.items()))
 
@@ -1792,6 +1826,12 @@ class Geometry(BaseGeometry):
             and isinstance(envelope, arcpy.Extent)
         ):
             return Geometry(self.as_arcpy.clip(envelope))
+        elif (
+            HASARCPY
+            and isinstance(self, (Point, Polygon, Polyline, MultiPoint))
+            and isinstance(envelope, Envelope)
+        ):
+            return Geometry(self.as_arcpy.clip(envelope.as_arcpy))
         return None
 
     # ----------------------------------------------------------------------
@@ -2647,10 +2687,13 @@ class Geometry(BaseGeometry):
         .. note::
             The ``query_point_and_distance`` method requires ArcPy
 
+        .. note::
+            The ``query_point_and_distance`` method only is valid for Polyline geometries.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Point` object. A second geometry
         ---------------     --------------------------------------------------------------------
         as_percentage       Optional boolean - if False, the measure will be returned as
                             distance, True, measure will be a percentage
@@ -2661,8 +2704,12 @@ class Geometry(BaseGeometry):
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
-            if isinstance(second_geometry, Geometry):
+        if (
+            HASARCPY
+            and isinstance(self, Polyline)
+            and isinstance(second_geometry, Point)
+        ):
+            if isinstance(second_geometry, Point):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.queryPointAndDistance(
                 in_point=second_geometry, use_percentage=use_percentage

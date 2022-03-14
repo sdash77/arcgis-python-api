@@ -22,7 +22,15 @@ import atexit
 import logging
 import site
 
+import logging
+
 log = logging.getLogger()
+log.setLevel(logging.DEBUG)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+log.addHandler(handler)
+
+
 here = path.abspath(path.dirname(__file__))
 
 
@@ -59,9 +67,11 @@ else:
         "cachetools",
         "six",
         "lxml",
+        "notebook",
         "cryptography",
         "ipywidgets >=7",
         "widgetsnbextension >=3",
+        "jupyter-client <=6.1.12",
         "pandas >=1.3.5",
         "numpy >=1.16.2",
         "matplotlib",
@@ -105,6 +115,7 @@ def _post_install():
 
         activate_map_widget = True
     except Exception as e:
+
         log.exception(
             "arcgis/notebook packages don't appear to be installed: "
             "map widget not activated, may not work. The rest of "
@@ -115,19 +126,25 @@ def _post_install():
 
     if activate_map_widget:
         log.warning("Attempting to activate map widget...")
+        print("Attempting to activate map widget...")
         try:
+
             log.warning(
                 nbext.install_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
+
             log.warning(
                 nbext.enable_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
+
             log.warning(
                 nbext.enable_nbextension_python(
                     "widgetsnbextension", sys_prefix=True, logger=log
                 )
             )
+
         except Exception as e:
+            print(f"Activating the widget failed {e}")
             log.exception("Activating map widget failed: Continuing install..")
             log.exception(e)
 
@@ -199,25 +216,6 @@ data_files = [
         ],
     ),
 ]
-if not "darwin" in sys.platform:
-    _get_rel_site_packages_dir() + "arcgis/gis/_impl"
-    data_files += [
-        (
-            _get_rel_site_packages_dir() + "arcgis/gis/_impl",
-            [
-                "arcgis/gis/_impl/_decrypt_nbauth.cp37-win_amd64.pyd",
-                "arcgis/gis/_impl/_decrypt_nbauth.cp38-win_amd64.pyd",
-                "arcgis/gis/_impl/_decrypt_nbauth.cp39-win_amd64.pyd",
-                "arcgis/gis/_impl/_decrypt_nbauth.cpython-37m-x86_64-linux-gnu.so",
-                "arcgis/gis/_impl/_decrypt_nbauth.cpython-38-x86_64-linux-gnu.so",
-                "arcgis/gis/_impl/_decrypt_nbauth.cpython-39-x86_64-linux-gnu.so",
-            ],
-        )
-    ]
-    data_files += [
-        "arcgis/graph/_arcgisknowledge.pyd",
-        "arcgis/graph/_arcgisknowledge.so",
-    ]
 
 
 def get_version():
@@ -332,20 +330,20 @@ kwargs = {
     # },
     "package_data": {
         "arcgis": [
-            "raster/*.dll",
-            "raster/*.so",
+            "gis/_impl/*.pyd",
+            "gis/_impl/*.so",
+            "graph/_decoder/**/*.pyd",
+            "graph/_decoder/**/*.so",
             "learn/*.dll",
             "learn/*.so",
-            "learn/_tracking/*.pyd",
-            "learn/_tracking/*.dll",
             "learn/_mmdetection_config/*.py",
             "learn/_mmdetection_config/**/*.py",
             "learn/_mmdetection_config/**/**/*.py",
             "learn/_mmseg_config/*.py",
-            "gis/_impl/*.pyd",
-            "graph/*.pyd",
-            "graph/*.so",
-            "gis/_impl/*.so",
+            "learn/_tracking/*.pyd",
+            "learn/_tracking/*.dll",
+            "raster/*.dll",
+            "raster/*.so",
         ],
     },
     # Although 'package_data' is the preferred approach, in some case you may

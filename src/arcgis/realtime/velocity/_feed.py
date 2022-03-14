@@ -6,7 +6,7 @@ from ._util import _Util
 
 class Feed(Task):
     """
-    Feed class implements Task and provides public facing methods to access Feeds API endpoints
+    The ``Feed`` class implements Task and provides public facing methods to access Feed API endpoints.
     """
 
     _id = ""
@@ -31,7 +31,7 @@ class Feed(Task):
     # ----------------------------------------------------------------------
     def start(self) -> Dict:
         """
-        Start the Feed for the given id
+        Start the Feed for the given ID.
 
         :return: response of feed start
 
@@ -49,7 +49,7 @@ class Feed(Task):
     # ----------------------------------------------------------------------
     def stop(self) -> Dict:
         """
-        Stop the Feed for the given id
+        Stop the Feed for the given ID.
         Return True if the Feed was successfully stopped.
 
         :return: boolean
@@ -69,7 +69,7 @@ class Feed(Task):
     @property
     def status(self) -> Dict:
         """
-        Get the status of the running Feed for the given id
+        Get the status of the running Feed for the given ID.
         :return: response of Feed status
 
         .. code-block:: python
@@ -88,7 +88,7 @@ class Feed(Task):
     @property
     def metrics(self) -> Dict:
         """
-        Get the metrics of the running Feed for the given id
+        Get the metrics of the running Feed for the given ID.
 
         :return: response of feed metrics
 
@@ -106,7 +106,7 @@ class Feed(Task):
     # ----------------------------------------------------------------------
     def delete(self) -> bool:
         """
-        Deletes an existing feed instance
+        Deletes an existing Feed instance.
 
         :return: A boolean containing True (for success) or
          False (for failure) a dictionary with details is returned.

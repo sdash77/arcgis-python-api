@@ -145,7 +145,12 @@ class KubeServiceDirectory(_BaseKube):
         return []
 
     # ----------------------------------------------------------------------
-    def publish_sd(self, sd_file: str, folder: Optional[str] = None):
+    def publish_sd(
+        self,
+        sd_file: str,
+        folder: Optional[str] = None,
+        service_config: Optional[dict] = None,
+    ):
         """
         Publishes a service definition file to ArcGIS Server.
 
@@ -158,6 +163,8 @@ class KubeServiceDirectory(_BaseKube):
                                file to.  If this folder is not present, it will be created.  The
                                default is None in which case the service definition will be published
                                to the System folder.
+        ------------------     --------------------------------------------------------------------
+        service_config         Optional Dict[str, Any]. A set of configuration overwrites that overrides the service definitions defaults.
         ==================     ====================================================================
 
         :return:
@@ -183,10 +190,13 @@ class KubeServiceDirectory(_BaseKube):
         status, res = uploads.upload(path=sd_file, description="sd file")
         if status:
             uid = res["item"]["itemID"]
-            if folder:
-                config = uploads._service_configuration(uid)
-                if "folderName" in config:
-                    config["folderName"] = folder
+            config = uploads._service_configuration(uid)
+            if service_config or folder:
+                if service_config:
+                    config.update(service_config)
+                if folder:
+                    if "folderName" in config:
+                        config["folderName"] = folder
                 res = service.publish_service_definition(
                     in_sdp_id=uid, in_config_overwrite=json.dumps(config)
                 )

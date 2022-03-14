@@ -194,7 +194,9 @@ def _bb_pad_collate(samples, pad_idx=0):
     return torch.cat(imgs, 0), (bboxes, labels)
 
 
-def _get_bbox_classes(label_file, class_mapping, height_width=[], **kwargs):
+def _get_bbox_classes(
+    label_file, class_mapping, height_width=[], stratified=False, **kwargs
+):
     dataset_type = kwargs.get("dataset_type", None)
 
     if dataset_type == "KITTI_rectangles":
@@ -298,22 +300,30 @@ def _get_bbox_classes(label_file, class_mapping, height_width=[], **kwargs):
 
     if len(bboxes) == 0:
         return [[[0.0, 0.0, 0.0, 0.0]], [list(class_mapping.values())[0]]]
-    return [bboxes, classes]
+
+    if stratified:
+        return classes
+    else:
+        return [bboxes, classes]
 
 
-def _get_bbox_lbls(imagefile, class_mapping, height_width, **kwargs):
+def _get_bbox_lbls(imagefile, class_mapping, height_width, stratified=False, **kwargs):
     dataset_type = kwargs.get("dataset_type", None)
     if dataset_type == "KITTI_rectangles":
         label_suffix = ".txt"
     else:
         label_suffix = ".xml"
+
+    # Typecasted to path type to handle error while loading data in dataframe mode
+    imagefile = Path(imagefile)
+
     label_file = (
         imagefile.parents[1]
         / "labels"
         / imagefile.name.replace("{ims}".format(ims=imagefile.suffix), label_suffix)
     )
     return _get_bbox_classes(
-        label_file, class_mapping, height_width, dataset_type=dataset_type
+        label_file, class_mapping, height_width, stratified, dataset_type=dataset_type
     )
 
 
@@ -1248,8 +1258,8 @@ def prepare_data(
                             Default value feature classification is True.
                             Default value pixel classification is False.
 
-                            Note: Applies only to single label feature classification
-                            and pixel classification.
+                            Note: Applies to single label feature classification,
+                            object detection and pixel classification.
     =====================   ===========================================
 
     :return: data object
@@ -1667,12 +1677,22 @@ def prepare_data(
 
     if dataset_type == "RCNN_Masks":
 
-        def get_labels(x, label_dirs, ext=right):
-            label_path = []
-            for lbl in label_dirs:
-                if os.path.exists(Path(lbl) / (x.stem + ".{}".format(ext))):
-                    label_path.append(Path(lbl) / (x.stem + ".{}".format(ext)))
-            return label_path
+        def get_labels(x, label_dirs, ext=right, stratified=False):
+            # Typecasted to path type to handle error while loading data in dataframe mode
+            x = Path(x)
+
+            if stratified:
+                classes = []
+                for lbl in label_dirs:
+                    if os.path.exists(Path(lbl) / (x.stem + ".{}".format(ext))):
+                        classes.append(Path(lbl).stem)
+                return classes
+            else:
+                label_path = []
+                for lbl in label_dirs:
+                    if os.path.exists(Path(lbl) / (x.stem + ".{}".format(ext))):
+                        label_path.append(Path(lbl) / (x.stem + ".{}".format(ext)))
+                return label_path
 
         label_dirs = []
         index_dir = {}  # for handling class value with any number
@@ -1697,6 +1717,10 @@ def prepare_data(
             image_without_label, not_label_count=not_label_count
         )
 
+        get_mask_label_value = partial(
+            get_labels, label_dirs=label_dir, stratified=True
+        )
+
         if class_mapping.get(0):
             del class_mapping[0]
 
@@ -1704,19 +1728,35 @@ def prepare_data(
             del color_mapping[0]
 
         if data_folders is None and images_df is None:
-            data = (
-                ArcGISInstanceSegmentationItemList.from_folder(path / "images")
-                .filter_by_func(remove_image_without_label)
-                .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(
-                    get_y_func,
-                    chip_size=chip_size,
-                    classes=["NoData"] + list(class_mapping.values()),
-                    class_mapping=class_mapping,
-                    color_mapping=color_mapping,
-                    index_dir=index_dir,
+            if kwargs.get("stratify") == True:
+                data = (
+                    ArcGISInstanceSegmentationItemList.from_folder(path / "images")
+                    .filter_by_func(remove_image_without_label)
+                    .label_list_from_func(get_mask_label_value)
+                    .stratified_split_by_pct(val_split_pct, seed=seed)
+                    .label_from_func(
+                        get_y_func,
+                        chip_size=chip_size,
+                        classes=["NoData"] + list(class_mapping.values()),
+                        class_mapping=class_mapping,
+                        color_mapping=color_mapping,
+                        index_dir=index_dir,
+                    )
                 )
-            )
+            else:
+                data = (
+                    ArcGISInstanceSegmentationItemList.from_folder(path / "images")
+                    .filter_by_func(remove_image_without_label)
+                    .split_by_rand_pct(val_split_pct, seed=seed)
+                    .label_from_func(
+                        get_y_func,
+                        chip_size=chip_size,
+                        classes=["NoData"] + list(class_mapping.values()),
+                        class_mapping=class_mapping,
+                        color_mapping=color_mapping,
+                        index_dir=index_dir,
+                    )
+                )
         else:
             if images_df is not None:
                 # images_df should have two columns 0, 1
@@ -1726,7 +1766,13 @@ def prepare_data(
                 ##
                 src = ArcGISInstanceSegmentationItemList.from_df(images_df, "images")
                 src.items = images_df[images_df.columns[0]].values
-                src = src.split_by_rand_pct(val_split_pct, seed=seed)
+                if kwargs.get("stratify") == True:
+                    src = src.label_list_from_func(
+                        get_mask_label_value
+                    ).stratified_split_by_pct(val_split_pct, seed=seed)
+                else:
+                    src = src.split_by_rand_pct(val_split_pct, seed=seed)
+
                 if len(images_df.columns) > 1:
                     src = src.label_from_df(
                         chip_size=chip_size,
@@ -1746,20 +1792,30 @@ def prepare_data(
                     )
             else:
                 # MultiFolder Training
-                def _get_labels(x, ext=right):
+                def _get_labels(x, ext=right, stratified=False):
                     path = x.parent.parent
                     label_dir = [
                         os.path.join(path / "labels", lbl)
                         for lbl in label_dirs
                         if os.path.isdir(os.path.join(path / "labels", lbl))
                     ]
-                    label_path = []
-                    for lbl in label_dir:
-                        if os.path.exists(Path(lbl) / (x.stem + ".{}".format(ext))):
-                            label_path.append(Path(lbl) / (x.stem + ".{}".format(ext)))
-                    return label_path
+                    if stratified:
+                        classes = []
+                        for lbl in label_dir:
+                            if os.path.exists(Path(lbl) / (x.stem + ".{}".format(ext))):
+                                classes.append(Path(lbl).stem)
+                        return classes
+                    else:
+                        label_path = []
+                        for lbl in label_dir:
+                            if os.path.exists(Path(lbl) / (x.stem + ".{}".format(ext))):
+                                label_path.append(
+                                    Path(lbl) / (x.stem + ".{}".format(ext))
+                                )
+                        return label_path
 
                 get_y_func = _get_labels
+                get_mask_label_value = partial(_get_labels, stratified=True)
                 imageslist = []
                 for data_folder in data_folders:
                     imageslist.append(
@@ -1767,19 +1823,35 @@ def prepare_data(
                             data_folder / "images"
                         ).items
                     )
-                src = (
-                    ArcGISInstanceSegmentationItemList(np.concatenate(imageslist))
-                    .filter_by_func(remove_image_without_label)
-                    .split_by_rand_pct(val_split_pct, seed=seed)
-                    .label_from_func(
-                        get_y_func,
-                        chip_size=chip_size,
-                        classes=(["NoData"] + list(class_mapping.values())),
-                        class_mapping=class_mapping,
-                        color_mapping=color_mapping,
-                        index_dir=index_dir,
+                if kwargs.get("stratify") == True:
+                    src = (
+                        ArcGISInstanceSegmentationItemList(np.concatenate(imageslist))
+                        .filter_by_func(remove_image_without_label)
+                        .label_list_from_func(get_mask_label_value)
+                        .stratified_split_by_pct(val_split_pct, seed=seed)
+                        .label_from_func(
+                            get_y_func,
+                            chip_size=chip_size,
+                            classes=(["NoData"] + list(class_mapping.values())),
+                            class_mapping=class_mapping,
+                            color_mapping=color_mapping,
+                            index_dir=index_dir,
+                        )
                     )
-                )
+                else:
+                    src = (
+                        ArcGISInstanceSegmentationItemList(np.concatenate(imageslist))
+                        .filter_by_func(remove_image_without_label)
+                        .split_by_rand_pct(val_split_pct, seed=seed)
+                        .label_from_func(
+                            get_y_func,
+                            chip_size=chip_size,
+                            classes=(["NoData"] + list(class_mapping.values())),
+                            class_mapping=class_mapping,
+                            color_mapping=color_mapping,
+                            index_dir=index_dir,
+                        )
+                    )
                 src.path = os.path.abspath("images")
             data = src
         #
@@ -1887,6 +1959,8 @@ def prepare_data(
         def get_label_pixels(x, ext=right):
             import numpy as np
 
+            # Typecasted to path type to handle error while loading data in dataframe mode
+            x = Path(x)
             img_arr = ArcGISMSImage.read_image(
                 (x.parents[1] / "labels" / (x.stem + ".{}".format(ext)))
             )
@@ -1919,7 +1993,7 @@ def prepare_data(
             }
 
         if data_folders is None and images_df is None:
-            if kwargs.get("stratify"):
+            if kwargs.get("stratify") == True:
                 data = (
                     ArcGISSegmentationItemList.from_folder(path / "images")
                     .filter_by_func(remove_image_without_label)
@@ -1953,7 +2027,12 @@ def prepare_data(
                 ##
                 src = ArcGISSegmentationItemList.from_df(images_df, "images")
                 src.items = images_df[images_df.columns[0]].values
-                src = src.split_by_rand_pct(val_split_pct, seed=seed)
+                if kwargs.get("stratify") == True:
+                    src = src.label_list_from_func(
+                        get_label_pixels
+                    ).stratified_split_by_pct(val_split_pct, seed=seed)
+                else:
+                    src = src.split_by_rand_pct(val_split_pct, seed=seed)
                 if len(images_df.columns) > 1:
                     src = src.label_from_df(
                         class_mapping=class_mapping,
@@ -1976,17 +2055,31 @@ def prepare_data(
                             data_folder / "images"
                         ).items
                     )
-                src = (
-                    ArcGISSegmentationItemList(np.concatenate(imageslist))
-                    .filter_by_func(remove_image_without_label)
-                    .split_by_rand_pct(val_split_pct, seed=seed)
-                    .label_from_func(
-                        get_y_func,
-                        classes=(["NoData"] + list(class_mapping.values())),
-                        class_mapping=class_mapping,
-                        color_mapping=color_mapping,
+                if kwargs.get("stratify") == True:
+                    src = (
+                        ArcGISSegmentationItemList(np.concatenate(imageslist))
+                        .filter_by_func(remove_image_without_label)
+                        .label_list_from_func(get_label_pixels)
+                        .stratified_split_by_pct(val_split_pct, seed=seed)
+                        .label_from_func(
+                            get_y_func,
+                            classes=(["NoData"] + list(class_mapping.values())),
+                            class_mapping=class_mapping,
+                            color_mapping=color_mapping,
+                        )
                     )
-                )
+                else:
+                    src = (
+                        ArcGISSegmentationItemList(np.concatenate(imageslist))
+                        .filter_by_func(remove_image_without_label)
+                        .split_by_rand_pct(val_split_pct, seed=seed)
+                        .label_from_func(
+                            get_y_func,
+                            classes=(["NoData"] + list(class_mapping.values())),
+                            class_mapping=class_mapping,
+                            color_mapping=color_mapping,
+                        )
+                    )
             data = src
         #
         _show_batch_multispectral = show_batch_classified_tiles
@@ -2045,20 +2138,44 @@ def prepare_data(
             dataset_type=dataset_type,
         )
 
+        get_label_value = partial(
+            _get_bbox_lbls,
+            class_mapping=class_mapping,
+            height_width=height_width,
+            stratified=True,
+            dataset_type=dataset_type,
+        )
+
         if data_folders is None and images_df is None:
-            data = (
-                ObjectDetectionItemList.from_folder(path / "images")
-                .filter_by_func(remove_image_without_label)
-                .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(get_y_func)
-            )
+            if kwargs.get("stratify") == True:
+                data = (
+                    ObjectDetectionItemList.from_folder(path / "images")
+                    .filter_by_func(remove_image_without_label)
+                    .label_list_from_func(get_label_value)
+                    .stratified_split_by_pct(val_split_pct, seed=seed)
+                    .label_from_func(get_y_func)
+                )
+            else:
+                data = (
+                    ObjectDetectionItemList.from_folder(path / "images")
+                    .filter_by_func(remove_image_without_label)
+                    .split_by_rand_pct(val_split_pct, seed=seed)
+                    .label_from_func(get_y_func)
+                )
         else:
             if images_df is not None:
                 src = ObjectDetectionItemList.from_df(images_df, "images")
                 src.items = images_df[images_df.columns[0]].values
-                src = src.split_by_rand_pct(val_split_pct, seed=seed).label_from_func(
-                    get_y_func
-                )
+                if kwargs.get("stratify") == True:
+                    src = (
+                        src.label_list_from_func(get_label_value)
+                        .stratified_split_by_pct(val_split_pct, seed=seed)
+                        .label_from_func(get_y_func)
+                    )
+                else:
+                    src = src.split_by_rand_pct(
+                        val_split_pct, seed=seed
+                    ).label_from_func(get_y_func)
             else:
                 # MultiFolder Training
                 imageslist = []
@@ -2068,12 +2185,21 @@ def prepare_data(
                             data_folder / "images"
                         ).items
                     )
-                src = (
-                    ObjectDetectionItemList(np.concatenate(imageslist))
-                    .filter_by_func(remove_image_without_label)
-                    .split_by_rand_pct(val_split_pct, seed=seed)
-                    .label_from_func(get_y_func)
-                )
+                if kwargs.get("stratify") == True:
+                    src = (
+                        ObjectDetectionItemList(np.concatenate(imageslist))
+                        .filter_by_func(remove_image_without_label)
+                        .label_list_from_func(get_label_value)
+                        .stratified_split_by_pct(val_split_pct, seed=seed)
+                        .label_from_func(get_y_func)
+                    )
+                else:
+                    src = (
+                        ObjectDetectionItemList(np.concatenate(imageslist))
+                        .filter_by_func(remove_image_without_label)
+                        .split_by_rand_pct(val_split_pct, seed=seed)
+                        .label_from_func(get_y_func)
+                    )
             data = src
         #
         _show_batch_multispectral = show_batch_pascal_voc_rectangles
@@ -2146,6 +2272,13 @@ def prepare_data(
                     .stratified_split_by_pct(val_split_pct, seed=seed)
                     .label_from_func(get_y_func)
                 )
+            elif dataset_type == "Imagenet" and kwargs.get("stratify") == True:
+                data = (
+                    ArcGISImageList.from_folder(path / "images")
+                    .label_list_from_func(get_y_func, val_split_pct)
+                    .stratified_split_by_pct(val_split_pct, seed=seed)
+                    .label_from_func(get_y_func)
+                )
             else:
                 data = (
                     ArcGISImageList.from_folder(path / "images")
@@ -2157,9 +2290,16 @@ def prepare_data(
             if images_df is not None:
                 src = ArcGISImageList.from_df(images_df, "images")
                 src.items = images_df[images_df.columns[0]].values
-                src = src.split_by_rand_pct(val_split_pct, seed=seed).label_from_func(
-                    get_y_func
-                )
+                if kwargs.get("stratify") == True:
+                    src = (
+                        src.label_list_from_func(get_y_func, val_split_pct)
+                        .stratified_split_by_pct(val_split_pct, seed=seed)
+                        .label_from_func(get_y_func)
+                    )
+                else:
+                    src = src.split_by_rand_pct(
+                        val_split_pct, seed=seed
+                    ).label_from_func(get_y_func)
             else:
                 # MultiFolder Training
                 imageslist = []

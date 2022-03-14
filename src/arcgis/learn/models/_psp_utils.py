@@ -530,6 +530,6 @@ def accuracy(input, target, ignore_mapped_class=[]):
         _, total_classes, _, _ = input.shape
         keep_indices = [i for i in range(total_classes) if i not in ignore_mapped_class]
         for k in ignore_mapped_class:
-            input[:, k] = -1
+            input[:, k] = input.min() - 1
         targ_mask = isin(target, keep_indices)
         return (input.argmax(dim=1)[targ_mask] == target[targ_mask]).float().mean()

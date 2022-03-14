@@ -924,10 +924,6 @@ class MapView(widgets.DOMWidget):
 
             self.webmap = WebMap()
 
-        # Set up default extent
-        if "defaultExtent" in self.gis.org_settings:
-            self.extent = self.gis.org_settings["defaultExtent"]
-
         # Handle callbacks and such
         self.on_msg(self._handle_map_msg)
         self._draw_end_handlers = widgets.CallbackDispatcher()

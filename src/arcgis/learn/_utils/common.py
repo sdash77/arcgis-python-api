@@ -179,7 +179,9 @@ class ArcGISMSImage(Image):
         return read_image(path, keep_raw=keep_raw)
 
     @classmethod
-    def open(cls, path, cast_to=np.float32, div=None, imagery_type=None):
+    def open(cls, path, cast_to=None, div=None, imagery_type=None):
+        if cast_to is None:
+            cast_to = np.float32
         path = str(os.path.abspath(path))
         if not os.path.exists:
             raise Exception(
@@ -311,7 +313,6 @@ class(es) {",".join(classes_below_req_intances)} in your data does not meet the 
                 classes = len(set(self._list_of_labels))
                 xlen = len(self._list_of_labels)
                 sample_shortage = math.ceil((classes - xlen * valid_pct) / valid_pct)
-                print(sample_shortage)
                 extra_samples = random.choices(
                     self._idx_label_tuple_list, k=sample_shortage
                 )
