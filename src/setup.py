@@ -22,7 +22,15 @@ import atexit
 import logging
 import site
 
+import logging
+
 log = logging.getLogger()
+log.setLevel(logging.DEBUG)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+log.addHandler(handler)
+
+
 here = path.abspath(path.dirname(__file__))
 
 
@@ -59,10 +67,11 @@ else:
         "cachetools",
         "six",
         "lxml",
+        "notebook",
         "cryptography",
         "ipywidgets >=7",
-        "jupyter-client <=6.1.12",
         "widgetsnbextension >=3",
+        "jupyter-client <=6.1.12",
         "pandas >=1.3.5",
         "numpy >=1.16.2",
         "matplotlib",
@@ -106,6 +115,7 @@ def _post_install():
 
         activate_map_widget = True
     except Exception as e:
+
         log.exception(
             "arcgis/notebook packages don't appear to be installed: "
             "map widget not activated, may not work. The rest of "
@@ -116,19 +126,25 @@ def _post_install():
 
     if activate_map_widget:
         log.warning("Attempting to activate map widget...")
+        print("Attempting to activate map widget...")
         try:
+
             log.warning(
                 nbext.install_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
+
             log.warning(
                 nbext.enable_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
+
             log.warning(
                 nbext.enable_nbextension_python(
                     "widgetsnbextension", sys_prefix=True, logger=log
                 )
             )
+
         except Exception as e:
+            print(f"Activating the widget failed {e}")
             log.exception("Activating map widget failed: Continuing install..")
             log.exception(e)
 
