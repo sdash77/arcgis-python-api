@@ -283,7 +283,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                         False, the process failed.
         """
 
-        if self._auth_token:
+        if self._auth_token and "refresh_token" in self._auth_token:
             params = {
                 "grant_type": "suspend_session",
                 "client_id": self._clientid,  # "arcgispro",
