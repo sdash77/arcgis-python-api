@@ -1003,7 +1003,7 @@ class StoryMap(object):
                     )
                 )
             # Make a call to the StoryMaps publish endpoint
-            self._con.post(self._url)
+            self._gis._con.post(self._url)
         else:
             # Set the type keywords
             keywords = self._item.typeKeywords
