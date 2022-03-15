@@ -27,6 +27,7 @@ class EsriNotebookAuth(AuthBase, SupportMultiAuth):
         else:
             self.referer = referer
         self._no_go_token = set()
+        self.verify_cert = kwargs.pop("verify_cert", True)
 
     # ----------------------------------------------------------------------
     def __str__(self):

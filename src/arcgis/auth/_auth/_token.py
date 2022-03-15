@@ -283,7 +283,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                         False, the process failed.
         """
 
-        if self._auth_token:
+        if self._auth_token and "refresh_token" in self._auth_token:
             params = {
                 "grant_type": "suspend_session",
                 "client_id": self._clientid,  # "arcgispro",
@@ -690,7 +690,7 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
         **kwargs,
     ) -> None:
         """init"""
-
+        self.proxies = kwargs.pop("proxies", None)
         if username is None and portal_auth is None:
             raise Exception(
                 "A portal_auth or username/password is required for GenerateToken"
@@ -700,6 +700,7 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
         self._portal_auth = portal_auth
         has_session = "session" in kwargs
         self._session = kwargs.pop("session", None) or requests.sessions.Session()
+        self.verify_cert = verify_cert
         if has_session == False:
             self._session.verify = verify_cert
             self._session.allow_redirects = True
@@ -893,7 +894,12 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
                 "expiration": 60,  # self.time_out,
                 "f": "json",
             }
-            resp = self._session.post(url=self._token_url, data=postdata)
+            resp = self._session.post(
+                url=self._token_url,
+                data=postdata,
+                verify=self.verify_cert,
+                proxies=self.proxies,
+            )
             if resp.status_code == 200:
                 data = resp.json()
                 if "error" in data:
@@ -923,7 +929,12 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
                 "request": "getToken",
                 "referer": self.referer,
             }
-            resp = self._session.post(url=self._token_url, data=postdata)
+            resp = self._session.post(
+                url=self._token_url,
+                data=postdata,
+                verify=self.verify_cert,
+                proxies=self.proxies,
+            )
             if resp.status_code == 200:
                 data = resp.json()
                 if "error" in data:
