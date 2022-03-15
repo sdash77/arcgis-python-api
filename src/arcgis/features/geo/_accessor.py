@@ -1962,8 +1962,8 @@ class GeoAccessor(object):
         ----------------------  ---------------------------------------------------------
         field                   Attribute field used for renderer.
         ----------------------  ---------------------------------------------------------
-        class_count             Number of classes that will be considered for the
-                                selected classification method.
+        class_count             Number of classes that will be considered in the
+                                selected classification method for the class breaks.
         ----------------------  ---------------------------------------------------------
         min_value               The minimum numeric data value needed to begin class
                                 breaks.
