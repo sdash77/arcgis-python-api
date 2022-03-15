@@ -988,12 +988,20 @@ class StoryMap(object):
                 self._item.share(org=True)
             elif sharing == "public":
                 self._item.share(everyone=True)
-            
+
             # Get url
             if self._gis._is_agol:
-                self._url = "https://storymaps.arcgis.com/stories/{storyid}/publish".format(storyid=self._itemid)
+                self._url = (
+                    "https://storymaps.arcgis.com/stories/{storyid}/publish".format(
+                        storyid=self._itemid
+                    )
+                )
             else:
-                self._url = "https://{portal}/apps/storymaps/stories/{storyid}/publish".format(portal=self._gis.url, storyid=self._itemid)
+                self._url = (
+                    "https://{portal}/apps/storymaps/stories/{storyid}/publish".format(
+                        portal=self._gis.url, storyid=self._itemid
+                    )
+                )
             # Make a call to the StoryMaps publish endpoint
             self._con.post(self._url)
         else:
