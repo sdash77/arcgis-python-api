@@ -1,7 +1,5 @@
 var config = require("./common");
 
-config.CdnUrl = "https:" + config.CdnUrl;
-
 config.JSOutputContext = "embed";
 
 config.BaseRequireJSConfig = {

@@ -6909,8 +6909,9 @@ class ContentManager(object):
                                   should be updated to the organizations default basemap. Default is False,
                                   basemap will not change.
         ---------------------     --------------------------------------------------------------------
-        copy_data                 Optional boolean. Indicating whether the data should be copied with any
-                                  feature layer or feature collections. Default is True, data will be copied.
+        copy_data                 Optional boolean. If False, the data is put by reference rather than
+                                  by copy. Default is True, data will be copied. This creates a Hosted
+                                  Feature Collection or Feature Layer.
         ---------------------     --------------------------------------------------------------------
         copy_global_ids           Optional boolean. Assumes previous parameter is set to True. If True,
                                   features copied will preserve their global IDs. Default is False
