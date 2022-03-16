@@ -10325,13 +10325,13 @@ def compute_change(
                                              - DIFFERENCE : The mathematical difference, or subtraction, between the pixel values in the input rasters will be calculated. This is the default.
                                              - RELATIVE_DIFFERENCE : The difference in pixel values, accounting for the magnitudes of the values being compared, will be calculated.
                                              - CATEGORICAL_DIFFERENCE : The difference between two categorical or thematic rasters will be calculated, where the output contains class transitions that occurred between the two rasters.
-                                             - SPECTRAL_EUCLIDEAN_DISTANCE : The Euclidean distance between two multiband rasters, 
-                                                                             where each pixel is treated as a vector. Larger values 
+                                             - SPECTRAL_EUCLIDEAN_DISTANCE : The Euclidean distance between two multiband rasters,
+                                                                             where each pixel is treated as a vector. Larger values
                                                                              indicate more change between the images.
-                                             - SPECTRAL_ANGLE_DIFFERENCE : The spectral angle between two multiband rasters, where 
-                                                                           each pixel is treated as a vector. Larger angles indicate 
+                                             - SPECTRAL_ANGLE_DIFFERENCE : The spectral angle between two multiband rasters, where
+                                                                           each pixel is treated as a vector. Larger angles indicate
                                                                            more change between the images.
-                                             - BAND_WITH_MOST_CHANGE : The band that accounts for the most change in each pixel between 
+                                             - BAND_WITH_MOST_CHANGE : The band that accounts for the most change in each pixel between
                                                                        two multiband rasters.
 
                                              Example:
@@ -10393,9 +10393,9 @@ def compute_change(
         "DIFFERENCE": 0,
         "RELATIVE_DIFFERENCE": 1,
         "CATEGORICAL_DIFFERENCE": 2,
-        "SPECTRAL_EUCLIDEAN_DISTANCE" : 3,
-        "SPECTRAL_ANGLE_DIFFERENCE" :4,
-        "BAND_WITH_MOST_CHANGE" : 5,
+        "SPECTRAL_EUCLIDEAN_DISTANCE": 3,
+        "SPECTRAL_ANGLE_DIFFERENCE": 4,
+        "BAND_WITH_MOST_CHANGE": 5,
     }
 
     if isinstance(method, str):
@@ -10405,7 +10405,7 @@ def compute_change(
             "CATEGORICAL_DIFFERENCE",
             "SPECTRAL_EUCLIDEAN_DISTANCE",
             "SPECTRAL_ANGLE_DIFFERENCE",
-            "BAND_WITH_MOST_CHANGE"
+            "BAND_WITH_MOST_CHANGE",
         ]
         if [element.upper() for element in method_allowed_values].count(
             method.upper()

@@ -13385,7 +13385,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name: outputName (str). Required parameter.
 
         compute_change_method: computeChangeMethod (str). Optional parameter.
-           Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE
+           Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE, SPECTRAL_EUCLIDEAN_DISTANCE, SPECTRAL_ANGLE_DIFFERENCE, BAND_WITH_MOST_CHANGE
 
         from_classes: fromClasses (str). Optional parameter.
 

@@ -8635,7 +8635,14 @@ def compute_change_raster(
                                                 - DIFFERENCE - The mathematical difference, or subtraction, between the pixel values in the rasters will be calculated. This is the default.
                                                 - RELATIVE_DIFFERENCE - The difference in pixel values, accounting for the quantities of the values being compared, will be calculated.
                                                 - CATEGORICAL_DIFFERENCE  - The difference between two categorical or thematic rasters will be calculated in which the output contains class transitions that occurred between the two rasters.
-
+                                                - SPECTRAL_EUCLIDEAN_DISTANCE - The Euclidean distance between two multiband rasters,
+                                                                                where each pixel is treated as a vector. Larger values
+                                                                                indicate more change between the images.
+                                                - SPECTRAL_ANGLE_DIFFERENCE - The spectral angle between two multiband rasters, where
+                                                                            each pixel is treated as a vector. Larger angles indicate
+                                                                            more change between the images.
+                                                - BAND_WITH_MOST_CHANGE - The band that accounts for the most change in each pixel between
+                                                                        two multiband rasters.
                                              Example:
                                                 "DIFFERENCE"
     ------------------------------------     --------------------------------------------------------------------
