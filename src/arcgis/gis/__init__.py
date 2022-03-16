@@ -11525,7 +11525,7 @@ class Item(dict):
                 return_raw_response=True,
             )
             if resp.status_code >= 300 and resp.status_code < 400:
-                url = resp.headers['location']
+                url = resp.headers["location"]
                 resp = self._portal.con.get(
                     path=url,
                     file_name=file_name,
