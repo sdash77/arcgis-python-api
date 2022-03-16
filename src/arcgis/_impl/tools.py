@@ -941,7 +941,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         point_layer = self._feature_input(point_layer)
         if polygon_layer:
             polygon_layer = self._feature_input(polygon_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -1288,7 +1288,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             required_facilities_layer = self._feature_input(required_facilities_layer)
         if candidate_facilities_layer:
             candidate_facilities_layer = self._feature_input(candidate_facilities_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -1644,7 +1644,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "ConnectOriginsToDestinations"
         origins_layer = self._feature_input(origins_layer)
         destinations_layer = self._feature_input(destinations_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -1926,7 +1926,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CreateDriveTimeAreas"
 
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2064,7 +2064,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         if route_data_item:
             route_data_item = {"itemId": route_data_item.itemid}
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2244,7 +2244,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         task = "CreateBuffers"
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2402,7 +2402,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CalculateDensity"
 
         params = {}
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2603,7 +2603,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         task = "CreateViewshed"
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2765,7 +2765,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3063,7 +3063,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3206,7 +3206,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
 
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3355,7 +3355,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
 
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3572,7 +3572,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3665,7 +3665,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3960,7 +3960,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4106,7 +4106,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4359,7 +4359,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             line_barrier_layer = self._feature_input(line_barrier_layer)
         if polygon_barrier_layer:
             polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4547,7 +4547,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4703,7 +4703,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4855,7 +4855,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "FindSimilarLocations"
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4971,7 +4971,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         if extent_layer:
             extent_layer = self._feature_input(extent_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5195,7 +5195,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if predict_at_point_layer:
             predict_at_point_layer = self._feature_input(predict_at_point_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5368,7 +5368,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         target_layer = self._feature_input(target_layer)
         join_layer = self._feature_input(join_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5512,7 +5512,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         input_layer = self._feature_input(input_layer)
         merge_layer = self._feature_input(merge_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5661,7 +5661,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         overlay_layer = self._feature_input(overlay_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5984,7 +5984,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             start_layer = self._feature_input(start_layer)
         if end_layer:
             end_layer = self._feature_input(end_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6083,7 +6083,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         ====================    =========================================================
         **Argument**            **Description**
         --------------------    ---------------------------------------------------------
-        analysis_layer          Required frature layer. The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
+        analysis_layer          Required feature layer. The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
         --------------------    ---------------------------------------------------------
         summarize_type          Required list of strings. The method with which to summarize the ``analysis_layer``.
 
@@ -6142,7 +6142,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6322,7 +6322,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if sum_within_layer:
             sum_within_layer = self._feature_input(sum_within_layer)
         summary_layer = self._feature_input(summary_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6488,7 +6488,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6760,7 +6760,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         sum_nearby_layer = self._feature_input(sum_nearby_layer)
         summary_layer = self._feature_input(summary_layer)
-        if self._gis.version > [9, 2] or self._gis.is_agol:
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.

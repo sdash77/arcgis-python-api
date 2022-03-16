@@ -422,11 +422,13 @@ class GIS(object):
         self._datastores_list = None
         self._utoken = kwargs.pop("token", None)
         client_secret = kwargs.pop("client_secret", None)
+        self._api_key = None
         if self._username is None:
             if "ESRI_API_KEY" in os.environ and self._utoken is None:
                 self._utoken = os.environ.get("ESRI_API_KEY", None)
             elif self._utoken is None and not "ESRI_API_KEY" in os.environ:
                 self._utoken = kwargs.pop("api_key", None)
+            self._api_key = self._utoken
 
         if self._url.lower() == "home" and not os.getenv("NB_AUTH_FILE", None) is None:
             # configuring for hosted notebooks need to happen before portalpy
@@ -458,6 +460,7 @@ class GIS(object):
                 proxy=kwargs.get("proxy", None),
                 custom_adapter=custom_adapter,
                 token=self._utoken,
+                api_key=self._api_key,
                 is_hosted_nb_home=self._is_hosted_nb_home,
                 use_gen_token=self._use_gen_token,
             )
@@ -482,6 +485,7 @@ class GIS(object):
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
                     token=self._utoken,
+                    api_key=self._api_key,
                     is_hosted_nb_home=self._is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
                 )
@@ -549,6 +553,7 @@ class GIS(object):
                         proxy=kwargs.get("proxy", None),
                         custom_adapter=custom_adapter,
                         token=self._utoken,
+                        api_key=self._api_key,
                         is_hosted_nb_home=self._is_hosted_nb_home,
                         use_gen_token=self._use_gen_token,
                     )
@@ -1390,6 +1395,11 @@ class GIS(object):
 
         if zoomlevel is not None:
             mapwidget.zoom = zoomlevel
+
+        if not location:
+            # Set up default extent
+            if "defaultExtent" in self.org_settings:
+                mapwidget.extent = self.org_settings["defaultExtent"]
 
         return mapwidget
 
@@ -4865,7 +4875,6 @@ class ContentManager(object):
         params = {"f": "json", "url": url}
         return self._gis._con.get(curl, params, ignore_error_key=True)
 
-    # ----------------------------------------------------------------------
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
     ):
@@ -4895,16 +4904,37 @@ class ContentManager(object):
 
 
         """
-        if size < 5e6:
-            size = 5e6
+        from typing import Union, Iterator, Tuple
+        from io import BytesIO
 
-        def read_in_chunks(file_object, chunk_size=10000000):
-            """Generate file chunks of 10MB"""
-            while True:
-                data = file_object.read(chunk_size)
-                if not data:
-                    break
-                yield data
+        def chunk_by_file_size(
+            fp: str,
+            size: int = None,
+            parameter_name: str = "file",
+            upload_format: bool = False,
+        ) -> Iterator[Union[Tuple[str, BytesIO, str], BytesIO]]:
+            """Splits a File based on a specific bytes size"""
+            if size is None:
+                size = int(2.5e7)  # 25MB
+            i = 1
+            with open(fp, "rb") as reader:
+                while True:
+                    bio = BytesIO()
+                    data = bio.write(reader.read(size))
+                    bio.seek(0)
+                    if not data:
+                        break
+                    if upload_format:
+                        fpath = f"split{i}.split"
+                        yield parameter_name, bio, fpath
+                    else:
+                        yield bio
+                    i += 1
+            return None
+
+        size = int(size)
+        if size < 2.5e7:
+            size = int(2.5e7)
 
         owner_name = owner
         if isinstance(owner, User):
@@ -4923,56 +4953,37 @@ class ContentManager(object):
         url = "{base}{path}/items/{itemid}/addPart".format(
             base=self._gis._portal.resturl, path=path, itemid=itemid
         )
-        file = {"file": None}
-        params = {"f": "json", "partNum": None}
-        messages = []
-        future_files = []
-        with open(file_path, "rb") as f:
-            import copy
-            import uuid
-            import concurrent.futures
+        results = []
+        futures = {}
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=5, thread_name_prefix="upld_"
+        ) as tp:
 
-            nthreads = 5
-            with concurrent.futures.ThreadPoolExecutor(max_workers=nthreads) as tp:
-                future_parts = {}
-                base_file = uuid.uuid4().hex[:4]
-                for part_num, piece in enumerate(read_in_chunks(f), start=1):
-                    params["partNum"] = part_num
-                    temp_file = os.path.join(
-                        tempfile.gettempdir(), "split%s.part%s" % (base_file, part_num)
-                    )
-                    kwargs = {
+            futures = {
+                tp.submit(
+                    self._gis._con.post_multipart,
+                    **{
                         "path": url,
-                        "postdata": copy.copy(params),
-                        "files": {"file": copy.copy(temp_file)},
-                    }
-                    with open(temp_file, "wb") as writer:
-                        writer.write(piece)
-                        del writer
-                    future_parts[tp.submit(self._gis._con.post, **kwargs)] = part_num
-                    future_files.append(copy.copy(temp_file))
-                concurrent.futures.wait(
-                    list(future_parts.keys()), None, concurrent.futures.ALL_COMPLETED
+                        "params": {"f": "json", "partNum": f"{idx + 1}"},
+                        "files": [part],
+                    },
+                ): idx
+                + 1
+                for idx, part in enumerate(
+                    chunk_by_file_size(file_path, size=size, upload_format=True)
                 )
-                for future in concurrent.futures.as_completed(future_parts):
-                    part_num = future_parts[future]
-                    try:
-                        if future.done():
-                            data = future.result()
-                            if "success" in data:
-                                messages.append(data["success"])
-                            else:
-                                messages.append(False)
-                    except Exception as exc:
-                        _log.error("%r generated an exception: %s" % (url, exc))
-                    else:
-                        _log.debug("%r page is %s" % (url, data))
-                for ffile in future_files:
-                    if os.path.isfile(ffile):
-                        os.remove(ffile)
-
-        if all(messages):
-            # commit the addition
+            }
+        messages = []
+        for future in concurrent.futures.as_completed(futures):
+            r = future.result()
+            if "success" in r:
+                results.append(r["success"])
+            elif "status" in r and r["status"] == "success":
+                results.append(True)
+            else:
+                results.append(False)
+            messages.append(r)
+        if all(results):  # Should be True/False list
             url = "{base}{path}/items/{itemid}/commit".format(
                 base=self._gis._portal.resturl, path=path, itemid=itemid
             )
@@ -4984,7 +4995,7 @@ class ContentManager(object):
             }
             params.update(item_properties)
             res = self._gis._con.post(url, params)
-            if "success" in res:
+            if "success" in res and res["success"]:
                 url = "{base}{path}/items/{itemid}/status".format(
                     base=self._gis._portal.resturl, path=path, itemid=itemid
                 )
@@ -5001,6 +5012,7 @@ class ContentManager(object):
                 return res["status"]
             else:
                 return False
+
         return False
 
     # ----------------------------------------------------------------------
@@ -5320,7 +5332,7 @@ class ContentManager(object):
             if kwargs.get("upload_size", 0) >= 1e7:
                 upload_size = kwargs.get("upload_size")
             else:
-                upload_size = 1e7
+                upload_size = int(2.5e7)
 
             status = self._add_by_part(
                 file_path=data,
@@ -6897,8 +6909,9 @@ class ContentManager(object):
                                   should be updated to the organizations default basemap. Default is False,
                                   basemap will not change.
         ---------------------     --------------------------------------------------------------------
-        copy_data                 Optional boolean. Indicating whether the data should be copied with any
-                                  feature layer or feature collections. Default is True, data will be copied.
+        copy_data                 Optional boolean. If False, the data is put by reference rather than
+                                  by copy. Default is True, data will be copied. This creates a Hosted
+                                  Feature Collection or Feature Layer.
         ---------------------     --------------------------------------------------------------------
         copy_global_ids           Optional boolean. Assumes previous parameter is set to True. If True,
                                   features copied will preserve their global IDs. Default is False
@@ -9490,26 +9503,21 @@ class User(dict):
             "f": "json",
             "start": 1,
             "num": 100,
-            "returnAppClientIds": True,
-            "returnAllProvisions": True,
+            "includeExpired": True,
         }
         res = self._portal.con.post(url, params)
         provs = [
             Item(gis=self._gis, itemid=i["itemId"]) for i in res["provisionedListings"]
         ]
         while res["nextStart"] > -1:
-            params = {
-                "f": "json",
-                "start": res["nextStart"],
-                "num": 100,
-                "returnAppClientIds": True,
-                "returnAllProvisions": True,
-            }
+            params["start"] = res["nextStart"]
             res = self._portal.con.post(url, params)
-            provs += [
-                Item(gis=self._gis, itemid=i["itemId"])
-                for i in res["provisionedListings"]
-            ]
+            provs.extend(
+                [
+                    Item(gis=self._gis, itemid=i["itemId"])
+                    for i in res["provisionedListings"]
+                ]
+            )
         return provs
 
     # ----------------------------------------------------------------------
@@ -9585,13 +9593,181 @@ class User(dict):
         thumbnail = self.thumbnail
         if self.thumbnail is None or not self._portal.is_logged_in:
             thumbnail = self.get_thumbnail_link()
-        else:
+        elif self.get_thumbnail():
             b64 = base64.b64encode(self.get_thumbnail())
             thumbnail = (
                 "data:image/png;base64,"
                 + str(b64, "utf-8")
                 + "' width='200' height='133"
             )
+        else:
+            thumbnail = (
+                "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgEAYABgAAD/4QgwRXhpZgAATU0AKgAAAAgABwESAAMAAAABAAEAAAEaAAUAA"
+                "AABAAAAYgEbAAUAAAABAAAAagEoAAMAAAABAAIAAAExAAIAAAAcAAAAcgEyAAIAAAAUAAAAjodpAAQAAAABAAAApAAAANAADqYAA"
+                "AAnEAAOpgAAACcQQWRvYmUgUGhvdG9zaG9wIENTMyBXaW5kb3dzADIwMTE6MDI6MjUgMjM6NDc6NTcAAAAAA6ABAAMAAAAB//8AA"
+                "KACAAQAAAABAAAAlqADAAQAAAABAAAAlgAAAAAAAAAGAQMAAwAAAAEABgAAARoABQAAAAEAAAEeARsABQAAAAEAAAEmASgAAwAAA"
+                "AEAAgAAAgEABAAAAAEAAAEuAgIABAAAAAEAAAb6AAAAAAAAAEgAAAABAAAASAAAAAH/2P/gABBKRklGAAECAABIAEgAAP/tAAxBZ"
+                "G9iZV9DTQAC/+4ADkFkb2JlAGSAAAAAAf/bAIQADAgICAkIDAkJDBELCgsRFQ8MDA8VGBMTFRMTGBEMDAwMDAwRDAwMDAwMDAwMD"
+                "AwMDAwMDAwMDAwMDAwMDAwMDAENCwsNDg0QDg4QFA4ODhQUDg4ODhQRDAwMDAwREQwMDAwMDBEMDAwMDAwMDAwMDAwMDAwMDAwMD"
+                "AwMDAwMDAwM/8AAEQgAlgCWAwEiAAIRAQMRAf/dAAQACv/EAT8AAAEFAQEBAQEBAAAAAAAAAAMAAQIEBQYHCAkKCwEAAQUBAQEBA"
+                "QEAAAAAAAAAAQACAwQFBgcICQoLEAABBAEDAgQCBQcGCAUDDDMBAAIRAwQhEjEFQVFhEyJxgTIGFJGhsUIjJBVSwWIzNHKC0UMHJ"
+                "ZJT8OHxY3M1FqKygyZEk1RkRcKjdDYX0lXiZfKzhMPTdePzRieUpIW0lcTU5PSltcXV5fVWZnaGlqa2xtbm9jdHV2d3h5ent8fX5"
+                "/cRAAICAQIEBAMEBQYHBwYFNQEAAhEDITESBEFRYXEiEwUygZEUobFCI8FS0fAzJGLhcoKSQ1MVY3M08SUGFqKygwcmNcLSRJNUo"
+                "xdkRVU2dGXi8rOEw9N14/NGlKSFtJXE1OT0pbXF1eX1VmZ2hpamtsbW5vYnN0dXZ3eHl6e3x//aAAwDAQACEQMRAD8A9FYxha07R"
+                "wOw8Pgn2M/dH3D+5Jn0G/BSQSx2M/dH4f3JbGfuj8P7lJJJTHYz90fh/clsZ+6Pw/uUkklMdjP3R+H9yWxn7o/D+5SSSUx2M/dH4"
+                "f3JbGfuj8P7lJJJTHYz90fh/clsZ+6Pw/uUkklMdjP3R+H9yWxn7o/D+5SSSUx2M/dH4f3JbGfuj8P7lJJJTHYz90fh/clsZ+6Pw"
+                "/uUkjwkpgWN3NEDny4j4JJ3fSb8f4FJFD//0PRmfQb8FJRZ9BvwUkEqSSSSUpJJO1rnGAkpYa8I1dPd33KTKQ3XuiIoYelX4Jekz"
+                "w/E/wB6mkkph6NfghWVFuo1CsJGD5pKaaSnbXtM9lBBKkkkklKSPCSR4SUxd9Jvx/gkk76Tfj/BJFD/AP/R9GZ9BvwUlFn0G/BSQ"
+                "SpJJJJSkXHHJKEj4/0SkpI5waJUfUceGpnHc+B+anRQtusPgEiHn84/JOkkpjt8SSmjYdzfmFNJJS7gHN+SqxCsVmCWH5fBBsEPI"
+                "SUxSSSQSpI8JJHhJTF30m/H+CSTvpN+P8EkUP8A/9L0Zn0G/BSUWfQb8FJBKkkkklKR6Pon4oCnXYWaQkpI3knxKkos+j8ZUkUKS"
+                "SSSUpJJJJSw/nG+YQ7x75UrTEEIRJJkpKWSSSQSpI8JJHhJTF30m/H+CSTvpN+P8EkUP//T9GZ9BvwUlFn0G/BSQSpJJJJSkkkkl"
+                "JqtW/BTQaXdkZFCkkkklKSSS4SUitPCGne6SopKXSSSQSpI8JJHhJTF30m/H+CSTvpN+P8ABJFD/9T0Zn0G/BSUWfQb8FJBKkkkk"
+                "lKSSSRQppLSjtO4SgIrG6SDqkpIko7/AN4Qn3DkFJS6Ha+PaE/ud9HQdyUJ4hySlkkkkEqSSSSUpI8JJHhJTF30m/H+CSTvpN+P8"
+                "EkUP//V9GZ9BvwUlFn0G/BSQSpKCdAkrFLABuPJSQibS8qYx/EoydFSA0ACQnbG0IqFG15HY6j4pKZJoE8apJ0lKUWsD5ce/CTpM"
+                "NHdFAgADskpEcdp4Kicd3bVHTpKabmOadUyuEAiCq9tewyOCkpGkeEkjwgli76Tfj/BJJ30m/H+CSKH/9b0Zn0G/BSUWfQb8FJBK"
+                "hqQPFXAIACrUtl4VlFCk6SSSlKFjZbPcKaSSkQMie6dNG15b2OoSeZEeKSlMBJLj8kRM0QAE6Sl0kkklLKFwlnwRExEiElNLunPC"
+                "ciCQmPCCmLvpN+P8EknfSb8f4JIqf/X9GZ9BvwUlFn0G/BSSUmxxrPyR0Gge0/FFSUukkkkpSSSZJTCxst05Cav3HcfkiJRHCSlJ"
+                "0ydJSkkkklKSSSSU1bRDyhnhFv+khJKWd9Jvx/gkk76Tfj/AASSU//Q9FYTtEA8eSfc790/gvmRJJT9QVPuA9tZInxH96J6l/eo/"
+                "eP718tpJKfqX1Lf9Efvb/el6lv+iP3t/vXy0kkp+pfUt/0Tvvb/AOST+pZ/onfe3/yS+WUklP1N6ln+id97f/JJvUs/0Tvvb/5Jf"
+                "LSSSn6l9Sz/AETvvb/5JL1Lf9Efvb/evlpJJT9S+pd/oj94/vUTZd/oj94/vXy4kkp+o99/+j/6n/ySiXZH7h+W3/yS+XkklP069"
+                "1k+9hn4hRJdH0T+C+ZEklP00S7c32mZ0GngkvmVJJT/AP/Z/+0NTFBob3Rvc2hvcCAzLjAAOEJJTQQEAAAAAAAHHAIAAAIAAAA4Q"
+                "klNBCUAAAAAABDo8VzzL8EYoaJ7Z63FZNW6OEJJTQQvAAAAAABKWOMBAEgAAABIAAAAAAAAAAAAAADQAgAAQAIAAAAAAAAAAAAAG"
+                "AMAAGQCAAAAAcADAACwBAAAAQAPJwEAagBwAGcAAAAuAGoAcAA4QklNA+0AAAAAABAAYAAAAAEAAQBgAAAAAQABOEJJTQQmAAAAA"
+                "AAOAAAAAAAAAAAAAD+AAAA4QklNBA0AAAAAAAQAAAAeOEJJTQQZAAAAAAAEAAAAHjhCSU0D8wAAAAAACQAAAAAAAAAAAQA4QklNB"
+                "AoAAAAAAAEAADhCSU0nEAAAAAAACgABAAAAAAAAAAI4QklNA/UAAAAAAEgAL2ZmAAEAbGZmAAYAAAAAAAEAL2ZmAAEAoZmaAAYAA"
+                "AAAAAEAMgAAAAEAWgAAAAYAAAAAAAEANQAAAAEALQAAAAYAAAAAAAE4QklNA/gAAAAAAHAAAP///////////////////////////"
+                "/8D6AAAAAD/////////////////////////////A+gAAAAA/////////////////////////////wPoAAAAAP///////////////"
+                "/////////////8D6AAAOEJJTQQIAAAAAAAQAAAAAQAAAkAAAAJAAAAAADhCSU0EHgAAAAAABAAAAAA4QklNBBoAAAAAA08AAAAGA"
+                "AAAAAAAAAAAAACWAAAAlgAAAA0AbgBvAC0AdQBzAGUAcgAtAHQAaAB1AG0AYgAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAA"
+                "AAAAAAAlgAAAJYAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAQAAAAAAAG51bGwAAAACAAAABmJvdW5kc"
+                "09iamMAAAABAAAAAAAAUmN0MQAAAAQAAAAAVG9wIGxvbmcAAAAAAAAAAExlZnRsb25nAAAAAAAAAABCdG9tbG9uZwAAAJYAAAAAU"
+                "mdodGxvbmcAAACWAAAABnNsaWNlc1ZsTHMAAAABT2JqYwAAAAEAAAAAAAVzbGljZQAAABIAAAAHc2xpY2VJRGxvbmcAAAAAAAAAB"
+                "2dyb3VwSURsb25nAAAAAAAAAAZvcmlnaW5lbnVtAAAADEVTbGljZU9yaWdpbgAAAA1hdXRvR2VuZXJhdGVkAAAAAFR5cGVlbnVtA"
+                "AAACkVTbGljZVR5cGUAAAAASW1nIAAAAAZib3VuZHNPYmpjAAAAAQAAAAAAAFJjdDEAAAAEAAAAAFRvcCBsb25nAAAAAAAAAABMZ"
+                "WZ0bG9uZwAAAAAAAAAAQnRvbWxvbmcAAACWAAAAAFJnaHRsb25nAAAAlgAAAAN1cmxURVhUAAAAAQAAAAAAAG51bGxURVhUAAAAA"
+                "QAAAAAAAE1zZ2VURVhUAAAAAQAAAAAABmFsdFRhZ1RFWFQAAAABAAAAAAAOY2VsbFRleHRJc0hUTUxib29sAQAAAAhjZWxsVGV4d"
+                "FRFWFQAAAABAAAAAAAJaG9yekFsaWduZW51bQAAAA9FU2xpY2VIb3J6QWxpZ24AAAAHZGVmYXVsdAAAAAl2ZXJ0QWxpZ25lbnVtA"
+                "AAAD0VTbGljZVZlcnRBbGlnbgAAAAdkZWZhdWx0AAAAC2JnQ29sb3JUeXBlZW51bQAAABFFU2xpY2VCR0NvbG9yVHlwZQAAAABOb"
+                "25lAAAACXRvcE91dHNldGxvbmcAAAAAAAAACmxlZnRPdXRzZXRsb25nAAAAAAAAAAxib3R0b21PdXRzZXRsb25nAAAAAAAAAAtya"
+                "WdodE91dHNldGxvbmcAAAAAADhCSU0EKAAAAAAADAAAAAE/8AAAAAAAADhCSU0EEQAAAAAAAQEAOEJJTQQUAAAAAAAEAAAAAThCS"
+                "U0EDAAAAAAHFgAAAAEAAACWAAAAlgAAAcQAAQjYAAAG+gAYAAH/2P/gABBKRklGAAECAABIAEgAAP/tAAxBZG9iZV9DTQAC/+4AD"
+                "kFkb2JlAGSAAAAAAf/bAIQADAgICAkIDAkJDBELCgsRFQ8MDA8VGBMTFRMTGBEMDAwMDAwRDAwMDAwMDAwMDAwMDAwMDAwMDAwMD"
+                "AwMDAwMDAENCwsNDg0QDg4QFA4ODhQUDg4ODhQRDAwMDAwREQwMDAwMDBEMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM/8AAE"
+                "QgAlgCWAwEiAAIRAQMRAf/dAAQACv/EAT8AAAEFAQEBAQEBAAAAAAAAAAMAAQIEBQYHCAkKCwEAAQUBAQEBAQEAAAAAAAAAAQACA"
+                "wQFBgcICQoLEAABBAEDAgQCBQcGCAUDDDMBAAIRAwQhEjEFQVFhEyJxgTIGFJGhsUIjJBVSwWIzNHKC0UMHJZJT8OHxY3M1FqKyg"
+                "yZEk1RkRcKjdDYX0lXiZfKzhMPTdePzRieUpIW0lcTU5PSltcXV5fVWZnaGlqa2xtbm9jdHV2d3h5ent8fX5/cRAAICAQIEBAMEB"
+                "QYHBwYFNQEAAhEDITESBEFRYXEiEwUygZEUobFCI8FS0fAzJGLhcoKSQ1MVY3M08SUGFqKygwcmNcLSRJNUoxdkRVU2dGXi8rOEw"
+                "9N14/NGlKSFtJXE1OT0pbXF1eX1VmZ2hpamtsbW5vYnN0dXZ3eHl6e3x//aAAwDAQACEQMRAD8A9FYxha07RwOw8Pgn2M/dH3D+5"
+                "Jn0G/BSQSx2M/dH4f3JbGfuj8P7lJJJTHYz90fh/clsZ+6Pw/uUkklMdjP3R+H9yWxn7o/D+5SSSUx2M/dH4f3JbGfuj8P7lJJJT"
+                "HYz90fh/clsZ+6Pw/uUkklMdjP3R+H9yWxn7o/D+5SSSUx2M/dH4f3JbGfuj8P7lJJJTHYz90fh/clsZ+6Pw/uUkjwkpgWN3NEDn"
+                "y4j4JJ3fSb8f4FJFD//0PRmfQb8FJRZ9BvwUkEqSSSSUpJJO1rnGAkpYa8I1dPd33KTKQ3XuiIoYelX4Jekzw/E/wB6mkkph6Nfg"
+                "hWVFuo1CsJGD5pKaaSnbXtM9lBBKkkkklKSPCSR4SUxd9Jvx/gkk76Tfj/BJFD/AP/R9GZ9BvwUlFn0G/BSQSpJJJJSkXHHJKEj4"
+                "/0SkpI5waJUfUceGpnHc+B+anRQtusPgEiHn84/JOkkpjt8SSmjYdzfmFNJJS7gHN+SqxCsVmCWH5fBBsEPISUxSSSQSpI8JJHhJ"
+                "TF30m/H+CSTvpN+P8EkUP8A/9L0Zn0G/BSUWfQb8FJBKkkkklKR6Pon4oCnXYWaQkpI3knxKkos+j8ZUkUKSSSSUpJJJJSw/nG+Y"
+                "Q7x75UrTEEIRJJkpKWSSSQSpI8JJHhJTF30m/H+CSTvpN+P8EkUP//T9GZ9BvwUlFn0G/BSQSpJJJJSkkkklJqtW/BTQaXdkZFCk"
+                "kkklKSSS4SUitPCGne6SopKXSSSQSpI8JJHhJTF30m/H+CSTvpN+P8ABJFD/9T0Zn0G/BSUWfQb8FJBKkkkklKSSSRQppLSjtO4S"
+                "gIrG6SDqkpIko7/AN4Qn3DkFJS6Ha+PaE/ud9HQdyUJ4hySlkkkkEqSSSSUpI8JJHhJTF30m/H+CSTvpN+P8EkUP//V9GZ9BvwUl"
+                "Fn0G/BSQSpKCdAkrFLABuPJSQibS8qYx/EoydFSA0ACQnbG0IqFG15HY6j4pKZJoE8apJ0lKUWsD5ce/CTpMNHdFAgADskpEcdp4"
+                "Kicd3bVHTpKabmOadUyuEAiCq9tewyOCkpGkeEkjwgli76Tfj/BJJ30m/H+CSKH/9b0Zn0G/BSUWfQb8FJBKhqQPFXAIACrUtl4V"
+                "lFCk6SSSlKFjZbPcKaSSkQMie6dNG15b2OoSeZEeKSlMBJLj8kRM0QAE6Sl0kkklLKFwlnwRExEiElNLunPCciCQmPCCmLvpN+P8"
+                "EknfSb8f4JIqf/X9GZ9BvwUlFn0G/BSSUmxxrPyR0Gge0/FFSUukkkkpSSSZJTCxst05Cav3HcfkiJRHCSlJ0ydJSkkkklKSSSSU"
+                "1bRDyhnhFv+khJKWd9Jvx/gkk76Tfj/AASSU//Q9FYTtEA8eSfc790/gvmRJJT9QVPuA9tZInxH96J6l/eo/eP718tpJKfqX1Lf9"
+                "Efvb/el6lv+iP3t/vXy0kkp+pfUt/0Tvvb/AOST+pZ/onfe3/yS+WUklP1N6ln+id97f/JJvUs/0Tvvb/5JfLSSSn6l9Sz/AETvv"
+                "b/5JL1Lf9Efvb/evlpJJT9S+pd/oj94/vUTZd/oj94/vXy4kkp+o99/+j/6n/ySiXZH7h+W3/yS+XkklP0691k+9hn4hRJdH0T+C"
+                "+ZEklP00S7c32mZ0GngkvmVJJT/AP/ZOEJJTQQhAAAAAABVAAAAAQEAAAAPAEEAZABvAGIAZQAgAFAAaABvAHQAbwBzAGgAbwBwA"
+                "AAAEwBBAGQAbwBiAGUAIABQAGgAbwB0AG8AcwBoAG8AcAAgAEMAUwAzAAAAAQA4QklNBAYAAAAAAAcABgABAAEBAP/hDpdodHRwO"
+                "i8vbnMuYWRvYmUuY29tL3hhcC8xLjAvADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkI"
+                "j8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDQuMS1jMDM2IDQ2L"
+                "jI3NjcyMCwgTW9uIEZlYiAxOSAyMDA3IDIyOjQwOjA4ICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cud"
+                "zMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4YXA9I"
+                "mh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIge"
+                "G1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4YXBNTT0iaHR0cDovL25zL"
+                "mFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iIHhtbG5zOmV4a"
+                "WY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vZXhpZi8xLjAvIiB4YXA6Q3JlYXRlRGF0ZT0iMjAxMC0wNC0wOFQxMDozNTo0OC0wNzowM"
+                "CIgeGFwOk1vZGlmeURhdGU9IjIwMTEtMDItMjVUMjM6NDc6NTctMDg6MDAiIHhhcDpNZXRhZGF0YURhdGU9IjIwMTEtMDItMjVUM"
+                "jM6NDc6NTctMDg6MDAiIHhhcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTMyBXaW5kb3dzIiBkYzpmb3JtYXQ9ImltY"
+                "WdlL2pwZWciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpIaXN0b3J5PSIiIHhhcE1NOkluc3RhbmNlSUQ9InV1a"
+                "WQ6Q0JFN0I3NkY3QzQxRTAxMUJFOTQ5NzcwOUI0NjMzQkMiIHRpZmY6T3JpZW50YXRpb249IjEiIHRpZmY6WFJlc29sdXRpb249I"
+                "jk2MDAwMC8xMDAwMCIgdGlmZjpZUmVzb2x1dGlvbj0iOTYwMDAwLzEwMDAwIiB0aWZmOlJlc29sdXRpb25Vbml0PSIyIiB0aWZmO"
+                "k5hdGl2ZURpZ2VzdD0iMjU2LDI1NywyNTgsMjU5LDI2MiwyNzQsMjc3LDI4NCw1MzAsNTMxLDI4MiwyODMsMjk2LDMwMSwzMTgsM"
+                "zE5LDUyOSw1MzIsMzA2LDI3MCwyNzEsMjcyLDMwNSwzMTUsMzM0MzI7NDE2QzZBQjk2Qjg2MTJBNERGMENFM0Q1MjM5RTc3RDAiI"
+                "GV4aWY6UGl4ZWxYRGltZW5zaW9uPSIxNTAiIGV4aWY6UGl4ZWxZRGltZW5zaW9uPSIxNTAiIGV4aWY6Q29sb3JTcGFjZT0iLTEiI"
+                "GV4aWY6TmF0aXZlRGlnZXN0PSIzNjg2NCw0MDk2MCw0MDk2MSwzNzEyMSwzNzEyMiw0MDk2Miw0MDk2MywzNzUxMCw0MDk2NCwzN"
+                "jg2NywzNjg2OCwzMzQzNCwzMzQzNywzNDg1MCwzNDg1MiwzNDg1NSwzNDg1NiwzNzM3NywzNzM3OCwzNzM3OSwzNzM4MCwzNzM4M"
+                "SwzNzM4MiwzNzM4MywzNzM4NCwzNzM4NSwzNzM4NiwzNzM5Niw0MTQ4Myw0MTQ4NCw0MTQ4Niw0MTQ4Nyw0MTQ4OCw0MTQ5Miw0M"
+                "TQ5Myw0MTQ5NSw0MTcyOCw0MTcyOSw0MTczMCw0MTk4NSw0MTk4Niw0MTk4Nyw0MTk4OCw0MTk4OSw0MTk5MCw0MTk5MSw0MTk5M"
+                "iw0MTk5Myw0MTk5NCw0MTk5NSw0MTk5Niw0MjAxNiwwLDIsNCw1LDYsNyw4LDksMTAsMTEsMTIsMTMsMTQsMTUsMTYsMTcsMTgsM"
+                "jAsMjIsMjMsMjQsMjUsMjYsMjcsMjgsMzA7QUZCRTBGRkExQzU1RTU2Mzc1NUQ1OTlDRjYxMzEyNEIiLz4gPC9yZGY6UkRGPiA8L"
+                "3g6eG1wbWV0YT4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+                "CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8P3hwYWNrZXQgZW5kPSJ3Ij8+/+4ADkFkb2JlAGRAAAAAAf/bAIQAA"
+                "gICAgICAgICAgMCAgIDBAMCAgMEBQQEBAQEBQYFBQUFBQUGBgcHCAcHBgkJCgoJCQwMDAwMDAwMDAwMDAwMDAEDAwMFBAUJBgYJD"
+                "QoJCg0PDg4ODg8PDAwMDAwPDwwMDAwMDA8MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM/8AAEQgAlgCWAwERAAIRAQMRAf/dA"
+                "AQAE//EAIUAAAEFAQEBAAAAAAAAAAAAAAABAgMEBQYJBwEBAQEAAAAAAAAAAAAAAAAAAAECEAABAwICAwsKBAQHAQAAAAABAAIDE"
+                "QQhMUESBVGxIjJysjNzsxQ0YXGBkaFCktITVMEj0xVSg1UGYkNTY5MkNiURAQEBAAAAAAAAAAAAAAAAAAABEf/aAAwDAQACEQMRA"
+                "D8A9nLSztX2trI60ic58THOc5jKuIjaD7mhYaWu52mixh+BnyIE7pa/Yw/DH8iA7pa/Yw/DH8iA7pa/Yw/DH8iA7pa/Yw/DH8iA7"
+                "pa/Yw/DH8iA7pa/Yw/DH8iA7pa/Yw/DH8iA7pa/Yw/DH8iA7pa/Yw/DH8iA7pa/Yw/DH8iA7pa/Yw/DH8iA7pa/Yw/DH8iA7pa/Y"
+                "w/DH8iA7pa/Yw/DH8iA7pa/Yw/DH8iANpa0dWyhAIIJDWYAjkKxKgltbcTW0YgjDX3BBfqsxZ9Fx/gWkf/Q9prLwViNP0hzWrDS0"
+                "gEAgEAgFcTRXEDGp0UTDS0IxIoN0phpMDgCCdwJhpaHcp50w00OBNFMCooQCAQCBr+I/kneViVXm8RZn/ed2L1pH//R9pbPwlj1Q"
+                "5rVhpbQCAQCAJAFTgFYlKyr3AMBJOVBVaR0NhscupLdt4OhhOfqQav7TY6IaHdDnDeIPtQJ+02elhI3C+Q77yPYgX9psP8AQ9p/F"
+                "Bz9/sx9sXPjrJEMTo1VKRkVGB3clloIBAIBA2TiP5J3lYlQTdNadc7sXLSP/9L2ls/CWPVDmtWGltAIBAIJ4Lea4fqQtDnUrjSlF"
+                "YldXY7JjtdSR1TPnX3RhuLSNihpjmMkDThicPOgWmkYoAZ7iBjtV4NSJAMHNUo47amz+6ymZvROxZ6VMXWVmpgEUIBA2TiP5J3lY"
+                "lQTdNadc7sXLSP/0/aWz8JY9UOa1YaW0AgEAcj5ig6HYDGkySOz1Q0HyqxK6C5uWW7dcjWoaagzJWkUjtCd4rFaEjQ4uA/FA3698"
+                "8f5EPlo5zh5sKIInNu3A618/ksAaEDO7aw4c0rznRzsD56IIyzub23UALWnxEZcTQZVQat1FHd2rgOEHM1mO82KDgzHqEVPC1iCF"
+                "KQqy0EAgbJxH8k7ysSoJumtOud2LlpH/9T2ls/CWPVDmtWGltAIBAhyQdZsENEEhpU1pRWJUk8gnvAxg4No3Wruudwae1aRLju0G"
+                "4gEAgEBQOIaRUO4JHnwQNsJDHJLZvNQKmI7rMt9Bze0mNjvJI25DFSkUVloIBA2TiP5J3lYlQTdNadc7sXLSP/V9pbPwlj1Q5rVh"
+                "pbQCAQI7L0jfQdXsI/kPpmZK+hWJRb8J1xLmXyuA5LcN9aRaQCAQCBRmDuEH1IIWcG+tDkXxua7z11t4IMfbbKXuuMQ8ZqUjIWWg"
+                "gEDZOI/kneViVBN01p1zuxctI//1vaWz8JY9UOa1YaW0AgEBWmiqDQsNoyWI1QzXa5w1juCuKsStqyP/XDjnK55Pkq6oWkWkAgEA"
+                "gUIMvaUjojBIw0c2tD5xRBgyyyTPD5DUjJSkMWWggEDZOI/kneViVBN01p1zuxctI//1/aWz8JY9UOa1YaW0AgEAgN1WJXR7NcX2"
+                "4r7ma0jRQCAQCAoTgM9CDC2q6n02n3c0GOHAmgKlIVZaCAQNk4j+Sd5WJUE3TWnXO7Fy0j/0PaWz8JY9UOa1YaW0AgEAgDkaKxK1"
+                "dkTEazCaArSOgphXQgRAIBAE6tScKAoORvJ/rSuaDWhU0xVa0ggkJaqRZUIBA2TiP5J3lYlQTdNadc7sXLSP//R9pbPwlj1Q5rVh"
+                "pbQCAQCBDWhorEp8Er4Htc0YDNaR1VtK2eMPDxUZjLfQWEAgDUEA4E5A4EoMrad4Wn6EZFSOEQclKRgDDWw42lZaCAQCAQNk4j+S"
+                "d5WJUE3TWnXO7Fy0j//0vaWz8JY9UOa1YaW0AgECawrTSriaVJA00IpVaR0FpbkQtfDINc8UOrRBbbdmurcMcxzcnjFvsqgl7zGG"
+                "67ZBUZafYgrF1xO6kAMTDi+WUguwx4NK0QYV5GIrhxdUF41qnSPwUorazf4h61MXQXNGkYphoBBTDSqYBFNk4j+Sd5WJUE3TWnXO"
+                "7Fy0j//0/aWz8JY9UOa1YaW0AgXVc4hra6xyoKqxK0INj3c2qSKNObsAtI049gEU+rJhpQLNsSKON8jHF7m4hu+gsWzWd3Zq46ua"
+                "CbhZcEt0tIQIIoi4O+i3XGRGCB+DQXAU1MXDyDNBTt7SK+Mt3LUCV2rEANAx0oFl2DbyA6kjmu0BwFPYgpzbBnaKxFr6bmB9qDGn"
+                "tLi3f8AmNcGtzwJHrQQ1ClIVZaNk4j+Sd5WJUE3TWnXO7Fy0j//1PaWz8JY9UOa1YaW0CE0FdxEddsizjbC26e3WkmzadCsG8CMA"
+                "FpAckDaHcr5EGE5ndr2WKtIbissR/x6W+TDFBOCCaaUDh56eVBWuC52pbx494NAfIMT7Ag2YomxRsja2jWDDzoJQDVApyQRvYyRp"
+                "a8Va7NpQcdtWxFpIHt4j1KRkrLRsnEfyTvKxKgm6a0653YuWkf/1faWz8JY9UOa1YaWiaCpRDo2/Vkjjbi57gAPSiPocUYiijjHu"
+                "inpVgmANVoOQIa0NM0GdfW5kg+o0fmxcJvoxPsQU4pRLGyd3Be8cJm4EEpyrkBjXzYoG2LXTSS3Tm8EmkP4oNoHJAqBDkgbSmeSD"
+                "N2tC2W0c73o6EesKUjhG62sa5VwKy0dJxH8k7ysSoJumtOud2LlpH//1vaWz8JY9UOa1YaWziCiNHZEBku4tYYtOt6FcR3ABqa7t"
+                "R6kkD1oCAQIcvwQYOoLa7kt/cmcZYid2mLfUgW6eXtbC3B0po30Yn2BBrQx6kUbGtoGhBMAaoHIBAhyQRSxiSN7HDBwUo+eSs+nI"
+                "9pFKONFlUL+I/kneVghm6a0653YuWkf/9f2ls/CWPVDmtWGlo5GmZwCsSuk2A0az5XZhuoD5dK0jqKhAqAQCBDkgy9oW5kga5nSw"
+                "EOa7SRXH2IIbAd6ebt4wZwY2n1FBs4VFDloQOQCAQCBDkpRwe1WCK9l0NOLVkZb3AseAfdO8rBHN01p1zuxctD/0PaWz8JZYg0iF"
+                "SDX3WrOLqySDShFajT5UkHXbCa3u8jq1P1DlitI3RnkUD0CVG6gWqBDkgbSuBGBwKBgjawAMbqNbjQaUDxmgdUbqBUBWiBK+f1IA"
+                "5KUcVt4DvJNRUjAafUpgwDk7kneSQJMR9a0653YuWh//9H2ctJZRb2witpntEQ1iDGGngt3XILQmnqNazkpUV4UW7ykG9s282syN"
+                "/ddkSzR65r+bA3R5XhBqt2htyo19gSlukCeCvaIJRtHatf/AD1wP58H4yIHfuG1f6Bceie2r2iAG0Np1Fdg3Xpmtv1EEn7htH+hX"
+                "P8AzW36qA/cNo/0K5/5rb9VA120No0P/wAG5Pk+tbfqoGDaO0tH9v3VdFZrb9VAp2jtWn/n7g/z7f8ACRA39x2scv7fnHlM8FOeg"
+                "rvv9sk4bDe07pmgPsMg30Effduni7IcDoIdbfroK0t1/cNDTZ8tdxhtg70ETE+xBiXVxtAyDvlhOyTQXPi1vY5BWdNNqv8A+pcDg"
+                "n3o9zlIK80s5ntHOtbhsjZnfTj1o+F+S6uOtTJB/9k="
+            )
+
+            thumbnail += "' width='200' height='133"
 
         firstName = "Not Provided"
         lastName = "Not Provided"

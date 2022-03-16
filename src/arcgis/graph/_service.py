@@ -1,12 +1,14 @@
 import datetime as _dt
 from arcgis.auth.tools import LazyLoader
 
+
 try:
-    from arcgis.graph import _arcgisknowledge as _kgparser
+    from arcgis.graph._decoder import _arcgisknowledge as _kgparser
 
     HAS_KG = True
 except ImportError as e:
     HAS_KG = False
+
 _gis = LazyLoader("arcgis.gis")
 _isd = LazyLoader("arcgis._impl.common._isd")
 from typing import List
@@ -14,6 +16,28 @@ import platform
 
 
 class KnowledgeGraph:
+    """
+    Provides access to a Knowledge Graph's datamodel and properties, as well as
+    methods to search and query the graph.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Knowledge Graph URL
+    ------------------     --------------------------------------------------------------------
+    gis                    an authenticated :class:`arcigs.gis.GIS` object.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # Connect to a Knowledge Graph:
+
+        gis = GIS(url="url",username="username",password="password")
+
+        knowledge_graph = KnowledgeGraph(url, gis=gis)
+
+    """
+
     _gis = None
     _url = None
     _properties = None
@@ -24,11 +48,11 @@ class KnowledgeGraph:
         self._gis = gis
 
     def _validate_import(self):
-        p = platform.platform().lower().find("windows") > -1
-        if HAS_KG == False and p:
-            raise ImportError("Missing _arcgisknowledge library.")
-        elif HAS_KG == False and p == False:
-            raise ImportError("KnowledgeGraph is currently only supported on Windows.")
+        if HAS_KG == False:
+            raise ImportError(
+                "An error occured with importing the KnowledgeGraph libraries. Please ensure you "
+                "are using Python 3.7,3.8, or 3.9 on Windows or Linux platforms."
+            )
 
     @classmethod
     def fromitem(cls, item):
@@ -47,17 +71,17 @@ class KnowledgeGraph:
             self._properties = _isd.InsensitiveDict(resp)
         return self._properties
 
-    def search(self, query: str, category: str = "both") -> List[dict]:
+    def search(self, search: str, category: str = "both") -> List[dict]:
         """
-        Allows for the searching of the properties of both entities and
-        relationships in the graph using a full-text index.
+        Allows for the searching of the properties of entities,
+        relationships, or both in the graph using a full-text index.
+
+        `Learn more about searching a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-graph-search.htm>`_
 
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
-        query               Required String. Allows you to return the entities and
-                            relationships in a graph, as well as the properties of those
-                            entities and relationships, by providing an open cypher query.
+        search              Required String. The search to perform on the knowledge graph.
         ----------------    ---------------------------------------------------------------
         category            Optional String.  The category is the location of the full
                             text search.  This can be isolated to either the `entities` or
@@ -66,7 +90,7 @@ class KnowledgeGraph:
                             The allowed values are: both, entities, relationships
         ================    ===============================================================
 
-        :return: List[dict]
+        :return: List[list]
 
         """
         url = self._url + "/graph/search"
@@ -77,7 +101,7 @@ class KnowledgeGraph:
         }
         assert str(category).lower() in cat_lu.keys()
         r_enc = _kgparser.GraphSearchRequestEncoder()
-        r_enc.search_query = query
+        r_enc.search_query = search
         r_enc.return_geometry = True
         r_enc.max_num_results = self.properties["maxRecordCount"]
         r_enc.type_category_filter = cat_lu[category.lower()]
@@ -107,17 +131,19 @@ class KnowledgeGraph:
 
     def query(self, query: str) -> List[dict]:
         """
-        Queries the Knowledge Graph
+        Queries the Knowledge Graph using openCypher
+
+        `Learn more about querying a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-graph-query.htm>`_
 
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
         query               Required String. Allows you to return the entities and
                             relationships in a graph, as well as the properties of those
-                            entities and relationships, by providing an open cypher query.
+                            entities and relationships, by providing an openCypher query.
         ================    ===============================================================
 
-        :return: List[dict]
+        :return: List[list]
 
         """
         self._validate_import()

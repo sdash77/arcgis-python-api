@@ -588,7 +588,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :return: Boolean. `True` if success else `False`
+        :return: Dictionary indicating 'success' or 'error'
 
 
         """
@@ -604,7 +604,7 @@ class ParcelFabricManager(object):
             "moment": moment,
             "f": "json",
         }
-        return self._con.post(url, params)["success"]
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
@@ -844,7 +844,7 @@ class ParcelFabricManager(object):
 
                                         If None, the method will analyze the entire parcel fabric.
         ----------------------------    --------------------------------------------------------------------
-        future                          Optional boolean. If `True`, the request is processed as an 
+        future                          Optional boolean. If `True`, the request is processed as an
                                         asynchronous job and a URL is returned that points a location
                                         displaying the status of the job.
 

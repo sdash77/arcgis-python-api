@@ -504,8 +504,14 @@ class Webhook(object):
         """
         if name is None:
             name = self.properties.name
-        if secret is None:
-            secret = self.properties.secret
+        if "secret" in self.properties:
+            if secret is None:
+                secret = self.properties.secret
+            elif secret == "":
+                secret = ""
+        else:
+            if secret is None or secret == "":
+                secret = None
         if url is None:
             url = self.properties.payloadUrl
         if number_of_failures is None:

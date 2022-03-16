@@ -41,6 +41,7 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
         password: str,
         referer: str = "http",
         verify_cert: bool = True,
+        **kwargs,
     ):
         self.username = username
         self.password = password
@@ -52,6 +53,7 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
         self._session.verify = verify_cert
         self._session.headers.update({"referer": referer})
         self._session.auth = (self.username, self.password)
+        self._proxies = kwargs.pop("proxies", None)
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -123,7 +125,11 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
                 token_str = self._tokens[server_url]
             else:
                 token = self._session.post(
-                    token_url, data=postdata, auth=self.auth, verify=self.verify_cert
+                    token_url,
+                    data=postdata,
+                    auth=self.auth,
+                    verify=self.verify_cert,
+                    proxies=self._proxies,
                 )
                 token_str = token.json().get("token", None)
                 if token_str is None:

@@ -1,6 +1,6 @@
 import sys
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import platform
 import unittest
 from arcgis.auth import EsriWindowsAuth, EsriKerberosAuth, EsriSession
@@ -114,7 +114,7 @@ class TestLDAPAuth(unittest.TestCase):
         ldap_url = "https://rpubrh77017.ags.esri.com/portal"
         url = f"{ldap_url}/sharing/rest/portals/self?f=json"
         server_url = f"{ldap_url}/sharing/rest/portals/self/servers?f=json"
-        auth = EsriBasicAuth(ldap_user, ldap_pw, legacy=True)
+        auth = EsriBasicAuth(ldap_user, ldap_pw)
         with EsriSession(auth=auth) as session:
             resp = session.get(url)
             data = resp.json()

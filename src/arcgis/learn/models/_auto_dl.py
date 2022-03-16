@@ -40,8 +40,11 @@ class ImageryModel(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        name_or_path            Required string. Name or Path to
+        path                    Required string. Path to
                                 Esri Model Definition(EMD) file.
+        ---------------------   -------------------------------------------
+        data                    Required ImageryDataObject. Returned data
+                                object from `prepare_data` function.
         =====================   ===========================================
         """
         is_mm = False
@@ -67,7 +70,11 @@ class ImageryModel(ArcGISModel):
                 getattr(ag.learn, modelname)(data, model=mm_model),
             )
         else:
-            setattr(self, "imagery_model", getattr(ag.learn, modelname)(data))
+            setattr(
+                self,
+                "imagery_model",
+                getattr(ag.learn, modelname).from_model(path, data),
+            )
         getattr(self, "imagery_model").load(path)
 
     def fit(
@@ -145,6 +152,18 @@ class ImageryModel(ArcGISModel):
             )
         except Exception as E:
             print("Load the model first using load()")
+
+    def show_results(self, rows=5, **kwargs):
+
+        """
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        rows                     Optional int. Number of rows of results
+                                 to be displayed.
+        =====================   ===========================================
+        """
+        getattr(self, "imagery_model").show_results(rows, **kwargs)
 
     def save(
         self,
@@ -239,7 +258,8 @@ class ImageryModel(ArcGISModel):
         =====================   ===========================================
         """
         try:
-            getattr(self, "imagery_model").lr_find(allow_plot)
+            lr = getattr(self, "imagery_model").lr_find(allow_plot)
+            return lr
         except Exception as E:
             print("Load the model first using load()")
 
@@ -369,7 +389,7 @@ class AutoDL:
                             For eg:
                             Supported Object Detection models:
                             ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "MMDetection"]
-                            Supported Object Detection models:
+                            Supported Pixel Classification models:
                             ["DeepLab", "UnetClassifier", "PSPNetClassifier", "MMSegmentation"]
     ---------------------   -------------------------------------------
     verbose                 Optional Boolean.
@@ -435,7 +455,6 @@ class AutoDL:
         self._all_detection_data = [
             "PASCAL_VOC_rectangles",
             "KITTI_rectangles",
-            "RCNN_Masks",
         ]
         if total_time_limit < 1:
             print("Total time limit should be greater than or equal to 1 hr")
@@ -519,7 +538,7 @@ class AutoDL:
         )
         print(
             "Time required to process the entire dataset of",
-            self._tiles_required,
+            len(self._data.train_ds) + len(self._data.valid_ds),
             "images is",
             round(required_time / 60, 2),
             "hours",
@@ -616,7 +635,9 @@ class AutoDL:
             self.logger_dict.append(log_msg)
 
         try:
-            getattr(self, model).fit(epochs, early_stopping=True, callbacks=callbacks)
+            getattr(self, model).fit(
+                int(epochs), early_stopping=True, callbacks=callbacks
+            )
             if self.verbose:
                 clear_output(wait=True)
                 all_logs = "\n".join(self.logger_dict)
@@ -625,8 +646,12 @@ class AutoDL:
             if self.verbose:
                 all_logs = "\n".join(self.logger_dict)
                 print(all_logs)
+                print(e)
             else:
                 print(e)
+            end_time = time.time()
+            tot_sec = int(end_time - start_time)
+            return tot_sec
 
         if self.verbose:
             log_msg = "{date}: Training completed".format(
@@ -815,9 +840,10 @@ class AutoDL:
                 self.logger_dict.append(log_msg)
             if model_time > compare_time:
                 epochs = (self._max_epochs * compare_time) // model_time
+                if epochs <= 0:
+                    epochs = 0
                 if self.verbose:
-                    log_msg = """{date}: Remaining time is not sufficient to train the {network} for complete 20 epochs, \
-                    instead it will be trained for {net_epochs}""".format(
+                    log_msg = """{date}: Insufficient time to train the {network} for 20 epochs. {net_epochs} epochs can only be trained in the remaining time.""".format(
                         date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
                         network=model,
                         net_epochs=epochs,
@@ -835,9 +861,9 @@ class AutoDL:
                     self.logger_dict.append(log_msg)
                     print(log_msg)
 
-            if epochs == 0:
+            if epochs <= 0:
                 if self.verbose:
-                    log_msg = """{date}: The time left to train the {network} is not sufficent...""".format(
+                    log_msg = """{date}: The time left to train the {network} is not sufficent.""".format(
                         date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
                     )
                     print(log_msg)
@@ -903,9 +929,10 @@ class AutoDL:
                     self.logger_dict.append(log_msg)
                 if model_time > compare_time:
                     epochs = (self._max_epochs * compare_time) // model_time
+                    if epochs <= 0:
+                        epochs = 0
                     if self.verbose:
-                        log_msg = """{date}: Remaining time is not sufficient to train the {network} for complete 20 epochs, 
-                                        max epochs will be {net_epochs}""".format(
+                        log_msg = """{date}: Insufficient to train the {network} for 20 epochs. {net_epochs} can only be trained in the remaining time.""".format(
                             date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
                             network=model,
                             net_epochs=epochs,
@@ -923,7 +950,7 @@ class AutoDL:
                         self.logger_dict.append(log_msg)
                         print(log_msg)
 
-                if epochs == 0:
+                if epochs <= 0:
                     if self.verbose:
                         log_msg = """{date}: The time left to train the {network} is not sufficent...""".format(
                             date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
