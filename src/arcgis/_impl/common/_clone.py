@@ -5001,7 +5001,7 @@ class _FormDefinition(_ItemDefinition):
                         with open(os.path.join(zip_dir, path)) as file:
                             payload = json.loads(file.read())
                     except UnicodeDecodeError:
-                        with open(os.path.join(zip_dir, path), 'rb') as file:
+                        with open(os.path.join(zip_dir, path), "rb") as file:
                             payload = json.load(file)
 
                     file_changed = False
