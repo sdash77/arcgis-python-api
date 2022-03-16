@@ -18,6 +18,27 @@ def detect_proxy(replace_https: bool = True) -> typing.Optional[typing.Dict]:
     """
     Using `urllib.request.getproxies` create the dictionary for the proxy if they exist.
 
+    .. note::
+        This method cannot detect all proxies and is only recommended to assist if proxy
+        errors occur. Talk to whomever manages your proxy to get the proper forward
+        proxy information.
+
+    .. note::
+        See the urllib.requests.getproxies() `documentation
+        <https://docs.python.org/3/library/urllib.request.html#urllib.request.getproxies>`_
+         page for a full explination of the code.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    replace_https       Optional Boolean.  The autodetect method from `urllib.requests.getproxies`
+                        assumes there is an `http` and `https` version of the proxy.  Many
+                        implementations of proxies force `https` traffic through the `http`
+                        proxy endpoint.  When this is true, the `getproxies` call will be
+                        modified for the `https` entry and switch the scheme from `https`
+                        to `http`.
+    ===============     ====================================================================
+
     Usage Example:
 
        gis = GIS(proxy=detect_proxy(True), verify_cert=False)
