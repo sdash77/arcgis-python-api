@@ -11500,20 +11500,49 @@ class Item(dict):
             >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
 
         """
-        data_path = "content/items/" + self.itemid + "/data"
+        if self._gis._con.token:
+            data_path = (
+                "content/items/"
+                + self.itemid
+                + f"/data"  # "?token={self._gis._con.token}"
+            )
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
         if not save_path:
             save_path = self._workdir
         try:
-            download_path = self._portal.con.get(
-                path=data_path,
+
+            url = self._gis._portal.resturl + data_path
+            con = self._gis._con
+            resp = self._portal.con.get(
+                path=url,
                 file_name=file_name,
                 out_folder=save_path,
                 try_json=False,
                 force_bytes=False,
+                allow_redirects=False,
+                return_raw_response=True,
             )
+            if resp.status_code >= 300 and resp.status_code < 400:
+                url = resp.headers['location']
+                resp = self._portal.con.get(
+                    path=url,
+                    file_name=file_name,
+                    out_folder=save_path,
+                    try_json=False,
+                    force_bytes=False,
+                    allow_redirects=False,
+                    return_raw_response=True,
+                    drop_auth=True,
+                )
+                download_path = con._handle_response(
+                    resp, file_name=file_name, out_path=save_path, try_json=False
+                )
+            else:
+                download_path = con._handle_response(
+                    resp, file_name=file_name, out_path=save_path, try_json=False
+                )
         except Exception as e:
             _log.debug(msg=str(e))
             _log.debug(
