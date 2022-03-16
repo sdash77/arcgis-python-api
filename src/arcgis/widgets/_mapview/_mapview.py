@@ -512,8 +512,8 @@ class MapView(widgets.DOMWidget):
                 raise RuntimeError("Basemap '{}' isn't valid".format(value))
 
     _basemap = Unicode("topo").tag(sync=True)
-    """What basemap you would like to apply to the widget (‘topo’,
-    ‘national-geographic’, etc.). See `basemaps` for a full list
+    """What basemap you would like to apply to the widget ('topo',
+    'national-geographic', etc.). See `basemaps` for a full list
     """
     mode = Unicode("2D").tag(sync=True)
     """The string that specifies whether the map displays in '2D' mode
