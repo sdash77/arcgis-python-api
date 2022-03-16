@@ -1205,7 +1205,7 @@ def train_model(
                                               - All training data must have the same tile size.
     ------------------------------------     --------------------------------------------------------------------
     model_type                               Required string. The model type to use for training the deep learning model.
-                                             Possible values: SSD, UNET, FEATURE_CLASSIFIER, PSPNET, RETINANET, MASKRCNN
+                                             Possible values:
                                               - SSD - The Single Shot Detector (SSD) is used for object detection.
                                               - UNET - U-Net is used for pixel classification.
                                               - FEATURE_CLASSIFIER - The Feature Classifier is used for object classification.
