@@ -1962,7 +1962,7 @@ async def _get_enrich_rest(
 
         # unpack the enriched results - reaching into the FeatureSet for just the attributes - much faster
         else:
-            r_df = pd.DataFrame([f["attributes"] for f in fs["features"]])
+            r_df = pd.DataFrame([f["attributes"] for f in fs[0]["features"]])
 
         # add the dataframe to the list
         enrich_res_itr.append(r_df)
