@@ -7063,7 +7063,7 @@ class Raster:
     @property
     def catalog_paths(self):
         """
-        The ``catalog_paths`` property represents the full paths and the names of the referenced raster.
+        The ``catalog_paths`` property represents the full paths and the names of each item comprising a mosaic dataset.
 
         :return:
             A String
@@ -7093,7 +7093,7 @@ class Raster:
     @property
     def names(self):
         """
-        The ``names`` property returns the names of the raster.
+        The ``names`` property returns the names of each item comprising a mosaic dataset.
 
         :return:
             A String
@@ -9075,12 +9075,12 @@ class _ImageServerRaster(ImageryLayer, Raster):
         return self._url
 
     @property
-    def catalog_path(self):
+    def catalog_paths(self):
         return [self._url]
 
     @property
     def path(self):
-        return self._url.rsplit("/", 1)[0]
+        return None
 
     @property
     def name(self):
@@ -9088,7 +9088,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def names(self):
-        return super().properties.names
+        return [super().properties.names]
 
     @property
     def has_RAT(self):
