@@ -3,8 +3,6 @@ The arcgis.widgets module provides components for visualizing GIS data and analy
 This module includes the MapView Jupyter notebook widget for visualizing maps and layers
 """
 import json
-import random
-import string
 import time
 import logging
 import base64
@@ -13,10 +11,16 @@ from uuid import uuid4
 from collections import OrderedDict
 from urllib.parse import urlparse
 import os
-import shutil
 import datetime as dt
 import dateutil.parser
 import tempfile
+
+from arcgis.features import FeatureSet, FeatureCollection, FeatureLayer
+from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
+from arcgis.gis import Layer
+from arcgis.gis import Item
+from arcgis.mapping import MapImageLayer, VectorTileLayer
+from arcgis.mapping.ogc._base import BaseOGC
 
 import ipywidgets
 from ipywidgets import widgets
@@ -1425,15 +1429,7 @@ class MapView(widgets.DOMWidget):
         self.webmap.add_layer(item, webmap_options)
 
     def _add_layer_to_widget(self, item, options):
-        from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
-        from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
-        from arcgis.gis import Layer
-        from arcgis.gis import Item
-        from arcgis._impl.common._mixins import PropertyMap
-        from arcgis.mapping import MapImageLayer, VectorTileLayer
-        from arcgis.mapping.ogc._base import BaseOGC
-        from pandas import DataFrame
-
+        
         self._update_time_extent_if_applicable(item)
 
         if isinstance(item, Raster):
@@ -1459,9 +1455,6 @@ class MapView(widgets.DOMWidget):
                 log.warning("No 'layers' in Item: will not be added to map")
         elif isinstance(item, Layer):
             self._add_layer_to_webmap(item, options)
-            # TODO: Expand this to separate out Layer types on Python side
-            # (i.e., do what was done for ImageryLayer for all major Layers)
-            # 'No type' layer just means that we'll figure it out at JS time
             _lyr = _make_jsonable_dict(item._lyr_json)
             if ("type" in _lyr and _lyr["type"] == "MapImageLayer") and (
                 "TilesOnly" in item.properties.capabilities
@@ -1476,12 +1469,12 @@ class MapView(widgets.DOMWidget):
                 _lyr["options"] = options
             _lyr["_hashFromPython"] = self._get_hash(item)
             self._add_notype_layer(item, _lyr)
-        elif isinstance(item, DataFrame):
+        elif isinstance(item, pd.DataFrame):
             if hasattr(item, "spatial"):
                 self.add_layer(item.spatial.to_featureset())
             else:
                 raise Exception(
-                    "Could not add DataFrame to map it is not a spatially enabled DataFrame"
+                    "Could not add DataFrame to map it is not a Spatially Enabled DataFrame"
                 )
         elif isinstance(item, FeatureSet):
             fset_symbol = options["symbol"] if options and "symbol" in options else None
