@@ -1215,41 +1215,41 @@ def train_model(
                                               - YOLOV3 - The YOLOv3 approach will be used to train the model. YOLOv3 is used for object detection.
                                               - DeepLabV3 - The DeepLabV3 approach will be used to train the model. DeepLab is used for pixel classification.
                                               - FASTERRCNN - The FasterRCNN approach will be used to train the model. FasterRCNN is used for object detection.
-                                              - BDCN_EDGEDETECTOR -  The Bi-Directional Cascade Network (BDCN) architecture will be used to train the model. 
+                                              - BDCN_EDGEDETECTOR -  The Bi-Directional Cascade Network (BDCN) architecture will be used to train the model.
                                                 The BDCN Edge Detector is used for pixel classification. This approach is useful to improve edge detection for objects at different scales.
-                                              - HED_EDGEDETECTOR -  The Holistically-Nested Edge Detection (HED) architecture will be used to train the model. 
+                                              - HED_EDGEDETECTOR -  The Holistically-Nested Edge Detection (HED) architecture will be used to train the model.
                                                 The HED Edge Detector is used for pixel classification. This approach is useful to in edge and object boundary detection.
-                                              - MULTITASK_ROADEXTRACTOR -  The Multi Task Road Extractor architecture will be used to train the model. 
+                                              - MULTITASK_ROADEXTRACTOR -  The Multi Task Road Extractor architecture will be used to train the model.
                                                 The Multi Task Road Extractor is used for pixel classification. This approach is useful for road network extraction from satellite imagery.
-                                              - CONNECTNET - The ConnectNet architecture will be used to train the model. ConnectNet is used for pixel classification. 
+                                              - CONNECTNET - The ConnectNet architecture will be used to train the model. ConnectNet is used for pixel classification.
                                                 This approach is useful for road network extraction from satellite imagery.
-                                              - PIX2PIX - The Pix2Pix approach will be used to train the model. Pix2Pix is used for image-to-image translation. 
+                                              - PIX2PIX - The Pix2Pix approach will be used to train the model. Pix2Pix is used for image-to-image translation.
                                                 This approach creates a model object that generates images of one type to another. The input training data for this
                                                 model type uses the Export Tiles metadata format.
-                                              - CYCLEGAN - The CycleGAN approach will be used to train the model. CycleGAN is used for image-to-image translation. 
-                                                This approach creates a model object that generates images of one type to another. This approach is unique in that 
+                                              - CYCLEGAN - The CycleGAN approach will be used to train the model. CycleGAN is used for image-to-image translation.
+                                                This approach creates a model object that generates images of one type to another. This approach is unique in that
                                                 the images to be trained do not need to overlap. The input training data for this model type uses the CycleGAN metadata format.
-                                              - SUPERRESOLUTION - The Super-resolution approach will be used to train the model. Super-resolution is used for 
-                                                image-to-image translation. This approach creates a model object that increases the resolution and improves the 
+                                              - SUPERRESOLUTION - The Super-resolution approach will be used to train the model. Super-resolution is used for
+                                                image-to-image translation. This approach creates a model object that increases the resolution and improves the
                                                 quality of images. The input training data for this model type uses the Export Tiles metadata format.
-                                              - CHANGEDETECTOR - The Change detector approach will be used to train the model. Change detector is used for 
-                                                pixel classification. This approach creates a model object that uses two spatial-temporal images to create 
+                                              - CHANGEDETECTOR - The Change detector approach will be used to train the model. Change detector is used for
+                                                pixel classification. This approach creates a model object that uses two spatial-temporal images to create
                                                 a classified raster of the change. The input training data for this model type uses the Classified Tiles metadata format.
-                                              - IMAGECAPTIONER - The Image captioner approach will be used to train the model. Image captioner is used for 
+                                              - IMAGECAPTIONER - The Image captioner approach will be used to train the model. Image captioner is used for
                                                 image-to-text translation. This approach creates a model that generates text captions for an image.
-                                              - SIAMMASK - The Siam Mask approach will be used to train the model. Siam Mask is used for object detection in videos. 
-                                                The model is trained using frames of the video and detects the classes and bounding boxes of the objects in each frame. 
+                                              - SIAMMASK - The Siam Mask approach will be used to train the model. Siam Mask is used for object detection in videos.
+                                                The model is trained using frames of the video and detects the classes and bounding boxes of the objects in each frame.
                                                 The input training data for this model type uses the MaskRCNN metadata format.
-                                              - MMDETECTION - The MMDetection approach will be used to train the model. MMDetection is used for object detection. 
+                                              - MMDETECTION - The MMDetection approach will be used to train the model. MMDetection is used for object detection.
                                                 The supported metadata formats are PASCAL Visual Object Class rectangles and KITTI rectangles.
-                                              - MMSEGMENTATION - The MMSegmentation approach will be used to train the model. MMDetection is used for pixel classification. 
+                                              - MMSEGMENTATION - The MMSegmentation approach will be used to train the model. MMDetection is used for pixel classification.
                                                 The supported metadata format is Classified Tiles.
-                                              - DEEPSORT - The Deep Sort approach will be used to train the model. Deep Sort is used for object detection in videos. 
-                                                The model is trained using frames of the video and detects the classes and bounding boxes of the objects in each frame. 
+                                              - DEEPSORT - The Deep Sort approach will be used to train the model. Deep Sort is used for object detection in videos.
+                                                The model is trained using frames of the video and detects the classes and bounding boxes of the objects in each frame.
                                                 The input training data for this model type uses the Imagenet metadata format.
                                                 Where Siam Mask is useful while tracking an object, Deep Sort is useful in training a model to track multiple objects.
-                                              - PIX2PIXHD - The Pix2PixHD approach will be used to train the model. Pix2PixHD is used for image-to-image translation. 
-                                                This approach creates a model object that generates images of one type to another. 
+                                              - PIX2PIXHD - The Pix2PixHD approach will be used to train the model. Pix2PixHD is used for image-to-image translation.
+                                                This approach creates a model object that generates images of one type to another.
                                                 The input training data for this model type uses the Export Tiles metadata format.
                                               - MAXDEEPLAB - The MAXDEEPLAB approach will be used to train the model. It is used for Panoptic Segmentation.
     ------------------------------------     --------------------------------------------------------------------

@@ -16543,8 +16543,13 @@ class _RasterAnalysisTools(BaseAnalytics):
         if isinstance(in_folder, arcgis.gis.Datastore):
             in_folder = in_folder.datapath
         elif isinstance(in_folder, list):
-            in_folder = [folder.datapath if isinstance(folder, arcgis.gis.Datastore) else str(folder) for folder in in_folder]
-            in_folder =",".join(in_folder)
+            in_folder = [
+                folder.datapath
+                if isinstance(folder, arcgis.gis.Datastore)
+                else str(folder)
+                for folder in in_folder
+            ]
+            in_folder = ",".join(in_folder)
 
         if pretrained_model is not None:
             pretrained_model = self._set_param(pretrained_model)
