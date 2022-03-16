@@ -4997,8 +4997,13 @@ class _FormDefinition(_ItemDefinition):
                                         )
 
                 elif os.path.splitext(path)[1].lower() == ".webform":
-                    with open(os.path.join(zip_dir, path)) as file:
-                        payload = json.loads(file.read())
+                    try:
+                        with open(os.path.join(zip_dir, path)) as file:
+                            payload = json.loads(file.read())
+                    except UnicodeDecodeError:
+                        with open(os.path.join(zip_dir, path), 'rb') as file:
+                            payload = json.load(file)
+
                     file_changed = False
 
                     # Find related service mapping and replace in webform
