@@ -12894,10 +12894,7 @@ class Item(dict):
                     df = pd.DataFrame([], columns=["Date", "Usage"])
                 elif len(res["data"]):
                     df = pd.DataFrame(res["data"][0]["num"], columns=["Date", "Usage"])
-                    if hasattr(df, "Date"):
-                        df.Date = df.Date.astype(float) / 1000
-                    else:
-                        df.Date = df.astype(float) / 1000
+                    df.Date = df.Date.astype(float) / 1000
                     df.Date = df.Date.apply(lambda x: datetime.fromtimestamp(x))
                     df.Usage = df.Usage.astype(int)
                 return df
