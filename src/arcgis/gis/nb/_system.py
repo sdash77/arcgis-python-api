@@ -624,11 +624,11 @@ class SystemManager(object):
 
     # ----------------------------------------------------------------------
     @properties.setter
-    def properties(self, value) -> None:
+    def properties(self, value: dict) -> None:
         """
         See main ``properties`` property docstring
         """
-        properties: {
+        properties = {
             "dockerConnectionPort": 2375,
             "webSocketSize": 16,
             "maxContainersPerNode": 20,
@@ -776,7 +776,7 @@ class SystemManager(object):
         return self._dir
 
     # ----------------------------------------------------------------------
-    def job_details(self, job_id) -> Dict[str, Any]:
+    def job_details(self, job_id: str) -> Dict[str, Any]:
         """
         A job represents the asynchronous execution of an operation in
         ArcGIS Notebook Server. You can acquire progress information by

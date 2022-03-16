@@ -16,7 +16,7 @@ json = LazyLoader("json")
 threading = LazyLoader("threading")
 _dt = LazyLoader("datetime")
 requests = LazyLoader("requests")
-
+requests_oauthlib = LazyLoader("requests_oauthlib")
 _MSG = """
 
 You need to a security question by integer:
@@ -212,6 +212,9 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     _oauth_info = None
     _referer = None
     _no_go_token = None
+    _response_type = None
+    _client = None
+    _expiration = None
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -225,18 +228,29 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         **kwargs,
     ):
         """init"""
+        self._expiration = expiration or 20160
+        self._response_type = kwargs.pop("response_type", "token")
+        if self._response_type == "token":
+            from oauthlib.oauth2 import MobileApplicationClient
+
+            self._client = MobileApplicationClient(client_id="arcgisonline")
+
         if referer is None:
             self._referer = ""
         url = _parse_arcgis_url(url=url)
         self.legacy = legacy
         self._verify_cert = verify_cert
+        self.proxies = kwargs.pop("proxies", {})
         self._base_url = url
         self._auth_url = f"{url}/sharing/rest/oauth2/authorize"
         self._token_url = f"{url}/sharing/rest/oauth2/token"
         self._signin_url = f"{url}/sharing/oauth2/signin"
         self._reset_password_url = f"{url}/sharing/oauth2/resetPassword"
         self._update_profile_url = f"{url}/sharing/oauth2/updateUserProfile"
-        self._clientid = kwargs.get("clientid", "arcgispro")
+        if self._response_type == "token":
+            self._clientid = "arcgisonline"
+        else:
+            self._clientid = kwargs.get("clientid", "arcgispro")
         self._no_go_token = set()
         self._username = username
         self._password = password
@@ -269,7 +283,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                         False, the process failed.
         """
 
-        if self._auth_token:
+        if self._auth_token and "refresh_token" in self._auth_token:
             params = {
                 "grant_type": "suspend_session",
                 "client_id": self._clientid,  # "arcgispro",
@@ -280,12 +294,91 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             return True
         try:
             return (
-                requests.post(self._token_url, data=params, verify=self._verify_cert)
+                requests.post(
+                    self._token_url,
+                    data=params,
+                    verify=self._verify_cert,
+                    proxies=self.proxies,
+                )
                 .json()
                 .get("success", False)
             )
         except:
             return False
+
+    def _init_response_type_token(self):
+        """"""
+        import requests_oauthlib
+
+        redirect_uri = f"https://{parse_url(self._auth_url).netloc}"  # "urn:ietf:wg:oauth:2.0:oob" does not work for MobileApplicationClient
+
+        session = requests_oauthlib.OAuth2Session(
+            self._clientid,
+            client=self._client,
+            redirect_uri=redirect_uri,
+        )
+        auth_url, state = session.authorization_url(
+            self._auth_url,
+            expiration=self._expiration,
+            style="dark",
+            locale="en-US",
+        )
+        auth_response = requests.get(
+            url=auth_url,
+            proxies=self.proxies,
+            verify=self._verify_cert,
+        ).text
+        if "oauth_state" in auth_response:
+            oauth_state = auth_response.split('"oauth_state":"')[1].split('"')[0]
+        else:
+            raise Exception("Unable to generate oauth token")
+        params = {
+            "expiration": self._expiration,
+            "oauth_state": oauth_state,
+            "username": self._username,
+            "password": self._password,
+        }
+
+        response = requests.post(
+            self._signin_url,
+            data=params,
+            allow_redirects=False,
+            proxies=self.proxies,
+            verify=self._verify_cert,
+        )
+        #
+        # After authenticating, ArcGIS Online/Enterprise can prompt for a
+        # terms and conditions acceptance.
+        #
+        callback_url = response.headers["location"]
+        if callback_url.find("acceptTermsAndConditions") > -1:
+            parsed = parse_url(response.headers["location"])
+            oauth_state = parse_qs(parsed.query)["oauth_state"][0]
+
+            url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+            params = {"oauth_state": oauth_state, "acceptTermsAndConditions": True}
+            response = requests.post(
+                url,
+                params,
+                verify=self._verify_cert,
+                allow_redirects=False,
+                proxies=self.proxies,
+            )
+            callback_url = response.headers["location"]
+        self._expiration_time = _dt.datetime.now() + _dt.timedelta(seconds=1440)
+
+        # Now we extract the token from the URL to make use of it.
+        self._auth_token = session.token_from_fragment(callback_url)
+        if "expires_at" in self._auth_token:
+            self._expiration_time = _dt.datetime.fromtimestamp(
+                self._auth_token["expires_at"]
+            )
+        elif "expires" in self._auth_token:
+            self._expiration_time = _dt.datetime.now() + _dt.timedelta(
+                seconds=self._auth_token["expiration"]
+            )
+        else:
+            self._expiration_time = _dt.datetime.now() + _dt.timedelta(seconds=300)
 
     # ----------------------------------------------------------------------
     def _init_token_auth_handshake(self):
@@ -300,7 +393,9 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         )
         self._authorization_url = authorization_url
         self._state = state
-        content = requests.get(self._authorization_url, verify=self._verify_cert).text
+        content = requests.get(
+            self._authorization_url, verify=self._verify_cert, proxies=self.proxies
+        ).text
 
         pattern = self._re_expressions["step-1a"]
         if len(pattern.findall(content)) == 0:
@@ -329,6 +424,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             signin_params,
             verify=self._verify_cert,
             allow_redirects=True,
+            proxies=self.proxies,
         )
         matches = pattern.findall(signin_resp.text)
         if len(matches) > 0:
@@ -359,7 +455,11 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
             params = {"oauth_state": oauth_state, "acceptTermsAndConditions": True}
             signin_resp = requests.post(
-                url, params, verify=self._verify_cert, allow_redirects=True
+                url,
+                params,
+                verify=self._verify_cert,
+                allow_redirects=True,
+                proxies=self.proxies,
             )
             resp_text = signin_resp.text
             exp = r"<title>SUCCESS code=(.*?)</title>"
@@ -396,6 +496,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 params,
                 verify=self._verify_cert,
                 allow_redirects=True,
+                proxies=self.proxies,
             )
             self._password = new_password
             oauth_state = json.loads(pattern.findall(resp_text)[0].replace(" ", ""))[
@@ -415,6 +516,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 params,
                 verify=self._verify_cert,
                 allow_redirects=True,
+                proxies=self.proxies,
             )
             self._init_token_auth_handshake()
         else:
@@ -427,6 +529,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             code=code,
             verify=self._verify_cert,
             include_client_id=True,
+            proxies=self.proxies,
             **{"expiration": 20160},
         )
         if "expires_at" in self._auth_token:
@@ -452,7 +555,10 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                     self._refresh()
                 return self._auth_token["access_token"]
             else:
-                self._init_token_auth_handshake()
+                if self._response_type == "token":
+                    self._init_response_type_token()
+                else:
+                    self._init_token_auth_handshake()
                 return self.token
         except:
             self._auth_token = None
@@ -529,22 +635,29 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     # ----------------------------------------------------------------------
     def _refresh(self):
         """renews the token"""
-        self._auth_token = self._oauth.refresh_token(
-            token_url=self._token_url,
-            verify=self._verify_cert,
-            client_id=self._oauth.client_id,
-            expiration=20160,
-        )
-        if "expires_at" in self._auth_token:
-            self._expiration_time = _dt.datetime.fromtimestamp(
-                self._auth_token["expires_at"]
-            )
-        elif "expires" in self._auth_token:
+        if self._response_type == "token":
             self._expiration_time = _dt.datetime.now() + _dt.timedelta(
-                seconds=self._auth_token["expiration"]
+                seconds=self._expiration - 1
             )
+            self._init_response_type_token()
         else:
-            self._expiration_time = _dt.datetime.now() + _dt.timedelta(seconds=300)
+
+            self._auth_token = self._oauth.refresh_token(
+                token_url=self._token_url,
+                verify=self._verify_cert,
+                client_id=self._oauth.client_id,
+                expiration=20160,
+            )
+            if "expires_at" in self._auth_token:
+                self._expiration_time = _dt.datetime.fromtimestamp(
+                    self._auth_token["expires_at"]
+                )
+            elif "expires" in self._auth_token:
+                self._expiration_time = _dt.datetime.now() + _dt.timedelta(
+                    seconds=self._auth_token["expiration"]
+                )
+            else:
+                self._expiration_time = _dt.datetime.now() + _dt.timedelta(seconds=300)
 
 
 ###########################################################################
@@ -577,7 +690,7 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
         **kwargs,
     ) -> None:
         """init"""
-
+        self.proxies = kwargs.pop("proxies", None)
         if username is None and portal_auth is None:
             raise Exception(
                 "A portal_auth or username/password is required for GenerateToken"
@@ -587,6 +700,7 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
         self._portal_auth = portal_auth
         has_session = "session" in kwargs
         self._session = kwargs.pop("session", None) or requests.sessions.Session()
+        self.verify_cert = verify_cert
         if has_session == False:
             self._session.verify = verify_cert
             self._session.allow_redirects = True
@@ -780,7 +894,12 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
                 "expiration": 60,  # self.time_out,
                 "f": "json",
             }
-            resp = self._session.post(url=self._token_url, data=postdata)
+            resp = self._session.post(
+                url=self._token_url,
+                data=postdata,
+                verify=self.verify_cert,
+                proxies=self.proxies,
+            )
             if resp.status_code == 200:
                 data = resp.json()
                 if "error" in data:
@@ -810,7 +929,12 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
                 "request": "getToken",
                 "referer": self.referer,
             }
-            resp = self._session.post(url=self._token_url, data=postdata)
+            resp = self._session.post(
+                url=self._token_url,
+                data=postdata,
+                verify=self.verify_cert,
+                proxies=self.proxies,
+            )
             if resp.status_code == 200:
                 data = resp.json()
                 if "error" in data:

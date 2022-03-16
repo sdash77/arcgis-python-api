@@ -1,5 +1,5 @@
 import os, copy
-from typing import Dict, List, Any, Union, Iterator
+from typing import Dict, List, Any, Optional, Union, Iterator
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.geometry import Geometry
@@ -60,12 +60,12 @@ class OGCCollection:
     # ---------------------------------------------------------------------
     def query(
         self,
-        query: str = None,
+        query: Optional[str] = None,
         limit: int = 10000,
-        bbox: List[float] = None,
-        bbox_sr: int = None,
-        time_filter: str = None,
-        return_all=False,
+        bbox: Optional[List[float]] = None,
+        bbox_sr: Optional[int] = None,
+        time_filter: Optional[str] = None,
+        return_all: bool = False,
         **kwargs,
     ) -> Union[Dict[str, Any], pd.DataFrame]:
         """

@@ -1,7 +1,9 @@
 import logging as _logging
+from typing import Optional
 import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
+from arcgis.gis import GIS
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing import import_toolbox
@@ -165,32 +167,32 @@ default_attributes = {
 
 
 def generate_origin_destination_cost_matrix(
-    origins,
-    destinations,
-    travel_mode="Custom",
-    time_units="Minutes",
-    distance_units="Kilometers",
-    analysis_region=None,
-    number_of_destinations_to_find=None,
-    cutoff=None,
-    time_of_day=None,
-    time_zone_for_time_of_day="Geographically Local",
-    point_barriers=None,
-    line_barriers=None,
-    polygon_barriers=None,
-    uturn_at_junctions="Allowed Only at Intersections and Dead Ends",
-    use_hierarchy=True,
-    restrictions=None,
-    attribute_parameter_values=None,
-    impedance="Drive Time",
-    origin_destination_line_shape="None",
-    save_output_network_analysis_layer=False,
-    overrides=None,
-    time_impedance=None,
-    distance_impedance=None,
-    output_format=None,
-    gis=None,
-    future=False,
+    origins: FeatureSet,
+    destinations: FeatureSet,
+    travel_mode: str = "Custom",
+    time_units: str = "Minutes",
+    distance_units: str = "Kilometers",
+    analysis_region: Optional[str] = None,
+    number_of_destinations_to_find: Optional[int] = None,
+    cutoff: Optional[float] = None,
+    time_of_day: Optional[datetime] = None,
+    time_zone_for_time_of_day: str = "Geographically Local",
+    point_barriers: Optional[FeatureSet] = None,
+    line_barriers: Optional[FeatureSet] = None,
+    polygon_barriers: Optional[FeatureSet] = None,
+    uturn_at_junctions: str = "Allowed Only at Intersections and Dead Ends",
+    use_hierarchy: bool = True,
+    restrictions: Optional[str] = None,
+    attribute_parameter_values: Optional[FeatureSet] = None,
+    impedance: str = "Drive Time",
+    origin_destination_line_shape: str = "None",
+    save_output_network_analysis_layer: bool = False,
+    overrides: Optional[dict] = None,
+    time_impedance: Optional[str] = None,
+    distance_impedance: Optional[str] = None,
+    output_format: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
 

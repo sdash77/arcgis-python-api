@@ -318,7 +318,7 @@ class AOI(object):
 
     def get_geography_level(
         self,
-        selector: [str, pd.DataFrame] = None,
+        selector: Union[str, pd.DataFrame] = None,
         selection_field: str = "NAME",
         query_string: str = None,
         output_spatial_reference: Union[SpatialReference, dict, int] = 4326,

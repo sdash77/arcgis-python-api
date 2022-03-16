@@ -3,7 +3,8 @@ A module for managing forms in the ArcGIS platform
 """
 
 import json
-import arcgis
+from typing import Optional, Union
+from arcgis import mapping
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import Item
 from arcgis.features import FeatureLayer
@@ -73,7 +74,7 @@ class FormCollection:
             return self.forms[self._index - 1]
 
     def _refresh_forms(self, parent):
-        if isinstance(parent, arcgis.mapping.WebMap):
+        if isinstance(parent, mapping.WebMap):
             self.forms = self._get_forms_from_webmap(parent)
         elif isinstance(parent, Item):
             if parent.type != "Feature Layer Collection":
@@ -82,7 +83,12 @@ class FormCollection:
         else:
             raise ValueError("Parent item must be webmap or feature layer collection")
 
-    def get(self, item_id=None, title=None, layer_id=None):
+    def get(
+        self,
+        item_id: Optional[str] = None,
+        title: Optional[str] = None,
+        layer_id: Optional[str] = None,
+    ):
         """
         Returns the form for the first layer with a matching item_id, title, or layer_id in the webmap's
         operational layers. Pass one of the three parameters into the method to return the form.
@@ -252,7 +258,7 @@ class FormInfo:
         self._title = None
         self._description = None
 
-    def get(self, label=None):
+    def get(self, label: Optional[str] = None):
         """
         Returns a matching FormElement given a label
 
@@ -327,7 +333,7 @@ class FormInfo:
             else:
                 item_data["layers"][self._layer_data["id"]].pop("formInfo", None)
             self._parent.update(data=item_data)
-        if isinstance(self._parent, arcgis.mapping.WebMap):
+        if isinstance(self._parent, mapping.WebMap):
             if self.exists():
                 self._original_layer["formInfo"] = self.to_dict()
             else:
@@ -367,7 +373,11 @@ class FormInfo:
             except Exception:
                 continue
 
-    def add(self, element=None, index=None):
+    def add(
+        self,
+        element=None,
+        index: Optional[int] = None,
+    ):
         """
         Adds a single :class:`~arcgis.mapping.forms.FormElement` to the form. You can add to the form either by instantiating your
         own :class:`~arcgis.mapping.forms.FormFieldElement` or :class:`~arcgis.mapping.forms.FormGroupElement` and passing it into the element parameter here,
@@ -379,10 +389,6 @@ class FormInfo:
         ------------------     --------------------------------------------------------------------
         element                Optional :class:`arcgis.mapping.forms.FormFieldElement` or
                                :class:`arcgis.mapping.forms.FormGroupElement`.
-        ------------------     --------------------------------------------------------------------
-        field_name             Optional :class:`str`.
-                               An actual field name (not alias) corresponding to a field in the
-                               form's feature layer
         ------------------     --------------------------------------------------------------------
         index                  Optional :class:`int`.
                                The index where you'd like the element in the form. If not provided,
@@ -401,16 +407,16 @@ class FormInfo:
 
     def add_field(
         self,
-        field_name,
-        label,
-        description=None,
+        field_name: str,
+        label: str,
+        description: Optional[str] = None,
         visibility_expression=None,
-        domain=None,
-        editable=None,
-        hint=None,
-        input_type=None,
+        domain: Optional[dict] = None,
+        editable: Optional[bool] = None,
+        hint: Optional[str] = None,
+        input_type: Optional[Union[str, dict]] = None,
         required_expression=None,
-        index=None,
+        index: Optional[int] = None,
         **kwargs,
     ):
         """
@@ -478,11 +484,11 @@ class FormInfo:
 
     def add_group(
         self,
-        label,
-        description=None,
+        label: str,
+        description: Optional[str] = None,
         visibility_expression=None,
-        initial_state=None,
-        index=None,
+        initial_state: Optional[str] = None,
+        index: Optional[int] = None,
         **kwargs,
     ):
         """
@@ -517,7 +523,11 @@ class FormInfo:
         )
         return self.add(group_el, index=index)
 
-    def delete(self, element=None, label=None):
+    def delete(
+        self,
+        element=None,
+        label: Optional[str] = None,
+    ):
         """
         Deletes element from the form. You can use either the element param
         with a form element you get using :attr:`~arcgis.mapping.FormInfo.get()` or you can pass the label of the
@@ -547,7 +557,13 @@ class FormInfo:
         except Exception:
             return False
 
-    def move(self, element=None, label=None, destination=None, index=None):
+    def move(
+        self,
+        element=None,
+        label: Optional[str] = None,
+        destination=None,
+        index: Optional[int] = None,
+    ):
         """
         Moves a form element in the form to a new location. You can use either the element param
         with a form element you get using :attr:`~arcgis.mapping.FormInfo.get()` or you can pass the label of the
@@ -1015,7 +1031,7 @@ class FormFieldElement(FormElement):
         return self._domain
 
     @domain.setter
-    def domain(self, value):
+    def domain(self, value: dict):
         if not isinstance(value, dict):
             raise ValueError("Please pass a dict into this function")
         self._domain = value
@@ -1026,7 +1042,7 @@ class FormFieldElement(FormElement):
         return self._editable
 
     @editable.setter
-    def editable(self, value):
+    def editable(self, value: bool):
         self._editable = value
 
     @property
@@ -1071,7 +1087,7 @@ class FormFieldElement(FormElement):
         return self._input_type
 
     @input_type.setter
-    def input_type(self, value):
+    def input_type(self, value: str):
         if value in [
             "text-area",
             "text-box",
@@ -1220,12 +1236,14 @@ class FormGroupElement(FormElement):
         return self._initial_state
 
     @initial_state.setter
-    def initial_state(self, value):
+    def initial_state(self, value: str):
         if value not in ["collapsed", "expanded"]:
             raise ValueError("Value can either be collapsed or expanded")
         self._initial_state = value
 
-    def add(self, element=None, index=None):
+    def add(
+        self, element: Optional[FormFieldElement] = None, index: Optional[int] = None
+    ):
         """
         Adds a single form element to the group. You can add to the group either by instantiating
         a FormFieldElement and passing it into the element parameter here,
@@ -1236,10 +1254,6 @@ class FormGroupElement(FormElement):
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         element                Optional :class:`arcgis.mapping.forms.FormFieldElement`
-        ------------------     --------------------------------------------------------------------
-        field_name             Optional :class:`str`
-                               An actual field name (not alias) corresponding to a field in the
-                               form's feature layer
         ------------------     --------------------------------------------------------------------
         index                  Optional :class:`int`.
                                The index where you'd like the element in the group. If not provided,
@@ -1256,16 +1270,16 @@ class FormGroupElement(FormElement):
 
     def add_field(
         self,
-        field_name,
-        label,
-        description=None,
+        field_name: str,
+        label: str,
+        description: Optional[str] = None,
         visibility_expression=None,
-        domain=None,
-        editable=None,
-        hint=None,
-        input_type=None,
+        domain: Optional[dict] = None,
+        editable: Optional[bool] = None,
+        hint: Optional[str] = None,
+        input_type: Optional[Union[dict, str]] = None,
         required_expression=None,
-        index=None,
+        index: Optional[int] = None,
         **kwargs,
     ):
         """
@@ -1329,7 +1343,9 @@ class FormGroupElement(FormElement):
         )
         return self.add(element, index=index)
 
-    def delete(self, element=None, label=None):
+    def delete(
+        self, element: Optional[FormFieldElement] = None, label: Optional[str] = None
+    ):
         """
         Deletes form element from the group. You can use either the element param
         with a form element you get using `FormInfo.get()` or you can pass the label of the
@@ -1355,7 +1371,13 @@ class FormGroupElement(FormElement):
         except Exception:
             return False
 
-    def move(self, element=None, label=None, destination=None, index=None):
+    def move(
+        self,
+        element: Optional[FormFieldElement] = None,
+        label: Optional[str] = None,
+        destination=None,
+        index: Optional[int] = None,
+    ):
         """
         Moves a form element in the group to a new location. You can use either the element param
         with a form element you get using FormGroupElement.get() or you can pass the label
@@ -1390,7 +1412,7 @@ class FormGroupElement(FormElement):
             destination = self
         return destination.add(element, index=index)
 
-    def get(self, label=None):
+    def get(self, label: Optional[str] = None):
         """
         Returns a matching FormFieldElement in the group given a label
 

@@ -1962,6 +1962,9 @@ class GeoAccessor(object):
         ----------------------  ---------------------------------------------------------
         field                   Attribute field used for renderer.
         ----------------------  ---------------------------------------------------------
+        class_count             Number of classes that will be considered in the
+                                selected classification method for the class breaks.
+        ----------------------  ---------------------------------------------------------
         min_value               The minimum numeric data value needed to begin class
                                 breaks.
         ----------------------  ---------------------------------------------------------
@@ -3026,14 +3029,14 @@ class GeoAccessor(object):
             ):  # pd.datetime
                 fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
                 date_fields.append(col)
-            elif (
-                isinstance(col_val, (np.int32, np.int16, np.int8))
-                and not col in date_cols
-            ):
+            elif isinstance(col_val, (np.int16, np.int8)) and not col in date_cols:
                 fields.append(
                     {"name": col, "type": "esriFieldTypeSmallInteger", "alias": col}
                 )
-            elif isinstance(col_val, (int, np.int, np.int64)) and not col in date_cols:
+            elif (
+                isinstance(col_val, (int, np.int, np.int64, np.int32))
+                and not col in date_cols
+            ):
                 fields.append(
                     {"name": col, "type": "esriFieldTypeInteger", "alias": col}
                 )
@@ -3720,8 +3723,10 @@ class GeoAccessor(object):
                                      - equals - Indicates if the base and comparison geometries are of the same shape type and define the same set of points in the plane. This is a 2D comparison only; M and Z values are ignored.
                                      - overlaps - Indicates if the intersection of the two geometries has the same shape type as one of the input geometries and is not equivalent to either of the input geometries.
                                      - touches - Indicates if the boundaries of the geometries intersect.
-                                     - within - Indicates if the base geometry is within the comparison geometry.
-                                     - intersect - Intdicates if the base geometry has an intersection of the other geometry.
+                                     - within - Indicates if the base geometry contains the comparison geometry.
+                                     - intersect - Indicates if the base geometry has an intersection of the other geometry.
+
+                                     Note - contains and within will lead to same results when performing spatial operations.
         -------------------------    ---------------------------------------------------------
         relation                     Optional String.  The spatial relationship type.  The
                                      allowed values are: BOUNDARY, CLEMENTINI, and PROPER.

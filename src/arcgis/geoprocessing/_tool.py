@@ -20,12 +20,13 @@ from arcgis.features import (
 from arcgis.geoprocessing import LinearUnit, DataFile, RasterData
 
 from arcgis.gis import Item, _GISResource, Layer
-from arcgis.mapping import MapImageLayer
+from arcgis.auth.tools import LazyLoader
+
+mapping = LazyLoader("arcgis.mapping")
 
 from ._types import LinearUnit, DataFile, RasterData
 
 from ..features import FeatureSet
-from ..mapping import MapImageLayer
 
 try:
     from arcgis.features.geo import _is_geoenabled
@@ -105,30 +106,58 @@ def _call_generator(fnname, spec):
 
         # args, posargs = self.arguments()
 
+        inputs = dict(kwargs)
         # print("My args: ")
-        # for k, v in kwargs.items():
+        # for k, v in dict(kwargs).items():
         #    print(k + " => " + str(v))
 
-        return self._execute(kwargs)
+        return self._execute(inputs)
 
     code = call.__code__
-    new_code = types.CodeType(
-        len(spec) + 1,
-        0,
-        len(spec) + 2,
-        code.co_stacksize,
-        code.co_flags,
-        code.co_code,
-        code.co_consts,
-        code.co_names,
-        varnames,
-        code.co_filename,
-        _camelCase_to_underscore(fnname),
-        code.co_firstlineno,
-        code.co_lnotab,
-        code.co_freevars,
-        code.co_cellvars,
-    )
+
+    if hasattr(types.CodeType, "co_posonlyargcount"):  # pragma: no branch
+        """
+               rgcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,
+        |        flags, codestring, constants, names, varnames, filename, name,
+        |        firstlineno, lnotab[, freevars[, cellvars]]
+        """
+        new_code = types.CodeType(
+            len(spec) + 1,
+            0,
+            0,
+            len(spec) + 2,
+            code.co_stacksize,
+            code.co_flags,
+            code.co_code,
+            code.co_consts,
+            code.co_names,
+            varnames,
+            code.co_filename,
+            _camelCase_to_underscore(fnname),
+            code.co_firstlineno,
+            code.co_lnotab,
+            code.co_freevars,
+            cellvars=code.co_cellvars,
+        )
+    else:
+        new_code = types.CodeType(
+            len(spec) + 1,
+            0,
+            len(spec) + 2,
+            code.co_stacksize,
+            code.co_flags,
+            code.co_code,
+            code.co_consts,
+            code.co_names,
+            varnames,
+            code.co_filename,
+            _camelCase_to_underscore(fnname),
+            code.co_firstlineno,
+            code.co_lnotab,
+            code.co_freevars,
+            code.co_cellvars,
+        )
+
     """
      * co_name gives the function name
      * co_argcount is the number of positional arguments (including
@@ -302,7 +331,7 @@ def _inspect_tool(taskprops, map_as_result):
             {
                 "name": "result_layer",
                 "display_name": "Result Layer",
-                "type": MapImageLayer,
+                "type": mapping.MapImageLayer,
             }
         )
 
@@ -576,7 +605,7 @@ _log = _logging.getLogger(__name__)
 
             for task in tbx.properties.tasks:
                 # _generate_fn(task, tbx)
-                f = executor.submit(fn=_generate_fn, **{"task": task, "tbx": tbx})
+                f = executor.submit(_generate_fn, **{"task": task, "tbx": tbx})
                 source.append(f)
         for fnsrc in source:
             fn_src, choice_list, func_name = fnsrc.result()
@@ -956,7 +985,7 @@ class Toolbox(_AsyncResource):
                     {
                         "name": "result_layer",
                         "display_name": "Result Layer",
-                        "type": MapImageLayer,
+                        "type": mapping.MapImageLayer,
                     }
                 )
 
@@ -1260,7 +1289,9 @@ class Toolbox(_AsyncResource):
                     self.url.replace("/GPServer", "/MapServer") + "/jobs/" + job_id
                 )
 
-                output_dict["result_layer"] = MapImageLayer(result_layer_url, self._gis)
+                output_dict["result_layer"] = mapping.MapImageLayer(
+                    result_layer_url, self._gis
+                )
 
             num_returns = len(resp)
             if num_returns == 1:

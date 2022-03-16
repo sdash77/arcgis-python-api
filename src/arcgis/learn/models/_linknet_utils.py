@@ -299,7 +299,7 @@ def accuracy(input, *target, ignore_mapped_class=[]):
         _, total_classes, _, _ = input.shape
         keep_indices = [i for i in range(total_classes) if i not in ignore_mapped_class]
         for k in ignore_mapped_class:
-            input[:, k] = -1
+            input[:, k] = input.min() - 1
         targ_mask = isin(target, keep_indices)
         return (input.argmax(dim=1)[targ_mask] == target[targ_mask]).float().mean()
 
@@ -315,7 +315,7 @@ def miou(prediction, *target, ignore_mapped_class=[], smooth=1e-8):
 
     def fast_hist(a, b, n):
         k = (a >= 0) & (a < n)
-        return np.bincount(n * a[k].astype(int) + b[k], minlength=n ** 2).reshape(n, n)
+        return np.bincount(n * a[k].astype(int) + b[k], minlength=n**2).reshape(n, n)
 
     target = target.squeeze(1).long()
     batch_size = prediction.size(0)
@@ -351,7 +351,7 @@ def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_clas
 
     def fast_hist(a, b, n):
         k = (a >= 0) & (a < n)
-        return np.bincount(n * a[k].astype(int) + b[k], minlength=n ** 2).reshape(n, n)
+        return np.bincount(n * a[k].astype(int) + b[k], minlength=n**2).reshape(n, n)
 
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
@@ -363,7 +363,7 @@ def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_clas
             target = target[0].squeeze(1).long()
             if ignore_mapped_class != []:
                 for k in ignore_mapped_class:
-                    pred[:, k] = -1000
+                    pred[:, k] = pred.min() - 1
                 pred = pred.argmax(dim=1)
             else:
                 pred = pred.argmax(dim=1)

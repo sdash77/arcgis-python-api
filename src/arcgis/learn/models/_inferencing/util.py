@@ -310,11 +310,11 @@ def segment_image(model, images, device, predict_bg, model_info):
     output = model(normed_batch_tensor)
     ignore_mapped_class = model_info.get("ignore_mapped_class", [])
     for k in ignore_mapped_class:
-        output[:, k] = -1
+        output[:, k] = output.min() - 1
     if predict_bg:
         return output.max(dim=1)[1]
     else:
-        output[:, 0] = -1
+        output[:, 0] = output.min() - 1
         return output.max(dim=1)[1]
 
 
@@ -353,6 +353,16 @@ def remap(tensor, idx2pixel):
     return modified_tensor
 
 
+def wnet_cgan_image(model, images_a, images_b, device):
+    model = model.to(device)
+    normed_batch_tensor_a, normed_batch_tensor_b = (
+        tensor(images_a).to(device).float(),
+        tensor(images_b).to(device).float(),
+    )
+    output = model.G(normed_batch_tensor_a, normed_batch_tensor_b)
+    return output
+
+
 def pixel_classify_image(model, tiles, device, classes, predict_bg, model_info):
     class_values = [clas["Value"] for clas in model_info["Classes"]]
     is_contiguous = is_cont([0] + class_values)
@@ -376,7 +386,8 @@ def pixel_classify_image(model, tiles, device, classes, predict_bg, model_info):
 
 def pixel_classify_superres_image(model, tiles, device):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
-    img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+    tiles = tensor(tiles)
+    img_normed = norm(tiles.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
     superres_predictions = superres_image(model, img_normed, device)
     superres_predictions = (
         superres_predictions
@@ -468,6 +479,62 @@ def pixel_classify_pix2pix_image(model, tiles, device, model_info):
         )[:, :num_channel_tar, :, :]
 
     return pix2pix_predictions
+
+
+def pixel_classify_wnet_image(model, tiles, device, model_info):
+    tile_height, tile_width = tiles.shape[2], tiles.shape[3]
+
+    num_band_a = model_info.get("n_band_a", None)
+    num_band_b = model_info.get("n_band_b", None)
+    num_band_tar = model_info.get("n_band_c", None)
+
+    if num_band_a == 1 and num_band_b == 1:
+        tile_a = tiles[:, num_band_a, :, :][:, None, :, :]
+        tile_b = tiles[:, num_band_b, :, :][:, None, :, :]
+    else:
+        tile_a = tiles[:, :num_band_a, :, :]
+        tile_b = tiles[:, num_band_a:, :, :]
+
+    num_chanel = model_info.get("n_channel", None)
+
+    norm_stats = model_info.get("NormalizationStats", None)
+    norm_stats_b = model_info.get("NormalizationStats_b", None)
+
+    img_scaled_a = scale_batch(tile_a, model_info, norm_stats)
+    img_normed_a = -1 + 2 * img_scaled_a
+
+    img_scaled_b = scale_batch(tile_b, model_info, norm_stats_b)
+    img_normed_b = -1 + 2 * img_scaled_b
+
+    if img_normed_a.shape[1] < num_chanel:
+        cont = []
+        for j in range(img_normed_a.shape[0]):
+            tile = img_normed_a[j, :, :, :]
+            last_tile = np.expand_dims(tile[tile.shape[0] - 1, :, :], 0)
+            res = abs(num_chanel - tile.shape[0])
+            for i in range(res):
+                tile = np.concatenate((tile, last_tile), axis=0)
+            cont.append(tile)
+        img_normed_a = np.stack(cont, axis=0)
+
+    if img_normed_b.shape[1] < num_chanel:
+        cont = []
+        for j in range(img_normed_b.shape[0]):
+            tile = img_normed_b[j, :, :, :]
+            last_tile = np.expand_dims(tile[tile.shape[0] - 1, :, :], 0)
+            res = abs(num_chanel - tile.shape[0])
+            for i in range(res):
+                tile = np.concatenate((tile, last_tile), axis=0)
+            cont.append(tile)
+        img_normed_b = np.stack(cont, axis=0)
+
+    wnet_predictions = wnet_cgan_image(model, img_normed_a, img_normed_b, device)
+    norm_stats_c = model_info.get("NormalizationStats_c", None)
+    wnet_predictions = wnet_predictions.detach().cpu().numpy()
+    wnet_predictions = torch.tensor(
+        rescale_batch(wnet_predictions, model_info, norm_stats_c)
+    )[:, :num_band_tar, :, :]
+    return wnet_predictions
 
 
 def variable_tile_size_check(json_info, parameters):
@@ -754,12 +821,18 @@ def update_pixels_img_trans(self, tlc, shape, props, **pixelBlocks):
         prediction = pixel_classify_pix2pix_hd_image(
             self.model, patches, self.device, model_info=self.json_info
         )
-    if model_name == "CycleGAN":
+    elif model_name == "CycleGAN":
         prediction = pixel_classify_cyclegan_image(
             self.model, patches, self.device, self.direction, model_info=self.json_info
         )
-    if model_name == "Pix2Pix":
+    elif model_name == "Pix2Pix":
         prediction = pixel_classify_pix2pix_image(
+            self.model, patches, self.device, model_info=self.json_info
+        )
+    elif model_name == "SuperResolution":
+        prediction = pixel_classify_superres_image(self.model, patches, self.device)
+    elif model_name == "WNetcGAN":
+        prediction = pixel_classify_wnet_image(
             self.model, patches, self.device, model_info=self.json_info
         )
 

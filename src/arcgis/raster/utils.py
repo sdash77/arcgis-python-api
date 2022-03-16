@@ -1,7 +1,11 @@
+from typing import Optional, Union
+from arcgis.gis import GIS
 from arcgis.raster import _util
 
 
-def generate_direct_access_url(expiration=None, *, gis=None):
+def generate_direct_access_url(
+    expiration: Optional[int] = None, *, gis: Optional[GIS] = None
+):
     """
     Function to get the direct access url for user's rasterStore on ArcGIS Online.
 
@@ -23,7 +27,12 @@ def generate_direct_access_url(expiration=None, *, gis=None):
 
 
 def upload_imagery_to_agol_userstore(
-    files, direct_access_url=None, auto_renew=True, upload_properties=None, *, gis=None
+    files: Union[str, list],
+    direct_access_url: Optional[str] = None,
+    auto_renew: bool = True,
+    upload_properties: Optional[dict] = None,
+    *,
+    gis: Optional[GIS] = None
 ):
     """
     Uploads file/files to the user's rasterstore on ArcGIS Online and returns the list of urls.
@@ -31,8 +40,8 @@ def upload_imagery_to_agol_userstore(
     The list of urls can then be used with :meth:`arcgis.raster.analytics.copy_raster` or :meth:`arcgis.raster.analytics.create_image_collection`
     method to create imagery layers on ArcGIS Online.
     
-    For this functionality to work, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.8)
-    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
+    For this functionality to work, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.9)
+    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package
 
     ====================================     ====================================================================
     **Argument**                             **Description**

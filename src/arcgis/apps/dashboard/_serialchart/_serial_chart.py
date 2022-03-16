@@ -320,7 +320,7 @@ class SerialChart(_BaseWidget):
                 }
             )
         elif self._data._categories_from == "fields":
-            for category in self._category_fields:
+            for category in self._data._category_fields:
                 dataset["statisticDefinitions"].append(
                     {
                         "onStatisticField": category,
@@ -917,6 +917,7 @@ class SerialChartData(object):
             raise Exception(
                 'Invalid option, choose from "groupByValues", "features", "fields"'
             )
+        schart_data._series = []
 
         if categories_from == "features":
             schart_data._series = []

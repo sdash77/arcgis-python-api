@@ -1,7 +1,8 @@
 """
-The arcgis.realtime module provides types and functions for receiving real-time data feeds and sensor data streamed from
-the GIS to perform continuous processing and analysis. It includes support for stream layers that allow Python scripts
-to subscribe to the streamed feature data or broadcast updates or alerts.
+arcgis.realtime.StreamLayer provides types and functions for receiving real-time data feeds and sensor data streamed from
+the GIS to perform continuous processing and analysis on the streaming data. It includes support for stream layers that allow Python scripts
+to subscribe to the streamed feature data or to broadcast updates and alerts.
+
 """
 from arcgis.gis import *
 from arcgis.features import *
@@ -12,9 +13,9 @@ from urllib.parse import urlencode
 
 class StreamLayer(Layer):
     """
-    Stream layers allow Python scripts to subscribe to the feature data streamed from the GIS using the
-    GeoEvent Processor or broadcast updates or alerts. This class can be used to perform continuous processing and
-    analysis of real-time data as it's received.
+    arcgis.realtime.StreamLayer allows Python scripts to subscribe to the feature data streamed from the GIS, using ArcGIS
+    GeoEvent Server or ArcGIS Velocity, or to broadcast updates and alerts. This class can be used to perform continuous processing and
+    analysis on streaming data as it is received.
     """
 
     # autobahn, twisted, pyOpenssl, service_identity
@@ -36,7 +37,7 @@ class StreamLayer(Layer):
 
     @property
     def out_sr(self):
-        """Get/Set the spatial reference of the streamed features"""
+        """Get/Set the spatial reference of the streamed features."""
         return self._out_sr
 
     @out_sr.setter
@@ -47,7 +48,7 @@ class StreamLayer(Layer):
     def filter(self):
         """
         Get/Set property used for filtering the streamed features so they meet spatial and SQL like criteria,
-        and return the specified fields
+        and return the specified fields.
         """
         return self._filter
 
@@ -57,13 +58,13 @@ class StreamLayer(Layer):
 
     def subscribe(self, on_features, on_open=None, on_disconnect=None, on_error=None):
         """
-        Allows Python scripts to subscribe to the feature data streamed from the GIS using the
-        GeoEvent Processor. Subscribing to the streamed data can be used to perform continuous processing and analysis
-        of real-time data as it's received.
-        :param on_features: callback function that is called every time features are streamed to the client
-        :param on_open: callback function called when the connection to the streaming server is created
-        :param on_disconnect: callback function called when the connection to the streaming server is closed
-        :param on_error: callback function called if the connection recieves an error
+        Allows Python scripts to subscribe to the feature data streamed from the GIS using ArcGIS
+        GeoEvent Server or ArcGIS Velocity. Subscribing to the streamed data can be used to perform continuous processing and analysis
+        of real-time data as it is received.
+        :param on_features: callback function that is called every time features are streamed to the client.
+        :param on_open: callback function called when the connection to the streaming server is created.
+        :param on_disconnect: callback function called when the connection to the streaming server is closed.
+        :param on_error: callback function called if the connection recieves an error.
         """
         try:
             import sys

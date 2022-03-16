@@ -74,15 +74,6 @@ except ImportError as e:
         pass
 
 
-try:
-    import tensorboardX
-
-    # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
-    from fastai.callbacks.tensorboard import LearnerTensorboardWriter
-    from .._utils.tensorboard_utils import ArcGISTBCallback
-except:
-    HAS_TENSORBOARDX = False
-
 logger = logging.getLogger()
 
 # For lr computation, skip beginning and trailing values.
@@ -950,7 +941,15 @@ class ArcGISModel(object):
                 )
             kwargs.pop("save_callback_params", None)
             # If tensorboardx is installed write a log with name as timestamp
-            if tensorboard and HAS_TENSORBOARDX:
+            if tensorboard:
+                try:
+                    import tensorboardX
+
+                    # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
+                    from fastai.callbacks.tensorboard import LearnerTensorboardWriter
+                    from .._utils.tensorboard_utils import ArcGISTBCallback
+                except:
+                    raise
                 training_id = time.strftime("log_%Y-%m-%d_%H-%M-%S")
                 log_path = Path(self._data.path) / "training_log"
                 abs_path = os.path.abspath(log_path)
@@ -1145,6 +1144,7 @@ class ArcGISModel(object):
         if (
             getattr(self._data, "_dataset_type", None) == "Pix2Pix"
             or getattr(self._data, "_dataset_type", None) == "CycleGAN"
+            or getattr(self._data, "_dataset_type", None) == "WNet_cGAN"
         ):
             _emd_template["ExtractBands"] = self._data._extract_bands
             _emd_template["NormalizationStats"] = {
@@ -1162,6 +1162,22 @@ class ArcGISModel(object):
                     _emd_template["NormalizationStats"][_stat] = _emd_template[
                         "NormalizationStats"
                     ][_stat].tolist()
+            if getattr(self._data, "_dataset_type", None) == "WNet_cGAN":
+                _emd_template["NormalizationStats_b"] = {
+                    "band_min_values": self._data._band_min_values_b,
+                    "band_max_values": self._data._band_max_values_b,
+                    "band_mean_values": self._data._band_mean_values_b,
+                    "band_std_values": self._data._band_std_values_b,
+                    "scaled_min_values": self._data._scaled_min_values_b,
+                    "scaled_max_values": self._data._scaled_max_values_b,
+                    "scaled_mean_values": self._data._scaled_mean_values_b,
+                    "scaled_std_values": self._data._scaled_std_values_b,
+                }
+                for _stat in _emd_template["NormalizationStats_b"]:
+                    if _emd_template["NormalizationStats_b"][_stat] is not None:
+                        _emd_template["NormalizationStats_b"][_stat] = _emd_template[
+                            "NormalizationStats_b"
+                        ][_stat].tolist()
             if getattr(self._data, "_dataset_type", None) == "CycleGAN":
                 _emd_template["n_channel_rev"] = len(
                     _emd_template["NormalizationStats"]["band_min_values"]
@@ -1311,6 +1327,10 @@ class ArcGISModel(object):
             model_analysis = f"""
             <p><b>FID A:</b> {emd_template.get('FID_A')}</p>
             <p><b>FID B:</b> {emd_template.get('FID_B')}</p>
+        """
+        if emd_template.get("panoptic_quality"):
+            model_analysis = f"""
+            <p><b>Panoptic Quality:</b> {emd_template.get('panoptic_quality')}</p>
         """
 
         if model_analysis:
@@ -1592,7 +1612,7 @@ class ArcGISModel(object):
 
         if publish:
             self._publish_dlpk(
-                (saved_path.parent / saved_path.stem).with_suffix(".dlpk"),
+                (saved_path.parent / os.path.basename(saved_path)).with_suffix(".dlpk"),
                 gis=gis,
                 overwrite=kwargs.get("overwrite", False),
             )

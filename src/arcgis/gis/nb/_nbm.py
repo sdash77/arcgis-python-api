@@ -1,5 +1,6 @@
 import os
-from arcgis.gis import GIS
+from typing import Optional
+from arcgis.gis import GIS, Item
 from arcgis._impl.common._mixins import PropertyMap
 import concurrent.futures
 
@@ -131,11 +132,11 @@ class NotebookManager(object):
     # ----------------------------------------------------------------------
     def execute_notebook(
         self,
-        item,
-        update_portal_item=True,
-        parameters=None,
-        save_parameters=False,
-        future=False,
+        item: Item,
+        update_portal_item: bool = True,
+        parameters: Optional[list] = None,
+        save_parameters: bool = False,
+        future: bool = False,
     ):
         """
 
@@ -243,7 +244,11 @@ class NotebookManager(object):
 
     # ----------------------------------------------------------------------
     def open_notebook(
-        self, itemid, templateid=None, nb_runtimeid=None, template_nb=None
+        self,
+        itemid: str,
+        templateid: Optional[str] = None,
+        nb_runtimeid: Optional[str] = None,
+        template_nb: Optional[str] = None,
     ):
         """
 
@@ -410,21 +415,21 @@ class Runtime(object):
     # ----------------------------------------------------------------------
     def update(
         self,
-        name=None,
-        image_id=None,
-        max_cpu=None,
-        max_memory=None,
-        memory_unit=None,
-        max_swap_memory=None,
-        swap_memory_unit=None,
-        shared_memory=None,
-        docker_runtime=None,
-        shared_unit=None,
-        version=None,
-        container_type=None,
-        pull_string=None,
-        require_advanced_priv=None,
-        manifest=None,
+        name: Optional[str] = None,
+        image_id: Optional[str] = None,
+        max_cpu: Optional[float] = None,
+        max_memory: Optional[float] = None,
+        memory_unit: Optional[str] = None,
+        max_swap_memory: Optional[str] = None,
+        swap_memory_unit: Optional[str] = None,
+        shared_memory: Optional[str] = None,
+        docker_runtime: Optional[str] = None,
+        shared_unit: Optional[str] = None,
+        version: Optional[str] = None,
+        container_type: Optional[str] = None,
+        pull_string: Optional[str] = None,
+        require_advanced_priv: Optional[bool] = None,
+        manifest: Optional[str] = None,
     ):
         """
         This operation allows you to update the properties of a notebook

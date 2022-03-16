@@ -1,3 +1,7 @@
+from typing import Optional, Dict, Union, List
+
+from arcgis import GIS
+
 from ._bigdata_analytics import BigDataAnalytics
 from ._util import _Util
 import logging
@@ -7,28 +11,39 @@ _LOGGER = logging.getLogger(__name__)
 
 class BigDataAnalyticsManager:
     """
-    Used to manage Big Data Analytics
+    Used to manage big data analytic items.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    URL of the ArcGIS Velocity organization.
+    ------------------     --------------------------------------------------------------------
+    gis                    An authenticated :class:`arcigs.gis.GIS` object.
+    ==================     ====================================================================
+
     """
 
     _gis = None
     _util = None
 
-    def __init__(self, url, gis):
-        """
-        Initializer
-        :param url: Base url of Velocity.
-        :param gis: An authenticated arcigs.gis.GIS object.
-        """
+    def __init__(self, url: str, gis: GIS):
         self._gis = gis
 
         self._util = _Util(gis, url)
 
-    # ----------------------------------------------------------------------
     @property
-    def items(self):
+    def items(self) -> List[BigDataAnalytics]:
         """
-        Get all Big Data Analytics items
+        Get all big data analytic items.
+
         :return: returns a collection of all configured Big Data Analytics items
+
+        .. code-block:: python
+
+            # Get all big data analytics
+
+            all_bigdata_analytics = bigdata_analytics.items
+            all_bigdata_analytics
         """
         all_bigdata_analytics_response = self._util._get_request("analytics/bigdata")
         if (
@@ -48,12 +63,25 @@ class BigDataAnalyticsManager:
                 f"Error retrieving Big-data Analytic items. Velocity response: ${all_bigdata_analytics_response}"
             )
 
-    # ----------------------------------------------------------------------
-    def get(self, id):
+    def get(self, id) -> BigDataAnalytics:
         """
-        Get Big Data Analytics by id
-         :param id:  unique id of a big data task
-        :return: endpoint response of Big Data Analytics for the given id
+        Get big data analytic items by ID.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        id                  Unique ID of a big data analytic task.
+        ===============     ====================================================================
+
+        :return: endpoint response of Big Data Analytics for the given id and label
+
+        .. code-block:: python
+
+            # Get big data analytics by id
+            # Method: <item>.get(id)
+
+            sample_bigdata_task = bigdata_analytics.get("id")
+
         """
         bigdata_analytics_item = self._util._get("analytics/bigdata", id)
         return BigDataAnalytics(self._gis, self._util, bigdata_analytics_item)

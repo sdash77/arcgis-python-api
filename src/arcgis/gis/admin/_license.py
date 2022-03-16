@@ -3,8 +3,9 @@ Entry point to working with licensing on Portal or ArcGIS Online
 """
 from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
-from ...gis import GIS
+from ...gis import GIS, User, Item
 from ._base import BasePortalAdmin
+from typing import Union
 
 ########################################################################
 class LicenseManager(BasePortalAdmin):
@@ -56,7 +57,46 @@ class LicenseManager(BasePortalAdmin):
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def get(self, name):
+    def provisions(
+        self,
+        user: User,
+        all_available: bool = False,
+        included_expired: bool = True,
+        return_client_ids: bool = False,
+    ) -> list:
+        """
+        Allows administrators to manage a user's list of provsional Add-On Licenses.
+
+        """
+
+        if isinstance(user, User):
+            user = user.username
+        url = "%s/community/users/%s/provisionedListings" % (
+            self._gis._portal.resturl,
+            user,
+        )
+
+        params = {
+            "f": "json",
+            "returnAppClientIds": return_client_ids,
+            "returnAllProvisions": all_available,
+            "includeExpired": included_expired,
+            "start": 1,
+            "num": 100,
+        }
+        res = self._con.get(url, params)
+        provs = res["provisionedListings"]
+        while res["nextStart"] > -1:
+            params["start"] = res["nextStart"]
+            res = self._con.get(url, params)
+            provs.extend(res["provisionedListings"])
+            if res["nextStart"] == -1:
+                break
+
+        return provs
+
+    # ----------------------------------------------------------------------
+    def get(self, name: str):
         """
         Retrieves a license by it's name (title)
 
@@ -85,7 +125,7 @@ class LicenseManager(BasePortalAdmin):
         return None
 
     # ----------------------------------------------------------------------
-    def all(self):
+    def all(self) -> list:
         """
         Returns all Licenses registered with an organization
 
@@ -99,11 +139,15 @@ class LicenseManager(BasePortalAdmin):
             purchases = self.properties["purchases"]
             for purchase in purchases:
                 licenses.append(License(gis=self._gis, info=purchase))
+        if "trials" in self.properties:
+            purchases = self.properties["trials"]
+            for purchase in purchases:
+                licenses.append(License(gis=self._gis, info=purchase))
         return licenses
 
     # ----------------------------------------------------------------------
     @property
-    def bundles(self):
+    def bundles(self) -> list:
         """
         Returns a list of Application Bundles for an Organization
 
@@ -138,7 +182,7 @@ class LicenseManager(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @property
-    def offline_pro(self):
+    def offline_pro(self) -> bool:
         """
         Administrators can get/set the disconnect settings for the ArcGIS Pro licensing.
         A value of True means that a user can check out a license from the enterprise
@@ -161,7 +205,7 @@ class LicenseManager(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @offline_pro.setter
-    def offline_pro(self, value):
+    def offline_pro(self, value: bool):
         """
         See main ``offline_pro`` property docstring
         """
@@ -290,7 +334,7 @@ class Bundle(object):
         return "<AppBundle: %s>" % self.properties["name"]
 
     # ----------------------------------------------------------------------
-    def assign(self, users):
+    def assign(self, users: list):
         """
         Assigns the current application bundle to a list of users
 
@@ -326,7 +370,7 @@ class Bundle(object):
         return res
 
     # ----------------------------------------------------------------------
-    def revoke(self, users):
+    def revoke(self, users: list):
         """
         Revokes the current application bundle to a list of users
 
@@ -362,7 +406,7 @@ class Bundle(object):
         return res
 
 
-########################################################################
+###########################################################################
 class License(object):
     """
     Represents a single entitlement for a given organization.
@@ -490,7 +534,7 @@ class License(object):
         return user_entitlements
 
     # ----------------------------------------------------------------------
-    def check(self, user) -> list:
+    def check(self, user: str) -> list:
         """
         Checks if the entitlement is assigned or not.
 
@@ -528,7 +572,7 @@ class License(object):
         return []
 
     # ----------------------------------------------------------------------
-    def user_entitlement(self, username):
+    def user_entitlement(self, username: str):
         """
         checks if a user has the entitlement assigned to them
 
@@ -566,7 +610,13 @@ class License(object):
         return {}
 
     # ----------------------------------------------------------------------
-    def assign(self, username, entitlements, suppress_email=True):
+    def assign(
+        self,
+        username: str,
+        entitlements: list,
+        suppress_email: bool = True,
+        overwrite: bool = True,
+    ):
         """
         grants a user an entitlement.
 
@@ -576,12 +626,15 @@ class License(object):
         username            required string, the name of the user you wish to
                             assign an entitlement to.
         ---------------     ----------------------------------------------------
-        entitlments         required list, a list of entitlements values
+        entitlements        required list, a list of entitlements values
         ---------------     ----------------------------------------------------
-        suppress_email       optional boolean, if True, the org will not notify
+        suppress_email      optional boolean, if True, the org will not notify
                             a user that their entitlements has changed (default)
                             If False, the org will send an email notifying a
                             user that their entitlements have changed.
+        ---------------     ----------------------------------------------------
+        overwrite           optional boolean, if True, existing entitlements
+                            for the user are dropped
         ===============     ====================================================
 
         :return:
@@ -590,6 +643,15 @@ class License(object):
         item_id = self.properties["listing"]["itemId"]
         if isinstance(entitlements, str):
             entitlements = entitlements.split(",")
+
+        if not overwrite:
+            existing = self.user_entitlement(username)
+            if existing and "entitlements" in existing:
+                entitlement_set = set(existing["entitlements"])
+                for e in entitlements:
+                    entitlement_set.add(e)
+                entitlements = list(entitlement_set)
+
         params = {
             "f": "json",
             "userEntitlements": {"users": [username], "entitlements": entitlements},
@@ -606,7 +668,7 @@ class License(object):
         return res
 
     # ----------------------------------------------------------------------
-    def revoke(self, username, entitlements, suppress_email=True):
+    def revoke(self, username: str, entitlements: list, suppress_email: bool = True):
         """
         removes a specific license from a given entitlement
 

@@ -221,8 +221,9 @@ class CycleGAN(nn.Module):
         fake_A, fake_B = self.G_A(real_B), self.G_B(real_A)
         if self.arcgis_results:
             return torch.cat([fake_A[:, None], fake_B[:, None]], 1)
-        idt_A, idt_B = self.G_A(real_A), self.G_B(
-            real_B
+        idt_A, idt_B = (
+            self.G_A(real_A),
+            self.G_B(real_B),
         )  # Needed for the identity loss during training.
         return [fake_A, fake_B, idt_A, idt_B]
 

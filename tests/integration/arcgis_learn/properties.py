@@ -1,11 +1,11 @@
 import os
 from fastai.vision.transform import rotate, brightness, contrast
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from arcgis.learn import (
     MLModel,
     FasterRCNN,
     SuperResolution,
-    EntityRecognizer,
     PointCNN,
     SingleShotDetector,
     UnetClassifier,
@@ -30,10 +30,11 @@ from arcgis.learn import (
     DeepSort,
     MMSegmentation,
     MMDetection,
-    AutoML, MLModel
+    AutoML,
+    MLModel,
 )
 import json
-from arcgis.learn.text import SequenceToSequence
+from arcgis.learn.text import EntityRecognizer, SequenceToSequence
 
 if os.environ["run_nightly"] == "1":
     data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_regression"
@@ -1134,16 +1135,17 @@ data = {
         "model": DeepSort,
         "model_test": "deepsort_test",
         "prepare_data": {
-            "path": os.path.join(
-                data_folder, "deepsort_data"
+            "path": os.path.join(data_folder, "deepsort_data"),
+            "batch_size": 10,
+            "transforms": (
+                [
+                    rotate(degrees=30, p=0.5),
+                    brightness(change=(0.4, 0.6)),
+                    contrast(scale=(0.75, 1.5)),
+                ],
+                [],
             ),
-            "batch_size":10,
-            "transforms": ([
-                rotate(degrees=30, p=0.5),
-                brightness(change=(0.4, 0.6)),
-                contrast(scale=(0.75, 1.5))
-            ], []),
-            "resize_to": (128,64)
+            "resize_to": (128, 64),
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1163,10 +1165,8 @@ data = {
         "model": MMSegmentation,
         "model_test": "mmsegmentation_test",
         "prepare_data": {
-            "path": os.path.join(
-                data_folder, "mmsegmentation_data"
-            ),
-            "batch_size":2
+            "path": os.path.join(data_folder, "mmsegmentation_data"),
+            "batch_size": 2,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1186,10 +1186,8 @@ data = {
         "model": MMDetection,
         "model_test": "mmdetection_test",
         "prepare_data": {
-            "path": os.path.join(
-                data_folder, "mmdetection_data"
-            ),
-            "batch_size":2
+            "path": os.path.join(data_folder, "mmdetection_data"),
+            "batch_size": 2,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1209,9 +1207,7 @@ data = {
         "model": MLModel,
         "model_test": "automl_test",
         "prepare_tabular_data": {
-            "path": os.path.join(
-                data_folder, "automl_data", "automl_data.csv"
-            )
+            "path": os.path.join(data_folder, "automl_data", "automl_data.csv")
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1231,9 +1227,7 @@ data = {
         "model": AutoML,
         "model_test": "automl_test",
         "prepare_tabular_data": {
-            "path": os.path.join(
-                data_folder, "automl_data", "automl_data.csv"
-            )
+            "path": os.path.join(data_folder, "automl_data", "automl_data.csv")
         },
         "prepare_data_ms": False,
         "should_test": True,

@@ -41,7 +41,7 @@ class SecurityManager(object):
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def _modify_server_role(self, role):
+    def _modify_server_role(self, role: str):
         """
         Allows for the modification of the server role from federated to standalone.
 

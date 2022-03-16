@@ -1,6 +1,6 @@
 {
   "name": "arcgis-map-ipywidget",
-  "version": "1.9.1",
+  "version": "2.0.1",
   "description": "The map widget for the ArcGIS API for Python",
   "homepage": "https://github.com/Esri/arcgis-python-api",
   "author": "esri",

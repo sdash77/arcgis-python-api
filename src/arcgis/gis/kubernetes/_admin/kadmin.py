@@ -1,3 +1,4 @@
+from typing import Optional
 from urllib.request import HTTPError
 from arcgis._impl.common._isd import InsensitiveDict
 from ._base import _BaseKube
@@ -7,6 +8,7 @@ from ._overview import Overview
 from ._usage import UsageStatistics
 from ._mode import Mode
 from ._system import SystemManager
+from ._jobs import JobManager
 from arcgis.gis.admin._license import LicenseManager
 from arcgis.gis import Item, User
 from arcgis.apps.tracker._location_tracking import LocationTrackingManager
@@ -36,6 +38,9 @@ class KubernetesAdmin(_BaseKube):
     _properties = None
     _organizations = None
     _category_schema = None
+    _jobs = None
+    _collaborations = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """class initializer"""
@@ -138,6 +143,21 @@ class KubernetesAdmin(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
+    def jobs(self) -> JobManager:
+        """
+        This resource is a collection of the jobs (asynchronous operations)
+        created in your deployment. When operations that support asynchronous
+        executions are run with the async option enabled, a new job entry is
+        created that can be queried for its current status and messages.
+
+        """
+        if self._jobs is None:
+            url = self._url + "/jobs"
+            self._jobs = JobManager(url=url, gis=self._gis)
+        return self._jobs
+
+    # ----------------------------------------------------------------------
+    @property
     def license(self) -> LicenseManager:
         """
         provides a set of tools to access and manage user licenses and
@@ -174,10 +194,10 @@ class KubernetesAdmin(_BaseKube):
     # ----------------------------------------------------------------------
     def scheduled_tasks(
         self,
-        item: Item = None,
-        active: bool = None,
-        user: User = None,
-        types: str = None,
+        item: Optional[Item] = None,
+        active: Optional[bool] = None,
+        user: Optional[User] = None,
+        types: Optional[str] = None,
     ):
         """
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
@@ -316,6 +336,19 @@ class KubernetesAdmin(_BaseKube):
             url = self._url + "/security"
             self._security = KubeSecurity(url=url, gis=self._gis)
         return self._security
+
+    # ----------------------------------------------------------------------
+    @property
+    def collaborations(self):
+        """
+        The collaborations resource lists all collaborations in which a
+        portal participates
+        """
+        if self._collaborations is None:
+            from arcgis.gis.admin._collaboration import CollaborationManager
+
+            self._collaborations = CollaborationManager(gis=self._gis)
+        return self._collaborations
 
     # ----------------------------------------------------------------------
     @property

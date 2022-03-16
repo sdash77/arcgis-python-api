@@ -1,6 +1,7 @@
 """
 Controls the local portal's security settings
 """
+from typing import Optional
 from .._impl._con import Connection
 from .. import GIS
 from ._base import BasePortalAdmin
@@ -157,7 +158,7 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @tokens.setter
-    def tokens(self, value):
+    def tokens(self, value: str):
         """
         See main ``tokens`` property docsring
         """
@@ -247,7 +248,7 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @config.setter
-    def config(self, value):
+    def config(self, value: dict):
         """
         See main ``config`` property docstring
         """
@@ -256,7 +257,9 @@ class Security(BasePortalAdmin):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def update_identity_store(self, user_config=None, group_config=None):
+    def update_identity_store(
+        self, user_config: Optional[dict] = None, group_config: Optional[dict] = None
+    ):
         """
         You can use this operation to change the identity provider and
         group store configuration in your portal. When Portal for ArcGIS is
@@ -299,7 +302,9 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @property
-    def test_identity_store(self, user_config=None, group_config=None):
+    def test_identity_store(
+        self, user_config: Optional[dict] = None, group_config: Optional[dict] = None
+    ):
         """
         This operation can be used to test the connection to a user or
         group store.
@@ -375,7 +380,7 @@ class OAuth(BasePortalAdmin):
             self._init(self._gis)
 
     # ----------------------------------------------------------------------
-    def update(self, current_id, new_id):
+    def update(self, current_id: str, new_id: str):
         """
         When new applications are registered with Portal for ArcGIS, a new
         client ID is generated for the application. This allows the
@@ -462,7 +467,7 @@ class SSLCertificates(BasePortalAdmin):
         self._init()
 
     # ----------------------------------------------------------------------
-    def update(self, alias, protocols, cipher_suites):
+    def update(self, alias: str, protocols: str, cipher_suites: str):
         """
         Use this operation to configure the web server certificate, SSL
         protocols, and cipher suites used by the portal.
@@ -507,18 +512,18 @@ class SSLCertificates(BasePortalAdmin):
     # ----------------------------------------------------------------------
     def generate(
         self,
-        alias,
-        common_name,
-        organization,
-        key_algorithm="RSA",
-        validity=90,
-        key_size=2048,
-        signature_algorithm="SHA256withRSA",
-        unit="",
-        city="",
-        state="",
-        country_code="",
-        alt_name="",
+        alias: str,
+        common_name: str,
+        organization: str,
+        key_algorithm: str = "RSA",
+        validity: int = 90,
+        key_size: int = 2048,
+        signature_algorithm: str = "SHA256withRSA",
+        unit: str = "",
+        city: str = "",
+        state: str = "",
+        country_code: str = "",
+        alt_name: str = "",
     ):
         """
         Use this operation to create a self-signed certificate or as a
@@ -595,7 +600,7 @@ class SSLCertificates(BasePortalAdmin):
             return False
 
     # ----------------------------------------------------------------------
-    def import_certificate(self, certificate, alias, norestart=False):
+    def import_certificate(self, certificate: str, alias: str, norestart: bool = False):
         """
         This operation imports a certificate authority's (CA) root and
         intermediate certificates into the keystore.
@@ -664,7 +669,7 @@ class SSLCertificates(BasePortalAdmin):
         return True
 
     # ----------------------------------------------------------------------
-    def import_server_certificate(self, alias, password, certificate):
+    def import_server_certificate(self, alias: str, password: str, certificate: str):
         """
         This operation imports an existing server certificate, stored
         in the PKCS #12 format, into the keystore. If the certificate
@@ -694,7 +699,7 @@ class SSLCertificates(BasePortalAdmin):
             return False
 
     # ----------------------------------------------------------------------
-    def list(self, force=False):
+    def list(self, force: bool = False):
         """
         List of SSL Certificates as represented in the Portal Admin API
 
@@ -743,7 +748,7 @@ class SSLCertificates(BasePortalAdmin):
         return self._certs
 
     # ----------------------------------------------------------------------
-    def get(self, alias_name):
+    def get(self, alias_name: str):
         """
         gets a single SSLCertificate object by the alias name
 
@@ -835,7 +840,7 @@ class SSLCertificate(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
-    def export(self, out_path=None):
+    def export(self, out_path: Optional[str] = None):
         """
         This operation downloads an SSL certificate. The file returned by
         the server is an X.509 certificate. The downloaded certificate can
@@ -877,7 +882,7 @@ class SSLCertificate(BasePortalAdmin):
             return False
 
     # ----------------------------------------------------------------------
-    def import_signed_certificate(self, file_path):
+    def import_signed_certificate(self, file_path: str):
         """
         imports a certificate authority (CA) signed SSL certificate into
         the key store.
@@ -923,7 +928,7 @@ class EnterpriseGroups(BasePortalAdmin):
             self._init(self._gis)
 
     # ----------------------------------------------------------------------
-    def search(self, query="", max_count=255):
+    def search(self, query: str = "", max_count: int = 255):
         """
         This operation searches groups in the configured enterprise group
         store. You can narrow down the search using the filter parameter.
@@ -944,7 +949,7 @@ class EnterpriseGroups(BasePortalAdmin):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def refresh_groups(self, groups):
+    def refresh_groups(self, groups: str):
         """
         This operation iterates over every enterprise account configured in
         the portal and determines if the user account is a part of the
@@ -970,7 +975,7 @@ class EnterpriseGroups(BasePortalAdmin):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def get_group_users(self, name, query="", max_count=255):
+    def get_group_users(self, name: str, query: str = "", max_count: int = 255):
         """
         This operation returns the users that are currently assigned to the
         enterprise group within the enterprise user/group store. You can
@@ -999,7 +1004,7 @@ class EnterpriseGroups(BasePortalAdmin):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def get_user_groups(self, username, query="", max_count=255):
+    def get_user_groups(self, username: str, query: str = "", max_count: int = 255):
         """
         This operation lists the groups assigned to a user account in the
         configured enterprise group store.
@@ -1056,17 +1061,17 @@ class EnterpriseUsers(BasePortalAdmin):
     # ----------------------------------------------------------------------
     def create(
         self,
-        username,
-        password,
-        first_name,
-        last_name,
-        email,
-        role="org_user",
-        level=2,
-        provider="arcgis",
-        idp_username=None,
-        description=None,
-        user_license=None,
+        username: str,
+        password: str,
+        first_name: str,
+        last_name: str,
+        email: str,
+        role: str = "org_user",
+        level: int = 2,
+        provider: str = "arcgis",
+        idp_username: Optional[str] = None,
+        description: Optional[str] = None,
+        user_license: Optional[str] = None,
     ):
         """
         This operation is used to pre-create built-in or enterprise
@@ -1157,7 +1162,7 @@ class EnterpriseUsers(BasePortalAdmin):
         return res["status"] == "success"
 
     # ----------------------------------------------------------------------
-    def get(self, username):
+    def get(self, username: str):
         """
         This operation returns the description, full name, and email
         address for a single user in the enterprise identity (user) store
@@ -1181,7 +1186,7 @@ class EnterpriseUsers(BasePortalAdmin):
         return self._con.post(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def update(self, username, idp_username):
+    def update(self, username: str, idp_username: str):
         """
         This operation allows an administrator to update the idp_username
         for an enterprise user in the portal. This is used when migrating
@@ -1209,7 +1214,7 @@ class EnterpriseUsers(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
-    def search(self, query="", max_count=255):
+    def search(self, query: str = "", max_count: int = 255):
         """
         This operation searches users in the configured enterprise user
         store. You can narrow down the search using the filter parameter.
@@ -1230,7 +1235,7 @@ class EnterpriseUsers(BasePortalAdmin):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def refresh_users(self, users):
+    def refresh_users(self, users: str):
         """
         This operation iterates over every enterprise group configured in
         the portal and determines if the input user accounts belong to any
