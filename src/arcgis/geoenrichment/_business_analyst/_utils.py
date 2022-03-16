@@ -743,7 +743,6 @@ def add_proximity_to_enrich_feature_list(
 # asynchronous function support section - solution located on StackOverflow
 # https://stackoverflow.com/questions/55409641/asyncio-run-cannot-be-called-from-a-running-event-loop
 class RunThread(threading.Thread):
-
     def __init__(self, func, args, kwargs):
         self.func = func
         self.args = args
