@@ -12617,50 +12617,118 @@ class Item(dict):
              item.update(description ="aggregated US hurricane data", title = "US Hurricane Data",
                              tags = "Hurricanes, USA, Natural Disasters")
         """
-        # owner = self._gis.users.get(self.owner)
-        owner = self._user_id
-        # if hasattr(owner, 'id') and \
-        #   owner.id != 'null':
-        #    owner = owner.id
-        # else:
-        #    owner = owner.username
-        try:
-            folder = self.ownerFolder
-        except:
-            folder = None
+        if (
+            data
+            and isinstance(data, str)
+            and os.path.isfile(data)
+            and os.stat(data).st_size > int(2.5e7)
+        ):
+            owner = self._user_id
 
-        if item_properties:
-            large_thumbnail = item_properties.pop("largeThumbnail", None)
-        else:
-            large_thumbnail = None
+            try:
+                folder = self.ownerFolder
+            except:
+                folder = None
 
-        if item_properties is not None:
-            if "tags" in item_properties:
-                if type(item_properties["tags"]) is list:
-                    item_properties["tags"] = ",".join(item_properties["tags"])
+            if item_properties:
+                large_thumbnail = item_properties.pop("largeThumbnail", None)
+            else:
+                large_thumbnail = None
 
-        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            if item_properties is not None:
+                if "tags" in item_properties:
+                    if type(item_properties["tags"]) is list:
+                        item_properties["tags"] = ",".join(item_properties["tags"])
+
+            if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+                if item_properties is None:
+                    item_properties = {}
+                if not "type" in item_properties:
+                    item_properties["type"] = self.type
+                if not "fileName" in item_properties:
+                    fileName = self.name
+                    item_properties["fileName"] = fileName
+            # update everything but the data
+            ret = self._portal.update_item(
+                self.itemid,
+                item_properties,
+                None,
+                thumbnail,
+                metadata,
+                owner,
+                folder,
+                large_thumbnail,
+            )
+            # update the data by part:
+            params = {
+                "f": "json",
+                "multipart": True,
+                "async": True,
+                "filename": os.path.basename(data),
+            }
+            url = f"{self._gis._portal.resturl}content/users/{self.owner}"
+            if folder:
+                url += "/" + folder
+            url += "/items/" + self.itemid + "/update"
+            res = self._gis._con.post(url, params)
             if item_properties is None:
-                item_properties = {}
-            if not "type" in item_properties:
+                item_properties = {"type": self.type}
+            elif not "type" in item_properties:
                 item_properties["type"] = self.type
-            if not "fileName" in item_properties:
-                fileName = self.name
-                item_properties["fileName"] = fileName
+            status = self._gis.content._add_by_part(
+                file_path=data,
+                itemid=self.itemid,
+                item_properties=item_properties,
+                size=int(3.5e7),
+                owner=self.owner,
+                folder=folder,
+            )
+            if status == "completed":
+                self._hydrate()
+            elif ret:
+                self._hydrate()
+            return ret
+        else:
 
-        ret = self._portal.update_item(
-            self.itemid,
-            item_properties,
-            data,
-            thumbnail,
-            metadata,
-            owner,
-            folder,
-            large_thumbnail,
-        )
-        if ret:
-            self._hydrate()
-        return ret
+            owner = self._user_id
+
+            try:
+                folder = self.ownerFolder
+            except:
+                folder = None
+
+            if item_properties:
+                large_thumbnail = item_properties.pop("largeThumbnail", None)
+            else:
+                large_thumbnail = None
+
+            if item_properties is not None:
+                if "tags" in item_properties:
+                    if type(item_properties["tags"]) is list:
+                        item_properties["tags"] = ",".join(item_properties["tags"])
+
+            if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+                if item_properties is None:
+                    item_properties = {}
+                if not "type" in item_properties:
+                    item_properties["type"] = self.type
+                if not "fileName" in item_properties:
+                    fileName = self.name
+                    item_properties["fileName"] = fileName
+
+            ret = self._portal.update_item(
+                self.itemid,
+                item_properties,
+                data,
+                thumbnail,
+                metadata,
+                owner,
+                folder,
+                large_thumbnail,
+            )
+            if ret:
+                self._hydrate()
+            return ret
 
     @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range: str = "7D", as_df: bool = True):
