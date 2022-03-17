@@ -15,12 +15,11 @@ import datetime as dt
 import dateutil.parser
 import tempfile
 
-from arcgis.features import FeatureSet, FeatureCollection, FeatureLayer
+from arcgis.geometry import Point, Polygon, Polyline, MultiPoint, Geometry
+from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
 from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
 from arcgis.gis import Layer
 from arcgis.gis import Item
-from arcgis.mapping import MapImageLayer, VectorTileLayer
-from arcgis.mapping.ogc._base import BaseOGC
 
 import ipywidgets
 from ipywidgets import widgets
@@ -91,14 +90,6 @@ def _flatten_list(*unpacked_list):
 
 
 def _get_extent(item):
-    from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
-    from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
-    from arcgis.gis import Layer
-    from arcgis.gis import Item
-    from arcgis._impl.common._mixins import PropertyMap
-    from arcgis.mapping import MapImageLayer, VectorTileLayer
-    from pandas import DataFrame
-
     if isinstance(item, Raster):
         if isinstance(item._engine_obj, _ImageServerRaster):
             item = item._engine_obj
@@ -108,7 +99,7 @@ def _get_extent(item):
         return list(map(_get_extent, item.layers))
     elif isinstance(item, list):
         return list(map(_get_extent, item))
-    elif isinstance(item, DataFrame):
+    elif isinstance(item, pd.DataFrame):
         return _get_extent_of_dataframe(item)
     elif isinstance(item, FeatureSet):
         return _get_extent(item.sdf)
@@ -1291,7 +1282,6 @@ class MapView(widgets.DOMWidget):
             return is_good_range(conn.code)
 
     def _check_if_webmap(self, item):
-        from arcgis.gis import Item
         from arcgis.mapping import WebMap
 
         if isinstance(item, Item) and (item.type.lower() == "web map"):
@@ -1302,7 +1292,6 @@ class MapView(widgets.DOMWidget):
                 self.extent = item.item.extent
 
     def _check_if_webscene(self, item):
-        from arcgis.gis import Item
 
         if isinstance(item, Item):
             if item.type.lower() == "web scene":
@@ -1444,7 +1433,9 @@ class MapView(widgets.DOMWidget):
         self.webmap.add_layer(item, webmap_options)
 
     def _add_layer_to_widget(self, item, options):
-        
+        from arcgis.mapping import MapImageLayer, VectorTileLayer
+        from arcgis.mapping.ogc._base import BaseOGC
+
         self._update_time_extent_if_applicable(item)
 
         if isinstance(item, Raster):
@@ -1573,7 +1564,6 @@ class MapView(widgets.DOMWidget):
         # Remove everything if the user didn't specify. Then, look up the hash
         # for each layer, remove it from the python side, trigger the removal
         # from the JS side
-        from arcgis.raster import Raster
 
         output_bool = True
         if layers is None:
@@ -1610,11 +1600,6 @@ class MapView(widgets.DOMWidget):
         'layer', or anything, attempt to return a list of of 'layer' types
         that would exist in self.layers
         """
-        from arcgis.features import FeatureSet, Feature, FeatureCollection
-        from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
-        from arcgis.gis import Layer
-        from arcgis.gis import Item
-        from arcgis._impl.common._mixins import PropertyMap
         from arcgis.mapping.ogc._base import BaseOGC
 
         output_layers = []
@@ -1674,8 +1659,6 @@ class MapView(widgets.DOMWidget):
         if self._is_hashable(item):
             return str(hash(item))
         else:
-            from arcgis.raster import Raster, ImageryLayer
-
             if isinstance(item, dict):
                 return str(hash(frozenset(item)))
             elif is_numpy_array(item):
@@ -1878,9 +1861,6 @@ class MapView(widgets.DOMWidget):
                 index += 1
 
     def _check_for_drawn_layers(self):
-        from arcgis.geometry import Point, Polygon, Polyline, MultiPoint, Geometry
-        from arcgis.features import FeatureSet, Feature, FeatureCollection
-
         for layer in self._readonly_webmap_from_js["layers"]:
             if ("graphics" in layer) and (len(layer["graphics"]) > 0):
                 for graphic in layer["graphics"]:
@@ -1915,8 +1895,6 @@ class MapView(widgets.DOMWidget):
                         )
 
     def _check_if_graphic_already_saved(self, geom):
-        from arcgis.geometry import Geometry
-
         for layer in self.webmap.layers:
             for fset in layer["featureCollection"]["layers"]:
                 for feat in fset["featureSet"]["features"]:
@@ -2211,11 +2189,6 @@ class MapView(widgets.DOMWidget):
             <Map Widget Displayed with the drawn Polygons>
 
         """
-        from arcgis.features import FeatureSet, Feature, FeatureCollection
-        from arcgis.raster import ImageryLayer
-        from arcgis.gis import Layer
-        from arcgis.gis import Item
-        from arcgis._impl.common._mixins import PropertyMap
 
         title = (
             attributes["title"]
