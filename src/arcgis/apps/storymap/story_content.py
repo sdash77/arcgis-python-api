@@ -269,6 +269,7 @@ class Image(object):
         # Check if new_image is url or path
         if _parse.urlparse(new_image).scheme == "https":
             # New image is a Url
+            self._url = True
             # Update the height and width for the image
             data = requests.get(new_image).content
             im = _Image.open(_io.BytesIO(data))
@@ -299,6 +300,7 @@ class Image(object):
             ] = "uri"
         else:
             # Update the height and width for the image
+            self._url = False
             im = _Image.open(new_image)
             w, h = im.size
             self._story._properties["resources"][self.resource_node]["data"][
@@ -309,9 +311,14 @@ class Image(object):
             ] = w
 
             # Update resource dictionary
-            resource_id = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["resourceId"]
+            resource_id = (
+                self._story._properties["resources"][self.resource_node]["data"][
+                    "resourceId"
+                ]
+                if "resourceId"
+                in self._story._properties["resources"][self.resource_node]["data"]
+                else None
+            )
             # Update where file path is held
             self._story._properties["resources"][self.resource_node]["data"][
                 "resourceId"
@@ -329,7 +336,8 @@ class Image(object):
                 "provider"
             ] = "item-resource"
             # Update the resource by removing old and adding new
-            self._story._remove_resource(resource_id)
+            if resource_id:
+                self._story._remove_resource(resource_id)
             self._story._add_resource(new_image)
         # Set new path
         self._path = new_image
