@@ -655,9 +655,15 @@ class Connection(object):
         ignore_error_key              optional Boolean. The default is False. If true, JSON will be returned and no exception is raised when 'error' is present in the response
         ---------------------------   -----------------------------------------------------
         return_raw_response           optional Boolean. Returns the requests' Response object.
+        ---------------------------   -----------------------------------------------------
+        allow_redirects               Optional Boolean. Does not allow the call to follow the 3xx status codes. The default is True
+        ---------------------------   -----------------------------------------------------
+        drop_auth                     Optional Boolean. Drop this when auth handlers cause issues. The default is False
         ===========================   =====================================================
         """
+        drop_auth = kwargs.pop("drop_auth", False)
         ignore_error_key = kwargs.pop("ignore_error_key", False)
+        allow_redirects = kwargs.pop("allow_redirects", True)
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
@@ -698,10 +704,25 @@ class Connection(object):
                 cert = (self._cert_file, self._key_file)
             else:
                 cert = None
-
-            resp = self._session.get(
-                url=url, params=params, cert=cert, verify=self._verify_cert
-            )
+            if self._session.auth and drop_auth:
+                auth = self._session.auth
+                self._session.auth = None
+                resp = self._session.get(
+                    url=url,
+                    params=params,
+                    cert=cert,
+                    verify=self._verify_cert,
+                    allow_redirects=allow_redirects,
+                )
+                self._session.auth = auth
+            else:
+                resp = self._session.get(
+                    url=url,
+                    params=params,
+                    cert=cert,
+                    verify=self._verify_cert,
+                    allow_redirects=allow_redirects,
+                )
 
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
@@ -947,12 +968,18 @@ class Connection(object):
         timeout                       optional Integer. Timeout in seconds
         ---------------------------   -----------------------------------------------------
         return_raw_response           Optional Boolean. If True, returns the requests.Response object.
+        ---------------------------   -----------------------------------------------------
+        allow_redirects               Optional Boolean. Does not allow the call to follow the 3xx status codes. The default is True
+        ---------------------------   -----------------------------------------------------
+        drop_auth                     Optional Boolean. Drop this when auth handlers cause issues. The default is False
         ===========================   =====================================================
 
         :returns: data returned from the URL call.
         """
         import io
 
+        drop_auth = kwargs.pop("drop_auth", False)
+        allow_redirects = kwargs.pop("allow_redirects", True)
         timeout = kwargs.pop("timeout", self._timeout)
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
@@ -1038,15 +1065,29 @@ class Connection(object):
             # https://stackoverflow.com/a/12385661
             params.update(fields)
             mp_encoder = MultipartEncoder(fields=params)
+            if self._session.auth and drop_auth:
+                auth = self._session.auth
+                self._session.auth
+            else:
+                auth = None
             if post_json:  # edge case workflow
                 if timeout:
 
                     resp = self._session.post(
-                        url=url, json=params, cert=cert, files=files, timeout=timeout
+                        url=url,
+                        json=params,
+                        cert=cert,
+                        files=files,
+                        allow_redirects=allow_redirects,
+                        timeout=timeout,
                     )
                 else:
                     resp = self._session.post(
-                        url=url, json=params, cert=cert, files=files
+                        url=url,
+                        json=params,
+                        cert=cert,
+                        allow_redirects=allow_redirects,
+                        files=files,
                     )
             else:
                 # data=mp_encoder
@@ -1055,6 +1096,7 @@ class Connection(object):
                         url=url,
                         data=mp_encoder,
                         cert=cert,
+                        allow_redirects=allow_redirects,
                         timeout=timeout,
                         headers={"Content-Type": mp_encoder.content_type},
                     )
@@ -1063,8 +1105,11 @@ class Connection(object):
                         url=url,
                         data=mp_encoder,
                         cert=cert,
+                        allow_redirects=allow_redirects,
                         headers={"Content-Type": mp_encoder.content_type},
                     )
+            if auth and drop_auth:
+                self._session.auth = auth
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err
@@ -1169,11 +1214,17 @@ class Connection(object):
         timeout                       optional Integer. The number of seconds to timeout a service without a response.  The default is 600 seconds.
         ---------------------------   -----------------------------------------------------
         return_raw_response           Optional boolean. Returns the requests.Response object.
+        ---------------------------   -----------------------------------------------------
+        allow_redirects               Optional Boolean. Does not allow the call to follow the 3xx status codes. The default is True
+        ---------------------------   -----------------------------------------------------
+        drop_auth                     Optional Boolean. Drop this when auth handlers cause issues. The default is False
         ===========================   =====================================================
 
         :returns: data returned from the URL call.
 
         """
+        drop_auth = kwargs.pop("drop_auth", False)
+        allow_redirects = kwargs.pop("allow_redirects", True)
         timeout = kwargs.pop("timeout", self._timeout)
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
@@ -1254,16 +1305,33 @@ class Connection(object):
                         params[k] = json.dumps(dict(v))
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
+            if self._session.auth and drop_auth:
+                auth = self._session.auth
+                self._session.auth
+            else:
+                auth = None
             if post_json:  # edge case workflow
-                if timeout:
 
+                if timeout:
                     resp = self._session.post(
-                        url=url, json=params, cert=cert, files=files, timeout=timeout
+                        url=url,
+                        json=params,
+                        cert=cert,
+                        files=files,
+                        timeout=timeout,
+                        verify=self._verify_cert,
+                        allow_redirects=allow_redirects,
                     )
                 else:
                     resp = self._session.post(
-                        url=url, json=params, cert=cert, files=files
+                        url=url,
+                        json=params,
+                        cert=cert,
+                        files=files,
+                        verify=self._verify_cert,
+                        allow_redirects=allow_redirects,
                     )
+
             else:
                 if timeout:
 
@@ -1274,6 +1342,7 @@ class Connection(object):
                         files=files,
                         timeout=timeout,
                         verify=self._verify_cert,
+                        allow_redirects=allow_redirects,
                     )
                 else:
                     resp = self._session.post(
@@ -1282,7 +1351,10 @@ class Connection(object):
                         cert=cert,
                         files=files,
                         verify=self._verify_cert,
+                        allow_redirects=allow_redirects,
                     )
+            if auth:
+                self._session.auth = auth
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err
@@ -1390,12 +1462,17 @@ class Connection(object):
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
         ---------------------------   -----------------------------------------------------
         return_raw_response           Optional boolean. When true, it returns the requests.Response object
+        ---------------------------   -----------------------------------------------------
+        allow_redirects               Optional Boolean. Does not allow the call to follow the 3xx status codes. The default is True
+        ---------------------------   -----------------------------------------------------
+        drop_auth                     Optional Boolean. Drop this when auth handlers cause issues. The default is False
         ===========================   =====================================================
 
         :returns: dict or string depending on the response
 
         """
-
+        drop_auth = kwargs.pop("drop_auth", False)
+        allow_redirects = kwargs.pop("allow_redirects", True)
         return_raw_response = kwargs.pop("return_raw_response", False)
         post_json = kwargs.pop("post_json", False)
         json_encode = kwargs.pop("json_encode", True)
@@ -1451,11 +1528,29 @@ class Connection(object):
                     params[k] = json.dumps(dict(v))
                 elif isinstance(v, InsensitiveDict):
                     params[k] = v.json
-        if post_json:  # edge case workflow
-            resp = self._session.put(url=url, json=params, cert=cert, files=files)
+        if self._session.auth and drop_auth:
+            auth = self._session.auth
+            self._session.auth
         else:
-            resp = self._session.put(url=url, data=params, cert=cert, files=files)
-        #
+            auth = None
+        if post_json:  # edge case workflow
+            resp = self._session.put(
+                url=url,
+                json=params,
+                cert=cert,
+                files=files,
+                allow_redirects=allow_redirects,
+            )
+        else:
+            resp = self._session.put(
+                url=url,
+                data=params,
+                cert=cert,
+                files=files,
+                allow_redirects=allow_redirects,
+            )
+        if auth and drop_auth:
+            self._session.auth = auth
         if return_raw_response:
             return resp
         return self._handle_response(
@@ -1497,11 +1592,18 @@ class Connection(object):
         ---------------------------   -----------------------------------------------------
         ssl                           optional boolean. If true all calls are forced to be
                                       https.
+        ---------------------------   -----------------------------------------------------
         return_raw_response           Optional Boolean.  Returns the raw requests.Response object
+        ---------------------------   -----------------------------------------------------
+        allow_redirects               Optional Boolean. Does not allow the call to follow the 3xx status codes. The default is True
+        ---------------------------   -----------------------------------------------------
+        drop_auth                     Optional Boolean. Drop this when auth handlers cause issues. The default is False
         ===========================   =====================================================
 
         :returns: dict or string depending on the response
         """
+        allow_redirects = kwargs.pop("allow_redirects", True)
+        drop_auth = kwargs.pop("drop_auth", False)
         out_path = kwargs.pop("out_path", None)
         return_raw_response = kwargs.pop("return_raw_response", False)
         file_name = kwargs.pop("file_name", None)
@@ -1517,8 +1619,17 @@ class Connection(object):
 
         if try_json:
             params["f"] = "json"
-
-        resp = self._session.delete(url=url, data=params)
+        if drop_auth and self._session.auth:
+            auth = self._session.auth
+            self._session.auth = None
+            resp = self._session.delete(
+                url=url, data=params, allow_redirects=allow_redirects
+            )
+            self._session.auth = auth
+        else:
+            resp = self._session.delete(
+                url=url, data=params, allow_redirects=allow_redirects
+            )
         if return_raw_response:
             return resp
         return self._handle_response(
