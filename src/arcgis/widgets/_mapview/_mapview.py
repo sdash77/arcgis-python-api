@@ -1358,6 +1358,21 @@ class MapView(widgets.DOMWidget):
     def local_raster_file_format(self, value):
         self._raster.file_format = value
 
+    def update_renderer(self, layer, renderer_dict):
+        """
+        The ``update_renderer`` method will update the renderer for the layer specified with the newly specified renderer
+        dictionary provided.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        layer                  Required FeatureLayer for which the renderer will be updated. To access 
+                               the list of layers on the map, use the ``layers`` property.
+        ------------------     --------------------------------------------------------------------
+        renderer_dict          Required dict. Specify visualization of renderer info.
+        ==================     ====================================================================
+        """
+
     def add_layer(self, item, options=None):
         """
         The ``add_layer`` method adds the specified ``Layer`` or :class:`~arcgis.gis.Item` to the
