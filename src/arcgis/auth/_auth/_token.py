@@ -320,8 +320,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         auth_url, state = session.authorization_url(
             self._auth_url,
             expiration=self._expiration,
-            style="dark",
-            locale="en-US",
+            **{"allow_verification": "false", "style": "dark", "locale": "en-US"},
         )
         auth_response = requests.get(
             url=auth_url,
@@ -388,8 +387,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         authorization_url, state = self._oauth.authorization_url(
             self._auth_url,
             expiration=20160,
-            style="dark",
-            locale="en-US",
+            **{"allow_verification": "false", "style": "dark", "locale": "en-US"},
         )
         self._authorization_url = authorization_url
         self._state = state

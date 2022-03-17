@@ -1,6 +1,6 @@
 import sys, json, uuid
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7986\src")
+# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7986\src")
 import unittest
 
 try:
