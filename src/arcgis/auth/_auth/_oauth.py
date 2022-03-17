@@ -191,7 +191,9 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             if self._proxies:
                 oauth.proxies = self._proxies
             oauth.verify = False
-            authorization_url, state = oauth.authorization_url(auth_url)
+            authorization_url, state = oauth.authorization_url(
+                auth_url, **{"allow_verification": "false"}
+            )
             print(
                 "Please sign in to your GIS and paste the code that is obtained below."
             )
@@ -227,6 +229,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 "response_type": "code",
                 "expiration": -1,  # we want refresh_token to work for the life of the script
                 "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
+                "allow_verification": "false",
             }
             content = str(self._session.get(auth_url, params=parameters).content)
 
