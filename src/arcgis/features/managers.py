@@ -1524,7 +1524,7 @@ class FeatureLayerCollectionManager(_GISResource):
         :returns: List[FeatureLayerManagers]
         """
         self._tables = []
-        if 'tables' in self.properties:
+        if "tables" in self.properties:
             for table in self.properties.tables:
                 try:
 
