@@ -1502,14 +1502,17 @@ class FeatureLayerCollectionManager(_GISResource):
         :returns: List[FeatureLayerManagers]
         """
         self._layers = []
-        for table in self.properties.layers:
-            try:
+        if "layers" in self.properties:
+            for table in self.properties.layers:
+                try:
 
-                self._layers.append(
-                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
-                )
-            except Exception as e:
-                _log.error(str(e))
+                    self._layers.append(
+                        FeatureLayerManager(
+                            self.url + "/" + str(table["id"]), self._gis
+                        )
+                    )
+                except Exception as e:
+                    _log.error(str(e))
 
         return self._layers
 
@@ -1521,14 +1524,18 @@ class FeatureLayerCollectionManager(_GISResource):
         :returns: List[FeatureLayerManagers]
         """
         self._tables = []
-        for table in self.properties.tables:
-            try:
+        if 'tables' in self.properties:
+            for table in self.properties.tables:
+                try:
 
-                self._tables.append(
-                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
-                )
-            except Exception as e:
-                _log.error(str(e))
+                    self._tables.append(
+                        FeatureLayerManager(
+                            self.url + "/" + str(table["id"]), self._gis
+                        )
+                    )
+                except Exception as e:
+                    _log.error(str(e))
+        return self._tables
 
     def _populate_layers(self):
         """
