@@ -1584,7 +1584,8 @@ class MapView(widgets.DOMWidget):
         """
         Update the layer on the map to have it dynamically visuallized with the new properties.
         """
-        
+        self.webmap.update_layer(layer)
+
 
     def _infer_layers(self, arg):
         """For a generic list of Layers, Items, FeatureSets, or an individual
