@@ -865,6 +865,80 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         return True
 
+    def update_layer(self, layer:dict):
+        """
+        To update the layer dictionary for a layer in the map. For example, to update the renderer dictionary for a layer
+        and have it by dynamically changed on the webmap. Can be used to configure the pop_ups dictionary, renderer,
+        or any other part of the Feature Layer properties.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        layer                  Required object. The existing webmap layer with updated properties.
+                               In order to get a layer on the webmap, use the ``get_layer`` method and
+                               assign the output to a value. Make edits on the this value (dict) and pass
+                               it in this method to update the rendering on the map.
+
+                               .. warning:: 
+                                    If the title of the feature layer is changed, this will not work.
+        ==================     ====================================================================
+
+        .. code-block:: python
+            # create webmap and add layer
+            wm = WebMap()
+            wm.add_layer(<layer>)
+
+            # get the layer to edit
+            lyr_dict = wm.get_layer(title = <layer title>)
+            lyr_dict
+            >>> {'title': 'national_forest',
+                'opacity': 1,
+                'visibility': True,
+                'id': '-9223371862458414740',
+                'layerDefinition': {'definitionExpression': None,
+                'drawingInfo': {'renderer': {'type': 'simple',
+                    'symbol': {'type': 'esriSFS',
+                    'style': 'esriSFSSolid',
+                    'color': [255, 255, 238, 255],
+                    'outline': {'type': 'esriSLS',
+                    'style': 'esriSLSSolid',
+                    'color': [0, 0, 0, 255],
+                    'width': 0.75}}}}},
+                'layerType': 'ArcGISFeatureLayer',
+                'itemId': '747b24cdf0ef49acab79feb3dfcd4546',
+                'url': 'https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/Cougar_Habitat/FeatureServer/3',
+                'popupInfo': {'title': 'national_forest',
+                'fieldInfos': [{'fieldName': 'FID',
+                    'label': 'FID',
+                    'isEditable': False,
+                    'visible': True},
+                {'fieldName': 'objectid_1',
+                    'label': 'objectid_1',
+                    'isEditable': True,
+                    'visible': True}],
+                'description': None,
+                'showAttachments': True,
+                'mediaInfos': []}}
+
+            # edit layer dictionary
+            lyr_dict["layerDefinition"]["drawingInfo"]["renderer"] = {'type': 'simple',
+                                                                        'symbol': {'type': 'esriSFS',
+                                                                        'style': 'esriSFSSolid',
+                                                                        'color': [0, 0, 255, 255], #change the color
+                                                                        'outline': {'type': 'esriSLS',
+                                                                        'style': 'esriSLSSolid',
+                                                                        'color': [0, 0, 0, 255],
+                                                                        'width': 0.75}}}
+
+            # update with webmap update_layer to see it render on map
+            wm.update_layer(lyr_dict)
+        
+        """
+        lyr_dict = self.get_layer(title = layer["title"])
+        lyr_idx = self._webmapdict["operationalLayers"].index(layer)
+        self._webmapdict["operationalLayers"][lyr_idx] = layer
+
+
     def _process_extent(self, extent=None):
         """
         internal method to transform extent to a string of xmin, ymin, xmax, ymax
