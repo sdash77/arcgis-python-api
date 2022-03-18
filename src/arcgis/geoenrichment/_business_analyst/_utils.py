@@ -648,9 +648,9 @@ def validate_network_travel_mode(source, travel_mode):
 def add_proximity_to_enrich_feature(
     source: GIS,
     feature: dict,
-    travel_mode: Optional[str] = "straight_line",
+    travel_mode: str = "straight_line",
     proximity_metric: Optional = None,
-    proximity_value: Optional[int] = 1,
+    proximity_value: int = 1,
 ) -> dict:
     """Add proximity metrics onto a feature in a feature set for sending to the enrich REST endpoint."""
     # alias list to standardize the proximity_metric input

@@ -60,13 +60,17 @@ class AOI(object):
 
     @property
     def source(self) -> Union[str, GIS]:
+        """
+        Source being used.
+
+        Args:
+            in_source: Either the 'local' keyword or an instantiated ``GIS`` object
+                instance.
+        """
         return self._source
 
     @source.setter
     def source(self, in_source: Optional[Union[str, GIS]] = None) -> None:
-        """
-        Source being used.
-        """
         self._source = set_source(in_source)
 
         # if working with a GIS object instance, we need to set a few extra properties
@@ -210,7 +214,7 @@ class AOI(object):
         self,
         geographies: Union[pd.DataFrame, Iterable, Path],
         enrich_variables: Union[pd.DataFrame, Iterable],
-        return_geometry: Optional[bool] = True,
+        return_geometry: bool = True,
         standard_geography_level: Optional[Union[int, str]] = None,
         standard_geography_id_column: Optional[str] = None,
         proximity_type: Optional[str] = None,
@@ -679,13 +683,17 @@ class BusinessAnalyst(object):
 
     @property
     def source(self) -> Union[str, GIS]:
+        """
+        Source being used.
+
+        Args:
+            in_source: Either the 'local' keyword or an instantiated ``GIS`` object
+                instance.
+        """
         return self._source
 
     @source.setter
     def source(self, in_source: Optional[Union[str, GIS]] = None) -> None:
-        """
-        Source being used.
-        """
         self._source = set_source(in_source)
 
         # if working with a GIS object instance, we need to set a few extra properties
