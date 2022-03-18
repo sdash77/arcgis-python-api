@@ -9,7 +9,6 @@ import base64
 import urllib.request
 from uuid import uuid4
 from collections import OrderedDict
-from urllib.parse import urlparse
 import os
 import datetime as dt
 import dateutil.parser
@@ -24,7 +23,7 @@ from arcgis.gis import Item
 import ipywidgets
 from ipywidgets import widgets
 from ipywidgets.embed import embed_minimal_html
-from traitlets import Unicode, Int, List, Bool, Dict, Tuple, Float, observe
+from traitlets import Unicode, List, Bool, Dict, Tuple, Float, observe
 
 Datetime = ipywidgets.trait_types.Datetime
 from IPython.display import display, HTML
