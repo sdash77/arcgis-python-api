@@ -1580,6 +1580,12 @@ class MapView(widgets.DOMWidget):
 
         return output_bool
 
+    def update_layer(self, layer):
+        """
+        Update the layer on the map to have it dynamically visuallized with the new properties.
+        """
+        
+
     def _infer_layers(self, arg):
         """For a generic list of Layers, Items, FeatureSets, or an individual
         'layer', or anything, attempt to return a list of of 'layer' types

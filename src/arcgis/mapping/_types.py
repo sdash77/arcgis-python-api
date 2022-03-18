@@ -880,7 +880,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                                it in this method to update the rendering on the map.
 
                                .. warning::
-                                    If the title of the feature layer is changed, this will not work.
+                                    If the itemId of the feature layer is changed, this will not work.
         ==================     ====================================================================
 
         .. code-block:: python
@@ -923,19 +923,22 @@ class WebMap(HasTraits, collections.OrderedDict):
             # edit layer dictionary
             lyr_dict["layerDefinition"]["drawingInfo"]["renderer"] = {'type': 'simple',
                                                                         'symbol': {'type': 'esriSFS',
-                                                                        'style': 'esriSFSSolid',
-                                                                        'color': [0, 0, 255, 255], #change the color
-                                                                        'outline': {'type': 'esriSLS',
-                                                                        'style': 'esriSLSSolid',
-                                                                        'color': [0, 0, 0, 255],
-                                                                        'width': 0.75}}}
+                                                                                'style': 'esriSFSSolid',
+                                                                                'color': [0, 0, 255, 255], #change the color
+                                                                                'outline': {'type': 'esriSLS',
+                                                                                'style': 'esriSLSSolid',
+                                                                                'color': [0, 0, 0, 255],
+                                                                                'width': 0.75}}}
 
             # update with webmap update_layer to see it render on map
             wm.update_layer(lyr_dict)
 
         """
-        lyr_dict = self.get_layer(title=layer["title"])
-        lyr_idx = self._webmapdict["operationalLayers"].index(layer)
+        # Find the layer to update based on the id of the layer passed in.
+        lyr_dict = self.get_layer(layer["itemId"])
+        # Get the index so we update the observable list at the correct position.
+        lyr_idx = self._webmapdict["operationalLayers"].index(lyr_dict)
+        # Update the observable list, this triggers webmap to render new layer.
         self._webmapdict["operationalLayers"][lyr_idx] = layer
 
     def _process_extent(self, extent=None):
