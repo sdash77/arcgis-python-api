@@ -865,7 +865,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         return True
 
-    def update_layer(self, layer:dict):
+    def update_layer(self, layer: dict):
         """
         To update the layer dictionary for a layer in the map. For example, to update the renderer dictionary for a layer
         and have it by dynamically changed on the webmap. Can be used to configure the pop_ups dictionary, renderer,
@@ -879,7 +879,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                                assign the output to a value. Make edits on the this value (dict) and pass
                                it in this method to update the rendering on the map.
 
-                               .. warning:: 
+                               .. warning::
                                     If the title of the feature layer is changed, this will not work.
         ==================     ====================================================================
 
@@ -932,12 +932,11 @@ class WebMap(HasTraits, collections.OrderedDict):
 
             # update with webmap update_layer to see it render on map
             wm.update_layer(lyr_dict)
-        
+
         """
-        lyr_dict = self.get_layer(title = layer["title"])
+        lyr_dict = self.get_layer(title=layer["title"])
         lyr_idx = self._webmapdict["operationalLayers"].index(layer)
         self._webmapdict["operationalLayers"][lyr_idx] = layer
-
 
     def _process_extent(self, extent=None):
         """
