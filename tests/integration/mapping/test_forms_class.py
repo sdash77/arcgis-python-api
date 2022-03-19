@@ -536,14 +536,16 @@ class Test_Forms(unittest.TestCase):
             )
             self.assertEqual(expression.expression, "test")
             self.assertEqual(expression.title, "New Expression")
+            self.assertEqual(expression.return_type, "boolean")
             expression.title = "New Expression 2"
             self.assertEqual(expression.title, "New Expression 2")
             with self.assertRaises(ValueError):
                 expression.name = None
             self.assertEqual(expression.return_type, "boolean")
             expression_2 = FormExpressionInfo(
-                title="New Expression 3", name="expr1", expression="test"
+                title="New Expression 3", name="expr1", expression="test", return_type="boolean"
             )
+            self.assertEqual(expression_2.return_type, "boolean")
             el = FormFieldElement(
                 label="test",
                 field_name="facname",

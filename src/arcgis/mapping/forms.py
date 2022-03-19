@@ -218,6 +218,7 @@ class FormInfo:
                 expression=exp.get("expression"),
                 name=exp.get("name"),
                 title=exp.get("title"),
+                return_type=exp.get("returnType")
             )
             self._expression_infos.append(expression)
         self._form_elements = self._get_form_element_objects(
@@ -1470,10 +1471,10 @@ class FormExpressionInfo:
     ==================     ====================================================================
     """
 
-    def __init__(self, expression=None, name=None, title=None):
+    def __init__(self, expression=None, name=None, title=None, return_type="boolean"):
         self._expression = expression
         self._name = name
-        self._return_type = "boolean"
+        self._return_type = return_type
         self._title = title
 
     def __repr__(self):
