@@ -202,11 +202,12 @@ class FormInfo:
             form_info.update()
     """
 
-    def __init__(self, layer_data, parent):
+    def __init__(self, layer_data, parent, **kwargs):
         if not isinstance(layer_data, (dict, PropertyMap)):
             raise ValueError(
                 "Incorrect layer type passed to FormInfo class. Please pass in a property map"
             )
+        self._kwargs = kwargs
         self._original_layer = layer_data
         self._layer_data = copy.deepcopy(layer_data)
         self._form = self._layer_data.get("formInfo", {})
@@ -358,6 +359,8 @@ class FormInfo:
             data["description"] = self._description
         if self._title:
             data["title"] = self._title
+        for key, value in self._kwargs.items():
+            data[key] = value
         return data
 
     def add_all_attributes(self):
@@ -1086,7 +1089,7 @@ class FormFieldElement(FormElement):
         self._editable = editable
         self._field_name = field_name
         self._hint = hint
-        self._input_type = input_type
+        self.input_type = input_type
         self._required_expression = required_expression
         self._editable_expression = editable_expression
         self._value_expression = value_expression
@@ -1152,17 +1155,17 @@ class FormFieldElement(FormElement):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        value               Required string.
+        value               Required string or dictionary.
                             Values: "text-area" | "text-box" | "barcode-scanner" | "combo-box" |
                                     "radio-buttons" | "datetime-picker"
         ===============     ====================================================================
 
-        :return: String that represents the input type
+        :return: dictionary that represents the input type
         """
         return self._input_type
 
     @input_type.setter
-    def input_type(self, value: str):
+    def input_type(self, value: Union[str, dict]):
         if value in [
             "text-area",
             "text-box",
@@ -1586,11 +1589,14 @@ class FormExpressionInfo:
     ==================     ====================================================================
     """
 
-    def __init__(self, expression=None, name=None, title=None, return_type="boolean"):
+    def __init__(
+        self, expression=None, name=None, title=None, return_type="boolean", **kwargs
+    ):
         self._expression = expression
         self._name = name
         self._return_type = return_type
         self._title = title
+        self._kwargs = kwargs
 
     def __repr__(self):
         if self._title:
@@ -1650,4 +1656,6 @@ class FormExpressionInfo:
             exp_dict["expression"] = self._expression
         if self._return_type:
             exp_dict["returnType"] = self._return_type
+        for key, value in self._kwargs.items():
+            exp_dict[key] = value
         return exp_dict

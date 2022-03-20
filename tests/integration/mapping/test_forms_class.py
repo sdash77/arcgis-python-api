@@ -384,7 +384,7 @@ class Test_Forms(unittest.TestCase):
             self.assertEqual(form.elements[0].description, "test")
             self.assertEqual(form.elements[0].hint, "the name")
             self.assertEqual(form.elements[0].editable, True)
-            self.assertEqual(form.elements[0].input_type, "text-box")
+            self.assertEqual(form.elements[0].input_type["type"], "text-box")
             with self.assertRaises(ValueError):
                 form_element.field_name = "blah"
 
@@ -454,14 +454,14 @@ class Test_Forms(unittest.TestCase):
                 label="Facility Name", field_name="facname", input_type="text-area"
             )
             form.add(form_element)
-            self.assertEqual(form.elements[0].input_type, "text-area")
+            self.assertEqual(form.elements[0].input_type["type"], "text-area")
 
             # integer - no cvd
             form_element = FormFieldElement(
                 label="Shelter Capacity", field_name="sheltcap", input_type="text-area"
             )
             form.add(form_element)
-            self.assertEqual(form.elements[1].input_type, "text-area")
+            self.assertEqual(form.elements[1].input_type["type"], "text-area")
 
             # string - with cvd
             form_element = FormFieldElement(
@@ -470,14 +470,25 @@ class Test_Forms(unittest.TestCase):
                 input_type="radio-buttons",
             )
             form.add(form_element)
-            self.assertEqual(form.elements[2].input_type, "radio-buttons")
+            self.assertEqual(form.elements[2].input_type["type"], "radio-buttons")
 
             # integer - with cvd
             form_element = FormFieldElement(
                 label="Facility Type", field_name="factype", input_type="radio-buttons"
             )
             form.add(form_element)
-            self.assertEqual(form.elements[3].input_type, "radio-buttons")
+            self.assertEqual(form.elements[3].input_type["type"], "radio-buttons")
+
+            # input type with additional options
+            form_element = FormFieldElement(
+                label="Facility Type",
+                field_name="sheltcurpop",
+                input_type={"type": "text-box", "minLength": 5, "maxLength": 100},
+            )
+            form.add(form_element)
+            self.assertEqual(form.elements[4].input_type["type"], "text-box")
+            self.assertEqual(form.elements[4].input_type["minLength"], 5)
+            self.assertEqual(form.elements[4].input_type["maxLength"], 100)
 
         except AssertionError as assertErrorException:
             raise assertErrorException
@@ -797,6 +808,33 @@ class Test_Forms(unittest.TestCase):
                 el.element_type = "blah"
             with self.assertRaises(ValueError):
                 el.visibility_expression = "blah"
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
+    def test_kwargs_serialization(self):
+        try:
+            form = self.forms.get(title="Shelters")
+            form.add_field(
+                field_name="facname", label="Facility Name", customArg={"name": "test"}
+            )
+            print(form.to_dict())
+            self.assertEqual(
+                form.to_dict()["formElements"][0]["customArg"]["name"], "test"
+            )
+            form.add_group(label="Facility Name", customArg={"name": "test2"})
+            self.assertEqual(
+                form.to_dict()["formElements"][1]["customArg"]["name"], "test2"
+            )
 
         except AssertionError as assertErrorException:
             raise assertErrorException
