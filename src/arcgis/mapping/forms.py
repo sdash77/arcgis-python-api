@@ -218,7 +218,7 @@ class FormInfo:
                 expression=exp.get("expression"),
                 name=exp.get("name"),
                 title=exp.get("title"),
-                return_type=exp.get("returnType")
+                return_type=exp.get("returnType"),
             )
             self._expression_infos.append(expression)
         self._form_elements = self._get_form_element_objects(
@@ -765,9 +765,21 @@ class FormInfo:
                     field_name=element.get("fieldName"),
                     hint=element.get("hint"),
                     input_type=element.get("inputType"),
-                    required_expression=FormInfo._get_expression_info(form, element.get("requiredExpression")) if form else None,
-                    editable_expression=FormInfo._get_expression_info(form, element.get("editableExpression")) if form else None,
-                    value_expression=FormInfo._get_expression_info(form, element.get("valueExpression")) if form else None,
+                    required_expression=FormInfo._get_expression_info(
+                        form, element.get("requiredExpression")
+                    )
+                    if form
+                    else None,
+                    editable_expression=FormInfo._get_expression_info(
+                        form, element.get("editableExpression")
+                    )
+                    if form
+                    else None,
+                    value_expression=FormInfo._get_expression_info(
+                        form, element.get("valueExpression")
+                    )
+                    if form
+                    else None,
                 )
             elif element["type"] == "group":
                 el = FormGroupElement(
@@ -776,7 +788,11 @@ class FormInfo:
                     initial_state=element.get("initialState"),
                     description=element.get("description"),
                     label=element.get("label"),
-                    visibility_expression=FormInfo._get_expression_info(form, element.get("visibilityExpression")) if form else None,
+                    visibility_expression=FormInfo._get_expression_info(
+                        form, element.get("visibilityExpression")
+                    )
+                    if form
+                    else None,
                 )
             else:
                 el = FormElement(
@@ -784,7 +800,11 @@ class FormInfo:
                     element_type=element.get("type"),
                     description=element.get("description"),
                     label=element.get("label"),
-                    visibility_expression=FormInfo._get_expression_info(form, element.get("visibilityExpression")) if form else None,
+                    visibility_expression=FormInfo._get_expression_info(
+                        form, element.get("visibilityExpression")
+                    )
+                    if form
+                    else None,
                 )
             elements.append(el)
         return elements
@@ -807,29 +827,54 @@ class FormInfo:
                 ):
                     self._expression_infos.append(element.visibility_expression)
             else:
-                if self._get_expression_info(self, element.visibility_expression) is None:
+                if (
+                    self._get_expression_info(self, element.visibility_expression)
+                    is None
+                ):
                     element._visibility_expression = None
         if element.element_type == "field":
             if element.required_expression:
                 if isinstance(element.required_expression, FormExpressionInfo):
-                    if self._get_expression_info(self, element.required_expression.name) is None:
+                    if (
+                        self._get_expression_info(
+                            self, element.required_expression.name
+                        )
+                        is None
+                    ):
                         self._expression_infos.append(element.required_expression)
                 else:
-                    if self._get_expression_info(self, element.required_expression) is None:
+                    if (
+                        self._get_expression_info(self, element.required_expression)
+                        is None
+                    ):
                         element._required_expression = None
             if element.editable_expression:
                 if isinstance(element.editable_expression, FormExpressionInfo):
-                    if self._get_expression_info(self, element.editable_expression.name) is None:
+                    if (
+                        self._get_expression_info(
+                            self, element.editable_expression.name
+                        )
+                        is None
+                    ):
                         self._expression_infos.append(element.editable_expression)
                 else:
-                    if self._get_expression_info(self, element.editable_expression) is None:
+                    if (
+                        self._get_expression_info(self, element.editable_expression)
+                        is None
+                    ):
                         element._editable_expression = None
             if element.value_expression:
                 if isinstance(element.value_expression, FormExpressionInfo):
-                    if self._get_expression_info(self, element.value_expression.name) is None:
+                    if (
+                        self._get_expression_info(self, element.value_expression.name)
+                        is None
+                    ):
                         self._expression_infos.append(element.value_expression)
                 else:
-                    if self._get_expression_info(self, element.value_expression) is None:
+                    if (
+                        self._get_expression_info(self, element.value_expression)
+                        is None
+                    ):
                         element._value_expression = None
 
     def _get_required_fields(self):

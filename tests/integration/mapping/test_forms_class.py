@@ -543,7 +543,10 @@ class Test_Forms(unittest.TestCase):
                 expression.name = None
             self.assertEqual(expression.return_type, "boolean")
             expression_2 = FormExpressionInfo(
-                title="New Expression 3", name="expr1", expression="test", return_type="boolean"
+                title="New Expression 3",
+                name="expr1",
+                expression="test",
+                return_type="boolean",
             )
             self.assertEqual(expression_2.return_type, "boolean")
             el = FormFieldElement(
@@ -607,7 +610,10 @@ class Test_Forms(unittest.TestCase):
         try:
             form = self.forms.get(title="Shelters")
             expression = FormExpressionInfo(
-                title="New Value Expression", name="expr0", expression="test", return_type="string"
+                title="New Value Expression",
+                name="expr0",
+                expression="test",
+                return_type="string",
             )
             self.assertEqual(expression.expression, "test")
             self.assertEqual(expression.title, "New Value Expression")
@@ -616,15 +622,21 @@ class Test_Forms(unittest.TestCase):
                 label="test",
                 field_name="facname",
                 value_expression=expression,
-                editable=False
+                editable=False,
             )
             form.add(el)
             self.assertEqual(len(form.expressions), 1)
-            self.assertEqual(form.to_dict()["formElements"][0]["valueExpression"], "expr0")
+            self.assertEqual(
+                form.to_dict()["formElements"][0]["valueExpression"], "expr0"
+            )
             self.assertEqual(form.to_dict()["expressionInfos"][0]["name"], "expr0")
-            self.assertEqual(form.to_dict()["expressionInfos"][0]["returnType"], "string")
+            self.assertEqual(
+                form.to_dict()["expressionInfos"][0]["returnType"], "string"
+            )
             self.assertEqual(form.to_dict()["expressionInfos"][0]["expression"], "test")
-            self.assertEqual(form.to_dict()["expressionInfos"][0]["title"], "New Value Expression")
+            self.assertEqual(
+                form.to_dict()["expressionInfos"][0]["title"], "New Value Expression"
+            )
 
         except AssertionError as assertErrorException:
             raise assertErrorException
@@ -642,7 +654,10 @@ class Test_Forms(unittest.TestCase):
         try:
             form = self.forms.get(title="Shelters")
             expression = FormExpressionInfo(
-                title="New Editable Expression", name="expr0", expression="return true", return_type="boolean"
+                title="New Editable Expression",
+                name="expr0",
+                expression="return true",
+                return_type="boolean",
             )
             self.assertEqual(expression.expression, "return true")
             self.assertEqual(expression.title, "New Editable Expression")
@@ -651,15 +666,23 @@ class Test_Forms(unittest.TestCase):
                 label="test",
                 field_name="facname",
                 editable_expression=expression,
-                editable=False
+                editable=False,
             )
             form.add(el)
             self.assertEqual(len(form.expressions), 1)
-            self.assertEqual(form.to_dict()["formElements"][0]["editableExpression"], "expr0")
+            self.assertEqual(
+                form.to_dict()["formElements"][0]["editableExpression"], "expr0"
+            )
             self.assertEqual(form.to_dict()["expressionInfos"][0]["name"], "expr0")
-            self.assertEqual(form.to_dict()["expressionInfos"][0]["returnType"], "boolean")
-            self.assertEqual(form.to_dict()["expressionInfos"][0]["expression"], "return true")
-            self.assertEqual(form.to_dict()["expressionInfos"][0]["title"], "New Editable Expression")
+            self.assertEqual(
+                form.to_dict()["expressionInfos"][0]["returnType"], "boolean"
+            )
+            self.assertEqual(
+                form.to_dict()["expressionInfos"][0]["expression"], "return true"
+            )
+            self.assertEqual(
+                form.to_dict()["expressionInfos"][0]["title"], "New Editable Expression"
+            )
 
         except AssertionError as assertErrorException:
             raise assertErrorException
