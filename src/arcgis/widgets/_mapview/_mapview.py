@@ -1515,6 +1515,10 @@ class MapView(widgets.DOMWidget):
                     self._add_layer_to_widget(item_, options)
         else:
             raise RuntimeError("Cannot infer layer: will not be added to map")
+        view_layers = []
+        for view in self.webmap.layers:
+           view_layers.append(dict(view))
+        self._view_layers = view_layers
 
     def _add_notype_layer(self, item, lyr_json):
         # Add the original item to the hashed layers
@@ -1576,6 +1580,11 @@ class MapView(widgets.DOMWidget):
         # Layer is removed from python side: trigger removal from JS side
         self._layers_to_remove = tuple("nonexistant_layer_id")
         self._layers_to_remove = tuple(layer_hashes_to_remove)
+        
+        view_layers =[]
+        for view in self.webmap.layers:
+           view_layers.append(dict(view))
+        self._view_layers = view_layers
 
         return output_bool
 
@@ -1586,12 +1595,11 @@ class MapView(widgets.DOMWidget):
         Update the layer on the map to have it dynamically visuallized with the new properties.
         """
         self.webmap.update_layer(layer)
-        # takes list of dict objects
-        self._view_layers = self.webmap.layers
-        # You need to re-write this dict to trigger the JS side change
-        copy_view_layers = list(self._view_layers)
-        self._view_layers = []
-        self._view_layers = copy_view_layers
+        # You need to re-write this list of dicts to trigger the JS side change
+        # view_layers = []
+        # for view in self.webmap.layers:
+        #    view_layers.append(dict(view))
+        # self._view_layers = view_layers
 
 
     def _infer_layers(self, arg):

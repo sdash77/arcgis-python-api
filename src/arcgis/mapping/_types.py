@@ -903,6 +903,15 @@ class WebMap(HasTraits, collections.OrderedDict):
         # Update the observable list, this triggers webmap to render new layer.
         self._webmapdict["operationalLayers"][lyr_idx] = layer
 
+        # Update the layers property
+        if "operationalLayers" in self._webmapdict:
+                self._layers = []
+                for l in self._webmapdict["operationalLayers"]:
+                    self._layers.append(_mixins.PropertyMap(l))
+                # reverse the layer list - webmap viewer reverses the list always
+                self._layers.reverse()
+
+
     def _process_extent(self, extent=None):
         """
         internal method to transform extent to a string of xmin, ymin, xmax, ymax
