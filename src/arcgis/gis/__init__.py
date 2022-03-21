@@ -1396,6 +1396,11 @@ class GIS(object):
         if zoomlevel is not None:
             mapwidget.zoom = zoomlevel
 
+        if not location:
+            # Set up default extent
+            if "defaultExtent" in self.org_settings:
+                mapwidget.extent = self.org_settings["defaultExtent"]
+
         return mapwidget
 
 
@@ -4870,7 +4875,6 @@ class ContentManager(object):
         params = {"f": "json", "url": url}
         return self._gis._con.get(curl, params, ignore_error_key=True)
 
-    # ----------------------------------------------------------------------
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
     ):
@@ -4900,16 +4904,37 @@ class ContentManager(object):
 
 
         """
-        if size < 5e6:
-            size = 5e6
+        from typing import Union, Iterator, Tuple
+        from io import BytesIO
 
-        def read_in_chunks(file_object, chunk_size=10000000):
-            """Generate file chunks of 10MB"""
-            while True:
-                data = file_object.read(chunk_size)
-                if not data:
-                    break
-                yield data
+        def chunk_by_file_size(
+            fp: str,
+            size: int = None,
+            parameter_name: str = "file",
+            upload_format: bool = False,
+        ) -> Iterator[Union[Tuple[str, BytesIO, str], BytesIO]]:
+            """Splits a File based on a specific bytes size"""
+            if size is None:
+                size = int(2.5e7)  # 25MB
+            i = 1
+            with open(fp, "rb") as reader:
+                while True:
+                    bio = BytesIO()
+                    data = bio.write(reader.read(size))
+                    bio.seek(0)
+                    if not data:
+                        break
+                    if upload_format:
+                        fpath = f"split{i}.split"
+                        yield parameter_name, bio, fpath
+                    else:
+                        yield bio
+                    i += 1
+            return None
+
+        size = int(size)
+        if size < 2.5e7:
+            size = int(2.5e7)
 
         owner_name = owner
         if isinstance(owner, User):
@@ -4928,56 +4953,37 @@ class ContentManager(object):
         url = "{base}{path}/items/{itemid}/addPart".format(
             base=self._gis._portal.resturl, path=path, itemid=itemid
         )
-        file = {"file": None}
-        params = {"f": "json", "partNum": None}
-        messages = []
-        future_files = []
-        with open(file_path, "rb") as f:
-            import copy
-            import uuid
-            import concurrent.futures
+        results = []
+        futures = {}
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=5, thread_name_prefix="upld_"
+        ) as tp:
 
-            nthreads = 5
-            with concurrent.futures.ThreadPoolExecutor(max_workers=nthreads) as tp:
-                future_parts = {}
-                base_file = uuid.uuid4().hex[:4]
-                for part_num, piece in enumerate(read_in_chunks(f), start=1):
-                    params["partNum"] = part_num
-                    temp_file = os.path.join(
-                        tempfile.gettempdir(), "split%s.part%s" % (base_file, part_num)
-                    )
-                    kwargs = {
+            futures = {
+                tp.submit(
+                    self._gis._con.post_multipart,
+                    **{
                         "path": url,
-                        "postdata": copy.copy(params),
-                        "files": {"file": copy.copy(temp_file)},
-                    }
-                    with open(temp_file, "wb") as writer:
-                        writer.write(piece)
-                        del writer
-                    future_parts[tp.submit(self._gis._con.post, **kwargs)] = part_num
-                    future_files.append(copy.copy(temp_file))
-                concurrent.futures.wait(
-                    list(future_parts.keys()), None, concurrent.futures.ALL_COMPLETED
+                        "params": {"f": "json", "partNum": f"{idx + 1}"},
+                        "files": [part],
+                    },
+                ): idx
+                + 1
+                for idx, part in enumerate(
+                    chunk_by_file_size(file_path, size=size, upload_format=True)
                 )
-                for future in concurrent.futures.as_completed(future_parts):
-                    part_num = future_parts[future]
-                    try:
-                        if future.done():
-                            data = future.result()
-                            if "success" in data:
-                                messages.append(data["success"])
-                            else:
-                                messages.append(False)
-                    except Exception as exc:
-                        _log.error("%r generated an exception: %s" % (url, exc))
-                    else:
-                        _log.debug("%r page is %s" % (url, data))
-                for ffile in future_files:
-                    if os.path.isfile(ffile):
-                        os.remove(ffile)
-
-        if all(messages):
-            # commit the addition
+            }
+        messages = []
+        for future in concurrent.futures.as_completed(futures):
+            r = future.result()
+            if "success" in r:
+                results.append(r["success"])
+            elif "status" in r and r["status"] == "success":
+                results.append(True)
+            else:
+                results.append(False)
+            messages.append(r)
+        if all(results):  # Should be True/False list
             url = "{base}{path}/items/{itemid}/commit".format(
                 base=self._gis._portal.resturl, path=path, itemid=itemid
             )
@@ -4989,7 +4995,7 @@ class ContentManager(object):
             }
             params.update(item_properties)
             res = self._gis._con.post(url, params)
-            if "success" in res:
+            if "success" in res and res["success"]:
                 url = "{base}{path}/items/{itemid}/status".format(
                     base=self._gis._portal.resturl, path=path, itemid=itemid
                 )
@@ -5006,6 +5012,7 @@ class ContentManager(object):
                 return res["status"]
             else:
                 return False
+
         return False
 
     # ----------------------------------------------------------------------
@@ -5325,7 +5332,7 @@ class ContentManager(object):
             if kwargs.get("upload_size", 0) >= 1e7:
                 upload_size = kwargs.get("upload_size")
             else:
-                upload_size = 1e7
+                upload_size = int(2.5e7)
 
             status = self._add_by_part(
                 file_path=data,
@@ -6902,8 +6909,9 @@ class ContentManager(object):
                                   should be updated to the organizations default basemap. Default is False,
                                   basemap will not change.
         ---------------------     --------------------------------------------------------------------
-        copy_data                 Optional boolean. Indicating whether the data should be copied with any
-                                  feature layer or feature collections. Default is True, data will be copied.
+        copy_data                 Optional boolean. If False, the data is put by reference rather than
+                                  by copy. Default is True, data will be copied. This creates a Hosted
+                                  Feature Collection or Feature Layer.
         ---------------------     --------------------------------------------------------------------
         copy_global_ids           Optional boolean. Assumes previous parameter is set to True. If True,
                                   features copied will preserve their global IDs. Default is False
@@ -9203,6 +9211,7 @@ class User(dict):
         self._user_id = username
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
+        self._invitemgr = None
         # userdict = self._portal.get_user(self.username)
         self._hydrated = False
         if userdict:
@@ -9284,6 +9293,20 @@ class User(dict):
         )
         params = {"f": "json"}
         return self._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def invitations(self) -> "UserInvitationManager":
+        """
+        Provides a list of invitations for a given user
+
+        :returns: UserInvitationManager
+        """
+        if self._invitemgr is None:
+            from arcgis.gis.sharing import UserInvitationManager
+
+            self._invitemgr = UserInvitationManager(self)
+        return self._invitemgr
 
     # ----------------------------------------------------------------------
     def report(
@@ -10672,6 +10695,8 @@ class User(dict):
         else:
             # delete the groups owned by the user
             [grp.delete() for grp in self.groups if grp.owner == self.username]
+        if self._gis._portal.is_arcgisonline:
+            self.esri_access = "arcgisonly"
         return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username: str):
@@ -11492,20 +11517,49 @@ class Item(dict):
             >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
 
         """
-        data_path = "content/items/" + self.itemid + "/data"
+        if self._gis._con.token:
+            data_path = (
+                "content/items/"
+                + self.itemid
+                + f"/data"  # "?token={self._gis._con.token}"
+            )
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
         if not save_path:
             save_path = self._workdir
         try:
-            download_path = self._portal.con.get(
-                path=data_path,
+
+            url = self._gis._portal.resturl + data_path
+            con = self._gis._con
+            resp = self._portal.con.get(
+                path=url,
                 file_name=file_name,
                 out_folder=save_path,
                 try_json=False,
                 force_bytes=False,
+                allow_redirects=False,
+                return_raw_response=True,
             )
+            if resp.status_code >= 300 and resp.status_code < 400:
+                url = resp.headers["location"]
+                resp = self._portal.con.get(
+                    path=url,
+                    file_name=file_name,
+                    out_folder=save_path,
+                    try_json=False,
+                    force_bytes=False,
+                    allow_redirects=False,
+                    return_raw_response=True,
+                    drop_auth=True,
+                )
+                download_path = con._handle_response(
+                    resp, file_name=file_name, out_path=save_path, try_json=False
+                )
+            else:
+                download_path = con._handle_response(
+                    resp, file_name=file_name, out_path=save_path, try_json=False
+                )
         except Exception as e:
             _log.debug(msg=str(e))
             _log.debug(
@@ -12609,50 +12663,118 @@ class Item(dict):
              item.update(description ="aggregated US hurricane data", title = "US Hurricane Data",
                              tags = "Hurricanes, USA, Natural Disasters")
         """
-        # owner = self._gis.users.get(self.owner)
-        owner = self._user_id
-        # if hasattr(owner, 'id') and \
-        #   owner.id != 'null':
-        #    owner = owner.id
-        # else:
-        #    owner = owner.username
-        try:
-            folder = self.ownerFolder
-        except:
-            folder = None
+        if (
+            data
+            and isinstance(data, str)
+            and os.path.isfile(data)
+            and os.stat(data).st_size > int(2.5e7)
+        ):
+            owner = self._user_id
 
-        if item_properties:
-            large_thumbnail = item_properties.pop("largeThumbnail", None)
-        else:
-            large_thumbnail = None
+            try:
+                folder = self.ownerFolder
+            except:
+                folder = None
 
-        if item_properties is not None:
-            if "tags" in item_properties:
-                if type(item_properties["tags"]) is list:
-                    item_properties["tags"] = ",".join(item_properties["tags"])
+            if item_properties:
+                large_thumbnail = item_properties.pop("largeThumbnail", None)
+            else:
+                large_thumbnail = None
 
-        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            if item_properties is not None:
+                if "tags" in item_properties:
+                    if type(item_properties["tags"]) is list:
+                        item_properties["tags"] = ",".join(item_properties["tags"])
+
+            if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+                if item_properties is None:
+                    item_properties = {}
+                if not "type" in item_properties:
+                    item_properties["type"] = self.type
+                if not "fileName" in item_properties:
+                    fileName = self.name
+                    item_properties["fileName"] = fileName
+            # update everything but the data
+            ret = self._portal.update_item(
+                self.itemid,
+                item_properties,
+                None,
+                thumbnail,
+                metadata,
+                owner,
+                folder,
+                large_thumbnail,
+            )
+            # update the data by part:
+            params = {
+                "f": "json",
+                "multipart": True,
+                "async": True,
+                "filename": os.path.basename(data),
+            }
+            url = f"{self._gis._portal.resturl}content/users/{self.owner}"
+            if folder:
+                url += "/" + folder
+            url += "/items/" + self.itemid + "/update"
+            res = self._gis._con.post(url, params)
             if item_properties is None:
-                item_properties = {}
-            if not "type" in item_properties:
+                item_properties = {"type": self.type}
+            elif not "type" in item_properties:
                 item_properties["type"] = self.type
-            if not "fileName" in item_properties:
-                fileName = self.name
-                item_properties["fileName"] = fileName
+            status = self._gis.content._add_by_part(
+                file_path=data,
+                itemid=self.itemid,
+                item_properties=item_properties,
+                size=int(3.5e7),
+                owner=self.owner,
+                folder=folder,
+            )
+            if status == "completed":
+                self._hydrate()
+            elif ret:
+                self._hydrate()
+            return ret
+        else:
 
-        ret = self._portal.update_item(
-            self.itemid,
-            item_properties,
-            data,
-            thumbnail,
-            metadata,
-            owner,
-            folder,
-            large_thumbnail,
-        )
-        if ret:
-            self._hydrate()
-        return ret
+            owner = self._user_id
+
+            try:
+                folder = self.ownerFolder
+            except:
+                folder = None
+
+            if item_properties:
+                large_thumbnail = item_properties.pop("largeThumbnail", None)
+            else:
+                large_thumbnail = None
+
+            if item_properties is not None:
+                if "tags" in item_properties:
+                    if type(item_properties["tags"]) is list:
+                        item_properties["tags"] = ",".join(item_properties["tags"])
+
+            if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+                if item_properties is None:
+                    item_properties = {}
+                if not "type" in item_properties:
+                    item_properties["type"] = self.type
+                if not "fileName" in item_properties:
+                    fileName = self.name
+                    item_properties["fileName"] = fileName
+
+            ret = self._portal.update_item(
+                self.itemid,
+                item_properties,
+                data,
+                thumbnail,
+                metadata,
+                owner,
+                folder,
+                large_thumbnail,
+            )
+            if ret:
+                self._hydrate()
+            return ret
 
     @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range: str = "7D", as_df: bool = True):
@@ -12886,7 +13008,7 @@ class Item(dict):
                     df = pd.DataFrame([], columns=["Date", "Usage"])
                 elif len(res["data"]):
                     df = pd.DataFrame(res["data"][0]["num"], columns=["Date", "Usage"])
-                    df.Date = df.astype(float) / 1000
+                    df.Date = df.Date.astype(float) / 1000
                     df.Date = df.Date.apply(lambda x: datetime.fromtimestamp(x))
                     df.Usage = df.Usage.astype(int)
                 return df

@@ -77,7 +77,7 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     time                      Union[TimeInstant, TimeInterval]. An instance of time configuration that
                               will be used to create time information from the incoming data.
     ---------------------     --------------------------------------------------------------------
-    run_interval              RunInterval. An instance of the scheduler configuration. The default is: 
+    run_interval              RunInterval. An instance of the scheduler configuration. The default is:
                               RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     =====================     ====================================================================
 

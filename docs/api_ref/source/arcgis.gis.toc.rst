@@ -166,4 +166,5 @@ Submodules
    arcgis.gis.nb
    arcgis.gis.workflowmanager
    arcgis.gis.tasks
+   arcgis.gis.sharing
 

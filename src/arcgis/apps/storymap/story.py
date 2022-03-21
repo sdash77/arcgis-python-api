@@ -4,6 +4,7 @@ import uuid
 from enum import Enum
 from arcgis.auth.tools import LazyLoader
 import re
+import copy
 
 arcgis = LazyLoader("arcgis")
 Content = LazyLoader("arcgis.apps.storymap.story_content")
@@ -130,12 +131,18 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def _create_new_storymap(self):
         # get template from _ref folder
-        template = arcgis.apps.storymap._ref.storymap_2
+        template = copy.deepcopy(arcgis.apps.storymap._ref.storymap_2)
         # add correct by-line and locale
         template["nodes"]["n-aTn8ak"]["data"]["byline"] = self._gis._username
         template["nodes"]["n-4xkUEe"]["config"]["storyLocale"] = (
             self._gis.users.me.culture if self._gis.users.me.culture else "en-US"
         )
+
+        # create unique story node id
+        story_node = "n-" + uuid.uuid4().hex[0:6]
+        template["root"] = story_node
+        template["nodes"][story_node] = template["nodes"]["n-4xkUEe"]
+        del template["nodes"]["n-4xkUEe"]
         # set properties for the story
         self._properties = template
         # create text for resource call

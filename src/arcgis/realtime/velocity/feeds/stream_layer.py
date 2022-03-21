@@ -29,7 +29,7 @@ class StreamLayer(_FeedTemplate, _HasTime):
                                     The default is: "*".
     ------------------              --------------------------------------------------------------------
     outSR                           int. Requested output spatial reference. The default is: 4326.
-                                    
+
                                     .. note::
                                         To learm more about projected and geographic coordinate systems, refer to
                                         `Using spatial references <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`.

@@ -310,11 +310,11 @@ def segment_image(model, images, device, predict_bg, model_info):
     output = model(normed_batch_tensor)
     ignore_mapped_class = model_info.get("ignore_mapped_class", [])
     for k in ignore_mapped_class:
-        output[:, k] = -1
+        output[:, k] = output.min() - 1
     if predict_bg:
         return output.max(dim=1)[1]
     else:
-        output[:, 0] = -1
+        output[:, 0] = output.min() - 1
         return output.max(dim=1)[1]
 
 

@@ -2505,11 +2505,13 @@ class FeatureLayer(Layer):
 
             executor = concurrent.futures.ThreadPoolExecutor(1)
             res = self._con.post(path=delete_url, postdata=params)
+            time.sleep(2)
             future = executor.submit(
                 self._status_via_url,
                 *(self._con, res["statusUrl"], {"f": "json"}),
             )
             executor.shutdown(False)
+
             return future
 
     @property
@@ -2552,6 +2554,7 @@ class FeatureLayer(Layer):
                 "CompletedWithErrors",
             ]
         ]
+        time.sleep(0.5)
         status = con.get(url, params)
         while (
             status["status"].lower() in status_allowed
