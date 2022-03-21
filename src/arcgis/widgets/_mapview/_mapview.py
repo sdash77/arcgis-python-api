@@ -1579,11 +1579,19 @@ class MapView(widgets.DOMWidget):
 
         return output_bool
 
+    _view_layers = List([]).tag(sync=True)
+
     def update_layer(self, layer):
         """
         Update the layer on the map to have it dynamically visuallized with the new properties.
         """
         self.webmap.update_layer(layer)
+        # takes list of dict objects
+        self._view_layers = self.webmap.layers
+        # You need to re-write this dict to trigger the JS side change
+        copy_view_layers = list(self._view_layers)
+        self._view_layers = []
+        self._view_layers = copy_view_layers
 
 
     def _infer_layers(self, arg):
