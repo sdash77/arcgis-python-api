@@ -9211,6 +9211,7 @@ class User(dict):
         self._user_id = username
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
+        self._invitemgr = None
         # userdict = self._portal.get_user(self.username)
         self._hydrated = False
         if userdict:
@@ -9292,6 +9293,20 @@ class User(dict):
         )
         params = {"f": "json"}
         return self._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def invitations(self) -> "UserInvitationManager":
+        """
+        Provides a list of invitations for a given user
+
+        :returns: UserInvitationManager
+        """
+        if self._invitemgr is None:
+            from arcgis.gis.sharing import UserInvitationManager
+
+            self._invitemgr = UserInvitationManager(self)
+        return self._invitemgr
 
     # ----------------------------------------------------------------------
     def report(
@@ -10680,6 +10695,8 @@ class User(dict):
         else:
             # delete the groups owned by the user
             [grp.delete() for grp in self.groups if grp.owner == self.username]
+        if self._gis._portal.is_arcgisonline:
+            self.esri_access = "arcgisonly"
         return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username: str):
