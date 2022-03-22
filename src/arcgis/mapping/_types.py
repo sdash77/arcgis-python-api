@@ -911,7 +911,6 @@ class WebMap(HasTraits, collections.OrderedDict):
                 # reverse the layer list - webmap viewer reverses the list always
                 self._layers.reverse()
 
-
     def _process_extent(self, extent=None):
         """
         internal method to transform extent to a string of xmin, ymin, xmax, ymax
@@ -2030,45 +2029,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         if value in [0, "0", False, "false"]:
             self._zoom = False
 
-    @property
-    def zoomlevel(self):
-        """
-        Get/Set the zoom level.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required float. The zoom level for the map
-        ==================     ====================================================================
-
-        :return: The zoomlevel value
-        """
-        return self._mapview.zoom
-
-    @zoomlevel.setter
-    def zoomlevel(self, value):
-        self._mapview.zoom = value
-
-    @property
-    def center(self):
-        """
-        Get/Set the center value for the map.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required `[lat, long]` list, or a dict that represents the JSON of the map
-                               widget's center.
-        ==================     ====================================================================
-
-        :return:  A dict that represents the JSON of the map's center.
-        """  
-        return self._mapview.center
     
-    @center.setter
-    def center(self, value):
-        self._mapview.center = value
-
     @property
     def navigation(self):
         """

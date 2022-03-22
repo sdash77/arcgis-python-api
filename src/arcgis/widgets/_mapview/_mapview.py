@@ -1458,7 +1458,7 @@ class MapView(widgets.DOMWidget):
             else:
                 _lyr["options"] = options
             _lyr["_hashFromPython"] = self._get_hash(item)
-            self._add_notype_layer(item, _lyr)
+            self._add_notype_layer(item, _lyr, True)
         elif isinstance(item, pd.DataFrame):
             if hasattr(item, "spatial"):
                 self.add_layer(item.spatial.to_featureset())
@@ -1499,12 +1499,12 @@ class MapView(widgets.DOMWidget):
             finally:
                 if not added_successful:
                     item["_hashFromPython"] = self._get_hash(item)
-                    self._add_notype_layer(item, item)
+                    self._add_notype_layer(item, item, True)
         elif isinstance(item, BaseOGC):
             self._add_layer_to_webmap(item, options)
             _lyr = _make_jsonable_dict(item._lyr_json)
             _lyr["_hashFromPython"] = self._get_hash(item)
-            self._add_notype_layer(item, _lyr)
+            self._add_notype_layer(item, _lyr, True)
         elif _is_iterable(item):
             # If it's any iterable not previously checked, attempt to infer
             if "layers" in item:
@@ -1515,20 +1515,35 @@ class MapView(widgets.DOMWidget):
                     self._add_layer_to_widget(item_, options)
         else:
             raise RuntimeError("Cannot infer layer: will not be added to map")
-        view_layers = []
-        for view in self.webmap.layers:
-           view_layers.append(dict(view))
-        self._view_layers = view_layers
 
-    def _add_notype_layer(self, item, lyr_json):
+    def _add_notype_layer(self, item, lyr_json, new):
         # Add the original item to the hashed layers
-        self._add_to_hashed_layers(item)
+        if new is True:
+            self._add_to_hashed_layers(item)
         # but draw the json representation
+        else:
+            # remove old representation otherwise both will appear on map
+            # applied for update layer
+            layers = list(self._draw_these_notype_layers_on_widget_load)
+            for layer in layers:
+                if layer["_hashFromPython"] == lyr_json["_hashFromPython"]:
+                    layers.remove(layer)
+            self._draw_these_notype_layers_on_widget_load = tuple(layers)
         self._draw_these_notype_layers_on_widget_load += (lyr_json,)
         if self.ready:
             self._add_this_notype_layer = {}
             self._add_this_notype_layer = lyr_json
 
+    def update_layer(self, layer):
+        """
+        Update the layer on the map to have it dynamically visuallized with the new properties.
+        """
+        # Update the webmap part
+        self.webmap.update_layer(layer)
+
+        # Update the mapview part
+        self._webmap = self.webmap._webmapdict        
+        
     def remove_layers(self, layers=None):
         """
         The ``remove_layers`` method removes the layers added to the map widget.
@@ -1580,27 +1595,8 @@ class MapView(widgets.DOMWidget):
         # Layer is removed from python side: trigger removal from JS side
         self._layers_to_remove = tuple("nonexistant_layer_id")
         self._layers_to_remove = tuple(layer_hashes_to_remove)
-        
-        view_layers =[]
-        for view in self.webmap.layers:
-           view_layers.append(dict(view))
-        self._view_layers = view_layers
 
         return output_bool
-
-    _view_layers = List([]).tag(sync=True)
-
-    def update_layer(self, layer):
-        """
-        Update the layer on the map to have it dynamically visuallized with the new properties.
-        """
-        self.webmap.update_layer(layer)
-        # You need to re-write this list of dicts to trigger the JS side change
-        # view_layers = []
-        # for view in self.webmap.layers:
-        #    view_layers.append(dict(view))
-        # self._view_layers = view_layers
-
 
     def _infer_layers(self, arg):
         """For a generic list of Layers, Items, FeatureSets, or an individual
@@ -1650,7 +1646,7 @@ class MapView(widgets.DOMWidget):
         self._hashed_layers[hash_] = item
 
     def _remove_from_notype_layers(self, layer):
-        layers_to_test = list(self._notype_layers)
+        layers_to_test = list(self.layers)
         for i in range(0, len(layers_to_test)):
             layer_to_test = layers_to_test[i]
             if layer_to_test["_hashFromPython"] == self._get_hash(
