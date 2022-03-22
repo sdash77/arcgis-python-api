@@ -6,6 +6,7 @@ import json
 import time
 import logging
 import base64
+from typing import Union
 import urllib.request
 from uuid import uuid4
 from collections import OrderedDict
@@ -1534,7 +1535,7 @@ class MapView(widgets.DOMWidget):
             self._add_this_notype_layer = {}
             self._add_this_notype_layer = lyr_json
 
-    def update_layer(self, layer):
+    def update_layer(self, layer: Union[dict, FeatureLayer]):
         """
         To update the layer dictionary for a layer in the map. For example, to update the renderer dictionary for a layer
         and have it by dynamically changed on the mapview.
