@@ -1536,7 +1536,37 @@ class MapView(widgets.DOMWidget):
 
     def update_layer(self, layer):
         """
-        Update the layer on the map to have it dynamically visuallized with the new properties.
+        To update the layer dictionary for a layer in the map. For example, to update the renderer dictionary for a layer
+        and have it by dynamically changed on the mapview.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        layer                   Required Feature Layer or Feature Layer dictionary.
+                                The existing mapview layer with updated properties.
+                                In order to get a layer on the mapview, use the ``layers`` method and
+                                assign the output to a value. Make edits on the this value and pass
+                                it in as a dict to update the rendering on the map.
+
+                                .. warning::
+                                    If the itemId of the feature layer is changed, this will not work.
+        ==================      ====================================================================
+
+        .. code-block:: python
+            # Create a mapview and add layer
+            map1 = gis.map("Oregon")
+            map1.add_layer(<fl_to_add>)
+
+            # Get a layer and edit the color
+            fl = map1.layers[0]
+            fl.renderer.symbol.color = [0, 204, 204, 255]
+
+            # Update the layer to see it render on map
+            map1.update_layer(fl)
+
+            # Save with the updates
+            wm_properties= {"title": "Test Update", "tags":["update_layer"], "snippet":"Updated a layer and now save"}
+            map1.save(wm_properties)
         """
         # Update the webmap part
         self.webmap.update_layer(layer)

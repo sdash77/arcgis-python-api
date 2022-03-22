@@ -878,18 +878,33 @@ class WebMap(HasTraits, collections.OrderedDict):
         and have it by dynamically changed on the webmap. Can be used to configure the pop_ups dictionary, renderer,
         or any other part of the Feature Layer properties.
 
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        layer                  Required object. The existing webmap layer with updated properties.
-                               In order to get a layer on the webmap, use the ``get_layer`` method and
-                               assign the output to a value. Make edits on the this value (dict) and pass
-                               it in this method to update the rendering on the map.
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        layer                   Required Feature Layer or Feature Layer dictionary.
+                                The existing webmap layer with updated properties.
+                                In order to get a layer on the webmap, use the ``layers`` method and
+                                assign the output to a value. Make edits on the this value and pass
+                                it in as a dict to update the rendering on the map.
 
-                               .. warning::
+                                .. warning::
                                     If the itemId of the feature layer is changed, this will not work.
-        ==================     ====================================================================
+        ==================      ====================================================================
 
+        .. code-block:: python
+            # Create Webmap from webmap item
+            wm = WebMap(<wm_item_id>)
+
+            # Get a layer and edit the color
+            fl = wm.layers[0]
+            fl["layerDefinition"]["drawingInfo"]["renderer"]["symbol"]["color"] = [0, 0, 0, 255]
+
+            # Update the layer to see it render on map
+            wm.update_layer(dict(my_lyr))
+
+            # Save with the updates
+            wm_properties= {"title": "Test Update", "tags":["update_layer"], "snippet":"Updated a layer and now save"}
+            wm.save(wm_properties)
         """
         if isinstance(layer, FeatureLayer):
             # Need to remove to re-create the layer view correctly
