@@ -9092,14 +9092,14 @@ def export_to_tile_package(
     Exports a Tiled ImageryLayer portal item to tile package.
 
     .. note::
-        Currently supported only on ArcGIS online. 
+        Currently supported only on ArcGIS online.
 
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
     input_data          Required Tiled ImageryLayer portal item to be exported as tile package.
     ---------------     --------------------------------------------------------------------
-    output_name         Optional string. Name of the Tile Package to be created. 
+    output_name         Optional string. Name of the Tile Package to be created.
                         If not provided, a Tile Package is created by the method and used as the output.
     ---------------     --------------------------------------------------------------------
     gis                 Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
