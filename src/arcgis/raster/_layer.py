@@ -9445,6 +9445,8 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def catalog_paths(self):
+        if self._datastore_raster:
+            return [self._uri]
         return [self._url]
 
     @property
@@ -9464,7 +9466,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def names(self):
-        return [super().properties.names]
+        return [super().properties.name]
 
     @property
     def has_RAT(self):
