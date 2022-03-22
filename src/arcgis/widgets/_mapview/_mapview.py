@@ -1542,8 +1542,8 @@ class MapView(widgets.DOMWidget):
         self.webmap.update_layer(layer)
 
         # Update the mapview part
-        self._webmap = self.webmap._webmapdict        
-        
+        self._webmap = self.webmap._webmapdict
+
     def remove_layers(self, layers=None):
         """
         The ``remove_layers`` method removes the layers added to the map widget.

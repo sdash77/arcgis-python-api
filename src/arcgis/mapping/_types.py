@@ -603,7 +603,6 @@ class WebMap(HasTraits, collections.OrderedDict):
             )
         # endregion
 
-
         # region create the new layer dict in memory
         # dvitale: add ability to specify layer id
         layer_id = (
@@ -905,11 +904,11 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         # Update the layers property
         if "operationalLayers" in self._webmapdict:
-                self._layers = []
-                for l in self._webmapdict["operationalLayers"]:
-                    self._layers.append(_mixins.PropertyMap(l))
-                # reverse the layer list - webmap viewer reverses the list always
-                self._layers.reverse()
+            self._layers = []
+            for l in self._webmapdict["operationalLayers"]:
+                self._layers.append(_mixins.PropertyMap(l))
+            # reverse the layer list - webmap viewer reverses the list always
+            self._layers.reverse()
 
     def _process_extent(self, extent=None):
         """
@@ -2029,7 +2028,6 @@ class WebMap(HasTraits, collections.OrderedDict):
         if value in [0, "0", False, "false"]:
             self._zoom = False
 
-    
     @property
     def navigation(self):
         """
