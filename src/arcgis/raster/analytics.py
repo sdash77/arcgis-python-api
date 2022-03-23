@@ -9114,7 +9114,7 @@ def export_to_tile_package(
 
         # Usage Example
 
-        >>> exported_item = export_to_tile_package(input_data = item, output_name = "exported_tile_package")
+        exported_item = export_to_tile_package(input_data = item, output_name = "exported_tile_package")
 
     """
 
