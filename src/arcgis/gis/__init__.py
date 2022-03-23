@@ -4856,6 +4856,8 @@ class ContentManager(object):
         The class is not created by the user.
     """
 
+    _depmgr = None
+
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
@@ -4874,6 +4876,18 @@ class ContentManager(object):
         curl = f"{self._gis._portal.resturl}portals/checkUrl"
         params = {"f": "json", "url": url}
         return self._gis._con.get(curl, params, ignore_error_key=True)
+
+    # ----------------------------------------------------------------------
+    @property
+    def dependency_manager(self) -> "DependencyManager":
+        """
+        Provides users the ability to manage the Enterprise's Item Dependencies Database.
+        """
+        if self._depmgr is None:
+            from arcgis.gis.sharing._dependency import DependencyManager
+
+            self._depmgr = DependencyManager(gis=self._gis)
+        return self._depmgr
 
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
