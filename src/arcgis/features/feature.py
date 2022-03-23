@@ -813,7 +813,7 @@ class FeatureSet(object):
         :return:
            A :class:`~arcgis.features.FeatureSet` object
         """
-        if hasattr(fs, "JSON") and fs.__name__ == "FeatureSet":
+        if hasattr(fs, "JSON") and type(fs).__name__ == "FeatureSet":
             return FeatureSet.from_dict(_ujson.loads(fs.JSON))
         else:
             raise ValueError(f"Invalid input of type {type(fs)}")
