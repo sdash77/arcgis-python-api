@@ -25,8 +25,8 @@ class DependencyManager:
         :returns: Dict[str, Any]
 
         """
-        url = self._urls['rebuild']
-        params = {'f': 'json'}
+        url = self._urls["rebuild"]
+        params = {"f": "json"}
         return self._gis._con.post(url, params)
 
     def status(self) -> Dict[str, str]:
@@ -35,14 +35,14 @@ class DependencyManager:
 
         :returns: Dict[str,str]
         """
-        url = self._urls['status']
-        params = {'f': 'json'}
+        url = self._urls["status"]
+        params = {"f": "json"}
         return self._gis._con.get(url, params)
 
     def terminate(self):
         """
         Ends the rebuild of the dependency database.
         """
-        url = self._urls['stop']
-        params = {'f': 'json'}
+        url = self._urls["stop"]
+        params = {"f": "json"}
         return self._gis._con.post(url, params)
