@@ -712,8 +712,8 @@ def merge_emd_and_stats(data_folders):
 def prepare_textdata(
     path,
     task,
-    text_columns,
-    label_columns,
+    text_columns=None,
+    label_columns=None,
     train_file="train.csv",
     valid_file=None,
     val_split_pct=0.1,
@@ -723,6 +723,8 @@ def prepare_textdata(
     remove_html_tags=False,
     remove_urls=False,
     working_dir=None,
+    dataset_type=None,
+    class_mapping=None,
     **kwargs,
 ):
     """
@@ -738,16 +740,20 @@ def prepare_textdata(
     task                    Required string.
                             The task for which the dataset is prepared.
                             Available choice at this point is
-                            "classification" and "sequence_translation".
+                            "classification", "sequence_translation" or "entity_recognition".
     ---------------------   -------------------------------------------
-    text_columns            Required string.
-                            The column that will be used as feature.
+    text_columns            Optional string.
+                            This parameter is mandatory when task is "classification"
+                             or "sequence_translation".
+                            The column that will contain the input text.
     ---------------------   -------------------------------------------
-    label_columns           Required list.
+    label_columns           Optional list.
+                            This parameter is mandatory when task is "classification"
+                             or "sequence_translation".
                             The list of columns denoting the class
                             label/translated text to predict. Provide
                             a list of columns in case of multi-label
-                            classification problem
+                            classification problem.
     ---------------------   -------------------------------------------
     train_file              Optional string.
                             The file name containing the training data.
@@ -796,6 +802,22 @@ def prepare_textdata(
     working_dir             Optional string.
                             Sets the default path to be used as a prefix
                             for saving trained models and checkpoints.
+    ---------------------   -------------------------------------------
+    dataset_type            Optional list.
+                            This parameter is mandatory when task is "entity_recognition"
+                            Accepted data format
+                            for this model are - 'ner_json','BIO' or 'LBIOU'
+    ---------------------   -------------------------------------------
+    class_mapping           Optional dictionary. Mapping from id to
+                            its string label.
+                            For dataset_type=IOB, BILUO or ner_json:
+                                Provide address field as class mapping
+                                in below format:
+                                class_mapping={'address_tag':'address_field'}.
+                                Field defined as 'address_tag' will be treated
+                                as a location. In cases where trained model extracts
+                                multiple locations from a single document, that
+                                document will be replicated for each location.
     =====================   ===========================================
 
     **Keyword Arguments**
@@ -810,6 +832,11 @@ def prepare_textdata(
                             val_split_pct.
                             The default value is True.
                             Note: Applies only to single-label text classification.
+    ---------------------   -------------------------------------------
+    encoding                Optional string.
+                            Applicable only when task is entity_recognition:
+                            The encoding to read the csv/json file.
+                            Default is 'UTF-8'
     =====================   ===========================================
 
     :returns: `TextData` object
@@ -825,51 +852,105 @@ def prepare_textdata(
     # if task not in allowed_tasks:
     #     raise Exception(f"Wrong task choosen. Allowed tasks are {allowed_tasks}")
 
-    if isinstance(label_columns, (str, bytes)):
-        label_columns = [label_columns]
-
     force_cpu = arcgis.learn.models._arcgis_model._device_check()
 
     if hasattr(arcgis, "env") and force_cpu == 1:
         arcgis.env._processorType = "CPU"
 
     if task == "classification":
-        data = TextDataObject.prepare_data_for_classification(
-            path,
-            text_columns,
-            label_columns,
-            train_file=train_file,
-            valid_file=valid_file,
-            val_split_pct=val_split_pct,
-            seed=seed,
-            batch_size=batch_size,
-            process_labels=process_labels,
-            remove_html_tags=remove_html_tags,
-            remove_urls=remove_urls,
-            **kwargs,
-        )
+        if text_columns == None or label_columns == None:
+            logger = logging.getLogger()
+            logger.error(
+                f"For classification task the `text_columns` and `label_columns` parameters are required."
+            )
+            raise Exception(
+                f"For classification task the `text_columns` and `label_columns` parameters are required."
+            )
+        else:
+            if isinstance(label_columns, (str, bytes)):
+                label_columns = [label_columns]
+            data = TextDataObject.prepare_data_for_classification(
+                path,
+                text_columns,
+                label_columns,
+                train_file=train_file,
+                valid_file=valid_file,
+                val_split_pct=val_split_pct,
+                seed=seed,
+                batch_size=batch_size,
+                process_labels=process_labels,
+                remove_html_tags=remove_html_tags,
+                remove_urls=remove_urls,
+                **kwargs,
+            )
 
     elif task.lower() == "sequence_translation":
-        data = TextDataObject.prepare_data_for_seq2seq(
-            path,
-            text_columns,
-            label_columns,
-            train_file=train_file,
-            val_split_pct=val_split_pct,
-            seed=seed,
-            batch_size=batch_size,
-            process_labels=process_labels,
-            remove_html_tags=remove_html_tags,
-            remove_urls=remove_urls,
-        )
+        if text_columns == None or label_columns == None:
+            logger = logging.getLogger()
+            logger.error(
+                f"For sequence translation task the `text_columns` and `label_columns` parameters are required."
+            )
+            raise Exception(
+                f"For sequence translation task the `text_columns` and `label_columns` parameters are required."
+            )
+        else:
+            if isinstance(label_columns, (str, bytes)):
+                label_columns = [label_columns]
+            data = TextDataObject.prepare_data_for_seq2seq(
+                path,
+                text_columns,
+                label_columns,
+                train_file=train_file,
+                val_split_pct=val_split_pct,
+                seed=seed,
+                batch_size=batch_size,
+                process_labels=process_labels,
+                remove_html_tags=remove_html_tags,
+                remove_urls=remove_urls,
+            )
+    elif task.lower() == "entity_recognition":
+        if dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
+            from ._utils._ner_utils import _NERData
+
+            if batch_size == 64:
+                batch_size = 8
+            encoding = kwargs.get("encoding", "UTF-8")
+            ner_architecture = kwargs.get("ner_architecture", "spacy")
+            data = _NERData(
+                dataset_type=dataset_type,
+                path=path,
+                class_mapping=class_mapping,
+                seed=seed,
+                val_split_pct=val_split_pct,
+                batch_size=batch_size,
+                encoding=encoding,
+            )
+            if working_dir is not None:
+                data.working_dir = path = Path(os.path.abspath(working_dir))
+            else:
+                path = os.path.abspath(data.path)
+                data.working_dir = None
+            if os.path.isfile(path):
+                path = os.path.dirname(path)
+            _prepare_working_dir(path)
+
+            return data
+        else:
+            logger = logging.getLogger()
+            logger.error(
+                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
+            )
+            raise Exception(
+                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
+            )
 
     else:
         logger = logging.getLogger()
         logger.error(
-            f"Wrong task - {task} provided. This function can handle only `classification` and 'sequence_translation' task currently"
+            f"Wrong task - {task} provided. This function can handle only `classification`, 'sequence_translation' and 'entity_recognition' task currently"
         )
         raise Exception(
-            f"Wrong task - {task} provided. This function can handle only `classification` and 'sequence_translation' task currently"
+            f"Wrong task - {task} provided. This function can handle only `classification`, 'sequence_translation' and 'entity_recognition' task currently"
         )
 
     if working_dir is None:
@@ -1100,7 +1181,6 @@ def prepare_data(
     -For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
     -For feature categorization use Labelled Tiles or Imagenet format.
     -For pixel classification, use Classified Tiles format.
-    -For entity extraction from text, use IOB, BILUO or ner_json formats.
     -For DeepSort, use Imagenet format.
     -For panoptic segmentation, use Panoptic format.
 
@@ -1111,15 +1191,6 @@ def prepare_data(
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
-                            For dataset_type=IOB, BILUO or ner_json:
-                                Provide address field as class mapping
-                                in below format:
-                                class_mapping={'address_tag':'address_field'}.
-                                Field defined as 'address_tag' will be treated
-                                as a location. In cases where trained model extracts
-                                multiple locations from a single document, that
-                                document will be replicated for each location.
-
     ---------------------   -------------------------------------------
     chip_size               Optional integer, default 224. Size of the image to train the model.
                             Images are cropped to the specified chip_size.
@@ -1163,9 +1234,6 @@ def prepare_data(
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
                             'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
                             This parameter is mandatory while preparing data
-                            for 'EntityRecognizer' model. Accepted data format
-                            for this model are - ['ner_json','BIO', 'LBIOU'].
-                            This parameter is mandatory while preparing data
                             for 'MaXDeepLab' panoptic segmentation model.
                             Accepted data format is 'Panoptic'.
     ---------------------   -------------------------------------------
@@ -1199,11 +1267,6 @@ def prepare_data(
                             for example: if value is 2 and image size 256x256,
                             it will create label images of size 128x128.
                             Default is 4
-    ---------------------   -------------------------------------------
-    encoding                Optional string.
-                            Applicable only when dataset_type=IOB, BILUO or ner_json:
-                            The encoding to read the csv/json file.
-                            Default is 'UTF-8'
     ---------------------   -------------------------------------------
     min_points              Optional int. Filtering based on minimum number
                             of points in a block.
