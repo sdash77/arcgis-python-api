@@ -944,8 +944,6 @@ def prepare_textdata(
                 f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
             )
 
-
-
     else:
         logger = logging.getLogger()
         logger.error(
