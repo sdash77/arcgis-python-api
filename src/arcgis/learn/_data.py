@@ -861,10 +861,10 @@ def prepare_textdata(
         if text_columns == None or label_columns == None:
             logger = logging.getLogger()
             logger.error(
-                f"For sequence translation task the `text_columns` and `label_columns` parameters are required."
+                f"For classification task the `text_columns` and `label_columns` parameters are required."
             )
             raise Exception(
-                f"For sequence translation task the `text_columns` and `label_columns` parameters are required."
+                f"For classification task the `text_columns` and `label_columns` parameters are required."
             )
         else:
             if isinstance(label_columns, (str, bytes)):
