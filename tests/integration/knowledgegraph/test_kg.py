@@ -32,7 +32,7 @@ class TestImport(unittest.TestCase):
         from arcgis.graph import KnowledgeGraph
 
     def test_search(self):
-        items = gis.content.search('type:Knowledge Graph')
+        items = gis.content.search("type:Knowledge Graph")
         if len(items) > 0:
             assert isinstance(KnowledgeGraph.fromitem(items[0]), KnowledgeGraph)
 

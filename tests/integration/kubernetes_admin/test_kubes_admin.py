@@ -17,7 +17,13 @@ class TestKubernetesAdmin(unittest.TestCase):
     """General Test Cases for Kubernetes"""
 
     def setUp(self):
-        self._gis = GIS(url="https://1091pubbi-1091pubbi.apps.openshift46release.esri.com/web", username="ACadmin", password="ACadmin82", verify_cert=VERIFY_CERT, trust_env=True)
+        self._gis = GIS(
+            url="https://1091pubbi-1091pubbi.apps.openshift46release.esri.com/web",
+            username="ACadmin",
+            password="ACadmin82",
+            verify_cert=VERIFY_CERT,
+            trust_env=True,
+        )
 
     def test_properties(self):
         """tests the properties off of the GIS Kubernetes Admin Class"""
@@ -42,7 +48,7 @@ class TestKubernetesAdmin(unittest.TestCase):
         assert admin.uploads
         assert admin.usage
         assert admin.jobs
-        
+
     def test_scheduled_task(self):
         admin = self._gis.admin
         assert isinstance(admin, KubernetesAdmin)
@@ -50,6 +56,7 @@ class TestKubernetesAdmin(unittest.TestCase):
 
     def test_jobs(self):
         from arcgis.gis.kubernetes._admin._jobs import JobManager
+
         admin = self._gis.admin
         assert isinstance(admin, KubernetesAdmin)
         assert isinstance(admin.jobs, JobManager)

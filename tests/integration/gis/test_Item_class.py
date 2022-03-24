@@ -67,7 +67,12 @@ class Test_Item_portal_builtin(unittest.TestCase):
         # region Read config data
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
+        dev_gis = GIS(
+            url="https://datasciencedev.esri.com/portal/",
+            username="portaladmin",
+            password="esri.agp",
+            verify_cert=False,
+        )
         cls.portal_url = _conf_reader["datascienceqa"]["url"]
         cls.portal_username = _conf_reader["datascienceqa"]["admin_user"]
         cls.portal_password = _conf_reader["datascienceqa"]["admin_password"]

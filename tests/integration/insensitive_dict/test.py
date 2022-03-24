@@ -34,13 +34,14 @@ class TestInsensitiveDict(unittest.TestCase):
         i1 = InsensitiveDict({"a": 1, "b": {"c": "d"}})
         assert i1.json
         i1 = InsensitiveDict({"a": 1, "b": {"c": {"d": [{"fish": "duck"}]}}})
-        assert i1.json == json.dumps({"a":1,"b":{"c":{"d":[{"fish":"duck"}]}}},separators=(',', ':'))
+        assert i1.json == json.dumps(
+            {"a": 1, "b": {"c": {"d": [{"fish": "duck"}]}}}, separators=(",", ":")
+        )
         i1 = InsensitiveDict({"a": 1, "b": {"c": {"d": [{"fish": "duck"}]}}})
         i1.b.c.d.append([1, 2, 3])
         i1.b.c.d.append({"dog": "cat"})
         assert (
-            i1.json
-            == '{"a":1,"b":{"c":{"d":[{"fish":"duck"},[1,2,3],{"dog":"cat"}]}}}'
+            i1.json == '{"a":1,"b":{"c":{"d":[{"fish":"duck"},[1,2,3],{"dog":"cat"}]}}}'
         )
 
     # ----------------------------------------------------------------------
