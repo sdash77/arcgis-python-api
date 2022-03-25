@@ -4882,8 +4882,12 @@ class ContentManager(object):
     def dependency_manager(self) -> "DependencyManager":
         """
         Provides users the ability to manage the Enterprise's Item Dependencies Database.
+
+        Available in ArcGIS Enterprise 10.9.1+
+
+        :returns: DependencyManager or None for ArcGIS Online.
         """
-        if self._depmgr is None:
+        if self._depmgr is None and self._gis._portal.is_arcgisonline == False:
             from arcgis.gis.sharing._dependency import DependencyManager
 
             self._depmgr = DependencyManager(gis=self._gis)
