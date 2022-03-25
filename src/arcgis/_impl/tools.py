@@ -8851,8 +8851,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                         ):
                             url = input_param["url"]
                             if "token" not in url:
-                                token = input_layer._gis._con._create_token(url)
-                                url = input_param["url"] + "?token=" + token
+                                from arcgis.raster.functions.utility import (
+                                    _generate_layer_token,
+                                )
+
+                                token = _generate_layer_token(input_layer, url)
+                                if token is not None:
+                                    url = input_param["url"] + "?token=" + token
                                 input_param.update({"url": url})
                     except:
                         pass
@@ -8888,8 +8893,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                     if isinstance(input_param, dict) and "url" in input_param.keys():
                         url = input_param["url"]
                         if "token" not in url:
-                            token = input_layer._gis._con._create_token(url)
-                            url = input_param["url"] + "?token=" + token
+                            from arcgis.raster.functions.utility import (
+                                _generate_layer_token,
+                            )
+
+                            token = _generate_layer_token(input_layer, url)
+                            if token is not None:
+                                url = input_param["url"] + "?token=" + token
                             input_param.update({"url": url})
                 except:
                     pass
@@ -9289,8 +9299,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                     url = item.url
                     try:
                         if "token" not in url:
-                            token = item._gis._con._create_token(url)
-                            url = url + "?token=" + token
+                            from arcgis.raster.functions.utility import (
+                                _generate_layer_token,
+                            )
+
+                            token = _generate_layer_token(item, url)
+                            if token is not None:
+                                url = url + "?token=" + token
                     except:
                         pass
                     url_list.append(url)
