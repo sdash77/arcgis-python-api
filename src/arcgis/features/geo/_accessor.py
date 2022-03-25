@@ -1464,11 +1464,11 @@ class GeoAccessor(object):
         """
         if self._name is None:
             try:
-                cols = [c.lower() for c in self._data.columns.tolist()]
                 if any(self._data.dtypes == "geometry"):
                     name = self._data.dtypes[self._data.dtypes == "geometry"].index[0]
                     self.set_geometry(name)
-                elif "shape" in cols:
+                elif "shape" in [str(c).lower() for c in self._data.columns.tolist()]:
+                    cols = [str(c).lower() for c in self._data.columns.tolist()]
                     idx = cols.index("shape")
                     self.set_geometry(self._data.columns[idx])
             except:
