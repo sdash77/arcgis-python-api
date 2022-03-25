@@ -569,9 +569,7 @@ class Video(object):
                     "caption": "" if caption is None else caption,
                     "alt": "" if alt_text is None else alt_text,
                 },
-                "config": {
-                    "size": display,
-                },
+                "config": {"size": display,},
             }
 
             # Create resource node for file path
@@ -824,11 +822,7 @@ class Audio(object):
 
     # ----------------------------------------------------------------------
     def _add_audio(
-        self,
-        caption=None,
-        alt_text=None,
-        display=None,
-        story=None,
+        self, caption=None, alt_text=None, display=None, story=None,
     ):
         self._story = story
         # Make an add resource call
@@ -1593,10 +1587,7 @@ class Text(object):
         self._story = story
         self._story._properties["nodes"][self.node] = {
             "type": "text",
-            "data": {
-                "type": self._style,
-                "text": self._text,
-            },
+            "data": {"type": self._style, "text": self._text,},
         }
         if self._color is not None:
             self._story._properties["nodes"][self.node]["data"]["customTextColors"] = [
@@ -2075,9 +2066,7 @@ class Swipe(object):
 
     # ----------------------------------------------------------------------
     def edit(
-        self,
-        content: Optional[Union[Image, Map]] = None,
-        position: str = "right",
+        self, content: Optional[Union[Image, Map]] = None, position: str = "right",
     ):
         """
         Edit the media content of a Swipe item. To save your edits and see them
@@ -2219,9 +2208,7 @@ class Sidecar(object):
     # ----------------------------------------------------------------------
     # Can we create an alias name called: change_media
     def edit(
-        self,
-        content: Union[Image, Video, Map, Embed],
-        slide_number: int,
+        self, content: Union[Image, Video, Map, Embed], slide_number: int,
     ):
         """
         Edit method can be used to edit the type of media in a slide of the Sidecar.
@@ -2453,9 +2440,7 @@ class Timeline(object):
 
     # ----------------------------------------------------------------------
     def edit(
-        self,
-        content: Union[Image, Text],
-        event: int,
+        self, content: Union[Image, Text], event: int,
     ):
         """
         Edit event text or image content.

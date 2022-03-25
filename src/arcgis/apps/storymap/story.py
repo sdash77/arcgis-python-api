@@ -989,23 +989,23 @@ class StoryMap(object):
             elif sharing == "public":
                 self._item.share(everyone=True)
 
-            if self._gis._con._session.auth and self._gis._con._session.auth.token is not None:
-                params={'f' : 'json', "token" : self._gis._con._session.auth.token}
+            if (
+                self._gis._con._session.auth
+                and self._gis._con._session.auth.token is not None
+            ):
+                params = {"f": "json", "token": self._gis._con._session.auth.token}
                 # Get url
                 if self._gis._is_agol:
-                    self._url = (
-                        "https://storymaps.arcgis.com/stories/{storyid}/publish".format(
-                            storyid=self._itemid
-                        )
+                    self._url = "https://storymaps.arcgis.com/stories/{storyid}/publish".format(
+                        storyid=self._itemid
                     )
                 else:
-                    self._url = (
-                        "https://{portal}/apps/storymaps/stories/{storyid}/publish".format(
-                            portal=self._gis.url, storyid=self._itemid
-                        )
+                    self._url = "https://{portal}/apps/storymaps/stories/{storyid}/publish".format(
+                        portal=self._gis.url, storyid=self._itemid
                     )
+
                 # Make a call to the StoryMaps publish endpoint
-                self._gis._con.post(path =self._url, params=params)
+                self._gis._con.post(path=self._url, params=params)
         else:
             # Set the type keywords
             keywords = self._item.typeKeywords
