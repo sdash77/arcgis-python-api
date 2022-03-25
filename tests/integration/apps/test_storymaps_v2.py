@@ -57,34 +57,34 @@ class TestStoryMap(unittest.TestCase):
 
     def test_add_image(self):
         """Test adding an Image and seeing properties"""
-        trees = Image(
+        img = Image(
             "https://www.nps.gov/npgallery/GetAsset/69680c29-caa3-42da-93d9-32925e9ed409/proxy/hires"
         )
-        image = story.add(trees, "Trees with a deer", "Sequoia trees in the distance")
+        image = story.add(img, "Trees with a deer", "Sequoia trees in the distance")
         story.add()  # separator
 
         assert image
-        assert trees.properties
-        assert trees.caption
-        assert trees.alt_text
+        assert img.properties
+        assert img.caption
+        assert img.alt_text
 
     def test_add_video(self):
         """Test adding a Video and seeing properties"""
-        bear = Video(content + r"\underwater.mp4")
-        video = story.add(bear)
+        vid = Video(content + r"\underwater.mp4")
+        video = story.add(vid)
 
         assert video
-        assert bear.video
+        assert vid.video
 
     def test_add_audio(self):
         """Test adding an Audio and seeing properties"""
         # Node order before adding audio
-        craine = Audio(content + r"\craine.mp3")
+        aud = Audio(content + r"\craine.mp3")
         print("Node Order Before Adding Audio:")
         print(story.nodes)
         print("------------------------------------")
         # Add audio at a certain position
-        audio = story.add(craine, position=2)
+        audio = story.add(aud, position=2)
         separator = story.add()
 
         # See node order after audio was added
@@ -97,25 +97,25 @@ class TestStoryMap(unittest.TestCase):
 
     def test_add_embed(self):
         """Test adding Embed and seeing properties"""
-        park_media = Embed(
+        emb = Embed(
             "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
         )
-        web_page = story.add(park_media)
+        web_page = story.add(emb)
 
         assert web_page
-        assert park_media.link
-        assert park_media.properties
+        assert emb.link
+        assert emb.properties
 
     def test_add_button(self):
         """Test adding a Button and seeing the properties"""
-        leaves = Button(
+        btn = Button(
             link="https://www.nps.gov/subjects/forests/leaf-peeping.htm",
             text="Autumn Colors",
         )
-        leaf_button = story.add(leaves)
+        button = story.add(btn)
 
-        assert leaf_button
-        assert leaves.properties
+        assert button
+        assert btn.properties
 
     def test_add_map(self):
         """
@@ -160,33 +160,33 @@ class TestStoryMap(unittest.TestCase):
     def test_delete(self):
         """Test delete method on an Audio node. Each content has this delete method"""
         # Audio through URL
-        thunder = Audio(content + r"\channel_isl.mp3")
-        story.add(thunder)
-        assert thunder.properties
+        aud_dlt = Audio(content + r"\craine.mp3")
+        story.add(aud_dlt)
+        assert aud_dlt.properties
 
-        deleted = thunder.delete()
+        deleted = aud_dlt.delete()
         assert deleted
 
     def test_replace_media_item(self):
         """Test replacing the webpage link. This can be done through a property for each content"""
-        park_media = Embed(
+        emd = Embed(
             "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
         )
-        story.add(park_media)
+        story.add(emd)
 
-        national_parks = "https://www.nps.gov/index.htm"
-        assert park_media.link
-        print(park_media.link)
+        new_emd = "https://www.nps.gov/index.htm"
+        assert emd.link
+        print(emd.link)
 
-        park_media.link = national_parks
-        park_media.caption = "I updated the webpage"
-        print(park_media.link)
-        print(park_media.caption)
+        emd.link = new_emd
+        emd.caption = "I updated the webpage"
+        print(emd.link)
+        print(emd.caption)
 
-        assert park_media.link
+        assert emd.link
 
     def test_path_to_url(self):
-        vid = Video(content + r"\fawn.mp4")
+        vid = Video(content + r"\underwater.mp4")
         video = story.add(vid)
 
         new_video = "https://www.youtube.com/embed/G6b7Kgvd0iA"

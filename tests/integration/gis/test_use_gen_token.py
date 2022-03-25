@@ -8,17 +8,17 @@ import unittest
 from arcgis.gis import GIS, ProfileManager
 from arcgis.auth import EsriBuiltInAuth, EsriGenTokenAuth
 
-if not 'gpportal' in ProfileManager().list():
+if not "gpportal" in ProfileManager().list():
     gis = GIS(
-        url='https://gpportal.esri.com/portal',
-        username='admin',
-        password='esri.agp',
+        url="https://gpportal.esri.com/portal",
+        username="admin",
+        password="esri.agp",
         verify_cert=False,
-        profile='gpportal',
+        profile="gpportal",
     )
     del gis
 
-PROFILES = ['your_online_profile', 'gpportal']
+PROFILES = ["your_online_profile", "gpportal"]
 
 
 class TestUseGenTokenGIS(unittest.TestCase):
@@ -38,5 +38,5 @@ class TestUseGenTokenGIS(unittest.TestCase):
         assert isinstance(gis._portal.con._session.auth, EsriBuiltInAuth)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

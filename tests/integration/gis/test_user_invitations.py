@@ -6,7 +6,7 @@ from arcgis.gis import GIS, User, UserManager, Group, GroupManager
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis.sharing import UserInvitationManager
 
-PROFILES = ['your_online_profile', 'your_enterprise_profile']
+PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
 proxies = detect_proxy(True)
 
@@ -51,7 +51,7 @@ class TestUserInvitationManager(unittest.TestCase):
                 assert isinstance(test_user, User)
                 gm = gis.groups
                 isinstance(gm, GroupManager)
-                group = gm.create(title='test_group_123a', tags='a,b,c')
+                group = gm.create(title="test_group_123a", tags="a,b,c")
                 group.reassign_to(target_owner=test_user)
                 group.leave()
                 group.invite_users(usernames=[me])
@@ -88,7 +88,7 @@ class TestUserInvitationManager(unittest.TestCase):
                 assert isinstance(test_user, User)
                 gm = gis.groups
                 isinstance(gm, GroupManager)
-                group = gm.create(title='test_group_123a', tags='a,b,c')
+                group = gm.create(title="test_group_123a", tags="a,b,c")
                 group.reassign_to(target_owner=test_user)
                 group.leave()
                 group.invite_users(usernames=[me])
@@ -125,7 +125,7 @@ class TestUserInvitationManager(unittest.TestCase):
                 assert isinstance(test_user, User)
                 gm = gis.groups
                 isinstance(gm, GroupManager)
-                group = gm.create(title='test_group_123a', tags='a,b,c')
+                group = gm.create(title="test_group_123a", tags="a,b,c")
                 group.reassign_to(target_owner=test_user)
                 group.leave()
                 group.invite_users(usernames=[me])

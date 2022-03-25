@@ -43,7 +43,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test create_dynamic_layer
         """
         # Must chech that supportDynamicLayers = True in layer properties
-        # Layer is 
+        # Layer is
         try:
             item_online = gis.content.get("8fdd810d7bbc4c64b1676a5130cbf90d")
             layer_to_add = {
@@ -140,7 +140,10 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test generate_kml method
         """
-        layer = MapImageLayer("https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/",gis)
+        layer = MapImageLayer(
+            "https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/",
+            gis,
+        )
         generate = layer.generate_kml(
             save_location=r"./",
             name="Map Service Test",

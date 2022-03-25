@@ -91,7 +91,7 @@ data = {
         "prepare_data": {
             "path": os.path.join(data_folder, "100_cracks_data"),
             "batch_size": 2,
-            "dataset_type":"PASCAL_VOC_rectangles",
+            "dataset_type": "PASCAL_VOC_rectangles",
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
@@ -329,8 +329,11 @@ data = {
         "datapath_ms": "fc_data",
         "model": FeatureClassifier,
         "model_test": "fc_test",
-        "prepare_data": {"path": os.path.join(data_folder, "featureClassifier"),
-         "batch_size": 2, "dataset_type":"Imagenet"},
+        "prepare_data": {
+            "path": os.path.join(data_folder, "featureClassifier"),
+            "batch_size": 2,
+            "dataset_type": "Imagenet",
+        },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "fc_data"),
             "batch_size": 2,
