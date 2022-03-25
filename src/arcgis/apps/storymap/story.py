@@ -996,8 +996,10 @@ class StoryMap(object):
                 params = {"f": "json", "token": self._gis._con._session.auth.token}
                 # Get url
                 if self._gis._is_agol:
-                    self._url = "https://storymaps.arcgis.com/stories/{storyid}/publish".format(
-                        storyid=self._itemid
+                    self._url = (
+                        "https://storymaps.arcgis.com/stories/{storyid}/publish".format(
+                            storyid=self._itemid
+                        )
                     )
                 else:
                     self._url = "https://{portal}/apps/storymaps/stories/{storyid}/publish".format(
