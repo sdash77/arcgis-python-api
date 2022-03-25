@@ -10457,6 +10457,16 @@ class _RasterAnalysisTools(BaseAnalytics):
         if "context" in context_param.keys():
             context = context_param["context"]
 
+        from arcgis.raster import RasterCollection
+        from arcgis.raster._layer import _LocalRasterCollection
+
+        if (
+            isinstance(input_rasters, RasterCollection)
+            and input_rasters._ras_coll_engine == _LocalRasterCollection
+        ):
+            raster_list = [ras["Raster"].catalog_path for ras in input_rasters]
+            input_rasters = raster_list
+
         md_data_path = []
         if md_to_upload is not None:
             if isinstance(input_rasters, str):
