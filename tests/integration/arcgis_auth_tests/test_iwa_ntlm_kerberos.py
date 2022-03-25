@@ -1,6 +1,8 @@
 import sys
 
-sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+from arcgis.auth.tools._util import detect_proxy
+
 import platform
 import unittest
 from arcgis.gis import GIS
@@ -78,9 +80,9 @@ class TestLDAPAuth(unittest.TestCase):
     """LDAP Test"""
 
     def test_ldap(self):
-        ldap_url = "https://rpubrh77017.ags.esri.com/portal"
-        username = ldap_user
-        password = ldap_pw
+        ldap_url = "https://rpubrh8212.ags.esri.com/portal"
+        username = "creator1"
+        password = "portalaccount1"
         gis = GIS(url=ldap_url, username=username, password=password)
         assert gis.users.me
 

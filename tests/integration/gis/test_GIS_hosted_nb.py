@@ -2,6 +2,10 @@
 # Name:        GIS
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
+import sys
+
+sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_master\tests")
 import unittest
 import os
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
@@ -113,3 +117,7 @@ class Test_GIS_home_homde(unittest.TestCase):
 # TestModule
 def tearDownModule():
     print("**End GIS hosted NB module Tests**")
+
+
+if __name__ == "__main__":
+    unittest.main()
