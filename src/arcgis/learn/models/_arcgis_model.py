@@ -1555,6 +1555,7 @@ class ArcGISModel(object):
                     "Pix2Pix",
                     "SuperResolution",
                     "ImageCaptioner",
+                    "PanopticSegmenter",
                 ]
                 or save_inference_file
             ):

@@ -43,9 +43,13 @@ class MaXDeepLabConfig:
         return xb
 
     def get_model(self, data, backbone, **kwargs):
-        N = data.K  # Max num of masks in predictions
+        N = data.K  # Max num of masks in predictions #TODO: make K private variable
+        n_bands = len(data._bands) if data._is_multispectral else 3
         model = self.maxdeeplab.MaXDeepLabS(
-            im_size=data.chip_size, n_classes=data.c, n_masks=N
+            im_size=data.chip_size,
+            n_classes=data.c,
+            n_masks=N,
+            in_channels=n_bands,
         )
         return model
 
@@ -109,7 +113,7 @@ class MaXDeepLab(ModelExtension):
 
     @staticmethod
     def _supported_datasets():
-        return ["Panoptic"]
+        return ["Panoptic_Segmentation"]
 
     @property
     def supported_backbones(self):

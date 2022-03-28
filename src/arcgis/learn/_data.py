@@ -1182,7 +1182,7 @@ def prepare_data(
     -For feature categorization use Labelled Tiles or Imagenet format.
     -For pixel classification, use Classified Tiles format.
     -For DeepSort, use Imagenet format.
-    -For panoptic segmentation, use Panoptic format.
+    -For panoptic segmentation, use Panoptic_Segmentation format.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -1228,14 +1228,11 @@ def prepare_data(
                             'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
                             'superres', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN',
-                            'Panoptic', and 'ObjectTracking'.
+                            'Panoptic_Segmentation', and 'ObjectTracking'.
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
                             'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
-                            This parameter is mandatory while preparing data
-                            for 'MaXDeepLab' panoptic segmentation model.
-                            Accepted data format is 'Panoptic'.
     ---------------------   -------------------------------------------
     resize_to               Optional integer or tuple of integers.
                             A tuple should be of the form (height, width).
@@ -1534,8 +1531,7 @@ def prepare_data(
     ):
         with open(stats_file) as f:
             stats = json.load(f)
-            if dataset_type != "Panoptic":
-                dataset_type = stats["MetaDataMode"]
+            dataset_type = stats["MetaDataMode"]
 
         with open(path / "map.txt") as f:
             while True:
@@ -1944,7 +1940,7 @@ def prepare_data(
         kwargs_transforms["tfm_y"] = True
 
     ## Create databunch for Panoptic Segmentation
-    elif dataset_type == "Panoptic":
+    elif dataset_type == "Panoptic_Segmentation":
 
         if class_mapping.get(0):
             del class_mapping[0]
@@ -2013,6 +2009,7 @@ def prepare_data(
             kwargs_transforms["size"] = chip_size
 
         kwargs_transforms["tfm_y"] = True
+        _show_batch_multispectral = show_batch_panoptic
 
     elif dataset_type == "Classified_Tiles":
 
@@ -2913,7 +2910,7 @@ def prepare_data(
         data.valid_ds.x._div = 255.0
         data.is_normalized = True
 
-        if dataset_type == "Panoptic":
+        if dataset_type == "Panoptic_Segmentation":
             data.c = len(data.classes)
             data.show_batch = types.MethodType(show_batch_panoptic, data)
 
@@ -2946,7 +2943,6 @@ def prepare_data(
         "ChangeDetection",
         "superres",
         "Imagenet",
-        "Panoptic",
     ]:
         data._dataset_type = stats["MetaDataMode"]
     else:
