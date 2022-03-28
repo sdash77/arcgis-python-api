@@ -4962,7 +4962,7 @@ def majority(
     process_as_multiband: Optional[bool] = None,
 ):
     """
-    The majority function “reduces” multiple pixels from multiple rasters into a single pixel in a single (reduced) raster
+    The majority function determines the value that occurs most often from multiple rasters, on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
