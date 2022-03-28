@@ -33,7 +33,7 @@ jobs:
 
       - name: Install the Requirements
         run: pip install -r src/requirements.txt
-      - name Clean PYD/SO Files and Folders
+      - name: Clean PYD/SO Files and Folders
         run: |
           python ./build/clean_up_so_pyd.py "./src"
       - name: Create the Distributions
