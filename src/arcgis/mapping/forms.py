@@ -68,7 +68,7 @@ class FormCollection:
 
     def __next__(self):
         if self._index >= len(self.forms):
-            return StopIteration
+            raise StopIteration
         else:
             self._index += 1
             return self.forms[self._index - 1]
@@ -130,7 +130,22 @@ class FormCollection:
         """This is a shared method which creates an array of forms if given an array of layers."""
         # we save parent here into the form in order to distinguish between whether from_item or from_webmap was used and to get a usable GIS
         for layer in layers:
-            forms.append(FormInfo(layer, parent))
+            FormCollection._get_forms_within_group_layer(forms, layer, parent)
+
+    @staticmethod
+    def _get_forms_within_group_layer(forms, layer, parent, subtype_gl_layer=None):
+        if layer.layerType == "GroupLayer":
+            for sub_layer in reversed(layer.layers):
+                FormCollection._get_forms_within_group_layer(forms, sub_layer, parent)
+        elif layer.layerType == "SubtypeGroupLayer":
+            for sub_layer in reversed(layer.layers):
+                FormCollection._get_forms_within_group_layer(
+                    forms, sub_layer, parent, subtype_gl_layer=layer
+                )
+        elif layer.layerType == "ArcGISFeatureLayer" and not hasattr(
+            layer, "featureCollection"
+        ):
+            forms.append(FormInfo(layer, parent, subtype_gl_layer))
 
     def _get_forms_from_item(self, item):
         """Populates self.forms given an item."""
@@ -167,6 +182,11 @@ class FormInfo:
                            This is the object which contains the layer, either an item of type
                            `Feature Layer Collection` or a webmap. This is needed to save your
                            form changes to the backend.
+    ------------------     --------------------------------------------------------------------
+    subtype_gl_data        Optional :class:`PropertyMap` or :class:`dict`. This is the
+                           operational layer representing a subtype group layer which contains
+                           the layer containing the form. It can be retrieved from a webmap
+                           using `arcgis.mapping.WebMap(item).layers[0]`
     ==================     ====================================================================
 
     .. code-block:: python
@@ -202,12 +222,17 @@ class FormInfo:
             form_info.update()
     """
 
-    def __init__(self, layer_data, parent, **kwargs):
+    def __init__(self, layer_data, parent, subtype_gl_data=None, **kwargs):
         if not isinstance(layer_data, (dict, PropertyMap)):
             raise ValueError(
                 "Incorrect layer type passed to FormInfo class. Please pass in a property map"
             )
+        if subtype_gl_data and not isinstance(subtype_gl_data, (dict, PropertyMap)):
+            raise ValueError(
+                "Incorrect subtype group layer type passed to FormInfo class. Please pass in a property map"
+            )
         self._kwargs = kwargs
+        self._subtype_group_layer_data = subtype_gl_data
         self._original_layer = layer_data
         self._layer_data = copy.deepcopy(layer_data)
         self._form = self._layer_data.get("formInfo", {})
@@ -227,7 +252,10 @@ class FormInfo:
         )
         self._parent = parent
         try:
-            url = self._original_layer["url"]
+            if self._subtype_group_layer_data:
+                url = self._subtype_group_layer_data["url"]
+            else:
+                url = self._original_layer["url"]
             self.feature_layer = FeatureLayer(url=url, gis=self._parent._gis)
             self._fields = self._get_fields()
             self._edit_fields = self._get_edit_fields()
