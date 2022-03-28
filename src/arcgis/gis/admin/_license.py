@@ -626,7 +626,7 @@ class License(object):
         username            required string, the name of the user you wish to
                             assign an entitlement to.
         ---------------     ----------------------------------------------------
-        entitlements        required list, a list of entitlements values
+        entitlements        required list/str, a list of entitlements values
         ---------------     ----------------------------------------------------
         suppress_email      optional boolean, if True, the org will not notify
                             a user that their entitlements has changed (default)

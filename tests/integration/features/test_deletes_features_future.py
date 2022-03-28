@@ -6,7 +6,7 @@ sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7999\src")
 from arcgis.gis import GIS
 
 proxies = None
-PROFILES = ['your_online_profile']
+PROFILES = ["your_online_profile"]
 
 data = [
     {
@@ -1812,7 +1812,7 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
                     future=False,
                 )
                 resp = d
-                assert 'deleteResults' in resp
+                assert "deleteResults" in resp
                 resp = flyr.delete_features(
                     deletes="1",
                     where=None,
@@ -1820,7 +1820,7 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
                     return_delete_results=True,
                     future=False,
                 )
-                assert 'deleteResults' in resp
+                assert "deleteResults" in resp
                 resp = flyr.delete_features(
                     deletes="1",
                     where=None,
@@ -1828,7 +1828,7 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
                     return_delete_results=False,
                     future=False,
                 )
-                assert 'success' in resp
+                assert "success" in resp
                 flyr.delete_features(
                     deletes="1",
                     where=None,
@@ -1836,7 +1836,7 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
                     return_delete_results=False,
                     future=False,
                 )
-                assert 'success' in resp
+                assert "success" in resp
             except Exception as e:
                 raise e
             finally:
@@ -1862,7 +1862,7 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
                     future=True,
                 )
                 resp = d
-                assert 'status' in resp.result()
+                assert "status" in resp.result()
                 resp = flyr.delete_features(
                     deletes="1",
                     where=None,
@@ -1870,7 +1870,7 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
                     return_delete_results=True,
                     future=True,
                 )
-                assert 'status' in resp.result()
+                assert "status" in resp.result()
                 resp = flyr.delete_features(
                     deletes="1",
                     where=None,
@@ -1878,7 +1878,7 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
                     return_delete_results=False,
                     future=True,
                 )
-                assert 'status' in resp.result()
+                assert "status" in resp.result()
                 resp = flyr.delete_features(
                     deletes="1",
                     where=None,
@@ -1886,7 +1886,7 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
                     return_delete_results=False,
                     future=True,
                 )
-                assert 'status' in resp.result()
+                assert "status" in resp.result()
             except Exception as e:
                 raise e
             finally:

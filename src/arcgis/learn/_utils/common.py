@@ -455,7 +455,7 @@ def image_tensor_checks_plotting(imagetensor_batch):
     if symbology_x_batch.mean() < 1:
         symbology_x_batch = symbology_x_batch.clamp(0, 1)
 
-    # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
+    # Squeeze channels if single channel (224, 224, 1) -> (224, 224)
     if symbology_x_batch.shape[-1] == 1:
         symbology_x_batch = symbology_x_batch.squeeze(-1)
     return symbology_x_batch

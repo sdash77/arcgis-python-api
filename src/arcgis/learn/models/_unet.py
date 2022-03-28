@@ -446,6 +446,24 @@ class UnetClassifier(ArcGISModel):
     def _show_results_multispectral(
         self, rows=5, alpha=0.7, **kwargs
     ):  # parameters adjusted in kwargs
+        """
+        Shows the ground truth and predictions of model side by side.
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Number of rows of data to be displayed, if
+                                batch size is smaller, then the rows will
+                                display the value provided for batch size.
+        ---------------------   -------------------------------------------
+        alpha                   Optional Float. Opacity parameter for label
+                                overlay on image. Float [0.0 - 1.0]
+                                Default: 0.7
+        =====================   ===========================================
+
+        """
         return_fig = kwargs.get("return_fig", False)
         ret_val = show_results_multispectral(self, nrows=rows, alpha=alpha, **kwargs)
         if return_fig:

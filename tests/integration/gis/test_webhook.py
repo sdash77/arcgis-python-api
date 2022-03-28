@@ -11,7 +11,7 @@ from arcgis.gis import GIS
 from arcgis.gis.admin._wh import WebhookManager
 
 
-PROFILES = ['your_enterprise_profile']
+PROFILES = ["your_enterprise_profile"]
 proxies = urllib.request.getproxies()
 key = uuid.uuid4().hex[:5]
 
