@@ -123,6 +123,18 @@ def usa_local_enrich_vars(usa_local):
 
 
 @pytest.fixture(scope='session')
+def gis_pro():
+    gis = GIS('pro')
+    return gis
+
+
+@pytest.fixture(scope='session')
+def gis_agol():
+    gis = GIS(os.getenv("AGOL_URL"), username=os.getenv("AGOL_USERNAME"), password=os.getenv("AGOL_PASSWORD"))
+    return gis
+
+
+@pytest.fixture(scope='session')
 def usa_agol():
     gis = GIS(os.getenv("AGOL_URL"), username=os.getenv("AGOL_USERNAME"), password=os.getenv("AGOL_PASSWORD"))
     return Country('usa', gis=gis)

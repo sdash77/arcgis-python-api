@@ -1,6 +1,6 @@
 from typing import Union, Iterable
 
-from arcgis.geoenrichment._business_analyst import BusinessAnalyst, Country
+from arcgis.geoenrichment import Country
 from arcgis.geoenrichment._business_analyst._utils import pep8ify
 import pandas as pd
 import pytest
@@ -21,7 +21,7 @@ from .configtest import (
 
 
 # root tests
-def enrich_test(enrich_src: Union[BusinessAnalyst, Country], geom: Union[pd.DataFrame, pd.Series, Iterable],
+def enrich_test(enrich_src: Country, geom: Union[pd.DataFrame, pd.Series, Iterable],
                 enrich_vars: pd.DataFrame, expectation: object, std_geo_lvl: Union[str, int] = None,
                 std_geo_id_col: str = None, prx_typ: str = None, prx_val: Union[int, float] = None,
                 prx_mtrc: str = None) -> None:
@@ -38,9 +38,9 @@ def enrich_test(enrich_src: Union[BusinessAnalyst, Country], geom: Union[pd.Data
         assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
 
 
-def enrich_do_not_return_geom_test(enrich_src: Union[BusinessAnalyst, Country], geom_df: pd.DataFrame,
+def enrich_do_not_return_geom_test(enrich_src: Country, geom_df: pd.DataFrame,
                                    enrich_vars: pd.DataFrame, expectation: object,
-                                   std_geo_lvl: Union[str, int] = None, std_geo_id_col: str = None):
+                                   std_geo_lvl: Union[str, int] = None, std_geo_id_col: str = None) -> None:
     with expectation:
         enrich_res = enrich_src.enrich(geom_df, enrich_vars, standard_geography_level=std_geo_lvl,
                                        standard_geography_id_column=std_geo_id_col, return_geometry=False)
@@ -52,8 +52,7 @@ def enrich_do_not_return_geom_test(enrich_src: Union[BusinessAnalyst, Country], 
         assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
 
 
-def enrich_json_input_test(enrich_src: Union[BusinessAnalyst, Country],
-                           enrich_vars: pd.DataFrame, expectation: object):
+def enrich_json_input_test(enrich_src: Country, enrich_vars: pd.DataFrame, expectation: object) -> None:
     with expectation:
         geom = [
             {"geometry": {
