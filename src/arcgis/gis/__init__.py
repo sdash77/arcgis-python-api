@@ -13451,7 +13451,6 @@ class Item(dict):
                 # find items with relationship 'Service2Data' in reverse direction - all feature services published using this data item
                 related_items = self.related_items("Service2Data", "reverse")
 
-                return_item_list = []
                 if (
                     len(related_items) == 1
                 ):  # simple 1:1 relationship between data and service items
@@ -13484,7 +13483,6 @@ class Item(dict):
                             "analyzeParameters": {
                                 "enableGlobalGeocoding": "true",
                                 "sourceLocale": "en-us",
-                                # "locationType":"address",
                                 "sourceCountry": "",
                                 "sourceCountryHint": "",
                             },
@@ -13507,7 +13505,6 @@ class Item(dict):
                         "analyzeParameters": {
                             "enableGlobalGeocoding": "true",
                             "sourceLocale": "en-us",
-                            # "locationType":"address",
                             "sourceCountry": "",
                             "sourceCountryHint": "",
                         },
