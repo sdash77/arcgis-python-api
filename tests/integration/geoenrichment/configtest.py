@@ -1,3 +1,4 @@
+from configparser import ConfigParser
 from contextlib import contextmanager
 import os
 from pathlib import Path
@@ -20,20 +21,27 @@ __all__ = ['usa_local', 'usa_local_enrich_vars', 'usa_agol', 'usa_agol_enrich_va
 # get the path to the geoenrich data path
 _dir_data = Path(__file__).parent.parent / "geoenrich_data"
 
-# load up the dotenv file
+# if present, use python dotenv, but roll back to configparser if not
 if module_avail("dotenv"):
     from dotenv import find_dotenv, load_dotenv
-
     load_dotenv(find_dotenv())
 
+# try to load from environment variables - will all be None if not set or loaded
+_agol_url, _agol_user, _agol_pass = (
+    os.getenv("AGOL_URL"),
+    os.getenv("AGOL_USERNAME"),
+    os.getenv("AGOL_PASSWORD"),
+)
+
+# use configfile if still not set
+if _agol_url is None and _agol_user is None and _agol_pass is None:
+    config = ConfigParser()
+    config.read('./config.ini')
     _agol_url, _agol_user, _agol_pass = (
-        os.getenv("AGOL_URL"),
-        os.getenv("AGOL_USERNAME"),
-        os.getenv("AGOL_PASSWORD"),
+        config["AGOL"]["URL"],
+        config["AGOL"]["USERNAME"],
+        config["AGOL"]["PASSWORD"],
     )
-
-else:
-
 
 
 def _get_filtered_enrich_variables(usa: Country) -> pd.DataFrame:
@@ -77,9 +85,9 @@ else:
 if _agol_url and _agol_user and _agol_pass:
     try:
         _ = GIS(
-            os.getenv("AGOL_URL"),
-            username=os.getenv("AGOL_USERNAME"),
-            password=os.getenv("AGOL_PASSWORD"),
+            url=_agol_url,
+            username=_agol_user,
+            password=_agol_pass,
         )
         agol_avail = True
     except Exception as e:
@@ -87,16 +95,15 @@ if _agol_url and _agol_user and _agol_pass:
         warn(e)
 else:
     agol_avail = False
-    warn(
-        "Cannot test ArcGIS Online because AGOL_URL, AGOL_USERNAME, and AGOL_PASSWORD are not in the environment "
-        "variables."
-    )
+    warn("Cannot test ArcGIS Online because cannot load URL and credentials from config.ini.")
 
 # way to flag tests in an environment without ArcGIS Pro
-skip_if_no_local = pytest.mark.skipif(local_ba_avail is not True, reason='ArcGIS Pro (arcpy) is not available.')
+skip_if_no_local = pytest.mark.skipif(local_ba_avail is not True,
+                                      reason='ArcGIS Pro with BA and data is not available.')
 
 # way to flag tests if ArcGIS Online connection not available
-skip_if_no_agol = pytest.mark.skipif(agol_avail is False, reason='A connection to ArcGIS Online is not available.')
+skip_if_no_agol = pytest.mark.skipif(agol_avail is False,
+                                     reason='A connection to ArcGIS Online is not available.')
 
 
 # REFERENCE: https://docs.pytest.org/en/6.2.x/example/parametrize.html#parametrizing-conditional-raising

@@ -1,26 +1,36 @@
-import importlib
+from configparser import ConfigParser
 import os
 
 from arcgis.gis import GIS
+from arcgis.geoenrichment._business_analyst._utils import module_avail
 
 __all__ = ["gis_agol"]
 
-# get dotenv if available and load the dotenv file
-if importlib.util.find_spec("dotenv") is not None:
+# if present, use python dotenv, but roll back to configparser if not
+if module_avail("dotenv"):
     from dotenv import find_dotenv, load_dotenv
-
     load_dotenv(find_dotenv())
 
-# ensure all keys are available
-key_lst = ["AGOL_URL", "AGOL_USERNAME", "AGOL_PASSWORD"]
-for key in key_lst:
-    assert (
-        os.getenv(key) is not None
-    ), f"The environment variable, {key}, is not available."
+# try to load from environment variables - will all be None if not set or loaded
+_agol_url, _agol_user, _agol_pass = (
+    os.getenv("AGOL_URL"),
+    os.getenv("AGOL_USERNAME"),
+    os.getenv("AGOL_PASSWORD"),
+)
+
+# use configfile if still not set
+if _agol_url is None and _agol_user is None and _agol_pass is None:
+    config = ConfigParser()
+    config.read('../config.ini')
+    _agol_url, _agol_user, _agol_pass = (
+        config["AGOL"]["URL"],
+        config["AGOL"]["USERNAME"],
+        config["AGOL"]["PASSWORD"],
+    )
 
 # create a connection to the GIS for testing
 gis_agol = GIS(
-    url=os.getenv(key_lst[0]),
-    username=os.getenv(key_lst[1]),
-    password=os.getenv(key_lst[2]),
+    url=_agol_url,
+    username=_agol_user,
+    password=_agol_pass,
 )

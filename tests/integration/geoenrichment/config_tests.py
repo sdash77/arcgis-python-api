@@ -1,13 +1,12 @@
+from configparser import ConfigParser
 import os
 from pathlib import Path
 from warnings import warn
 
-from arcgis.features import GeoAccessor
-from arcgis.geoenrichment import Country, enrich
+from arcgis.geoenrichment import Country
 from arcgis.geoenrichment._business_analyst._utils import (
     local_business_analyst_avail,
     local_ba_data_avail,
-    avail_arcpy,
     module_avail,
 )
 from arcgis.gis import GIS
@@ -15,16 +14,26 @@ import pytest
 
 dir_data = Path(__file__).parent / "geoenrich_data"
 
-# load up the config options
+# if present, use python dotenv, but roll back to configparser if not
 if module_avail("dotenv"):
     from dotenv import find_dotenv, load_dotenv
-
     load_dotenv(find_dotenv())
 
+# try to load from environment variables - will all be None if not set or loaded
+_agol_url, _agol_user, _agol_pass = (
+    os.getenv("AGOL_URL"),
+    os.getenv("AGOL_USERNAME"),
+    os.getenv("AGOL_PASSWORD"),
+)
+
+# use configfile if still not set
+if _agol_url is None and _agol_user is None and _agol_pass is None:
+    config = ConfigParser()
+    config.read('./config.ini')
     _agol_url, _agol_user, _agol_pass = (
-        os.getenv("AGOL_URL"),
-        os.getenv("AGOL_USERNAME"),
-        os.getenv("AGOL_PASSWORD"),
+        config["AGOL"]["URL"],
+        config["AGOL"]["USERNAME"],
+        config["AGOL"]["PASSWORD"],
     )
 
 # start building up a list of sources to test
@@ -44,11 +53,6 @@ else:
     )
 
 # create an active connection to ArcGIS Online and add to the source list if possible
-_agol_url, _agol_user, _agol_pass = (
-    os.getenv("AGOL_URL"),
-    os.getenv("AGOL_USERNAME"),
-    os.getenv("AGOL_PASSWORD"),
-)
 if _agol_url and _agol_user and _agol_pass:
     agol = GIS(
         os.getenv("AGOL_URL"),
@@ -58,10 +62,7 @@ if _agol_url and _agol_user and _agol_pass:
     _src_lst.append(agol)
     _src_nm_lst.append("agol")
 else:
-    warn(
-        "Cannot test ArcGIS Online because AGOL_URL, AGOL_USERNAME, and AGOL_PASSWORD are not in the environment "
-        "variables."
-    )
+    warn("Cannot test ArcGIS Online because cannot load URL and credentials from config.ini.")
 
 
 @pytest.fixture(scope="module", params=_src_lst, ids=_src_nm_lst)
