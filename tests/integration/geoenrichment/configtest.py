@@ -26,6 +26,15 @@ if module_avail("dotenv"):
 
     load_dotenv(find_dotenv())
 
+    _agol_url, _agol_user, _agol_pass = (
+        os.getenv("AGOL_URL"),
+        os.getenv("AGOL_USERNAME"),
+        os.getenv("AGOL_PASSWORD"),
+    )
+
+else:
+
+
 
 def _get_filtered_enrich_variables(usa: Country) -> pd.DataFrame:
     # get the available enrichment variables
@@ -65,11 +74,6 @@ else:
     )
 
 # see if credentials are available for ArcGIS Online and flag if cannot connect for any reason
-_agol_url, _agol_user, _agol_pass = (
-    os.getenv("AGOL_URL"),
-    os.getenv("AGOL_USERNAME"),
-    os.getenv("AGOL_PASSWORD"),
-)
 if _agol_url and _agol_user and _agol_pass:
     try:
         _ = GIS(

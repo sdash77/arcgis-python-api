@@ -15,11 +15,17 @@ import pytest
 
 dir_data = Path(__file__).parent / "geoenrich_data"
 
-# load up the dotenv file
+# load up the config options
 if module_avail("dotenv"):
     from dotenv import find_dotenv, load_dotenv
 
     load_dotenv(find_dotenv())
+
+    _agol_url, _agol_user, _agol_pass = (
+        os.getenv("AGOL_URL"),
+        os.getenv("AGOL_USERNAME"),
+        os.getenv("AGOL_PASSWORD"),
+    )
 
 # start building up a list of sources to test
 _src_lst = []
