@@ -28,42 +28,32 @@ def get_countries_test(gis: GIS = None, as_df=None) -> None:
     assert cntrs
 
 
-def enrich_iterable_str_addresses_test(gis: GIS = None) -> None:
-    er = enrich(address_list_str, analysis_variables=key_enrich_list_web, gis=gis)
-    assert isinstance(er, pd.DataFrame)
-    assert er.spatial.validate()
-
-
-# def enrich_iterable_str_points_of_interest_test() -> None:
-#     assert False
-#
-#
-# def enrich_iterable_str_place_names() -> None:
-#     assert False
-
-
 def enrich_iterable_dict_addresses_test(gis: GIS = None) -> None:
-    er = enrich(address_list_json, analysis_variables=key_enrich_list_web, gis=gis)
+    usa = Country('usa', gis=gis)
+    er = usa.enrich(address_list_json, enrich_variables=key_enrich_list_web)
     assert isinstance(er, pd.DataFrame)
     assert er.spatial.validate()
 
 
 def enrich_iterable_geometry_test(gis: GIS = None) -> None:
     geom_lst = list(block_group_df.SHAPE)
-    er = enrich(geom_lst, analysis_variables=key_enrich_list_web, gis=gis)
+    usa = Country('usa', gis=gis)
+    er = usa.enrich(geom_lst, enrich_variables=key_enrich_list_web)
     assert isinstance(er, pd.DataFrame)
     assert er.spatial.validate()
 
 
 def enrich_iterable_buffer_study_areas_test(gis: GIS = None) -> None:
     geom_lst = list(block_group_points_df.SHAPE)
-    er = enrich(geom_lst, analysis_variables=key_enrich_list_web, gis=gis)
+    usa = Country('usa', gis=gis)
+    er = usa.enrich(geom_lst, enrich_variables=key_enrich_list_web)
     assert isinstance(er, pd.DataFrame)
     assert er.spatial.validate()
 
 
 def enrich_sedf_test(gis: GIS = None) -> None:
-    er = enrich(block_group_df, analysis_variables=key_enrich_list_web, gis=gis)
+    usa = Country('usa', gis=gis)
+    er = usa.enrich(block_group_df, enrich_variables=key_enrich_list_web)
     assert isinstance(er, pd.DataFrame)
     assert er.spatial.validate()
 
@@ -72,19 +62,3 @@ def get_named_areas_test(gis: GIS = None) -> None:
     cntry = Country.get("usa", gis=gis)
     zip90018 = cntry.subgeographies.states["California"].zip5["90018"]
     assert zip90018
-
-
-# def enrich_iterable_named_areas_test() -> None:
-#     assert False
-#
-#
-# def standard_geography_query_seattle_test() -> None:
-#     assert False
-#
-#
-# def standard_geography_query_seattle_zip_test():
-#     assert False
-#
-#
-# def standard_geography_query_zip_list():
-#     assert False

@@ -53,7 +53,7 @@ def geometry_test(country: Country) -> None:
 
 def levels_test(country: Country) -> None:
     lvls = country.levels
-    assert lvls
+    assert isinstance(lvls, pd.DataFrame)
 
 
 def reports_test(country: Country) -> None:
