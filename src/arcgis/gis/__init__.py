@@ -13593,6 +13593,9 @@ class Item(dict):
             # check if layers and tables key exist. If not, add empty array to avoid error in update
             if "layers" not in publish_parameters:
                 publish_parameters["layers"] = []
+                # csv analyze returns layerInfo rather than a layer
+                if "layerInfo" in publish_parameters:
+                    publish_parameters["layers"].append(publish_parameters["layerInfo"])
             if "tables" not in publish_parameters:
                 publish_parameters["tables"] = []
 
