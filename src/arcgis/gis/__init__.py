@@ -13371,7 +13371,6 @@ class Item(dict):
 
         import time
 
-        params = {"f": "json"}
         if str(output_type).lower() in ["ogc", "ogcfeatureservice"]:
             output_type = "OGCFeatureService"
             file_type = "featureService"
