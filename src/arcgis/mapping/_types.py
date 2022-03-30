@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from typing import Any, Optional, Union
 from arcgis.auth.tools import LazyLoader
 from arcgis.features.layer import FeatureLayer
+import arcgis
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
