@@ -1925,6 +1925,8 @@ def clip(
     geometry=None,
     clip_outside: bool = True,
     astype: Optional[str] = None,
+    clipping_raster: Optional[Union[Raster, ImageryLayer]] = None,
+    use_input_feature_geometry: bool = True,
 ):
 
     """
@@ -1943,12 +1945,20 @@ def clip(
     clip_outside                             Optional boolean, If True, the imagery outside the extents will be removed, else the imagery within the clipping geometry will be removed.
     --------------------------------     --------------------------------------------------------------------
     astype                                   Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    clipping_raster                          Optional Raster/ImageryLayer object. Specifies the raster from which the extent needs to be used for clipping.
+    --------------------------------     --------------------------------------------------------------------
+    use_input_feature_geometry               Optional Raster/ImageryLayer object. Sp
     ================================     ====================================================================
 
     :return: The clipped raster.
 
     """
     layer, raster, raster_ra = _raster_input(raster)
+
+    layer2 = None
+    if clipping_raster is not None:
+        layer2, raster_2, raster_ra2 = _raster_input(raster, clipping_raster)
 
     template_dict = {
         "rasterFunction": "Clip",
@@ -1959,10 +1969,41 @@ def clip(
         },
     }
 
+    try:
+        #extent_envelope=None
+        #from arcgis.geometry import Geometry
+        #if geometry is not None and not isinstance(geometry, Geometry):
+        #    geometry = Geometry(geometry)
+        #if geometry is not None and isinstance(geometry, Geometry):
+        #    extent_envelope = _json.loads(geometry.envelope.JSON)
+        extent_envelope = geometry
+        if clipping_raster is not None and isinstance(clipping_raster, (Raster, ImageryLayer)):
+              extent_envelope = dict(clipping_raster.extent)
+
+
+        if not use_input_feature_geometry:
+            from arcgis.geometry import Geometry
+            if geometry is not None and not isinstance(geometry, Geometry):
+                geometry = Geometry(geometry)
+            if geometry is not None and isinstance(geometry, Geometry):
+                extent_envelope = _json.loads(geometry.envelope.JSON)
+
+        template_dict["rasterFunctionArguments"]["ClippingGeometry"] = extent_envelope
+        template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
+    except:
+        pass
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if clipping_raster is not None:
+        template_dict["rasterFunctionArguments"]["ClippingRaster"] = raster_2
+
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra["rasterFunctionArguments"]["Raster"] = raster_ra
+    if clipping_raster is not None:
+        function_chain_ra["rasterFunctionArguments"]["ClippingRaster"] = raster_ra2
+
+    return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
 
 
 def colormap(
