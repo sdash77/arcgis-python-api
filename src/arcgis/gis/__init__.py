@@ -13586,37 +13586,39 @@ class Item(dict):
 
             res = self._gis.content.analyze(item=self, file_type=fileType)
             publish_parameters = res["publishParameters"]
+            # case for hosted tables
+            if (
+                "layerInfo" in publish_parameters
+                and "layerInfo" in publish_parameters_orig
+            ):
+                # do general update
+                publish_parameters.update(publish_parameters_orig)
+            # case for hosted fl
+            else:
+                # check if layers key exist. If not, add empty array to avoid error in update
+                if "layers" not in publish_parameters:
+                    publish_parameters["layers"] = []
+                    # csv analyze returns layerInfo rather than a layer
+                    if "layerInfo" in publish_parameters:
+                        publish_parameters["layers"].append(
+                            publish_parameters["layerInfo"]
+                        )
 
-            # check if layers and tables key exist. If not, add empty array to avoid error in update
-            if "layers" not in publish_parameters:
-                publish_parameters["layers"] = []
-                # csv analyze returns layerInfo rather than a layer
-                if "layerInfo" in publish_parameters:
-                    publish_parameters["layers"].append(publish_parameters["layerInfo"])
-            if "tables" not in publish_parameters:
-                publish_parameters["tables"] = []
+                # check if layers key exist. If not, add empty array to avoid error in update
+                if "layers" not in publish_parameters_orig:
+                    publish_parameters_orig["layers"] = []
 
-            # check if layers and tables key exist. If not, add empty array to avoid error in update
-            if "layers" not in publish_parameters_orig:
-                publish_parameters_orig["layers"] = []
-            if "tables" not in publish_parameters_orig:
-                publish_parameters_orig["tables"] = []
+                # update layers but layer index must match
+                # update the layers otherwise general update will overwrite nested dictionary
+                for idx, lyr in enumerate(publish_parameters["layers"]):
+                    lyr.update(publish_parameters_orig["layers"][idx])
 
-            # update layers but layer index must match
-            # update the layers otherwise general update will overwrite nested dictionary
-            for idx, lyr in enumerate(publish_parameters["layers"]):
-                lyr.update(publish_parameters_orig["layers"][idx])
-            for idx, tbl in enumerate(publish_parameters["tables"]):
-                tbl.update(publish_parameters_orig["tables"][idx])
+                # delete since already updated and avoid overwritting
+                if "layers" in publish_parameters_orig:
+                    del publish_parameters_orig["layers"]
 
-            # delete since already updated and avoid overwritting
-            if "layers" in publish_parameters_orig:
-                del publish_parameters_orig["layers"]
-            if "tables" in publish_parameters_orig:
-                del publish_parameters_orig["tables"]
-
-            # do general update
-            publish_parameters.update(publish_parameters_orig)
+                # do general update
+                publish_parameters.update(publish_parameters_orig)
 
         ret = self._portal.publish_item(
             self.itemid,
