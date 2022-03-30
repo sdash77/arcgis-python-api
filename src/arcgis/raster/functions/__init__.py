@@ -1970,26 +1970,27 @@ def clip(
     }
 
     try:
-        #extent_envelope=None
-        #from arcgis.geometry import Geometry
-        #if geometry is not None and not isinstance(geometry, Geometry):
-        #    geometry = Geometry(geometry)
-        #if geometry is not None and isinstance(geometry, Geometry):
-        #    extent_envelope = _json.loads(geometry.envelope.JSON)
-        extent_envelope = geometry
-        if clipping_raster is not None and isinstance(clipping_raster, (Raster, ImageryLayer)):
-              extent_envelope = dict(clipping_raster.extent)
-
-
-        if not use_input_feature_geometry:
+        extent_envelope = None
+        if geometry is not None:
             from arcgis.geometry import Geometry
-            if geometry is not None and not isinstance(geometry, Geometry):
+
+            if not isinstance(geometry, Geometry):
                 geometry = Geometry(geometry)
-            if geometry is not None and isinstance(geometry, Geometry):
+            if isinstance(geometry, Geometry):
                 extent_envelope = _json.loads(geometry.envelope.JSON)
 
-        template_dict["rasterFunctionArguments"]["ClippingGeometry"] = extent_envelope
+        if clipping_raster is not None and isinstance(
+            clipping_raster, (Raster, ImageryLayer)
+        ):
+            extent_envelope = dict(clipping_raster.extent)
+
         template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
+
+        if not use_input_feature_geometry:
+            template_dict["rasterFunctionArguments"][
+                "ClippingGeometry"
+            ] = extent_envelope
+
     except:
         pass
     if astype is not None:
