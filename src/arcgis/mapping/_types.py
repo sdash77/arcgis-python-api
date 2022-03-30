@@ -8,7 +8,6 @@ from contextlib import contextmanager
 from typing import Any, Optional, Union
 from arcgis.auth.tools import LazyLoader
 from arcgis.features.layer import FeatureLayer
-import arcgis
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
@@ -405,6 +404,8 @@ class WebMap(HasTraits, collections.OrderedDict):
         new_layer = self._create_layer_definition(layer, options)
         if "layerType" in new_layer:
             layer_type = new_layer["layerType"]
+        else:
+            layer_type = None
 
         # region sort layers into 'operationalLayers' or 'tables'
         if isinstance(layer, _arcgis_features.Table):
