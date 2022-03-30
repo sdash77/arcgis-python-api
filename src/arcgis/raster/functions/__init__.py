@@ -1948,7 +1948,8 @@ def clip(
     --------------------------------     --------------------------------------------------------------------
     clipping_raster                          Optional Raster/ImageryLayer object. Specifies the raster from which the extent needs to be used for clipping.
     --------------------------------     --------------------------------------------------------------------
-    use_input_feature_geometry               Optional Raster/ImageryLayer object. Sp
+    use_input_feature_geometry               Optional boolean. If True, the function uses the clip geometry defined by the geometry parameter. This is the default.
+                                             If False, the function uses the extent of the clip geometry defined by the geometry parameter.
     ================================     ====================================================================
 
     :return: The clipped raster.
@@ -1969,8 +1970,17 @@ def clip(
         },
     }
 
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
+
+    extent_envelope = None
+
+    if clipping_raster is not None and isinstance(
+        clipping_raster, (Raster, ImageryLayer)
+    ):
+        extent_envelope = dict(clipping_raster.extent)
+
     try:
-        extent_envelope = None
         if geometry is not None:
             from arcgis.geometry import Geometry
 
@@ -1979,13 +1989,6 @@ def clip(
             if isinstance(geometry, Geometry):
                 extent_envelope = _json.loads(geometry.envelope.JSON)
 
-        if clipping_raster is not None and isinstance(
-            clipping_raster, (Raster, ImageryLayer)
-        ):
-            extent_envelope = dict(clipping_raster.extent)
-
-        template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
-
         if not use_input_feature_geometry:
             template_dict["rasterFunctionArguments"][
                 "ClippingGeometry"
@@ -1993,8 +1996,8 @@ def clip(
 
     except:
         pass
-    if astype is not None:
-        template_dict["outputPixelType"] = astype.upper()
+
+    template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
 
     if clipping_raster is not None:
         template_dict["rasterFunctionArguments"]["ClippingRaster"] = raster_2
