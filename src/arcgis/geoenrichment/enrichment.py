@@ -604,6 +604,27 @@ class Country(object):
         """
         return self._ba_cntry.enrich_variables
 
+    def _get_enrich_variables_from_iterable(
+        self, enrich_variables: Union[Iterable, pd.Series], **kwargs
+    ) -> pd.DataFrame:
+        """
+        Get a dataframe of enrich enrich_variables associated with the list of enrich_variables
+        passed in. This is especially useful when needing aliases (*human readable
+        names*), or are interested in enriching more data using previously enriched
+        data as a template.
+
+        Args:
+            enrich_variables: Iterable (normally a list) of enrich_variables correlating to
+                enrichment enrich_variables. These variable names can be simply the name, the
+                name prefixed by the collection separated by a dot, or the output from
+                enrichment in ArcGIS Pro with the field name modified to fit field naming
+                and length constraints.
+
+        Returns:
+            Pandas DataFrame of enrich enrich_variables with the different available aliases.
+        """
+        return self._ba_cntry.get_enrich_variables_from_iterable(enrich_variables)
+
     def enrich(
         self,
         geographies: Union[pd.DataFrame, Iterable, Path],
