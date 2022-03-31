@@ -22,7 +22,7 @@ def create_country_test(iso3: str, gis: GIS, expectation, year: Optional[int] = 
         assert isinstance(cntry, Country)
 
 
-# including to ensure credentials correctly getting loaded from config and also ensure not lower level issues
+# including to ensure credentials correctly getting loaded from config and also ensure not lower level issues in GIS
 def test_create_gis():
     gis = GIS(agol_url, username=agol_user, password=agol_pass)
     assert isinstance(gis, GIS)
