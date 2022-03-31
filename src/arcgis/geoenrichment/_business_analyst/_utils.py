@@ -557,14 +557,14 @@ def pro_at_least_version(version: str) -> bool:
     v_lst, in_lst = [lst + ([0] * (max_len - len(lst))) for lst in [v_lst, in_lst]]
 
     # variable to store status
-    at_least = True
+    at_least = False
 
     # test all the parts of the input version against the current version
     for idx in range(0, max_len):
 
         # evaluate if the part and if greater, break and report status
-        if v_lst[idx] < in_lst[idx]:
-            at_least = False
+        if v_lst[idx] > in_lst[idx]:
+            at_least = True
             break
 
     return at_least

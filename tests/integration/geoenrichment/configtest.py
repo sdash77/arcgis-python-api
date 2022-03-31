@@ -18,8 +18,9 @@ import pytest
 __all__ = ['usa_local', 'usa_local_enrich_vars', 'usa_agol', 'usa_agol_enrich_vars',
            'polygon_df', 'line_df', 'point_df', 'stdgeo_srs']
 
-# get the path to the geoenrich data path
-_dir_data = Path(__file__).parent.parent / "geoenrich_data"
+# get the path to the data resources
+_dir_test_geoenrichment = Path(__file__).parent
+_dir_data = _dir_test_geoenrichment / "geoenrich_data"
 
 # if present, use python dotenv, but roll back to configparser if not
 if module_avail("dotenv"):
@@ -36,7 +37,7 @@ _agol_url, _agol_user, _agol_pass = (
 # use configfile if still not set
 if _agol_url is None and _agol_user is None and _agol_pass is None:
     config = ConfigParser()
-    config.read('./config.ini')
+    config.read(_dir_test_geoenrichment / 'config.ini')
     _agol_url, _agol_user, _agol_pass = (
         config["AGOL"]["URL"],
         config["AGOL"]["USERNAME"],
@@ -92,7 +93,7 @@ if _agol_url and _agol_user and _agol_pass:
         agol_avail = True
     except Exception as e:
         agol_avail = False
-        warn(e)
+        warn(str(e))
 else:
     agol_avail = False
     warn("Cannot test ArcGIS Online because cannot load URL and credentials from config.ini.")
@@ -111,65 +112,39 @@ skip_if_no_agol = pytest.mark.skipif(agol_avail is False,
 def does_not_raise():
     yield
 
+usa_local = Country('usa', gis=GIS('pro'))
+usa_local_enrich_vars = _get_filtered_enrich_variables(usa_local)
 
-@pytest.fixture
-def usa_local():
-    return Country('usa', gis=GIS('pro'))
-
-
-@pytest.fixture
-def usa_local_enrich_vars(usa_local):
-    return _get_filtered_enrich_variables(usa_local)
-
-
-@pytest.fixture(scope='session')
-def gis_pro():
-    gis = GIS('pro')
-    return gis
-
-
-@pytest.fixture(scope='session')
-def gis_agol():
-    gis = GIS(os.getenv("AGOL_URL"), username=os.getenv("AGOL_USERNAME"), password=os.getenv("AGOL_PASSWORD"))
-    return gis
-
-
-@pytest.fixture(scope='session')
-def usa_agol():
-    gis = GIS(os.getenv("AGOL_URL"), username=os.getenv("AGOL_USERNAME"), password=os.getenv("AGOL_PASSWORD"))
-    return Country('usa', gis=gis)
-
-
-@pytest.fixture
-def usa_agol_enrich_vars(usa_agol):
-    return _get_filtered_enrich_variables(usa_agol)
-
+gis_pro = GIS('pro')
+gis_agol = GIS(_agol_url, username=_agol_user, password=_agol_pass)
+usa_agol = GIS(_agol_url, username=_agol_user, password=_agol_pass)
+usa_agol_enrich_vars = _get_filtered_enrich_variables(usa_agol)
 
 # get path to testing data directory
 _dir_data = Path(__file__).parent / 'geoenrich_data'
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def polygon_df():
     df = pd.read_pickle(_dir_data / 'block_group_df.pkl')
     df.spatial.set_geometry('SHAPE')
     return df
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def stdgeo_srs(polygon_df):
     bg_id_lst = polygon_df['ID']
     return bg_id_lst
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def line_df():
     df = pd.read_pickle(_dir_data / 'lines_df.pkl')
     df.spatial.set_geometry('SHAPE')
     return df
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def point_df():
     df = pd.read_pickle(_dir_data / 'points_df.pkl')
     df.spatial.set_geometry('SHAPE')
