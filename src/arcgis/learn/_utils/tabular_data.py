@@ -1077,6 +1077,75 @@ class TabularDataObject(object):
         )
 
     @staticmethod
+    def _sdf_gptool_workflow(
+        input_features,
+        distance_feature,
+        raster_list,
+        index_field=None,
+        is_table_obj=False,
+    ):
+        index_data = None
+        data_source = None
+        import arcpy
+        import pandas as pd
+
+        # if ((distance_feature) and (data_source)):F
+        if not is_table_obj:
+            data_source = input_features.dataSource
+            count = 1
+            for distance_layer in distance_feature:
+                # field_1 = 'NEAR_FID_'+str(count)
+                field_2 = "NEAR_DIST_" + str(count)
+                fields = [["Distance", field_2]]
+                arcpy.Near_analysis(data_source, distance_layer)
+                count = count + 1
+            sdf = pd.DataFrame.spatial.from_featureclass(data_source)
+        else:
+            sdf = pd.DataFrame()
+            data_type = arcpy.Describe(input_features).dataType
+            if data_type == "TableView":
+                sdf = pd.DataFrame.spatial.from_table(str(input_features))
+        rasters_data = {}
+        if data_source:
+            for cnt, raster in enumerate(raster_list):
+                if isinstance(raster, tuple):
+                    wkt = raster[0].extent["spatialReference"]["wkt"]
+                else:
+                    wkt = raster.extent["spatialReference"]["wkt"]
+                sr = arcpy.SpatialReference()
+                sr.loadFromString(wkt)
+                for i in range(raster.band_count):
+                    if i == 0:
+                        rasters_data[raster.name] = []
+                    else:
+                        rasters_data[raster.name + f"_{i}"] = []
+                fields = ["SHAPE@X", "SHAPE@Y"]
+                with arcpy.da.SearchCursor(
+                    data_source, fields, spatial_reference=sr
+                ) as cursor:
+                    for row in cursor:
+                        # print(u'{0}, {1}'.format(row[0], row[1]))
+                        if arcpy.Describe(data_source).shapeType == "Point":
+                            raster_value = raster.read(
+                                origin_coordinate=(row[0], row[1]), ncols=1, nrows=1
+                            )
+                            value = raster_value[0][0]
+                        else:  # Polygon
+                            pass
+                        for i in range(len(value)):
+                            if i == 0:
+                                rasters_data[raster.name].append(value[i])
+                            else:
+                                rasters_data[raster.name + f"_{i}"].append(value[i])
+                for key, value in rasters_data.items():
+                    sdf[key] = value
+
+            if index_field in list(sdf.columns.values):
+                index_data = sdf[index_field].values
+
+        return sdf, index_data
+
+    @staticmethod
     def _process_layer(
         input_features, date_field, distance_layers, rasters, index_field
     ):
@@ -1085,6 +1154,24 @@ class TabularDataObject(object):
             if isinstance(input_features, FeatureLayer):
                 input_layer = input_features
                 sdf = input_features.query().sdf
+            elif hasattr(input_features, "dataSource"):
+                sdf, index_data = TabularDataObject._sdf_gptool_workflow(
+                    input_features,
+                    distance_layers,
+                    rasters,
+                    index_field,
+                    is_table_obj=False,
+                )
+                return sdf, index_data
+            elif hasattr(input_features, "value"):
+                sdf, index_data = TabularDataObject._sdf_gptool_workflow(
+                    input_features,
+                    distance_layers,
+                    rasters,
+                    index_field,
+                    is_table_obj=True,
+                )
+                return sdf, index_data
             else:
                 sdf = input_features.copy()
                 input_layer = None
