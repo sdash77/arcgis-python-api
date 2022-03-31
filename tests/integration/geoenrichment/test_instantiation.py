@@ -45,10 +45,5 @@ def test_create_country_usa_agol(gis_agol):
 
 
 @skip_if_no_agol
-def test_create_country_usa_2019_agol(gis_agol):
-    create_country_test('usa', gis=gis_agol, year=2019, expectation=pytest.raises(Exception))
-
-
-@skip_if_no_agol
 def test_create_country_can_agol(gis_agol):
     create_country_test('can', gis=gis_agol, expectation=does_not_raise())
