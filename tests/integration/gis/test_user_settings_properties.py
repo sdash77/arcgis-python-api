@@ -4,15 +4,15 @@ sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 from arcgis.gis import GIS
 import unittest
 
-PROFILES = ['your_online_profile']
+PROFILES = ["your_online_profile"]
 ALLOWED_LANDING_PAGES = [
-    'home',
-    'gallery',
-    'map',
-    'scene',
-    'groups',
-    'content',
-    'organization',
+    "home",
+    "gallery",
+    "map",
+    "scene",
+    "groups",
+    "content",
+    "organization",
 ]
 landing_pages_lu = {
     "home": "index.html",
@@ -52,10 +52,10 @@ class TestUserSettings(unittest.TestCase):
             user = gis.users.me
             user.landing_page = "organization"
             us = user.user_settings
-            us['landingPage']['url'] = "index.html"
+            us["landingPage"]["url"] = "index.html"
             user.user_settings = us
             assert user.landing_page == "home"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

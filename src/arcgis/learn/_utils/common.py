@@ -179,7 +179,9 @@ class ArcGISMSImage(Image):
         return read_image(path, keep_raw=keep_raw)
 
     @classmethod
-    def open(cls, path, cast_to=np.float32, div=None, imagery_type=None):
+    def open(cls, path, cast_to=None, div=None, imagery_type=None):
+        if cast_to is None:
+            cast_to = np.float32
         path = str(os.path.abspath(path))
         if not os.path.exists:
             raise Exception(
@@ -453,7 +455,7 @@ def image_tensor_checks_plotting(imagetensor_batch):
     if symbology_x_batch.mean() < 1:
         symbology_x_batch = symbology_x_batch.clamp(0, 1)
 
-    # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
+    # Squeeze channels if single channel (224, 224, 1) -> (224, 224)
     if symbology_x_batch.shape[-1] == 1:
         symbology_x_batch = symbology_x_batch.squeeze(-1)
     return symbology_x_batch

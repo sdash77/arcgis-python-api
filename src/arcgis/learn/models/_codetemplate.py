@@ -863,7 +863,8 @@ class ArcGISImageClassifier:
                 model_as_file = False
             except json.decoder.JSONDecodeError:
                 raise Exception("Invalid model argument")
-
+        
+        self.class_values = set([row['Value'] for row in self.json_info.get('Classes', [])])
         framework = self.json_info['Framework']
         if 'ModelConfiguration' in self.json_info:
             if isinstance(self.json_info['ModelConfiguration'], str):
@@ -921,7 +922,13 @@ class ArcGISImageClassifier:
                 'description': 'Device ID'
             }
         ]
-        return self.child_image_classifier.getParameterInfo(required_parameters)
+        params = self.child_image_classifier.getParameterInfo(required_parameters)
+        if 0 not in self.class_values:
+            for param in params:
+                if param['name'] == 'predict_background':
+                    param['value'] = 'False'
+                    break
+        return params
 
     def getConfiguration(self, **scalars):
         configuration = self.child_image_classifier.getConfiguration(**scalars)

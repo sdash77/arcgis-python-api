@@ -160,7 +160,7 @@ class ModelExtension(ArcGISModel):
 
                 self.learn.metrics = [accuracy]
             self._code = image_classifier_prf
-        elif self._data.dataset_type == "Panoptic":
+        elif self._data.dataset_type == "Panoptic_Segmentation":
             self._code = panoptic_segmenter_prf
             self._kwargs["n_masks"] = self._data.K
             self._kwargs["instance_classes"] = self._data.instance_classes
@@ -216,7 +216,7 @@ class ModelExtension(ArcGISModel):
             )
             _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
 
-        elif self._data.dataset_type == "Panoptic":
+        elif self._data.dataset_type == "Panoptic_Segmentation":
             _emd_template["ModelType"] = "PanopticSegmenter"
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISPanopticSegmenter.py"
@@ -359,7 +359,7 @@ class ModelExtension(ArcGISModel):
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
-            if dataset_type == "Panoptic":
+            if dataset_type == "Panoptic_Segmentation":
                 data.K = emd["Kwargs"]["n_masks"]
                 data.instance_classes = emd["Kwargs"]["instance_classes"]
         data.resize_to = resize_to
@@ -381,7 +381,7 @@ class ModelExtension(ArcGISModel):
     def _model_metrics(self):
         if self._data.dataset_type == "Classified_Tiles":
             return {"accuracy": "{0:1.4e}".format(self._get_model_metrics())}
-        elif self._data.dataset_type == "Panoptic":
+        elif self._data.dataset_type == "Panoptic_Segmentation":
             pq = self.panoptic_quality(show_progress=False)
             return {"panoptic_quality": "{:.4f}".format(pq)}
         else:
@@ -443,7 +443,7 @@ class ModelExtension(ArcGISModel):
                 self.per_class_metrics = self._per_class_metrics
                 self.accuracy = self._accuracy
 
-        elif self._data.dataset_type == "Panoptic":
+        elif self._data.dataset_type == "Panoptic_Segmentation":
             self.show_results = self._show_results_panoptic
             self.panoptic_quality = self._panoptic_quality
 
@@ -612,6 +612,30 @@ class ModelExtension(ArcGISModel):
     def _show_results_multispectral(
         self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs
     ):
+        """
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
+        thresh                  Optional float. The probability above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        ---------------------   -------------------------------------------
+        alpha                   Optional Float.
+                                Opacity of the lables for the corresponding
+                                images. Values range between 0 and 1, where
+                                1 means opaque.
+        =====================   ===========================================
+
+        """
         ret_val = show_results_multispectral(
             self,
             nrows=rows,

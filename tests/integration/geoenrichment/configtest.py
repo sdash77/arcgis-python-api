@@ -18,8 +18,9 @@ import pytest
 __all__ = ['usa_local', 'usa_local_enrich_vars', 'usa_agol', 'usa_agol_enrich_vars',
            'polygon_df', 'line_df', 'point_df', 'stdgeo_srs']
 
-# get the path to the geoenrich data path
-_dir_data = Path(__file__).parent.parent / "geoenrich_data"
+# get the path to the data resources
+_dir_test_geoenrichment = Path(__file__).parent
+_dir_data = _dir_test_geoenrichment / "geoenrich_data"
 
 # if present, use python dotenv, but roll back to configparser if not
 if module_avail("dotenv"):
@@ -36,7 +37,7 @@ _agol_url, _agol_user, _agol_pass = (
 # use configfile if still not set
 if _agol_url is None and _agol_user is None and _agol_pass is None:
     config = ConfigParser()
-    config.read('./config.ini')
+    config.read(_dir_test_geoenrichment / 'config.ini')
     _agol_url, _agol_user, _agol_pass = (
         config["AGOL"]["URL"],
         config["AGOL"]["USERNAME"],
@@ -92,7 +93,7 @@ if _agol_url and _agol_user and _agol_pass:
         agol_avail = True
     except Exception as e:
         agol_avail = False
-        warn(e)
+        warn(str(e))
 else:
     agol_avail = False
     warn("Cannot test ArcGIS Online because cannot load URL and credentials from config.ini.")
@@ -130,13 +131,13 @@ def gis_pro():
 
 @pytest.fixture(scope='session')
 def gis_agol():
-    gis = GIS(os.getenv("AGOL_URL"), username=os.getenv("AGOL_USERNAME"), password=os.getenv("AGOL_PASSWORD"))
+    gis = GIS(_agol_url, username=-_agol_user, password=_agol_pass)
     return gis
 
 
 @pytest.fixture(scope='session')
 def usa_agol():
-    gis = GIS(os.getenv("AGOL_URL"), username=os.getenv("AGOL_USERNAME"), password=os.getenv("AGOL_PASSWORD"))
+    gis = GIS(_agol_url, username=-_agol_user, password=_agol_pass)
     return Country('usa', gis=gis)
 
 

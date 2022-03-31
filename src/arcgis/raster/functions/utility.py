@@ -2,6 +2,16 @@ from .._layer import ImageryLayer, Raster
 from arcgis.gis import Item
 import numbers
 from arcgis.features.layer import FeatureLayer
+from arcgis.auth import (
+    EsriUserTokenAuth,
+    EsriOAuth2Auth,
+    EsriNotebookAuth,
+    EsriAPIKeyAuth,
+    ArcGISProAuth,
+    EsriBuiltInAuth,
+    EsriGenTokenAuth,
+)
+import requests
 
 
 def _raster_input(raster, raster2=None):
@@ -58,8 +68,8 @@ def _raster_input(raster, raster2=None):
                                     (hasattr(raster2, "_lazy_token"))
                                     and raster2._lazy_token is None
                                 ) or not hasattr(raster2, "_lazy_token"):
-                                    raster2._lazy_token = (
-                                        raster2._gis._con._create_token(url)
+                                    raster2._lazy_token = _generate_layer_token(
+                                        raster2, url
                                     )
                                 if isinstance(raster2._lazy_token, str):
                                     url = url + "?token=" + raster2._lazy_token
@@ -97,8 +107,8 @@ def _raster_input(raster, raster2=None):
                                     (hasattr(raster2, "_lazy_token"))
                                     and raster2._lazy_token is None
                                 ) or not hasattr(raster2, "_lazy_token"):
-                                    raster2._lazy_token = (
-                                        raster2._gis._con._create_token(url)
+                                    raster2._lazy_token = _generate_layer_token(
+                                        raster2, url
                                     )
 
                                 if isinstance(raster2._lazy_token, str):
@@ -261,7 +271,7 @@ def _get_raster_url(raster, layer):
                             (hasattr(raster, "_lazy_token"))
                             and raster._lazy_token is None
                         ) or not hasattr(raster, "_lazy_token"):
-                            raster._lazy_token = raster._gis._con._create_token(url)
+                            raster._lazy_token = _generate_layer_token(raster, url)
                         if isinstance(raster._lazy_token, str):
                             url = url + "?token=" + raster._lazy_token
                         raster = _replace_raster_url(raster._fn, url)
@@ -290,7 +300,7 @@ def _get_raster_url(raster, layer):
                             (hasattr(raster, "_lazy_token"))
                             and raster._lazy_token is None
                         ) or not hasattr(raster, "_lazy_token"):
-                            raster._lazy_token = raster._gis._con._create_token(url)
+                            raster._lazy_token = _generate_layer_token(raster, url)
                         if isinstance(raster._lazy_token, str):
                             url = url + "?token=" + raster._lazy_token
                         raster = url
@@ -321,7 +331,7 @@ def _get_raster_ra(raster):
             if (
                 (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
             ) or not hasattr(raster, "_lazy_token"):
-                raster._lazy_token = raster._gis._con._create_token(url)
+                raster._lazy_token = _generate_layer_token(raster, url)
             if isinstance(raster._lazy_token, str):
                 url = url + "?token=" + raster._lazy_token
         except:
@@ -384,7 +394,7 @@ def _get_raster_ra_rft(raster):
             if (
                 (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
             ) or not hasattr(raster, "_lazy_token"):
-                raster._lazy_token = raster._gis._con._create_token(url)
+                raster._lazy_token = _generate_layer_token(raster, url)
             if isinstance(raster._lazy_token, str):
                 url = url + "?token=" + raster._lazy_token
         except:
@@ -552,3 +562,36 @@ def _pixel_type_string_to_long(pixel_type):
         return 22
     else:
         return -1
+
+
+def _generate_layer_token(layer, url):
+    token = layer._gis._con._create_token(url)
+    if token:
+        if isinstance(
+            layer._gis._con._session.auth,
+            (
+                EsriUserTokenAuth,
+                EsriOAuth2Auth,
+                EsriNotebookAuth,
+                EsriAPIKeyAuth,
+                ArcGISProAuth,
+                EsriBuiltInAuth,
+                EsriGenTokenAuth,
+            ),
+        ):
+            temp_r = requests.get(
+                url, {"f": "json", "token": token}, verify=layer._gis._verify_cert
+            )
+            if temp_r.status_code != 200:
+                return None
+            elif (
+                temp_r.status_code == 200
+                and temp_r.text.lower().find("invalid token") > -1
+            ):
+                return None
+            else:
+                return token
+        else:
+            return token
+    else:
+        return None

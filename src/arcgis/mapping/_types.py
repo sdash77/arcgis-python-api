@@ -480,7 +480,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                     layer_type = "ArcGISImageServiceLayer"
                     # todo : get renderer info
 
-                elif isinstance(layer, _arcgis_features.MapImageLayer):
+                elif isinstance(layer, _arcgis_mapping.MapImageLayer):
                     layer_type = "ArcGISMapServiceLayer"
                 elif isinstance(layer, _arcgis_mapping.VectorTileLayer):
                     layer_type = "VectorTileLayer"

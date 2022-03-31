@@ -5,12 +5,11 @@ For more information about orthomapping workflows in ArcGIS, please visit the he
 http://desktop.arcgis.com/en/arcmap/10.4/manage-data/raster-and-images/block-adjustment-for-mosaic-datasets.htm.
 """
 
-
+from __future__ import annotations
+from typing import Any, Optional
 import arcgis
 import json
-import string as _string
-import random as _random
-from arcgis.gis import Item
+from arcgis.gis import GIS, Item
 import collections
 from ._util import _set_context
 
@@ -118,13 +117,13 @@ def is_supported(gis=None):
 ###################################################################################################
 def compute_sensor_model(
     image_collection,
-    mode="Quick",
-    location_accuracy="High",
-    context=None,
+    mode: str = "Quick",
+    location_accuracy: str = "High",
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     compute_sensor_model computes the bundle block adjustment for the image collection
@@ -195,7 +194,7 @@ def compute_sensor_model(
         location_accuracy=location_accuracy,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -232,7 +231,12 @@ def compute_sensor_model(
 ## Alter processing states
 ###################################################################################################
 def alter_processing_states(
-    image_collection, new_states, *, gis=None, future=False, **kwargs
+    image_collection,
+    new_states: dict[str, Any],
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Alter the processing states of the image collection.
@@ -277,7 +281,7 @@ def alter_processing_states(
         image_collection=image_collection,
         new_states=new_states,
         future=future,
-        **kwargs
+        **kwargs,
     )
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -308,7 +312,9 @@ def alter_processing_states(
 ###################################################################################################
 ## Get processing states
 ###################################################################################################
-def get_processing_states(image_collection, *, gis=None, future=False, **kwargs):
+def get_processing_states(
+    image_collection, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+):
     """
     Retrieve the processing states of the image collection
 
@@ -427,13 +433,13 @@ def append_control_points(image_collection, control_points, gis = None):
 ###################################################################################################
 def match_control_points(
     image_collection,
-    control_points,
-    similarity="High",
-    context=None,
+    control_points: list[dict[str, Any]],
+    similarity: str = "High",
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     The match_control_points is a function that takes a collection of ground control points
@@ -558,7 +564,7 @@ def match_control_points(
         similarity=similarity,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -599,14 +605,14 @@ def match_control_points(
 ###################################################################################################
 def color_correction(
     image_collection,
-    color_correction_method,
-    dodging_surface_type,
+    color_correction_method: str,
+    dodging_surface_type: str,
     target_image=None,
-    context=None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Color balance the image collection. 
@@ -715,7 +721,7 @@ def color_correction(
         target_image=target_image,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -767,12 +773,12 @@ def color_correction(
 def compute_control_points(
     image_collection,
     reference_image=None,
-    image_location_accuracy="High",
-    context=None,
+    image_location_accuracy: str = "High",
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     This service tool is used for computing matching control points between images
@@ -864,7 +870,7 @@ def compute_control_points(
         image_location_accuracy=image_location_accuracy,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -906,12 +912,12 @@ def compute_control_points(
 ###################################################################################################
 def compute_seamlines(
     image_collection,
-    seamlines_method,
-    context=None,
+    seamlines_method: str,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Compute seamlines on the image collection. This service tool is used to compute
@@ -980,7 +986,7 @@ def compute_seamlines(
         seamlines_method=seamlines_method,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -1014,7 +1020,12 @@ def compute_seamlines(
 ## Edit control points
 ###################################################################################################
 def edit_control_points(
-    image_collection, control_points, *, gis=None, future=False, **kwargs
+    image_collection,
+    control_points: list[dict[str, Any]],
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     This service can be used to append additional ground control point sets to
@@ -1114,7 +1125,7 @@ def edit_control_points(
         image_collection=image_collection,
         input_control_points=control_points,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -1138,15 +1149,15 @@ def edit_control_points(
 ###################################################################################################
 def generate_dem(
     image_collection,
-    out_dem,
-    cell_size,
-    surface_type,
-    matching_method=None,
-    context=None,
+    out_dem: str,
+    cell_size: dict[str, int],
+    surface_type: str,
+    matching_method: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Generate a DEM from the image collection. Refer to "Interpolate From Point Cloud"
@@ -1250,7 +1261,7 @@ def generate_dem(
         matching_method=matching_method,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -1338,13 +1349,13 @@ def generate_dem(
 def generate_orthomosaic(
     image_collection,
     out_ortho,
-    regen_seamlines=True,
-    recompute_color_correction=True,
-    context=None,
+    regen_seamlines: bool = True,
+    recompute_color_correction: bool = True,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Function can be used for generating single ortho-rectified mosaicked image from image collection after
@@ -1443,7 +1454,7 @@ def generate_orthomosaic(
         recompute_color_correction=recompute_color_correction,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -1518,7 +1529,12 @@ def generate_orthomosaic(
 ## Generate report
 ###################################################################################################
 def generate_report(
-    image_collection, report_format="PDF", *, gis=None, future=False, **kwargs
+    image_collection,
+    report_format: str = "PDF",
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     This function is used to generate orthomapping report with image collection
@@ -1549,7 +1565,7 @@ def generate_report(
         image_collection=image_collection,
         report_format=report_format,
         future=future,
-        **kwargs
+        **kwargs,
     )
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -1575,7 +1591,13 @@ def generate_report(
 ###################################################################################################
 ## query camera info
 ###################################################################################################
-def query_camera_info(camera_query=None, *, gis=None, future=False, **kwargs):
+def query_camera_info(
+    camera_query: Optional[str] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
     """
     This service tool is used to query specific or the entire digital camera
     database. The digital camera database contains the specs
@@ -1631,7 +1653,14 @@ def query_camera_info(camera_query=None, *, gis=None, future=False, **kwargs):
 ###################################################################################################
 ## query control points
 ###################################################################################################
-def query_control_points(image_collection, query, *, gis=None, future=False, **kwargs):
+def query_control_points(
+    image_collection,
+    query: str,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
     """
     Query for control points in an image collection. It allows users to query
     among certain control point sets that has ground control points inside.
@@ -1693,7 +1722,9 @@ def query_control_points(image_collection, query, *, gis=None, future=False, **k
 ###################################################################################################
 ## Reset image collection
 ###################################################################################################
-def reset_image_collection(image_collection, *, gis=None, future=False, **kwargs):
+def reset_image_collection(
+    image_collection, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+):
     """
     Reset the image collection. It is used to reset the image collection to its
     original state. The image collection could be adjusted during the orthomapping
@@ -1734,7 +1765,7 @@ def reset_image_collection(image_collection, *, gis=None, future=False, **kwargs
     """
 
 
-def compute_spatial_reference_factory_code(latitude, longitude):
+def compute_spatial_reference_factory_code(latitude: float, longitude: float):
     """
     Computes spatial reference factory code. This value may be used as out_sr value in create image collection function
 
