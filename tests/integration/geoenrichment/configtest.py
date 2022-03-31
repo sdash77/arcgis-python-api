@@ -112,39 +112,65 @@ skip_if_no_agol = pytest.mark.skipif(agol_avail is False,
 def does_not_raise():
     yield
 
-usa_local = Country('usa', gis=GIS('pro'))
-usa_local_enrich_vars = _get_filtered_enrich_variables(usa_local)
 
-gis_pro = GIS('pro')
-gis_agol = GIS(_agol_url, username=_agol_user, password=_agol_pass)
-usa_agol = GIS(_agol_url, username=_agol_user, password=_agol_pass)
-usa_agol_enrich_vars = _get_filtered_enrich_variables(usa_agol)
+@pytest.fixture
+def usa_local():
+    return Country('usa', gis=GIS('pro'))
+
+
+@pytest.fixture
+def usa_local_enrich_vars(usa_local):
+    return _get_filtered_enrich_variables(usa_local)
+
+
+@pytest.fixture(scope='session')
+def gis_pro():
+    gis = GIS('pro')
+    return gis
+
+
+@pytest.fixture(scope='session')
+def gis_agol():
+    gis = GIS(_agol_url, username=-_agol_user, password=_agol_pass)
+    return gis
+
+
+@pytest.fixture(scope='session')
+def usa_agol():
+    gis = GIS(_agol_url, username=-_agol_user, password=_agol_pass)
+    return Country('usa', gis=gis)
+
+
+@pytest.fixture
+def usa_agol_enrich_vars(usa_agol):
+    return _get_filtered_enrich_variables(usa_agol)
+
 
 # get path to testing data directory
 _dir_data = Path(__file__).parent / 'geoenrich_data'
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def polygon_df():
     df = pd.read_pickle(_dir_data / 'block_group_df.pkl')
     df.spatial.set_geometry('SHAPE')
     return df
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def stdgeo_srs(polygon_df):
     bg_id_lst = polygon_df['ID']
     return bg_id_lst
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def line_df():
     df = pd.read_pickle(_dir_data / 'lines_df.pkl')
     df.spatial.set_geometry('SHAPE')
     return df
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def point_df():
     df = pd.read_pickle(_dir_data / 'points_df.pkl')
     df.spatial.set_geometry('SHAPE')
