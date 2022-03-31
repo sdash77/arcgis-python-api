@@ -613,14 +613,16 @@ class Country(object):
         names*), or are interested in enriching more data using previously enriched
         data as a template.
 
-        Args:
-            enrich_variables: Iterable (normally a list) of enrich_variables correlating to
-                enrichment enrich_variables. These variable names can be simply the name, the
-                name prefixed by the collection separated by a dot, or the output from
-                enrichment in ArcGIS Pro with the field name modified to fit field naming
-                and length constraints.
+        ============================     ====================================================================
+        **Argument**                     **Description**
+        ----------------------------     --------------------------------------------------------------------
+        enrich_variables                 Iterable (normally a list) of enrich_variables correlating to
+                                         enrichment enrich_variables. These variable names can be simply the
+                                         name, the name prefixed by the collection separated by a dot, or
+                                         the output from enrichment in ArcGIS Pro with the field name
+                                         modified to fit field naming and length constraints.
 
-        Returns:
+        return:
             Pandas DataFrame of enrich enrich_variables with the different available aliases.
         """
         return self._ba_cntry.get_enrich_variables_from_iterable(enrich_variables)
