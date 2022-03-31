@@ -3163,14 +3163,14 @@ class FeatureLayer(Layer):
             from datetime import datetime as _datetime
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": "Int64",
-                "esriFieldTypeInteger": "Int64",  # np.int64,
-                "esriFieldTypeSingle": np.int32,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
+                "esriFieldTypeSmallInteger": pd.Int64Dtype(),
+                "esriFieldTypeInteger": pd.Int64Dtype(),
+                "esriFieldTypeSingle": pd.Int32Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
                 "esriFieldTypeString": str,
                 "esriFieldTypeDate": _datetime,
-                "esriFieldTypeOID": "Int64",
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
