@@ -55,6 +55,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
         **kwargs,
     ):
         self.legacy = kwargs.pop("legacy", False)
+        self.proxies = kwargs.pop("proxies", None)
         self._server_log = {}
         self._tokens = {}
         self._token_url = None

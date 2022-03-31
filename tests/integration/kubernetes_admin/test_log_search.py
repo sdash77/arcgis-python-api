@@ -26,9 +26,9 @@ class TestSearchKubernetesLogs(unittest.TestCase):
         logs = _gis.admin.logs
         assert isinstance(
             logs.search(
-                query='item',
-                sort_by='bestMatch',
-                sort_order='desc',
+                query="item",
+                sort_by="bestMatch",
+                sort_order="desc",
                 show_stack=False,
                 return_count=True,
             ),
@@ -40,9 +40,9 @@ class TestSearchKubernetesLogs(unittest.TestCase):
         logs = _gis.admin.logs
         assert isinstance(
             logs.search(
-                query='item',
-                sort_by='bestMatch',
-                sort_order='desc',
+                query="item",
+                sort_by="bestMatch",
+                sort_order="desc",
                 show_stack=False,
                 return_count=False,
             ),
@@ -53,15 +53,15 @@ class TestSearchKubernetesLogs(unittest.TestCase):
         isinstance(_gis, GIS)
         logs = _gis.admin.logs
         messages = logs.search(
-            query='item',
-            sort_by='time',
-            sort_order='asc',
+            query="item",
+            sort_by="time",
+            sort_order="asc",
             show_stack=True,
             return_count=False,
         )
         if len(messages) > 0:
             msg = messages[0]
-            assert 'stackTraces' in msg.keys()
+            assert "stackTraces" in msg.keys()
 
 
 if __name__ == "__main__":

@@ -260,6 +260,8 @@ class ChildPanopticSegmenter:
             pixel_mapping = [0] + class_values
             self.idx2pixel = {i: d for i, d in enumerate(pixel_mapping)}
 
+        self.activations = None
+
     def getParameterInfo(self, required_parameters):
         required_parameters.extend(
             [
@@ -386,6 +388,7 @@ class ChildPanopticSegmenter:
             threshold=self.thres,
             idx2pixel=self.idx2pixel,
             is_contig=self.is_contig,
+            pred_batch=self.activations,
         )
         return predictions
 
@@ -419,7 +422,7 @@ class ChildPanopticSegmenter:
                 output = pred_batch
 
         else:
-            output = classify_image(
+            output, self.activations = classify_image(
                 self.model_extension._model_conf,
                 self.model,
                 patches,
@@ -545,6 +548,7 @@ def detect_object_mask(
     threshold,
     idx2pixel,
     is_contig,
+    pred_batch,
 ):
 
     tile_height, tile_width = images.shape[2], images.shape[3]
@@ -552,18 +556,19 @@ def detect_object_mask(
     N = model_info["Kwargs"]["n_masks"]
     instance_classes = model_info["Kwargs"]["instance_classes"]
 
-    if "NormalizationStats" in model_info:
-        batch_input = model_configuration.transform_input_multispectral(
-            torch.tensor(images).to(device).float()
-        )
-    else:
-        batch_input = model_configuration.transform_input(
-            torch.tensor(images).to(device).float()
-        )
-    with torch.no_grad():
-        pred_batch = model(batch_input)
+    if pred_batch is None:
+        if "NormalizationStats" in model_info:
+            batch_input = model_configuration.transform_input_multispectral(
+                torch.tensor(images).to(device).float()
+            )
+        else:
+            batch_input = model_configuration.transform_input(
+                torch.tensor(images).to(device).float()
+            )
+        with torch.no_grad():
+            pred_batch = model(batch_input)
+
     preds = model_configuration.post_process(pred_batch, thres=threshold, detector=True)
-    # preds = pred_batch
 
     ## TODO: check if this block can be moved to post_process
     instance_probs = F.softmax(preds[0], dim=1)
@@ -680,4 +685,4 @@ def classify_image(
         if thinning:
             return torch.stack(preds)
         else:
-            return preds
+            return preds, pred_batch

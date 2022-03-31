@@ -389,7 +389,7 @@ class AutoDL:
                             For eg:
                             Supported Object Detection models:
                             ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "MMDetection"]
-                            Supported Object Detection models:
+                            Supported Pixel Classification models:
                             ["DeepLab", "UnetClassifier", "PSPNetClassifier", "MMSegmentation"]
     ---------------------   -------------------------------------------
     verbose                 Optional Boolean.

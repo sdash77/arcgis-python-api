@@ -3,7 +3,11 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.realtime.velocity.feeds_manager import Feed
 from arcgis.realtime.velocity.feeds import RSS, HttpReceiver
-from arcgis.realtime.velocity.http_authentication_type import (NoAuth, BasicAuth, CertificateAuth)
+from arcgis.realtime.velocity.http_authentication_type import (
+    NoAuth,
+    BasicAuth,
+    CertificateAuth,
+)
 
 
 try:
@@ -35,25 +39,20 @@ class TestFeedsApiMethods(unittest.TestCase):
         description=description,
         authentication_type="none",
         sample_message=sample_data,
-        data_format=None
+        data_format=None,
     )
 
     http_receiver.rename_field("name", "name1")
 
-
-
     # set track id for an existing field
     http_receiver.set_track_id("name")
-
-
 
     feeds.create(http_receiver)
     feeds.items
 
-
     # rss_feed = feeds._sample_message(input_type="feed")
     # print(rss_feed)
-    #feed_item = feeds.get("e4d3c42193b14b48b912306919617010")
+    # feed_item = feeds.get("e4d3c42193b14b48b912306919617010")
 
     # ----------------------------------------------------------------------
     @unittest.skipIf(SKIP_SOME_TESTS, "test_get_all_feeds skipping")

@@ -1474,6 +1474,16 @@ class FeatureLayer(Layer):
                                                 }
                                             ]
         -------------------------------     --------------------------------------------------------------------
+        statistic_filter                    Optional ``StatisticFilter`` instance. The definitions for one or more field-based
+                                            statistics can be added, e.g. statisticType, onStatisticField, or
+                                            outStatisticFieldName.
+
+                                            Syntax:
+
+                                            sf = StatisticFilter()
+                                            sf.add(statisticType="count", onStatisticField="1", outStatisticFieldName="total")
+                                            sf.filter
+        -------------------------------     --------------------------------------------------------------------
         return_z                            Optional boolean. If true, Z values are included in the results if
                                             the features have Z values. Otherwise, Z values are not returned.
                                             The default is False.
@@ -1619,6 +1629,28 @@ class FeatureLayer(Layer):
             <Integer>
             >>> search_count
             <149>
+
+        .. code-block:: python
+
+            # Usage Example with "out_statistics" parameter
+
+            >>> stats = [{
+                    'onStatisticField': "1",
+                    'outStatisticFieldName': "total",
+                    'statisticType': "count"
+                }]
+            >>> feature_layer.query(out_statistics=stats, as_df=True) # returns a DataFrame containting total count
+
+        .. code-block:: python
+
+            # Usage Example with "StatisticFilter" parameter
+
+            >>> from arcgis._impl.common._filters import StatisticFilter
+            >>> sf1 = StatisticFilter()
+            >>> sf1.add(statisticType="count", onStatisticField="1", outStatisticFieldName="total")
+            >>> sf1.filter # This is to print the filter content
+            >>> feature_layer.query(statistic_filter=sf1, as_df=True) # returns a DataFrame containing total count
+
 
         """
         as_raw = as_df
@@ -2505,11 +2537,13 @@ class FeatureLayer(Layer):
 
             executor = concurrent.futures.ThreadPoolExecutor(1)
             res = self._con.post(path=delete_url, postdata=params)
+            time.sleep(2)
             future = executor.submit(
                 self._status_via_url,
                 *(self._con, res["statusUrl"], {"f": "json"}),
             )
             executor.shutdown(False)
+
             return future
 
     @property
@@ -2552,6 +2586,7 @@ class FeatureLayer(Layer):
                 "CompletedWithErrors",
             ]
         ]
+        time.sleep(0.5)
         status = con.get(url, params)
         while (
             status["status"].lower() in status_allowed

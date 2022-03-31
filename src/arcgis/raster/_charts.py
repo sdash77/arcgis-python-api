@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Any, Optional, Union
+
 from ._util import (
     _to_datetime,
     _datetime2ole,
@@ -8,6 +11,7 @@ from ._util import (
 import datetime as _datetime
 import copy as _copy
 import logging as _logging
+from arcgis.geometry import Point, Polygon
 
 _LOGGER = _logging.getLogger(__name__)
 
@@ -23,17 +27,17 @@ except:
 
 def temporal_profile(
     raster,
-    points=[],
-    time_field=None,
-    variables=[],
-    bands=[0],
-    time_extent=None,
-    dimension=None,
-    dimension_values=[],
-    show_values=False,
-    trend_type=None,
-    trend_order=None,
-    plot_properties={},
+    points: list[Point] = [],
+    time_field: Optional[str] = None,
+    variables: list[str] = [],
+    bands: list[int] = [0],
+    time_extent: Optional[list[_datetime.datetime]] = None,
+    dimension: Optional[list[str]] = None,
+    dimension_values: list[int] = [],
+    show_values: bool = False,
+    trend_type: Optional[str] = None,
+    trend_order: Optional[int] = None,
+    plot_properties: dict[str, Any] = {},
 ):
 
     """
@@ -494,13 +498,13 @@ def temporal_profile(
 
 def plot_histograms(
     raster,
-    geometry=None,
-    pixel_size=None,
-    time=None,
-    bands=[],
-    display_stats=True,
-    plot_properties=None,
-    subplot_properties=None,
+    geometry: Optional[Union[Polygon, dict[str, Any]]] = None,
+    pixel_size: Optional[Union[list[float], dict[str, Any]]] = None,
+    time: Optional[Union[_datetime.datetime, _datetime.date, str]] = None,
+    bands: list[int] = [],
+    display_stats: bool = True,
+    plot_properties: Optional[dict[str, Any]] = None,
+    subplot_properties: Optional[Union[list[dict], dict[str, Any]]] = None,
 ):
 
     """
@@ -516,14 +520,14 @@ def plot_histograms(
     ============================    ====================================================================
     **Arguments**                   **Description**
     ----------------------------    --------------------------------------------------------------------
-    geometry                        optional Polygon or Extent. A geometry that defines the geometry
+    geometry                        Optional Polygon or Extent. A geometry that defines the geometry
                                     within which the histogram is computed. The geometry can be an
                                     envelope or a polygon. If not provided, then the full extent of the 
                                     raster will be used for the computation.
 
                                     **Note:** This parameter is honoured if the raster uses "image_server" engine.
     ----------------------------    --------------------------------------------------------------------
-    pixel_size                      optional list or dictionary. The pixel level being used (or the
+    pixel_size                      Optional list or dictionary. The pixel level being used (or the
                                     resolution being looked at). If pixel size is not specified, then
                                     pixel_size will default to the base resolution of the dataset.
                                     The structure of the pixel_size parameter is the same as the
@@ -540,7 +544,7 @@ def plot_histograms(
 
                                     **Note:** This parameter is honoured if the raster uses "image_server" engine.
     ----------------------------    --------------------------------------------------------------------
-    time                            optional datetime.date, datetime.datetime or timestamp string. The
+    time                            Optional datetime.date, datetime.datetime or timestamp string. The
                                     time instant or the time extent of the exported image.
                                     Time instant specified as datetime.date, datetime.datetime or
                                     timestamp in milliseconds since epoch
@@ -557,13 +561,13 @@ def plot_histograms(
 
                                     **Note:** This parameter is honoured if the raster uses "image_server" engine.
     ----------------------------    --------------------------------------------------------------------
-    bands                           optional list of band indices. By default takes the first band (band index - 0).
+    bands                           Optional list of band indices. By default takes the first band (band index - 0).
                                     Image histogram charts are plotted for these specific bands.
 
                                     Example:
                                         - [0,2,3]
     ----------------------------    --------------------------------------------------------------------
-    display_stats                   optional boolean. Specifies whether to plot the band-wise statistics 
+    display_stats                   Optional boolean. Specifies whether to plot the band-wise statistics 
                                     along with the histograms.
 
                                     Some basic descriptive statistics are calculated and displayed on 
@@ -574,14 +578,14 @@ def plot_histograms(
                                         - True - The statistics will be displayed along with the histograms. \
                                                 This is the default.
     ----------------------------    --------------------------------------------------------------------
-    plot_properties                 optional dictionary. This parameter can be used to set the figure 
+    plot_properties                 Optional dictionary. This parameter can be used to set the figure 
                                     properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`__ 
                                     parameters and values specified in dict format.
 
                                     Example:
                                         - {"figsize":(15,15)}
     ----------------------------    --------------------------------------------------------------------
-    subplot_properties              optional list or dictionary. This parameter can be used to set band-wise 
+    subplot_properties              Optional list or dictionary. This parameter can be used to set band-wise 
                                     histogram (subplot) display properties. These are the `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
                                     parameters and values specified in dictionary format.
 
