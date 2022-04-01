@@ -677,6 +677,7 @@ class ImageryLayer(Layer):
         self._tiles_only = None
         self._extent_set = False
         self._original_info = {}
+        self._rendering_rule_from_item = False
 
     @property
     def rasters(self):
