@@ -557,14 +557,14 @@ def pro_at_least_version(version: str) -> bool:
     v_lst, in_lst = [lst + ([0] * (max_len - len(lst))) for lst in [v_lst, in_lst]]
 
     # variable to store status
-    at_least = False
+    at_least = True
 
     # test all the parts of the input version against the current version
     for idx in range(0, max_len):
 
         # evaluate if the part and if greater, break and report status
-        if v_lst[idx] > in_lst[idx]:
-            at_least = True
+        if v_lst[idx] < in_lst[idx]:
+            at_least = False
             break
 
     return at_least
@@ -648,9 +648,9 @@ def validate_network_travel_mode(source, travel_mode):
 def add_proximity_to_enrich_feature(
     source: GIS,
     feature: dict,
-    travel_mode: str = "straight_line",
+    travel_mode: Optional[str] = "straight_line",
     proximity_metric: Optional = None,
-    proximity_value: int = 1,
+    proximity_value: Optional[int] = 1,
 ) -> dict:
     """Add proximity metrics onto a feature in a feature set for sending to the enrich REST endpoint."""
     # alias list to standardize the proximity_metric input
@@ -747,7 +747,6 @@ class RunThread(threading.Thread):
         self.func = func
         self.args = args
         self.kwargs = kwargs
-        self.result = None
         super().__init__()
 
     def run(self):

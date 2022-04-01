@@ -60,17 +60,13 @@ class AOI(object):
 
     @property
     def source(self) -> Union[str, GIS]:
-        """
-        Source being used.
-
-        Args:
-            in_source: Either the 'local' keyword or an instantiated ``GIS`` object
-                instance.
-        """
         return self._source
 
     @source.setter
     def source(self, in_source: Optional[Union[str, GIS]] = None) -> None:
+        """
+        Source being used.
+        """
         self._source = set_source(in_source)
 
         # if working with a GIS object instance, we need to set a few extra properties
@@ -214,7 +210,7 @@ class AOI(object):
         self,
         geographies: Union[pd.DataFrame, Iterable, Path],
         enrich_variables: Union[pd.DataFrame, Iterable],
-        return_geometry: bool = True,
+        return_geometry: Optional[bool] = True,
         standard_geography_level: Optional[Union[int, str]] = None,
         standard_geography_id_column: Optional[str] = None,
         proximity_type: Optional[str] = None,
@@ -683,17 +679,13 @@ class BusinessAnalyst(object):
 
     @property
     def source(self) -> Union[str, GIS]:
-        """
-        Source being used.
-
-        Args:
-            in_source: Either the 'local' keyword or an instantiated ``GIS`` object
-                instance.
-        """
         return self._source
 
     @source.setter
     def source(self, in_source: Optional[Union[str, GIS]] = None) -> None:
+        """
+        Source being used.
+        """
         self._source = set_source(in_source)
 
         # if working with a GIS object instance, we need to set a few extra properties
@@ -1736,7 +1728,7 @@ class BusinessAnalyst(object):
 
         # if working with a specific country, add this to the payload
         if country is not None:
-            params["useData"] = json.dumps({"sourceCountry": country.properties.iso3})
+            params["useData"] = json.dumps({"sourceCountry": country.properties.iso2})
 
         # get the maximum batch size to ensure is not less than best practices set above
         svc_lmt_url = f'{self.source.properties.helperServices("geoenrichment").url}/Geoenrichment/ServiceLimits'
@@ -1771,7 +1763,7 @@ class BusinessAnalyst(object):
                 country is not None
             ), "Standard geography levels can only be used with a Country."
 
-            # pull the geography level out of the geography levels dataframe
+            # get the geography levels dataframe, and pull out the geography level using the provided index
             geo_lvl = country.geography_levels.iloc[standard_geography_level][
                 "level_id"
             ]
@@ -1786,7 +1778,7 @@ class BusinessAnalyst(object):
                 params["studyAreas"] = json.dumps(
                     [
                         {
-                            "sourceCountry": country.iso3,
+                            "sourceCountry": geo_lvl.split(".")[0],
                             "layer": geo_lvl,
                             "ids": batch_id_lst,
                         }
@@ -1958,19 +1950,20 @@ async def _get_enrich_rest(
                     f"Error: {err['id']}: {err['description']}"
                 )
 
-        # pull out the response feature set
-        fs = r_json["results"][0]["value"]["FeatureSet"]
-        assert (
-            len(fs) > 0
-        ), "No results were returned. Please ensure you are using the correct country."
-
         # if getting geometry back, unpack into spatially enabled dataframe
         if retrieve_geometry:
-            r_df = FeatureSet.from_dict(fs[0]).sdf
+            r_df = FeatureSet.from_dict(
+                r_json["results"][0]["value"]["FeatureSet"][0]
+            ).sdf
 
         # unpack the enriched results - reaching into the FeatureSet for just the attributes - much faster
         else:
-            r_df = pd.DataFrame([f["attributes"] for f in fs[0]["features"]])
+            r_df = pd.DataFrame(
+                [
+                    f["attributes"]
+                    for f in r_json["results"][0]["value"]["FeatureSet"][0]["features"]
+                ]
+            )
 
         # add the dataframe to the list
         enrich_res_itr.append(r_df)
