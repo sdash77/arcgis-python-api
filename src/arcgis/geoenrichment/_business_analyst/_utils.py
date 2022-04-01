@@ -435,7 +435,7 @@ def validate_spatial_reference(
 
 def get_spatially_enabled_dataframe(
     input_object: Union[pd.DataFrame, pd.Series, Geometry, Iterable, np.ndarray],
-    spatial_column: Optional[str] = "SHAPE",
+    spatial_column: str = "SHAPE",
 ) -> pd.DataFrame:
     """Garbage disposal taking variety of possible inputs and outputting, if possible, a Pandas Spatially Enabled
     DataFrame."""
@@ -475,9 +475,7 @@ def preproces_code_inputs(codes):
     return codes
 
 
-def get_top_codes(
-    codes: Union[pd.Series, list, tuple], threshold: Optional[float] = 0.5
-) -> list:
+def get_top_codes(codes: Union[pd.Series, list, tuple], threshold: float = 0.5) -> list:
     """Get the top category codes by only keeping those compromising 50% or greater of the records.
 
     Args:
@@ -588,7 +586,7 @@ def extract_from_kwargs(paramater_key: str, kwargs: dict) -> Tuple[Any, dict]:
     return param_val, kwargs
 
 
-def validate_network_travel_mode(source, travel_mode):
+def validate_network_travel_mode(source, travel_mode: str):
     """Validate the travel_mode string or index."""
     # dictionary of potential aliases for travel modes
     travel_mode_dict = {"walk": "walking", "drive": "driving", "truck": "trucking"}
@@ -649,7 +647,7 @@ def add_proximity_to_enrich_feature(
     source: GIS,
     feature: dict,
     travel_mode: str = "straight_line",
-    proximity_metric: Optional = None,
+    proximity_metric: Optional[str] = None,
     proximity_value: int = 1,
 ) -> dict:
     """Add proximity metrics onto a feature in a feature set for sending to the enrich REST endpoint."""
@@ -726,9 +724,9 @@ def add_proximity_to_enrich_feature(
 def add_proximity_to_enrich_feature_list(
     source: GIS,
     feature_list: Iterable,
-    travel_mode="straight_line",
-    proximity_metric=None,
-    proximity_value=1,
+    travel_mode: str = "straight_line",
+    proximity_metric: Optional[str] = None,
+    proximity_value: int = 1,
 ) -> list:
     """Add proxmity metrics to a FeatureSet for sending to the enrich REST endpoint."""
     prx_feat_lst = [

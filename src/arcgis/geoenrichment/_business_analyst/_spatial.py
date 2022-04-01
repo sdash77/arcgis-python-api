@@ -16,7 +16,7 @@ if arcpy_avail:
 
 def change_spatial_reference(
     input_dataframe: pd.DataFrame,
-    output_spatial_reference: Optional[Union[int, SpatialReference]] = 4326,
+    output_spatial_reference: Union[int, SpatialReference] = 4326,
     input_spatial_reference: Optional[Union[int, SpatialReference]] = None,
     transformation_name: Optional[str] = None,
 ) -> pd.DataFrame:
@@ -145,7 +145,7 @@ def _get_weighted_centroid_geometry(
     sub_df: pd.DataFrame,
     weighting_column: str,
     sptl_ref: SpatialReference,
-    geom_col: Optional[str] = "SHAPE",
+    geom_col: str = "SHAPE",
 ) -> Point:
     """
     Helper function to calculate centroid coordinates.

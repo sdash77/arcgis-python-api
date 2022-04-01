@@ -1,6 +1,5 @@
-from ctypes import Union
 import json
-from typing import Optional
+from typing import Optional, Union
 import pandas as pd
 import arcgis
 from arcgis.gis import GIS
