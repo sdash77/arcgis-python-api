@@ -3169,7 +3169,7 @@ class FeatureLayer(Layer):
                 "esriFieldTypeDouble": pd.Float64Dtype(),
                 "esriFieldTypeFloat": pd.Float64Dtype(),
                 "esriFieldTypeString": str,
-                "esriFieldTypeDate": _datetime,
+                "esriFieldTypeDate": object,
                 "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
