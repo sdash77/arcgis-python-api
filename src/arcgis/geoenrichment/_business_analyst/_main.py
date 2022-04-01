@@ -62,7 +62,7 @@ class AOI(object):
     def source(self) -> Union[str, GIS]:
         """
         Source being used.
-        
+
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
@@ -243,7 +243,7 @@ class AOI(object):
         **Argument**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         geographies                         Required geographic areas or points to be enriched.
-                                            enrich_variables: Enrichment enrich_variables to be used, 
+                                            enrich_variables: Enrichment enrich_variables to be used,
                                             typically discovered using the "enrich_variables" property.
         -----------------------------       --------------------------------------------------------------------
         return_geometry                     Optional boolean indicating if geometry is desired in the output.
@@ -308,7 +308,7 @@ class Country(AOI):
     Country enables access to Business Analyst functionality. Business Analyst
     data is available by iso3 using both ``local`` (ArcGIS Pro with the Business
     Analyst extension and local data) and ``GIS`` sources.
-    
+
     =============================       ====================================================================
     **Argument**                        **Description**
     -----------------------------       --------------------------------------------------------------------
@@ -326,7 +326,7 @@ class Country(AOI):
                                         This is only honored if using local resources and the specified
                                         year is available.
     =============================       ====================================================================
-    
+
     """
 
     def __init__(
@@ -1182,7 +1182,7 @@ class BusinessAnalyst(object):
         =============================       ====================================================================
         **Argument**                        **Description**
         -----------------------------       --------------------------------------------------------------------
-        enrich_variables                    Iterable (normally a list) or pd.DataFrame 
+        enrich_variables                    Iterable (normally a list) or pd.DataFrame
                                             of enrich_variables correlating to
                                             enrichment enrich_variables. These variable names can be simply the name, the
                                             name prefixed by the collection separated by a dot, or the output from
@@ -1331,7 +1331,7 @@ class BusinessAnalyst(object):
     ) -> pd.DataFrame:
         """
         Enrich enables retrieving apportioned demographic factors for input geographies.
-        
+
         =============================       ====================================================================
         **Argument**                        **Description**
         -----------------------------       --------------------------------------------------------------------
@@ -1360,7 +1360,7 @@ class BusinessAnalyst(object):
         -----------------------------       --------------------------------------------------------------------
         output_spatial_reference            If the geometry is being returned, and a geometry other
                                             than WGS84 is desired, please provide it here. The default is
-                                            ``{'wkid': 4326}`` (WGS84).   
+                                            ``{'wkid': 4326}`` (WGS84).
         -----------------------------       --------------------------------------------------------------------
         estimate_credits                    If the source for the Business Analyst instance is ArcGIS Online,
                                             this enables estimation of credit consumption before actually performing the

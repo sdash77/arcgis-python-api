@@ -278,7 +278,12 @@ class Country(object):
     """
 
     @classmethod
-    def get(cls, name: str, gis: Optional[GIS] = None, year: Optional[Union[str, int]] = None):
+    def get(
+        cls,
+        name: str,
+        gis: Optional[GIS] = None,
+        year: Optional[Union[str, int]] = None,
+    ):
         """
         Get a reference to a particular country, given its name, or its
         two letter abbreviation or three letter ISO3 code.
@@ -1588,6 +1593,7 @@ def _find_report(country, gis=None):
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
     return ge.find_report(country=country)
+
 
 # ----------------------------------------------------------------------
 @_call_method_by_source
