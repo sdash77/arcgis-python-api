@@ -3144,7 +3144,7 @@ class FeatureLayer(Layer):
 
         if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeSmallInteger": np.int64,
                 "esriFieldTypeInteger": np.int64,
                 "esriFieldTypeSingle": np.int32,
                 "esriFieldTypeDouble": float,
@@ -3163,14 +3163,14 @@ class FeatureLayer(Layer):
             from datetime import datetime as _datetime
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
+                "esriFieldTypeSmallInteger": pd.Int64Dtype(),
+                "esriFieldTypeInteger": pd.Int64Dtype(),
+                "esriFieldTypeSingle": pd.Int32Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
                 "esriFieldTypeString": str,
-                "esriFieldTypeDate": _datetime,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeDate": object,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
@@ -3274,6 +3274,9 @@ class FeatureLayer(Layer):
                     names.append(fld["name"])
                 if fld["type"] == "esriFieldTypeDate":
                     dfields.append(fld["name"])
+        if dtypes:
+            df = df.astype(dtypes)
+
         if "SHAPE" in featureset_dict:
             df.spatial.set_geometry("SHAPE")
         if len(dfields) > 0:
