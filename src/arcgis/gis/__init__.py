@@ -4608,11 +4608,11 @@ class GroupManager(object):
 
         --------------------  ---------------------------------------------------------
         provider_group_name   Optional string. The name of the domain group.
-                              Create an association between a Portal group and an 
+                              Create an association between a Portal group and an
                               Active Directory or LDAP group.
         --------------------  ---------------------------------------------------------
-        provider              Optional string. Name of the provider. Required if the 
-                              parameter `provider_group_name` is specified. Example of 
+        provider              Optional string. Name of the provider. Required if the
+                              parameter `provider_group_name` is specified. Example of
                               use: provider_group_name = “groupNameTest”, provider = 'enterprise'
         --------------------  ---------------------------------------------------------
         max_file_size         Optional integer.  This is the maximum file size allowed
