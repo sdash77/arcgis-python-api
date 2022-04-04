@@ -2331,15 +2331,6 @@ class FeatureLayerCollectionManager(_GISResource):
             postdata = {"f": "json"}
 
             old_publish_parameters = self._gis._con.post(path, postdata)
-
-            # params = {
-            #     "name": related_data_item.name,
-            #     "title": related_data_item.title,
-            #     "tags": related_data_item.tags,
-            #     "type": related_data_item.type,
-            #     "overwrite": True,
-            #     "overwriteService": "on",
-            # }
             base_url = feature_layer_item.privateUrl
             lyr_url_info = "%s/layers" % base_url
             fs_url = "%s" % base_url
@@ -2353,29 +2344,6 @@ class FeatureLayerCollectionManager(_GISResource):
             feature_service_def.update(layer_info)
             publish_parameters = feature_service_def
             publish_parameters.update(old_publish_parameters)
-            # publish_parameters["name"] = feature_layer_item.title
-            # publish_parameters["_ssl"] = False
-            # for idx, lyr in enumerate(publish_parameters["layers"]):
-            #     lyr["parentLayerId"] = -1
-            #     for k in {
-            #         "sourceSpatialReference",
-            #         "isCoGoEnabled",
-            #         "parentLayer",
-            #         "isDataArchived",
-            #         "cimVersion",
-            #     }:
-            #         lyr.pop(k, None)
-            # for idx, lyr in enumerate(publish_parameters["tables"]):
-            #     lyr["parentLayerId"] = -1
-            #     for k in {
-            #         "sourceSpatialReference",
-            #         "isCoGoEnabled",
-            #         "parentLayer",
-            #         "isDataArchived",
-            #         "cimVersion",
-            #     }:
-            #         lyr.pop(k, None)
-
         else:
             # overwriting a SD case - no need for detailed publish parameters
             publish_parameters = None
