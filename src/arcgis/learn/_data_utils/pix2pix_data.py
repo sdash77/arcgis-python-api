@@ -694,7 +694,7 @@ def post_process(dists):
     return (dists > 1.0).long()
 
 
-def show_results(self, rows):
+def show_results(self, rows, **kwargs):
     self.learn.model.eval()
     x_batch, y_batch = get_nbatches(
         self._data.valid_dl, math.ceil(rows / self._data.batch_size)
@@ -738,6 +738,7 @@ def show_results(self, rows):
                     ArcGISMSImage(x_B[r]),
                     ArcGISMSImage(activations[r]),
                 ),
+                kwargs.get("rgb_bands", None),
             )
         else:
             display_row(

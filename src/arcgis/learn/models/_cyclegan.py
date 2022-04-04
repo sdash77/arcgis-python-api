@@ -205,6 +205,13 @@ class CycleGAN(ArcGISModel):
                                 to be displayed.
         =====================   ===========================================
 
+         **kwargs**
+
+        =====================   ===========================================
+        rgb_bands               Optional list of integers (band numbers)
+                                to be considered for rgb visualization.
+        =====================   ===========================================
+
         """
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
