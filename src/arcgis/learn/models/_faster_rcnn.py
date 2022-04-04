@@ -451,11 +451,11 @@ class FasterRCNN(ModelExtension):
     data                            Required fastai Databunch. Returned data object from
                                     ``prepare_data`` function.
     -----------------------------   ---------------------------------------------
-    backbone                        Optional function. Backbone CNN model to be used for
-                                    creating the base of the `FasterRCNN`, which
+    backbone                        Optional string. Backbone convolutional neural network
+                                    model used for feature extraction, which
                                     is `resnet50` by default.
-                                    Compatible backbones: 'resnet18', 'resnet34',
-                                    'resnet50', 'resnet101', 'resnet152'
+                                    Supported backbones: ResNet family and specified Timm
+                                    models from :func:`~arcgis.learn.FasterRCNN.backbones`.
     -----------------------------   ---------------------------------------------
     pretrained_path                 Optional string. Path where pre-trained model is
                                     saved.
@@ -589,7 +589,12 @@ class FasterRCNN(ModelExtension):
 
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return FasterRCNN._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return FasterRCNN._supported_backbones()
 
     @staticmethod

@@ -51,10 +51,12 @@ class PSPNetClassifier(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             `prepare_data` function.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `PSPNetClassifier`, which
-                            is `resnet50` by default. It supports the ResNet,
-                            DenseNet, and VGG families.
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which
+                            is `resnet50` by default.
+                            Supported backbones: ResNet, DenseNet, VGG families
+                            and specified Timm models from
+                            :func:`~arcgis.learn.PSPNetClassifier.backbones`.
     ---------------------   -------------------------------------------
     use_unet                Optional Bool. Specify whether to use Unet-Decoder or not,
                             Default True.
@@ -305,7 +307,12 @@ class PSPNetClassifier(ArcGISModel):
     # Return a list of supported backbones names
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return PSPNetClassifier._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return PSPNetClassifier._supported_backbones()
 
     @staticmethod

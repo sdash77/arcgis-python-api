@@ -103,9 +103,12 @@ class SingleShotDetector(ArcGISModel):
     ratios                  Optional list of tuples. Aspect ratios of anchor
                             boxes.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `SingleShotDetector`, which
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which
                             is `resnet34` by default.
+                            Supported backbones: ResNet, DenseNet, VGG families
+                            and specified Timm models from
+                            :func:`~arcgis.learn.SingleShotDetector.backbones`.
     ---------------------   -------------------------------------------
     dropout                 Optional float. Dropout probability. Increase it to
                             reduce overfitting.
@@ -345,7 +348,12 @@ class SingleShotDetector(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return SingleShotDetector._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return SingleShotDetector._supported_backbones()
 
     @staticmethod

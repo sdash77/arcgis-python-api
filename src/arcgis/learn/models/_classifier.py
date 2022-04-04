@@ -117,9 +117,11 @@ class FeatureClassifier(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             `prepare_data` function.
     ---------------------   -------------------------------------------
-    backbone                Optional torchvision model. Backbone CNN model to be used for
-                            creating the base of the ``FeatureClassifier``, which
-                            is ``resnet34`` by default.
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which is ``resnet34``
+                            by default.
+                            Supported backbones: ResNet family and specified Timm
+                            models from :func:`~arcgis.learn.FeatureClassifier.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -271,7 +273,12 @@ class FeatureClassifier(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return FeatureClassifier._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return FeatureClassifier._supported_backbones()
 
     @staticmethod

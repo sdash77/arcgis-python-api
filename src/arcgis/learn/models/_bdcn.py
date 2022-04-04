@@ -119,11 +119,11 @@ class BDCNEdgeDetector(ModelExtension):
     data                    Required fastai Databunch. Returned data object from
                             ``prepare_data`` function.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `Bi-Directional Cascade Network
-                            for Perceptual Edge Detection`, which
-                            is `vgg19` by default.
-                            Compatible backbones: resnet and VGG
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which is `vgg19` by
+                            default.
+                            Supported backbones: ResNet, Vgg family and specified Timm
+                            models from :func:`~arcgis.learn.BDCNEdgeDetector.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -180,9 +180,14 @@ class BDCNEdgeDetector(ModelExtension):
     def _is_edge_detection(self):
         return True
 
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
+        return BDCNEdgeDetector._supported_backbones()
+
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
         return BDCNEdgeDetector._supported_backbones()
 
     @staticmethod

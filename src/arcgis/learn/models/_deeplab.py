@@ -193,11 +193,13 @@ class DeepLab(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             ``prepare_data`` function.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `DeepLab`, which
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which
                             is `resnet101` by default since it is pretrained in
-                            torchvision. It supports the ResNet,
-                            DenseNet, and VGG families.
+                            torchvision.
+                            Supported backbones: ResNet, DenseNet, VGG family and
+                            specified Timm models from
+                            :func:`~arcgis.learn.DeepLab.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -408,7 +410,12 @@ class DeepLab(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return DeepLab._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return DeepLab._supported_backbones()
 
     @staticmethod

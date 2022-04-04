@@ -57,9 +57,11 @@ class UnetClassifier(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             `prepare_data` function.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `UnetClassifier`, which
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which
                             is `resnet34` by default.
+                            Supported backbones: ResNet family and specified Timm
+                            models from :func:`~arcgis.learn.UnetClassifier.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -324,7 +326,12 @@ class UnetClassifier(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return UnetClassifier._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return UnetClassifier._supported_backbones()
 
     @staticmethod
