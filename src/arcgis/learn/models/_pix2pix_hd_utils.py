@@ -229,7 +229,7 @@ class LocalEnhancer(nn.Module):
         self.n_local_enhancers = n_local_enhancers
 
         ###### global generator model #####
-        ngf_global = ngf * (2 ** n_local_enhancers)
+        ngf_global = ngf * (2**n_local_enhancers)
         model_global = GlobalGenerator(
             input_nc,
             output_nc,
@@ -336,7 +336,7 @@ class GlobalGenerator(nn.Module):
         ]
         ### downsample
         for i in range(n_downsampling):
-            mult = 2 ** i
+            mult = 2**i
             model += [
                 nn.Conv2d(
                     ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1
@@ -346,7 +346,7 @@ class GlobalGenerator(nn.Module):
             ]
 
         ### resnet blocks
-        mult = 2 ** n_downsampling
+        mult = 2**n_downsampling
         for i in range(n_blocks):
             model += [
                 ResnetBlock(
@@ -446,7 +446,7 @@ class Encoder(nn.Module):
         ]
         ### downsample
         for i in range(n_downsampling):
-            mult = 2 ** i
+            mult = 2**i
             model += [
                 nn.Conv2d(
                     ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1
