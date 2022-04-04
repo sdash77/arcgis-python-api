@@ -12,6 +12,7 @@ import datetime as _datetime
 import copy as _copy
 import logging as _logging
 from arcgis.geometry import Point, Polygon
+from arcgis.raster import ImageryLayer
 
 _LOGGER = _logging.getLogger(__name__)
 
@@ -121,6 +122,17 @@ def temporal_profile(
         None
 
     """
+    if raster.tiles_only:
+        try:
+            from arcgis.raster.functions.utility import _generate_layer_token
+
+            token = _generate_layer_token(raster, raster.url)
+            newlyr = ImageryLayer(
+                {"input_raster": raster.url + "?token=" + token}, raster._gis
+            )
+            raster = newlyr
+        except:
+            raise RuntimeError("Failed to draw the temportal profile for the layer")
 
     t1 = []
 
@@ -385,7 +397,6 @@ def temporal_profile(
             "ascending": False,
             "sortField": x_var,
         }
-
         for index, point in enumerate(points):
             for variable in variables:
                 t2 = raster.get_samples(

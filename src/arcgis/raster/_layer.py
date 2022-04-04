@@ -636,8 +636,13 @@ class ImageryLayer(Layer):
                 self._datastore_raster = True
                 self._uri = url
                 if isinstance(url, dict):
-                    encoded_dict = str(self._uri).encode("utf-8")
-                    self._uri = base64.b64encode(encoded_dict)
+                    raster_url = None
+                    raster_url = url.get("input_raster", None)
+                    if raster_url:
+                        self._uri = raster_url
+                    else:
+                        encoded_dict = str(self._uri).encode("utf-8")
+                        self._uri = base64.b64encode(encoded_dict)
                 gis = _arcgis.env.active_gis if gis is None else gis
                 if gis is not None:
                     if ImageryLayer._rendering_service_object is None or (
