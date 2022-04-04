@@ -2595,49 +2595,34 @@ class GeoAccessor(object):
             if geocoder is None:
                 geocoder = arcgis.env.active_gis._tools.geocoders[0]
             sr = dict(geocoder.properties.spatialReference)
-            geoms = []
             if address_column in df.columns:
                 batch_size = geocoder.properties.locatorProperties.MaxBatchSize
-                N = len(df)
-                geoms = []
-                for i in range(0, N, batch_size):
-                    start = i
-                    stop = i + batch_size if i + batch_size < N else N
-                    res = batch_geocode(
-                        list(df[start:stop][address_column]), geocoder=geocoder
+                pieces = [
+                    df.iloc[i : i + batch_size] for i in range(0, len(df), batch_size)
+                ]
+                data = []
+                for df in pieces:
+                    piece_df = batch_geocode(
+                        list(df[address_column]),
+                        geocoder=geocoder,
+                        as_featureset=True,
+                    ).sdf.sort_values(by='ResultID')
+                    piece_df.index = df.index
+                    piece_df['ResultID'] = df.index.tolist()
+                    data.append(piece_df)
+                if len(data) == 1:
+                    merged = df.merge(data[0], left_index=True, right_on='ResultID')
+                else:
+                    merged = df.merge(
+                        pd.concat(data), left_index=True, right_on='ResultID'
                     )
-                    for index in range(len(res)):
-                        try:
-                            address = df.iloc[index][address_column]
-                        except:  # for older versions, fall back to `df.loc`
-                            address = df.loc[df.index[index]][address_column]
-                        try:
-                            loc = res[index]["location"]
-                            x = loc["x"]
-                            y = loc["y"]
-                            geoms.append(
-                                _geometry.Geometry(
-                                    {"x": x, "y": y, "spatialReference": sr}
-                                )
-                            )
-
-                        except:
-                            x, y = None, None
-                            try:
-                                loc = geocode(address, geocoder=geocoder)[0]["location"]
-                                x = loc["x"]
-                                y = loc["y"]
-                            except:
-                                print("Unable to geocode address: " + address)
-                                pass
-                            geoms.append(None)
             else:
                 raise ValueError("Address column not found in dataframe")
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                df["SHAPE"] = geoms
-                df.spatial.set_geometry("SHAPE")
-            return df
+
+                merged.spatial.set_geometry("SHAPE")
+            return merged
 
     # ----------------------------------------------------------------------
     @staticmethod
