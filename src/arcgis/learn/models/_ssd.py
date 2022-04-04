@@ -3,7 +3,6 @@ from pathlib import Path
 import json
 from ._codetemplate import code
 import warnings
-import math
 from .._data import _raise_fastai_import_error
 import traceback
 
@@ -20,12 +19,9 @@ try:
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body, cnn_config
-    from fastai.vision.data import ImageDataBunch
     from fastai.vision import ImageList
-    from fastai.vision import imagenet_stats, normalize
-    from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
-    from torchvision.models import resnet34
-    from torchvision.models import mobilenet_v2
+    from fastai.vision import imagenet_stats
+    from fastai.vision.image import bb2hw, Image, pil2tensor
     from torchvision import models
     from .._utils.pascal_voc_rectangles import (
         ObjectDetectionCategoryList,
@@ -35,8 +31,6 @@ try:
         SSDHead,
         BCE_Loss,
         FocalLoss,
-        one_hot_embedding,
-        nms,
         postprocess,
     )
     from ._ssd_utils import (
@@ -46,17 +40,13 @@ try:
         avg_iou,
         AveragePrecision,
     )
-    from .._data import prepare_data
-    from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import (
-        SaveModelCallback,
         _set_multigpu_callback,
         _resnet_family,
         _vgg_family,
         _densenet_family,
-        _change_tail,
     )
-    from ._unet_utils import is_no_color
+    from ._timm_utils import timm_config, filter_timm_models, _get_feature_size
     from torch.nn import Module as NnModule
     import PIL
     from .._image_utils import (
@@ -71,7 +61,6 @@ try:
         _get_emd_path,
         read_image,
     )
-    from fastprogress.fastprogress import progress_bar
     from .._utils.env import _IS_ARCGISPRONOTEBOOK
     import matplotlib.pyplot as plt
 except Exception as e:
@@ -185,6 +174,13 @@ class SingleShotDetector(ArcGISModel):
                 location_loss_factor,
             )
         else:
+
+            self._check_dataset_support(self._data)
+            if not (self._check_backbone_support(getattr(self, "_backbone", backbone))):
+                raise Exception(
+                    f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
+                )
+
             # assert (location_loss_factor is not None) or ((location_loss_factor > 0) and (location_loss_factor < 1)),
             if not ssd_version in [1, 2]:
                 raise Exception("ssd_version can be only [1,2]")
@@ -199,14 +195,15 @@ class SingleShotDetector(ArcGISModel):
             self._code = code
             self.ssd_version = ssd_version
 
-            backbone_cut = None
-            backbone_split = None
+            if "timm" in self._backbone.__module__:
 
-            self._check_dataset_support(self._data)
-            if not (self._check_backbone_support(getattr(self, "_backbone", backbone))):
-                raise Exception(
-                    f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
-                )
+                timm_meta = timm_config(self._backbone)
+                backbone_cut = timm_meta["cut"]
+                backbone_split = timm_meta["split"]
+            else:
+                backbone_cut = None
+                backbone_split = None
+
             backbone_name = self._backbone.__name__[:3]
 
             if self._backbone.__name__ == "mobilenet_v2":
@@ -277,18 +274,13 @@ class SingleShotDetector(ArcGISModel):
                     grids = list(set(grids))
 
                 self._create_anchors(grids, zooms, ratios)
-                if hasattr(self, "_orig_backbone"):
-                    feature_sizes = model_sizes(
-                        create_body(
-                            self._orig_backbone, pretrained=False, cut=backbone_cut
-                        ),
-                        size=(data.chip_size, data.chip_size),
-                    )
-                else:
-                    feature_sizes = model_sizes(
-                        create_body(self._backbone, pretrained=False, cut=backbone_cut),
-                        size=(data.chip_size, data.chip_size),
-                    )
+
+                feature_sizes = _get_feature_size(
+                    self._backbone,
+                    cut=backbone_cut,
+                    chip_size=(data.chip_size, data.chip_size),
+                )
+
                 num_features = feature_sizes[-1][-1]
                 num_channels = feature_sizes[-1][1]
 
@@ -358,12 +350,16 @@ class SingleShotDetector(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
+
+        timm_models = filter_timm_models()
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+
         return [
             *_resnet_family,
             *_densenet_family,
             *_vgg_family,
             models.mobilenet_v2.__name__,
-        ]
+        ] + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -675,7 +671,11 @@ class SingleShotDetector(ArcGISModel):
         _emd_template["ModelConfiguration"] = "_DynamicSSD"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
-        _emd_template["backbone"] = self._backbone.__name__
+        if "timm" in self._backbone.__module__:
+            bckbn_name = "timm:" + self._backbone.__name__
+        else:
+            bckbn_name = self._backbone.__name__
+        _emd_template["backbone"] = bckbn_name
         if _emd_template["backbone"] == "backbone_wrapper":
             _emd_template["backbone"] = self._orig_backbone.__name__
         _emd_template["Grids"] = self.grids

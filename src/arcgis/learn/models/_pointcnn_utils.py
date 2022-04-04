@@ -128,7 +128,7 @@ class DepthwiseConv2D(nn.Module):
                 return out
         else:
             B, C, P, K = inp.shape
-            C = int(C**0.5)
+            C = int(C ** 0.5)
             inp = inp.view(B, P, C, C).permute(0, 3, 1, 2).contiguous()
             out = self.module(inp.contiguous())
             return (

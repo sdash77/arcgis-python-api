@@ -46,6 +46,7 @@ from torch import nn, LongTensor
 import torch.nn.functional as F
 from fastai.vision.image import ImageBBox
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
+from fastai.vision.learner import create_body
 import numpy as np
 from fastai.callbacks.hooks import model_sizes, hook_outputs
 from fastai.layers import conv2d, conv_layer
@@ -56,6 +57,7 @@ import warnings
 import logging
 from fastai.basic_train import Callback
 from fastai.torch_core import add_metrics
+from ._timm_utils import _get_feature_size
 
 from fastprogress.fastprogress import progress_bar
 
@@ -85,7 +87,9 @@ class RetinaNetModel(nn.Module):
 
     def __init__(
         self,
-        encoder,
+        backbone,
+        backbone_pretrained,
+        backbone_cut,
         n_classes,
         final_bias=0.0,
         chs=256,
@@ -100,11 +104,16 @@ class RetinaNetModel(nn.Module):
         super().__init__()
         self.n_classes, self.flatten = n_classes, flatten
         self.chip_size = chip_size
+        encoder = create_body(backbone, backbone_pretrained, backbone_cut)
 
         # Fetch the sizes of various activation layers of the backbone
-        sfs_szs = model_sizes(encoder, size=self.chip_size)
+        sfs_szs = _get_feature_size(
+            backbone,
+            cut=backbone_cut,
+            chip_size=self.chip_size,
+        )
 
-        hooks = hook_outputs(encoder)
+        hooks = hook_outputs(nn.Sequential(*encoder.children()))
 
         self.encoder = encoder
         self.c5top5 = conv2d(sfs_szs[-1][1], chs, ks=1, bias=True)
@@ -123,7 +132,7 @@ class RetinaNetModel(nn.Module):
         self.box_regressor = self._head_subnet(4, n_anchors, 0.0, chs=chs)
 
         # Create a dummy x to be passed through the model and fetch the sizes
-        x_dummy = torch.rand(n_bands, self.chip_size[0], self.chip_size[1]).unsqueeze(0)
+        x_dummy = torch.rand(2, n_bands, self.chip_size[0], self.chip_size[1])
         p_states = self._create_p_states(x_dummy)
         self.sizes = [[p.size(2), p.size(3)] for p in p_states]
 

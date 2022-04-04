@@ -1,10 +1,8 @@
-import os, json, tempfile
+import json
 from pathlib import Path
 from ._codetemplate import image_classifier_prf
-from ._arcgis_model import _raise_fastai_import_error
 from functools import partial
 from ._arcgis_model import ArcGISModel
-import types
 import logging
 
 logger = logging.getLogger()
@@ -12,26 +10,22 @@ logger = logging.getLogger()
 try:
     from fastai.basic_train import Learner
     from ._arcgis_model import (
-        SaveModelCallback,
         _resnet_family,
         _vgg_family,
         _densenet_family,
         _set_ddp_multigpu,
         _isnotebook,
     )
-    from ._unet_utils import is_no_color, predict_batch, show_results_multispectral
+    from ._timm_utils import filter_timm_models
+    from ._unet_utils import is_no_color, show_results_multispectral
     import torch
     from torch import nn
     import torch.nn.functional as F
     from torchvision import models
-    from ._unet_utils import LabelCallback
     from ._arcgis_model import _EmptyData, _change_tail
-    from fastai.vision import to_device
-    from fastai.callbacks.hooks import hook_output, model_sizes
     from torchvision.models._utils import IntermediateLayerGetter
     from collections import OrderedDict
     import numpy as np
-    from fastai.callbacks import EarlyStoppingCallback
     from fastai.torch_core import split_model_idx
     from .._utils.classified_tiles import per_class_metrics
     from fastai.vision import flatten_model
@@ -323,7 +317,10 @@ class DeepLab(ArcGISModel):
         self.dice_loss_average = kwargs.get("dice_loss_average", "micro")
 
         self._code = image_classifier_prf
-        if self._backbone.__name__ == "resnet101":
+        if (
+            self._backbone.__name__ == "resnet101"
+            and "timm" not in self._backbone.__module__
+        ):
             model = _create_deeplab(
                 data.chip_size,
                 data.c,
@@ -416,7 +413,20 @@ class DeepLab(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family, *_densenet_family, *_vgg_family]
+        timm_models = filter_timm_models(
+            [
+                "*dpn*",
+                "*inception*",
+                "*nasnet*",
+                "*repvgg*",
+                "*resnetblur*",
+                "*selecsls*",
+                "*tresnet*",
+                "*hrnet*",
+            ]
+        )
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family, *_densenet_family, *_vgg_family] + timm_backbones
 
     @property
     def supported_datasets(self):

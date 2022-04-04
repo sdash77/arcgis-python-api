@@ -1,5 +1,6 @@
 import arcgis as _arcgis
 from ._arcgis_model import ArcGISModel
+from ._timm_utils import timm_config, filter_timm_models, _get_feature_size
 from ..._impl.common._deprecate import deprecated
 from .._data import _check_esri_files, _raise_fastai_import_error
 import random
@@ -16,8 +17,6 @@ try:
     import shutil
     import warnings
     from pathlib import Path
-    from functools import partial
-    from ._unet_utils import is_no_color
     from ._codetemplate import feature_classifier_prf
     import torch
     import torch.nn.functional as F
@@ -33,7 +32,7 @@ try:
     from fastai.vision.data import ImageDataBunch, ImageList
     from fastai.vision import imagenet_stats, normalize
     from fastai.basic_train import Learner, LearnerCallback
-    from torch.utils.data.sampler import WeightedRandomSampler, BatchSampler
+    from torch.utils.data.sampler import WeightedRandomSampler
     from fastai.vision.learner import (
         cnn_learner,
         ClassificationInterpretation,
@@ -197,7 +196,7 @@ class FeatureClassifier(ArcGISModel):
 
                 class MultLabelFbetaModified(MultiLabelFbeta):
                     def fbeta_score(self, precision, recall):
-                        beta2 = self.beta**2
+                        beta2 = self.beta ** 2
                         fbeta = (
                             (1 + beta2)
                             * (precision * recall)
@@ -213,12 +212,26 @@ class FeatureClassifier(ArcGISModel):
             else:
                 metrics = accuracy
 
+            if "timm" in self._backbone.__module__:
+                timm_meta = timm_config(self._backbone)
+                backbone_cut = timm_meta["cut"]
+                backbone_split = timm_meta["split"]
+
+            if "tresnet" in self._backbone.__module__:
+                from fastai.vision import create_head
+
+                nf = 2 * _get_feature_size(self._backbone, backbone_cut)[-1][1]
+                head = create_head(nf, data.c)
+            else:
+                head = None
+
             self.learn = cnn_learner(
                 data,
                 self._backbone,
                 metrics=metrics,
                 cut=backbone_cut,
                 split_on=backbone_split,
+                custom_head=head,
             )
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
@@ -263,7 +276,9 @@ class FeatureClassifier(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family, models.mobilenet_v2.__name__]
+        timm_models = filter_timm_models()
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family, models.mobilenet_v2.__name__] + timm_backbones
 
     @property
     def supported_datasets(self):

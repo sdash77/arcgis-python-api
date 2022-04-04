@@ -43,10 +43,7 @@ try:
     import math
     import warnings
     from fastai.distributed import *
-    from torchvision import datasets, transforms
     import argparse
-    import torch.distributed as dist
-    from fastai.torch_core import get_model
     from torch.nn.parallel import DistributedDataParallel
     from .._utils.segmentation_loss_functions import dice
     from fastai.basics import partial
@@ -54,6 +51,7 @@ try:
     from ... import __version__ as ArcGISLearnVersion
     from ._pointcnn_utils import AverageMetric
     from fastai.core import camel2snake
+    import timm
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -537,8 +535,16 @@ class ArcGISModel(object):
                 self._backbone = getattr(models, backbone)
             elif hasattr(models.detection, backbone):
                 self._backbone = getattr(models.detection, backbone)
+            elif "timm:" in backbone:
+                bckbn = backbone.split(":")[1]
+                if hasattr(timm.models, bckbn):
+                    self._backbone = getattr(timm.models, bckbn)
         else:
             self._backbone = backbone
+
+        if not hasattr(self, "_backbone"):
+            self._backbone = models.resnet34
+            logger.warning("unsupported backbone, reverting to ResNet34.")
 
         if hasattr(data, "_is_multispectral"):  # multispectral support
             self._is_multispectral = getattr(data, "_is_multispectral")
@@ -593,6 +599,8 @@ class ArcGISModel(object):
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
         backbone_name = backbone if type(backbone) is str else backbone.__name__
+        if type(backbone) is not str and "timm" in backbone.__module__:
+            backbone_name = "timm:" + backbone.__name__
         return False if backbone_name not in self.supported_backbones else True
 
     def _check_dataset_support(self, data):
@@ -1030,7 +1038,10 @@ class ArcGISModel(object):
             if self._backend == "tensorflow":
                 backbone = self._backbone._keras_api_names[-1].split(".")[-1]
             else:
-                backbone = self._backbone.__name__
+                if "timm" in self._backbone.__module__:
+                    backbone = "timm:" + self._backbone.__name__
+                else:
+                    backbone = self._backbone.__name__
             if backbone == "backbone_wrapper":
                 backbone = self._orig_backbone.__name__
 

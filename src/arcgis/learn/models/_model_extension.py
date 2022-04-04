@@ -126,9 +126,10 @@ class ModelExtension(ArcGISModel):
         model = self._model_conf.get_model(data, backbone, **kwargs)
         if backbone is not None:
             backbone_name = backbone if type(backbone) is str else backbone.__name__
-            if model_conf.__name__ == "MyFasterRCNN" and backbone_name in [
-                "resnet18",
-                "resnet34",
+            if model_conf.__name__ == "MyFasterRCNN" and backbone_name not in [
+                "resnet50",
+                "resnet101",
+                "resnet152",
             ]:
                 model.rpn.anchor_generator.grid_anchors = types.MethodType(
                     grid_anchors, model.rpn.anchor_generator
@@ -681,7 +682,7 @@ class ModelExtension(ArcGISModel):
             rows = len(self._data.valid_ds)
 
         ds_type = DatasetType.Valid
-        n_items = rows**2 if self.learn.data.train_ds.x._square_show_res else rows
+        n_items = rows ** 2 if self.learn.data.train_ds.x._square_show_res else rows
         if self.learn.dl(ds_type).batch_size < n_items:
             n_items = self.learn.dl(ds_type).batch_size
         ds = self.learn.dl(ds_type).dataset

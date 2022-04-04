@@ -2,14 +2,16 @@ from pathlib import Path
 import json
 import warnings
 from ._model_extension import ModelExtension
-from ._arcgis_model import _EmptyData
 
 try:
     from fastai.vision import flatten_model, ImageList
-    from fastai.vision import imagenet_stats, normalize
+    from fastai.vision import imagenet_stats
     import torch
     from fastai.torch_core import split_model_idx
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from ._arcgis_model import _resnet_family, _get_device
+    from ._timm_utils import filter_timm_models
     from .._utils.common import (
         get_multispectral_data_params_from_emd,
         _get_emd_path,
@@ -35,8 +37,6 @@ class MyFasterRCNN:
     try:
         import torch
         import torchvision
-        import pathlib
-        import os
         import fastai
 
         tvisver = [int(x) for x in torchvision.__version__.split(".")]
@@ -55,6 +55,14 @@ class MyFasterRCNN:
         (self.fasterrcnn_kwargs, kwargs,) = self.fastai.core.split_kwargs_by_func(
             kwargs, self.torchvision.models.detection.FasterRCNN.__init__
         )
+
+        if "timm" in backbone:
+            from arcgis.learn.models._arcgis_model import timm_config, _get_feature_size
+
+            backbone_cut = timm_config(backbone)["cut"]
+        else:
+            backbone_cut = None
+
         if backbone is None:
             backbone = self.torchvision.models.resnet50
 
@@ -63,6 +71,12 @@ class MyFasterRCNN:
                 backbone = getattr(self.torchvision.models, backbone)
             elif hasattr(self.torchvision.models.detection, backbone):
                 backbone = getattr(self.torchvision.models.detection, backbone)
+            elif "timm:" in backbone:
+                import timm
+
+                bckbn = backbone.split(":")[1]
+                if hasattr(timm.models, bckbn):
+                    backbone = getattr(timm.models, bckbn)
         else:
             backbone = backbone
         pretrained_backbone = kwargs.get("pretrained_backbone", True)
@@ -75,19 +89,8 @@ class MyFasterRCNN:
                 max_size=2 * data.chip_size,
                 **self.fasterrcnn_kwargs,
             )
-        elif backbone.__name__ in ["resnet18", "resnet34"]:
-            backbone_small = self.fastai.vision.learner.create_body(
-                backbone, pretrained=pretrained_backbone
-            )
-            backbone_small.out_channels = 512
-            model = self.torchvision.models.detection.FasterRCNN(
-                backbone_small,
-                91,
-                min_size=1.5 * data.chip_size,
-                max_size=2 * data.chip_size,
-                **self.fasterrcnn_kwargs,
-            )
-        else:
+
+        elif backbone.__name__ in ["resnet101", "resnet152"]:
             backbone_fpn = (
                 self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(
                     backbone.__name__, pretrained=pretrained_backbone
@@ -95,6 +98,38 @@ class MyFasterRCNN:
             )
             model = self.torchvision.models.detection.FasterRCNN(
                 backbone_fpn,
+                91,
+                min_size=1.5 * data.chip_size,
+                max_size=2 * data.chip_size,
+                **self.fasterrcnn_kwargs,
+            )
+
+        else:
+            backbone_small = self.fastai.vision.learner.create_body(
+                backbone, pretrained_backbone, backbone_cut
+            )
+            if "timm" in backbone.__module__:
+                from ._maskrcnn import TimmFPNBackbone
+
+                try:
+                    backbone_small = TimmFPNBackbone(backbone_small, data.chip_size)
+                except:
+                    pass
+
+            if not hasattr(backbone_small, "out_channels"):
+                if "tresnet" in backbone.__module__:
+                    backbone_small.out_channels = _get_feature_size(
+                        backbone, backbone_cut
+                    )[-1][1]
+                else:
+                    backbone_small.out_channels = (
+                        self.fastai.callbacks.hooks.num_features_model(
+                            self.torch.nn.Sequential(*backbone_small.children())
+                        )
+                    )
+
+            model = self.torchvision.models.detection.FasterRCNN(
+                backbone_small,
                 91,
                 min_size=1.5 * data.chip_size,
                 max_size=2 * data.chip_size,
@@ -196,6 +231,11 @@ class MyFasterRCNN:
             target_list.append(
                 target
             )  # FasterRCNN require batches target in form of list of dictionary.
+
+        # handle batch size one in training
+        if model_input_batch.shape[0] < 2:
+            model_input_batch = self.torch.cat((model_input_batch, model_input_batch))
+            target_list.append(target_list[0])
 
         # FasterRCNN require model input with images and coresponding targets in training mode to return the losses so append
         # the targets in model input itself.
@@ -554,7 +594,9 @@ class FasterRCNN(ModelExtension):
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family]
+        timm_models = filter_timm_models()
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family] + timm_backbones
 
     @property
     def supported_datasets(self):

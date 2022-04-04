@@ -1,4 +1,5 @@
 from ._arcgis_model import ArcGISModel, _get_device
+from ._timm_utils import timm_config, filter_timm_models
 from pathlib import Path
 import json
 from ._codetemplate import code
@@ -37,7 +38,7 @@ try:
     )
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
-    from ._arcgis_model import SaveModelCallback, _resnet_family
+    from ._arcgis_model import _resnet_family
     from .._image_utils import (
         _get_image_chips,
         _get_transformed_predictions,
@@ -133,12 +134,19 @@ class RetinaNet(ArcGISModel):
         self._data = data
         self._chip_size = (data.chip_size, data.chip_size)
 
+        if "timm" in self._backbone.__module__:
+            backbone_cut = timm_config(self._backbone)["cut"]
+        else:
+            backbone_cut = None
+
         # Cut-off the backbone before the penultimate layer
-        self._encoder = create_body(self._backbone, backbone_pretrained)
+        self._encoder = create_body(self._backbone, backbone_pretrained, backbone_cut)
 
         # Initialize the model, loss function and the Learner object
         self._model = RetinaNetModel(
-            self._encoder,
+            self._backbone,
+            backbone_pretrained,
+            backbone_cut,
             n_classes=data.c - 1,
             final_bias=-4,
             chip_size=self._chip_size,
@@ -153,7 +161,13 @@ class RetinaNet(ArcGISModel):
         )
         self.learn = Learner(data, self._model, loss_func=self._loss_f)
         self.learn.metrics = [AveragePrecision(self, data.c - 1)]
-        self.learn.split([self._model.encoder[6], self._model.c5top5])
+        if (
+            "resnet" in self._backbone.__name__
+            and "timm" not in self._backbone.__module__
+        ):
+            self.learn.split([self._model.encoder[6], self._model.c5top5])
+        else:
+            self.learn.split([self._model.c5top5])
         self.learn.freeze()
         if pretrained_path is not None:
             self.load(str(pretrained_path))
@@ -177,7 +191,9 @@ class RetinaNet(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family]
+        timm_models = filter_timm_models()
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family] + timm_backbones
 
     @property
     def supported_datasets(self):

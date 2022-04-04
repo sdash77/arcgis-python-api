@@ -23,49 +23,100 @@
 # Based on https://github.com/meteorshowers/hed-pytorch/
 
 import torch
-import warnings
 import numpy as np
 import torch.nn.functional as F
 import torch.nn as nn
 import torch
-from torchvision import models
-import math
 from fastai.callbacks.hooks import hook_outputs
-from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
-from ._arcgis_model import _get_backbone_meta
+from fastai.vision.models.unet import _get_sfs_idxs
 from fastprogress.fastprogress import progress_bar
+from fastai.vision import flatten_model
+from ._timm_utils import get_backbone
+
+
+def modify_layers(backbone, backbone_fn):
+    hookable_modules = flatten_model(backbone)
+    for i, module in enumerate(hookable_modules):
+        if (
+            isinstance(module, nn.MaxPool2d)
+            and not "xception" in backbone_fn.__module__
+        ):
+            module.ceil_mode = True
+            module.kernel_size = 2
+        elif isinstance(module, nn.Conv2d) and i == 0:
+            module.stride = (1, 1)
+
+
+def get_hooks(backbone, chip_size):
+
+    try:
+        hookable_modules = flatten_model(backbone)
+        feature_sizes = model_sizes(
+            nn.Sequential(*hookable_modules), size=(chip_size, chip_size)
+        )
+        f_change_idxs = _get_sfs_idxs(feature_sizes)
+        hooks = [hookable_modules[i] for i in f_change_idxs + [-1]][:5]
+        return hooks
+    except:
+        hookable_modules = list(backbone.children())
+        feature_sizes = model_sizes(
+            nn.Sequential(*hookable_modules), size=(chip_size, chip_size)
+        )
+        f_change_idxs = _get_sfs_idxs(feature_sizes)
+        if len(f_change_idxs) > 1 and f_change_idxs[0] == f_change_idxs[1]:
+            del f_change_idxs[0]
+        if len(f_change_idxs) > 3:
+            hooks = [hookable_modules[i] for i in f_change_idxs + [-1]][:5]
+            return hooks
+
+        def get_len(m):
+            try:
+                return len(m)
+            except:
+                return 0
+
+        module_len = [get_len(m) for m in hookable_modules]
+        hooks = []
+        idx = 0
+        while len(hooks) < 5 and len(hookable_modules) > idx:
+            if module_len[idx] == 0:
+                try:
+                    if module_len[idx + 1] > 0:
+                        hooks.append(hookable_modules[idx])
+                except:
+                    hooks.append(hookable_modules[idx])
+            else:
+                feature_sizes = model_sizes(
+                    nn.Sequential(*hookable_modules[idx]), size=(chip_size, chip_size)
+                )
+                if len(feature_sizes) < 2:
+                    hooks.append(hookable_modules[idx])
+                else:
+                    f_change_idxs = _get_sfs_idxs(feature_sizes)
+                    if len(f_change_idxs) > 1 and f_change_idxs[0] == f_change_idxs[1]:
+                        del f_change_idxs[0]
+                    if f_change_idxs == []:
+                        hooks.append(hookable_modules[idx])
+                    int_idx = 0
+                    while len(hooks) < 5 and len(f_change_idxs) > int_idx:
+                        hooks.append(hookable_modules[idx][f_change_idxs[int_idx]])
+                        int_idx += 1
+            idx += 1
+        if len(hooks) < 5:
+            hooks.append(hookable_modules[idx - 1][-1])
+        return hooks
 
 
 class _HEDModel(nn.Module):
     def __init__(self, backbone_fn, chip_size=224, pretrained=True):
+
         super().__init__()
-
-        backbone_name = backbone_fn.__name__
-        if "vgg" in backbone_name:
-            self.backbone = create_body(backbone_fn, pretrained=pretrained)[0]  # [:-1]
-        else:
-            self.backbone = create_body(backbone_fn, pretrained=pretrained)
-
-        self.hookable_modules = list(self.backbone.children())
-
-        for i, module in enumerate(self.hookable_modules):
-            if isinstance(module, nn.MaxPool2d):
-                module.ceil_mode = True
-                module.kernel_size = 2
-            elif isinstance(module, nn.Conv2d) and i == 0:
-                module.stride = (1, 1)
-
-        if "vgg" in backbone_name:
-            hooks = [
-                self.hookable_modules[i - 1]
-                for i, module in enumerate(self.hookable_modules)
-                if isinstance(module, nn.MaxPool2d)
-            ]
-
-        else:
-            hooks = [self.hookable_modules[i] for i in range(2, 8) if i != 3]
-
+        self.backbone = get_backbone(backbone_fn, pretrained)
+        modify_layers(self.backbone, backbone_fn)
+        if len(self.backbone) < 2:
+            self.backbone = self.backbone[0]
+        hooks = get_hooks(self.backbone, chip_size)
         self.hook = hook_outputs(hooks)
         model_sizes(self.backbone, size=(chip_size, chip_size))
         layer_num_channels = [k.stored.shape[1] for k in self.hook]
@@ -103,6 +154,11 @@ class _HEDModel(nn.Module):
         so4 = crop(upsample4, img_H, img_W)
         so5 = crop(upsample5, img_H, img_W)
 
+        if so1.size(2) != so2.size(2):
+            so1 = F.interpolate(
+                so1, (img_H, img_W), mode="bilinear", align_corners=False
+            )
+
         fusecat = torch.cat((so1, so2, so3, so4, so5), dim=1)
         fuse = self.score_final(fusecat)
 
@@ -127,7 +183,6 @@ def make_bilinear_weights(size, num_channels):
         center = factor - 0.5
     og = np.ogrid[:size, :size]
     filt = (1 - abs(og[0] - center) / factor) * (1 - abs(og[1] - center) / factor)
-    # print(filt)
     filt = torch.from_numpy(filt)
     w = torch.zeros(num_channels, num_channels, size, size)
     w.requires_grad = False

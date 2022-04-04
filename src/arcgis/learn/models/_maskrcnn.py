@@ -1,3 +1,4 @@
+from turtle import back
 from ._arcgis_model import ArcGISModel
 from ._arcgis_model import _EmptyData, _change_tail
 
@@ -8,32 +9,26 @@ try:
     import math
     import PIL
     import torch
-    from fastai.vision.learner import cnn_learner
-    from fastai.callbacks.hooks import model_sizes
+    import torch.nn as nn
+    from collections import OrderedDict
     from fastai.vision.learner import create_body
-    from fastai.vision.image import open_image
+    from fastai.callbacks.hooks import num_features_model
     from fastai.vision import flatten_model
     from fastai.vision.image import pil2tensor
-    from fastai.core import has_arg, split_kwargs_by_func
-    from torchvision.models import resnet34
+    from fastai.core import split_kwargs_by_func
     from torchvision import models
     from skimage.measure import find_contours
-    from arcgis.learn.models._inferencing.util import nms
     from ._codetemplate import instance_detector_prf
     from arcgis.learn.models._deepsort_predict_utils import non_max_suppression
     import numpy as np
     import types
-    from .._data import prepare_data, _raise_fastai_import_error
-    from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import (
-        SaveModelCallback,
-        _set_multigpu_callback,
         _get_backbone_meta,
         _resnet_family,
         _set_ddp_multigpu,
         _isnotebook,
     )
-    import torchvision
+    from ._timm_utils import timm_config, filter_timm_models, _get_feature_size
     from torchvision import models
     from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
     from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
@@ -52,9 +47,7 @@ try:
     import matplotlib.pyplot as plt
     import matplotlib.patches as patches
     import matplotlib
-    from fastai.basic_data import DatasetType
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-    import os as arcgis_os
     from .._utils.common import get_nbatches, image_batch_stretcher, read_image
     from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
@@ -67,6 +60,39 @@ try:
     import cv2
 except Exception:
     HAS_OPENCV = False
+
+
+class TimmFPNBackbone(nn.Module):
+    def __init__(self, backbone, chip_size=224):
+        from fastai.callbacks.hooks import hook_outputs
+        from fastai.callbacks.hooks import model_sizes
+        from torchvision.ops.feature_pyramid_network import (
+            FeaturePyramidNetwork,
+            LastLevelMaxPool,
+        )
+        from ._hed_utils import get_hooks
+
+        super().__init__()
+        self.backbone = backbone
+        hooks = get_hooks(self.backbone, chip_size)
+        self.hook = hook_outputs(hooks[1:])
+        model_sizes(self.backbone, size=(chip_size, chip_size))
+        layer_num_channels = [k.stored.shape[1] for k in self.hook]
+        self.fpn = FeaturePyramidNetwork(
+            in_channels_list=layer_num_channels,
+            out_channels=256,
+            extra_blocks=LastLevelMaxPool(),
+        )
+        self.out_channels = 256
+
+    def forward(self, x):
+        x = self.backbone(x)
+        out = OrderedDict()
+        features = self.hook.stored
+        for k, v in enumerate(features):
+            out[str(k)] = v
+        x = self.fpn(out)
+        return x
 
 
 def chips_to_batch(chips, model_height, model_width, batch_size=1):
@@ -262,7 +288,10 @@ class MaskRCNN(ArcGISModel):
             kwargs, models.detection.MaskRCNN.__init__
         )
 
-        if self._backbone.__name__ == "resnet50":
+        if (
+            self._backbone.__name__ == "resnet50"
+            and "timm" not in self._backbone.__module__
+        ):
             model = models.detection.maskrcnn_resnet50_fpn(
                 pretrained=pretrained_backbone,
                 pretrained_backbone=False,
@@ -275,7 +304,11 @@ class MaskRCNN(ArcGISModel):
                 model.backbone = _change_tail(model.backbone, data)
                 model.transform.image_mean = scaled_mean_values
                 model.transform.image_std = scaled_std_values
-        elif self._backbone.__name__ in ["resnet18", "resnet34"] and not pointrend:
+        elif (
+            self._backbone.__name__ in ["resnet18", "resnet34"]
+            and not pointrend
+            and "timm" not in self._backbone.__module__
+        ):
             if self._is_multispectral:
                 backbone_small = create_body(
                     self._backbone_ms,
@@ -308,9 +341,26 @@ class MaskRCNN(ArcGISModel):
                 grid_anchors, model.rpn.anchor_generator
             )
         else:
-            backbone_fpn = resnet_fpn_backbone(
-                self._backbone.__name__, pretrained=pretrained_backbone
-            )
+            if "timm" in self._backbone.__module__:
+                backbone_cut = timm_config(self._backbone)["cut"]
+                backbone_fpn = create_body(
+                    self._backbone, pretrained_backbone, backbone_cut
+                )
+                try:
+                    backbone_fpn = TimmFPNBackbone(backbone_fpn, data.chip_size)
+                except:
+                    if "tresnet" in self._backbone.__module__:
+                        backbone_fpn.out_channels = _get_feature_size(
+                            self._backbone, backbone_cut
+                        )[-1][1]
+                    else:
+                        backbone_fpn.out_channels = num_features_model(
+                            torch.nn.Sequential(*backbone_fpn.children())
+                        )
+            else:
+                backbone_fpn = resnet_fpn_backbone(
+                    self._backbone.__name__, pretrained=pretrained_backbone
+                )
             if self._is_multispectral:
                 backbone_fpn = _change_tail(backbone_fpn, data)
                 model = models.detection.MaskRCNN(
@@ -329,6 +379,10 @@ class MaskRCNN(ArcGISModel):
                     min_size=1.5 * data.chip_size,
                     max_size=2 * data.chip_size,
                     **self.maskrcnn_kwargs,
+                )
+            if "timm" in self._backbone.__module__:
+                model.rpn.anchor_generator.grid_anchors = types.MethodType(
+                    grid_anchors, model.rpn.anchor_generator
                 )
 
         in_features = model.roi_heads.box_predictor.cls_score.in_features
@@ -405,7 +459,9 @@ class MaskRCNN(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family]
+        timm_models = filter_timm_models()
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family] + timm_backbones
 
     @property
     def supported_datasets(self):

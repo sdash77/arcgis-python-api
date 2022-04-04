@@ -9,6 +9,7 @@ try:
     from fastai.torch_core import split_model_idx
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._arcgis_model import _resnet_family, _vgg_family
+    from ._timm_utils import filter_timm_models
 
     HAS_FASTAI = True
 
@@ -24,9 +25,6 @@ class CustomHED:
     try:
         import torch
         from torchvision import models
-        import pathlib
-        import os
-        import fastai
         from arcgis.learn.models import _hed_utils as hed
     except:
         pass
@@ -45,6 +43,12 @@ class CustomHED:
                 self._backbone = getattr(self.models, backbone)
             elif hasattr(self.models.detection, backbone):
                 self._backbone = getattr(self.models.detection, backbone)
+            elif "timm:" in backbone:
+                import timm
+
+                bckbn = backbone.split(":")[1]
+                if hasattr(timm.models, bckbn):
+                    self._backbone = getattr(timm.models, bckbn)
         else:
             self._backbone = backbone
 
@@ -181,7 +185,23 @@ class HEDEdgeDetector(ModelExtension):
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family, *_vgg_family]
+        timm_models = filter_timm_models(
+            [
+                "*dpn*",
+                "*inception*",
+                "*nasnet*",
+                "*tf_efficientnet_cc*",
+                "*repvgg*",
+                "*resnetblur*",
+                "*selecsls*",
+                "*tresnet*",
+                "*hrnet*",
+                "*rexnet*",
+                "*mixnet*",
+            ]
+        )
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family, *_vgg_family] + timm_backbones
 
     @property
     def supported_datasets(self):
