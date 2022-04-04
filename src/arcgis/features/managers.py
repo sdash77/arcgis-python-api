@@ -2245,7 +2245,7 @@ class FeatureLayerCollectionManager(_GISResource):
         if "serviceItemId" in self.properties.keys():
             feature_layer_item = self._gis.content.get(self.properties["serviceItemId"])
         else:
-            return {"error": "Can only overwrite a hosted feature layer collection"}
+            return {"Error": "Can only overwrite a Hosted Feature Layer Collection (Feature Service)"}
         # endregion
 
         # region find data item related to this hosted feature layer
@@ -2254,15 +2254,18 @@ class FeatureLayerCollectionManager(_GISResource):
             related_data_item = related_data_items[0]
         else:
             return {
-                "error": "Cannot find related data item used to publish this feature layer"
+                "Error": "Cannot find related data item used to publish this Feature Layer"
             }
 
-        # Find if hosted table, meaning no layers present but table is present
+        # find if we are overwritting only a hosted table
         hosted_table = False
         if not feature_layer_item.layers and feature_layer_item.tables:
             hosted_table = True
         # endregion
+
         params = None
+        # overwritting for online and enterprise is different
+        # if online or hosted table then use minimal parameters
         if (
             related_data_item.type
             in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
@@ -2291,13 +2294,13 @@ class FeatureLayerCollectionManager(_GISResource):
             for layer in self.layers:
                 layer_def = dict(layer.properties)
                 if "fields" in layer_def.keys():
-                    dump = layer_def.pop("fields")
+                    layer_def.pop("fields")
                 layers_dict.append(layer_def)
 
             for table in self.tables:
                 table_def = dict(table.properties)
                 if "fields" in table_def.keys():
-                    dump = table_def.pop("fields")
+                    table_def.pop("fields")
                 tables_dict.append(table_def)
 
             # Splice the detailed table and layer def with FeatuerServer def
@@ -2312,7 +2315,7 @@ class FeatureLayerCollectionManager(_GISResource):
             publish_parameters = feature_service_def
             publish_parameters.update(old_publish_parameters)
 
-        # region construct publishParameters dictionary
+        # enterprise overwriting params creation
         elif related_data_item.type in [
             "CSV",
             "Shapefile",
