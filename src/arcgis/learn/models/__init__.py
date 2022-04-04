@@ -34,3 +34,4 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._auto_dl import AutoDL, ImageryModel
     from ._max_deeplab import MaXDeepLab
     from ._wnet_cgan import WNet_cGAN
+    from ._detreg_detector import DETReg
