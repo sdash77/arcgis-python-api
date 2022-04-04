@@ -63,9 +63,12 @@ class AOI(object):
         """
         Source being used.
 
-        Args:
-            in_source: Either the 'local' keyword or an instantiated ``GIS`` object
-                instance.
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        in_source               Optional either the 'local' keyword or an instantiated ``GIS`` object
+                                instance.
+        ==================      ====================================================================
         """
         return self._source
 
@@ -116,18 +119,17 @@ class AOI(object):
         names*), or are interested in enriching more data using previously enriched
         data as a template.
 
-        Args:
-            enrich_variables: Iterable (normally a list) of enrich_variables correlating to
-                enrichment enrich_variables. These variable names can be simply the name, the
-                name prefixed by the collection separated by a dot, or the output from
-                enrichment in ArcGIS Pro with the field name modified to fit field naming
-                and length constraints.
-            drop_duplicates: Optional boolean (default True) indicating whether to drop
-                duplicates. Since the same enrich_variables appear in multiple data collections,
-                multiple instances of the same variable can be found. Dropping duplicates
-                removes redundant matches.
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        enrich_variables        Required Iterable (normally a list) of enrich_variables correlating to
+                                enrichment enrich_variables. These variable names can be simply the name, the
+                                name prefixed by the collection separated by a dot, or the output from
+                                enrichment in ArcGIS Pro with the field name modified to fit field naming
+                                and length constraints.
+        ==================      ====================================================================
 
-        Returns:
+        :returns:
             Pandas DataFrame of enrich enrich_variables with the different available aliases.
 
         .. code-block:: python
@@ -220,8 +222,8 @@ class AOI(object):
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        output_spatial_reference: Optional[Union[int, dict, SpatialReference]] = 4326,
-        estimate_credits: Optional[bool] = False,
+        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        estimate_credits: bool = False,
         **kwargs,
     ) -> Union[pd.DataFrame, Path, float]:
         """
@@ -237,37 +239,48 @@ class AOI(object):
             (ArcGIS Pro with Business Analyst and local data) or a ``GIS`` object connected to ArcGIS
             Online, and very well may also the be the case if using an instance of ArcGIS Enterprise.
 
-        Args:
-            geographies: Required geographic areas or points to be enriched.
-            enrich_variables: Enrichment enrich_variables to be used, typically discovered using
-                the "enrich_variables" property.
-            return_geometry: Optional boolean indicating if geometry is desired in the output.
-                Default is True.
-            standard_geography_level: If the input geographies are a standard geography level,
-                it can be specified using either the standard geography index or the standard
-                geography identifier retrieved using the Country.geography_levels property.
-            standard_geography_id_column: Column with values uniquely identifying the input
-                geographies using a standard level of geography. For example, in the United
-                States, typically block groups are used for analysis if possible, and these
-                block groups all have a unique identifier, typically referred to as the FIPS.
-                If you have this value in a column of your data, it will *dramatically* speed
-                up the enrichment process if you specify it in this parameter.
-            proximity_type: Type of area to create around each point.
-            proximity_value: Scalar value representing the proximity around each point to
-                be used for creating an area for enrichment. For instance, if using 1.2 km,
-                the input for this parameter is 1.2. The default is 1.
-            proximity_metric: Scalar metric defining the proximity_value. Again, if
-                1.2 km, the input for this metric will be kilometers. The default is
-                ``kilometers``.
-            output_spatial_reference: Desired spatial reference for returned data. This can be
-                a spatial reference WKID as an integer, a dictionary representing the spatial
-                reference, or a Spatial Reference object. The default is WGS84 (WKID 4326).
-            estimate_credits: While only useful for ArcGIS Online, enables populating the
-                parameters just as you would for enriching using ArcGIS Online, and getting an
-                estimate of the number of credits, which will be consumed if the enrich
-                operation is performed. If this parameter is populated, the function will *not*
-                perform the enrich operation or consume credits. Rather, it will *only* provide
-                a credit consumption estimate.
+        =============================       ====================================================================
+        **Argument**                        **Description**
+        -----------------------------       --------------------------------------------------------------------
+        geographies                         Required geographic areas or points to be enriched.
+                                            enrich_variables: Enrichment enrich_variables to be used,
+                                            typically discovered using the "enrich_variables" property.
+        -----------------------------       --------------------------------------------------------------------
+        return_geometry                     Optional boolean indicating if geometry is desired in the output.
+                                            Default is True.
+        -----------------------------       --------------------------------------------------------------------
+        standard_geography_level            If the input geographies are a standard geography level,
+                                            it can be specified using either the standard geography index or the standard
+                                            geography identifier retrieved using the Country.geography_levels property.
+        -----------------------------       --------------------------------------------------------------------
+        standard_geography_id_column        Column with values uniquely identifying the input
+                                            geographies using a standard level of geography. For example, in the United
+                                            States, typically block groups are used for analysis if possible, and these
+                                            block groups all have a unique identifier, typically referred to as the FIPS.
+                                            If you have this value in a column of your data, it will *dramatically* speed
+                                            up the enrichment process if you specify it in this parameter.
+        -----------------------------       --------------------------------------------------------------------
+        proximity_type                      Type of area to create around each point.
+        -----------------------------       --------------------------------------------------------------------
+        proximity_value                     Scalar value representing the proximity around each point to
+                                            be used for creating an area for enrichment. For instance, if using 1.2 km,
+                                            the input for this parameter is 1.2. The default is 1.
+        -----------------------------       --------------------------------------------------------------------
+        proximity_metric                    Scalar metric defining the proximity_value. Again, if
+                                            1.2 km, the input for this metric will be kilometers. The default is
+                                            ``kilometers``.
+        -----------------------------       --------------------------------------------------------------------
+        output_spatial_reference            Desired spatial reference for returned data. This can be
+                                            a spatial reference WKID as an integer, a dictionary representing the spatial
+                                            reference, or a Spatial Reference object. The default is WGS84 (WKID 4326).
+        -----------------------------       --------------------------------------------------------------------
+        estimate_credits                    While only useful for ArcGIS Online, enables populating the
+                                            parameters just as you would for enriching using ArcGIS Online, and getting an
+                                            estimate of the number of credits, which will be consumed if the enrich
+                                            operation is performed. If this parameter is populated, the function will *not*
+                                            perform the enrich operation or consume credits. Rather, it will *only* provide
+                                            a credit consumption estimate.
+        =============================       ====================================================================
 
         Returns:
             Pandas DataFrame, path to the output Feature Class or table, or float of predicted
@@ -296,18 +309,24 @@ class Country(AOI):
     data is available by iso3 using both ``local`` (ArcGIS Pro with the Business
     Analyst extension and local data) and ``GIS`` sources.
 
-    Args:
-            iso3: The country's ISO3 identifier.
-            source: Optional ``GIS`` object or ``local`` keyword specifying the Business
-                Analyst data and analysis source. If ``local``, the Python
-                environment *must* have ``arcpy`` installed with bindings to ArcGIS
-                Pro with the Business Analyst extension. If connecting to a ``GIS``
-                instance, both ArcGIS Enterprise with Business Analyst and ArcGIS
-                Online are supported. However, please be aware, any geoenrichment or
-                analysis *will* consume ArcGIS Online credits.
-            year: Optional integer explicitly specifying the year to reference.
-                This is only honored if using local resources and the specified
-                year is available.
+    =============================       ====================================================================
+    **Argument**                        **Description**
+    -----------------------------       --------------------------------------------------------------------
+    iso3                                The country's ISO3 identifier.
+    -----------------------------       --------------------------------------------------------------------
+    source                              Optional ``GIS`` object or ``local`` keyword specifying the Business
+                                        Analyst data and analysis source. If ``local``, the Python
+                                        environment *must* have ``arcpy`` installed with bindings to ArcGIS
+                                        Pro with the Business Analyst extension. If connecting to a ``GIS``
+                                        instance, both ArcGIS Enterprise with Business Analyst and ArcGIS
+                                        Online are supported. However, please be aware, any geoenrichment or
+                                        analysis *will* consume ArcGIS Online credits.
+    -----------------------------       --------------------------------------------------------------------
+    year                                Optional integer explicitly specifying the year to reference.
+                                        This is only honored if using local resources and the specified
+                                        year is available.
+    =============================       ====================================================================
+
     """
 
     def __init__(
@@ -662,14 +681,18 @@ class BusinessAnalyst(object):
         Country (``BusinessAnalyst.countries``) and variable (``Country.enrich_variables``)
         introspection does *not* cost any credits.
 
-    Args:
-        source: Optional ``GIS`` object or ``local`` keyword specifying the Business
-            Analyst data and analysis source. If ``local``, the Python
-            environment *must* have ``arcpy`` installed with bindings to ArcGIS
-            Pro with the Business Analyst extension. If connecting to a ``GIS``
-            instance, both ArcGIS Enterprise with Business Analyst and ArcGIS
-            Online are supported. However, please be aware, any geoenrichment or
-            analysis *will* consume ArcGIS Online credits.
+    =============================       ====================================================================
+    **Argument**                        **Description**
+    -----------------------------       --------------------------------------------------------------------
+    source                              Optional ``GIS`` object or ``local`` keyword specifying the Business
+                                        Analyst data and analysis source. If ``local``, the Python
+                                        environment *must* have ``arcpy`` installed with bindings to ArcGIS
+                                        Pro with the Business Analyst extension. If connecting to a ``GIS``
+                                        instance, both ArcGIS Enterprise with Business Analyst and ArcGIS
+                                        Online are supported. However, please be aware, any geoenrichment or
+                                        analysis *will* consume ArcGIS Online credits.
+    =============================       ====================================================================
+
     """
 
     def __init__(self, source: Optional[Union[str, GIS]] = None) -> None:
@@ -878,12 +901,15 @@ class BusinessAnalyst(object):
     def get_country(self, iso3: str, year: Optional[int] = None) -> Country:
         """
         Get a Country object instance.
-
-        Args:
-            iso3: Required string, the country's ISO3 identifier.
-            year: Optional integer explicitly specifying the year to reference. This
-                is only honored if using local resources and the specified year is
-                available.
+        =============================       ====================================================================
+        **Argument**                        **Description**
+        -----------------------------       --------------------------------------------------------------------
+        iso3                                Required String. The country's ISO3 identifier.
+        -----------------------------       --------------------------------------------------------------------
+        year                                Optional integer explicitly specifying the year to reference.
+                                            This is only honored if using local resources and the specified
+                                            year is available.
+        =============================       ====================================================================
 
         Returns:
             Country object instance.
@@ -1039,12 +1065,15 @@ class BusinessAnalyst(object):
         names*), or are interested in enriching more data using previously enriched
         data as a template.
 
-        Args:
-            enrich_variables: Iterable (normally a list) of enrich_variables correlating to
-                enrichment enrich_variables. These variable names can be simply the name, the
-                name prefixed by the collection separated by a dot, or the output from
-                enrichment in ArcGIS Pro with the field name modified to fit field naming
-                and length constraints.
+        =============================       ====================================================================
+        **Argument**                        **Description**
+        -----------------------------       --------------------------------------------------------------------
+        enrich_variables                    Iterable (normally a list) of enrich_variables correlating to
+                                            enrichment enrich_variables. These variable names can be simply the name, the
+                                            name prefixed by the collection separated by a dot, or the output from
+                                            enrichment in ArcGIS Pro with the field name modified to fit field naming
+                                            and length constraints.
+        =============================       ====================================================================
 
         Returns:
             Pandas DataFrame of enrich enrich_variables with the different available aliases.
@@ -1150,8 +1179,16 @@ class BusinessAnalyst(object):
         to be specified in a variety of iterables, but always provide a standardized variable
         DataFrame as output.
 
-        Args:
-            enrich_variables: Iterable or pd.DataFrame of enrich enrich_variables.
+        =============================       ====================================================================
+        **Argument**                        **Description**
+        -----------------------------       --------------------------------------------------------------------
+        enrich_variables                    Iterable (normally a list) or pd.DataFrame
+                                            of enrich_variables correlating to
+                                            enrichment enrich_variables. These variable names can be simply the name, the
+                                            name prefixed by the collection separated by a dot, or the output from
+                                            enrichment in ArcGIS Pro with the field name modified to fit field naming
+                                            and length constraints.
+        =============================       ====================================================================
 
         Returns:
             Pandas DataFrame of enrich enrich_variables.
@@ -1295,30 +1332,40 @@ class BusinessAnalyst(object):
         """
         Enrich enables retrieving apportioned demographic factors for input geographies.
 
-        Args:
-            geographies: Input geographies desired to get demographic variables for. Normally
-                these will be geometries included as part of a spatially enabled Pandas
-                Data Frame, but if using standard geographies, this can also be just an
-                iterable of standard geography identifiers.
-            enrich_variables: Variables desired to be retrieved.
-            proximity_type: If the input geographies are points, retrieving enriched
-                variables requires delineating a zone around each point to use for apportioning
-                demographic factors to each input geography. Default is ``straight_line``.
-            proximity_value: If the input geographies are points, this is the value used
-                to create a zone around the points for apportioning demographic factors. For
-                instance, if specifying five miles, this parameter value will be ``5``. Default
-                is ``1``.
-            proximity_metric: If the input geographies are points, this is the metric
-                defining the proximity value. For instance, if specifying one kilometer, this
-                value will be ``kilometers``. Default is ``kilometers``.
-            return_geometry: Whether or not it is desired to have geometries returned as part
-                of the returned dataframe. Default is ``True``.
-            output_spatial_reference: If the geometry is being returned, and a geometry other
-                than WGS84 is desired, please provide it here. The default is
-                ``{'wkid': 4326}`` (WGS84).
-            estimate_credits: If the source for the Business Analyst instance is ArcGIS Online,
-                this enables estimation of credit consumption before actually performing the
-                enrich task.
+        =============================       ====================================================================
+        **Argument**                        **Description**
+        -----------------------------       --------------------------------------------------------------------
+        geographies                         Input geographies desired to get demographic variables for. Normally
+                                            these will be geometries included as part of a spatially enabled Pandas
+                                            Data Frame, but if using standard geographies, this can also be just an
+                                            iterable of standard geography identifiers.
+        -----------------------------       --------------------------------------------------------------------
+        enrich_variables                    Variables desired to be retrieved.
+        -----------------------------       --------------------------------------------------------------------
+        proximity_type                      If the input geographies are points, retrieving enriched
+                                            variables requires delineating a zone around each point to use for apportioning
+                                            demographic factors to each input geography. Default is ``straight_line``.
+        -----------------------------       --------------------------------------------------------------------
+        proximity_value                     If the input geographies are points, this is the value used
+                                            to create a zone around the points for apportioning demographic factors. For
+                                            instance, if specifying five miles, this parameter value will be ``5``. Default
+                                            is ``1``.
+        -----------------------------       --------------------------------------------------------------------
+        proximity_metric                    If the input geographies are points, this is the metric
+                                            defining the proximity value. For instance, if specifying one kilometer, this
+                                            value will be ``kilometers``. Default is ``kilometers``.
+        -----------------------------       --------------------------------------------------------------------
+        return_geometry                     Whether or not it is desired to have geometries returned as part
+                                            of the returned dataframe. Default is ``True``.
+        -----------------------------       --------------------------------------------------------------------
+        output_spatial_reference            If the geometry is being returned, and a geometry other
+                                            than WGS84 is desired, please provide it here. The default is
+                                            ``{'wkid': 4326}`` (WGS84).
+        -----------------------------       --------------------------------------------------------------------
+        estimate_credits                    If the source for the Business Analyst instance is ArcGIS Online,
+                                            this enables estimation of credit consumption before actually performing the
+                                            enrich task.
+        =============================       ====================================================================
 
         Returns:
             Pandas Data Frame

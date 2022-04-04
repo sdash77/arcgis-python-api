@@ -278,7 +278,12 @@ class Country(object):
     """
 
     @classmethod
-    def get(cls, name: str, gis: GIS = None, year: Optional[Union[str, int]] = None):
+    def get(
+        cls,
+        name: str,
+        gis: Optional[GIS] = None,
+        year: Optional[Union[str, int]] = None,
+    ):
         """
         Get a reference to a particular country, given its name, or its
         two letter abbreviation or three letter ISO3 code.
@@ -621,6 +626,7 @@ class Country(object):
                                          name, the name prefixed by the collection separated by a dot, or
                                          the output from enrichment in ArcGIS Pro with the field name
                                          modified to fit field naming and length constraints.
+        ============================     ====================================================================
 
         return:
             Pandas DataFrame of enrich enrich_variables with the different available aliases.
@@ -632,11 +638,11 @@ class Country(object):
         geographies: Union[pd.DataFrame, Iterable, Path],
         enrich_variables: Union[pd.DataFrame, Iterable],
         return_geometry: bool = True,
-        standard_geography_level: Union[int, str] = None,
-        standard_geography_id_column: str = None,
-        proximity_type: str = None,
-        proximity_value: Union[float, int] = None,
-        proximity_metric: str = None,
+        standard_geography_level: Optional[Union[int, str]] = None,
+        standard_geography_id_column: Optional[str] = None,
+        proximity_type: Optional[str] = None,
+        proximity_value: Optional[Union[float, int]] = None,
+        proximity_metric: Optional[str] = None,
         output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
     ):
         """
@@ -649,7 +655,7 @@ class Country(object):
         for enrichment. This area can be defined using additional parameters, but by
         default is one kilometer around the geometry. Also, only straight-line distance
         is supported with line geometries, but points can use available transportation
-        network methods – typically drive distance or drive time.
+        network methods [typically drive distance or drive time].
 
         While already popular for site analysis, forecast modeling for a store or
         facility location, enrich provides access to a massive amount of data for any
@@ -1052,7 +1058,7 @@ class Country(object):
         return self._ba_cntry.travel_modes
 
 
-def get_countries(gis: GIS = None, as_df: bool = True):
+def get_countries(gis: Optional[GIS] = None, as_df: bool = True):
     """
     Retrieve available countries based on the GIS source being used.
 
@@ -1069,7 +1075,7 @@ def get_countries(gis: GIS = None, as_df: bool = True):
                            country dataset installed locally. Finally, if neither of these
                            sources are available, a :class:`~arcgis.gis.GIS` object must be
                            explicitly provided.
-
+    ------------------     --------------------------------------------------------------------
     as_df                  Optional boolean, specifying if a Pandas DataFrame output is
                            desired. If ``True``, (the default) a Pandas DataFrame of available
                            countries is returned. If ``False`` , a list of
@@ -1587,164 +1593,6 @@ def _find_report(country, gis=None):
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
     return ge.find_report(country=country)
-
-
-# ----------------------------------------------------------------------
-# def get_variables(country,
-#                   dataset=None,
-#                   text=None,
-#                   gis=None):
-#     """
-#     The GeoEnrichment get_variables method allows you to search the data
-#     collections for variables that contain specific keywords.
-#
-#     ======================     ====================================================================
-#     **Argument**               **Description**
-#     ----------------------     --------------------------------------------------------------------
-#     country                    Optional string. Specifies the source country for the search. Use
-#                                this parameter to limit the search and query of standard geographic
-#                                features to one country. This parameter supports both the
-#                                two-digit and three-digit country codes illustrated in the
-#                                coverage table.
-#
-#                                Example 1 - Set source country to the United States:
-#                                country=US
-#
-#                                Example 2 - Set source country to the Canada:
-#                                country=CA
-#
-#                                Additional notes
-#                                Currently, the service is available for Canada, the United States
-#                                and a number of European countries. Other countries will be added
-#                                in the near future.
-#     ----------------------     --------------------------------------------------------------------
-#     dataset                    optional string/list. Optional parameter to specify a specific
-#                                dataset within a defined country. This parameter will not be used
-#                                in the Beta release. In the future, some countries may have two or
-#                                more datasets that may have different vintages and standard
-#                                geography areas. For example, in the United States, there may be
-#                                an optional dataset with historic census data from previous years.
-#                                Examples
-#                                dataset=USA_ESRI_2013
-#     ----------------------     --------------------------------------------------------------------
-#     text                       Optional string. Use this parameter to specify the text to query and
-#                                search the data collections for the country and datasets specified.
-#                                You can use this parameter to query and find specific keywords that
-#                                are contained in a data collection.
-#     ------------------         --------------------------------------------------------------------
-#     gis                        Optional GIS.  If None, the GIS object will be used from the
-#                                arcgis.env.active_gis.  This GIS object must be authenticated and
-#                                have the ability to consume credits
-#     ======================     ====================================================================
-#
-#     returns: Pandas' DataFrame
-#     """
-#     if gis is None:
-#         gis = env.active_gis
-#     ge = _GeoEnrichment(gis=gis)
-#     return ge.get_variables(country=country,
-#                              dataset=dataset,
-#                              text=text)
-# ----------------------------------------------------------------------
-# def report_metadata(country, gis=None):
-#     """
-#     This method returns information about a given country's available reports and provides
-#     detailed metadata about each report.
-#
-#     :Usage:
-#     >>> df = arcgis.geoenrichment.report_metadata("al", gis=gis)
-#     # returns basic report metadata for Albania
-#
-#     ==================     ====================================================================
-#     **Argument**           **Description**
-#     ------------------     --------------------------------------------------------------------
-#     country                Required string. lets the user supply and optional name of a country
-#                            in order to get information about the data collections in that given
-#                            country. This can be the two letter country code or the coutries
-#                            full name.
-#     ------------------     --------------------------------------------------------------------
-#     gis                    Optional GIS.  If None, the GIS object will be used from the
-#                            arcgis.env.active_gis.  This GIS object must be authenticated and
-#                            have the ability to consume credits
-#     ==================     ====================================================================
-#
-#:return: Pandas' DataFrame """ if gis is None: gis = env.active_gis ge =\
-# _GeoEnrichment(gis=gis) return ge.report_metadata(country=country)\
-# ----------------------------------------------------------------------
-@deprecated(
-    deprecated_in="1.4.1",
-    removed_in="1.5.0",
-    current_version=__version__,
-    details="Method was removed due to changes in the GeoEnrichment API",
-)
-def find_businesses(
-    type_filters=None,
-    feature_limit=1000,
-    feature_offset=0,
-    exact_match=False,
-    search_string=None,
-    spatial_filter=None,
-    simple_search=False,
-    dataset_id=None,
-    full_error_message=False,
-    out_sr=4326,
-    return_geometry=False,
-    as_featureset=False,
-    gis=None,
-):
-    """
-    The find_businesses method returns business points matching a given search criteria.
-    Business points can be selected using any combination of three search criteria: search
-    string, spatial filter and business type. A business point will be selected if it matches
-    all search criteria specified.
-
-    ======================     ====================================================================
-    **Argument**               **Description**
-    ----------------------     --------------------------------------------------------------------
-    type_filters               Optional list. List of business type filters restricting the search.
-                               For USA, either the NAICS or SIC filter is useful as a business type
-                               filter. If both filters are specified in the type_filters parameter
-                               value, selected business points will match both of them.
-    ----------------------     --------------------------------------------------------------------
-    feature_limit              Optional integer. The limit of returned business points.
-    ----------------------     --------------------------------------------------------------------
-    feature_offset             Optional integer. Start the results on the number of the record
-                               specified.
-    ----------------------     --------------------------------------------------------------------
-    exact_match                Optional boolean. True value of the parameter means the exact match
-                               of the string to search.
-    ----------------------     --------------------------------------------------------------------
-    search_string              Optional string. A string of characters which is used in the search
-                               query.
-    ----------------------     --------------------------------------------------------------------
-    spatial_filter             Optional SpatialFilter. A spatial filter restricting the search.
-    ----------------------     --------------------------------------------------------------------
-    simple_search              Optional boolean. A spatial filter restricting the search. True
-                               value of the parameter means a simple search (e.g., in company
-                               names only).
-    ----------------------     --------------------------------------------------------------------
-    dataset_id                 Optional string. ID of the active dataset.
-    ----------------------     --------------------------------------------------------------------
-    full_error_message         Optional boolean. Parameter for composing error message.
-    ----------------------     --------------------------------------------------------------------
-    out_sr                     Optional integer. Parameter specifying the spatial reference to
-                               return the output dataframe.
-    ----------------------     --------------------------------------------------------------------
-    return_geometry            Optional boolean. When true, geometries are returned with the
-                               response.
-    ----------------------     --------------------------------------------------------------------
-    as_featureset              Optional boolean.  The default is False. If True, the result will be
-                               a arcgis.features.FeatureSet object instead of a SpatailDataFrame or
-                               Pandas' DataFrame.
-    ----------------------     --------------------------------------------------------------------
-    gis                        Optional GIS.  If None, the GIS object will be used from the
-                               arcgis.env.active_gis.  This GIS object must be authenticated and
-                               have the ability to consume credits
-    ======================     ====================================================================
-
-    returns: DataFrame (Spatial or Pandas), FeatureSet, or dictionary on error.
-    """
-    raise Exception("This method is deprecated.")
 
 
 # ----------------------------------------------------------------------
