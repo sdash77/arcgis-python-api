@@ -2245,7 +2245,9 @@ class FeatureLayerCollectionManager(_GISResource):
         if "serviceItemId" in self.properties.keys():
             feature_layer_item = self._gis.content.get(self.properties["serviceItemId"])
         else:
-            return {"Error": "Can only overwrite a Hosted Feature Layer Collection (Feature Service)"}
+            return {
+                "Error": "Can only overwrite a Hosted Feature Layer Collection (Feature Service)"
+            }
         # endregion
 
         # region find data item related to this hosted feature layer
