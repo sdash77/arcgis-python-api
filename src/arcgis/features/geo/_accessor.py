@@ -2606,15 +2606,15 @@ class GeoAccessor(object):
                         list(df[address_column]),
                         geocoder=geocoder,
                         as_featureset=True,
-                    ).sdf.sort_values(by='ResultID')
+                    ).sdf.sort_values(by="ResultID")
                     piece_df.index = df.index
-                    piece_df['ResultID'] = df.index.tolist()
+                    piece_df["ResultID"] = df.index.tolist()
                     data.append(piece_df)
                 if len(data) == 1:
-                    merged = df.merge(data[0], left_index=True, right_on='ResultID')
+                    merged = df.merge(data[0], left_index=True, right_on="ResultID")
                 else:
                     merged = df.merge(
-                        pd.concat(data), left_index=True, right_on='ResultID'
+                        pd.concat(data), left_index=True, right_on="ResultID"
                     )
             else:
                 raise ValueError("Address column not found in dataframe")
