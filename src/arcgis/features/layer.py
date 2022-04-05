@@ -2552,15 +2552,17 @@ class FeatureLayer(Layer):
         Returns up-to-date approximations of layer information, such as row count
         and extent. Layers that support this property will include
         `infoInEstimates` information in the layer's :attr:`~arcgis.features.FeatureLayer.properties`.
-
+        
+        Currently available with ArcGIS Online and Enterprise 10.9.1+
+        
         :returns: Dict[str, Any]
 
         """
-
-        if "infoInEstimates" in self.properties:
-            url = self._url + "/getEstimates"
-            params = {"f": "json"}
-            return self._con.get(url, params)
+        if self._gis.version > [9, 2] or self._gis._is_agol:
+            if "infoInEstimates" in self.properties:
+                url = self._url + "/getEstimates"
+                params = {"f": "json"}
+                return self._con.get(url, params)
         return {}
 
     # ----------------------------------------------------------------------
