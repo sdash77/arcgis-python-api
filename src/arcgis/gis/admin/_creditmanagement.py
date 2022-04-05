@@ -45,7 +45,7 @@ class CreditManager(object):
         """
         boolean that show is credit credit assignment
         """
-        if 'creditAssignments' in self._gis.properties:
+        if "creditAssignments" in self._gis.properties:
             return self._gis.properties.creditAssignments == "enabled"
         else:
             return False
