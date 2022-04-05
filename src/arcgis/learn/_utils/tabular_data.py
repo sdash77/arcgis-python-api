@@ -1110,14 +1110,14 @@ class TabularDataObject(object):
             for cnt, raster in enumerate(raster_list):
                 if isinstance(raster, tuple):
                     try:
-                        wkt = raster[0].extent['spatialReference']['wkt']
+                        wkt = raster[0].extent["spatialReference"]["wkt"]
                     except:
-                        wkt = raster[0].extent['spatialReference']['wkid']
+                        wkt = raster[0].extent["spatialReference"]["wkid"]
                 else:
                     try:
-                        wkt = raster.extent['spatialReference']['wkt']
+                        wkt = raster.extent["spatialReference"]["wkt"]
                     except:
-                        wkt = raster.extent['spatialReference']['wkid']
+                        wkt = raster.extent["spatialReference"]["wkid"]
                 sr = arcpy.SpatialReference()
                 sr.loadFromString(wkt)
                 for i in range(raster.band_count):

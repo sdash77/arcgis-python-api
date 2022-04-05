@@ -4930,16 +4930,16 @@ class ContentManager(object):
         url = f"{self._gis._portal.resturl}portals/self/cost"
 
         params = {
-            'tileStorage': tile_storage,
-            'fileStorage': file_storage,
-            'featureStorage': feature_storage,
-            'generatedTileCount': generate_tile_count,
-            'loadedTileCount': loaded_tile_count,
-            'enrichVariableCount': enrich_variable_count,
-            'enrichReportCount': enrich_report_count,
-            'serviceAreaCount': service_area_count,
-            'geocodeCount': geocode_count,
-            'f': 'json',
+            "tileStorage": tile_storage,
+            "fileStorage": file_storage,
+            "featureStorage": feature_storage,
+            "generatedTileCount": generate_tile_count,
+            "loadedTileCount": loaded_tile_count,
+            "enrichVariableCount": enrich_variable_count,
+            "enrichReportCount": enrich_report_count,
+            "serviceAreaCount": service_area_count,
+            "geocodeCount": geocode_count,
+            "f": "json",
         }
         return self._gis._con.get(url, params)
 

@@ -109,7 +109,7 @@ class ModelExtension(ArcGISModel):
             del kwargs["ArcGISLearnVersion"]
 
         super().__init__(data, backbone, **kwargs)
-        if model_conf.__name__ == 'CustomDetReg':
+        if model_conf.__name__ == "CustomDetReg":
             self._model_conf = model_conf(**kwargs)
         else:
             self._model_conf = model_conf()
@@ -236,7 +236,7 @@ class ModelExtension(ArcGISModel):
         _emd_template["ModelConfigurationFile"] = "ModelConfiguration.py"
         _emd_template["ModelFileConfigurationClass"] = type(self._model_conf).__name__
         _emd_template["DatasetType"] = self._data.dataset_type
-        if not hasattr(self._data.train_dl.dataset, 'coco'):
+        if not hasattr(self._data.train_dl.dataset, "coco"):
             _emd_template["Kwargs"] = self._kwargs
 
         class_data = {}
@@ -357,11 +357,8 @@ class ModelExtension(ArcGISModel):
                 data.K = emd["Kwargs"]["n_masks"]
                 data.instance_classes = emd["Kwargs"]["instance_classes"]
         data.resize_to = resize_to
-        if modelconfclass == 'CustomDetReg':
-            mextnsn = cls(
-                data,
-                pretrained_path=str(model_file)
-            )
+        if modelconfclass == "CustomDetReg":
+            mextnsn = cls(data, pretrained_path=str(model_file))
         else:
             mextnsn = cls(
                 data,
@@ -447,11 +444,13 @@ class ModelExtension(ArcGISModel):
             self.show_results = self._show_results_panoptic
             self.panoptic_quality = self._panoptic_quality
 
-        elif hasattr(self,'coco_data'):
+        elif hasattr(self, "coco_data"):
             self.show_results = self._model_conf._show_results
             self.predict = self._model_conf.predict
             self.lr_find = self._model_conf.lr_find
-            self.average_precision_score = self._model_conf.average_precision_score_detreg
+            self.average_precision_score = (
+                self._model_conf.average_precision_score_detreg
+            )
 
         else:
             if self._is_multispectral:
@@ -676,7 +675,7 @@ class ModelExtension(ArcGISModel):
             rows = len(self._data.valid_ds)
 
         ds_type = DatasetType.Valid
-        n_items = rows ** 2 if self.learn.data.train_ds.x._square_show_res else rows
+        n_items = rows**2 if self.learn.data.train_ds.x._square_show_res else rows
         if self.learn.dl(ds_type).batch_size < n_items:
             n_items = self.learn.dl(ds_type).batch_size
         ds = self.learn.dl(ds_type).dataset
