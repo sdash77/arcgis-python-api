@@ -2552,9 +2552,9 @@ class FeatureLayer(Layer):
         Returns up-to-date approximations of layer information, such as row count
         and extent. Layers that support this property will include
         `infoInEstimates` information in the layer's :attr:`~arcgis.features.FeatureLayer.properties`.
-        
+
         Currently available with ArcGIS Online and Enterprise 10.9.1+
-        
+
         :returns: Dict[str, Any]
 
         """
