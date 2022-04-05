@@ -4880,15 +4880,15 @@ class ContentManager(object):
     # ----------------------------------------------------------------------
     def cost(
         self,
-        tile_storage: float = None,
-        file_storage: float = None,
-        feature_storage: float = None,
-        generate_tile_count: int = None,
-        loaded_tile_count: int = None,
-        enrich_variable_count: int = None,
-        enrich_report_count: int = None,
-        service_area_count: int = None,
-        geocode_count: int = None,
+        tile_storage: Optional[float] = None,
+        file_storage: Optional[float] = None,
+        feature_storage: Optional[float] = None,
+        generate_tile_count: Optional[int] = None,
+        loaded_tile_count: Optional[int] = None,
+        enrich_variable_count: Optional[int] = None,
+        enrich_report_count: Optional[int] = None,
+        service_area_count: Optional[int] = None,
+        geocode_count: Optional[int] = None,
     ) -> dict:
         """
         The `cost` allows for the estimation of amount of credits an
