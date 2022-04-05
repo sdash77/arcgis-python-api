@@ -145,6 +145,25 @@ def grid_anchors(self, grid_sizes, strides):
     return anchors
 
 
+class MaskRCNNTracer(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+        self.model.eval()
+
+    def _dict_to_tuple(self, out_dict):
+        return (
+            out_dict["boxes"],
+            out_dict["scores"],
+            out_dict["labels"],
+            out_dict["masks"],
+        )
+
+    def forward(self, inp):
+        out = self.model(inp)
+        return self._dict_to_tuple(out[0])
+
+
 class MaskRCNN(ArcGISModel):
     """
     Model architecture from https://arxiv.org/abs/1703.06870.
@@ -534,6 +553,40 @@ class MaskRCNN(ArcGISModel):
         return cls(
             data, **model_params, pretrained_path=str(model_file), **maskrcnn_kwargs
         )
+
+    def _save_pytorch_torchscript(self, name):
+        model = self.learn.model
+        model.eval()
+
+        cpu = torch.device("cpu")
+        device = cpu
+        model = model.to(cpu)
+
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        inp = torch.rand(1, 3, chip_size[0], chip_size[1]).to(cpu)
+
+        model = MaskRCNNTracer(model)
+
+        try:
+            traced_model = None
+            with torch.no_grad():
+                traced_model = self._trace(model, inp, True)
+        except:
+            traced_model = None
+            with torch.no_grad():
+                traced_model = self._trace(model, inp, True)
+
+        model.to(device)
+        saved_path_cpu = (
+            self.learn.path / self.learn.model_dir / f"{name}-cpu.pt"
+        ).__str__()
+        saved_path_gpu = ""
+        torch.jit.save(traced_model, saved_path_cpu)
+
+        return [f"{name}-cpu.pt", saved_path_gpu]
 
     def _get_emd_params(self, save_inference_file):
         import random

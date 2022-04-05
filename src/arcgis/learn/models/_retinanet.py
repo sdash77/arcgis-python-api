@@ -16,6 +16,7 @@ HAS_FASTAI = True
 # Exception will turn the HAS_FASTAI flag to false so that relevant exception can be raised
 try:
     import torch
+    from torch import Tensor
     import numpy as np
     import pandas as pd
     import PIL
@@ -35,6 +36,7 @@ try:
         compute_class_AP,
         get_predictions,
         AveragePrecision,
+        _process_bboxes_jit,
     )
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
@@ -60,6 +62,27 @@ try:
     import cv2
 except:
     HAS_OPENCV = False
+
+from typing import Tuple, List
+
+
+class RetinaNetTracer(torch.nn.Module):
+    def __init__(self, model, device, sizes, ratios, scales):
+        super().__init__()
+        self.model = model.to(device)
+        self.crit_vals = [
+            torch.tensor(sizes),
+            torch.tensor(ratios),
+            torch.tensor(scales),
+        ]
+
+    def _process_bboxes(self, output: List[Tensor]) -> Tuple[Tensor, Tensor, Tensor]:
+        return _process_bboxes_jit(output, self.crit_vals)
+
+    def forward(self, inp: List[Tensor]):
+        out = self.model(inp)
+        out_final = self._process_bboxes(out)
+        return out_final
 
 
 class RetinaNet(ArcGISModel):
@@ -179,6 +202,48 @@ class RetinaNet(ArcGISModel):
 
     def __repr__(self):
         return "<%s>" % (type(self).__name__)
+
+    def _save_device_model(self, model, device, save_path):
+        model.eval()
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        inp = torch.rand(1, 3, chip_size[0], chip_size[1]).to(device)
+        ratios = [float(ratio) for ratio in self.ratios]
+        scales = [float(ratio) for ratio in self.scales]
+        sizes = self._model.sizes
+        model = RetinaNetTracer(model, device, sizes, ratios, scales)
+        model = model.to(device)
+        traced_model = None
+        with torch.no_grad():
+            traced_model = self._trace(model, inp, True)  # TODO: more ease of use
+        torch.jit.save(traced_model, save_path)
+
+    def _save_pytorch_torchscript(self, name):
+        model = self.learn.model
+        model.eval()
+        device = self._device
+
+        cpu = torch.device("cpu")
+        save_path_cpu = (
+            self.learn.path / self.learn.model_dir / f"{name}-cpu.pt"
+        ).__str__()
+        self._save_device_model(model, cpu, save_path_cpu)
+        save_path_cpu = f"{name}-cpu.pt"
+
+        save_path_gpu = ""
+        if torch.cuda.is_available():
+            gpu = torch.device("cuda")
+            save_path_gpu = (
+                self.learn.path / self.learn.model_dir / f"{name}-gpu.pt"
+            ).__str__()
+            self._save_device_model(model, gpu, save_path_gpu)
+            save_path_gpu = f"{name}-gpu.pt"
+
+        model.to(device)
+
+        return [save_path_cpu, save_path_gpu]
 
     @staticmethod
     def _available_metrics():

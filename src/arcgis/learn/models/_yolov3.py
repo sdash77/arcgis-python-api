@@ -16,6 +16,7 @@ HAS_PIL = True
 
 try:
     import torch
+    from torch import Tensor
     import torch.nn as nn
     import numpy as np
     from fastai.vision import ImageList
@@ -35,6 +36,7 @@ try:
         generate_anchors,
         compute_class_AP,
         AveragePrecision,
+        postprocess,
     )
     from ._yolov3_utils import (
         download_yolo_weights,
@@ -67,6 +69,79 @@ try:
     import PIL
 except ImportError:
     HAS_PIL = False
+
+from typing import Tuple
+
+
+class YOLOv3Tracer(torch.nn.Module):
+    def __init__(self, model, device, chip_size):
+        super().__init__()
+        self.model = model.to(device)
+        self.model.eval()
+        self.chip_size = chip_size
+
+    def _reconstruct(self, t: Tuple[Tensor, Tensor, Tensor]):  # TODO
+        bboxes, labels, scores = t
+        if not len((labels).nonzero()) == 0:
+            i = (labels).nonzero().min()
+            bboxes, labels, scores = bboxes[i:], labels[i:], scores[i:]
+
+        return bboxes, labels, scores
+
+    def _analyze_pred(self, pred):
+        return postprocess(
+            pred, chip_size=self.chip_size[0], conf_thre=0.1, nms_thre=0.1
+        )
+
+    def _stack_bboxes(self, bboxes):
+        processed_bboxes = []
+        for bbox in bboxes:
+            bbox = (bbox + 1) / 2
+            output = torch.clone(bbox)
+            bbox[0] = output[1]
+            bbox[1] = output[0]
+            bbox[2] = output[3]
+            bbox[3] = output[2]
+            processed_bboxes.append(bbox)
+
+        out_bboxes = torch.stack([bbox for bbox in processed_bboxes])
+        return out_bboxes
+
+    def _process_bboxes(self, batch_output):
+        num_boxes = 0
+        pred_bboxes = []
+        pred_labels = []
+        pred_scores = []
+
+        batch = 0
+        for chip_idx, output in enumerate(batch_output):
+            pp_output = self._analyze_pred(pred=output)
+            if pp_output[0].numel() == 0:
+                continue
+            t = list(pp_output)
+            if len(t[0]) == 0:
+                continue
+            output_final = self._reconstruct(pp_output)
+
+            if not output_final[0] is None:
+                pred_bboxes.append(self._stack_bboxes(output_final[0]))
+                pred_labels.append(output_final[1])
+                pred_scores.append(output_final[2])
+                batch += 1
+
+        if not len(pred_bboxes) == 0:
+            pred_bboxes_final = torch.stack([bbox for bbox in pred_bboxes])
+            pred_labels_final = torch.stack([label for label in pred_labels])
+            pred_scores_final = torch.stack([score for score in pred_scores])  # TODO
+            return pred_bboxes_final, pred_labels_final, pred_scores_final
+        else:
+            dummy = torch.empty((batch, 0, 0, 0)).float()
+            return dummy, dummy, dummy
+
+    def forward(self, inp):
+        out = self.model(inp)
+        out_final = self._process_bboxes(out)
+        return out_final
 
 
 def chips_to_batch(chips, model_height, model_width, batch_size=1):
@@ -738,6 +813,45 @@ class YOLOv3(ArcGISModel):
             return statistics.mean(aps)
         else:
             return dict(zip(self._data.classes[1:], aps))
+
+    def _save_device_model(self, model, device, save_path):
+        model.eval()
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        inp = torch.rand(1, 3, chip_size[0], chip_size[1]).to(device)
+        model = YOLOv3Tracer(model, device, chip_size)
+        model = model.to(device)
+        traced_model = None
+        with torch.no_grad():
+            traced_model = self._script(model, inp)
+        torch.jit.save(traced_model, save_path)
+
+    def _save_pytorch_torchscript(self, name):
+        model = self.learn.model
+        model.eval()
+        device = self._device
+
+        cpu = torch.device("cpu")
+        save_path_cpu = (
+            self.learn.path / self.learn.model_dir / f"{name}-cpu.pt"
+        ).__str__()
+        self._save_device_model(model, cpu, save_path_cpu)
+        save_path_cpu = f"{name}-cpu.pt"
+
+        save_path_gpu = ""
+        if torch.cuda.is_available():
+            gpu = torch.device("cuda")
+            save_path_gpu = (
+                self.learn.path / self.learn.model_dir / f"{name}-gpu.pt"
+            ).__str__()
+            self._save_device_model(model, gpu, save_path_gpu)
+            save_path_gpu = f"{name}-gpu.pt"
+
+        model.to(device)
+
+        return [save_path_cpu, save_path_gpu]
 
     def _get_emd_params(self, save_inference_file):
 

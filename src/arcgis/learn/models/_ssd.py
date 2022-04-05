@@ -15,6 +15,7 @@ HAS_FASTAI = True
 
 try:
     import torch
+    from torch import tensor, Tensor
     import numpy as np
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
@@ -61,6 +62,8 @@ try:
         _get_emd_path,
         read_image,
     )
+    from ._inferencing.util import actn_to_bb, hw2corners, nms_jit
+    from fastprogress.fastprogress import progress_bar
     from .._utils.env import _IS_ARCGISPRONOTEBOOK
     import matplotlib.pyplot as plt
 except Exception as e:
@@ -81,6 +84,161 @@ except Exception:
 
 def _mobilenet_split(m: NnModule):
     return m[0][0][0], m[1]
+
+
+from typing import Union, Tuple, Optional, List
+
+
+try:
+
+    @torch.jit.script
+    def _nms_jit_loop(
+        conf_scores, a_ic, nms_overlap: float, thres: float
+    ) -> Tuple[List[Tensor], List[Tensor], List[List[Tensor]]]:
+        out1, out2 = [], []
+        cc = torch.jit.annotate(List[List[Tensor]], [])
+        for cl in range(1, len(conf_scores)):
+            c_mask = conf_scores[cl] > thres
+            if c_mask.sum() == 0:
+                continue
+            scores = conf_scores[cl][c_mask]
+            l_mask = c_mask.unsqueeze(1).expand_as(a_ic)
+            boxes = a_ic[l_mask].view(-1, 4)
+
+            ids, count = nms_jit(
+                boxes.data, scores, nms_overlap, 50
+            )  # FIX- NMS overlap hardcoded #TODO: jit
+            ids = ids[: int(count.item())]
+            out1.append(scores[ids])
+            out2.append(boxes.data[ids])
+            cc.append(
+                [
+                    torch.tensor([cl]).to(conf_scores.device).int()
+                    for i in range(int(count.item()))
+                ]
+            )
+
+        return out1, out2, cc
+
+    @torch.jit.script
+    def _get_jit_predictions(
+        conf_scores, a_ic, nms_overlap: float, thres: float
+    ) -> Tuple[Tensor, Tensor, Tensor]:
+        out1, out2, cc = _nms_jit_loop(conf_scores, a_ic, nms_overlap, thres)
+        if len(cc) == 0:
+            cc = [[torch.tensor([0]).int().to(a_ic.device)]]
+        cc_temp = torch.jit.annotate(List[Tensor], [])
+        for c in range(len(cc)):
+            cc_temp.append(torch.cat(cc[c]))
+        cc_concat = torch.cat(cc_temp)
+        if len(out1) == 0:
+            out1 = [torch.empty((0,), dtype=conf_scores.dtype).to(conf_scores.device)]
+        out1_concat = torch.cat(out1)
+        if len(out2) == 0:
+            out2 = [torch.empty((0,), dtype=conf_scores.dtype).to(conf_scores.device)]
+        out2_concat = torch.cat(out2)
+        bbox, clas, prs, thresh = (
+            out2_concat,
+            cc_concat,
+            out1_concat,
+            thres,
+        )  # FIX- hardcoded threshold
+        return bbox, clas, prs
+
+    @torch.jit.script
+    def _process_jit_bboxes(bboxes: List[Tensor]):
+        # print(bboxes)
+        processed_bboxes = []
+        for batch in range(len(bboxes)):
+            for bbox in bboxes[batch]:
+                output = torch.clone(bbox)
+                bbox[0] = output[1]
+                bbox[1] = output[0]
+                bbox[2] = output[3] - output[1]
+                bbox[3] = output[2] - output[0]
+                processed_bboxes.append(bbox)
+        if not len(processed_bboxes) == 0:
+            out_bboxes = torch.stack([bbox for bbox in processed_bboxes])
+            return out_bboxes
+        else:
+            return torch.empty((len(bboxes), 0, 0, 0)).float()
+
+except:
+    print("torch not available\n")
+
+
+class SSDTracer(torch.nn.Module):
+    def __init__(self, model, device, chip_size, anchors, grid_sizes, trace=False):
+        super().__init__()
+        if trace:
+            self.model = torch.jit.trace(
+                model.to(device),
+                torch.rand(1, 3, chip_size[0], chip_size[1]).to(device),
+            )
+        else:
+            self.model = model.to(device)
+        self.anchors = anchors.to(device)
+        self.grid_sizes = grid_sizes.to(device)
+
+    def _get_nms_preds(
+        self,
+        b_clas,
+        b_bb,
+        idx: int,
+        anchors,
+        grid_sizes,
+        nms_overlap: float,
+        thres: float,
+    ):
+        a_ic = actn_to_bb(b_bb[idx], anchors, grid_sizes)
+        conf_scores = b_clas[idx].sigmoid().t().detach().to(anchors.device)
+        out = _get_jit_predictions(conf_scores, a_ic, nms_overlap, thres)
+        return out
+
+    # TODO: batch_size
+    def process_bboxes(self, batch_output: List[Tensor]) -> List[Tensor]:
+        num_boxes = 0
+        pred_bboxes = []
+        pred_labels = []
+        pred_scores = []
+
+        batch = 0
+
+        for chip_idx, output in enumerate(batch_output[1]):
+            pred_bbox, pred_label, pred_score = self._get_nms_preds(
+                batch_output[0],
+                batch_output[1],
+                chip_idx,
+                self.anchors,
+                self.grid_sizes,
+                nms_overlap=0.1,
+                thres=0.3,
+            )
+
+            batch += 1
+            pred_bboxes.append(pred_bbox)
+            pred_labels.append(pred_label)
+            pred_scores.append(pred_score)
+
+        if not len(pred_bboxes) == 0:
+            pred_bboxes_final = _process_jit_bboxes(pred_bboxes).to(
+                batch_output[0].device
+            )
+            pred_labels_final = torch.stack([label for label in pred_labels]).to(
+                batch_output[0].device
+            )
+            pred_scores_final = torch.stack([score for score in pred_scores]).to(
+                batch_output[0].device
+            )  # TODO
+            return pred_bboxes_final, pred_labels_final, pred_scores_final
+        else:
+            dummy = torch.empty((batch, 0, 0, 0)).float().to(batch_output[0].device)
+            return dummy, dummy, dummy
+
+    def forward(self, inp: Tensor) -> List[Tensor]:
+        out = self.model(inp)
+        out_final = self.process_bboxes(out)
+        return out_final
 
 
 class SingleShotDetector(ArcGISModel):
@@ -664,6 +822,45 @@ class SingleShotDetector(ArcGISModel):
             ret_scores=ret_scores,
             device=device,
         )
+
+    def _save_device_model(self, model, device, save_path):
+        model.eval()
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        inp = torch.rand(1, 3, chip_size[0], chip_size[1]).to(device)
+        model = SSDTracer(model, device, chip_size, self._anchors, self._grid_sizes)
+        model = model.to(device)
+        traced_model = None
+        with torch.no_grad():
+            traced_model = self._trace(model, inp, True)
+        torch.jit.save(traced_model, save_path)
+
+    def _save_pytorch_torchscript(self, name):
+        model = self.learn.model
+        model.eval()
+        device = self._device
+
+        cpu = torch.device("cpu")
+        save_path_cpu = (
+            self.learn.path / self.learn.model_dir / f"{name}-cpu.pt"
+        ).__str__()
+        self._save_device_model(model, cpu, save_path_cpu)
+        save_path_cpu = f"{name}-cpu.pt"
+
+        save_path_gpu = ""
+        if torch.cuda.is_available():
+            gpu = torch.device("cuda")
+            save_path_gpu = (
+                self.learn.path / self.learn.model_dir / f"{name}-gpu.pt"
+            ).__str__()
+            self._save_device_model(model, gpu, save_path_gpu)
+            save_path_gpu = f"{name}-gpu.pt"
+
+        model.to(device)
+
+        return [save_path_cpu, save_path_gpu]
 
     def _get_emd_params(self, save_inference_file):
         import random
