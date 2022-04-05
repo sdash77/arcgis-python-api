@@ -43,13 +43,14 @@ try:
 except:
     pass
 
+
 def _get_rendering_service_layer(layer):
     from .functions.utility import _generate_layer_token
+
     token = _generate_layer_token(layer, layer.url)
-    newlyr = ImageryLayer(
-        {"input_raster": layer.url + "?token=" + token}, layer._gis
-    )
+    newlyr = ImageryLayer({"input_raster": layer.url + "?token=" + token}, layer._gis)
     return newlyr
+
 
 def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
     for key, value in fnarg_ra.items():
@@ -4449,7 +4450,6 @@ class ImageryLayer(Layer):
                     "Failed to perform calculate volume operation on the TilesOnly service"
                 )
 
-
         if self.properties.serviceDataType == "esriImageServiceDataTypeElevation":
             url = "%s/calculateVolume" % self._url
             from arcgis.geometry import Polygon
@@ -4531,7 +4531,7 @@ class ImageryLayer(Layer):
                     self = _get_rendering_service_layer(self)
                 except:
                     raise RuntimeError(
-                        "Failed to perform identify operation on the TilesOnly service"
+                        "Failed to perform query boundary operation on the TilesOnly service"
                     )
 
         url = self._url + "/queryBoundary"
