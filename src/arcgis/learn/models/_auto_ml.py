@@ -648,6 +648,7 @@ class AutoML(object):
         match_field_names=None,
         prediction_type="features",
     ):
+        dataframe_complete = False
         if isinstance(input_features, FeatureLayer):
             dataframe = input_features.query().sdf
         elif hasattr(input_features, "dataSource"):
@@ -658,6 +659,7 @@ class AutoML(object):
                 index_field=None,
                 is_table_obj=False,
             )
+            dataframe_complete = True
         elif hasattr(input_features, "value"):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
                 input_features,
@@ -666,6 +668,7 @@ class AutoML(object):
                 index_field=None,
                 is_table_obj=True,
             )
+            dataframe_complete = True
         else:
             dataframe = input_features.copy()
 
@@ -678,54 +681,57 @@ class AutoML(object):
         continuous_variables = self._data._continuous_variables
 
         columns = dataframe.columns
-        feature_layer_columns = []
-        for column in columns:
-            column_name = column
-            categorical = False
-
-            if column_name in fields_needed:
-                if column_name not in continuous_variables:
-                    categorical = True
-            elif match_field_names and match_field_names.get(column_name):
-                if match_field_names.get(column_name) not in continuous_variables:
-                    categorical = True
-            else:
-                continue
-
-            feature_layer_columns.append((column_name, categorical))
-
-        raster_columns = []
-        if rasters:
-            for raster in rasters:
-                column_name = raster.name
+        if dataframe_complete:
+            processed_dataframe = dataframe
+        else:
+            feature_layer_columns = []
+            for column in columns:
+                column_name = column
                 categorical = False
+
                 if column_name in fields_needed:
                     if column_name not in continuous_variables:
                         categorical = True
                 elif match_field_names and match_field_names.get(column_name):
-                    column_name = match_field_names.get(column_name)
-                    if column_name not in continuous_variables:
+                    if match_field_names.get(column_name) not in continuous_variables:
                         categorical = True
                 else:
                     continue
 
-                raster_columns.append((raster, categorical))
+                feature_layer_columns.append((column_name, categorical))
 
-        with warnings.catch_warnings():
-            if not HAS_FASTAI:
-                _raise_fastai_import_error(import_exception=import_exception)
-            warnings.simplefilter("ignore", UserWarning)
-            (
-                processed_dataframe,
-                fields_mapping,
-            ) = TabularDataObject._prepare_dataframe_from_features(
-                input_features,
-                self._data._dependent_variable,
-                feature_layer_columns,
-                raster_columns,
-                datefield,
-                distance_feature_layers,
-            )
+            raster_columns = []
+            if rasters:
+                for raster in rasters:
+                    column_name = raster.name
+                    categorical = False
+                    if column_name in fields_needed:
+                        if column_name not in continuous_variables:
+                            categorical = True
+                    elif match_field_names and match_field_names.get(column_name):
+                        column_name = match_field_names.get(column_name)
+                        if column_name not in continuous_variables:
+                            categorical = True
+                    else:
+                        continue
+
+                    raster_columns.append((raster, categorical))
+
+            with warnings.catch_warnings():
+                if not HAS_FASTAI:
+                    _raise_fastai_import_error(import_exception=import_exception)
+                warnings.simplefilter("ignore", UserWarning)
+                (
+                    processed_dataframe,
+                    fields_mapping,
+                ) = TabularDataObject._prepare_dataframe_from_features(
+                    input_features,
+                    self._data._dependent_variable,
+                    feature_layer_columns,
+                    raster_columns,
+                    datefield,
+                    distance_feature_layers,
+                )
 
         if match_field_names:
             processed_dataframe.rename(columns=match_field_names, inplace=True)
