@@ -4878,6 +4878,72 @@ class ContentManager(object):
         return self._gis._con.get(curl, params, ignore_error_key=True)
 
     # ----------------------------------------------------------------------
+    def cost(
+        self,
+        tile_storage: Optional[float] = None,
+        file_storage: Optional[float] = None,
+        feature_storage: Optional[float] = None,
+        generate_tile_count: Optional[int] = None,
+        loaded_tile_count: Optional[int] = None,
+        enrich_variable_count: Optional[int] = None,
+        enrich_report_count: Optional[int] = None,
+        service_area_count: Optional[int] = None,
+        geocode_count: Optional[int] = None,
+    ) -> dict:
+        """
+        The `cost` allows for the estimation of amount of credits an
+        operation will be required. For vector and tile storage, a user can
+        estimate the cost to cook tile and the cost of storage.  This
+        operation allows users to plan for future costs effeciently to best
+        serve their organization and clients.
+
+        .. note::
+            This operation is only supported on ArcGIS Online.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        tile_storage               Optional Float.  The size of the uncompressed tiles in MBs.
+        ----------------------     --------------------------------------------------------------------
+        file_storage               Optional Float. Estimates the credit cost of MB file storage.
+        ----------------------     --------------------------------------------------------------------
+        feature_storage            Optional Float. Estimates the cost of feature storage per feature.
+        ----------------------     --------------------------------------------------------------------
+        generate_tile_count        Optional Int.  Estimates the credit cost per tile.
+        ----------------------     --------------------------------------------------------------------
+        loaded_tile_count          Optional Int. Estimates the credit cost of pregenerated tile storage.
+        ----------------------     --------------------------------------------------------------------
+        enrich_variable_count      Optional Int. Estimates the credit cost er geoenrichment variable.
+        ----------------------     --------------------------------------------------------------------
+        enrich_report_count        Optional Int. Estimates the credit cost of running reports.
+        ----------------------     --------------------------------------------------------------------
+        service_area_count         Optional Int. Estimates the credit cost per service area generation.
+        ----------------------     --------------------------------------------------------------------
+        geocode_count              Optional Int. Estimates the credit cost per record for geocoding.
+        ======================     ====================================================================
+
+        :returns: dict[str, float]
+
+        """
+        if self._gis._portal.is_arcgisonline == False:
+            return {}
+        url = f"{self._gis._portal.resturl}portals/self/cost"
+
+        params = {
+            "tileStorage": tile_storage,
+            "fileStorage": file_storage,
+            "featureStorage": feature_storage,
+            "generatedTileCount": generate_tile_count,
+            "loadedTileCount": loaded_tile_count,
+            "enrichVariableCount": enrich_variable_count,
+            "enrichReportCount": enrich_report_count,
+            "serviceAreaCount": service_area_count,
+            "geocodeCount": geocode_count,
+            "f": "json",
+        }
+        return self._gis._con.get(url, params)
+
+    # ----------------------------------------------------------------------
     @property
     def dependency_manager(self) -> "DependencyManager":
         """

@@ -354,7 +354,7 @@ class ChildObjectDetector:
 
         if "NormalizationStats" in self.json_info:
             img_normed = normalize_batch(batch, self.json_info)
-        elif self.json_info['ModelFileConfigurationClass'] == 'CustomDetReg':
+        elif self.json_info["ModelFileConfigurationClass"] == "CustomDetReg":
             img_normed = batch
         else:
             img_normed = normalize_batch_imagenetstats(
