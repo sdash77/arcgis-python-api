@@ -4878,6 +4878,72 @@ class ContentManager(object):
         return self._gis._con.get(curl, params, ignore_error_key=True)
 
     # ----------------------------------------------------------------------
+    def cost(
+        self,
+        tile_storage: Optional[float] = None,
+        file_storage: Optional[float] = None,
+        feature_storage: Optional[float] = None,
+        generate_tile_count: Optional[int] = None,
+        loaded_tile_count: Optional[int] = None,
+        enrich_variable_count: Optional[int] = None,
+        enrich_report_count: Optional[int] = None,
+        service_area_count: Optional[int] = None,
+        geocode_count: Optional[int] = None,
+    ) -> dict:
+        """
+        The `cost` allows for the estimation of amount of credits an
+        operation will be required. For vector and tile storage, a user can
+        estimate the cost to cook tile and the cost of storage.  This
+        operation allows users to plan for future costs effeciently to best
+        serve their organization and clients.
+
+        .. note::
+            This operation is only supported on ArcGIS Online.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        tile_storage               Optional Float.  The size of the uncompressed tiles in MBs.
+        ----------------------     --------------------------------------------------------------------
+        file_storage               Optional Float. Estimates the credit cost of MB file storage.
+        ----------------------     --------------------------------------------------------------------
+        feature_storage            Optional Float. Estimates the cost of feature storage per feature.
+        ----------------------     --------------------------------------------------------------------
+        generate_tile_count        Optional Int.  Estimates the credit cost per tile.
+        ----------------------     --------------------------------------------------------------------
+        loaded_tile_count          Optional Int. Estimates the credit cost of pregenerated tile storage.
+        ----------------------     --------------------------------------------------------------------
+        enrich_variable_count      Optional Int. Estimates the credit cost er geoenrichment variable.
+        ----------------------     --------------------------------------------------------------------
+        enrich_report_count        Optional Int. Estimates the credit cost of running reports.
+        ----------------------     --------------------------------------------------------------------
+        service_area_count         Optional Int. Estimates the credit cost per service area generation.
+        ----------------------     --------------------------------------------------------------------
+        geocode_count              Optional Int. Estimates the credit cost per record for geocoding.
+        ======================     ====================================================================
+
+        :returns: dict[str, float]
+
+        """
+        if self._gis._portal.is_arcgisonline == False:
+            return {}
+        url = f"{self._gis._portal.resturl}portals/self/cost"
+
+        params = {
+            "tileStorage": tile_storage,
+            "fileStorage": file_storage,
+            "featureStorage": feature_storage,
+            "generatedTileCount": generate_tile_count,
+            "loadedTileCount": loaded_tile_count,
+            "enrichVariableCount": enrich_variable_count,
+            "enrichReportCount": enrich_report_count,
+            "serviceAreaCount": service_area_count,
+            "geocodeCount": geocode_count,
+            "f": "json",
+        }
+        return self._gis._con.get(url, params)
+
+    # ----------------------------------------------------------------------
     @property
     def dependency_manager(self) -> "DependencyManager":
         """
@@ -11091,8 +11157,11 @@ class Item(dict):
                 lyr = ImageryLayer(self.url, self._gis)
                 try:
                     item_data = self.get_data()
-                    lyr._fn = item_data.get("renderingRule", None)
-                    lyr._fnra = item_data.get("renderingRule", None)
+                    rendering_rule = item_data.get("renderingRule", None)
+                    if rendering_rule:
+                        lyr._fn = rendering_rule
+                        lyr._fnra = rendering_rule
+                        lyr._rendering_rule_from_item = True
                     lyr._mosaic_rule = item_data.get("mosaicRule", None)
                 except:
                     pass
@@ -13371,7 +13440,6 @@ class Item(dict):
 
         import time
 
-        params = {"f": "json"}
         if str(output_type).lower() in ["ogc", "ogcfeatureservice"]:
             output_type = "OGCFeatureService"
             file_type = "featureService"
@@ -13452,7 +13520,6 @@ class Item(dict):
                 # find items with relationship 'Service2Data' in reverse direction - all feature services published using this data item
                 related_items = self.related_items("Service2Data", "reverse")
 
-                return_item_list = []
                 if (
                     len(related_items) == 1
                 ):  # simple 1:1 relationship between data and service items
@@ -13485,7 +13552,6 @@ class Item(dict):
                             "analyzeParameters": {
                                 "enableGlobalGeocoding": "true",
                                 "sourceLocale": "en-us",
-                                # "locationType":"address",
                                 "sourceCountry": "",
                                 "sourceCountryHint": "",
                             },
@@ -13508,7 +13574,6 @@ class Item(dict):
                         "analyzeParameters": {
                             "enableGlobalGeocoding": "true",
                             "sourceLocale": "en-us",
-                            # "locationType":"address",
                             "sourceCountry": "",
                             "sourceCountryHint": "",
                         },
@@ -13590,34 +13655,39 @@ class Item(dict):
 
             res = self._gis.content.analyze(item=self, file_type=fileType)
             publish_parameters = res["publishParameters"]
+            # case for hosted tables
+            if (
+                "layerInfo" in publish_parameters
+                and "layerInfo" in publish_parameters_orig
+            ):
+                # do general update
+                publish_parameters.update(publish_parameters_orig)
+            # case for hosted fl
+            else:
+                # check if layers key exist. If not, add empty array to avoid error in update
+                if "layers" not in publish_parameters:
+                    publish_parameters["layers"] = []
+                    # csv analyze returns layerInfo rather than a layer
+                    if "layerInfo" in publish_parameters:
+                        publish_parameters["layers"].append(
+                            publish_parameters["layerInfo"]
+                        )
 
-            # check if layers and tables key exist. If not, add empty array to avoid error in update
-            if "layers" not in publish_parameters:
-                publish_parameters["layers"] = []
-            if "tables" not in publish_parameters:
-                publish_parameters["tables"] = []
+                # check if layers key exist. If not, add empty array to avoid error in update
+                if "layers" not in publish_parameters_orig:
+                    publish_parameters_orig["layers"] = []
 
-            # check if layers and tables key exist. If not, add empty array to avoid error in update
-            if "layers" not in publish_parameters_orig:
-                publish_parameters_orig["layers"] = []
-            if "tables" not in publish_parameters_orig:
-                publish_parameters_orig["tables"] = []
+                # update layers but layer index must match
+                # update the layers otherwise general update will overwrite nested dictionary
+                for idx, lyr in enumerate(publish_parameters["layers"]):
+                    lyr.update(publish_parameters_orig["layers"][idx])
 
-            # update layers but layer index must match
-            # update the layers otherwise general update will overwrite nested dictionary
-            for idx, lyr in enumerate(publish_parameters["layers"]):
-                lyr.update(publish_parameters_orig["layers"][idx])
-            for idx, tbl in enumerate(publish_parameters["tables"]):
-                tbl.update(publish_parameters_orig["tables"][idx])
+                # delete since already updated and avoid overwritting
+                if "layers" in publish_parameters_orig:
+                    del publish_parameters_orig["layers"]
 
-            # delete since already updated and avoid overwritting
-            if "layers" in publish_parameters_orig:
-                del publish_parameters_orig["layers"]
-            if "tables" in publish_parameters_orig:
-                del publish_parameters_orig["tables"]
-
-            # do general update
-            publish_parameters.update(publish_parameters_orig)
+                # do general update
+                publish_parameters.update(publish_parameters_orig)
 
         ret = self._portal.publish_item(
             self.itemid,

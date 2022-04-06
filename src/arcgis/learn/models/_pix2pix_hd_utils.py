@@ -55,6 +55,7 @@ from fastai.vision import (
     requires_grad,
     SmoothenValue,
     add_metrics,
+    F,
 )
 import torch
 from torch import nn
@@ -780,7 +781,14 @@ class Pix2PixHDModel(nn.Module):
 
 
 class Pix2PixHDLoss(nn.Module):
-    def __init__(self, p2p_model: nn.Module, vgg_loss=True, lambda_feat=10.0):
+    def __init__(
+        self,
+        p2p_model: nn.Module,
+        vgg_loss=True,
+        lambda_feat=10.0,
+        l1_loss=True,
+        lambda_l1=100.0,
+    ):
         super().__init__()
         self.gpu_ids = [0]
         self.Tensor = torch.cuda.FloatTensor if self.gpu_ids else torch.Tensor
@@ -791,6 +799,8 @@ class Pix2PixHDLoss(nn.Module):
         self.vgg_loss = vgg_loss
         if self.vgg_loss:
             self.criterionVGG = VGGLoss(self.gpu_ids)
+        self.l1_loss = l1_loss
+        self.lambda_l1 = lambda_l1
 
     def set_input(self, input):
         self.input_label, self.real_image = input
@@ -833,7 +843,15 @@ class Pix2PixHDLoss(nn.Module):
             self.loss_G_VGG = (
                 self.criterionVGG(fake_image, self.real_image) * self.lambda_feat
             )
-        return self.loss_G_GAN + self.loss_G_GAN_Feat + self.loss_G_VGG
+
+        # l1 loss for MS data
+        self.loss_G_l1 = 0
+        if self.l1_loss:
+            self.loss_G_l1 = (
+                torch.mean(F.l1_loss(fake_image, self.real_image))
+            ) * self.lambda_l1
+
+        return self.loss_G_GAN + self.loss_G_GAN_Feat + self.loss_G_VGG + self.loss_G_l1
 
 
 class Pix2PixHDTrainer(LearnerCallback):
@@ -869,7 +887,8 @@ class Pix2PixHDTrainer(LearnerCallback):
 
         self._set_trainable()
 
-        self.G_GAN_smter, self.G_GAN_Feat_smter, self.G_VGG_smter = (
+        self.G_GAN_smter, self.G_GAN_Feat_smter, self.G_VGG_smter, self.G_l1_smter = (
+            SmoothenValue(0.98),
             SmoothenValue(0.98),
             SmoothenValue(0.98),
             SmoothenValue(0.98),
@@ -884,6 +903,9 @@ class Pix2PixHDTrainer(LearnerCallback):
 
         if self.loss_func.vgg_loss:
             self.recorder.add_metric_names(["VGG_loss"])
+
+        if self.loss_func.l1_loss:
+            self.recorder.add_metric_names(["l1_loss"])
 
     def on_batch_begin(self, last_input, **kwargs):
         last_input[0], _, last_input[1], _ = encode_input(
@@ -900,6 +922,9 @@ class Pix2PixHDTrainer(LearnerCallback):
             )
         if self.loss_func.vgg_loss:
             self.G_VGG_smter.add_value(self.loss_func.loss_G_VGG.detach().cpu())
+
+        if self.loss_func.l1_loss:
+            self.G_l1_smter.add_value(self.loss_func.loss_G_l1.detach().cpu())
 
     def on_batch_end(self, last_input, last_output, **kwargs):
 
@@ -920,7 +945,7 @@ class Pix2PixHDTrainer(LearnerCallback):
         self.D_fake_smter.add_value(self.loss_D_fake.detach().cpu())
         self.D_real_smter.add_value(self.loss_D_real.detach().cpu())
 
-        loss_D = self.loss_D_fake + self.loss_D_real * 0.5
+        loss_D = (self.loss_D_fake + self.loss_D_real) * 0.5
 
         if self.learn.model.training == True:
             loss_D.backward()
@@ -935,5 +960,7 @@ class Pix2PixHDTrainer(LearnerCallback):
             smter_list.append(self.G_GAN_Feat_smter)
         if self.loss_func.vgg_loss:
             smter_list.append(self.G_VGG_smter)
+        if self.loss_func.l1_loss:
+            smter_list.append(self.G_l1_smter)
 
         return add_metrics(last_metrics, [s.smooth for s in smter_list])

@@ -1,11 +1,14 @@
 from ._machine_learning import MLModel, raise_data_exception
 import os
 import shutil
+import tempfile
 import random
 import json
 import pickle
 import warnings
 import math
+import shutil
+import os
 import time
 from pathlib import Path
 import traceback
@@ -72,20 +75,20 @@ class AutoML(object):
                             Can be {Explain, Perform, Compete}. This parameter defines
                             the goal of AutoML and how intensive the AutoML search will be.
 
-                            Explain : To to be used when the user wants to explain and
+                            Basic : To to be used when the user wants to explain and
                                       understand the data.
                                       Uses 75%/25% train/test split.
                                       Uses the following models: Baseline, Linear, Decision Tree,
                                       Random Forest, XGBoost, Neural Network, and Ensemble.
                                       Has full explanations in reports: learning curves, importance
                                       plots, and SHAP plots.
-                            Perform : To be used when the user wants to train a model that will be
+                            Intermediate : To be used when the user wants to train a model that will be
                                       used in real-life use cases.
                                       Uses 5-fold CV (Cross-Validation).
                                       Uses the following models: Linear, Random Forest, LightGBM,
                                       XGBoost, CatBoost, Neural Network, and Ensemble.
                                       Has learning curves and importance plots in reports.
-                            Compete : To be used for machine learning competitions (maximum performance).
+                            Advanced : To be used for machine learning competitions (maximum performance).
                                       Uses 10-fold CV (Cross-Validation).
                                       Uses the following models: Decision Tree, Random Forest, Extra Trees,
                                       XGBoost, CatBoost, Neural Network, Nearest Neighbors, Ensemble,
@@ -191,7 +194,26 @@ class AutoML(object):
                 explain_level = 2
             else:
                 explain_level = 0  # Setting explain level to 0 in case of Perform and Compete as EDA seems to be creating memory issues
+
+            # Mapping and conversion of old mode names to new
+            api_modes = ["Explain", "Perform", "Compete"]
+            tool_modes = ["Basic", "Intermediate", "Advanced"]
+            if mode in tool_modes:
+                mode = api_modes[tool_modes.index(mode)]
+            elif mode in api_modes:
+                mode = mode
+            else:
+                mode = "Explain"
+
+            try:
+                import arcpy
+
+                result_path = tempfile.mkdtemp(dir=arcpy.env.scratchFolder)
+            except:
+                result_path = tempfile.mkdtemp(dir=tempfile.gettempdir())
+
             self._model = base_AutoML(
+                results_path=result_path,
                 mode=mode,
                 algorithms=algorithms,
                 total_time_limit=total_time_limit,
@@ -316,6 +338,23 @@ class AutoML(object):
             shutil.rmtree(dest_dir)
         shutil.copytree(from_path, dest_dir)
 
+    def _copy_reports(self, src_dir, dest):
+        extensions = [".html", ".png", ".svg"]
+
+        for root, dirs, files in os.walk(src_dir):
+            for file in files:
+                for extension in extensions:
+                    if file.endswith(extension):
+                        folder_name = os.path.basename(root)
+                        src = os.path.join(root, file)
+                        dest_folder = dest
+                        if not folder_name.startswith("tmp"):
+                            dest_folder = os.path.join(dest, folder_name)
+                            if not os.path.isdir(dest_folder):
+                                os.mkdir(dest_folder)
+                        dest_folder = os.path.join(dest_folder, file)
+                        shutil.copy2(src, dest_folder)
+
     def save(self, path):
         """
         Saves the model in the path specified. Creates an Esri Model and a dlpk.
@@ -383,6 +422,15 @@ class AutoML(object):
             dest_file = os.path.join(save_model_path, os.path.basename(file))
             if os.path.isfile(abs_file_path):
                 shutil.copyfile(abs_file_path, dest_file)
+
+        # Copies reports if present
+        try:
+            self._copy_reports(result_path, save_model_path)
+            copy_success = True
+        except:
+            copy_success = False
+        if copy_success:
+            shutil.rmtree(result_path)
         # Creates dlpk
         from ._arcgis_model import _create_zip
 
@@ -600,8 +648,27 @@ class AutoML(object):
         match_field_names=None,
         prediction_type="features",
     ):
+        dataframe_complete = False
         if isinstance(input_features, FeatureLayer):
             dataframe = input_features.query().sdf
+        elif hasattr(input_features, "dataSource"):
+            dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
+                input_features,
+                distance_feature_layers,
+                rasters,
+                index_field=None,
+                is_table_obj=False,
+            )
+            dataframe_complete = True
+        elif hasattr(input_features, "value"):
+            dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
+                input_features,
+                distance_feature_layers,
+                rasters,
+                index_field=None,
+                is_table_obj=True,
+            )
+            dataframe_complete = True
         else:
             dataframe = input_features.copy()
 
@@ -614,54 +681,57 @@ class AutoML(object):
         continuous_variables = self._data._continuous_variables
 
         columns = dataframe.columns
-        feature_layer_columns = []
-        for column in columns:
-            column_name = column
-            categorical = False
-
-            if column_name in fields_needed:
-                if column_name not in continuous_variables:
-                    categorical = True
-            elif match_field_names and match_field_names.get(column_name):
-                if match_field_names.get(column_name) not in continuous_variables:
-                    categorical = True
-            else:
-                continue
-
-            feature_layer_columns.append((column_name, categorical))
-
-        raster_columns = []
-        if rasters:
-            for raster in rasters:
-                column_name = raster.name
+        if dataframe_complete:
+            processed_dataframe = dataframe
+        else:
+            feature_layer_columns = []
+            for column in columns:
+                column_name = column
                 categorical = False
+
                 if column_name in fields_needed:
                     if column_name not in continuous_variables:
                         categorical = True
                 elif match_field_names and match_field_names.get(column_name):
-                    column_name = match_field_names.get(column_name)
-                    if column_name not in continuous_variables:
+                    if match_field_names.get(column_name) not in continuous_variables:
                         categorical = True
                 else:
                     continue
 
-                raster_columns.append((raster, categorical))
+                feature_layer_columns.append((column_name, categorical))
 
-        with warnings.catch_warnings():
-            if not HAS_FASTAI:
-                _raise_fastai_import_error(import_exception=import_exception)
-            warnings.simplefilter("ignore", UserWarning)
-            (
-                processed_dataframe,
-                fields_mapping,
-            ) = TabularDataObject._prepare_dataframe_from_features(
-                input_features,
-                self._data._dependent_variable,
-                feature_layer_columns,
-                raster_columns,
-                datefield,
-                distance_feature_layers,
-            )
+            raster_columns = []
+            if rasters:
+                for raster in rasters:
+                    column_name = raster.name
+                    categorical = False
+                    if column_name in fields_needed:
+                        if column_name not in continuous_variables:
+                            categorical = True
+                    elif match_field_names and match_field_names.get(column_name):
+                        column_name = match_field_names.get(column_name)
+                        if column_name not in continuous_variables:
+                            categorical = True
+                    else:
+                        continue
+
+                    raster_columns.append((raster, categorical))
+
+            with warnings.catch_warnings():
+                if not HAS_FASTAI:
+                    _raise_fastai_import_error(import_exception=import_exception)
+                warnings.simplefilter("ignore", UserWarning)
+                (
+                    processed_dataframe,
+                    fields_mapping,
+                ) = TabularDataObject._prepare_dataframe_from_features(
+                    input_features,
+                    self._data._dependent_variable,
+                    feature_layer_columns,
+                    raster_columns,
+                    datefield,
+                    distance_feature_layers,
+                )
 
         if match_field_names:
             processed_dataframe.rename(columns=match_field_names, inplace=True)

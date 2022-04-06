@@ -16,6 +16,7 @@ HAS_PIL = True
 
 try:
     import torch
+    from torch import Tensor
     import torch.nn as nn
     import numpy as np
     from fastai.vision import ImageList
@@ -35,6 +36,7 @@ try:
         generate_anchors,
         compute_class_AP,
         AveragePrecision,
+        postprocess,
     )
     from ._yolov3_utils import (
         download_yolo_weights,
@@ -51,6 +53,7 @@ try:
     )
     from .._video_utils import VideoUtils
     from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.pascal_voc_rectangles import _reconstruct
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -66,6 +69,97 @@ try:
     import PIL
 except ImportError:
     HAS_PIL = False
+
+from typing import Tuple
+
+
+class YOLOv3Tracer(torch.nn.Module):
+    def __init__(self, model, device, chip_size):
+        super().__init__()
+        self.model = model.to(device)
+        self.model.eval()
+        self.chip_size = chip_size
+
+    def _reconstruct(self, t: Tuple[Tensor, Tensor, Tensor]):  # TODO
+        bboxes, labels, scores = t
+        if not len((labels).nonzero()) == 0:
+            i = (labels).nonzero().min()
+            bboxes, labels, scores = bboxes[i:], labels[i:], scores[i:]
+
+        return bboxes, labels, scores
+
+    def _analyze_pred(self, pred):
+        return postprocess(
+            pred, chip_size=self.chip_size[0], conf_thre=0.1, nms_thre=0.1
+        )
+
+    def _stack_bboxes(self, bboxes):
+        processed_bboxes = []
+        for bbox in bboxes:
+            bbox = (bbox + 1) / 2
+            output = torch.clone(bbox)
+            bbox[0] = output[1]
+            bbox[1] = output[0]
+            bbox[2] = output[3]
+            bbox[3] = output[2]
+            processed_bboxes.append(bbox)
+
+        out_bboxes = torch.stack([bbox for bbox in processed_bboxes])
+        return out_bboxes
+
+    def _process_bboxes(self, batch_output):
+        num_boxes = 0
+        pred_bboxes = []
+        pred_labels = []
+        pred_scores = []
+
+        batch = 0
+        for chip_idx, output in enumerate(batch_output):
+            pp_output = self._analyze_pred(pred=output)
+            if pp_output[0].numel() == 0:
+                continue
+            t = list(pp_output)
+            if len(t[0]) == 0:
+                continue
+            output_final = self._reconstruct(pp_output)
+
+            if not output_final[0] is None:
+                pred_bboxes.append(self._stack_bboxes(output_final[0]))
+                pred_labels.append(output_final[1])
+                pred_scores.append(output_final[2])
+                batch += 1
+
+        if not len(pred_bboxes) == 0:
+            pred_bboxes_final = torch.stack([bbox for bbox in pred_bboxes])
+            pred_labels_final = torch.stack([label for label in pred_labels])
+            pred_scores_final = torch.stack([score for score in pred_scores])  # TODO
+            return pred_bboxes_final, pred_labels_final, pred_scores_final
+        else:
+            dummy = torch.empty((batch, 0, 0, 0)).float()
+            return dummy, dummy, dummy
+
+    def forward(self, inp):
+        out = self.model(inp)
+        out_final = self._process_bboxes(out)
+        return out_final
+
+
+def chips_to_batch(chips, model_height, model_width, batch_size=1):
+    dtype = np.float32
+    band_count = 3
+    if len(chips) != 0:
+        dtype = chips[0].dtype
+
+    batch = np.zeros(
+        shape=(batch_size, band_count, model_height, model_width),
+        dtype=dtype,
+    )
+    for b in range(batch_size):
+        if b < len(chips):
+            batch[b, :, :model_height, :model_height] = chips[b]
+
+    return batch
+
 
 # Yolov3 model
 class YOLOv3(ArcGISModel):
@@ -285,9 +379,49 @@ class YOLOv3(ArcGISModel):
             thresh=thresh,
             nms_overlap=nms_overlap,
             alpha=alpha,
-            **kwargs
+            **kwargs,
         )
         self.learn.predicting = False  # toggling the flag here because show_results_multispectral doesn't invoke callbacks
+
+    def _predict_batch(self, images):
+        model = self.learn.model
+        model.eval()
+        model = model.to(self._device)
+        normed_batch_tensor = images.to(self._device)
+        predictions = model(normed_batch_tensor)
+        normed_batch_tensor.detach().cpu()
+        del normed_batch_tensor
+        return predictions
+
+    def _get_batched_predictions(self, chips, tytx, batch_size=1):
+        data = []
+        data_counter = 0
+        final_output = []
+        for idx in range(len(chips)):
+            chip = chips[idx]
+            frame = (
+                pil2tensor(
+                    PIL.Image.fromarray(cv2.cvtColor(chip["chip"], cv2.COLOR_BGR2RGB)),
+                    dtype=np.float32,
+                )
+                .div_(255)
+                .detach()
+                .cpu()
+                .numpy()
+            )
+            data.append(frame)
+            data_counter += 1
+            if data_counter % batch_size == 0 or idx == len(chips) - 1:
+                batch = chips_to_batch(data, tytx, tytx, batch_size)
+                predictions = self._predict_batch(torch.tensor(batch).float())
+                extra_chips = batch_size - len(data)
+                batch_output = (
+                    predictions[: (len(predictions) - extra_chips)].detach().cpu()
+                )
+                final_output.append(batch_output)
+                data = []
+                data_counter = 0
+        return torch.cat(final_output)
 
     def predict(
         self,
@@ -297,6 +431,7 @@ class YOLOv3(ArcGISModel):
         return_scores=True,
         visualize=False,
         resize=False,
+        **kwargs,
     ):
         """
         Predicts and displays the results of a trained model on a single image.
@@ -339,6 +474,16 @@ class YOLOv3(ArcGISModel):
                                 trained on).
         =====================   ===========================================
 
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        batch_size              Optional int. Batch size to be used
+                                during tiled inferencing. Deafult value 1.
+        ---------------------   -------------------------------------------
+        =====================   ===========================================
+
         :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
         """
 
@@ -371,6 +516,9 @@ class YOLOv3(ArcGISModel):
 
         height, width, _ = image.shape
 
+        batch_size = int(kwargs.get("batch_size", 1))
+        tytx = self._data.chip_size
+
         if self._data.chip_size is not None:
             chips = _get_image_chips(image, self._data.chip_size)
         else:
@@ -399,33 +547,33 @@ class YOLOv3(ArcGISModel):
         LabelList.__getitem__ = modified_getitem
 
         try:
-            for chip in chips:
-                frame = Image(
-                    pil2tensor(
-                        PIL.Image.fromarray(
-                            cv2.cvtColor(chip["chip"], cv2.COLOR_BGR2RGB)
-                        ),
-                        dtype=np.float32,
-                    ).div_(255)
+            prediction_data = self._get_batched_predictions(chips, tytx, batch_size)
+
+            class dummy:
+                pass
+
+            dummy_x = dummy()
+            dummy_x.size = [tytx, tytx]
+            for chip_idx, output in enumerate(prediction_data):
+                output = (
+                    output.detach().clone()
+                )  # required so that original output is not changed
+                pp_output = self._analyze_pred(
+                    pred=output, thresh=threshold, nms_overlap=nms_overlap
                 )
-                self.learn.predicting = True
-                bbox = self.learn.predict(
-                    frame,
-                    thresh=threshold,
-                    nms_overlap=nms_overlap,
-                    ret_scores=True,
-                    model=self,
-                )[0]
-                if bbox:
+                bbox = _reconstruct(
+                    pp_output, dummy_x, pad_idx=0, classes=self._data.classes
+                )
+                if bbox is not None:
                     scores = bbox.scores
                     bboxes, lbls = bbox._compute_boxes()
                     bboxes.add_(1).mul_(
                         torch.tensor(
                             [
-                                chip["height"] / 2,
-                                chip["width"] / 2,
-                                chip["height"] / 2,
-                                chip["width"] / 2,
+                                chips[chip_idx]["height"] / 2,
+                                chips[chip_idx]["width"] / 2,
+                                chips[chip_idx]["height"] / 2,
+                                chips[chip_idx]["width"] / 2,
                             ]
                         )
                     ).long()
@@ -434,14 +582,13 @@ class YOLOv3(ArcGISModel):
                             label = lbls[index]
                         else:
                             label = "Default"
-
                         data = bb2hw(bbox)
                         if include_pad_detections or not _exclude_detection(
                             (data[0], data[1], data[2], data[3]),
-                            chip["width"],
-                            chip["height"],
+                            chips[chip_idx]["width"],
+                            chips[chip_idx]["height"],
                         ):
-                            chip["predictions"].append(
+                            chips[chip_idx]["predictions"].append(
                                 {
                                     "xmin": data[0],
                                     "ymin": data[1],
@@ -667,6 +814,45 @@ class YOLOv3(ArcGISModel):
         else:
             return dict(zip(self._data.classes[1:], aps))
 
+    def _save_device_model(self, model, device, save_path):
+        model.eval()
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        inp = torch.rand(1, 3, chip_size[0], chip_size[1]).to(device)
+        model = YOLOv3Tracer(model, device, chip_size)
+        model = model.to(device)
+        traced_model = None
+        with torch.no_grad():
+            traced_model = self._script(model, inp)
+        torch.jit.save(traced_model, save_path)
+
+    def _save_pytorch_torchscript(self, name):
+        model = self.learn.model
+        model.eval()
+        device = self._device
+
+        cpu = torch.device("cpu")
+        save_path_cpu = (
+            self.learn.path / self.learn.model_dir / f"{name}-cpu.pt"
+        ).__str__()
+        self._save_device_model(model, cpu, save_path_cpu)
+        save_path_cpu = f"{name}-cpu.pt"
+
+        save_path_gpu = ""
+        if torch.cuda.is_available():
+            gpu = torch.device("cuda")
+            save_path_gpu = (
+                self.learn.path / self.learn.model_dir / f"{name}-gpu.pt"
+            ).__str__()
+            self._save_device_model(model, gpu, save_path_gpu)
+            save_path_gpu = f"{name}-gpu.pt"
+
+        model.to(device)
+
+        return [save_path_cpu, save_path_gpu]
+
     def _get_emd_params(self, save_inference_file):
 
         class_data = {}
@@ -815,7 +1001,7 @@ def create_coco_data():
     data.classes = list(class_mapping.values())
     data._is_empty = False
     data._is_coco = True
-    data.resize_to = 416
+    data.resize_to = None
     data.chip_size = 416
 
     return data

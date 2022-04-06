@@ -290,7 +290,7 @@ kwargs = {
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     "packages": find_packages(),
-    "python_requires": ">=3.7",
+    "python_requires": ">=3.7, <3.10",
     "include_package_data": True,
     "data_files": data_files,
     # List run-time dependencies here.  These will be installed by pip when

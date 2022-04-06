@@ -37,6 +37,9 @@ def _raster_input(raster, raster2=None):
         if isinstance(raster2, (ImageryLayer, Raster)) and isinstance(
             raster, (ImageryLayer, Raster)
         ):
+            if raster2._rendering_rule_from_item:
+                raster2._fn = None
+                raster2._fnra = None
             layer = raster2
             raster_ra = _get_raster_ra(raster2)
             if raster._datastore_raster and raster2._datastore_raster:
@@ -172,6 +175,9 @@ def _raster_input(raster, raster2=None):
         return layer, raster2, raster_ra
 
     if isinstance(raster, (ImageryLayer, Raster)):
+        if raster._rendering_rule_from_item:
+            raster._fn = None
+            raster._fnra = None
         layer = raster
         raster_ra = _get_raster_ra(raster)
         raster = _get_raster(raster)
@@ -389,6 +395,9 @@ def _get_raster_ra_rft(raster):
         if hasattr(raster, "_engine_obj"):
             raster = raster._engine_obj
     if isinstance(raster, (ImageryLayer, Raster)):
+        if raster._rendering_rule_from_item:
+            raster._fn = None
+            raster._fnra = None
         try:
             url = raster._url
             if (

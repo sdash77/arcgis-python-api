@@ -715,7 +715,7 @@ def display_row(axes, display, rgb_bands=None):
         ax.axis("off")
 
 
-def show_results(self, rows):
+def show_results(self, rows, **kwargs):
     self.learn.model.eval()
     x_batch, y_batch = get_nbatches(
         self._data.valid_dl, math.ceil(rows / self._data.batch_size)
@@ -760,6 +760,7 @@ def show_results(self, rows):
             display_row(
                 axs[r],
                 (ArcGISMSImage(x_A_B[r]), ArcGISMSImage(activ_A_B[r])),
+                kwargs.get("rgb_bands", None),
             )
         else:
             display_row(axs[r], (image2np(x_A_B[r]), image2np(activ_A_B[r])))

@@ -2064,13 +2064,13 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         if route_data_item:
             route_data_item = {"itemId": route_data_item.itemid}
-        if self._gis.version > [9, 2] or self._gis._is_agol:
-            overwrite = context.pop("overwrite", False) if context else False
-        else:
-            # Remove if in context but default to False in all cases.
-            overwrite = context.pop("overwrite", False) if context else False
-            overwrite = False
-        output_name = self._output_name_dict(output_name, overwrite)
+        # if self._gis.version > [9, 2] or self._gis._is_agol:
+        # overwrite = context.pop("overwrite", False) if context else False
+        # else:
+        ## Remove if in context but default to False in all cases.
+        # overwrite = context.pop("overwrite", False) if context else False
+        # overwrite = False
+        # output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params = {}

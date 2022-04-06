@@ -43,10 +43,7 @@ try:
     import math
     import warnings
     from fastai.distributed import *
-    from torchvision import datasets, transforms
     import argparse
-    import torch.distributed as dist
-    from fastai.torch_core import get_model
     from torch.nn.parallel import DistributedDataParallel
     from .._utils.segmentation_loss_functions import dice
     from fastai.basics import partial
@@ -54,6 +51,7 @@ try:
     from ... import __version__ as ArcGISLearnVersion
     from ._pointcnn_utils import AverageMetric
     from fastai.core import camel2snake
+    import timm
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -537,8 +535,16 @@ class ArcGISModel(object):
                 self._backbone = getattr(models, backbone)
             elif hasattr(models.detection, backbone):
                 self._backbone = getattr(models.detection, backbone)
+            elif "timm:" in backbone:
+                bckbn = backbone.split(":")[1]
+                if hasattr(timm.models, bckbn):
+                    self._backbone = getattr(timm.models, bckbn)
         else:
             self._backbone = backbone
+
+        if not hasattr(self, "_backbone"):
+            self._backbone = models.resnet34
+            logger.warning("unsupported backbone, reverting to ResNet34.")
 
         if hasattr(data, "_is_multispectral"):  # multispectral support
             self._is_multispectral = getattr(data, "_is_multispectral")
@@ -593,6 +599,8 @@ class ArcGISModel(object):
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
         backbone_name = backbone if type(backbone) is str else backbone.__name__
+        if type(backbone) is not str and "timm" in backbone.__module__:
+            backbone_name = "timm:" + backbone.__name__
         return False if backbone_name not in self.supported_backbones else True
 
     def _check_dataset_support(self, data):
@@ -1030,7 +1038,10 @@ class ArcGISModel(object):
             if self._backend == "tensorflow":
                 backbone = self._backbone._keras_api_names[-1].split(".")[-1]
             else:
-                backbone = self._backbone.__name__
+                if "timm" in self._backbone.__module__:
+                    backbone = "timm:" + self._backbone.__name__
+                else:
+                    backbone = self._backbone.__name__
             if backbone == "backbone_wrapper":
                 backbone = self._orig_backbone.__name__
 
@@ -1403,6 +1414,9 @@ class ArcGISModel(object):
                 os.makedirs(self.learn.path / self.learn.model_dir)
             name = name_or_path
 
+        script_paths = []
+        onnx_paths = []
+        tflite_paths = []
         try:
             _framework = framework.lower()
             if self._backend == "tensorflow" and _framework == "tflite":
@@ -1422,6 +1436,24 @@ class ArcGISModel(object):
                         "This pytorch model cannot be saved in tflite format"
                     )
             else:
+                if self._backend == "pytorch" and _framework == "torchscript":
+                    supported_models = [
+                        "MaskRCNN",
+                        "SingleShotDetector",
+                        "YOLOv3",
+                        "RetinaNet",
+                    ]
+                    if (type(self).__name__) in supported_models:
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore")
+                            script_paths = self._save_pytorch_torchscript(
+                                name
+                            )  # TODO: validate
+                    else:
+                        raise Exception(
+                            "This pytorch model cannot be saved in torchscript format"
+                        )
+
                 if isinstance(self.learn.model, (DistributedDataParallel)):
                     if not int(os.environ.get("RANK", 0)):
                         saved_path = self.learn.save(
@@ -1457,91 +1489,106 @@ class ArcGISModel(object):
             )
             os.remove(saved_path.with_suffix(".pth"))
 
+        # TODO: merge all
         if framework.lower() == "torchscript":
-            from ._siammask_utils import Custom
-            from ._siammask_utils import load_pretrain
-
-            siammask = Custom(anchors=self.anchors)
-            if "\\" in name_or_path or "/" in name_or_path:
-                models_path = os.path.join(name_or_path)
+            if len(script_paths) != 0:  # TODO: change_siammask
+                _script_save_params = {"GPU": script_paths[1], "CPU": script_paths[0]}
+                _emd_template["TorchScript"] = _script_save_params
             else:
-                models_path = os.path.join(self.learn.path, self.learn.model_dir, name)
-            if not os.path.exists(models_path):
-                os.makedirs(models_path)
+                from ._siammask_utils import Custom
+                from ._siammask_utils import load_pretrain
 
-            siammask = load_pretrain(siammask, os.path.join(models_path, name + ".pth"))
-            outdir = os.path.join(models_path, "torch_scripts")
-            if not os.path.isdir(outdir):
-                os.mkdir(outdir)
+                siammask = Custom(anchors=self.anchors)
+                if "\\" in name_or_path or "/" in name_or_path:
+                    models_path = os.path.join(name_or_path)
+                else:
+                    models_path = os.path.join(
+                        self.learn.path, self.learn.model_dir, name
+                    )
+                if not os.path.exists(models_path):
+                    os.makedirs(models_path)
 
-            scripted_feature_extractor = torch.jit.script(siammask.features.features)
-            scripted_feature_extractor.save(
-                os.path.join(outdir, "feature_extractor.pt")
-            )
+                siammask = load_pretrain(
+                    siammask, os.path.join(models_path, name + ".pth")
+                )
+                outdir = os.path.join(models_path, "torch_scripts")
+                if not os.path.isdir(outdir):
+                    os.mkdir(outdir)
 
-            scripted_feature_downsampler = torch.jit.script(
-                siammask.features.downsample
-            )
-            scripted_feature_downsampler.save(
-                os.path.join(outdir, "feature_downsampler.pt")
-            )
+                scripted_feature_extractor = torch.jit.script(
+                    siammask.features.features
+                )
+                scripted_feature_extractor.save(
+                    os.path.join(outdir, "feature_extractor.pt")
+                )
 
-            scripted_rpn_model = torch.jit.script(siammask.rpn_model)
-            scripted_rpn_model.save(os.path.join(outdir, "rpn_model.pt"))
+                scripted_feature_downsampler = torch.jit.script(
+                    siammask.features.downsample
+                )
+                scripted_feature_downsampler.save(
+                    os.path.join(outdir, "feature_downsampler.pt")
+                )
 
-            scripted_mask_conv_kernel = torch.jit.script(
-                siammask.mask_model.mask.conv_kernel
-            )
-            scripted_mask_conv_kernel.save(os.path.join(outdir, "mask_conv_kernel.pt"))
+                scripted_rpn_model = torch.jit.script(siammask.rpn_model)
+                scripted_rpn_model.save(os.path.join(outdir, "rpn_model.pt"))
 
-            scripted_mask_conv_search = torch.jit.script(
-                siammask.mask_model.mask.conv_search
-            )
-            scripted_mask_conv_search.save(os.path.join(outdir, "mask_conv_search.pt"))
+                scripted_mask_conv_kernel = torch.jit.script(
+                    siammask.mask_model.mask.conv_kernel
+                )
+                scripted_mask_conv_kernel.save(
+                    os.path.join(outdir, "mask_conv_kernel.pt")
+                )
 
-            scripted_mask_depthwise_conv = torch.jit.script(
-                siammask.mask_model.mask.conv2d_dw_group
-            )
-            scripted_mask_depthwise_conv.save(
-                os.path.join(outdir, "mask_depthwise_conv.pt")
-            )
+                scripted_mask_conv_search = torch.jit.script(
+                    siammask.mask_model.mask.conv_search
+                )
+                scripted_mask_conv_search.save(
+                    os.path.join(outdir, "mask_conv_search.pt")
+                )
 
-            scripted_refine_model = torch.jit.script(siammask.refine_model)
-            scripted_refine_model.save(os.path.join(outdir, "refine_model.pt"))
-            temp_emd_template = _emd_template.copy()
-            temp_emd_template["ModelFile"] = "."
-            temp_emd_template["ModelFiles"] = [
-                "feature_extractor.pt",
-                "feature_downsampler.pt",
-                "rpn_model.pt",
-                "mask_conv_kernel.pt",
-                "mask_conv_search.pt",
-                "mask_depthwise_conv.pt",
-                "refine_model.pt",
-            ]
+                scripted_mask_depthwise_conv = torch.jit.script(
+                    siammask.mask_model.mask.conv2d_dw_group
+                )
+                scripted_mask_depthwise_conv.save(
+                    os.path.join(outdir, "mask_depthwise_conv.pt")
+                )
 
-            if os.path.exists(os.path.join(outdir, name + ".emd")):
-                os.remove(os.path.join(outdir, name + ".emd"))
+                scripted_refine_model = torch.jit.script(siammask.refine_model)
+                scripted_refine_model.save(os.path.join(outdir, "refine_model.pt"))
+                temp_emd_template = _emd_template.copy()
+                temp_emd_template["ModelFile"] = "."
+                temp_emd_template["ModelFiles"] = [
+                    "feature_extractor.pt",
+                    "feature_downsampler.pt",
+                    "rpn_model.pt",
+                    "mask_conv_kernel.pt",
+                    "mask_conv_search.pt",
+                    "mask_depthwise_conv.pt",
+                    "refine_model.pt",
+                ]
 
-            import zipfile
+                if os.path.exists(os.path.join(outdir, name + ".emd")):
+                    os.remove(os.path.join(outdir, name + ".emd"))
 
-            dlpk_Name = os.path.join(outdir, name + ".dlpk")
-            if os.path.exists(dlpk_Name):
-                os.remove(dlpk_Name)
+                import zipfile
 
-            out_file = open(os.path.join(outdir, name + ".emd"), "w")
-            json.dump(temp_emd_template, out_file, indent=4)
-            out_file.close()
-            dlpk_Name = os.path.join(outdir, name + ".dlpk")
-            f = zipfile.ZipFile(dlpk_Name, "w")
-            cwd = os.getcwd()
-            os.chdir(outdir)
-            for files in temp_emd_template["ModelFiles"]:
-                f.write(files)
+                dlpk_Name = os.path.join(outdir, name + ".dlpk")
+                if os.path.exists(dlpk_Name):
+                    os.remove(dlpk_Name)
 
-            f.write(name + ".emd")
-            f.close()
-            os.chdir(cwd)
+                out_file = open(os.path.join(outdir, name + ".emd"), "w")
+                json.dump(temp_emd_template, out_file, indent=4)
+                out_file.close()
+                dlpk_Name = os.path.join(outdir, name + ".dlpk")
+                f = zipfile.ZipFile(dlpk_Name, "w")
+                cwd = os.getcwd()
+                os.chdir(outdir)
+                for files in temp_emd_template["ModelFiles"]:
+                    f.write(files)
+
+                f.write(name + ".emd")
+                f.close()
+                os.chdir(cwd)
 
         if _emd_template.get("InferenceFunction", False):
             if (
@@ -1693,6 +1740,19 @@ class ArcGISModel(object):
         with tf.io.gfile.GFile(saved_path, "wb") as f:
             f.write(tflite_model)
         return saved_path
+
+    def _script(self, model, inp):
+        scripted_model = torch.jit.script(model, inp)
+        scripted_model.eval()
+        return scripted_model
+
+    def _trace(self, model, inp, check_trace=False):
+        traced_model = torch.jit.trace(model, inp, check_trace=check_trace)
+        traced_model.eval()
+        return traced_model
+
+    def _save_pytorch_torchscript(self, name):
+        pass
 
     def _get_post_processed_model(self, input_normalization=True):
         return get_post_processed_model(self, input_normalization=input_normalization)
@@ -1891,11 +1951,12 @@ class ArcGISModel(object):
                                 supported by ``SingleShotDetector``,
                                 ``FeatureClassifier`` and ``RetinaNet``.
                                 ``torchscript`` format is supported by
-                                ``SiamMask``.
-                                For usage of SiamMask model in ArcGIS Pro 2.8,
+                                ``SiamMask``, ``MaskRCNN``, ``SingleShotDetector``,
+                                ``YOLOv3`` and ``RetinaNet``.
+                                For usage of SiamMask model in ArcGIS Pro >= 2.8,
                                 load the ``PyTorch`` framework saved model
                                 and export it with ``torchscript`` framework
-                                using ArcGIS API for Python v1.8.5.
+                                using ArcGIS API for Python >= v1.8.5.
                                 For usage of SiamMask model in ArcGIS Pro 2.9,
                                 set framework to ``torchscript`` and use the
                                 model files additionally generated inside

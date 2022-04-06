@@ -21,17 +21,10 @@ from torchvision.models.detection.roi_heads import (
     maskrcnn_loss,
     maskrcnn_inference,
 )
-from torchvision.models.detection import _utils as det_utils
-import torchvision
 
 import torch.nn.functional as F
-from torch import nn, Tensor
-
-from torchvision.ops import boxes as box_ops
-from torchvision.ops import misc as misc_nn_ops
-
-from torchvision.ops import roi_align
-from torch.jit.annotations import Optional, List, Dict, Tuple
+from torch import nn
+from torch.jit.annotations import List, Dict
 
 
 def create_pointrend(model, num_class):
@@ -53,8 +46,10 @@ def create_pointrend(model, num_class):
     # change mask head to pointrend mask head
 
     y["mask_roi_pool"] = MaskRoIPoolHead(num_class)
-    y["mask_head"] = CoarseMaskHead(num_class, 256)
-    y["mask_predictor"] = PointRendHeads(num_class)
+    y["mask_head"] = CoarseMaskHead(num_class, model.backbone.out_channels)
+    y["mask_predictor"] = PointRendHeads(
+        num_class, in_channel=model.backbone.out_channels
+    )
 
     model.roi_heads = PointRendROIHeads(**y)
 
@@ -336,7 +331,7 @@ class CoarseMaskHead(nn.Module):
 
 class PointRendHeads(torch.nn.Module):
     # This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
-    def __init__(self, num_class):
+    def __init__(self, num_class, **kwargs):
 
         super().__init__()
         self._feature_scales = {
@@ -352,10 +347,11 @@ class PointRendHeads(torch.nn.Module):
         # next two parameters are use in the adaptive subdivions inference procedure
         self.mask_point_subdivision_steps = 5
         self.mask_point_subdivision_num_points = 28 * 28
+        in_channel = int(kwargs.get("in_channel", 256))
 
-        in_channels = np.sum([256 for f in self.mask_point_in_features])
+        in_channels = np.sum([in_channel for f in self.mask_point_in_features])
         self.mask_point_head = StandardPointHead(
-            num_class, in_channels, coarse_pred_each_layer=True
+            num_class, in_channels, coarse_pred_each_layer=True, fc_dim=in_channel
         )
 
     def forward(self, features, mask_coarse_logits, instances):
