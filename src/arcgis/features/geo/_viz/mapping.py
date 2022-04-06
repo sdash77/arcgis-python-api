@@ -38,14 +38,14 @@ RENDERER_TYPES = {
 
 def plot(
     df,
-    map_widget:Optional[Union[arcgis.mapping.WebMap, MapView]]=None,
-    name:Optional[str]=None,
-    renderer_type:Optional[str]=None,
-    symbol_type:Optional[str]=None,
-    symbol_style:Optional[str]=None,
-    col:Optional[Union[str, list]]=None,
-    colors:Optional[str]="jet",
-    alpha:float=1,
+    map_widget: Optional[Union[arcgis.mapping.WebMap, MapView]] = None,
+    name: Optional[str] = None,
+    renderer_type: Optional[str] = None,
+    symbol_type: Optional[str] = None,
+    symbol_style: Optional[str] = None,
+    col: Optional[Union[str, list]] = None,
+    colors: Optional[str] = "jet",
+    alpha: float = 1,
     **kwargs,
 ):
     """
@@ -64,7 +64,7 @@ def plot(
     map_widget              Optional WebMap object. This is the map to display the
                             data on.
     ----------------------  ---------------------------------------------------------
-    name                    Optional string. The name to assign as a title of the map widget. 
+    name                    Optional string. The name to assign as a title of the map widget.
     ----------------------  ---------------------------------------------------------
     renderer_type           Optional string.  Determines the type of renderer to use
                             for the provided dataset. The default is 's' which is for
