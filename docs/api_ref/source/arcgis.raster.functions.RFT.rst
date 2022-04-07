@@ -8,16 +8,29 @@ arcgis.raster.functions.RFT
     that were marked as public by the author of the RFT. (This is supported only in 
     jupyter notebook and IPython environment.)
 
-    If any of the input values need to be given or overriden, the values maybe specified 
+    If any of the input values need to be given or overridden, the values maybe specified 
     as inputs directly to the RFT object. RFT objects can only be called using keyword 
     arguments. On calling the RFT object with the necessary input variables, it creates 
     an output Imagery Layer with function chain applied on it.
 
     .. note::
-        Make sure that Raster rendering service is turned turned on, inorder to display the 
+        Make sure that Raster rendering service is turned on, inorder to display the 
         output dynamically. 
 
         Also, set the desired extent on the output Imagery Layer before viewing it
+
+    .. note:: Sharing Raster Utilities
+        To use RFT module using non admin accounts, the Raster Utilities Utility Service has to
+        be shared by the owner of the utility to all users.
+
+        1) Log in to ArcGIS Server Manager with an administrator account
+
+        2) In the Services page, click the Utilities folder to view the utility services for the server
+
+        3) Locate RasterUtilities Utility Service:
+             a) Click the Sharing Properties icon
+             b) In the Sharing Properties panel, select ArcGIS Enterprise.
+             c) Click Save.
 
     .. code-block:: python
 

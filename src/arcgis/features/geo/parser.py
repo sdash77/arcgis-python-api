@@ -3,6 +3,7 @@ from arcgis.geometry import Geometry
 import numpy as np
 from pandas.api.types import is_list_like
 
+
 def to_geo(values):
     """Convert values to GeoArray
 
@@ -22,11 +23,11 @@ def to_geo(values):
 
     Or dictionaries
     >>> to_geo([{"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}}])
-    <IPArray(['{"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}}'])>
+    <GeoArray(['{"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}}'])>
 
     Or Geometry Objects
     >>> to_geo([Geometry({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})])
-    <IPArray(['{"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}}'])>
+    <GeoArray(['{"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}}'])>
     """
     from ._array import GeoArray
 
@@ -41,7 +42,6 @@ def _to_geo_array(values):
 
     if isinstance(values, GeoArray):
         return values.data
-    if not (isinstance(values, np.ndarray) and
-            values.dtype == GeoType._record_type):
+    if not (isinstance(values, np.ndarray) and values.dtype == GeoType._record_type):
         values = [Geometry(v) for v in values]
     return np.asarray(values, dtype=GeoType._record_type)

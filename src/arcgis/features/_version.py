@@ -1,8 +1,13 @@
+from __future__ import annotations
 import os
+import time
+from typing import Any, Optional, Union
 import uuid
+from arcgis.features.feature import FeatureSet
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features import FeatureLayerCollection, FeatureLayer
+
 
 class VersionManager(object):
     """
@@ -25,48 +30,52 @@ class VersionManager(object):
     ===============     ====================================================================
 
     """
+
     _con = None
     _flc = None
     _gis = None
     _json = None
     _versions = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def __init__(self, url, gis, flc=None):
         """init"""
         if isinstance(gis, GIS):
             self._gis = gis
         else:
-            raise ValueError('gis must be of type GIS')
+            raise ValueError("gis must be of type GIS")
         self._con = self._gis._portal.con
         self._url = url
         if isinstance(flc, FeatureLayer):
             self._flc = flc.container
-        elif flc is None or \
-           isinstance(flc, FeatureLayerCollection) == False:
+        elif flc is None or isinstance(flc, FeatureLayerCollection) == False:
             furl = os.path.dirname(url) + "/FeatureServer"
-            self._flc = FeatureLayerCollection(url=furl,
-                                               gis=self._gis)
+            self._flc = FeatureLayerCollection(url=furl, gis=self._gis)
         else:
             self._flc = flc
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<VersionManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the service properties"""
         if self._properties is None:
-            res = self._con.get(self._url, {'f':'json'})
+            res = self._con.get(self._url, {"f": "json"})
             self._properties = PropertyMap(res)
         return self._properties
-    #----------------------------------------------------------------------
-    def create(self, name,
-               permission='public',
-               description=""):
+
+    # ----------------------------------------------------------------------
+    def create(
+        self, name: str, permission: str = "public", description: str = ""
+    ) -> dict:
         """
         Create the named version off of DEFAULT. The version is associated
         with the specified feature service. During creation, the description
@@ -80,30 +89,31 @@ class VersionManager(object):
         permission          Optional String. The access permissions of the new version. The
                             default access permission is public.
 
-                            Values: private, public, protected, or hidden
+                            Values: "private" | "public" | "protected" | "hidden"
         ---------------     --------------------------------------------------------------------
         description         Optional String. The description of the new version
         ===============     ====================================================================
 
 
-        :return: Boolean
+        :return: Dictionary with Version Information
 
         """
         params = {
-            'f' : 'json',
-            'versionName' : name,
-            'description' : description,
-            'accessPermission' : permission
+            "f": "json",
+            "versionName": name,
+            "description": description,
+            "accessPermission": permission,
         }
         url = self._url + "/create"
         res = self._con.post(url, params)
         self._versions = None
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res
         else:
             return res
-    #----------------------------------------------------------------------
-    def purge(self, version, owner):
+
+    # ----------------------------------------------------------------------
+    def purge(self, version: str, owner: Optional[str] = None):
         """
         Removes a lock from a version
 
@@ -113,54 +123,58 @@ class VersionManager(object):
         ---------------     --------------------------------------------------------------------
         version             Required String. The name of the version that is locked.
         ---------------     --------------------------------------------------------------------
-        owner               Required String. The owner of the lock.
+        owner               Required String. The owner of the lock. (Deprecated)
         ===============     ====================================================================
 
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
+        if isinstance(version, Version):
+            version = version.properties.versionName
         url = "%s/purgeLock" % self._url
-        params = {
-            'f': 'json',
-            'version' : version,
-            'lockOwner' : owner
-        }
+        params = {"f": "json", "versionName": version}
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def locks(self):
         """
-        For the specified feature service, return the locks for the
-        administrator or the owner of the versions that have locks.
+        For the specified feature service, return the versions which are locked.
+
+        :return: List of locked versions
+
         """
-        params = {'f' : 'json'}
-        url = "%s/lockInfos" % self._url
-        return self._con.post(url, params)['lockInfos']
-    #----------------------------------------------------------------------
+        try:
+            return [v for v in self.all if v.properties.isLocked]
+        except:
+            return []
+        return []
+
+    # ----------------------------------------------------------------------
     @property
     def all(self):
         """returns all visible versions on a service"""
-        if self._versions is None or \
-           len(self._versions) == 0:
+        if self._versions is None or len(self._versions) == 0:
             url = "%s/versions" % self._url
-            params = {'f':'json'}
+            params = {"f": "json"}
             res = self._con.get(url, params)
             self._versions = []
-            if 'versions' in res:
-                for v in res['versions']:
-                    guid = v['versionGuid'][1:-1]
+            if "versions" in res:
+                for v in res["versions"]:
+                    guid = v["versionGuid"][1:-1]
                     vurl = "%s/versions/%s" % (self._url, guid)
-                    self._versions.append(Version(url=vurl,
-                                                  flc=self._flc,
-                                                  gis=self._gis))
+                    self._versions.append(
+                        Version(url=vurl, flc=self._flc, gis=self._gis)
+                    )
             return self._versions
         return self._versions
-    #----------------------------------------------------------------------
-    def search(self, owner=None, show_hidden=False):
+
+    # ----------------------------------------------------------------------
+    def search(self, owner: Optional[str] = None, show_hidden: bool = False):
         """
         For the specified feature service, return the info of all versions
         that the client has access to. If the client is the service owner
@@ -176,18 +190,15 @@ class VersionManager(object):
                             returned.
         ===============     ====================================================================
 
-        :return: dict
+        :return: Dictionary indication 'success' or 'error'
 
         """
         url = "%s/versionInfos" % self._url
-        params = {
-            'ownerFilter' : owner,
-            'includeHidden' : show_hidden,
-            'f' : 'json'
-        }
+        params = {"ownerFilter": owner, "includeHidden": show_hidden, "f": "json"}
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
-    def get(self, version, mode=None):
+
+    # ----------------------------------------------------------------------
+    def get(self, version: str, mode: Optional[str] = None):
         """
         Finds and Locations a Version by it's name
 
@@ -202,18 +213,20 @@ class VersionManager(object):
 
                             Values:
 
-                                - edit - starts editting mode
+                                - edit - starts editing mode
                                 - read - starts reading mode
                                 - None - no mode is started.  This is default.
         ===============     ====================================================================
 
-
         """
-        for v in self.versions:
-            if version.lower() == v.properties['versionName'].lower():
-                v.mode = mode
+        for v in self.all:
+            if version.lower() == v.properties["versionName"].lower():
+                if mode:
+                    v.mode = mode
                 return v
         return
+
+
 ########################################################################
 class Version(object):
     """
@@ -244,6 +257,7 @@ class Version(object):
     ===============     ====================================================================
 
     """
+
     _flc = None
     _gis = None
     _url = None
@@ -251,97 +265,164 @@ class Version(object):
     _mode = None
     _save = None
     _properties = None
-    #----------------------------------------------------------------------
-    def __init__(self,
-                 url,
-                 flc,
-                 gis=None,
-                 session_guid=None,
-                 mode=None):
+    _validation = None
+    # ----------------------------------------------------------------------
+
+    def __init__(self, url, flc, gis=None, session_guid=None, mode=None):
         """Constructor"""
-        self._mode = mode
+        if mode:
+            self.mode = mode
         self._url = url
         self._save = False
         if gis is None:
             from arcgis import env
+
             self._gis = env.active_gis
         self._gis = gis
         self._con = self._gis._portal.con
         if session_guid is None:
-            self._guid = "{%s-%s-%s-%s-%s}" % (uuid.uuid4().hex[:8],
-                                               uuid.uuid4().hex[:4],
-                                               uuid.uuid4().hex[:4],
-                                               uuid.uuid4().hex[:4],
-                                               uuid.uuid4().hex[:12])
+            self._guid = "{%s-%s-%s-%s-%s}" % (
+                uuid.uuid4().hex[:8],
+                uuid.uuid4().hex[:4],
+                uuid.uuid4().hex[:4],
+                uuid.uuid4().hex[:4],
+                uuid.uuid4().hex[:12],
+            )
         else:
             self._guid = session_guid
         self._flc = flc
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
-    def _parcel_fabric(self):
+    def validation(self):
+        """
+        Provides access to a validation manager.
+
+        :return: :class:`~arcgis.features.ValidationManager`
+        """
+        if self._validation is None:
+            from arcgis.mapping import MapImageLayer
+
+            ms = MapImageLayer(
+                url=os.path.dirname(self._flc.url) + "/MapServer", gis=self._gis
+            )
+            if "validationserver" in ms.properties.supportedExtensions.lower():
+                from arcgis.features._validation import ValidationManager
+
+                url = os.path.dirname(self._flc.url) + "/ValidationServer"
+                self._validation = ValidationManager(
+                    url=url, version=self, gis=self._gis
+                )
+        return self._validation
+
+    # ----------------------------------------------------------------------
+    @property
+    def parcel_fabric(self):
         """
         Provides access to a parcel fabric manager
 
-        :returns: ParcelFabricManager
+        :return: :class:`~arcgis.features.ParcelFabricManager`
         """
-        if "controllerDatasetLayers" in self._flc.properties and \
-           "parcelLayerId" in self._flc.properties.controllerDatasetLayers:
+        if (
+            "controllerDatasetLayers" in self._flc.properties
+            and "parcelLayerId" in self._flc.properties.controllerDatasetLayers
+        ):
             from arcgis.features._parcel import ParcelFabricManager
+
             url = os.path.dirname(self._flc.url) + "/ParcelFabricServer"
-            return ParcelFabricManager(url=url, gis=self._gis,
-                                       version=self, flc=self._flc)
+            return ParcelFabricManager(
+                url=url, gis=self._gis, version=self, flc=self._flc
+            )
         return
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def utility(self):
         """provides access to the utility service manager"""
 
-        if "controllerDatasetLayers" in self._flc.properties and \
-           "utilityNetworkLayerId" in self._flc.properties.controllerDatasetLayers:
+        if (
+            "controllerDatasetLayers" in self._flc.properties
+            and "utilityNetworkLayerId" in self._flc.properties.controllerDatasetLayers
+        ):
             from arcgis.features._utility import UtilityNetworkManager
+
             url = "%s/UtilityNetworkServer" % os.path.dirname(self._flc.url)
-            return UtilityNetworkManager(url=url,
-                                         version=self)
+            return UtilityNetworkManager(url=url, version=self)
         return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return "<Version {name} @ {guid}>".format(name=self.properties.versionName,
-                                                  guid=self.properties.versionGuid)
-    #----------------------------------------------------------------------
+        return "<Version {name} @ {guid}>".format(
+            name=self.properties.versionName, guid=self.properties.versionGuid
+        )
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the service properties"""
         if self._properties is None:
-            res = self._con.get(self._url, {'f':'json'})
+            res = self._con.get(self._url, {"f": "json"})
             self._properties = PropertyMap(res)
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def layers(self):
         """returns the layers in the FeatureLayerCollection"""
         return self._flc.layers
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
+    @property
+    def tables(self):
+        """returns the tables in the FeatureLayerCollection"""
+        return self._flc.tables
+
+    # ----------------------------------------------------------------------
     @property
     def mode(self):
         """
         The `mode` allows versoin editors to start and stop edit, read, or
         view mode.
 
-        Allowed Values:
-
-            + edit - calls the `start_editing` method and creates a lock
-            + read - calls the `start_reading` method and creates a lock
-            + None - terminates all sessions and lets a user view the version information (default)
-
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+                                Values:
+                                + edit - calls the `start_editing` method and creates a lock
+                                + read - calls the `start_reading` method and creates a lock
+                                + None - terminates all sessions and lets a user view the version information (default)
+        ==================      ====================================================================
 
         """
+        if (
+            "isBeingEdited" in self.properties
+            and self.properties.isBeingEdited
+            and "isBeingRead" in self.properties
+            and self.properties.isBeingRead
+        ):
+            self._mode = "edit"
+            return "edit"
+        elif (
+            "isBeingEdited" in self.properties
+            and self.properties.isBeingEdited == False
+            and "isBeingRead" in self.properties
+            and self.properties.isBeingRead
+        ):
+            self._mode = "read"
+            return "read"
+        else:
+            self._mode = None
+            return None
         return self._mode
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @mode.setter
-    def mode(self, value):
+    def mode(self, value: Optional[str]):
         """
         The `mode` allows versoin editors to start and stop edit, read, or
         view mode.
@@ -354,51 +435,83 @@ class Version(object):
 
 
         """
-        if value != self._mode:
-            if str(value).lower() == 'edit':
-                if self._mode == 'read':
+        # edit means reading is started and edit is started
+        # read means reading is start edit is stopped
+        # None means reading is stopped and edit is stopped.
+        value = str(value).lower()
+        if value != str(self.mode).lower():
+            if value == "edit":
+                if (
+                    "isBeingRead" in self.properties
+                    and self.properties.isBeingRead == False
+                ):
+                    self._mode = None
+                    self.start_reading()
+                    self._properties = None
+                if self.start_editing():
+                    self._mode = "edit"
+            elif value == "read":
+                if "isBeingEdited" in self.properties and self.properties.isBeingEdited:
+                    self.stop_editing(save=self.save_edits)
+                    self._properties = None
+                if self.start_reading():
+                    self._mode = value
+            elif value in [None, "none"]:
+                if "isBeingEdited" in self.properties and self.properties.isBeingEdited:
+                    self.stop_editing(save=self.save_edits)
+                    self._properties = None
+                if "isBeingRead" in self.properties and self.properties.isBeingRead:
+                    self._properties = None
                     self.stop_reading()
-                self._mode = 'edit'
-                self.start_editing()
-            elif str(value).lower() == 'read':
-                if self._mode == "edit":
-                    self.stop_editing(save=False)
-                    self._mode = "read"
-            elif value is None:
-                if self._mode == 'edit':
-                    self.stop_editing(save=False)
-                elif self._mode == 'read':
+                    self._properties = None
                     self.stop_reading()
-    #----------------------------------------------------------------------
+                    self._properties = None
+                self._mode = None
+            self._properties = None
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Deletes the current version
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
-        url = "%s/delete" % os.path.dirname(self._url)
+        url = "%s/delete" % os.path.dirname(os.path.dirname(self._url))
         params = {
-            'f' : 'json',
-            'versionName' : self.properties.versionName,
-            'sessionID' : self._guid
+            "f": "json",
+            "versionName": self.properties.versionName,
+            "sessionId": self._guid,
         }
-        res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        try:
+            res = self._con.post(url, params)
+        except:
+            params.pop("sessionId")
+            res = self._con.post(url, params)
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def save_edits(self):
         """
         Get/Set the Property to Save the Changes.
 
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required bool.
+                                Values: True | False
+        ==================      ====================================================================
+
         When set to true, any edits performed on the version will be saved.
         """
         return self._save
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @save_edits.setter
-    def save_edits(self, value):
+    def save_edits(self, value: Optional[bool]):
         """
         Get/Set the Property to Save the Changes.
 
@@ -406,25 +519,38 @@ class Version(object):
         """
         if value != self._save:
             self._save = value
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def start_editing(self):
         """
         Starts an edit session for the current user.
 
-        :returns: boolean
+        :return: Boolean. True if successful else False.
         """
-        if self._mode is None:
-            self._mode = 'edit'
-            params = {
-            'f' : 'json',
-            'sessionID' : self._guid
-            }
+        if (
+            "isBeingEdited" in self.properties
+            and self.properties.isBeingEdited == False
+        ):
+            self._properties = None
+            params = {"f": "json", "sessionId": self._guid}
+            self.start_reading()
             url = "%s/startEditing" % self._url
             res = self._con.post(url, params)
-            return res['success']
-        return False
-    #----------------------------------------------------------------------
-    def stop_editing(self, save=None):
+            if res["success"]:
+                self._mode = "edit"
+                self._properties = None
+            self._properties = None
+            return res["success"]
+        elif "isBeingEdited" in self.properties and self.properties.isBeingEdited:
+            raise Exception(
+                "Version already in edit mode. Only one user can be "
+                "editing a branch version."
+            )
+        else:
+            return False
+
+    # ----------------------------------------------------------------------
+    def stop_editing(self, save: Optional[bool] = None):
         """
         Starts an edit session for the current user.
 
@@ -436,62 +562,72 @@ class Version(object):
         ===============     ====================================================================
 
 
-        :returns: boolean
+        :return: Boolean. True if successful else False.
 
         """
-        if self._mode == 'edit':
+        self._properties = None
+        if "isBeingEdited" in self.properties and self.properties.isBeingEdited:
             self._mode = None
             if save is None:
                 save = self.save_edits
-            params = {
-            'f' : 'json',
-            'sessionID' : self._guid,
-            'saveEdits': save
-            }
+            params = {"f": "json", "sessionId": self._guid, "saveEdits": save}
             url = "%s/stopEditing" % self._url
             res = self._con.post(url, params)
-            return res['success']
+            if res["success"]:
+                self._mode = "read"
+            self._properties = None
+            return res["success"]
+        elif (
+            "isBeingEdited" in self.properties
+            and self.properties.isBeingEdited == False
+        ):
+            return True
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def start_reading(self):
         """
         Start reading represents a long-term service session. When `start_reading`
         is enabled, it will prevent other users from editing or reconciling the
         version.
 
-        :returns: Boolean
+        :return: Boolean. True if successful else False.
 
         """
-        if self._mode is None:
-            self._mode = 'read'
-            params = {
-            'f' : 'json',
-            'sessionID' : self._guid
-            }
-            url = "%s/startReading" % self._url
-            res = self._con.post(url, params)
-            return res['success']
-        return False
-    #----------------------------------------------------------------------
+        self._properties = None
+        params = {"f": "json", "sessionId": self._guid}
+        url = "%s/startReading" % self._url
+        res = self._con.post(url, params)
+        if res["success"]:
+            self._mode = "read"
+            self._properties = None
+            return res["success"]
+        else:
+            return False
+
+    # ----------------------------------------------------------------------
     def stop_reading(self):
         """
         Stops and releases a reading session.
 
-        :returns: Boolean
+        :return: Boolean. True if successful else False.
 
         """
-        if self._mode == 'read':
+        self._properties = None
+        params = {"f": "json", "sessionId": self._guid}
+        url = "%s/stopReading" % self._url
+        res = self._con.post(url, params)
+        if res["success"]:
             self._mode = None
-            params = {
-            'f' : 'json',
-            'sessionID' : self._guid
-            }
-            url = "%s/stopReading" % self._url
-            res = self._con.post(url, params)
-            return res['success']
-        return False
-    #----------------------------------------------------------------------
-    def delete_forward_edits(self, moment):
+            self._properties = None
+            return res["success"]
+        elif self.properties.isBeingRead == False:
+            return True
+        else:
+            return False
+
+    # ----------------------------------------------------------------------
+    def delete_forward_edits(self, moment: str):
         """
         If the input moment does not match a specific moment (a moment
         corresponding to an edit operation), the call will return an error.
@@ -510,23 +646,24 @@ class Version(object):
                             all forward moments will be trimmed.
         ===============     ====================================================================
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/deleteForwardEdits" % self._url
-        params = {
-            'f' : "json",
-            'sessionID' : self._guid,
-            'moment' : moment
-        }
+        params = {"f": "json", "sessionId": self._guid, "moment": moment}
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
-    def reconcile(self,
-                  end_with_conflict=False,
-                  with_post=False):
+
+    # ----------------------------------------------------------------------
+    def reconcile(
+        self,
+        end_with_conflict: bool = False,
+        with_post: bool = False,
+        conflict_detection: str = "byObject",
+        future: bool = False,
+    ):
         """
         Reconcile a version against the DEFAULT version. The reconcile
         operation requires that you are the only user currently editing the
@@ -546,25 +683,104 @@ class Version(object):
         ------------------     --------------------------------------------------------------------
         with_post              Optional Boolean. If True the with_post causes a post of the current
                                version following the reconcile.
+        ------------------     --------------------------------------------------------------------
+        conflict_detection     Optional String. Specify whether the conditions required for
+                               conflicts to occur are defined by object (row) or attribute (column).
+
+                               The default is `byObject`.
+
+                               .. note::
+                                   This parameter was introduced at ArcGIS Enterprise 10.9
+
+                               Values: `byObject` | `byAttribute`
+
+        ------------------     --------------------------------------------------------------------
+        future                 Optional boolean. If `True`, the request is processed as an asynchronous
+                               job and a URL is returned that points a location displaying the status
+                               of the job.
+
+                               .. note::
+                                   This parameter was introduced at ArcGIS Enterprise 10.9.1
+
+                               The default is `False`.
         ==================     ====================================================================
 
+        :returns: Boolean
+
         """
-        if self._mode == 'edit':
+        if self._mode == "edit":
             params = {
-               'f' : 'json',
-               'abortIfConflict' : end_with_conflict,
-               'withPost' : with_post
+                "f": "json",
+                "sessionId": self._guid,
+                "abortIfConflicts": end_with_conflict,
+                "withPost": with_post,
+                "conflictDetection": conflict_detection,
+                "async": future,
             }
             url = "%s/reconcile" % self._url
-            res = self._con.post(url, params)
-            return res['success']
-        return False
-    #----------------------------------------------------------------------
-    def alter(self,
-              owner=None,
-              version=None,
-              description=None,
-              permission=None):
+            if future:
+                res = self._con.post(path=url, postdata=params)
+                f = self._run_async(
+                    self._status_via_url,
+                    con=self._con,
+                    url=res["statusUrl"],
+                    params={"f": "json"},
+                )
+                return f
+            else:
+                res = self._con.post(url, params)
+                if "success" in res:
+                    return res
+                return res
+
+    # ----------------------------------------------------------------------
+    def restore(self, rows: list[dict[str, Any]]):
+        """
+        The `restore` method allows users to restore rows from a common
+        ancestor version.  This method is intended to be used when a
+        `DeleteUpdate` conflicts are identified during the last reconcile.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        rows                   Required List.  An array of the rows to be restored
+
+                               **Syntax**
+
+                               [
+
+                                    {
+
+                                       "layerId": <layerId>,
+                                       "objectIds":[<objectId>]
+
+                                    }
+                               ]
+
+
+
+        ==================     ====================================================================
+
+        :return: Boolean and String. Bool: True if successful else False. String: the moment
+
+        """
+        url = "%s/restoreRows" % self._url
+        params = {"f": "json", "sessionId": self._guid, "rows": rows}
+
+        res = self._con.post(url, params)
+
+        if "success" in res:
+            return res["success"], res.get("moment", "")
+        return res
+
+    # ----------------------------------------------------------------------
+    def alter(
+        self,
+        owner: Optional[str] = None,
+        version: Optional[str] = None,
+        description: Optional[str] = None,
+        permission: Optional[str] = None,
+    ):
         """
         The ```alter``` operation changes the geodatabase version's name,
         description, and access permissions.
@@ -584,31 +800,35 @@ class Version(object):
         ===============     ====================================================================
 
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/alter" % self._url
-        params = {
-            'f' : 'json'
-        }
-        if owner or\
-           version or\
-           description or\
-           permission:
+        params = {"f": "json"}
+        if owner or version or description or permission:
             if owner:
-                params['ownerName'] = owner
+                params["ownerName"] = owner
             if version:
-                params['versionName'] = version
+                params["versionName"] = version
             if description:
-                params['description'] = description
+                params["description"] = description
             if permission:
-                params['accessPermission'] = permission
-            res  = self._con.post(url, params)
+                params["accessPermission"] = permission
+            res = self._con.post(url, params)
             self._properties = None
-            return res['success']
+            return res["success"]
         return False
-    #----------------------------------------------------------------------
-    def differences(self, result_type):
+
+    # ----------------------------------------------------------------------
+    def differences(
+        self,
+        result_type="objectIds",
+        moment=None,
+        from_moment=None,
+        layers=None,
+        future=False,
+    ):
+
         """
         The ```differences``` operation allows you to view differences between
         the current version and the default version. The two versions can
@@ -621,17 +841,79 @@ class Version(object):
         Both differences and conflicts will be returned. It is the clients
         responsibility to determine which are differences, and which are conflicts.
 
-        :returns: dict
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        result_type         Required String.  Determines the type of results to return.
+                            The default result type is `objectIds`.
+
+                            Values : `objectIds` or `features`
+        ---------------     --------------------------------------------------------------------
+        moment              Required String. Moment used to compare current version with
+                            default.
+        ---------------     --------------------------------------------------------------------
+        from_moment         Optional string. Time epoch value in milliseconds specifying the
+                            time from which to obtain the differences between this value
+                            and the specific `moment` argument.
+        ---------------     --------------------------------------------------------------------
+        layers              Optional list. The layer id values for which differences should
+                            be returned. If not specified, the differences for all layers will
+                            be returned.
+        ---------------     --------------------------------------------------------------------
+        future              Optional boolean. If `True`, the method runs as an asynchronous
+                            job returning a _URL_ value to inspect the status of the job. The
+                            default value is `False`.
+        ===============     ====================================================================
+
+
+        :return:
+            Dictionary with a `differences` key indicating the various `inserts`, `updates`,
+            or `deletes` for each layer.
 
         """
         url = "%s/differences" % self._url
+        if from_moment:
+            if not "DEFAULT" in self.properties.versionName:
+                raise (
+                    "The from_moment parameter is only available for the DEFAULT version."
+                )
+        import json
+
         params = {
-            "f" : "json",
-            "sessionID" : self._guid,
-            "resultType" : result_type
+            "f": "json",
+            "sessionId": self._guid,
+            "resultType": result_type,
+            "fromMoment": from_moment,
+            "moment": moment,
+            "layers": layers,
+            "async": future,
         }
-        return self._con.post(url, params)
-    #----------------------------------------------------------------------
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            n = 1
+            if "statusUrl" in res:
+                time.sleep(1)
+                surl = res["statusUrl"]
+                sres = self._con.get(path=surl, params={"f": "json"})
+                while sres["status"].lower() != "completed":
+                    sres = self._con.get(path=surl, params={"f": "json"})
+                    if sres["status"].lower() in "failed":
+                        if "return_messages" in sres:
+                            return (False, sres)
+                        return False
+                    if n >= 40:
+                        n = 40
+                    time.sleep(0.5 * n)
+                    n += 1
+                else:
+                    return sres
+        else:
+            res = self._con.post(url, params)
+            if "success" in res:
+                return res
+            return res
+
+    # ----------------------------------------------------------------------
     def conflicts(self):
         """
         The ```conflicts``` operation allows you to view the conflicts by layer
@@ -640,14 +922,21 @@ class Version(object):
         are in conflicts will also be returned as they existed in the branch,
         ancestor, and default versions.
         """
-        params = {
-            'f' : 'json',
-            'sessionID' : self._guid
-        }
+        self.start_reading()
+        params = {"f": "json", "sessionId": self._guid}
         url = "%s/conflicts" % self._url
-        return self._con.post(url, params)
-    #----------------------------------------------------------------------
-    def inspect(self, conflicts, inspect_all=False, set_inspected=False):
+        resp = self._con.post(url, params)
+        if resp:
+            self.stop_reading()
+        return resp
+
+    # ----------------------------------------------------------------------
+    def inspect(
+        self,
+        conflicts: list[dict[str, Any]],
+        inspect_all: bool = False,
+        set_inspected: bool = False,
+    ):
         """
         The ```inspect``` operation allows the client to annotate conflicts
         from the conflict set that was obtained during the last reconcile
@@ -686,22 +975,23 @@ class Version(object):
         ===============     ====================================================================
 
 
-        :return: Boolean
+        :return: Boolean. True if successful else False.
 
 
         """
         url = "%s/inspectConflicts" % self._url
         params = {
-            'f' : 'json',
-            'sessionId' : self._guid,
-            'inspectAll' : inspect_all,
-            'conflicts' : conflicts,
-            'setInspected' : set_inspected
+            "f": "json",
+            "sessionId": self._guid,
+            "inspectAll": inspect_all,
+            "conflicts": conflicts,
+            "setInspected": set_inspected,
         }
         res = self._con.post(url, params)
-        return res['success']
-    #----------------------------------------------------------------------
-    def post(self):
+        return res["success"]
+
+    # ----------------------------------------------------------------------
+    def post(self, rows=None, future=False):
         """
         The Post operation allows the client to post the changes in their
         branch to the default version. The client can only post changes if
@@ -709,39 +999,96 @@ class Version(object):
         If the default version has been modified in the interim, the client
         will have to reconcile again before posting.
 
-        :return: Boolean
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        rows                Optional List of dictionaries representing the features or objects
+                            for posting a subset of edits in the current version. The
+                            `objectIds` specified must be edits contained within the current
+                            version, which can be obtained from the
+                            :meth:`~arcgis.features._version.Version.differences` method. The
+                            posted edits will no longer exist in the current version, another
+                            :meth:`~arcgis.features._version.Version.reconcile` is necessary
+                            to see the posted features.
+
+                            .. code-block:: python
+
+                                rows = [
+                                        {"layerId": 0,
+                                         "objectIds": [14,15,17,20]
+                                        },
+                                        {"layerId": 1},
+                                         "objectIds": [123]
+                                        }
+                                       ]
+        ---------------     --------------------------------------------------------------------
+        future              Optional Boolean. If `True", the operation runs as an asynchronous
+                            job. The results are returned as a Url pointing to a location that
+                            indicates the status of the job.
+        ===============     ====================================================================
+
+        :return:
+            Boolean. `True` or a job URL if successful, else `False`.
 
         """
-        if self._mode == 'edit':
+        if self._mode == "edit":
             url = "%s/post" % self._url
             params = {
-                "f" : "json",
-                "sessionID" : self._guid
+                "f": "json",
+                "sessionId": self._guid,
+                "rows": rows,
+                "async": future,
             }
-            res = self._con.post(url, params)
-            return res['success']
-        return False
-    #----------------------------------------------------------------------
+            if future:
+                res = self._con.post(path=url, postdata=params)
+                f = self._run_async(
+                    self._status_via_url,
+                    con=self._con,
+                    url=res["statusUrl"],
+                    params={"f": "json"},
+                )
+                return f
+            else:
+                res = self._con.post(url, params)
+                return res["success"]
+        else:
+            raise ("Version must be in edit mode to run post.")
+
+    # ----------------------------------------------------------------------
     def __enter__(self):
-        if self._mode == 'edit':
+        if self._mode == "edit":
             self.start_editing()
-        elif self.mode == 'read':
+        elif self.mode == "read":
             self.start_reading()
         return self
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __exit__(self, type, value, traceback):
-        if self._mode == 'edit':
+        self._properties = None
+        if self.properties.isLocked:
+            if self.properties.isBeingEdited:
+                if self._mode != "edit":
+                    self._mode = "edit"
+                self.stop_editing(self.save_edits)
+            if self.properties.isBeingRead:
+                if self._mode != "read":
+                    self._mode = "read"
+                self.stop_reading()
+        if self._mode == "edit":
             self.stop_editing(save=self.save_edits)
-        elif self._mode == 'read':
+        elif self._mode == "read":
             self.stop_reading()
-    #----------------------------------------------------------------------
-    def edit(self,
-             layer,
-             adds=None,
-             updates=None,
-             deletes=None,
-             use_global_ids=False,
-             rollback_on_failure=True):
+
+    # ----------------------------------------------------------------------
+    def edit(
+        self,
+        layer: FeatureLayer,
+        adds: Optional[Union[FeatureSet, list]] = None,
+        updates=None,
+        deletes=None,
+        use_global_ids=False,
+        rollback_on_failure=True,
+    ):
         """
         The `edit` operation allows users to apply changes to the current version. The edit
         session must be in the mode of `edit` or an exception will be raised.
@@ -777,16 +1124,59 @@ class Version(object):
                                 value is true.
         =====================   ===========================================
 
-        :returns: dictionary
+        :return: Dictionary
 
         """
-        if self._mode == 'edit':
-            return layer.edit_features(adds=adds,
-                                       updates=updates,
-                                       deletes=deletes,
-                                       gdb_version=self.properties.versionName,
-                                       use_global_ids=use_global_ids,
-                                       rollback_on_failure=rollback_on_failure)
+        if self._mode == "edit":
+            return layer.edit_features(
+                adds=adds,
+                updates=updates,
+                deletes=deletes,
+                gdb_version=self.properties.versionName,
+                use_global_ids=use_global_ids,
+                rollback_on_failure=rollback_on_failure,
+            )
         else:
-            raise Exception("Version must be in `edit` mode inorder to apply edits to this version.")
+            raise Exception(
+                "Version must be in `edit` mode inorder to apply edits to this version."
+            )
         return None
+
+    def _run_async(self, fn, **inputs):
+        """runs the inputs asynchronously"""
+        import concurrent.futures
+
+        tp = concurrent.futures.ThreadPoolExecutor(1)
+        future = tp.submit(fn=fn, **inputs)
+        tp.shutdown(False)
+        return future
+
+    # ----------------------------------------------------------------------
+
+    def _status_via_url(self, con, url, params):
+        """
+        performs the asynchronous check to see if the operation finishes
+        """
+        status_allowed = [
+            v.lower()
+            for v in [
+                "Executing",
+                "Pending",
+                "InProgress",
+                "Completed",
+                "CompletedWithErrors",
+            ]
+        ]
+        status = con.get(url, params)
+        while (
+            status["status"].lower() in status_allowed
+            and status["status"].lower() != "completed"
+        ):
+            if status["status"].lower() == "completed":
+                return status
+            elif "fail" in status["status"].lower():
+                break
+            elif "error" in status["status"].lower():
+                break
+            status = con.get(url, {"f": "json"})
+        return status

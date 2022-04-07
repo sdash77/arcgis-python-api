@@ -1,14 +1,14 @@
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Name:        Workforce Assignment Types tests
 # Purpose:     Sanity tests for ArcGIS Python API
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 import unittest
-from dino_utils.dino_precondition_checks import PreconditionChecks
-from dino_utils.dino_configs import DinoConfigs
+from integration.dino_utils.dino_precondition_checks import PreconditionChecks
+from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
 
-#region PreCondition check
+# region PreCondition check
 test_skip = False
 class_skip = False
 module_skip = False
@@ -16,13 +16,13 @@ module_skip = False
 r1 = PreconditionChecks.check_API_import()
 r2 = PreconditionChecks.check_Python_version()
 
-if (r1 & r2):
+if r1 & r2:
     print("## Precondition checks passed ##")
     module_skip = False
 else:
     module_skip = True
     print("Pre condition checks failed. Quitting tests")
-    raise(exit())
+    raise (exit())
 
 # Import the module after Precondition checks pass
 try:
@@ -34,17 +34,20 @@ try:
     from arcgis.apps.workforce.managers import *
 except ImportError:
     print("API import error. Quitting test")
-    raise(exit())
-#endregion PreCondition Check
+    raise (exit())
+# endregion PreCondition Check
 
-#TestModule
-@unittest.skipIf(module_skip, "Precondition check failed. Skipping tests in Workforce Assignment Types")
+# TestModule
+@unittest.skipIf(
+    module_skip,
+    "Precondition check failed. Skipping tests in Workforce Assignment Types",
+)
 def setUpModule():
     """
     Run checks for host system
     """
     # Get environment status
-    print("ArcPy on system: " , PreconditionChecks.check_ArcPy_import())
+    print("ArcPy on system: ", PreconditionChecks.check_ArcPy_import())
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
 
@@ -61,15 +64,23 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
         :return:
         """
         _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
+        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
 
-        cls.portal_url = _conf_reader['workforce_ago']['url']
-        cls.portal_username = _conf_reader['workforce_ago']['publisher_user']
-        cls.portal_password = _conf_reader['workforce_ago']['publisher_password']
-        cls.project_id = "b4afd06c39694fa3a1ef0deaaf6a3e33"
+        cls.portal_url = _conf_reader["workforce_ago"]["url"]
+        cls.portal_username = _conf_reader["workforce_ago"]["publisher_user"]
+        cls.portal_password = _conf_reader["workforce_ago"]["publisher_password"]
         cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
-        cls.project = Project(cls.gis.content.get(cls.project_id))
-
+        t = datetime.datetime.now()
+        cls.time_stamp = str.format(
+            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            str(t.year),
+            str(t.month),
+            str(t.day),
+            str(t.hour),
+            str(t.minute),
+            str(t.second),
+        )
+        cls.project = create_project(cls.time_stamp)
 
         r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
         if not r1:
@@ -81,18 +92,27 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
         self.project.assignment_types.add(name="Inspection")
 
     def reset_project(self):
-        self.project.assignment_types.batch_delete(self.project.assignment_types.search())
+        self.project.assignment_types.batch_delete(
+            self.project.assignment_types.search()
+        )
 
     def setUp(self):
         # reset project for each test
-        print("Test: "+self._testMethodName)
+        print("Test: " + self._testMethodName)
         self.namePrefix = "dino_"
         self.reset_project()
         self.setup_project()
 
         t = datetime.datetime.now()
-        self.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
-              str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        self.time_stamp = str.format(
+            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            str(t.year),
+            str(t.month),
+            str(t.day),
+            str(t.hour),
+            str(t.minute),
+            str(t.second),
+        )
         print("Time stamp: " + self.time_stamp)
 
     def tearDown(self):
@@ -100,6 +120,10 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        try:
+            cls.project.delete()
+        except Exception as e:
+            print("Failed to delete project successfully!")
         print("\n==================================================================")
 
     def test_attachment_type_manager(self):
@@ -123,7 +147,6 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
             self.project.assignment_types.add(name="Removal")
             assignment_type = self.project.assignment_types.search()[-1]
             self.assertEqual(assignment_type.name, "Removal", "Incorrect name")
-            self.assertEqual(assignment_type.code, 2, "Incorrect code")
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -137,14 +160,10 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
 
     def test_batch_add_assignment_type(self):
         try:
-            assignment_type = AssignmentType(
-                project,
-                name="Removal"
-            )
+            assignment_type = AssignmentType(self.project, name="Removal")
             self.project.assignment_types.batch_add([assignment_type])
             assignment_type = self.project.assignment_types.search()[-1]
             self.assertEqual(assignment_type.name, "Removal", "Incorrect name")
-            self.assertEqual(assignment_type.code, 2, "Incorrect code")
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -161,7 +180,9 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
             assignment_type = self.project.assignment_types.search()[0]
             assignment_type.delete()
             assignment_types = self.project.assignment_types.search()
-            self.assertEqual(len(assignment_types), 0, "Incorrect number of assignment types")
+            self.assertEqual(
+                len(assignment_types), 0, "Incorrect number of assignment types"
+            )
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -177,7 +198,11 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
         try:
             assignment_type = self.project.assignment_types.search()[0]
             self.project.assignment_types.batch_delete([assignment_type])
-            self.assertEqual(len(self.project.assignment_types.search()), 0, "Incorrect number of assignment types")
+            self.assertEqual(
+                len(self.project.assignment_types.search()),
+                0,
+                "Incorrect number of assignment types",
+            )
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -195,7 +220,9 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
             assignment_type.name = "Repair"
             self.project.assignment_types.batch_update([assignment_type])
             assignment_type = self.project.assignment_types.search()[0]
-            self.assertEqual(assignment_type.name, "Repair", "Incorrect assignment type")
+            self.assertEqual(
+                assignment_type.name, "Repair", "Incorrect assignment type"
+            )
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -212,7 +239,9 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
             assignment_type = self.project.assignment_types.search()[0]
             assignment_type.update(name="Repair")
             assignment_type = self.project.assignment_types.search()[0]
-            self.assertEqual(assignment_type.name, "Repair", "Incorrect assignment type")
+            self.assertEqual(
+                assignment_type.name, "Repair", "Incorrect assignment type"
+            )
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -240,7 +269,6 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
 
-
-#TestModule
+# TestModule
 def tearDownModule():
     print("**End Workforce AssignmentManager Tests**")

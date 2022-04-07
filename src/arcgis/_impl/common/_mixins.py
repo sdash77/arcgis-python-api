@@ -4,13 +4,15 @@ Mixin Classes for Attr-support.
 Copyright (c) 2013 Brendan Curran-Johnson
 https://github.com/bcj/AttrDict
 """
+from collections import OrderedDict
 from abc import ABCMeta, abstractmethod
-from collections import Mapping, MutableMapping, Sequence, OrderedDict
+from collections.abc import Mapping, MutableMapping, Sequence
 import re
 import json
 import six
 
-__all__ = ['Attr', 'MutableAttr']
+__all__ = ["Attr", "MutableAttr"]
+
 
 @six.add_metaclass(ABCMeta)
 class Attr(Mapping):
@@ -34,6 +36,7 @@ class Attr(Mapping):
         than if accessed as an attribute than if it is accessed as an
         item.
     """
+
     @abstractmethod
     def _configuration(self):
         """
@@ -127,9 +130,10 @@ class Attr(Mapping):
         """
         if isinstance(obj, Mapping):
             obj = self._constructor(obj, self._configuration())
-        elif (isinstance(obj, Sequence) and
-              not isinstance(obj, (six.string_types, six.binary_type))):
-            sequence_type = getattr(self, '_sequence_type', None)
+        elif isinstance(obj, Sequence) and not isinstance(
+            obj, (six.string_types, six.binary_type)
+        ):
+            sequence_type = getattr(self, "_sequence_type", None)
 
             if sequence_type:
                 obj = sequence_type(self._build(element) for element in obj)
@@ -149,10 +153,11 @@ class Attr(Mapping):
             'register').
         """
         return (
-            isinstance(key, six.string_types) and
-            re.match('^[A-Za-z][A-Za-z0-9_]*$', key) and
-            not hasattr(cls, key)
+            isinstance(key, six.string_types)
+            and re.match("^[A-Za-z][A-Za-z0-9_]*$", key)
+            and not hasattr(cls, key)
         )
+
 
 @six.add_metaclass(ABCMeta)
 class MutableAttr(Attr, MutableMapping):
@@ -160,6 +165,7 @@ class MutableAttr(Attr, MutableMapping):
     A mixin class for a mapping that allows for attribute-style access
     of values.
     """
+
     def _setattr(self, key, value):
         """
         Add an attribute to the object, without attempting to add it as
@@ -176,7 +182,7 @@ class MutableAttr(Attr, MutableMapping):
         """
         if self._valid_name(key):
             self[key] = value
-        elif getattr(self, '_allow_invalid_attributes', True):
+        elif getattr(self, "_allow_invalid_attributes", True):
             super(MutableAttr, self).__setattr__(key, value)
         else:
             raise TypeError(
@@ -200,7 +206,7 @@ class MutableAttr(Attr, MutableMapping):
         """
         if self._valid_name(key):
             del self[key]
-        elif getattr(self, '_allow_invalid_attributes', True):
+        elif getattr(self, "_allow_invalid_attributes", True):
             super(MutableAttr, self).__delattr__(key)
         else:
             raise TypeError(
@@ -209,15 +215,17 @@ class MutableAttr(Attr, MutableMapping):
                 )
             )
 
+
 class AttrDict(dict, MutableAttr):
     """
     A dict that implements MutableAttr.
     """
+
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
 
-        self._setattr('_sequence_type', list)
-        self._setattr('_allow_invalid_attributes', False)
+        self._setattr("_sequence_type", list)
+        self._setattr("_allow_invalid_attributes", False)
 
     def _configuration(self):
         """
@@ -229,11 +237,7 @@ class AttrDict(dict, MutableAttr):
         """
         Serialize the object.
         """
-        return (
-            self.copy(),
-            self._sequence_type,
-            self._allow_invalid_attributes
-        )
+        return (self.copy(), self._sequence_type, self._allow_invalid_attributes)
 
     def __setstate__(self, state):
         """
@@ -241,13 +245,11 @@ class AttrDict(dict, MutableAttr):
         """
         mapping, sequence_type, allow_invalid_attributes = state
         self.update(mapping)
-        self._setattr('_sequence_type', sequence_type)
-        self._setattr('_allow_invalid_attributes', allow_invalid_attributes)
+        self._setattr("_sequence_type", sequence_type)
+        self._setattr("_allow_invalid_attributes", allow_invalid_attributes)
 
     def __repr__(self):
-        return six.u('{contents}').format(
-            contents=super(AttrDict, self).__repr__()
-        )
+        return six.u("{contents}").format(contents=super(AttrDict, self).__repr__())
 
     @classmethod
     def _constructor(cls, mapping, configuration):
@@ -255,19 +257,21 @@ class AttrDict(dict, MutableAttr):
         A standardized constructor.
         """
         attr = cls(mapping)
-        attr._setattr('_sequence_type', configuration)
+        attr._setattr("_sequence_type", configuration)
 
         return attr
+
 
 class AttrOrderedDict(OrderedDict, MutableAttr):
     """
     An ordered dictionary that implements MutableAttr.
     """
+
     def __init__(self, *args, **kwargs):
         super(AttrOrderedDict, self).__init__(*args, **kwargs)
 
-        self._setattr('_sequence_type', list)
-        self._setattr('_allow_invalid_attributes', False)
+        self._setattr("_sequence_type", list)
+        self._setattr("_allow_invalid_attributes", False)
 
     def _configuration(self):
         """
@@ -279,11 +283,7 @@ class AttrOrderedDict(OrderedDict, MutableAttr):
         """
         Serialize the object.
         """
-        return (
-            self.copy(),
-            self._sequence_type,
-            self._allow_invalid_attributes
-        )
+        return (self.copy(), self._sequence_type, self._allow_invalid_attributes)
 
     def __setstate__(self, state):
         """
@@ -291,15 +291,15 @@ class AttrOrderedDict(OrderedDict, MutableAttr):
         """
         mapping, sequence_type, allow_invalid_attributes = state
         self.update(mapping)
-        self._setattr('_sequence_type', sequence_type)
-        self._setattr('_allow_invalid_attributes', allow_invalid_attributes)
+        self._setattr("_sequence_type", sequence_type)
+        self._setattr("_allow_invalid_attributes", allow_invalid_attributes)
 
     def __str__(self):
         return json.dumps(self, indent=2)
 
     def __repr__(self):
         return json.dumps(self, indent=2)
-        #return json.dumps(six.u('{contents}').format(
+        # return json.dumps(six.u('{contents}').format(
         #    contents=super(AttrOrderedDict, self).__repr__()), indent=2)
 
     @classmethod
@@ -308,24 +308,26 @@ class AttrOrderedDict(OrderedDict, MutableAttr):
         A standardized constructor.
         """
         attr = cls(mapping)
-        attr._setattr('_sequence_type', configuration)
+        attr._setattr("_sequence_type", configuration)
 
         return attr
 
+
 class PropertyMap(MutableAttr):
     """
-    A collection of property names and values providing access as attributes (ag, property.key) as well as dictionary keys (property['key']). 
+    A collection of property names and values providing access as attributes (ag, property.key) as well as dictionary keys (property['key']).
     Can be converted to dict using dict(obj). Makes it easy to get and set values of properties held in a dictionary.
     """
+
     def __init__(self, items=None, sequence_type=list):
         if items is None:
             items = {}
         elif not isinstance(items, Mapping):
             items = dict(items)
 
-        self._setattr('_sequence_type', sequence_type)
-        self._setattr('_mapping', items)
-        self._setattr('_allow_invalid_attributes', False)
+        self._setattr("_sequence_type", sequence_type)
+        self._setattr("_mapping", items)
+        self._setattr("_allow_invalid_attributes", False)
 
     def _configuration(self):
         """
@@ -370,26 +372,24 @@ class PropertyMap(MutableAttr):
         # sequence type seems like more trouble than it is worth.
         # If people want full serialization, they can pickle, and in
         # 99% of cases, sequence_type won't change anyway
-        return json.dumps(dict(self._mapping), indent=2) #six.u("PropertyMap({mapping})").format(mapping=repr(self._mapping))
+        return json.dumps(
+            dict(self._mapping), indent=2
+        )  # six.u("PropertyMap({mapping})").format(mapping=repr(self._mapping))
 
     def __getstate__(self):
         """
         Serialize the object.
         """
-        return (
-            self._mapping,
-            self._sequence_type,
-            self._allow_invalid_attributes
-        )
+        return (self._mapping, self._sequence_type, self._allow_invalid_attributes)
 
     def __setstate__(self, state):
         """
         Deserialize the object.
         """
         mapping, sequence_type, allow_invalid_attributes = state
-        self._setattr('_mapping', mapping)
-        self._setattr('_sequence_type', sequence_type)
-        self._setattr('_allow_invalid_attributes', allow_invalid_attributes)
+        self._setattr("_mapping", mapping)
+        self._setattr("_sequence_type", sequence_type)
+        self._setattr("_allow_invalid_attributes", allow_invalid_attributes)
 
     @classmethod
     def _constructor(cls, mapping, configuration):

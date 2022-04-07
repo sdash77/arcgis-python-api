@@ -10,10 +10,23 @@ AGOLAdminManager
     :undoc-members:
     :show-inheritance:
 
-
 PortalAdminManager
 ---------------
 .. autoclass:: arcgis.gis.admin.PortalAdminManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+KubernetesAdmin
+---------------
+.. autoclass:: arcgis.gis.kubernetes.KubernetesAdmin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+AGOLUsageReports
+---------------
+.. autoclass:: arcgis.gis.admin.AGOLUsageReports
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +37,6 @@ Bundle
     :members:
     :undoc-members:
     :show-inheritance:
-
 
 CategoryManager
 ---------------
@@ -40,14 +52,12 @@ CollaborationManager
     :undoc-members:
     :show-inheritance:
 
-
 Collaboration
 ---------------
 .. autoclass:: arcgis.gis.admin.Collaboration
     :members:
     :undoc-members:
     :show-inheritance:
-
 
 CreditManager
 ---------------
@@ -70,8 +80,14 @@ LicenseManager
     :undoc-members:
     :show-inheritance:
 
+LivingAtlas
+-----------
+.. autoclass:: arcgis.gis.admin.LivingAtlas
+    :members:
+    :undoc-members:
+
 IdentityProviderManager
----------------
+-----------------------
 .. autoclass:: arcgis.gis.admin.IdentityProviderManager
     :members:
     :undoc-members:
@@ -98,7 +114,13 @@ UX
     :undoc-members:
     :show-inheritance:
 
-
+EmailManager
+------------
+.. autoclass:: arcgis.gis.admin.EmailManager
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   
 Federation
 ---------------
 .. autoclass:: arcgis.gis.admin.Federation
@@ -106,6 +128,12 @@ Federation
    :undoc-members:
    :show-inheritance:
 
+Indexer
+-------
+.. autoclass:: arcgis.gis.admin.Indexer
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Logs
 ---------------
@@ -113,7 +141,6 @@ Logs
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 Machines
 ---------------
@@ -157,7 +184,7 @@ EnterpriseUsers
    :undoc-members:
 
 EnterpriseGroups
----------------
+----------------
 .. autoclass:: arcgis.gis.admin.EnterpriseGroups
    :members:
    :undoc-members:
@@ -178,7 +205,7 @@ System
 
 
 Licenses (Deprecated 10.7+)
----------------
+---------------------------
 .. autoclass:: arcgis.gis.admin.Licenses
    :members:
    :undoc-members:

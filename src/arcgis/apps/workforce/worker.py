@@ -39,10 +39,32 @@ class Worker(FeatureModel):
     user_id                Optional :class:`String`. The user id of the worker
     ==================     ====================================================================
 
+    .. code-block:: python
+
+        # Get a worker, update it, delete it
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        worker = project.workers.search()[0]
+        worker.update(title="Inspector",status="not_working")
+
+
     """
 
-    def __init__(self, project, feature=None, geometry=None, contact_number=None,
-                 name=None, notes=None, status="not_working", title=None, user_id=None):
+    def __init__(
+        self,
+        project,
+        feature=None,
+        geometry=None,
+        contact_number=None,
+        name=None,
+        notes=None,
+        status="not_working",
+        title=None,
+        user_id=None,
+    ):
         super().__init__(project, project.workers_layer, feature)
         self._schema = WorkerSchema(project.workers_layer)
         if not feature:
@@ -58,35 +80,53 @@ class Worker(FeatureModel):
         return "{} ({})".format(self.name, self.user_id)
 
     def __repr__(self):
-        return "<Worker {}>".format(self.object_id)
+        return "<Worker {}>".format(self.id)
 
-    def update(self, geometry=None, contact_number=None,
-                 name=None, notes=None, status=None, title=None, user_id=None):
+    def update(
+        self,
+        geometry=None,
+        contact_number=None,
+        name=None,
+        notes=None,
+        status=None,
+        title=None,
+        user_id=None,
+    ):
         """
-            Updates the worker on the server
+        Updates the worker on the server
 
-            ==================     ====================================================================
-            **Argument**           **Description**
-            ------------------     --------------------------------------------------------------------
-            geometry               Optional :class:`Dict`. The geometry of the worker.
-            ------------------     --------------------------------------------------------------------
-            contact_number         Optional :class:`String`. The contact number of the worker.
-            ------------------     --------------------------------------------------------------------
-            name                   Optional :class:`String`. The name of the worker.
-            ------------------     --------------------------------------------------------------------
-            notes                  Optional :class:`String`. The notes about the worker.
-            ------------------     --------------------------------------------------------------------
-            status                 Optional :class:`String`. The status of the worker.
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        geometry               Optional :class:`Dict`. The geometry of the worker.
+        ------------------     --------------------------------------------------------------------
+        contact_number         Optional :class:`String`. The contact number of the worker.
+        ------------------     --------------------------------------------------------------------
+        name                   Optional :class:`String`. The name of the worker.
+        ------------------     --------------------------------------------------------------------
+        notes                  Optional :class:`String`. The notes about the worker.
+        ------------------     --------------------------------------------------------------------
+        status                 Optional :class:`String`. The status of the worker.
 
-                                   `not_working`, `working`, `on_break`
-            ------------------     --------------------------------------------------------------------
-            title                  Optional :class:`String`. The title of the worker.
-            ------------------     --------------------------------------------------------------------
-            user_id                Optional :class:`String`. The user id of the worker
-            ==================     ====================================================================
+                               `not_working`, `working`, `on_break`
+        ------------------     --------------------------------------------------------------------
+        title                  Optional :class:`String`. The title of the worker.
+        ------------------     --------------------------------------------------------------------
+        user_id                Optional :class:`String`. The user id of the worker
+        ==================     ====================================================================
 
         """
-        update_worker(self.project, self, geometry, contact_number, name, notes, status, title, user_id)
+        update_worker(
+            self.project,
+            self,
+            geometry,
+            contact_number,
+            name,
+            notes,
+            status,
+            title,
+            user_id,
+        )
 
     def delete(self):
         """Deletes the worker from the server"""
@@ -140,9 +180,9 @@ class Worker(FeatureModel):
     @property
     def status(self):
         """
-            Gets/Sets the :class:`String` status of the worker
+        Gets/Sets the :class:`String` status of the worker
 
-            `not_working`, `working`, `on_break`
+        `not_working`, `working`, `on_break`
         """
         lut = {
             0: "not_working",
@@ -163,11 +203,11 @@ class Worker(FeatureModel):
             if reduced_str == "notworking":
                 self._feature.attributes[self._schema.status] = 0
             elif reduced_str == "working":
-               self._feature.attributes[self._schema.status] = 1
+                self._feature.attributes[self._schema.status] = 1
             elif reduced_str == "onbreak":
-               self._feature.attributes[self._schema.status] = 2
+                self._feature.attributes[self._schema.status] = 2
             else:
-               raise ValidationError("Invalid status", self)
+                raise ValidationError("Invalid status", self)
         else:
             raise ValidationError("Invalid status", self)
 
@@ -176,8 +216,7 @@ class Worker(FeatureModel):
         self._feature.geometry = value
 
     def _validate(self, **kwargs):
-        """
-        """
+        """ """
         errors = super()._validate(**kwargs)
         errors += self._validate_name()
         errors += self._validate_status()
@@ -196,9 +235,14 @@ class Worker(FeatureModel):
 
     def _validate_for_remove(self, **kwargs):
         errors = super()._validate_for_remove(**kwargs)
-        assignments = _store.query_assignments(self.project, "{} = {}".format(self.project._assignment_schema.worker_id, self.object_id))
+        assignments = _store.query_assignments(
+            self.project,
+            "{} = '{}'".format(self.project._assignment_schema.worker_id, self.id),
+        )
         if assignments:
-            errors.append(ValidationError("Cannot remove a Worker that has assignments", self))
+            errors.append(
+                ValidationError("Cannot remove a Worker that has assignments", self)
+            )
         return errors
 
     def _validate_name(self):
@@ -226,7 +270,11 @@ class Worker(FeatureModel):
             message = "The Worker user_id must match an accessible named user id"
             errors.append(ValidationError(message, self))
 
-        workers = [w for w in self.project._cached_workers.values() if w.user_id == self.user_id]
+        workers = [
+            w
+            for w in self.project._cached_workers.values()
+            if w.user_id == self.user_id
+        ]
         duplicate_workers = [w for w in workers if w.object_id != self.object_id]
         if duplicate_workers:
             message = "There cannot be multiple Workers with the same user_id"

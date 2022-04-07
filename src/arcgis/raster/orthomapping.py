@@ -1,27 +1,31 @@
-'''
+"""
 The orthomapping python API allows automating orthomapping tasks in the server environment.
 
 For more information about orthomapping workflows in ArcGIS, please visit the help documentation at 
 http://desktop.arcgis.com/en/arcmap/10.4/manage-data/raster-and-images/block-adjustment-for-mosaic-datasets.htm.
-'''
+"""
 
-
+from __future__ import annotations
+from typing import Any, Optional
 import arcgis
 import json
-import string as _string
-import random as _random
-from arcgis.gis import Item
+from arcgis.gis import GIS, Item
 import collections
 from ._util import _set_context
 
-from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
-                                          _analysis_job_status, _layer_input
+from arcgis.geoprocessing._support import (
+    _analysis_job,
+    _analysis_job_results,
+    _analysis_job_status,
+    _layer_input,
+)
 
 ###################################################################################################
 ###
 ### INTERNAL FUNCTIONS
 ###
 ###################################################################################################
+
 
 def _execute_task(gis, taskname, params):
 
@@ -30,34 +34,34 @@ def _execute_task(gis, taskname, params):
     task = taskname
 
     task_url, job_info, job_id = _analysis_job(gptool, task, params)
-    #print ('task url is ', task_url)
+    # print ('task url is ', task_url)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
     job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
 
     item_properties = {
-        "properties":{
-            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+        "properties": {
+            "jobUrl": task_url + "/jobs/" + job_info["jobId"],
             "jobType": "GPServer",
-            "jobId": job_info['jobId'],
-            "jobStatus": "completed"
-            }
+            "jobId": job_info["jobId"],
+            "jobStatus": "completed",
         }
+    }
     return job_values
 
 
-#def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
-    #return ''.join(_random.choice(chars) for _ in range(size))
+# def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
+# return ''.join(_random.choice(chars) for _ in range(size))
 ###################################################################################################
 ###################################################################################################
 def _set_image_collection_param(gis, params, image_collection):
     if isinstance(image_collection, str):
-        if 'http:' in image_collection or 'https:' in image_collection:
-            params['imageCollection'] = json.dumps({ 'url' : image_collection })
+        if "http:" in image_collection or "https:" in image_collection:
+            params["imageCollection"] = json.dumps({"url": image_collection})
         else:
-            params['imageCollection'] = json.dumps({ 'uri' : image_collection })
+            params["imageCollection"] = json.dumps({"uri": image_collection})
     elif isinstance(image_collection, Item):
-        params['imageCollection'] = json.dumps({ "itemId" : image_collection.itemid })
+        params["imageCollection"] = json.dumps({"itemId": image_collection.itemid})
     else:
         raise TypeError("image_collection should be a string (service name) or Item")
 
@@ -67,33 +71,33 @@ def _set_image_collection_param(gis, params, image_collection):
 def _create_output_image_service(gis, output_name, task):
     ok = gis.content.is_service_name_available(output_name, "Image Service")
     if not ok:
-        raise RuntimeError("An Image Service by this name already exists: " + output_name)
+        raise RuntimeError(
+            "An Image Service by this name already exists: " + output_name
+        )
 
     create_parameters = {
         "name": output_name,
         "description": "",
         "capabilities": "Image",
-        "properties": {
-            "path": "@",
-            "description": "",
-            "copyright": ""
-        }
+        "properties": {"path": "@", "description": "", "copyright": ""},
     }
 
-    output_service = gis.content.create_service(output_name, create_params=create_parameters,
-                                                      service_type="imageService")
+    output_service = gis.content.create_service(
+        output_name, create_params=create_parameters, service_type="imageService"
+    )
     description = "Image Service generated from running the " + task + " tool."
     item_properties = {
         "description": description,
         "tags": "Analysis Result, " + task,
-        "snippet": "Analysis Image Service generated from " + task
+        "snippet": "Analysis Image Service generated from " + task,
     }
     output_service.update(item_properties)
     return output_service
 
+
 ###################################################################################################
 ###
-### PUBLIC API 
+### PUBLIC API
 ###
 ###################################################################################################
 def is_supported(gis=None):
@@ -102,26 +106,30 @@ def is_supported(gis=None):
     checks if arcgis.env.active_gis supports raster analytics
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    if 'orthoMapping' in gis.properties.helperServices:
+    if "orthoMapping" in gis.properties.helperServices:
         return True
     else:
         return False
 
+
 ###################################################################################################
 ## Compute Sensor model
 ###################################################################################################
-def compute_sensor_model(image_collection, 
-                         mode='Quick', 
-                         location_accuracy='High', 
-                         context=None,
-                         *,
-                         gis=None,
-                         **kwargs):
+def compute_sensor_model(
+    image_collection,
+    mode: str = "Quick",
+    location_accuracy: str = "High",
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
     """
-    compute_sensor_model computes the bundle block adjustment for the image collection 
-    and applies the frame xform to the images. It will also generate the control point 
-    table, solution table, solution points table and flight path table. 
-    These tables will not be published as Portal items. 
+    compute_sensor_model computes the bundle block adjustment for the image collection
+    and applies the frame xform to the images. It will also generate the control point
+    table, solution table, solution points table and flight path table.
+    These tables will not be published as Portal items.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -129,12 +137,12 @@ def compute_sensor_model(image_collection,
     image_collection       Required, the input image collection on which to compute
                            the sensor model.
                            The image_collection can be a portal Item or an image service URL or a URI
-                           
+
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     mode                   Optional string.  the mode to be used for bundle block adjustment
                            Only the following modes are supported:
-                           
+
                            - 'Quick' : Computes tie points and adjustment at 8x of the source imagery resolution
 
                            - 'Full'  : adjust the images in Quick mode then at 1x of the source imagery resolution
@@ -143,27 +151,27 @@ def compute_sensor_model(image_collection,
 
                            By default, 'Quick' mode is applied to compute the sensor model.
     ------------------     --------------------------------------------------------------------
-    location_acuracy       Optional string. this option allows users to specify the GPS location accuracy level of the  
-                           source image. It determines how far the underline tool will search for neighboring 
+    location_acuracy       Optional string. this option allows users to specify the GPS location accuracy level of the
+                           source image. It determines how far the underline tool will search for neighboring
                            matching images, then calculate tie points and compute adjustments.
 
                            Possible values for location_accuracy are:
 
-                           - 'High'    : GPS accuracy is 0 to 10 meters, and the tool uses a maximum of 4 by 3 images 
+                           - 'High'    : GPS accuracy is 0 to 10 meters, and the tool uses a maximum of 4 by 3 images
 
                            - 'Medium'  : GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 4 by 6 images
 
-                           - 'Low'     : GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images 
+                           - 'Low'     : GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images
 
                            - 'VeryLow' : GPS accuracy is more than 50 meters, and the tool uses a maximum of 4 by 20 images
 
-                           The default location_accuracy is 'High' 
+                           The default location_accuracy is 'High'
     ------------------     --------------------------------------------------------------------
-    context                Optional dictionary. The context parameter is used to configure additional client settings 
+    context                Optional dictionary. The context parameter is used to configure additional client settings
                            for block adjustment. The supported configurable parameters are for compute mosaic dataset
-                           candidates after the adjustment. 
+                           candidates after the adjustment.
 
-                           Example: 
+                           Example:
                            {
                            "computeCandidate": False,
                            "maxoverlap": 0.6,
@@ -175,6 +183,19 @@ def compute_sensor_model(image_collection,
 
     :return:
         The imagery layer url
+
+    """
+
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.compute_sensor_model(
+        image_collection=image_collection,
+        mode=mode,
+        location_accuracy=location_accuracy,
+        context=context,
+        future=future,
+        **kwargs,
+    )
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -203,17 +224,26 @@ def compute_sensor_model(image_collection,
     job_values = _execute_task(gis, task, params)
     
     return job_values["result"]["url"]
+    """
+
 
 ###################################################################################################
 ## Alter processing states
 ###################################################################################################
-def alter_processing_states(image_collection, new_states, *, gis=None, **kwargs):
-    '''
+def alter_processing_states(
+    image_collection,
+    new_states: dict[str, Any],
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
     Alter the processing states of the image collection.
-    The states are stored as key property "Orthomapping". 
-    The content of the state is a dictionary including 
-    several properties which can be set based on the process 
-    done on the image collection. 
+    The states are stored as key property "Orthomapping".
+    The content of the state is a dictionary including
+    several properties which can be set based on the process
+    done on the image collection.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -221,7 +251,7 @@ def alter_processing_states(image_collection, new_states, *, gis=None, **kwargs)
     image_collection       Required, This is the image collection that will be adjusted.
 
                            The image_collection can be a portal Item or an image service URL or URI
-                           
+
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     new_states             Required dictionary. The state to set on the image_collection
@@ -231,12 +261,12 @@ def alter_processing_states(image_collection, new_states, *, gis=None, **kwargs)
                            blockadjustment, dem, gcp, seamlines, colorcorrection, adjust_index, imagetype
 
                            Example:
-                           {"blockadjustment": "raw",
-                            "dem": "Dense_Natual_Neighbor",
-                            "seamlines":"VORONOI",
-                            "colorcorrection":"SingleColor",
-                            "imagetype": "UAV/UAS",
-                            "adjust_index": 0}
+                               | {"blockadjustment": "raw",
+                               |  "dem": "Dense_Natual_Neighbor",
+                               |  "seamlines":"VORONOI",
+                               |  "colorcorrection":"SingleColor",
+                               |  "imagetype": "UAV/UAS",
+                               |  "adjust_index": 0}
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -244,8 +274,16 @@ def alter_processing_states(image_collection, new_states, *, gis=None, **kwargs)
     :return:
         The result will be the newly set states dictionary
 
-    '''
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
 
+    return gis._tools.orthomapping.alter_processing_states(
+        image_collection=image_collection,
+        new_states=new_states,
+        future=future,
+        **kwargs,
+    )
+    """
     gis = arcgis.env.active_gis if gis is None else gis
         
     params = {}
@@ -268,13 +306,16 @@ def alter_processing_states(image_collection, new_states, *, gis=None, **kwargs)
             processing_states = job_values['processingStates'].replace("'",'"')
             processing_states=json.loads( processing_states.replace('u"','"'))
             return processing_states
- 
+ """
+
 
 ###################################################################################################
 ## Get processing states
 ###################################################################################################
-def get_processing_states(image_collection, *, gis=None, **kwargs):
-    '''
+def get_processing_states(
+    image_collection, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+):
+    """
     Retrieve the processing states of the image collection
 
     ==================     ====================================================================
@@ -283,7 +324,7 @@ def get_processing_states(image_collection, *, gis=None, **kwargs):
     image_collection       Required, This is the image collection that will be adjusted.
 
                            The image_collection can be a portal Item or an image service URL or URI
-                            
+
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
@@ -292,7 +333,14 @@ def get_processing_states(image_collection, *, gis=None, **kwargs):
     :return:
         The result will be the newly set states dictionary
 
-    '''
+    """
+
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.get_processing_states(
+        image_collection=image_collection, future=future, **kwargs
+    )
+    """
 
     gis = arcgis.env.active_gis if gis is None else gis
 
@@ -303,6 +351,8 @@ def get_processing_states(image_collection, *, gis=None, **kwargs):
     task = 'GetProcessingStates'
     job_values = _execute_task(gis, task, params)
     return job_values["processingStates"]
+    """
+
 
 """
 ###################################################################################################
@@ -381,8 +431,17 @@ def append_control_points(image_collection, control_points, gis = None):
 ###################################################################################################
 ## Match control points
 ###################################################################################################
-def match_control_points(image_collection, control_points, similarity='High', context=None, *, gis=None, **kwargs):
-    '''
+def match_control_points(
+    image_collection,
+    control_points: list[dict[str, Any]],
+    similarity: str = "High",
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
     The match_control_points is a function that takes a collection of ground control points
     as input (control points to be specified as a list of dictionary objects), and each of the 
     ground control points needs at least one matching tie point in the control point sets. 
@@ -408,74 +467,72 @@ def match_control_points(image_collection, control_points, similarity='High', co
                            -- pointID (int) - The ID of the point within the control point table.
 
                            -- type (int)    - The type of the control point as determined by its numeric value
+
                                                  1: Tie Point 
                                                  2: Ground Control Point.
                                                  3: Check Point
 
-                           -- status (int)  - The status of the point. A value of 0 indicates that the point will
-                                                 not be used in computation. A non-zero value indicates otherwise.
-
-                           
+                           -- status (int)  - The status of the point. A value of 0 indicates that the point will not be used in computation. A non-zero value indicates otherwise.
 
                            -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
 
                            Example:
-                           [{
-                           "status": 1,
-                           "type": 2,
-                           "x": -117.0926538,
-                           "y": 34.00704253,
-                           "z": 634.2175,
-                           "spatialReference": {
-                               "wkid": 4326
-                           }, // default WGS84
-                           "imagePointSpatialReference": {}, // default ICS
-                           "pointId": 1,
-                           "xyAccuracy": "0.008602325",
-                           "zAccuracy": "0.015",
-                           "imagePoints": [{
-                               "imageID": 1,
-                               "x": 2986.5435987557084,
-                               "y": -2042.5193648409431,
-                               "u": 3057.4580682832734,
-                               "v": -1909.1506872159698
-                           },
-                           {
-                               "imageID": 2,
-                               "x": 1838.2814361401108,
-                               "y": -2594.5280063817972,
-                               "u": 3059.4079724863363,
-                               "v": -2961.292545463305
-                           },
-                           {
-                               "imageID": 12,
-                               "x": 5332.855578204663,
-                               "y": -2533.2805429751907,
-                               "u": 614.2338676573158,
-                               "v": -165.10836768947297
-                           },
-                           {
-                               "imageID": 13,
-                               "x": 4932.0895715254455,
-                               "y": -1833.8401744114287,
-                               "u": 616.9396928182223,
-                               "v": -1243.1445126959693
-                           }]
-                           },
-                           …
-                           …
-                           ] 
+                               | [{
+                               | "status": 1,
+                               | "type": 2,
+                               | "x": -117.0926538,
+                               | "y": 34.00704253,
+                               | "z": 634.2175,
+                               | "spatialReference": {
+                               |     "wkid": 4326
+                               | }, // default WGS84
+                               | "imagePointSpatialReference": {}, // default ICS
+                               | "pointId": 1,
+                               | "xyAccuracy": "0.008602325",
+                               | "zAccuracy": "0.015",
+                               | "imagePoints": [{
+                               |     "imageID": 1,
+                               |     "x": 2986.5435987557084,
+                               |     "y": -2042.5193648409431,
+                               |     "u": 3057.4580682832734,
+                               |     "v": -1909.1506872159698
+                               | },
+                               | {
+                               |     "imageID": 2,
+                               |     "x": 1838.2814361401108,
+                               |     "y": -2594.5280063817972,
+                               |     "u": 3059.4079724863363,
+                               |     "v": -2961.292545463305
+                               | },
+                               | {
+                               |     "imageID": 12,
+                               |     "x": 5332.855578204663,
+                               |     "y": -2533.2805429751907,
+                               |     "u": 614.2338676573158,
+                               |     "v": -165.10836768947297
+                               | },
+                               | {
+                               |     "imageID": 13,
+                               |     "x": 4932.0895715254455,
+                               |     "y": -1833.8401744114287,
+                               |     "u": 616.9396928182223,
+                               |     "v": -1243.1445126959693
+                               | }]
+                               | },
+                               | …
+                               | …
+                               | ] 
     ------------------     --------------------------------------------------------------------
     similarity             Optional string. Choose the tolerance level for your control point matching. 
 
-                           Low- The similarity tolerance for finding control points will be low.
-                           This option will produce the most control points, 
+                           - Low- The similarity tolerance for finding control points will be low. \
+                           This option will produce the most control points, \
                            but some may have a higher level of error. 
 
-                           Medium - The similarity tolerance for finding control points will be medium.
+                           - Medium - The similarity tolerance for finding control points will be medium.
                            
-                           High - The similarity tolerance for finding control points will be high. 
-                           This option will produce the least number of control points, 
+                           - High - The similarity tolerance for finding control points will be high. \
+                           This option will produce the least number of control points, \
                            but each matching pair will have a lower level of error. This is the default. 
     ------------------     --------------------------------------------------------------------
     context                Optional dictionary.Additional settings such as the input control points 
@@ -496,9 +553,21 @@ def match_control_points(image_collection, control_points, similarity='High', co
     ==================     ====================================================================
 
     :return:
-        A dictionary object
+        A list of dictionary objects
 
-    '''
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.match_control_points(
+        image_collection=image_collection,
+        control_points=control_points,
+        similarity=similarity,
+        context=context,
+        future=future,
+        **kwargs,
+    )
+
+    """
 
     gis = arcgis.env.active_gis if gis is None else gis
 
@@ -528,19 +597,24 @@ def match_control_points(image_collection, control_points, similarity='High', co
         return job_values["result"]
 
     return result
+    """
+
 
 ###################################################################################################
 ## Color Correction
 ###################################################################################################
-def color_correction(image_collection,
-                  color_correction_method,
-                  dodging_surface_type,
-                  target_image=None,
-                  context = None,
-                   *, 
-                   gis=None, 
-                   **kwargs):
-    '''
+def color_correction(
+    image_collection,
+    color_correction_method: str,
+    dodging_surface_type: str,
+    target_image=None,
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
     Color balance the image collection. 
     Refer to the "Color Balance Mosaic Dataset" GP tool for 
     documentation on color balancing mosaic datasets.
@@ -558,66 +632,66 @@ def color_correction(image_collection,
     color_correction_method                  Required string. This is the method that will be used for color
                                              correction computation. The available options are:
 
-                                             Dodging-Change each pixel's value toward a target color. 
-                                             With this technique, you must also choose 
-                                             the type of target color surface, which 
-                                             affects the target color. Dodging tends 
+                                             - Dodging-Change each pixel's value toward a target color. \
+                                             With this technique, you must also choose \
+                                             the type of target color surface, which \
+                                             affects the target color. Dodging tends \
                                              to give the best result in most cases. 
 
-                                             Histogram-Change each pixel's value according
-                                             to its relationship with a target histogram. 
-                                             The target histogram can be derived from
-                                             all of the rasters, or you can specify a
-                                             raster. This technique works well when 
+                                             - Histogram-Change each pixel's value according \
+                                             to its relationship with a target histogram. \
+                                             The target histogram can be derived from \
+                                             all of the rasters, or you can specify a \
+                                             raster. This technique works well when \
                                              all of the rasters have a similar histogram.
                                     
-                                             Standard_Deviation-Change each of the pixel's
-                                             values according to its relationship with the
-                                             histogram of the target raster, within one 
-                                             standard deviation. The standard deviation can be
-                                             calculated from all of the rasters in the mosaic
-                                             dataset, or you can specify a target raster. 
-                                             This technique works best when all of the 
+                                             - Standard_Deviation-Change each of the pixel's \
+                                             values according to its relationship with the \
+                                             histogram of the target raster, within one \
+                                             standard deviation. The standard deviation can be \
+                                             calculated from all of the rasters in the mosaic \
+                                             dataset, or you can specify a target raster. \
+                                             This technique works best when all of the \
                                              rasters have normal distributions.
     ------------------------------------     --------------------------------------------------------------------
     dodging_surface_type                     Required string.When using the Dodging balance method, 
                                              each pixel needs a target color, which is determined by 
                                              the surface type.
 
-                                             Single_Color-Use when there are only a small
-                                             number of raster datasets and a few different
-                                             types of ground objects. If there are too many
-                                             raster datasets or too many types of ground 
-                                             surfaces, the output color may become blurred. 
-                                             All the pixels are altered toward a single 
+                                             - Single_Color-Use when there are only a small \
+                                             number of raster datasets and a few different \
+                                             types of ground objects. If there are too many \
+                                             raster datasets or too many types of ground \
+                                             surfaces, the output color may become blurred. \
+                                             All the pixels are altered toward a single \
                                              color point-the average of all pixels. 
                                     
-                                             Color_Grid- Use when you have a large number
-                                             of raster datasets, or areas with a large 
-                                             number of diverse ground objects. Pixels 
-                                             are altered toward multiple target colors, 
+                                             - Color_Grid- Use when you have a large number \
+                                             of raster datasets, or areas with a large \
+                                             number of diverse ground objects. Pixels \
+                                             are altered toward multiple target colors, \
                                              which are distributed across the mosaic dataset. 
 
-                                             First_Order- This technique tends to create a 
-                                             smoother color change and uses less storage in
-                                             the auxiliary table, but it may take longer to
-                                             process compared to the color grid surface. 
-                                             All pixels are altered toward many points obtained
+                                             - First_Order- This technique tends to create a \
+                                             smoother color change and uses less storage in \
+                                             the auxiliary table, but it may take longer to \
+                                             process compared to the color grid surface. \
+                                             All pixels are altered toward many points obtained \
                                              from the two-dimensional polynomial slanted plane. 
 
-                                             Second_Order-This technique tends to create a 
-                                             smoother color change and uses less storage in
-                                             the auxiliary table, but it may take longer to
-                                             process compared to the color grid surface. 
-                                             All input pixels are altered toward a set of 
-                                             multiple points obtained from the two-dimensional 
+                                             - Second_Order-This technique tends to create a \
+                                             smoother color change and uses less storage in \
+                                             the auxiliary table, but it may take longer to \
+                                             process compared to the color grid surface. \
+                                             All input pixels are altered toward a set of \
+                                             multiple points obtained from the two-dimensional \
                                              polynomial parabolic surface. 
 
-                                             Third_Order-This technique tends to create a 
-                                             smoother color change and uses less storage in
-                                             the auxiliary table, but it may take longer to
-                                             process compared to the color grid surface. 
-                                             All input pixels are altered toward multiple 
+                                             - Third_Order-This technique tends to create a \
+                                             smoother color change and uses less storage in \
+                                             the auxiliary table, but it may take longer to \
+                                             process compared to the color grid surface. \
+                                             All input pixels are altered toward multiple \
                                              points obtained from the cubic surface.
     ------------------------------------     --------------------------------------------------------------------
     target_image                             Optional. The image service you want to use to color balance 
@@ -636,7 +710,21 @@ def color_correction(image_collection,
     :return:
         The imagery layer url
 
-    '''
+    """
+
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.compute_color_correction(
+        image_collection=image_collection,
+        color_correction_method=color_correction_method,
+        dodging_surface=dodging_surface_type,
+        target_image=target_image,
+        context=context,
+        future=future,
+        **kwargs,
+    )
+
+    """
 
     gis = arcgis.env.active_gis if gis is None else gis
 
@@ -676,13 +764,23 @@ def color_correction(image_collection,
 
     return job_values["result"]["url"]
 
+    """
 
 
 ###################################################################################################
 ## Compute Control Points
 ###################################################################################################
-def compute_control_points(image_collection, reference_image=None, image_location_accuracy="High", context = None, *, gis=None, **kwargs):
-    '''
+def compute_control_points(
+    image_collection,
+    reference_image=None,
+    image_location_accuracy: str = "High",
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
     This service tool is used for computing matching control points between images
     within an image collection and/or matching control points between the image 
     collection images and the reference image.
@@ -704,16 +802,15 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
     image_location_accuracy                 Optional string. This option allows you to specify the GPS location accuracy 
                                             level of the source image. It determines how far the tool will search for 
                                             neighboring matching images for calculating tie points and block adjustments. 
+                                            
                                             The following are the available options:
                                             Low, Medium, High
 
-                                            Low- GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 
-                                                 by 12 images. 
+                                            - Low- GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images. 
 
-                                            Medium- GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 
-                                                     4 by 6 images. 
+                                            - Medium- GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 4 by 6 images. 
 
-                                            High- GPS accuracy of 0 to 10 meters, and the tool uses a maximum of 4 by 3 images.
+                                            - High- GPS accuracy of 0 to 10 meters, and the tool uses a maximum of 4 by 3 images.
 
                                             If the image collection is created from satellite data, it will be automatically switched 
                                             to use RPC adjustment mode. In this case, the mode need not be explicitly set by the user.
@@ -721,33 +818,34 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
                                             Default is High
     ------------------------------------    --------------------------------------------------------------------
     context                                 Optional dictionary. Context contains additional environment settings that affect 
-                                            output control points generation. Possible keys and their possible values are: 
+                                            output control points generation. 
+                                            
+                                            Possible keys and their possible values are: 
 
-                                            pointSimilarity- Sets LOW, MEDIUM, or HIGH tolerance for computing control points 
-                                                             with varying levels of potential error.
+                                            pointSimilarity- Sets LOW, MEDIUM, or HIGH tolerance for computing control points with varying levels of potential error.
                                                              
-                                                             LOW tolerance will produce the most control point, but may have a higher 
+                                                             - LOW tolerance will produce the most control point, but may have a higher \
                                                              level of error. 
                                                              
-                                                             HIGH tolerance will produce the least number of control point, 
+                                                             - HIGH tolerance will produce the least number of control point, \
                                                              but each matching pair will have a lower level of error. 
 
-                                                             MEDIUM tolerance will set the similarity tolerance to medium.
+                                                             - MEDIUM tolerance will set the similarity tolerance to medium.
 
                                             pointDensity- Sets the number of tie points (LOW, MEDIUM, or HIGH), to be created. 
-                                                          LOW point density will create the fewest number of tie points. 
-
-                                                          MEDIUM point density will create a moderate number of tie points.
                                                           
-                                                          HIGH point density will create the highest number of tie points.
+                                                          - LOW point density will create the fewest number of tie points. \
 
-                                            pointDistribution- Randomly generates points that are better for overlapping areas 
-                                                               with irregular shapes.
+                                                          - MEDIUM point density will create a moderate number of tie points. \
+                                                          
+                                                          - HIGH point density will create the highest number of tie points. \
+
+                                            pointDistribution- Randomly generates points that are better for overlapping areas with irregular shapes.
                                                                
-                                                               RANDOM- will generate points that are better for overlapping areas 
+                                                               - RANDOM- will generate points that are better for overlapping areas \
                                                                with irregular shapes. 
 
-                                                               REGULAR- will generate points based on a 
+                                                               - REGULAR- will generate points based on a \
                                                                fixed pattern and uses the point density to determine how frequently to create points.
                                             Example:
 
@@ -763,7 +861,19 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
     :return:
         The imagery layer url
 
-    '''
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.compute_control_points(
+        image_collection=image_collection,
+        reference_image=reference_image,
+        image_location_accuracy=image_location_accuracy,
+        context=context,
+        future=future,
+        **kwargs,
+    )
+
+    """
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
@@ -794,17 +904,22 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
     job_values = _execute_task(gis, task, params)
 
     return job_values["result"]
+    """
+
 
 ###################################################################################################
 ## Compute Seamlines
 ###################################################################################################
-def compute_seamlines(image_collection,
-                      seamlines_method,
-                      context = None,
-                      *, 
-                      gis=None, 
-                      **kwargs):
-    '''
+def compute_seamlines(
+    image_collection,
+    seamlines_method: str,
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
     Compute seamlines on the image collection. This service tool is used to compute
     seamlines for the image collection, usually after the image collection has been
     block adjusted. Seamlines are helpful for generating the seamless mosaicked 
@@ -822,17 +937,17 @@ def compute_seamlines(image_collection,
     ------------------     --------------------------------------------------------------------
     seamlines_method       Required string. These are supported methods for generated seamlines for the image collection.
     
-                            VORONOI-Generate seamlines using the area Voronoi diagram. 
+                            - VORONOI-Generate seamlines using the area Voronoi diagram. 
 
-                            DISPARITY-Generate seamlines based on the disparity images of stereo pairs.
+                            - DISPARITY-Generate seamlines based on the disparity images of stereo pairs.
                             
-                            GEOMETRY - Generate seamlines for overlapping areas based on the intersection 
+                            - GEOMETRY - Generate seamlines for overlapping areas based on the intersection \
                             of footprints. Areas with no overlapping imagery will merge the footprints. 
 
-                            RADIOMETRY - Generate seamlines based on the spectral patterns of features 
+                            - RADIOMETRY - Generate seamlines based on the spectral patterns of features \
                             within the imagery.
 
-                            EDGE_DETECTION - Generate seamlines over intersecting areas based on the 
+                            - EDGE_DETECTION - Generate seamlines over intersecting areas based on the \
                             edges of features in the area.
 
                             This method can avoid seamlines cutting through buildings. 
@@ -862,7 +977,19 @@ def compute_seamlines(image_collection,
     :return:
         The Imagery layer url
 
-    '''
+    """
+
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.compute_seamlines(
+        image_collection=image_collection,
+        seamlines_method=seamlines_method,
+        context=context,
+        future=future,
+        **kwargs,
+    )
+
+    """
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
@@ -886,20 +1013,28 @@ def compute_seamlines(image_collection,
     job_values = _execute_task(gis, task, params)
 
     return job_values["result"]["url"]
+    """
 
 
 ###################################################################################################
 ## Edit control points
 ###################################################################################################
-def edit_control_points(image_collection, control_points, *, gis=None, **kwargs):
-    '''
+def edit_control_points(
+    image_collection,
+    control_points: list[dict[str, Any]],
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
     This service can be used to append additional ground control point sets to
-    the image collection's control points. It is recommended that a ground control point (GCP) set 
-    should contain one ground control point and multiple tie points. 
-    The service tool can also be used to edit tie point sets. 
+    the image collection's control points. It is recommended that a ground control point (GCP) set
+    should contain one ground control point and multiple tie points.
+    The service tool can also be used to edit tie point sets.
     The input control points dictionary will always replace the points in the tie points
-    table if the point IDs already exist. 
-   
+    table if the point IDs already exist.
+
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -909,8 +1044,8 @@ def edit_control_points(image_collection, control_points, *, gis=None, **kwargs)
     ------------------     --------------------------------------------------------------------
     control_points         Required, a list of control point sets objects.
 
-                           The schema of control points follows the schema 
-                           of the mosaic dataset control point table. 
+                           The schema of control points follows the schema
+                           of the mosaic dataset control point table.
 
                            The control point object should contain the point geometry, pointID, type, status and the
                            imagePoints. (the imagePoints attribute inside the control points object lists the imageIDs)
@@ -918,63 +1053,61 @@ def edit_control_points(image_collection, control_points, *, gis=None, **kwargs)
                            -- pointID (int) - The ID of the point within the control point table.
 
                            -- type (int)    - The type of the control point as determined by its numeric value
-                                                 1: Tie Point 
+
+                                                 1: Tie Point
                                                  2: Ground Control Point.
                                                  3: Check Point
 
-                           -- status (int)  - The status of the point. A value of 0 indicates that the point will
-                                                 not be used in computation. A non-zero value indicates otherwise.
-
-                           
+                           -- status (int)  - The status of the point. A value of 0 indicates that the point will not be used in computation. A non-zero value indicates otherwise.
 
                            -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
 
                            Example:
-                           [{
-                           "status": 1,
-                           "type": 2,
-                           "x": -117.0926538,
-                           "y": 34.00704253,
-                           "z": 634.2175,
-                           "spatialReference": {
-                               "wkid": 4326
-                           }, // default WGS84
-                           "imagePointSpatialReference": {}, // default ICS
-                           "pointId": 1,
-                           "xyAccuracy": "0.008602325",
-                           "zAccuracy": "0.015",
-                           "imagePoints": [{
-                               "imageID": 1,
-                               "x": 2986.5435987557084,
-                               "y": -2042.5193648409431,
-                               "u": 3057.4580682832734,
-                               "v": -1909.1506872159698
-                           },
-                           {
-                               "imageID": 2,
-                               "x": 1838.2814361401108,
-                               "y": -2594.5280063817972,
-                               "u": 3059.4079724863363,
-                               "v": -2961.292545463305
-                           },
-                           {
-                               "imageID": 12,
-                               "x": 5332.855578204663,
-                               "y": -2533.2805429751907,
-                               "u": 614.2338676573158,
-                               "v": -165.10836768947297
-                           },
-                           {
-                               "imageID": 13,
-                               "x": 4932.0895715254455,
-                               "y": -1833.8401744114287,
-                               "u": 616.9396928182223,
-                               "v": -1243.1445126959693
-                           }]
-                           },
-                           …
-                           …
-                           ] 
+                               | [{
+                               | "status": 1,
+                               | "type": 2,
+                               | "x": -117.0926538,
+                               | "y": 34.00704253,
+                               | "z": 634.2175,
+                               | "spatialReference": {
+                               |     "wkid": 4326
+                               | }, // default WGS84
+                               | "imagePointSpatialReference": {}, // default ICS
+                               | "pointId": 1,
+                               | "xyAccuracy": "0.008602325",
+                               | "zAccuracy": "0.015",
+                               | "imagePoints": [{
+                               |     "imageID": 1,
+                               |     "x": 2986.5435987557084,
+                               |     "y": -2042.5193648409431,
+                               |     "u": 3057.4580682832734,
+                               |     "v": -1909.1506872159698
+                               | },
+                               | {
+                               |     "imageID": 2,
+                               |     "x": 1838.2814361401108,
+                               |     "y": -2594.5280063817972,
+                               |     "u": 3059.4079724863363,
+                               |     "v": -2961.292545463305
+                               | },
+                               | {
+                               |     "imageID": 12,
+                               |     "x": 5332.855578204663,
+                               |     "y": -2533.2805429751907,
+                               |     "u": 614.2338676573158,
+                               |     "v": -165.10836768947297
+                               | },
+                               | {
+                               |     "imageID": 13,
+                               |     "x": 4932.0895715254455,
+                               |     "y": -1833.8401744114287,
+                               |     "u": 616.9396928182223,
+                               |     "v": -1243.1445126959693
+                               | }]
+                               | },
+                               | …
+                               | …
+                               | ]
 
 
     ------------------     --------------------------------------------------------------------
@@ -984,7 +1117,18 @@ def edit_control_points(image_collection, control_points, *, gis=None, **kwargs)
     :return:
         The Imagery layer url
 
-    '''
+    """
+
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.edit_control_points(
+        image_collection=image_collection,
+        input_control_points=control_points,
+        future=future,
+        **kwargs,
+    )
+
+    """
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
@@ -997,20 +1141,25 @@ def edit_control_points(image_collection, control_points, *, gis=None, **kwargs)
     job_values = _execute_task(gis, task, params)
 
     return job_values["result"]["url"]
+    """
+
 
 ###################################################################################################
 ## Generate DEM
 ###################################################################################################
-def generate_dem(image_collection,
-                 out_dem,
-                 cell_size,
-                 surface_type,
-                 matching_method = None,
-                 context = None,
-                 *,
-                 gis = None,
-                 **kwargs):
-    '''
+def generate_dem(
+    image_collection,
+    out_dem: str,
+    cell_size: dict[str, int],
+    surface_type: str,
+    matching_method: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
     Generate a DEM from the image collection. Refer to "Interpolate From Point Cloud"
     GP tool for more documentation
     http://pro.arcgis.com/en/pro-app/tool-reference/data-management/interpolate-from-point-cloud.htm
@@ -1034,23 +1183,24 @@ def generate_dem(image_collection,
     ------------------     --------------------------------------------------------------------
     surface_type           Required string. Create a digital terrain model or a digital surface model. Refer
                            to "surface_type" parameter of the GP tool.
+                           
                            The available choices are:
 
-                           DTM - Digital Terrain Model, the elevation is only the elevation of the bare earth, not including structures above the surface.
+                           - DTM - Digital Terrain Model, the elevation is only the elevation of the bare earth, not including structures above the surface.
 
-                           DSM - Digital Surface Model, the elevation includes the structures above the surface, for example, buildings, trees, bridges.
+                           - DSM - Digital Surface Model, the elevation includes the structures above the surface, for example, buildings, trees, bridges.
     ------------------     --------------------------------------------------------------------
     matching_method        Optional string. The method used to generate 3D points. 
 
-                           ETM-A feature-based stereo matching that uses the Harris operator to 
+                           - ETM-A feature-based stereo matching that uses the Harris operator to \
                            detect feature points. It is recommended for DTM generation.  
 
-                           SGM- Produces more points and more detail than the ETM method. It is 
-                           suitable for generating a DSM for urban areas. This is more 
+                           - SGM- Produces more points and more detail than the ETM method. It is \
+                           suitable for generating a DSM for urban areas. This is more \
                            computationally intensive than the ETM method1.  
 
-                           MVM (Multi-view image matching (MVM) - is based on the SGM matching method followed by a fusion step in which 
-                           the redundant depth estimations across single stereo model are merged. 
+                           - MVM (Multi-view image matching (MVM) - is based on the SGM matching method followed by a fusion step in which \
+                           the redundant depth estimations across single stereo model are merged. \
                            It produces dense 3D points and is computationally efficient
 
                            References:  
@@ -1064,26 +1214,27 @@ def generate_dem(image_collection,
     ------------------     --------------------------------------------------------------------
     context                Optional dictionary. Additional allowed point cloud generation parameter and DEM 
                            interpolation parameter can be assigned here.  
+                           
                            For example: 
-                           Point cloud generation parameters -  
-                           {"maxObjectSize": 50, 
-                           "groundSpacing": None, 
-                           "minAngle": 10, 
-                           "maxAngle": 70, 
-                           "minOverlap": 0.6, 
-                           "maxOmegaPhiDif": 8, 
-                           "maxGSDDif": 2, 
-                           "numImagePairs": 2, 
-                           "adjQualityThreshold": 0.2, 
-                           "regenPointCloud": False 
-                           } 
-
-                           DEM interpolation parameters -  
-                           {"method": "TRIANGULATION", 
-                           "smoothingMethod": "GAUSS5x5", 
-                           "applyToOrtho": True, 
-                           "fillDEM": "https://...." 
-                           } 
+                                | Point cloud generation parameters -  
+                                | {"maxObjectSize": 50, 
+                                | "groundSpacing": None, 
+                                | "minAngle": 10, 
+                                | "maxAngle": 70, 
+                                | "minOverlap": 0.6, 
+                                | "maxOmegaPhiDif": 8, 
+                                | "maxGSDDif": 2, 
+                                | "numImagePairs": 2, 
+                                | "adjQualityThreshold": 0.2, 
+                                | "regenPointCloud": False 
+                                | } 
+                                | 
+                                | DEM interpolation parameters -  
+                                | {"method": "TRIANGULATION", 
+                                | "smoothingMethod": "GAUSS5x5", 
+                                | "applyToOrtho": True, 
+                                | "fillDEM": "https://...." 
+                                | } 
  
                            Note:  
                            The "applyToOrtho" flag can apply the generated DEM back into the 
@@ -1099,8 +1250,21 @@ def generate_dem(image_collection,
     :return:
         The DEM layer item
 
-    '''
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
 
+    return gis._tools.orthomapping.generate_dem(
+        image_collection=image_collection,
+        cell_size=cell_size,
+        output_dem=out_dem,
+        surface_type=surface_type,
+        matching_method=matching_method,
+        context=context,
+        future=future,
+        **kwargs,
+    )
+
+    """
     gis = arcgis.env.active_gis if gis is None else gis
 
     task = 'GenerateDEM'
@@ -1176,23 +1340,27 @@ def generate_dem(image_collection,
     output_service= gis.content.get(job_values["result"]["itemId"])
 
     return  output_service 
+    """
 
 
 ###################################################################################################
 ## Generate orthomosaic
 ###################################################################################################
-def generate_orthomosaic(image_collection,
-                         out_ortho,
-                         regen_seamlines=True,
-                         recompute_color_correction=True,
-                         context=None,
-                         *,
-                         gis=None,
-                         **kwargs):
-    '''
-    Function can be used for generating single ortho-rectified mosaicked image from image collection after 
-    the block adjustment.  
-    
+def generate_orthomosaic(
+    image_collection,
+    out_ortho,
+    regen_seamlines: bool = True,
+    recompute_color_correction: bool = True,
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
+    Function can be used for generating single ortho-rectified mosaicked image from image collection after
+    the block adjustment.
+
     ===================================    ====================================================================
     **Argument**                           **Description**
     -----------------------------------    --------------------------------------------------------------------
@@ -1201,35 +1369,74 @@ def generate_orthomosaic(image_collection,
                                            The image_collection can be a portal Item or an image service URL or a URI
                                            The image_collection must exist.
     -----------------------------------    --------------------------------------------------------------------
-    out_ortho                               Required. This is the ortho-mosaicked image converted from the image 
+    out_ortho                               Required. This is the ortho-mosaicked image converted from the image
                                             collection after the block adjustment.
-                                            It can be a url, uri, portal item, or string representing the name of output dem 
+                                            It can be a url, uri, portal item, or string representing the name of output dem
                                             (either existing or to be created.)
                                             Like Raster Analysis services, the service can be an existing multi-tenant service URL.
     -----------------------------------    --------------------------------------------------------------------
     regen_seamlines                        Optional, boolean.
-                                           Choose whether to apply seamlines before the orthomosaic image generation or not. 
-                                           The seamlines will always be regenerated if this parameter is set to True. 
-                                           The user can set the seamline options through the context parameter. 
-                                           If the seamline generation options are not set, the default will be used.  
+                                           Choose whether to apply seamlines before the orthomosaic image generation or not.
+                                           The seamlines will always be regenerated if this parameter is set to True.
+                                           The user can set the seamline options through the context parameter.
+                                           If the seamline generation options are not set, the default will be used.
 
-                                            Default value is True
+                                           Default value is True
     -----------------------------------    --------------------------------------------------------------------
     recompute_color_correction              Optional, boolean.
-                                            Choose whether to apply color correction settings to the output ortho-image or not. 
-                                            Color correction will always be recomputed if this option is set to True. 
-                                            The user can configure the compute color correction settings through the context parameter. 
-                                            If there is no color collection setting, the default will be used.  
+                                            Choose whether to apply color correction settings to the output ortho-image or not.
+                                            Color correction will always be recomputed if this option is set to True.
+                                            The user can configure the compute color correction settings through the context parameter.
+                                            If there is no color collection setting, the default will be used.
 
                                             Default value is True
     -----------------------------------    --------------------------------------------------------------------
-    context                                Optional dictionary. Context contains additional environment settings that affect output 
+    context                                Optional dictionary. Context contains additional environment settings that affect output
                                            image. The supported environment settings for this tool are:
 
                                            1. Output Spatial Reference (outSR)-the output features will
                                               be projected into the output spatial reference.
 
-                                           2. Extent (extent) - extent that would clip or expand the output image 
+                                           2. Extent (extent) - extent that would clip or expand the output image
+
+                                           3. Cell Size (cellSize) - The output raster will have the resolution specified by cell size.
+
+                                           4. Compute Seamlines (seamlinesMethod) - Default.
+
+                                           5. Clipping Geometry (clippingGeometry) - Clips the orthomosaic image to an area of
+                                              interest defined by the geometry.
+
+                                           6. Orthomosaic As Overview (orthoMosaicAsOvr) - Adds the orthomosaic as an overview of the image collection.
+
+                                           7. Compute Color Correction (colorcorrectionMethod) — Default.
+
+                                           Example:
+
+                                               | {
+                                               |   "outSR": {"wkid": 3516},
+                                               |   "extent": {"xmin": 470614.263139,
+                                               |             "ymin": 8872849.409968,
+                                               |             "xmax": 532307.351827,
+                                               |             "ymax": 8920205.372412,
+                                               |             "spatialReference": {"wkid": 32628}},
+                                               |   "clippingGeometry": {},
+                                               |   "orthoMosaicAsOvr": False,
+                                               |   "seamlinesMethod": "VORONOI",
+                                               |   "minRegionSize": 100,
+                                               |   "pixelSize": "",
+                                               |   "blendType": "Both",
+                                               |   "blendWidth": None,
+                                               |   "blendUnit": "Pixels",
+                                               |   "requestSize": 1000,
+                                               |   "minThinnessRatio": 0.05,
+                                               |   "maxSliverSize": 20
+                                               |   "colorCorrectionMethod": "DODGING",
+                                               |   "dodgingSurface": "Single_Color",
+                                               |   "referenceImg": {"url": https://..."},
+                                               |   "skipRows": 10,
+                                               |   "skipCols": 10,
+                                               |   "reCalculateSats": "OVERWRITE"
+                                               |  }
     -----------------------------------    --------------------------------------------------------------------
     gis                                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ===================================    ====================================================================
@@ -1237,7 +1444,19 @@ def generate_orthomosaic(image_collection,
     :return:
         The Orthomosaicked Imagery layer item
 
-    '''
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.generate_orthomosaic(
+        image_collection=image_collection,
+        output_ortho_image=out_ortho,
+        regen_seamlines=regen_seamlines,
+        recompute_color_correction=recompute_color_correction,
+        context=context,
+        future=future,
+        **kwargs,
+    )
+    """
     gis = arcgis.env.active_gis if gis is None else gis
 
     task = 'GenerateOrthomosaic'
@@ -1303,17 +1522,25 @@ def generate_orthomosaic(image_collection,
     output_service= gis.content.get(job_values["result"]["itemId"])
 
     return  output_service 
+    """
 
 
 ###################################################################################################
 ## Generate report
 ###################################################################################################
-def generate_report(image_collection, report_format="PDF", *, gis=None, **kwargs):
+def generate_report(
+    image_collection,
+    report_format: str = "PDF",
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
     """
-    This function is used to generate orthomapping report with image collection 
-    that has been block adjusted. The report would contain information about 
+    This function is used to generate orthomapping report with image collection
+    that has been block adjusted. The report would contain information about
     the quality of the adjusted images, the distribution of the control points, etc.
-    The output of this service tool is a downloadable html page. 
+    The output of this service tool is a downloadable html page.
 
     ===================    ====================================================================
     **Argument**           **Description**
@@ -1334,6 +1561,15 @@ def generate_report(image_collection, report_format="PDF", *, gis=None, **kwargs
     """
     gis = arcgis.env.active_gis if gis is None else gis
 
+    return gis._tools.orthomapping.generate_report(
+        image_collection=image_collection,
+        report_format=report_format,
+        future=future,
+        **kwargs,
+    )
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
     params = {}
 
     _set_image_collection_param(gis, params, image_collection)
@@ -1349,25 +1585,34 @@ def generate_report(image_collection, report_format="PDF", *, gis=None, **kwargs
     job_values = _execute_task(gis, task, params)
 
     return job_values["outReport"]["url"]
+    """
+
 
 ###################################################################################################
 ## query camera info
 ###################################################################################################
-def query_camera_info(camera_query=None,
-                      *, 
-                      gis=None,
-                      **kwargs):
-    ''' 
-    This service tool is used to query specific or the entire digital camera 
+def query_camera_info(
+    camera_query: Optional[str] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
+    This service tool is used to query specific or the entire digital camera
     database. The digital camera database contains the specs
-    of digital camera sensors that were used to capture drone images. 
+    of digital camera sensors that were used to capture drone images.
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    camera_query           Required String. This is a SQL query statement that can 
+    camera_query           Required String. This is a SQL query statement that can
                            be used to filter a portion of the digital camera
                            database.
+                           Digital camera database can be queried using the fields Make, Model,
+                           Focallength, Columns, Rows, PixelSize.
+
+                           Eg. "Make='Rollei' and Model='RCP-8325'"
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -1376,7 +1621,14 @@ def query_camera_info(camera_query=None,
     :return:
         Data Frame representing the camera database
 
-    '''
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.query_camera_info(
+        camera_query=camera_query, future=future, **kwargs
+    )
+
+    """
     import pandas as pd
     import numpy as np
 
@@ -1392,31 +1644,35 @@ def query_camera_info(camera_query=None,
     task = 'QueryCameraInfo'
     job_values = _execute_task(gis, task, params)
     pd.set_option('display.max_rows', None)
-    df = pd.DataFrame(np.array(job_values["outputCameraInfo"]["content"]),columns = ["Maker","Model", "Focal Length", "Columns", "Rows","Pixel Size"])
-    display(df)
+    df = pd.DataFrame(np.array(job_values["outputCameraInfo"]["content"]),columns = job_values["outputCameraInfo"]["schema"])
     return df
-    #return job_values["outputCameraInfo"]["content"]
+
+    """
+
 
 ###################################################################################################
 ## query control points
 ###################################################################################################
-def query_control_points(image_collection,
-                         query,
-                         *, 
-                         gis=None, 
-                         **kwargs):
-    '''
-    Query for control points in an image collection. It allows users to query 
+def query_control_points(
+    image_collection,
+    query: str,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
+    Query for control points in an image collection. It allows users to query
     among certain control point sets that has ground control points inside.
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    image_collection       Required, the input image collection on which to query 
+    image_collection       Required, the input image collection on which to query
                            the the control points.
 
                            The image_collection can be a portal Item or an image service URL or a URI.
-                           
+
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     query                  Required string. a SQL statement used for querying the point;
@@ -1430,7 +1686,14 @@ def query_control_points(image_collection,
     :return:
         A dictionary object
 
-    '''
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.query_control_points(
+        image_collection=image_collection, where=query, future=future, **kwargs
+    )
+
+    """
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
@@ -1453,19 +1716,20 @@ def query_control_points(image_collection,
         return job_values["outControlPoints"]
 
     return result
+    """
+
 
 ###################################################################################################
 ## Reset image collection
 ###################################################################################################
-def reset_image_collection(image_collection,
-                            *, 
-                            gis=None, 
-                            **kwargs):
-    '''
-    Reset the image collection. It is used to reset the image collection to its 
-    original state. The image collection could be adjusted during the orthomapping 
-    workflow and if the user is not satisfied with the result, they will be able 
-    to clear any existing adjustment settings and revert the images back to 
+def reset_image_collection(
+    image_collection, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+):
+    """
+    Reset the image collection. It is used to reset the image collection to its
+    original state. The image collection could be adjusted during the orthomapping
+    workflow and if the user is not satisfied with the result, they will be able
+    to clear any existing adjustment settings and revert the images back to
     un-adjusted state
 
     ==================     ====================================================================
@@ -1473,7 +1737,7 @@ def reset_image_collection(image_collection,
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection to reset
                            The image_collection can be a portal Item or an image service URL or a URI.
-                           
+
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
@@ -1482,7 +1746,13 @@ def reset_image_collection(image_collection,
     :return:
         A boolean indicating whether the reset was successful or not
 
-    '''
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.reset_image_collection(
+        image_collection=image_collection, future=future, **kwargs
+    )
+    """
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
@@ -1492,9 +1762,10 @@ def reset_image_collection(image_collection,
     task = 'ResetImageCollection'
     job_values = _execute_task(gis, task, params)
     return job_values["result"]
+    """
 
 
-def compute_spatial_reference_factory_code(latitude, longitude): 
+def compute_spatial_reference_factory_code(latitude: float, longitude: float):
     """
     Computes spatial reference factory code. This value may be used as out_sr value in create image collection function
 
@@ -1508,29 +1779,35 @@ def compute_spatial_reference_factory_code(latitude, longitude):
     factory_code : spatial reference factory code
     """
     from math import isnan, fabs, floor
+
     zone = 0
-    if (isnan(longitude) or isnan(latitude) or fabs(longitude) > 180.0 or fabs(latitude) > 90.0):
+    if (
+        isnan(longitude)
+        or isnan(latitude)
+        or fabs(longitude) > 180.0
+        or fabs(latitude) > 90.0
+    ):
         raise RuntimeError("Incorrect latitude or longitude value")
 
-    zone = floor((longitude + 180)/6) + 1
-    if (latitude >= 56.0 and latitude < 64.0 and longitude >= 3.0 and longitude < 12.0):
-        zone = 32;
+    zone = floor((longitude + 180) / 6) + 1
+    if latitude >= 56.0 and latitude < 64.0 and longitude >= 3.0 and longitude < 12.0:
+        zone = 32
 
-    if (latitude >= 72.0 and latitude < 84.0):
-        if  (longitude >= 0.0  and longitude <  9.0):
-            zone = 31;
-        elif (longitude >= 9.0  and longitude < 21.0):
-            zone = 33;
-        elif (longitude >= 21.0 and longitude < 33.0):
-            zone = 35;
-        elif (longitude >= 33.0 and longitude < 42.0): 
+    if latitude >= 72.0 and latitude < 84.0:
+        if longitude >= 0.0 and longitude < 9.0:
+            zone = 31
+        elif longitude >= 9.0 and longitude < 21.0:
+            zone = 33
+        elif longitude >= 21.0 and longitude < 33.0:
+            zone = 35
+        elif longitude >= 33.0 and longitude < 42.0:
             zone = 37
 
-    if(latitude>=0):
+    if latitude >= 0:
         srid = 32601
     else:
         srid = 32701
 
-    factory_code = srid + zone -1
+    factory_code = srid + zone - 1
 
     return factory_code

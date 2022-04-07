@@ -1,26 +1,53 @@
 name: geosaurus_dev_env
 channels:
 - defaults
+- fastai
+- pytorch
+- esri
 dependencies:
 - ipywidgets >=7
-- pandas >=0.23
+- pandas >=1
+- ujson >=3
+- numpy>=1.16.2
 - pip
-- python=3.6
+- python>=3.7, <3.9
 - setuptools
 - widgetsnbextension >=3
-- keyring
+- jupyter_client <=6.1.12
+- keyring>19, <21.8.0
 - keyrings.alt
 - nbconvert
 - beautifulsoup4
 - requests
+- requests-kerberos>=0.12.0
+- requests-oauthlib>=1.2.0
 - jupyterlab
 - pytest
 - matplotlib
-- tornado<6
+- tornado
 - scikit-learn
 - scikit-image
 - keras
+- selenium
+- scipy
+- pillow
+- fastai=1.0.54
+- torchvision=0.3.0
+- pytorch=1.1.0
+- cudatoolkit
+- rtree>=0.8.3
+- lxml
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6
-  - sphinx-rtd-theme
+  - sphinx-rtd-theme==0.5.2
+  - pytest-blockage
+  - junit2html
+  - coverage
+  - geomet
+  - pytest-cov
+  - requests_toolbelt>=0.9.1
+  - requests_ntlm
+  - python-certifi-win32
+  - cachetools
+  - black

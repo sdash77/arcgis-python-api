@@ -26,6 +26,7 @@
 #        arguments in order.  Everything is required except the note and example code block.
 #        Simply copy-n-paste the full doc string, and then edit the text to match your code.
 
+
 def xyz(self, arg1, argument2=None, argument_three=None, arg4demoPruposes=None):
     """
     This is the method description, which is required.  Provide a simple and clear statement
@@ -52,6 +53,10 @@ def xyz(self, arg1, argument2=None, argument_three=None, arg4demoPruposes=None):
     argument_three         Optional string. Description text here.
     ------------------     --------------------------------------------------------------------
     arg4demoPurposes       Optional <> object. Description text here.
+    ------------------     --------------------------------------------------------------------
+    arg5demoPurposes       Optional <> object. Description text here. To learn more see
+                           `hyperlink text <url such as : http://stackoverflow.com/>`_.
+                           Note: the trailing _ is important.
     ==================     ====================================================================
 
 
@@ -72,7 +77,6 @@ def xyz(self, arg1, argument2=None, argument_three=None, arg4demoPruposes=None):
 
     """
 
-    
 
 ## 2 ## Standards for filling in the argument-description table
 
@@ -106,7 +110,7 @@ def xyz(self, arg1, argument2=None, argument_three=None, arg4demoPruposes=None):
 """
 
 ## 3 ## Standard return statements or formats
-#        No rigidity intended here at all.  Go with what is useful for the user and jives with you.  But if 
+#        No rigidity intended here at all.  Go with what is useful for the user and jives with you.  But if
 #        it is a standard response, like a simple True or False return, please try to use the standards below.
 #        In general, do not use "JSON" in return statements.
 """
@@ -132,7 +136,7 @@ For json responses:
   but this instead 'The data item object, None if not found.' 
 
 """
-       
+
 ## 4 ## Table for one or two or 12 arguments
 """
         ==================     ====================================================================
@@ -180,10 +184,10 @@ For json responses:
         ==================     ====================================================================
 """
 
-        
+
 ## 5 ## Table for longggg arguments
 #        If the argument name goes past the argument column boundary, the table will not be produced.
-#        The same does not hold true for the description column -- it is fine to flow text past this 
+#        The same does not hold true for the description column -- it is fine to flow text past this
 #        boundary, but do try to keep it reasonable if only for readability for developers in the
 #        code.  See #6 below.
 
@@ -234,16 +238,14 @@ For json responses:
 #        PEP-8 says <80, but caveats some teams prefer 100, some on this team wanted 120 or 100.  We're going
 #        with 100-ish.  Feel free to go with less, just don't exceed 100.
 #        https://www.python.org/dev/peps/pep-0008/#maximum-line-length
-                                                                       
+
 
 ## 7 ## Full gis.Item.create_tile_service example
 
-def create_tile_service(self,
-                         title,
-                         min_scale,
-                         max_scale,
-                         cache_info=None,
-                         build_cache=False):
+
+def create_tile_service(
+    self, title, min_scale, max_scale, cache_info=None, build_cache=False
+):
     """
     Allows publishers and administrators to publish hosted feature
     layers and hosted feature layer views as a tile service.
@@ -261,7 +263,7 @@ def create_tile_service(self,
                       Example: 80000.0
     ----------------  ---------------------------------------------------------------
     cache_info        Optional dictionary. If not none, administrator provides the
-                      tile cache info for the service. The default is the AGOL scheme.
+                      tile cache info for the service. The default is the ArcGIS Online scheme.
     ----------------  ---------------------------------------------------------------
     build_cache       Optional boolean. Default is False; if True, the cache will be
                       built at publishing time.  This will increase the time it takes
@@ -273,10 +275,17 @@ def create_tile_service(self,
 
     """
 
+    ## 8 ## Full gis.Item.add example, shows use of additional reference table and note
 
-## 8 ## Full gis.Item.add example, shows use of additional reference table and note
-        
-    def add(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
+    def add(
+        self,
+        item_properties,
+        data=None,
+        thumbnail=None,
+        metadata=None,
+        owner=None,
+        folder=None,
+    ):
         """
         Adds content to the GIS by creating an item.
 
@@ -357,12 +366,18 @@ def create_tile_service(self,
            The item ID if successfully added, None if unsuccessful.
         """
 
+    ## 10 ## Full gis.ContentManager.search example, a note with a list
+    #         The line-up of numbers and paragraph lines matters.
 
-
-## 10 ## Full gis.ContentManager.search example, a note with a list
-#         The line-up of numbers and paragraph lines matters.
-
-    def search(self, query, item_type=None, sort_field='avgRating', sort_order='desc', max_items=10, outside_org=False):
+    def search(
+        self,
+        query,
+        item_type=None,
+        sort_field="avgRating",
+        sort_order="desc",
+        max_items=10,
+        outside_org=False,
+    ):
         """
         Searches for portal items.
 
@@ -386,7 +401,7 @@ def create_tile_service(self,
         query             Required string. A query string.  See notes above.
         ----------------  --------------------------------------------------------------------------
         item_type         Optional string. Set type of item to search.
-                          http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+                          https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
         ----------------  --------------------------------------------------------------------------
         sort_field        Optional string. Valid values can be title, uploaded, type, owner, modified,
                           avgRating, numRatings, numComments, and numViews.
@@ -448,13 +463,9 @@ def create_tile_service(self,
 """
 
 ## Another way to embed table within a table
-def create(self,
-           name,
-           url,
-           events="ALL",
-           number_of_failures=5,
-           days_in_past=5,
-           secret=None):
+def create(
+    self, name, url, events="ALL", number_of_failures=5, days_in_past=5, secret=None
+):
     """
     Creates a WebHook to monitor REST endpoints and report activities
 
@@ -558,7 +569,8 @@ def create(self,
 
     """
     pass
-        
+
+
 ## 11 ## How to do bulleted lists
 
 #         Bulleted lists need to be in this format:
@@ -602,7 +614,6 @@ This results in "<bullet> Rest <dash> Exposes..."  :
                       username="user1", password="password1")
         
 """
-        
 
 
 ## 13 ## Format of docstrings for Python properties
@@ -611,13 +622,12 @@ This results in "<bullet> Rest <dash> Exposes..."  :
 # Format - Still TBD
 
 
-
 ## 14 ## Standard text -- data types, Esri product names, argument descriptions
 ##
 
- #
- # Data Types:
- #
+#
+# Data Types:
+#
 """
 Always include the modifier first -- Optional or Required
 Then the type followed by a period, and then followed by the argument description.
@@ -631,9 +641,9 @@ dictionary
 list??? string list or
 ?? add more
 """
- #
- # Esri product names, or related terms
- #
+#
+# Esri product names, or related terms
+#
 """
 big data, Big Data ??
 Data Store, datastore, data store ??
@@ -648,7 +658,6 @@ tags -- Optional string. Tags listed as comma-separated values, or a list of str
 access -- Optional string. Valid values are private, shared, org, or public.
 ?? add more
 """
-
 
 
 ## 15 ## Misc, other guidance
@@ -703,9 +712,9 @@ link. -- future maybe?
 """
 
 
-
 ## *1
-# not this >>  
+# not this >>
+
 
 def start(self):
     """
@@ -724,13 +733,14 @@ def start(self):
     A machine can participate in only one site at a time. To remove a machine permanently from
     the site, you can use the unregister operation.
     """
-# this instead (with most of above moved to the class description) >>  
-                                                                       
+    # this instead (with most of above moved to the class description) >>
+
     def start(self):
         """
-        Starts this server machine. Starting the machine enables its 
+        Starts this server machine. Starting the machine enables its
         ability to host GIS services.
         """
+
 
 # Summary of above -- The two paragraphs are more suited to being in the class descriptions,
 # especially since the same-ish info was repeated in several other methods.  Move those paragraphs
@@ -771,5 +781,3 @@ other, in particular with regards to the arg-desc table?  Ex - gis.GroupManager.
 
 
 """
-
-                               

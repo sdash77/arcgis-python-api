@@ -2,6 +2,7 @@ import pandas as pd
 from arcgis.geometry import Geometry, Point, Polygon, Polyline, MultiPoint
 from arcgis.features.geo._accessor import _is_geoenabled
 
+
 def select(sdf, other):
     """
     Performs a select by location operation
@@ -14,7 +15,7 @@ def select(sdf, other):
     other                        Required Spatially Enabled DataFrame or arcgis.Geometry.  This is the selecting data.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     ud = pd.Series([False] * len(sdf))
@@ -39,7 +40,11 @@ def select(sdf, other):
                 ud = ud | dj
         return sdf[ud]
     else:
-        raise ValueError(("Invalid input, please verify that `other` "
-                          "is a Point, Polygon, Polyline, MultiPoint, "
-                          "or Spatially enabled DataFrame"))
+        raise ValueError(
+            (
+                "Invalid input, please verify that `other` "
+                "is a Point, Polygon, Polyline, MultiPoint, "
+                "or Spatially enabled DataFrame"
+            )
+        )
     return None

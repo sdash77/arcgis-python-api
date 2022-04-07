@@ -1,13 +1,13 @@
-"""
-Module contains a class to manage site level functions on a local GIS
-"""
+from typing import Optional
 from ._base import BasePortalAdmin
+
 ########################################################################
 class Site(BasePortalAdmin):
     """
     Site is the root resources used after a local GIS is installed. Here
     administrators can create, export, import, and join sites.
     """
+
     _url = None
     _con = None
     _pa = None
@@ -15,29 +15,34 @@ class Site(BasePortalAdmin):
     _properties = None
     _json = None
     _json_dict = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, portaladmin, **kwargs):
         """Constructor"""
         super(Site, self).__init__(url=url, gis=portaladmin._gis)
-        initialize = kwargs.pop('initialize', False)
+        initialize = kwargs.pop("initialize", False)
         self._url = url
         self._pa = portaladmin
         self._gis = portaladmin._gis
         self._con = portaladmin._con
         if initialize:
             self._init()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @staticmethod
-    def create(con,
-               url,
-               username,
-               password,
-               full_name,
-               email,
-               content_store,
-               description="",
-               question_idx=None,
-               question_ans=None):
+    def create(
+        con,
+        url: str,
+        username: str,
+        password: str,
+        full_name: str,
+        email: str,
+        content_store: str,
+        description: str = "",
+        question_idx: Optional[int] = None,
+        question_ans: Optional[str] = None,
+        license_file: Optional[str] = None,
+        user_license: Optional[str] = None,
+    ):
         """
         The create site operation initializes and configures Portal for
         ArcGIS for use. It must be the first operation invoked after
@@ -79,25 +84,45 @@ class Site(BasePortalAdmin):
                                         forgotten password
         ---------------------------     --------------------------------------------------------------------
         question_ans                    Optional string. The answer to the secret question
+        ---------------------------     --------------------------------------------------------------------
+        license_file                    Optional string. The portal license file. Starting at 10.7, you will
+                                        obtain your portal license file - which contains information
+                                        regarding your user types, apps, and app bundles-from My Esri. For
+                                        more information, see Obtain a portal license file.
+        ---------------------------     --------------------------------------------------------------------
+        user_license                    The user type for the initial administrator account. The values
+                                        listed below are the user types that are compatible with the
+                                        Administrator role.
+
+                                        Values: creatorUT, GISProfessionalBasicUT,
+                                                GISProfessionalStdUT, GISProfessionalAdvUT
+
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/createNewSite" % url
-        params = {"f": "json",
-                  "username" : username,
-                  "password" : password,
-                  "fullName" : full_name,
-                  "email" : email,
-                  "description" : description,
-                  "contentStore" : content_store}
+        params = {
+            "f": "json",
+            "username": username,
+            "password": password,
+            "fullName": full_name,
+            "email": email,
+            "description": description,
+            "contentStore": content_store,
+        }
         if question_idx and question_ans:
-            params['securityQuestionIdx'] = question_idx
-            params['securityQuestionAns'] = question_ans
-        return con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
-    def export_site(self, location):
+            params["securityQuestionIdx"] = question_idx
+            params["securityQuestionAns"] = question_ans
+        if user_license:
+            params["userLicenseTypeId"] = user_license
+        if license_file:
+            license_file = {"file": license_file}
+        return con.post(url, params, files=license_file)
+
+    # ----------------------------------------------------------------------
+    def export_site(self, location: str):
         """
         This operation exports the portal site configuration to a location
         you specify. The exported file includes the following information:
@@ -115,7 +140,7 @@ class Site(BasePortalAdmin):
                                         where the exported site configuration will be written.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         .. code-block:: python
 
@@ -133,12 +158,11 @@ class Site(BasePortalAdmin):
 
         """
         url = "%s/exportSite" % self._url
-        params = {'f' : 'json',
-                  'location' : location}
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
-    def import_site(self, location):
+        params = {"f": "json", "location": location}
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
+    def import_site(self, location: str):
         """
         The importSite operation lets you restore your site from a backup
         site configuration file that you created using the exportSite
@@ -156,7 +180,7 @@ class Site(BasePortalAdmin):
         location                        Required string. A file path to an exported configuration.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Boolean. True if successful else False.
 
         """
         url = "%s/importSite" % self._url
@@ -164,15 +188,14 @@ class Site(BasePortalAdmin):
             raise ValueError(
                 "You must access portal not using the web adaptor (port 7443)"
             )
-        params = {'f' : 'json',
-                  'location' : location}
-        res =  self._con.post(path=url,
-                              postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        params = {"f": "json", "location": location}
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return False
-    #----------------------------------------------------------------------
-    def join(self, admin_url, username, password):
+
+    # ----------------------------------------------------------------------
+    def join(self, admin_url: str, username: str, password: str):
         """
         The joinSite operation connects a portal machine to an existing
         site. You must provide an account with administrative privileges to
@@ -184,7 +207,7 @@ class Site(BasePortalAdmin):
         configuration store.
         If this is the first portal machine in your site, use the Create
         Site operation instead.
-        The joinSite operation:
+        The join operation:
          - Registers a machine to an existing site (active machine)
          - Creates a snapshot of the database of the active machine
          - Updates the token shared key
@@ -208,17 +231,14 @@ class Site(BasePortalAdmin):
                                         of the existing portal site.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/joinSite" % self._url
-        params = {'f' : 'json',
-                  'machineAdminUrl' : admin_url,
-                  'username' : username,
-                  'password' : password}
-        return self._con.post(path=url,
-                              postdata=params)
-
-
-
-
+        params = {
+            "f": "json",
+            "machineAdminUrl": admin_url,
+            "username": username,
+            "password": password,
+        }
+        return self._con.post(path=url, postdata=params)

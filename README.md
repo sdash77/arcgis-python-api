@@ -1,3 +1,8 @@
+**Current Version:** [![Anaconda-Server Badge](https://anaconda.org/esri/arcgis/badges/version.svg)](https://anaconda.org/esri/arcgis) </br>
+**Last Update:** [![Anaconda-Server Badge](https://anaconda.org/esri/arcgis/badges/latest_release_relative_date.svg)](https://anaconda.org/esri/arcgis) </br>
+**Anaconda Total Downloads:** [![Anaconda-Server Badge](https://anaconda.org/esri/arcgis/badges/downloads.svg)](https://anaconda.org/esri/arcgis) </br>
+**PyPI Downloads:** ![PyPI - Downloads](https://img.shields.io/pypi/dm/arcgis?style=flat-square) </br>
+
 # Vision
  
 [ **A powerful Python library for spatial analysis, mapping and GIS** ](https://developers.arcgis.com/python/)
@@ -44,7 +49,7 @@ Try running these commands:
 
 ## Build the Documentation
 
-Go to the ```./docs``` folder, and run the following commands:
+Go to the ```./docs/api_ref``` folder, and run the following commands:
 
 Windows: ```.\make.bat html```
 OSX/Linux: ```make html```

@@ -12,20 +12,47 @@ from . import _security, _services
 from . import _system
 from . import _uploads, _usagereports
 from . import _mode
-from .. import  ServicesDirectory
-from arcgis._impl.connection import _ArcGISConnection
-from .._common import ServerConnection
+from .. import ServicesDirectory
+from ..._impl._con import Connection
+
 ########################################################################
 class Server(BaseServer):
     """
-    An ArcGIS Enterprise Server site used for hosting GIS Web services.
+    An ArcGIS Server site used for hosting GIS web services.
+
+    This class can be directly instantied when working with stand-alone (unfederated) ArcGIS Server sites.
+
+    This class is not directly created when working with federated ArcGIS Server sites, instead use the
+    :class:`ServerManager` :func:`~ServerManager.list` or :func:`~ServerManager.get` methods.
+
+    .. code-block:: python
+
+        # Usage Example 1: Get an object for an ArcGIS Server site federated with an ArcGIS Enterprise portal
+
+        gis = GIS(profile="your_ent_admin_profile")
+
+        hosting_server = gis.admin.servers.get(role="HOSTING_SERVER")
+
+
+    For stand-alone ArcGIS Server sites, directly create a :class:`Server` instance.
+
+    .. code-block:: python
+
+        # Usage Example 2: Get a stand-alone ArcGIS Server site that has Web Adaptor installed
+
+        server_base_url = "https://example.com"
+
+        gis_server = Server(url=f"{server_base_url}/web_adaptor/admin",
+                            token_url=f"{server_base_url}/web_adaptor/tokens/generateToken",
+                            username="admin_user",
+                            password="admin_password")
 
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the ArcGIS Server administration
-                           end point for the ArcGIS Server Site.
+                           end point for the ArcGIS Server site.
 
                            Example: https://gis.mysite.com/arcgis/admin
 
@@ -36,10 +63,15 @@ class Server(BaseServer):
                            Web Context URL, is recommended as generally the SSL Certificate binding for
                            the web server uses this hostname.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional string. The GIS object representing the Portal which thi
-                           Server is federated with. The GIS object should be logged in with a username
-                           in the publisher or administrator Role in order to administer the Server
+    gis                    Optional string. The GIS object representing the ArcGIS Enterprise portal which this
+                           ArcGIS Server site is federated with. The GIS object should be logged in with a username
+                           in the publisher or administrator Role in order to administer the server. If this
+                           parameter is not present, a combination of other keyword arguments must be present.
     ==================     ====================================================================
+
+    .. note::
+        If the ``gis`` argument is not present, any number of combinations of keyword arguments will initialize a
+        functioning ``Server`` object. See examples below.
 
     =====================     ====================================================================
     **Optional Argument**     **Description**
@@ -48,20 +80,19 @@ class Server(BaseServer):
                               Example: https://mysite.com/arcgis
     ---------------------     --------------------------------------------------------------------
     tokenurl                  Optional string. Used when a site is federated or when the token
-                              URL differs from the site's baseurl.  If a site is federated, the
-                              token URL will return as the Portal token and ArcGIS Server users
+                              URL differs from the site's base url.  If a site is federated, the
+                              token URL will return as the portal token and ArcGIS Server users
                               will not validate correctly.
     ---------------------     --------------------------------------------------------------------
-    username                  Optional string. The login username for BUILT-IN GIS Server security.
+    username                  Optional string. The login username when using built-in ArcGIS Server security.
     ---------------------     --------------------------------------------------------------------
-    password                  Optional string. A secret word or phrase that must be used to gain
-                              access to the account above.
+    password                  Optional string. The password for the specified username.
     ---------------------     --------------------------------------------------------------------
     key_file                  Optional string. The path to a PKI key file used to authenticate the
                               user to the Web Server in front of the ArcGIS Server site.
     ---------------------     --------------------------------------------------------------------
     cert_file                 Optional string. The path to PKI cert file used to authenticate the
-                              user to the Web Server in front of the ArcGIS Server site.
+                              user to the web server in front of the ArcGIS Server site.
     ---------------------     --------------------------------------------------------------------
     proxy_host                Optional string. The web address to the proxy host if the environment
                               where the Python API is running requires a proxy host for access to the
@@ -80,63 +111,76 @@ class Server(BaseServer):
                               of HTTP. The default is False.
     ---------------------     --------------------------------------------------------------------
     portal_connection         Optional string. This is used when a site is federated. It is the
-                              ArcGIS Online or Portal GIS object used.
+                              ArcGIS Enterprise portal GIS object representing the portal managing the site.
     ---------------------     --------------------------------------------------------------------
     initialize                Optional boolean. If True, the object will attempt to reach out to
                               the URL resource and populate at creation time. The default is False.
     =====================     ====================================================================
 
+    .. code-block:: python
+
+        # Usage Example 3: Get the ArcGIS Server site that is federated to an Enterprise (using ``gis``)
+
+        server_base_url = "https://example.com"
+        gis = GIS(profile="your_ent_admin_profile")
+        gis_server = Server(url=f"{server_base_url}/web_adaptor/admin",
+                            gis = gis)
+
+        # Usage Example 4: Get the ArcGIS Server site that is federated to an Enterprise (using ``portal_connection``)
+
+        server_base_url = "https://example.com"
+        gis = GIS(profile="your_ent_admin_profile")
+        gis_server = Server(url=f"{server_base_url}/web_adaptor/admin",
+                            portal_connection=gis._portal.con)
+
     """
+
     _url = None
     _con = None
     _json_dict = None
     _json = None
     _catalog = None
     _sitemanager = None
-    #----------------------------------------------------------------------
-    def __init__(self,
-                 url,
-                 gis=None,
-                 **kwargs):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
         if gis is None and len(kwargs) > 0:
-            if 'baseurl' not in kwargs:
-                kwargs['baseurl'] = url
-            gis = ServerConnection(**kwargs)
-        initialize = kwargs.pop('initialize', False)
-        super(Server, self).__init__(gis=gis,
-                                     url=url,
-                                     initialize=initialize,
-                                     **kwargs)
-
-        self._catalog = kwargs.pop('servicesdirectory', None)
-        if not url.lower().endswith('/admin'):
+            if "baseurl" not in kwargs:
+                kwargs["baseurl"] = url
+            kwargs["product"] = "SERVER"
+            gis = Connection(**kwargs)
+        initialize = kwargs.pop("initialize", False)
+        super(Server, self).__init__(gis=gis, url=url, initialize=initialize, **kwargs)
+        if url.endswith("/"):
+            url = url[:-1]
+        self._catalog = kwargs.pop("servicesdirectory", None)
+        if not url.lower().endswith("/admin"):
             url = "%s/admin" % url
         self._url = url
 
-        #else:
+        # else:
         #    raise ValueError("You must provide either a GIS or login credentials to use this object.")
-        if hasattr(gis, '_con'):
+        if hasattr(gis, "_con"):
             self._con = gis._con
-        elif hasattr(gis, '_portal'):
+        elif hasattr(gis, "_portal"):
             self._con = gis._portal._con
-        elif isinstance(gis, (_ArcGISConnection,
-                              ServerConnection)):
+        elif isinstance(gis, Connection):
             self._con = gis
         else:
             raise ValueError("Invalid gis Type: Must be GIS/ServicesDirectory Object")
         if initialize:
             self._init(self._con)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
-    def publish_sd(self,
-                    sd_file,
-                    folder=None):
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
+    def publish_sd(self, sd_file, folder=None, service_config=None):
         """
         Publishes a service definition file to ArcGIS Server.
 
@@ -149,49 +193,57 @@ class Server(BaseServer):
                                file to.  If this folder is not present, it will be created.  The
                                default is None in which case the service definition will be published
                                to the System folder.
+        ------------------     --------------------------------------------------------------------
+        service_config         Optional Dict[str, Any]. A set of configuration overwrites that overrides the service definitions defaults.
         ==================     ====================================================================
 
         :return:
            A boolean indicating success (True) or failure (False).
         """
         import json
-        if sd_file.lower().endswith('.sd') == False:
+
+        if sd_file.lower().endswith(".sd") == False:
             return False
-        catalog = self._catalog
-        if 'System' not in catalog.folders:
+        catalog = self.content
+        if "System" not in self.services.folders:
             return False
-        if folder and \
-           folder.lower() not in [f.lower() for f in catalog.folders]:
+        if folder and folder.lower() not in [f.lower() for f in self.services.folders]:
             self.services.create_folder(folder)
-        service = catalog.get(name="PublishingTools", folder='System')
+        service = catalog.get(name="PublishingTools", folder="System")
         if service is None:
-            service = catalog.get(name="PublishingToolsEx", folder='System')
+            service = catalog.get(name="PublishingToolsEx", folder="System")
         if service is None:
             return False
         status, res = self._uploads.upload(path=sd_file, description="sd file")
         if status:
-            uid = res['item']['itemID']
-            if folder:
-                config = self._uploads._service_configuration(uid)
-                if 'folderName' in config:
-                    config['folderName'] = folder
-                res = service.publish_service_definition(in_sdp_id=uid,
-                                                         in_config_overwrite=json.dumps(config))
+            uid = res["item"]["itemID"]
+            config = self._uploads._service_configuration(uid)
+            if folder or service_config:
+                if service_config and isinstance(service_config, dict):
+                    config.update(service_config)
+                if "folderName" in config:
+                    config["folderName"] = folder
+                res = service.publish_service_definition(
+                    in_sdp_id=uid, in_config_overwrite=json.dumps(config)
+                )
             else:
                 res = service.publish_service_definition(in_sdp_id=uid)
             return True
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @staticmethod
-    def _create(url,
-                username,
-                password,
-                config_store_connection,
-                directories,
-                cluster=None,
-                logs_settings=None,
-                run_async=False,
-                **kwargs):
+    def _create(
+        url,
+        username,
+        password,
+        config_store_connection,
+        directories,
+        cluster=None,
+        logs_settings=None,
+        run_async=False,
+        **kwargs,
+    ):
         """
         This is the first operation that you must invoke when you install
         ArcGIS Server for the first time. Creating a new site involves:
@@ -213,7 +265,7 @@ class Server(BaseServer):
         ----------------------     --------------------------------------------------------------------
         connection
         ----------------------     --------------------------------------------------------------------
-        url                        Required string. URI string to the site.
+        url                        Required string. URL for the site.
         ----------------------     --------------------------------------------------------------------
         username                   Required string. The name of the administrative account to be used by
                                    the site. This can be changed at a later stage.
@@ -232,7 +284,7 @@ class Server(BaseServer):
                                    site will create a cluster called 'default' with the first available
                                    port numbers starting from 4004.
         ----------------------     --------------------------------------------------------------------
-        logsSettings               Optional string. Optional log settings, see http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Log_Settings/02r3000001t6000000/ .
+        logsSettings               Optional string. Optional log settings, see https://developers.arcgis.com/rest/enterprise-administration/server/logssettings.htm .
         ----------------------     --------------------------------------------------------------------
         runAsync                   Optional boolean. A flag to indicate if the operation needs to be run
                                    asynchronously.
@@ -243,17 +295,16 @@ class Server(BaseServer):
         **Optional Argument**     **Description**
         ---------------------     --------------------------------------------------------------------
         baseurl                   Optional string. The root URL to a site.
-                                  Example: https://mysite.com/arcgis
+                                  Example: https://mysite.example.com/arcgis
         ---------------------     --------------------------------------------------------------------
         tokenurl                  Optional string. Used when a site is federated or when the token
                                   URL differs from the site's baseurl.  If a site is federated, the
                                   token URL will return as the Portal token and ArcGIS Server users
                                   will not validate correctly.
         ---------------------     --------------------------------------------------------------------
-        username                  Optional string. The login username for BUILT-IN security.
+        username                  Optional string. The login username when using built-in ArcGIS Server security.
         ---------------------     --------------------------------------------------------------------
-        password                  Optional string. A secret word or phrase that must be used to gain
-                                  access to the account above.
+        password                  Optional string. The password for the specified username.
         ---------------------     --------------------------------------------------------------------
         key_file                  Optional string. The path to PKI key file.
         ---------------------     --------------------------------------------------------------------
@@ -272,7 +323,7 @@ class Server(BaseServer):
                                   of HTTP. The default is False.
         ---------------------     --------------------------------------------------------------------
         portal_connection         Optional string. This is used when a site is federated. It is the
-                                  ArcGIS Online or Portal GIS object used.
+                                  ArcGIS Enterprise portal GIS object representing the portal managing the site.
         ---------------------     --------------------------------------------------------------------
         initialize                Optional boolean. If True, the object will attempt to reach out to
                                   the URL resource and populate at creation time. The default is False.
@@ -283,19 +334,19 @@ class Server(BaseServer):
         """
         url = url + "/createNewSite"
         params = {
-            "f" : "json",
-            "cluster" : cluster,
-            "directories" : directories,
-            "username" : username,
-            "password" : password,
-            "configStoreConnection" : config_store_connection,
-            "logSettings" : logs_settings,
-            "runAsync" : run_async
+            "f": "json",
+            "cluster": cluster,
+            "directories": directories,
+            "username": username,
+            "password": password,
+            "configStoreConnection": config_store_connection,
+            "logSettings": logs_settings,
+            "runAsync": run_async,
         }
-        con = ServerConnection(**kwargs)
-        return con.post(path=url,
-                        postdata=params)
-    #----------------------------------------------------------------------
+        con = Connection(**kwargs)
+        return con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def _join(self, admin_url, username, password):
         """
         The Join Site operation is used to connect a server machine to an
@@ -330,14 +381,14 @@ class Server(BaseServer):
         """
         url = self._url + "/joinSite"
         params = {
-            "f" : "json",
-            "adminURL" : admin_url,
-            "username" : username,
-            "password" : password
+            "f": "json",
+            "adminURL": admin_url,
+            "username": username,
+            "password": password,
         }
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def _delete(self):
         """
         Deletes the site configuration and releases all server resources.
@@ -358,12 +409,10 @@ class Server(BaseServer):
            Success statement.
         """
         url = self._url + "/deleteSite"
-        params = {
-            "f" : "json"
-        }
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def _export(self, location=None):
         """
         Exports the site configuration to a location you specify as input
@@ -384,14 +433,12 @@ class Server(BaseServer):
            Success statement.
         """
         url = self._url + "/exportSite"
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         if location is not None:
-            params['location'] = location
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+            params["location"] = location
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def _import_site(self, location):
         """
         This operation imports a site configuration into the currently
@@ -420,13 +467,10 @@ class Server(BaseServer):
            A report.
         """
         url = self._url + "/importSite"
-        params = {
-            "f" : "json",
-            "location" : location
-        }
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        params = {"f": "json", "location": location}
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def _upgrade(self, run_async=False):
         """
         This is the first operation that must be invoked during an ArcGIS
@@ -458,23 +502,20 @@ class Server(BaseServer):
            Success statement.
         """
         url = self._url + "/upgrade"
-        params = {
-            "f" : "json",
-            "runAsync" : run_async
-        }
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        params = {"f": "json", "runAsync": run_async}
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     @property
     def _public_key(self):
         """Gets the public key."""
         url = self._url + "/publicKey"
         params = {
-            "f" : "json",
+            "f": "json",
         }
-        return self._con.get(path=url,
-                             params=params)
-    #----------------------------------------------------------------------
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
     @property
     def machines(self):
         """
@@ -493,20 +534,18 @@ class Server(BaseServer):
         """
         if self.resources is None:
             self._init()
-        if isinstance(self.resources, list) and \
-           'machines' in self.resources:
+        if isinstance(self.resources, list) and "machines" in self.resources:
             url = self._url + "/machines"
-            return _machines.MachineManager(url,
-                                            gis=self._con,
-                                            initialize=False)
+            return _machines.MachineManager(url, gis=self._con, initialize=False)
         else:
             return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def datastores(self):
         """
         Gets the information about the data holdings of the server.
-        Data items are used by ArcGIS for Desktop and other clients
+        Data items are used by ArcGIS Pro, ArcGIS Desktop, and other clients
         to validate data paths referenced by GIS services.
         You can register new data items with the server by using the
         Register Data Item operation. Use the Find Data Items operation to
@@ -525,24 +564,22 @@ class Server(BaseServer):
         """
         if self.properties is None:
             self._init()
-        if isinstance(self.resources, list) and \
-           "data" in self.resources:
+        if isinstance(self.resources, list) and "data" in self.resources:
             url = self._url + "/data"
-            return _data.DataStoreManager(url=url,
-                                          gis=self._con)
+            return _data.DataStoreManager(url=url, gis=self._con)
         else:
             return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _info(self):
         """
         A read-only resource that returns meta information about the server.
         """
         url = self._url + "/info"
-        return _info.Info(url=url,
-                          gis=self._con,
-                          initialize=True)
-    #----------------------------------------------------------------------
+        return _info.Info(url=url, gis=self._con, initialize=True)
+
+    # ----------------------------------------------------------------------
     @property
     def site(self):
         """
@@ -559,21 +596,20 @@ class Server(BaseServer):
         if self._sitemanager is None:
             self._sitemanager = SiteManager(self)
         return self._sitemanager
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _clusters(self):
         """Gets the clusters functions if supported in resources."""
         if self.properties is None:
             self._init()
-        if isinstance(self.resources, list) and \
-           "clusters" in self.resources:
+        if isinstance(self.resources, list) and "clusters" in self.resources:
             url = self._url + "/clusters"
-            return _clusters.Cluster(url=url,
-                                     gis=self._con,
-                                     initialize=True)
+            return _clusters.Cluster(url=url, gis=self._con, initialize=True)
         else:
             return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def services(self):
         """
@@ -582,16 +618,15 @@ class Server(BaseServer):
         """
         if self.resources is None:
             self._init()
-        if isinstance(self.resources, list) and \
-           'services' in self.resources:
+        if isinstance(self.resources, list) and "services" in self.resources:
             url = self._url + "/services"
-            return _services.ServiceManager(url=url,
-                                            gis=self._con,
-                                            initialize=True,
-                                            sm=self)
+            return _services.ServiceManager(
+                url=url, gis=self._con, initialize=True, sm=self
+            )
         else:
             return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def usage(self):
         """
@@ -601,23 +636,20 @@ class Server(BaseServer):
         """
         if self.resources is None:
             self._init()
-        if isinstance(self.resources, list) and \
-           'usagereports' in self.resources:
+        if isinstance(self.resources, list) and "usagereports" in self.resources:
             url = self._url + "/usagereports"
-            return _usagereports.ReportManager(url=url,
-                                              gis=self._con,
-                                              initialize=True)
+            return _usagereports.ReportManager(url=url, gis=self._con, initialize=True)
         else:
             return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _kml(self):
         """Gets the KML functions for a server."""
         url = self._url + "/kml"
-        return _kml.KML(url=url,
-                        gis=self._con,
-                        initialize=True)
-    #----------------------------------------------------------------------
+        return _kml.KML(url=url, gis=self._con, initialize=True)
+
+    # ----------------------------------------------------------------------
     @property
     def logs(self):
         """
@@ -632,34 +664,31 @@ class Server(BaseServer):
         """
         if self.resources is None:
             self._init()
-        if isinstance(self.resources, list) and \
-           'logs' in self.resources:
+        if isinstance(self.resources, list) and "logs" in self.resources:
             url = self._url + "/logs"
-            return _logs.LogManager(url=url,
-                                    gis=self._con,
-                                    initialize=True)
+            return _logs.LogManager(url=url, gis=self._con, initialize=True)
         else:
             return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _security(self):
         """Gets an object to work with the site security."""
         if self.resources is None:
             self._init()
-        if isinstance(self.resources, list) and \
-           "security" in self.resources:
+        if isinstance(self.resources, list) and "security" in self.resources:
             url = self._url + "/security"
-            return _security.Security(url=url,
-                                      gis=self._con,
-                                      initialize=True)
+            return _security.Security(url=url, gis=self._con, initialize=True)
         else:
             return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def users(self):
         """Gets operations to work with users."""
         return self._security.users
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def content(self):
         """
@@ -667,7 +696,7 @@ class Server(BaseServer):
         services available on a particular server. A service represents a
         local GIS resource whose functionality has been made available on
         the server to a wider audience. For example, an ArcGIS Server
-        administrator can publish an ArcMap document (.mxd) as a map
+        administrator can publish a Pro map or ArcMap map document (.mxd) as a map
         service. Developers and clients can display the map service and
         query its contents.
 
@@ -688,12 +717,13 @@ class Server(BaseServer):
         service, or the necessary model inputs for a geoprocessing service.
         """
         from .. import ServicesDirectory
+
         if self._catalog is None:
             url = self._url.lower().replace("/admin", "")
-            self._catalog = ServicesDirectory(url=url,
-                                              con=self._con)
+            self._catalog = ServicesDirectory(url=url, con=self._con)
         return self._catalog
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def system(self):
         """
@@ -701,40 +731,42 @@ class Server(BaseServer):
         """
         if self.resources is None:
             self._init()
-        if isinstance(self.resources, list) and \
-           "system" in self.resources:
+        if isinstance(self.resources, list) and "system" in self.resources:
             url = self._url + "/system"
-            return _system.SystemManager(url=url,
-                                         gis=self._con,
-                                         initialize=True)
+            return _system.SystemManager(url=url, gis=self._con, initialize=True)
         else:
             return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _uploads(self):
         """Gets an object to work with the site uploads."""
         if self.resources is None:
             self._init()
-        if isinstance(self.resources, list) and \
-           "uploads" in self.resources:
+        if isinstance(self.resources, list) and "uploads" in self.resources:
             url = self._url + "/uploads"
-            return _uploads.Uploads(url=url,
-                                    gis=self._con,
-                                    initialize=True)
+            return _uploads.Uploads(url=url, gis=self._con, initialize=True)
         else:
             return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
-    def _mode(self):
-        """Gets the class that works with Mode."""
+    def mode(self):
+        """
+        ArcGIS Server site mode that allows you to control changes to your site.
+        You can set the site mode to READ_ONLY to disallow the publishing of new
+        services and block most administrative operations. Your existing services
+        will continue to function as they did previously. Note that certain
+        administrative operations such as adding and removing machines from a
+        site are still available in READ_ONLY mode.
+
+        :return: `Mode` class
+        """
         if self.resources is None:
             self._init()
-        if isinstance(self.resources, list) and \
-           'mode' in self.resources:
+        if isinstance(self.resources, list) and "mode" in self.resources:
             url = self._url + "/mode"
-            return _mode.Mode(url=url,
-                              gis=self._con,
-                              initialize=True)
+            return _mode.Mode(url=url, gis=self._con, initialize=True)
         return None
 
 
@@ -759,8 +791,9 @@ class SiteManager(object):
 
 
     """
+
     _sm = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, server, initialize=False):
         """Constructor"""
         self._sm = server
@@ -768,27 +801,33 @@ class SiteManager(object):
 
         if initialize:
             self._sm._init()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._sm._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._sm._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._sm._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._sm._url)
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
-        """Gets the site properties. """
+        """Gets the site properties."""
         return self._sm.properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @staticmethod
-    def create(username,
-               password,
-               config_store_connection,
-               directories,
-               cluster=None,
-               logs_settings=None,
-               run_async=False,
-               **kwargs):
+    def create(
+        username,
+        password,
+        config_store_connection,
+        directories,
+        cluster=None,
+        logs_settings=None,
+        run_async=False,
+        **kwargs,
+    ):
         """
         This is the first operation that you must invoke when you install
         ArcGIS Server for the first time. Creating a new site involves:
@@ -829,7 +868,7 @@ class SiteManager(object):
                                    site will create a cluster called 'default' with the first available
                                    port numbers starting from 4004.
         ----------------------     --------------------------------------------------------------------
-        logsSettings               Optional string. Optional log settings, see http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Log_Settings/02r3000001t6000000/ .
+        logsSettings               Optional string. Optional log settings, see https://developers.arcgis.com/rest/enterprise-administration/server/logssettings.htm .
         ----------------------     --------------------------------------------------------------------
         runAsync                   Optional boolean. A flag to indicate if the operation needs to be run
                                    asynchronously.
@@ -840,17 +879,16 @@ class SiteManager(object):
         **Optional Argument**     **Description**
         ---------------------     --------------------------------------------------------------------
         baseurl                   Optional string. The root URL to a site.
-                                  Example: https://mysite.com/arcgis
+                                  Example: https://mysite.example.com/arcgis
         ---------------------     --------------------------------------------------------------------
         tokenurl                  Optional string. Used when a site is federated or when the token
                                   URL differs from the site's baseurl.  If a site is federated, the
                                   token URL will return as the Portal token and ArcGIS Server users
                                   will not validate correctly.
         ---------------------     --------------------------------------------------------------------
-        username                  Optional string. The login username for BUILT-IN security.
+        username                  Optional string. The login username when using built-in ArcGIS Server security.
         ---------------------     --------------------------------------------------------------------
-        password                  Optional string. A secret word or phrase that must be used to gain
-                                  access to the account above.
+        password                  Optional string. The password for the specified username.
         ---------------------     --------------------------------------------------------------------
         key_file                  Optional string. The path to PKI key file.
         ---------------------     --------------------------------------------------------------------
@@ -869,7 +907,7 @@ class SiteManager(object):
                                   of HTTP. The default is False.
         ---------------------     --------------------------------------------------------------------
         portal_connection         Optional string. This is used when a site is federated. It is the
-                                  ArcGIS Online or Portal GIS object used.
+                                  ArcGIS Enterprise portal GIS object representing the portal managing the site.
         ---------------------     --------------------------------------------------------------------
         initialize                Optional boolean. If True, the object will attempt to reach out to
                                   the URL resource and populate at creation time. The default is False.
@@ -879,14 +917,17 @@ class SiteManager(object):
            Success statement.
 
         """
-        return Server._create(username,
-                                password,
-                                config_store_connection,
-                                directories,
-                                cluster,
-                                logs_settings,
-                                run_async)
-    #----------------------------------------------------------------------
+        return Server._create(
+            username,
+            password,
+            config_store_connection,
+            directories,
+            cluster,
+            logs_settings,
+            run_async,
+        )
+
+    # ----------------------------------------------------------------------
     def join(self, admin_url, username, password):
         """
         The Join Site operation is used to connect a server machine to an
@@ -920,7 +961,8 @@ class SiteManager(object):
 
         """
         return self._sm._join(admin_url, username, password)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Deletes the site configuration and releases all server resources.
@@ -946,7 +988,8 @@ class SiteManager(object):
            A status indicating success or failure.
         """
         return self._sm._delete()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def export(self, location=None):
         """
         Exports the site configuration to a location you specify as input
@@ -968,7 +1011,8 @@ class SiteManager(object):
 
         """
         return self._sm._export(location)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def import_site(self, location):
         """
         This operation imports a site configuration into the currently
@@ -998,7 +1042,8 @@ class SiteManager(object):
            A status indicating success (along with site details) or failure.
         """
         return self._sm._import_site(location=location)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def upgrade(self, run_async=False):
         """
         This is the first operation that must be invoked during an ArcGIS
@@ -1032,7 +1077,8 @@ class SiteManager(object):
 
         """
         return self._sm._upgrade(run_async)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def public_key(self):
         """Gets the public key."""

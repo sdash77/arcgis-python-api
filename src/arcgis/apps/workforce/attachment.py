@@ -35,7 +35,7 @@ class Attachment(Model):
     @property
     def id(self):
         """Gets the attachment id"""
-        return self._attachment_info['id']
+        return self._attachment_info["id"]
 
     @property
     def global_id(self):
@@ -48,17 +48,17 @@ class Attachment(Model):
     @property
     def name(self):
         """Gets the attachment name"""
-        return self._attachment_info['name']
+        return self._attachment_info["name"]
 
     @property
     def size(self):
         """Gets the attachment size"""
-        return self._attachment_info['size']
+        return self._attachment_info["size"]
 
     @property
     def content_type(self):
         """Gets the attachment content type"""
-        return self._attachment_info['contentType']
+        return self._attachment_info["contentType"]
 
     @property
     def project(self):
@@ -71,16 +71,18 @@ class Attachment(Model):
         return self._attachment_info
 
     def download(self, out_folder=None):
-        """ Downloads the attachment to the specified path.  If the path is omitted, the Attachment
-            will be saved to the current working directory, using the name property as the filename.
-            :param out_folder: The folder in which the attachment should be saved.  Defaults to the
-            current working directory.
+        """Downloads the attachment to the specified path.  If the path is omitted, the Attachment
+        will be saved to the current working directory, using the name property as the filename.
+        :param out_folder: The folder in which the attachment should be saved.  Defaults to the
+        current working directory.
 
-            :return: The absolute path to the downloaded file.
+        :return: The absolute path to the downloaded file.
         """
         if not out_folder:
             out_folder = os.getcwd()
-        paths = self.project.assignments_layer.attachments.download(self.assignment.id, self.id, out_folder)
+        paths = self.project.assignments_layer.attachments.download(
+            self.assignment.object_id, self.id, out_folder
+        )
         if len(paths) == 1:
             return paths[0]
         else:

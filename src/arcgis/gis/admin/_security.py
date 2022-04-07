@@ -1,80 +1,89 @@
 """
 Controls the local portal's security settings
 """
-from ..._impl.connection import _ArcGISConnection
+from typing import Optional
+from .._impl._con import Connection
 from .. import GIS
 from ._base import BasePortalAdmin
+
 ########################################################################
 class PasswordPolicy(BasePortalAdmin):
     """
     Manages a GIS Security Policy.  Administrators can view, update or
     reset the site's security policy.
     """
+
     _gis = None
     _con = None
     _url = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(PasswordPolicy, self).__init__(url=url,
-                                             gis=gis,
-                                             **kwargs)
+        super(PasswordPolicy, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, _ArcGISConnection):
+        if isinstance(gis, Connection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                "connection must be of type GIS or _ArcGISConnection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     @property
     def policy(self):
         """gets/sets the current security policy"""
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @policy.setter
     def policy(self, value=None):
         """gets/sets the current security policy"""
         url = "%s/update" % self._url
         from ..._impl.common._mixins import PropertyMap
+
         if value is None:
-            value = self.properties['passwordPolicy']
+            value = self.properties["passwordPolicy"]
         if isinstance(value, (dict, PropertyMap)):
             value = dict(value)
         else:
             raise ValueError("Input must be a dictionary of PropertyMap")
-        params = {"f" : "json",
-                  }
-        for k,v in value.items():
+        params = {
+            "f": "json",
+        }
+        for k, v in value.items():
             params[k] = v
         res = self._con.post(url, params)
-        if 'success' in res:
+        if "success" in res:
             self._properties = None
-            return res['success']
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def reset(self):
         """
         resets the security policy to the default install settings
         """
         url = "%s/reset" % self._url
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
+
+
 ########################################################################
 class Security(BasePortalAdmin):
     """
@@ -84,6 +93,7 @@ class Security(BasePortalAdmin):
     indexing capabilities, license information, and the properties of your
     portal.
     """
+
     _gis = None
     _con = None
     _url = None
@@ -91,24 +101,22 @@ class Security(BasePortalAdmin):
     _eu = None
     _eg = None
     _ssl = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(Security, self).__init__(url=url,
-                                       gis=gis,
-                                       **kwargs)
+        super(Security, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, _ArcGISConnection):
+        if isinstance(gis, Connection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                "connection must be of type GIS or _ArcGISConnection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def enterpriseusers(self):
         """
@@ -118,7 +126,8 @@ class Security(BasePortalAdmin):
             url = "%s/users" % self._url
             self._eu = EnterpriseUsers(url=url, gis=self._gis)
         return self._eu
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def groups(self):
         """provides access to managing Enterprise Groups with Portal"""
@@ -126,20 +135,10 @@ class Security(BasePortalAdmin):
             url = "%s/groups" % self._url
             self._eg = EnterpriseGroups(url=url, gis=self._gis)
         return self._eg
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def tokens(self):
-        """
-        This resource represents the token configuration within your
-        portal. Use the set on token_config operation to change the
-        configuration properties of the token service.
-        """
-        url = "%s/tokens" % self._url
-        params = {"f" : "json"}
-        return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
-    @tokens.setter
-    def tokens(self, value):
         """
         This resource represents the token configuration within your
         portal. Use the set on token_config operation to change the
@@ -151,24 +150,31 @@ class Security(BasePortalAdmin):
         value                           Required string. A shared key value
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary
+        """
+        url = "%s/tokens" % self._url
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
 
+    # ----------------------------------------------------------------------
+    @tokens.setter
+    def tokens(self, value: str):
+        """
+        See main ``tokens`` property docsring
         """
         import six
-        params = {
-            "f" : "json",
-            "tokenConfig" : None}
+
+        params = {"f": "json", "tokenConfig": None}
         if isinstance(value, six.string_types):
-            params['tokenConfig'] = {"sharedKey": value}
-        elif isinstance(value, dict) and \
-             "sharedKey" in value:
-            params['tokenConfig'] = value
+            params["tokenConfig"] = {"sharedKey": value}
+        elif isinstance(value, dict) and "sharedKey" in value:
+            params["tokenConfig"] = value
         else:
             raise ValueError("invalid value given")
         url = "%s/tokens/update" % self._url
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     @property
     def oauth(self):
         """
@@ -180,25 +186,10 @@ class Security(BasePortalAdmin):
             url = "%s/oauth" % self._url
             self._oauth = OAuth(url=url, gis=self._gis)
         return self._oauth
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def config(self):
-        """
-        The security configuration consists of the identity store
-        configuration.
-        If your portal will be authenticated through ArcGIS Web Adaptor,
-        you must set up your preferred authentication on your web server.
-        Use the Update Identity Store operation to configure your portal to
-        connect to your enterprise identity provider such as Windows Domain
-        or LDAP. By default, Portal for ArcGIS is configured to use the
-        built-in store and token-based authentication.
-        """
-        url = "%s/config" % self._url
-        params = {"f" : "json"}
-        return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
-    @config.setter
-    def config(self, value):
         """
         This operation can be used to update the portal's security settings
         such as whether or not enterprise accounts are automatically
@@ -251,16 +242,24 @@ class Security(BasePortalAdmin):
            "defaultRoleForUser": 12aBC3D4EF5ghIJ
           }
         """
+        url = "%s/config" % self._url
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    @config.setter
+    def config(self, value: dict):
+        """
+        See main ``config`` property docstring
+        """
         url = "%s/config/update" % self._url
-        params = {
-            "securityConfig" : value,
-            "f" : "json"
-        }
+        params = {"securityConfig": value, "f": "json"}
         return self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
-    def update_identity_store(self,
-                              user_config=None,
-                              group_config=None):
+
+    # ----------------------------------------------------------------------
+    def update_identity_store(
+        self, user_config: Optional[dict] = None, group_config: Optional[dict] = None
+    ):
         """
         You can use this operation to change the identity provider and
         group store configuration in your portal. When Portal for ArcGIS is
@@ -270,7 +269,7 @@ class Security(BasePortalAdmin):
         mechanism and group store, it must be configured to use an
         enterprise identity store such as Windows Active Directory or LDAP.
 
-        See: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Update_Identity_Store/02r300000249000000/
+        See: https://developers.arcgis.com/rest/enterprise-administration/portal/update-identity-store.htm
 
         ===========================     ====================================================================
         **Argument**                    **Description**
@@ -280,31 +279,32 @@ class Security(BasePortalAdmin):
         group_config                    Optional dict. The group store configuration
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/config/updateIdentityStore" % self._url
         if user_config is None:
             user_config = {
                 "type": "BUILTIN",
-                "properties": {"isPasswordEncrypted": "true"}
+                "properties": {"isPasswordEncrypted": "true"},
             }
         if group_config is None:
             group_config = {
                 "type": "BUILTIN",
-                "properties": {"isPasswordEncrypted": "true"}
+                "properties": {"isPasswordEncrypted": "true"},
             }
         params = {
             "userStoreConfig": user_config,
             "groupStoreConfig": group_config,
-            "f" : "json"
+            "f": "json",
         }
         return self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
-    def test_identity_store(self,
-                            user_config=None,
-                            group_config=None):
+    def test_identity_store(
+        self, user_config: Optional[dict] = None, group_config: Optional[dict] = None
+    ):
         """
         This operation can be used to test the connection to a user or
         group store.
@@ -317,32 +317,30 @@ class Security(BasePortalAdmin):
         group_config                    Optional dict. The group store configuration
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
 
         """
-        if user_config is None and \
-           group_config is None:
+        if user_config is None and group_config is None:
             return
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         url = "%s/config/testIdentityStore" % self._url
         if user_config is not None:
             user_config = {
                 "type": "BUILTIN",
-                "properties": {"isPasswordEncrypted": "true"}
+                "properties": {"isPasswordEncrypted": "true"},
             }
             params["userStoreConfig"] = user_config
         if group_config is not None:
             group_config = {
                 "type": "BUILTIN",
-                "properties": {"isPasswordEncrypted": "true"}
+                "properties": {"isPasswordEncrypted": "true"},
             }
             params["groupStoreConfig"] = group_config
 
         return self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def ssl(self):
         """
@@ -353,6 +351,8 @@ class Security(BasePortalAdmin):
             url = "%s/sslCertificates" % self._url
             self._ssl = SSLCertificates(url=url, gis=self._gis)
         return self._ssl
+
+
 ########################################################################
 class OAuth(BasePortalAdmin):
     """
@@ -360,28 +360,27 @@ class OAuth(BasePortalAdmin):
     OAuth2-specific properties of registered applications in Portal for
     ArcGIS.
     """
+
     _gis = None
     _con = None
     _url = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(OAuth, self).__init__(url=url,
-                                    gis=gis,
-                                    **kwargs)
+        super(OAuth, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, _ArcGISConnection):
+        if isinstance(gis, Connection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                "connection must be of type GIS or _ArcGISConnection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
-    def update(self, current_id, new_id):
+
+    # ----------------------------------------------------------------------
+    def update(self, current_id: str, new_id: str):
         """
         When new applications are registered with Portal for ArcGIS, a new
         client ID is generated for the application. This allows the
@@ -399,20 +398,19 @@ class OAuth(BasePortalAdmin):
         new_id                          Required string. The new client ID to assign to the application.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Boolean. True if successful else False
 
         """
-        params = {"f" : "json",
-                  "currentAppID" : current_id,
-                  "newAppID" : new_id}
+        params = {"f": "json", "currentAppID": current_id, "newAppID": new_id}
         url = "%s/changeAppID" % self._url
         res = self._con.post(path=url, postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
-        elif 'success' in res:
-            return res['success']
+        if "status" in res:
+            return res["status"] == "success"
+        elif "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def app_info(self):
         """
@@ -423,53 +421,53 @@ class OAuth(BasePortalAdmin):
         URIs by using the Update App Info operation.
         """
         url = "%s/getAppInfo" % self._url
-        params = {"f" : "json"}
+        params = {"f": "json"}
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @app_info.setter
     def app_info(self, value):
         """
-        This operation allows you to update the OAuth-specific properties
-        associated with an application. Use the Get App Info operation to
-        obtain the existing OAuth properties that can be edited.
+        See main ``app_info`` property docstring
         """
-        url = "%s/getAppInfo" % self._url
-        params = {"f" : "json",
-                  "appInfo" : value}
+        url = "%s/updateAppInfo" % self._url
+        params = {"f": "json", "appInfo": value}
         return self._con.post(path=url, postdata=params)
+
+
 ########################################################################
 class SSLCertificates(BasePortalAdmin):
     """
     Manages the Portal's SSL Certificates
     """
+
     _gis = None
     _con = None
     _url = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
         self._certs = None
-        super(SSLCertificates, self).__init__(url=url,
-                                              gis=gis,
-                                              **kwargs)
+        super(SSLCertificates, self).__init__(url=url, gis=gis, **kwargs)
 
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, _ArcGISConnection):
+        if isinstance(gis, Connection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                "connection must be of type GIS or _ArcGISConnection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _refresh(self):
         """reloads all the properties of a given service"""
         self._init()
-    #----------------------------------------------------------------------
-    def update(self, alias, protocols, cipher_suites):
+
+    # ----------------------------------------------------------------------
+    def update(self, alias: str, protocols: str, cipher_suites: str):
         """
         Use this operation to configure the web server certificate, SSL
         protocols, and cipher suites used by the portal.
@@ -498,33 +496,35 @@ class SSLCertificates(BasePortalAdmin):
                                         comma separated.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         self._certs = None
         url = "%s/update" % self._url
         params = {
-            "f" : "json",
-            "webServerCertificateAlias" : alias,
-            "sslProtocols" : protocols,
-            "cipherSuites" : cipher_suites
+            "f": "json",
+            "webServerCertificateAlias": alias,
+            "sslProtocols": protocols,
+            "cipherSuites": cipher_suites,
         }
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
-    def generate(self,
-                 alias,
-                 common_name,
-                 organization,
-                 key_algorithm="RSA",
-                 validity=90,
-                 key_size=2048,
-                 signature_algorithm="SHA256withRSA",
-                 unit="",
-                 city="",
-                 state="",
-                 country_code="",
-                 alt_name=""):
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
+    def generate(
+        self,
+        alias: str,
+        common_name: str,
+        organization: str,
+        key_algorithm: str = "RSA",
+        validity: int = 90,
+        key_size: int = 2048,
+        signature_algorithm: str = "SHA256withRSA",
+        unit: str = "",
+        city: str = "",
+        state: str = "",
+        country_code: str = "",
+        alt_name: str = "",
+    ):
         """
         Use this operation to create a self-signed certificate or as a
         starting point for getting a production-ready CA-signed
@@ -568,23 +568,24 @@ class SSLCertificates(BasePortalAdmin):
                                         parameter.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
         import json
+
         params = {
-            "alias":alias,
-            'keyAlg':key_algorithm,
-            'keySize': key_size,
-            'sigAlg':signature_algorithm,
-            'cn':common_name.upper(),
-            'orgUnit' : unit,
-            'org':organization,
-            'city': city,
-            'state': state,
-            'country':country_code,
-            'validity': validity,
-            'san':alt_name
+            "alias": alias,
+            "keyAlg": key_algorithm,
+            "keySize": key_size,
+            "sigAlg": signature_algorithm,
+            "cn": common_name.upper(),
+            "orgUnit": unit,
+            "org": organization,
+            "city": city,
+            "state": state,
+            "country": country_code,
+            "validity": validity,
+            "san": alt_name,
         }
         self._certs = None
         url = "%s/generateCertificate" % self._url
@@ -598,8 +599,8 @@ class SSLCertificates(BasePortalAdmin):
         except:
             return False
 
-    #----------------------------------------------------------------------
-    def import_certificate(self, certificate, alias, norestart=False):
+    # ----------------------------------------------------------------------
+    def import_certificate(self, certificate: str, alias: str, norestart: bool = False):
         """
         This operation imports a certificate authority's (CA) root and
         intermediate certificates into the keystore.
@@ -622,7 +623,7 @@ class SSLCertificates(BasePortalAdmin):
                                         and the portal will restart.  Added in 10.6.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         .. code-block:: python
 
@@ -641,36 +642,34 @@ class SSLCertificates(BasePortalAdmin):
 
         """
 
-        from six.moves.urllib.error import HTTPError
+        from urllib.error import HTTPError
 
         self._certs = None
-        params = {
-            "alias" : alias,
-            "norestart" : norestart,
-            "f" : "json"
-        }
-        files = {
-            'file' : certificate
-        }
+        params = {"alias": alias, "norestart": norestart, "f": "json"}
+        files = {"file": certificate}
         url = "%s/importRootOrIntermediate" % self._url
         try:
-            res = self._con.post(path=url,
-                                 add_headers=[('Accept', "*/*"), ('Accept-Encoding', 'gzip, deflate'),
-                                              ('User-Agent', 'geosaurus/1.0'), ('Connection', 'keep-alive')],
-                                 postdata=params,
-                                 files=files)
+            res = self._con.post(
+                path=url,
+                add_headers=[
+                    ("Accept", "*/*"),
+                    ("Accept-Encoding", "gzip, deflate"),
+                    ("User-Agent", "geosaurus/1.0"),
+                    ("Connection", "keep-alive"),
+                ],
+                postdata=params,
+                files=files,
+            )
         except HTTPError as error:
-            if error.code == '408' or error.code == 408:
+            if error.code == "408" or error.code == 408:
                 return True
             return False
         except:
             return True
         return True
-    #----------------------------------------------------------------------
-    def import_server_certificate(self,
-                                  alias,
-                                  password,
-                                  certificate):
+
+    # ----------------------------------------------------------------------
+    def import_server_certificate(self, alias: str, password: str, certificate: str):
         """
         This operation imports an existing server certificate, stored
         in the PKCS #12 format, into the keystore. If the certificate
@@ -688,27 +687,19 @@ class SSLCertificates(BasePortalAdmin):
         certificate                     Required string. The file location of the certificate file
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        params = {
-            "f" : "json",
-            "password" : password,
-            "alias" : alias
-        }
-        files = {
-            "file" : certificate
-        }
+        params = {"f": "json", "password": password, "alias": alias}
+        files = {"file": certificate}
         url = "%s/importExistingServerCertificate" % self._url
         try:
-            return self._con.post(path=url,
-                                  postdata=params,
-                                  files=files)
+            return self._con.post(path=url, postdata=params, files=files)
         except:
             return False
-        return True
-    #----------------------------------------------------------------------
-    def list(self, force=False):
+
+    # ----------------------------------------------------------------------
+    def list(self, force: bool = False):
         """
         List of SSL Certificates as represented in the Portal Admin API
 
@@ -721,7 +712,7 @@ class SSLCertificates(BasePortalAdmin):
                                         list of certificates.
         ===========================     ====================================================================
 
-        :returns:
+        :return:
             List of SSLCertificate objects
 
         .. code-block:: python
@@ -755,8 +746,9 @@ class SSLCertificates(BasePortalAdmin):
                 del cert
             self._certs = certs
         return self._certs
-    #----------------------------------------------------------------------
-    def get(self, alias_name):
+
+    # ----------------------------------------------------------------------
+    def get(self, alias_name: str):
         """
         gets a single SSLCertificate object by the alias name
 
@@ -766,7 +758,7 @@ class SSLCertificates(BasePortalAdmin):
         alias_name                      Required string. The common name of the certificate.
         ===========================     ====================================================================
 
-        :returns: SSLCertificate Object
+        :return: SSLCertificate Object
 
         .. code-block:: python
 
@@ -800,55 +792,55 @@ class SSLCertificates(BasePortalAdmin):
 
         """
         for cert in self.list():
-            if cert.properties['aliasName'].lower() == alias_name.lower():
+            if cert.properties["aliasName"].lower() == alias_name.lower():
                 return cert
             del cert
         return None
+
+
 ########################################################################
 class SSLCertificate(BasePortalAdmin):
     """
     represents a single registered certificate
     """
+
     _gis = None
     _con = None
     _url = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(SSLCertificate, self).__init__(url=url,
-                                             gis=gis,
-                                             **kwargs)
+        super(SSLCertificate, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, _ArcGISConnection):
+        if isinstance(gis, Connection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                "connection must be of type GIS or _ArcGISConnection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def generate_csr(self):
         """
         This operation generates a certificate signing request (CSR) for a
         self-signed certificate. A CSR is required by a CA to create a
         digitally signed version of your certificate.
 
-        :returns: string
+        :return: string
 
         """
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         url = "%s/generateCSR" % self._url
         res = self._con.post(path=url, postdata=params)
         if "certificateSigningRequest" in res:
             return res["certificateSigningRequest"]
         return res
-    #----------------------------------------------------------------------
-    def export(self, out_path=None):
+
+    # ----------------------------------------------------------------------
+    def export(self, out_path: Optional[str] = None):
         """
         This operation downloads an SSL certificate. The file returned by
         the server is an X.509 certificate. The downloaded certificate can
@@ -860,17 +852,17 @@ class SSLCertificate(BasePortalAdmin):
         out_path                        Required string. Save location of the certificate
         ===========================     ====================================================================
 
-        :returns: string
+        :return: string
 
         """
         if out_path is None:
             import tempfile
+
             out_path = tempfile.gettempdir()
         url = "%s/export" % self._url
-        return self._con.get(path=url,
-                             params={"f" : "json"},
-                             out_folder=out_path)
-    #----------------------------------------------------------------------
+        return self._con.get(path=url, params={"f": "json"}, out_folder=out_path)
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         This operation deletes an SSL certificate from the key store. Once
@@ -878,7 +870,8 @@ class SSLCertificate(BasePortalAdmin):
         SSL.
         """
         import json
-        params = {"f" : "json"}
+
+        params = {"f": "json"}
         url = "%s/delete" % self._url
         try:
             self._con.post(path=url, postdata=params)
@@ -887,8 +880,9 @@ class SSLCertificate(BasePortalAdmin):
             return True
         except:
             return False
-    #----------------------------------------------------------------------
-    def import_signed_certificate(self, file_path):
+
+    # ----------------------------------------------------------------------
+    def import_signed_certificate(self, file_path: str):
         """
         imports a certificate authority (CA) signed SSL certificate into
         the key store.
@@ -899,14 +893,14 @@ class SSLCertificate(BasePortalAdmin):
         file_path                       Required string. The location of the certificate
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/importSignedCertificate" % self._url
-        params = {'f' : "json"}
-        return self._con.post(path=url,
-                              postdata=params,
-                              files={"file" : file_path})
+        params = {"f": "json"}
+        return self._con.post(path=url, postdata=params, files={"file": file_path})
+
+
 ########################################################################
 class EnterpriseGroups(BasePortalAdmin):
     """
@@ -914,30 +908,27 @@ class EnterpriseGroups(BasePortalAdmin):
     enterprise groups within the portal. The resource returns the total
     number of groups in the system.
     """
+
     _gis = None
     _con = None
     _url = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(EnterpriseGroups, self).__init__(url=url,
-                                               gis=gis,
-                                               **kwargs)
+        super(EnterpriseGroups, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, _ArcGISConnection):
+        if isinstance(gis, Connection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                "connection must be of type GIS or _ArcGISConnection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
-    def search(self,
-               query="",
-               max_count=255):
+
+    # ----------------------------------------------------------------------
+    def search(self, query: str = "", max_count: int = 255):
         """
         This operation searches groups in the configured enterprise group
         store. You can narrow down the search using the filter parameter.
@@ -950,18 +941,15 @@ class EnterpriseGroups(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        params = {
-            "f" : "json",
-            "filter" : query,
-            "maxCount" : max_count
-        }
+        params = {"f": "json", "filter": query, "maxCount": max_count}
         url = "%s/searchEnterpriseGroups" % self._url
         return self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
-    def refresh_groups(self, groups):
+
+    # ----------------------------------------------------------------------
+    def refresh_groups(self, groups: str):
         """
         This operation iterates over every enterprise account configured in
         the portal and determines if the user account is a part of the
@@ -979,17 +967,15 @@ class EnterpriseGroups(BasePortalAdmin):
                                         refreshed
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/refreshMembership" % self._url
-        params = {
-            "f" : "json",
-            "groups" : groups
-        }
+        params = {"f": "json", "groups": groups}
         return self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
-    def get_group_users(self, name, query="", max_count=255):
+
+    # ----------------------------------------------------------------------
+    def get_group_users(self, name: str, query: str = "", max_count: int = 255):
         """
         This operation returns the users that are currently assigned to the
         enterprise group within the enterprise user/group store. You can
@@ -1005,20 +991,20 @@ class EnterpriseGroups(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary of group users
 
         """
         url = "%s/getUsersWithinEnterpriseGroup" % self._url
         params = {
-            "f" : "json",
-            "groupName" : name,
-            "filter" : query,
-            "maxCount" : max_count
+            "f": "json",
+            "groupName": name,
+            "filter": query,
+            "maxCount": max_count,
         }
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
-    def get_user_groups(self, username,
-                        query="", max_count=255):
+
+    # ----------------------------------------------------------------------
+    def get_user_groups(self, username: str, query: str = "", max_count: int = 255):
         """
         This operation lists the groups assigned to a user account in the
         configured enterprise group store.
@@ -1033,17 +1019,19 @@ class EnterpriseGroups(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary of user groups
 
         """
         url = "%s/getEnterpriseGroupsForUser" % self._url
         params = {
-            "f" : "json",
-            "username" : username,
-            "filter" : query,
-            "maxCount" : max_count
+            "f": "json",
+            "username": username,
+            "filter": query,
+            "maxCount": max_count,
         }
         return self._con.get(path=url, params=params)
+
+
 ########################################################################
 class EnterpriseUsers(BasePortalAdmin):
     """
@@ -1051,38 +1039,40 @@ class EnterpriseUsers(BasePortalAdmin):
     within Portal for ArcGIS. The resource returns the total number of
     members in the system.
     """
+
     _gis = None
     _con = None
     _url = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(EnterpriseUsers, self).__init__(url=url,
-                                              gis=gis,
-                                              **kwargs)
+        super(EnterpriseUsers, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, _ArcGISConnection):
+        if isinstance(gis, Connection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                "connection must be of type GIS or _ArcGISConnection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
-    def create(self,
-               username,
-               password,
-               first_name,
-               last_name,
-               email,
-               role="org_user",
-               level=2,
-               provider="arcgis",
-               idp_username=None,
-               description=None):
+
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        username: str,
+        password: str,
+        first_name: str,
+        last_name: str,
+        email: str,
+        role: str = "org_user",
+        level: int = 2,
+        provider: str = "arcgis",
+        idp_username: Optional[str] = None,
+        description: Optional[str] = None,
+        user_license: Optional[str] = None,
+    ):
         """
         This operation is used to pre-create built-in or enterprise
         accounts within the portal. The provider parameter is used to
@@ -1103,7 +1093,7 @@ class EnterpriseUsers(BasePortalAdmin):
         ---------------------------     --------------------------------------------------------------------
         role                            Optional string. The role for the user account. The default value is
                                         org_user.
-                                        Values org_user | org_publisher | org_admin
+                                        Values org_admin | org_publisher | org_user | org_editor (Data Editor) | viewer
         ---------------------------     --------------------------------------------------------------------
         level                           Optional integer. The account level to assign the user.
                                         Values 1 or 2
@@ -1116,31 +1106,63 @@ class EnterpriseUsers(BasePortalAdmin):
                                         parameter is enterprise.
         ---------------------------     --------------------------------------------------------------------
         description                     Optional string. A user description
+        ---------------------------     --------------------------------------------------------------------
+        user_license	                Optional string. The user type for the account. (10.7+)
+
+                                        Values: creator, editor, advanced (GIS Advanced),
+                                                basic (GIS Basic), standard (GIS Standard), viewer,
+                                                fieldworker
+
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
         """
+        role_lu = {
+            "editor": "iBBBBBBBBBBBBBBB",
+            "viewer": "iAAAAAAAAAAAAAAA",
+            "org_editor": "iBBBBBBBBBBBBBBB",
+            "org_viewer": "iAAAAAAAAAAAAAAA",
+        }
+        user_license_lu = {
+            "creator": "creatorUT",
+            "editor": "editorUT",
+            "advanced": "GISProfessionalAdvUT",
+            "basic": "GISProfessionalBasicUT",
+            "standard": "GISProfessionalStdUT",
+            "viewer": "viewerUT",
+            "fieldworker": "fieldWorkerUT",
+        }
+        if user_license and user_license.lower() in user_license_lu:
+            user_license = user_license_lu[user_license.lower()]
+        else:
+            user_license = user_license_lu["creator"]
+        if role.lower() in role_lu:
+            role = role_lu[role.lower()]
+
         url = "%s/createUser" % self._url
         params = {
-            "f" : "json",
-            "username" : username,
-            "password" : password,
-            "firstname" : first_name,
-            "lastname" : last_name,
-            "email" : email,
-            "role" : role,
-            "level" : level,
-            "provider" : provider
+            "f": "json",
+            "username": username,
+            "password": password,
+            "firstname": first_name,
+            "lastname": last_name,
+            "email": email,
+            "role": role,
+            "level": level,
+            "provider": provider,
         }
         if idp_username:
-            params['idpUsername'] =  idp_username
+            params["idpUsername"] = idp_username
         if description:
-            params['description'] = description
+            params["description"] = description
+        if user_license:
+            params["userLicenseTypeId"] = user_license
         res = self._con.post(path=url, postdata=params)
-        return res['status'] == 'success'
-    #----------------------------------------------------------------------
-    def get(self, username):
+        return res["status"] == "success"
+
+    # ----------------------------------------------------------------------
+    def get(self, username: str):
         """
         This operation returns the description, full name, and email
         address for a single user in the enterprise identity (user) store
@@ -1156,18 +1178,15 @@ class EnterpriseUsers(BasePortalAdmin):
                                         username. For LDAP users, the format is always username.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        url = "%s/getEnterpriseUsers" % self._url
-        params = {
-            "f" : "json",
-            "username" : username
-        }
-        return self._con.get(path=url,
-                             params=params)
-    #----------------------------------------------------------------------
-    def update(self, username, idp_username):
+        url = "%s/getEnterpriseUser" % self._url
+        params = {"f": "json", "username": username}
+        return self._con.post(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    def update(self, username: str, idp_username: str):
         """
         This operation allows an administrator to update the idp_username
         for an enterprise user in the portal. This is used when migrating
@@ -1184,21 +1203,18 @@ class EnterpriseUsers(BasePortalAdmin):
         idp_username                    Required string. The username used by the SAML identity provider
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         url = "%s/updateEnterpriseUser" % self._url
-        params = {
-            "f" : "json",
-            "username" : username,
-            "idpUsername" : idp_username
-        }
-        res = self._con.get(path=url, params=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        params = {"f": "json", "username": username, "idpUsername": idp_username}
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
-    def search(self, query="", max_count=255):
+
+    # ----------------------------------------------------------------------
+    def search(self, query: str = "", max_count: int = 255):
         """
         This operation searches users in the configured enterprise user
         store. You can narrow down the search using the filter parameter.
@@ -1211,18 +1227,15 @@ class EnterpriseUsers(BasePortalAdmin):
         max_count                       Optional integer. The maximum number of records to return
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary of the search
 
         """
         url = "%s/searchEnterpriseUsers" % self._url
-        params = {
-            "f" : "json",
-            "filter" : query,
-            "maxCount" : max_count
-        }
+        params = {"f": "json", "filter": query, "maxCount": max_count}
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
-    def refresh_users(self, users):
+
+    # ----------------------------------------------------------------------
+    def refresh_users(self, users: str):
         """
         This operation iterates over every enterprise group configured in
         the portal and determines if the input user accounts belong to any
@@ -1239,12 +1252,9 @@ class EnterpriseUsers(BasePortalAdmin):
         users                           Required string. A comma seperated list of users.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        params = {
-            "f" : "json",
-            "users" : users
-        }
+        params = {"f": "json", "users": users}
         url = "%s/refreshMembership" % self._url
         return self._con.post(path=url, postdata=params)

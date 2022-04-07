@@ -1,0 +1,5 @@
+NAME,camelCase,PascalCase,Longitude,Latitude,col with space,col !@$ nonnum,col.8;9,Col with caps Space, leading White_space, 54leadNumerals, 56 spaced lead_numerals
+Honolulu,65861,74476,-157.8234362,21.30578163,1,2,3,4,2,4,6
+Juneau,7356,4187,-134.5115816,58.35141816,1,2,3,4,2,4,6
+Boise City,47638,26800,-116.2376546,43.61373614,1,2,3,4,2,4,6
+Olympia,9395,9275,-122.8930726,47.04241817,1,2,3,4,2,4,6

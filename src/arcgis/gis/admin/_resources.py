@@ -4,6 +4,7 @@ Provides class, methods and functions to manage resources for a given GIS.
 import os
 import json
 import tempfile
+from typing import Optional
 
 
 class PortalResourceManager(object):
@@ -18,6 +19,7 @@ class PortalResourceManager(object):
 
 
     """
+
     _workdir = None
 
     def __init__(self, gis):
@@ -27,8 +29,13 @@ class PortalResourceManager(object):
         self._is_portal = self._gis.properties.isPortal
         self._workdir = tempfile.gettempdir()
 
-
-    def add(self, key=None, path=None, text=None, **kwargs):
+    def add(
+        self,
+        key: Optional[str] = None,
+        path: Optional[str] = None,
+        text: Optional[str] = None,
+        **kwargs
+    ):
         """
         The add resource operation allows the administrator to add a file
         resource, for example, the organization's logo or custom banner.
@@ -51,7 +58,7 @@ class PortalResourceManager(object):
                           Values: public, org, orgprivate
         ================  ===============================================================
 
-        :returns:
+        :return:
            boolean
         """
         access = kwargs.pop("access", None)
@@ -60,40 +67,38 @@ class PortalResourceManager(object):
             key = os.path.basename(path)
         elif key is None and path is None:
             raise ValueError("key must be populated is path is null")
-        url = "portals/self/addresource"
+        url = "portals/self/addResource"
         postdata = {
-            "f" : "json",
-            "key" : key,
+            "f": "json",
+            "key": key,
         }
         if path:
-            files = {
-                'file' : path
-            }
+            files = {"file": path}
         if text:
             if isinstance(text, dict):
-                postdata['text'] = json.dumps(text)
+                postdata["text"] = json.dumps(text)
             elif isinstance(text, str):
                 from arcgis._impl.common._utils import _to_utf8
-                postdata['text'] = _to_utf8(text)
+
+                postdata["text"] = _to_utf8(text)
         else:
             if self._portal.is_arcgisonline == False:
-                postdata['text'] = ""
+                postdata["text"] = ""
         if self._is_portal == False:
             url = "portals/%s/addResource" % self._gis.properties.id
             if text is None:
-                postdata['text'] = ""
+                postdata["text"] = ""
             if access:
-                postdata['access'] = access
+                postdata["access"] = access
             else:
-                postdata['access'] = 'public'
+                postdata["access"] = "public"
 
-        resp = self._portal.con.post(url,
-                                     postdata, files=files)
-        if 'success' in resp:
-            return resp['success']
+        resp = self._portal.con.post(url, postdata, files=files)
+        if "success" in resp:
+            return resp["success"]
         return resp
 
-    def delete(self, key):
+    def delete(self, key: str):
         """
         The Remove Resource operation allows the administrator to remove
         a file resource.
@@ -104,21 +109,20 @@ class PortalResourceManager(object):
         key               optional string, look up key for file to delete
         ================  ===============================================================
 
-        :returns:
+        :return:
            boolean
         """
         postdata = {
-            "f" : "json",
-            "key" : key,
-            }
-        resp = self._portal.con.post('portals/self/removeresource',
-                                     postdata)
-        if 'success' in resp:
-            return resp['success']
+            "f": "json",
+            "key": key,
+        }
+        resp = self._portal.con.post("portals/self/removeresource", postdata)
+        if "success" in resp:
+            return resp["success"]
         return resp
 
-    #----------------------------------------------------------------------
-    def list(self, start=1, num=100):
+    # ----------------------------------------------------------------------
+    def list(self, start: int = 1, num: int = 100):
         """
         returns a list of resources uploaded to portal.  The items can be
         images, files and other content used to stylize and modify a
@@ -135,21 +139,16 @@ class PortalResourceManager(object):
                           Default: 100
         ================  ===============================================================
 
-        :returns:
+        :return:
            boolean
         """
-        postdata = {
-            "f" : "json",
-            'start' : start,
-            'num' : num
-        }
-        resp = self._portal.con.post('portals/self/resources',
-                                     postdata)
-        if 'resources' in resp:
-            return resp['resources']
+        postdata = {"f": "json", "start": start, "num": num}
+        resp = self._portal.con.post("portals/self/resources", postdata)
+        if "resources" in resp:
+            return resp["resources"]
         return resp
 
-    def get(self, resource_name, download_path=None):
+    def get(self, resource_name: str, download_path: Optional[str] = None):
         """
         Download or get a portal resource item
 
@@ -164,13 +163,15 @@ class PortalResourceManager(object):
         :return:
            path to data or raw data if not file.
         """
-        data_path = 'portals/self/resources/' + resource_name
+        data_path = "portals/self/resources/" + resource_name
         if not download_path:
             download_path = self._workdir
 
-        download_path = self._portal.con.get(path=data_path,
-                                             file_name=resource_name,
-                                             out_folder=download_path,
-                                             try_json=False,
-                                             force_bytes=False)
+        download_path = self._portal.con.get(
+            path=data_path,
+            file_name=resource_name,
+            out_folder=download_path,
+            try_json=False,
+            force_bytes=False,
+        )
         return download_path

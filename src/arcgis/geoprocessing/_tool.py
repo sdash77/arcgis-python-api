@@ -12,25 +12,31 @@ from types import MethodType
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler
-from arcgis.features import FeatureCollection, FeatureLayerCollection, FeatureSet, SpatialDataFrame
+from arcgis.features import (
+    FeatureCollection,
+    FeatureLayerCollection,
+    FeatureSet,
+)
 from arcgis.geoprocessing import LinearUnit, DataFile, RasterData
 
 from arcgis.gis import Item, _GISResource, Layer
-from arcgis.mapping import MapImageLayer
+from arcgis.auth.tools import LazyLoader
+
+mapping = LazyLoader("arcgis.mapping")
 
 from ._types import LinearUnit, DataFile, RasterData
 
 from ..features import FeatureSet
-from ..mapping import MapImageLayer
 
 try:
     from arcgis.features.geo import _is_geoenabled
 except:
+
     def _is_geoenabled(o):
         return False
 
 
-def _import_code(code, name, verbose=False, add_to_sys_modules=False):
+def _import_code(code, name, verbose=False, add_to_sys_modules=False, choice_list=None):
     """
     Import dynamically generated code as a module. code is the
     object containing the code (a string, a file handle or an
@@ -50,9 +56,10 @@ def _import_code(code, name, verbose=False, add_to_sys_modules=False):
 
     Returns a newly generated module.
     """
-    import sys,imp
+    import sys
+    import importlib, types
 
-    module = imp.new_module(name)
+    module = types.ModuleType(name)
 
     if verbose:
         print(code)
@@ -61,63 +68,96 @@ def _import_code(code, name, verbose=False, add_to_sys_modules=False):
     if add_to_sys_modules:
         sys.modules[name] = module
 
+    if choice_list:
+        setattr(module, "choice_list", choice_list)
+        module.__dict__["choice_list"] = choice_list
     return module
 
+
 _log = logging.getLogger(__name__)
+
 
 def _camelCase_to_underscore(name):
     """PEP8ify name"""
     if name[0].isdigit():
         name = "execute_" + name
     name = name.replace(" ", "_")
-    if '_' in name:
+    if "_" in name:
         return name.lower()
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
 def _call_generator(fnname, spec):
-    """Generate GP function based on spec
-    """
+    """Generate GP function based on spec"""
     varnames = ()
     defaults = ()
-    if len(spec)>0:
+    if len(spec) > 0:
         varnames, defaults = zip(*spec)
 
-    varnames = ('self', ) + varnames
-
+    varnames = ("self",) + varnames
 
     def call(self):
         """Method to invoke the Geoprocessing task"""
-        #import sys
+        # import sys
         kwargs = locals()
-        kwargs.pop('self')
+        kwargs.pop("self")
         self.__dict__.update(kwargs)
 
         # args, posargs = self.arguments()
 
-        #print("My args: ")
-        #for k, v in kwargs.items():
+        inputs = dict(kwargs)
+        # print("My args: ")
+        # for k, v in dict(kwargs).items():
         #    print(k + " => " + str(v))
 
-        return self._execute(kwargs)
+        return self._execute(inputs)
 
     code = call.__code__
-    new_code = types.CodeType(len(spec) + 1,
-                              0,
-                              len(spec) + 2,
-                              code.co_stacksize,
-                              code.co_flags,
-                              code.co_code,
-                              code.co_consts,
-                              code.co_names,
-                              varnames,
-                              code.co_filename,
-                              _camelCase_to_underscore(fnname),
-                              code.co_firstlineno,
-                              code.co_lnotab,
-                              code.co_freevars,
-                              code.co_cellvars)
+
+    if hasattr(types.CodeType, "co_posonlyargcount"):  # pragma: no branch
+        """
+               rgcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,
+        |        flags, codestring, constants, names, varnames, filename, name,
+        |        firstlineno, lnotab[, freevars[, cellvars]]
+        """
+        new_code = types.CodeType(
+            len(spec) + 1,
+            0,
+            0,
+            len(spec) + 2,
+            code.co_stacksize,
+            code.co_flags,
+            code.co_code,
+            code.co_consts,
+            code.co_names,
+            varnames,
+            code.co_filename,
+            _camelCase_to_underscore(fnname),
+            code.co_firstlineno,
+            code.co_lnotab,
+            code.co_freevars,
+            cellvars=code.co_cellvars,
+        )
+    else:
+        new_code = types.CodeType(
+            len(spec) + 1,
+            0,
+            len(spec) + 2,
+            code.co_stacksize,
+            code.co_flags,
+            code.co_code,
+            code.co_consts,
+            code.co_names,
+            varnames,
+            code.co_filename,
+            _camelCase_to_underscore(fnname),
+            code.co_firstlineno,
+            code.co_lnotab,
+            code.co_freevars,
+            code.co_cellvars,
+        )
+
     """
      * co_name gives the function name
      * co_argcount is the number of positional arguments (including
@@ -142,17 +182,19 @@ def _call_generator(fnname, spec):
      * co_flags is an integer encoding a number of flags for the
     interpreter.
     """
-    return types.FunctionType(new_code,
-                              {"__builtins__": __builtins__},
-                              argdefs=defaults)
+    return types.FunctionType(
+        new_code, {"__builtins__": __builtins__}, argdefs=defaults
+    )
 
 
 def _generate_fn(task, tbx):
     fnname = _camelCase_to_underscore(task)
 
-
     taskurl = tbx.url + "/" + task
-    taskprops = tbx._con.post(taskurl, {"f": "json"}, token=tbx._token)
+    try:
+        taskprops = tbx._con.post(taskurl, {"f": "json"}, token=tbx._token)
+    except:
+        taskprops = tbx._con.post(taskurl, {"f": "json"})
 
     # execution_type = taskprops['executionType']
     #
@@ -160,104 +202,164 @@ def _generate_fn(task, tbx):
     # if  execution_type == 'esriExecutionTypeSynchronous':
     #     use_async = False
 
-    uses_map_as_result = tbx.properties.resultMapServerName != ''
+    uses_map_as_result = tbx.properties.resultMapServerName != ""
 
-    helpstring, name_name, name_type, return_values, spec, name_param = _inspect_tool(taskprops, uses_map_as_result)
+    (
+        helpstring,
+        name_name,
+        name_type,
+        return_values,
+        spec,
+        name_param,
+        choice_list_db_param,
+    ) = _inspect_tool(taskprops, uses_map_as_result)
 
-    src_code = 'def ' + fnname + '('
+    src_code = "def " + fnname + "("
     num_spaces = len(src_code)
-
     if len(spec) > 0:
         param_name, param_dval = spec[0]
         param_type = name_type[param_name]
 
         src_code += _generate_param(name_param, param_dval, param_name, param_type)
 
-        for param_name_dval in spec[1:]: # [ (param_name, param_dval) ]
+        for param_name_dval in spec[1:]:  # [ (param_name, param_dval) ]
             param_name, param_dval = param_name_dval
             param_type = name_type[param_name]
-            src_code += ',\n' + ' '*num_spaces
+            src_code += ",\n" + " " * num_spaces
             src_code += _generate_param(name_param, param_dval, param_name, param_type)
 
-        src_code += ',\n' \
-
-    src_code += ' '*num_spaces + 'gis=None) -> ' + name_type['return'].__name__ + ':\n'
+        src_code += ",\n"
+    src_code += (
+        " " * num_spaces
+        + "gis=None, future=False) -> "
+        + name_type["return"].__name__
+        + ":\n"
+    )
 
     src_code += '\n\t"""\n\n' + helpstring + '\n\t"""\n'
 
-    src_code += '\tkwargs = locals()\n\n'
-    src_code += '\tparam_db = { '
+    src_code += "\tkwargs = locals()\n\n"
+    # src_code += f'\tchoice_list_db = {choice_list_db_dict}\n\n'
+    src_code += "\tparam_db = { "
 
-    for param_name_dval in spec: # [ (param_name, param_dval) ]
+    for param_name_dval in spec:  # [ (param_name, param_dval) ]
         param_name, param_dval = param_name_dval
         param_type = name_type[param_name]
         gp_param_name = name_name[param_name]
-        src_code += '\n\t           "' + param_name + '": (' + param_type.__name__ + ', "' + gp_param_name +'"),'
+        src_code += (
+            '\n\t           "'
+            + param_name
+            + '": ('
+            + param_type.__name__
+            + ', "'
+            + gp_param_name
+            + '"),'
+        )
 
     # also add return params:
     for retval in return_values:
-        src_code += '\n\t           "' + retval['name'] + '": (' + retval['type'].__name__ + ', "' + retval['display_name'] +'"),'
+        src_code += (
+            '\n\t           "'
+            + retval["name"]
+            + '": ('
+            + retval["type"].__name__
+            + ', "'
+            + retval["display_name"]
+            + '"),'
+        )
 
-    src_code += '\n\t           }'
+    src_code += "\n\t           }"
 
-    src_code += '\n\treturn_values = ['
+    src_code += "\n\treturn_values = ["
     for retval in return_values:
-        src_code += '\n\t                 {"name":"' + retval['name'] + '", "display_name":"' + \
-                                            retval['display_name'] + '", "type":' + retval['type'].__name__ + "},"
-    src_code += '\n\t                ]\n\n'
+        src_code += (
+            '\n\t                 {"name":"'
+            + retval["name"]
+            + '", "display_name":"'
+            + retval["display_name"]
+            + '", "type":'
+            + retval["type"].__name__
+            + "},"
+        )
+    src_code += "\n\t                ]\n\n"
 
-    src_code += '\treturn _execute_gp_tool(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url)'
+    src_code += (
+        '\treturn _execute_gp_tool(gis, "'
+        + task
+        + '", kwargs, param_db, return_values, _use_async, _url, future=future)'
+    )
 
-    src_code += '\n\n\n'
-    return src_code
+    src_code += "\n\n\n"
+    return src_code, choice_list_db_param, _camelCase_to_underscore(taskprops["name"])
 
 
 def _generate_param(name_param, param_dval, param_name, param_type):
     param = name_param[param_name]
-    param_rqrd = param['parameterType']
+    param_rqrd = param["parameterType"]
     optional = False
-    if (param_rqrd is not None) and param_rqrd == 'esriGPParameterTypeOptional':
+    if (param_rqrd is not None) and param_rqrd == "esriGPParameterTypeOptional":
         optional = True
 
-    src_code = param_name + ':' + param_type.__name__
+    src_code = param_name + ":" + param_type.__name__
     # if optional:
-    if param_dval is not None and param_dval != '':
+    if param_dval is not None and param_dval != "":
         if param_type == str:
             src_code += '="""' + str(param_dval) + '"""'
         else:
-            src_code += '=' + str(param_dval)
+            src_code += "=" + str(param_dval)
     else:
-        src_code += '=None'
+        src_code += "=None"
     return src_code
 
 
 def _strip_html(text):
-    return re.sub("&lt; */? *\w+ */?\ *&gt;", "", text)
+    return re.sub(r"&lt; */? *\w+ */?\ *&gt;", "", text)
+
 
 def _inspect_tool(taskprops, map_as_result):
     # is map is a result, additional synthetic parameter is added
-    spec = []       # [ (param_name, param_dval) ]
+    spec = []  # [ (param_name, param_dval) ]
     name_type = {}  #
     name_name = {}  # map from camel_case to GPParameterName
     name_param = {}
-
+    choice_list_db_param = {}
     return_values = []
 
     # tools with output map service - add another output:
     if map_as_result:
-        return_values.append({"name": "result_layer", "display_name": "Result Layer", "type": MapImageLayer})
+        return_values.append(
+            {
+                "name": "result_layer",
+                "display_name": "Result Layer",
+                "type": mapping.MapImageLayer,
+            }
+        )
 
-    helpstring = ' \n\t\n'
-    if 'docstring' in taskprops:
-        helpstring += _strip_html(taskprops['docstring'])
-    if 'description' in taskprops:
-        helpstring += _strip_html(taskprops['description'])
+    helpstring = " \n\t\n"
+    if "docstring" in taskprops:
+        helpstring += _strip_html(taskprops["docstring"])
+    if "description" in taskprops:
+        helpstring += _strip_html(taskprops["description"])
 
     helpstring = helpstring + "\n\nParameters:"
 
-    task_params = taskprops['parameters']
+    task_params = taskprops["parameters"]
     for param in task_params:
-        param_helpstring, param_name_mapping, param_name_type_mapping, param_spec, param_return_values, param_name_param = _process_parameter(param, map_as_result)
+        (
+            param_helpstring,
+            param_name_mapping,
+            param_name_type_mapping,
+            param_spec,
+            param_return_values,
+            param_name_param,
+        ) = _process_parameter(param, map_as_result)
+        choice_list_db_param.update(
+            {
+                _camelCase_to_underscore(t["name"]): t["choiceList"]
+                for t in task_params
+                if "choiceList" in t
+            }
+        )
         helpstring += param_helpstring
         name_param.update(param_name_param)
         if param_spec is not None:
@@ -270,99 +372,146 @@ def _inspect_tool(taskprops, map_as_result):
             return_values.append(param_return_values)
 
     # gis=None
-    helpstring += '\n\n\tgis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.\n'
+    helpstring += "\n\n\tgis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.\n"
+    helpstring += "\n\n\tfuture: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.\n"
 
     if len(return_values) == 1:
-        helpstring = helpstring + "\n\nReturns: " # + name_type['return_display_name'] + " (" + name_type['return'].__name__ + ")"
+        helpstring = (
+            helpstring + "\n\nReturns: "
+        )  # + name_type['return_display_name'] + " (" + name_type['return'].__name__ + ")"
         for retval in return_values:
-            helpstring = helpstring + '\n   ' + retval['name'] + ' - ' + retval['display_name'] \
-                         + ' as a ' + retval['type'].__name__
+            helpstring = (
+                helpstring
+                + "\n   "
+                + retval["name"]
+                + " - "
+                + retval["display_name"]
+                + " as a "
+                + retval["type"].__name__
+            )
 
     else:
-        name_type['return'] = tuple  # for method spec, type hinting
+        name_type["return"] = tuple  # for method spec, type hinting
         helpstring = helpstring + "\n\nReturns the following as a named tuple:"
         for retval in return_values:
-            helpstring = helpstring + '\n   ' + retval['name'] + ' - ' + retval['display_name'] \
-                         + ' as a ' + retval['type'].__name__
+            helpstring = (
+                helpstring
+                + "\n   "
+                + retval["name"]
+                + " - "
+                + retval["display_name"]
+                + " as a "
+                + retval["type"].__name__
+            )
 
     helpstring = helpstring + "\n"
 
-    if 'helpUrl' in taskprops:
-        helpstring = helpstring + "\nSee " + taskprops['helpUrl'] + " for additional help."
+    if "helpUrl" in taskprops:
+        helpstring = (
+            helpstring + "\nSee " + taskprops["helpUrl"] + " for additional help."
+        )
 
-    return helpstring, name_name, name_type, return_values, spec, name_param
+    return (
+        helpstring,
+        name_name,
+        name_type,
+        return_values,
+        spec,
+        name_param,
+        choice_list_db_param,
+    )
 
 
 def _process_parameter(param, map_as_result):
 
-    gp_param_name = param['name']
+    gp_param_name = param["name"]
     param_name = _camelCase_to_underscore(gp_param_name)
-    param_name_mapping = {param_name : gp_param_name}
+    param_name_mapping = {param_name: gp_param_name}
 
-    name_param = { param_name : param }
+    name_param = {param_name: param}
     param_name_type_mapping = {}
     param_spec = None
 
     helpstring = ""
 
-    #name_name[param_name] = gp_param_name
+    # name_name[param_name] = gp_param_name
     param_return_values = None
-    param_type = param['dataType']
-    param_dval = param['defaultValue']
-    param_drtn = param['direction']
-    param_rqrd = param['parameterType']
-    param_chcs = param.get('choiceList', None)
+    param_type = param["dataType"]
+    param_dval = param["defaultValue"]
+    param_drtn = param["direction"]
+    param_rqrd = param["parameterType"]
+    param_chcs = param.get("choiceList", None)
     py_param_type = get_py_param_type(param_type)
-    if param_drtn == 'esriGPParameterDirectionInput':
+    if param_drtn == "esriGPParameterDirectionInput":
         param_name_type_mapping[param_name] = py_param_type
         param_spec = (param_name, param_dval)
 
-        helpstring += "\n\n   " + param_name + ": " + param['displayName'] + " (" + py_param_type.__name__ + ")."
-        if param_rqrd == 'esriGPParameterTypeOptional':
+        helpstring += (
+            "\n\n   "
+            + param_name
+            + ": "
+            + param["displayName"]
+            + " ("
+            + py_param_type.__name__
+            + ")."
+        )
+        if param_rqrd == "esriGPParameterTypeOptional":
             helpstring = helpstring + " Optional parameter. "
-        #elif param_rqrd == 'esriGPParameterTypeRequired' and param_dval is None:
+        # elif param_rqrd == 'esriGPParameterTypeRequired' and param_dval is None:
         else:
             helpstring = helpstring + " Required parameter. "
 
-        if 'description' in param:
-            helpstring = helpstring + ' ' + param['description']
+        if "description" in param:
+            helpstring = helpstring + " " + param["description"]
 
         if param_chcs is not None and len(param_chcs) > 0:
-            helpstring = helpstring + '\n      Choice list:' + str(param_chcs)
+            if isinstance(param_chcs, (tuple, list)):
+                helpstring = helpstring + "\n      Choice list:" + ",".join(param_chcs)
+            else:
+                helpstring = helpstring + "\n      Choice list:" + str(param_chcs)
 
-    elif param_drtn == 'esriGPParameterDirectionOutput':
+    elif param_drtn == "esriGPParameterDirectionOutput":
 
         if map_as_result:  # 6.3.4.7 Map Images as Geoprocessing Results
             if py_param_type in [FeatureSet, RasterData]:
                 py_param_type = dict  # map image
 
         param_name_type_mapping[param_name] = py_param_type
-        param_name_type_mapping['return'] = py_param_type
-        #param_name_type_mapping['return_name'] = param_name
-        #param_name_type_mapping['return_display_name'] = param['displayName']
+        param_name_type_mapping["return"] = py_param_type
+        # param_name_type_mapping['return_name'] = param_name
+        # param_name_type_mapping['return_display_name'] = param['displayName']
 
-        param_return_values = {"name": param_name,
-                              "display_name": param['displayName'],
-                              "type": py_param_type}
+        param_return_values = {
+            "name": param_name,
+            "display_name": param["displayName"],
+            "type": py_param_type,
+        }
 
-    return helpstring, param_name_mapping, param_name_type_mapping, param_spec, param_return_values, name_param
+    return (
+        helpstring,
+        param_name_mapping,
+        param_name_type_mapping,
+        param_spec,
+        param_return_values,
+        name_param,
+    )
 
 
 def get_py_param_type(param_type):
     type_mapping = {
-        'GPBoolean' : bool,
-        'GPDouble': float,
-        'GPLong': int,
-        'GPString': str,
-        'GPDate': datetime.datetime,
-        'GPFeatureRecordSetLayer': FeatureSet,
-        'GPRecordSet': FeatureSet,
-        'GPLinearUnit': LinearUnit,
-        'GPDataFile': DataFile,
-        'GPRasterData': RasterData,
-        'GPRasterLayer': RasterData,
-        'GPRasterDataLayer': RasterData,
-        'GPMultiValue' : list
+        "GPBoolean": bool,
+        "GPDouble": float,
+        "GPLong": int,
+        "GPString": str,
+        "GPDate": datetime.datetime,
+        "GPFeatureRecordSetLayer": FeatureSet,
+        "GPRecordSet": FeatureSet,
+        "GPLinearUnit": LinearUnit,
+        "GPDataFile": DataFile,
+        "GPRasterData": RasterData,
+        "GPRasterLayer": RasterData,
+        "GPRasterDataLayer": RasterData,
+        "GPMultiValue": list,
     }
     return type_mapping.get(param_type, str)
 
@@ -392,17 +541,16 @@ def import_toolbox(url_or_item, gis=None, verbose=False):
     url = url_or_item
     gis = arcgis.env.active_gis if gis is None else gis
     if isinstance(url_or_item, Item):
-        #tbx = Toolbox.fromitem(url_or_item)
+        # tbx = Toolbox.fromitem(url_or_item)
         url = url_or_item.url
     else:
         url = url_or_item
 
-    if not url.endswith('/GPServer'):
-        idx = url.index('/GPServer')
-        url = url[0:idx + len('/GPServer')]
+    if not url.endswith("/GPServer"):
+        idx = url.index("/GPServer")
+        url = url[0 : idx + len("/GPServer")]
 
     tbx = _AsyncResource(url, gis)
-
 
     src_code = """import logging as _logging
 import arcgis
@@ -411,28 +559,65 @@ from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
+import concurrent.futures
 
 _log = _logging.getLogger(__name__)
     """
     try:
         execution_type = tbx.properties.executionType
-    except:
-        from arcgis.gis import GIS
-        return import_toolbox(url_or_item=url_or_item,
-                              gis=GIS(), verbose=verbose)
+    except Exception as e:
+        try:
+            if str(e).lower().find("token required") > -1:
+                raise
+            elif (
+                str(e).lower().find("User does not have permissions to access".lower())
+                > -1
+            ):
+                raise
+            elif str(e).lower().find("(Error Code: 500)".lower()) > -1:
+                raise
+            else:
+                from arcgis.gis import GIS
+
+                tbx = import_toolbox(
+                    url_or_item=url_or_item, gis=GIS(), verbose=verbose
+                )
+            return tbx
+        except Exception as e:
+            raise
     use_async = True
-    if execution_type == 'esriExecutionTypeSynchronous':
+    if execution_type == "esriExecutionTypeSynchronous":
         use_async = False
 
     src_code += '\n_url = "' + url + '"'
-    src_code += '\n_use_async = ' + str(use_async) + '\n\n'
+    src_code += "\n_use_async = " + str(use_async) + "\n\n"
+    listed_params = {}
+    if len(tbx.properties.tasks) < 4:
+        for task in tbx.properties.tasks:
+            fn_src, choice_list, func_name = _generate_fn(task, tbx)
+            src_code += fn_src
+            listed_params[func_name] = choice_list
+    else:
+        source = []
+        import concurrent.futures
 
-    for task in tbx.properties.tasks:
-        fn_src = _generate_fn(task, tbx)
-        src_code += fn_src
+        with concurrent.futures.ThreadPoolExecutor(8) as executor:
 
-    return _import_code(src_code, 'name', verbose)
-    #print(src_code)
+            for task in tbx.properties.tasks:
+                # _generate_fn(task, tbx)
+                f = executor.submit(_generate_fn, **{"task": task, "tbx": tbx})
+                source.append(f)
+        for fnsrc in source:
+            fn_src, choice_list, func_name = fnsrc.result()
+            src_code += fn_src
+            listed_params[func_name] = choice_list
+    if len(listed_params) == 0:
+        listed_params = None
+    else:
+        listed_params = PropertyMap(listed_params)
+
+    return _import_code(src_code, "name", verbose, choice_list=listed_params)
+    # print(src_code)
 
 
 class _AsyncResource(_GISResource):
@@ -441,12 +626,12 @@ class _AsyncResource(_GISResource):
 
     def _refresh(self):
         params = {"f": "json"}
-        dictdata = self._con.get(path=self.url, params=params, token=self._con.token) # token=self._token)
+        dictdata = self._con.get(path=self.url, params=params)  # token=self._token)
         self.properties = PropertyMap(dictdata)
 
     def _analysis_job(self, task, params):
-        """ Submits an Analysis job and returns the job URL for monitoring the job
-            status in addition to the json response data for the submitted job."""
+        """Submits an Analysis job and returns the job URL for monitoring the job
+        status in addition to the json response data for the submitted job."""
 
         # Unpack the Analysis job parameters as a dictionary and add token and
         # formatting parameters to the dictionary. The dictionary is used in the
@@ -460,12 +645,12 @@ class _AsyncResource(_GISResource):
 
         params["f"] = "json"
 
-        resp = self._con.post(submit_url, params, token=self._token)
+        resp = self._con.post(submit_url, params)
         # print(resp)
-        return task_url, resp, resp['jobId']
+        return task_url, resp, resp["jobId"]
 
     def _analysis_job_status(self, task_url, job_info):
-        """ Tracks the status of the submitted Analysis job."""
+        """Tracks the status of the submitted Analysis job."""
 
         if "jobId" in job_info:
             # Get the id of the Analysis job to track the status.
@@ -473,7 +658,7 @@ class _AsyncResource(_GISResource):
             job_id = job_info.get("jobId")
             job_url = "{}/jobs/{}".format(task_url, job_id)
             params = {"f": "json"}
-            job_response = self._con.post(job_url, params, token=self._token)
+            job_response = self._con.post(job_url, params)
 
             # Query and report the Analysis job status.
             #
@@ -483,24 +668,26 @@ class _AsyncResource(_GISResource):
                 while not job_response.get("jobStatus") == "esriJobSucceeded":
                     time.sleep(5)
 
-                    job_response = self._con.post(job_url, params, token=self._token)
+                    job_response = self._con.post(job_url, params)
                     # print(job_response)
-                    messages = job_response['messages'] if 'messages' in job_response else []
+                    messages = (
+                        job_response["messages"] if "messages" in job_response else []
+                    )
                     num = len(messages)
                     if num > num_messages:
                         for index in range(num_messages, num):
                             msg = messages[index]
                             if arcgis.env.verbose:
-                                print(msg['description'])
-                            if msg['type'] == 'esriJobMessageTypeInformative':
-                                _log.info(msg['description'])
-                            elif msg['type'] == 'esriJobMessageTypeWarning':
-                                _log.warning(msg['description'])
-                            elif msg['type'] == 'esriJobMessageTypeError':
-                                _log.error(msg['description'])
+                                print(msg["description"])
+                            if msg["type"] == "esriJobMessageTypeInformative":
+                                _log.info(msg["description"])
+                            elif msg["type"] == "esriJobMessageTypeWarning":
+                                _log.warning(msg["description"])
+                            elif msg["type"] == "esriJobMessageTypeError":
+                                _log.error(msg["description"])
                                 # print(msg['description'], file=sys.stderr)
                             else:
-                                _log.warning(msg['description'])  # ,file = sys.stderr)
+                                _log.warning(msg["description"])  # ,file = sys.stderr)
                         num_messages = num
 
                     if job_response.get("jobStatus") == "esriJobFailed":
@@ -518,8 +705,8 @@ class _AsyncResource(_GISResource):
             raise Exception("No job url.")
 
     def _analysis_job_results(self, task_url, job_info, job_id=None):
-        """ Use the job result json to get information about the feature service
-            created from the Analysis job."""
+        """Use the job result json to get information about the feature service
+        created from the Analysis job."""
 
         # Get the paramUrl to get information about the Analysis job results.
         #
@@ -533,12 +720,10 @@ class _AsyncResource(_GISResource):
                 param_value = results[key]
                 if "paramUrl" in param_value:
                     param_url = param_value.get("paramUrl")
-                    result_url = "{}/jobs/{}/{}".format(task_url,
-                                                        job_id,
-                                                        param_url)
+                    result_url = "{}/jobs/{}/{}".format(task_url, job_id, param_url)
 
                     params = {"f": "json"}
-                    param_result = self._con.post(result_url, params, token=self._token)
+                    param_result = self._con.post(result_url, params)
 
                     job_value = param_result.get("value")
                     result_values[key] = job_value
@@ -553,9 +738,7 @@ class _AsyncResource(_GISResource):
                 "currentVersion": 10.11,
                 "copyrightText": "",
                 "defaultVisibility": True,
-                "relationships": [
-
-                ],
+                "relationships": [],
                 "isDataVersioned": False,
                 "supportsRollbackOnFailureParameter": True,
                 "supportsStatistics": True,
@@ -564,9 +747,7 @@ class _AsyncResource(_GISResource):
                 "minScale": 0,
                 "maxScale": 0,
                 "objectIdField": "OBJECTID",
-                "templates": [
-
-                ],
+                "templates": [],
                 "type": "Feature Layer",
                 "displayField": "TITLE",
                 "visibilityField": "VISIBLE",
@@ -582,46 +763,42 @@ class _AsyncResource(_GISResource):
                 "supportedQueryFormats": "JSON",
                 "hasStaticData": False,
                 "maxRecordCount": -1,
-                "indexes": [
-
-                ],
-                "types": [
-
-                ],
+                "indexes": [],
+                "types": [],
                 "fields": [
                     {
                         "alias": "OBJECTID",
                         "name": "OBJECTID",
                         "type": "esriFieldTypeOID",
-                        "editable": False
+                        "editable": False,
                     },
                     {
                         "alias": "Title",
                         "name": "TITLE",
                         "length": 50,
                         "type": "esriFieldTypeString",
-                        "editable": True
+                        "editable": True,
                     },
                     {
                         "alias": "Visible",
                         "name": "VISIBLE",
                         "type": "esriFieldTypeInteger",
-                        "editable": True
+                        "editable": True,
                     },
                     {
                         "alias": "Description",
                         "name": "DESCRIPTION",
                         "length": 1073741822,
                         "type": "esriFieldTypeString",
-                        "editable": True
+                        "editable": True,
                     },
                     {
                         "alias": "Type ID",
                         "name": "TYPEID",
                         "type": "esriFieldTypeInteger",
-                        "editable": True
-                    }
-                ]
+                        "editable": True,
+                    },
+                ],
             },
             "featureSet": {
                 "features": [
@@ -629,16 +806,13 @@ class _AsyncResource(_GISResource):
                         "geometry": {
                             "x": 80.27032792000051,
                             "y": 13.085227147000467,
-                            "spatialReference": {
-                                "wkid": 4326,
-                                "latestWkid": 4326
-                            }
+                            "spatialReference": {"wkid": 4326, "latestWkid": 4326},
                         },
                         "attributes": {
                             "description": "blayer desc",
                             "title": "blayer",
                             "OBJECTID": 0,
-                            "VISIBLE": 1
+                            "VISIBLE": 1,
                         },
                         "symbol": {
                             "angle": 0,
@@ -649,25 +823,27 @@ class _AsyncResource(_GISResource):
                             "imageData": "iVBORw0KGgoAAAANSUhEUgAAABUAAAAdCAYAAABFRCf7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNS4xIE1hY2ludG9zaCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4OTI1MkU2ODE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4OTI1MkU2OTE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg5MjUyRTY2MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg5MjUyRTY3MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+iVNkdQAABJlJREFUeNp0VltvG0UUnpkdr72261CnCQWEIA9FqOKlqooARUKCtAUhoA+VoBVRhfgFXKSKJ97goRL8ARCIclGgL0VUkBBAoBaVoggEQQVSAhFS06SJje3Y3t25cc7srL3YjddHs3N85pvvfOfMyJRs83n8o+P7POI9yQibooTeBa68ISbSRv+hifpCGHX2s6dnfrrRWjroOPzB0T0+zZ0q8uDRSrniF/MB8X2fADhR8IRRRDphh7Q6rbgtOucU0Sdnj59Z2hb00PtHD+Zp/p2x6uitO4o7iLYP8DMafjVE2wXUboALm50W2ahtXO3q8MTX02fnh0Affu/IkSAXnL55dLzMPU6kURZMIZQhFtRk2VBKcpQTIQVZ21hrdUX4zDcnPv2kBzr59mP3BLnChfGx8YrHPKIAELSzMPhQk+ydzpOvIYwywjFeK7K+vt6IlZw8/+y5RZ4gm9eCUrGCmkUyBkCV0Sd5UlBtTLIhRWQE9ixwsVwe6dY3X4WwJ+j9bx7a7/v5i6O7qlxisFZJAvBF7Rjty56CWlmszilj6BNgXd+syTCO7uNK62nuezyUkWWASTPHDtOjbgOHkJTOsbXAyJhIC+rlODdROM211gcQKBJxoh+EKAs4AGqybHVfBvdICNIU/IDHYbcJiS6le4wwbW1B9UDXJcg9QBxtbglh1BlAJzjoUxIGQZFRwtAypgnjtH0spDG9MWVs34xrN5uBLnEoTKQUgDLgZ6hliLunBaIDhy4LYhyotptZlphGyLUhfyspxxj3AIpaVqikdgyzoGn7p0xNj71rNamweCscWC0qoQ8YRm3K2OgpeFoc+j9FSUYKB+4OgxIK4RcZUJ6RsUgqCrShxWzza9035aw/lzYGY5P4xFSMR5vMcFpm87opL4HjXsr76dLhC2xYhgx3I0BfoS7RCp+3K/e8vn+Ke2zWK+cYofQG9yMlw1eK1aAni9oSWil9eOmFhXkPnbXZ1eXqwVsirfQU9Vynm75lymLbxvpSP4yqI4iR5uWlFxdOI56Xbro5t3qhOrW7ZmL1EOFwp7k6pRXuWaZgBmuwJSIl1fNXXvrxjRTLy2ZTm1v9YeTBXedNbCYZZ1U4pdt+NGiomuKKEvKp5ZM/f5z9zctc1vju1b9cv5q/M/icBd4+KNztlnGWKfYjAMqm+K7zZ/PYP6d+X3TrafbmR8N71QcrOPMLd5RGdj838WFup393orNLWRki6vFv197661i40m6AKwYLneG79BzDPNhNYFWwnfguGyKgPl32bwseoTnKekVpS9n49vorWwv1JsSVwAJHCHcW2Agsk3rBBZXBihhcn11biTfDixpPik1bEZyj34EVXXzJrUccWwrbZo5+B6ztRpvO1kLjjO5qW3YccZ5JeTAecQxqqV0Q6hM5KVIrNL5a/77yQPUyLbK9qiMv49zFhW6MMnPE0dwxlQ48ckXDNHJOq0C2xByreHtxhPk1sK4DEI5dut7+QWCZCyj9MXKLWmD/gl1Xtfhd6F2CI86dv+XiIrdOpeeCDd0VyW7KGbLptn9p/mrgNsIxwzKN0QO3IvlPgAEA3AQhIZtaN54AAAAASUVORK5CYII=",
                             "contentType": "image/png",
                             "width": 15.75,
-                            "height": 21.75
-                        }
+                            "height": 21.75,
+                        },
                     }
                 ],
-                "geometryType": "esriGeometryPoint"
+                "geometryType": "esriGeometryPoint",
             },
-            "nextObjectId": 1
+            "nextObjectId": 1,
         }
 
         input_layer_url = ""
         if isinstance(input_layer, Item):
-            if input_layer.type.lower() == 'feature service':
+            if input_layer.type.lower() == "feature service":
                 input_param = {"url": input_layer.layers[0].url}
-            elif input_layer.type.lower() == 'feature collection':
+            elif input_layer.type.lower() == "feature collection":
                 fcdict = input_layer.get_data()
-                fc = FeatureCollection(fcdict['layers'][0])
+                fc = FeatureCollection(fcdict["layers"][0])
                 input_param = fc.layer
             else:
-                raise TypeError("item type must be feature service or feature collection")
+                raise TypeError(
+                    "item type must be feature service or feature collection"
+                )
 
         elif isinstance(input_layer, FeatureLayerCollection):
             input_layer_url = input_layer.layers[0].url  # ["url"]
@@ -677,11 +853,15 @@ class _AsyncResource(_GISResource):
         elif isinstance(input_layer, Layer):
             input_layer_url = input_layer.url
             input_param = {"url": input_layer_url}
-        elif isinstance(input_layer, tuple):  # geocoding location, convert to point featureset
+        elif isinstance(
+            input_layer, tuple
+        ):  # geocoding location, convert to point featureset
             input_param = point_fs
             input_param["featureSet"]["features"][0]["geometry"]["x"] = input_layer[1]
             input_param["featureSet"]["features"][0]["geometry"]["y"] = input_layer[0]
-        elif isinstance(input_layer, dict):  # could add support for geometry one day using geometry -> featureset
+        elif isinstance(
+            input_layer, dict
+        ):  # could add support for geometry one day using geometry -> featureset
             input_param = input_layer
             """
             res = gis.analysis.trace_downstream({"layerDefinition":
@@ -715,13 +895,14 @@ class _AsyncResource(_GISResource):
             input_param = {"url": input_layer_url}
         else:
             raise Exception(
-                "Invalid format of input layer. url string, feature service Item, feature service instance or dict supported")
+                "Invalid format of input layer. url string, feature service Item, feature service instance or dict supported"
+            )
 
         return input_param
 
     def _raster_input(self, input_raster):
         if isinstance(input_raster, Item):
-            if input_raster.type.lower() == 'image service':
+            if input_raster.type.lower() == "image service":
                 input_param = {"itemId": input_raster.itemid}
             else:
                 raise TypeError("item type must be image service")
@@ -730,14 +911,17 @@ class _AsyncResource(_GISResource):
         elif isinstance(input_raster, dict):
             input_param = input_raster
         else:
-            raise Exception("Invalid format of input raster. image service Item or image service url, cloud raster uri "
-                            "or shared data path supported")
+            raise Exception(
+                "Invalid format of input raster. image service Item or image service url, cloud raster uri "
+                "or shared data path supported"
+            )
 
         return input_param
 
 
 class Toolbox(_AsyncResource):
     "A collection of geoprocessing tools."
+    _token = None
 
     def __init__(self, url, gis=None):
         """
@@ -746,11 +930,15 @@ class Toolbox(_AsyncResource):
         super(Toolbox, self).__init__(url, gis)
         try:
             from arcgis.gis.server._service._adminfactory import AdminServiceGen
+
             self.service = AdminServiceGen(service=self, gis=gis)
-        except: pass
+        except:
+            pass
 
         self._taskurls = {}
-        self._param_names = {} # mapping from fn to name-map (camel_case (PEP8ified) parameter name to GP_Param_Name)
+        self._param_names = (
+            {}
+        )  # mapping from fn to name-map (camel_case (PEP8ified) parameter name to GP_Param_Name)
         self._method_params = {}
         self._return_values = {}
 
@@ -761,127 +949,181 @@ class Toolbox(_AsyncResource):
             taskurl = self.url + "/" + task
 
             self._taskurls[fnname] = taskurl + "/execute"
+            try:
+                taskprops = self._con.post(taskurl, {"f": "json"})
+            except Exception as ex:
+                if str(ex).find("Token Required") > -1:
+                    taskprops = self._con.post(taskurl, {"f": "json"})
+                else:
+                    raise ex
 
-            taskprops = self._con.post(taskurl, {"f":"json"}, token=self._token)
-            execution_type = taskprops['executionType']
-            task_params = taskprops['parameters']
+            execution_type = taskprops["executionType"]
+            task_params = taskprops["parameters"]
 
-            helpstring = '\n'
-            if 'docstring' in taskprops:
-                docstring = taskprops['docstring']
-                text_docstring = re.sub("&lt; */? *\w+ */?\ *&gt;", "", docstring)
+            helpstring = "\n"
+            if "docstring" in taskprops:
+                docstring = taskprops["docstring"]
+                text_docstring = re.sub(r"&lt; */? *\w+ */?\ *&gt;", "", docstring)
                 helpstring = helpstring + ". " + text_docstring
 
-            if 'description' in taskprops:
-                description = taskprops['description']
-                text_description = re.sub("&lt; */? *\w+ */?\ *&gt;", "", description)
-                helpstring += ' \n \n' + text_description
+            if "description" in taskprops:
+                description = taskprops["description"]
+                text_description = re.sub(r"&lt; */? *\w+ */?\ *&gt;", "", description)
+                helpstring += " \n \n" + text_description
 
             helpstring = helpstring + "\n\nParameters:"
 
             spec = []
             name_type = {}
-            name_name = {} # map from camel_case to GPParameterName
+            name_name = {}  # map from camel_case to GPParameterName
             name_type[fnname] = task
             return_values = []
 
             # tools with output map service - add another output:
-            if self.properties.resultMapServerName != '':
-                return_values.append({"name": "result_layer", "display_name": "Result Layer", "type": MapImageLayer})
+            if self.properties.resultMapServerName != "":
+                return_values.append(
+                    {
+                        "name": "result_layer",
+                        "display_name": "Result Layer",
+                        "type": mapping.MapImageLayer,
+                    }
+                )
 
             for param in task_params:
 
-                gp_param_name = param['name']
+                gp_param_name = param["name"]
 
                 param_name = _camelCase_to_underscore(gp_param_name)
 
                 name_name[param_name] = gp_param_name
 
-                param_type = param['dataType']
-                param_dval = param['defaultValue']
-                param_drtn = param['direction']
+                param_type = param["dataType"]
+                param_dval = param["defaultValue"]
+                param_drtn = param["direction"]
 
-                param_rqrd = param['parameterType']
+                param_rqrd = param["parameterType"]
 
-                param_choices = param.get('choiceList', None)
+                param_choices = param.get("choiceList", None)
 
                 py_param_type_ = param_type
-                if param_type == 'GPBoolean':
+                if param_type == "GPBoolean":
                     py_param_type_ = bool
-                elif param_type == 'GPDouble':
+                elif param_type == "GPDouble":
                     py_param_type_ = float
-                elif param_type == 'GPLong':
+                elif param_type == "GPLong":
                     py_param_type_ = int
-                elif param_type == 'GPString':
+                elif param_type == "GPString":
                     py_param_type_ = str
-                elif param_type == 'GPDate':
+                elif param_type == "GPDate":
                     py_param_type_ = datetime.date
-                elif param_type == 'GPFeatureRecordSetLayer':
+                elif param_type == "GPFeatureRecordSetLayer":
                     py_param_type_ = FeatureSet
-                elif param_type == 'GPRecordSet':
+                elif param_type == "GPRecordSet":
                     py_param_type_ = FeatureSet
-                elif param_type == 'GPLinearUnit':
+                elif param_type == "GPLinearUnit":
                     py_param_type_ = LinearUnit
-                elif param_type == 'GPDataFile':
+                elif param_type == "GPDataFile":
                     py_param_type_ = DataFile
-                elif param_type in ['GPRasterData', 'GPRasterLayer', 'GPRasterDataLayer']:
+                elif param_type in [
+                    "GPRasterData",
+                    "GPRasterLayer",
+                    "GPRasterDataLayer",
+                ]:
                     py_param_type_ = RasterData
-                elif param_type.startswith('GPMultiValue'):
+                elif param_type.startswith("GPMultiValue"):
                     py_param_type_ = list
                 else:
                     py_param_type_ = str
 
-                if param_drtn == 'esriGPParameterDirectionInput':
+                if param_drtn == "esriGPParameterDirectionInput":
                     name_type[param_name] = py_param_type_
                     # print("\n   " + param_name + " : " + str(py_param_type_))
-                    #if param_dval is not None and param_dval != '':
+                    # if param_dval is not None and param_dval != '':
                     #    print(" = " + str(param_dval))
-                    #if param_rqrd is not None and param_rqrd == 'esriGPParameterTypeOptional':
+                    # if param_rqrd is not None and param_rqrd == 'esriGPParameterTypeOptional':
                     #    print(" = None")
-                    param_spec = ( param_name , param_dval )
+                    param_spec = (param_name, param_dval)
                     spec.append(param_spec)
 
-                    helpstring = helpstring + "\n\n   " + param_name + ": " + param['displayName']  + " (" + py_param_type_.__name__ + ")."
-                    if param_rqrd == 'esriGPParameterTypeOptional':
+                    helpstring = (
+                        helpstring
+                        + "\n\n   "
+                        + param_name
+                        + ": "
+                        + param["displayName"]
+                        + " ("
+                        + py_param_type_.__name__
+                        + ")."
+                    )
+                    if param_rqrd == "esriGPParameterTypeOptional":
                         helpstring = helpstring + " Optional parameter. "
-                    elif param_rqrd == 'esriGPParameterTypeRequired' and param_dval is None:
+                    elif (
+                        param_rqrd == "esriGPParameterTypeRequired"
+                        and param_dval is None
+                    ):
                         helpstring = helpstring + " Required parameter. "
 
-                    if 'description' in param:
-                        helpstring = helpstring + ' ' + param['description']
+                    if "description" in param:
+                        helpstring = helpstring + " " + param["description"]
 
                     if param_choices is not None and len(param_choices) > 0:
-                        helpstring = helpstring + '\n      Choice list:' + str(param_choices)
+                        helpstring = (
+                            helpstring + "\n      Choice list:" + str(param_choices)
+                        )
 
-                elif param_drtn == 'esriGPParameterDirectionOutput':
+                elif param_drtn == "esriGPParameterDirectionOutput":
 
-                    if self.properties.resultMapServerName != '': # 6.3.4.7 Map Images as Geoprocessing Results
+                    if (
+                        self.properties.resultMapServerName != ""
+                    ):  # 6.3.4.7 Map Images as Geoprocessing Results
                         if py_param_type_ in [FeatureSet, RasterData]:
-                            py_param_type_ = dict # map image
+                            py_param_type_ = dict  # map image
 
                     name_type[param_name] = py_param_type_
-                    name_type['return'] = py_param_type_
-                    name_type['return_name'] = param_name
-                    name_type['return_display_name'] = param['displayName']
+                    name_type["return"] = py_param_type_
+                    name_type["return_name"] = param_name
+                    name_type["return_display_name"] = param["displayName"]
 
-                    return_values.append({"name": param_name,
-                                          "display_name": param['displayName'],
-                                          "type": py_param_type_})
-
-
+                    return_values.append(
+                        {
+                            "name": param_name,
+                            "display_name": param["displayName"],
+                            "type": py_param_type_,
+                        }
+                    )
 
             if len(return_values) == 1:
-                helpstring = helpstring + "\n\nReturns: " + name_type['return_display_name'] + " (" + name_type['return'].__name__ + ")"
+                helpstring = (
+                    helpstring
+                    + "\n\nReturns: "
+                    + name_type["return_display_name"]
+                    + " ("
+                    + name_type["return"].__name__
+                    + ")"
+                )
             else:
-                name_type['return'] = tuple # for method spec, type hinting
+                name_type["return"] = tuple  # for method spec, type hinting
                 helpstring = helpstring + "\n\nReturns the following as a named tuple:"
                 for retval in return_values:
-                    helpstring = helpstring + '\n   ' + retval['name'] + ' - ' + retval['display_name'] + ' as a ' + retval['type'].__name__
+                    helpstring = (
+                        helpstring
+                        + "\n   "
+                        + retval["name"]
+                        + " - "
+                        + retval["display_name"]
+                        + " as a "
+                        + retval["type"].__name__
+                    )
 
             helpstring = helpstring + "\n"
 
-            if 'helpUrl' in taskprops:
-                helpstring = helpstring + "\nSee " + taskprops['helpUrl'] + " for additional help."
+            if "helpUrl" in taskprops:
+                helpstring = (
+                    helpstring
+                    + "\nSee "
+                    + taskprops["helpUrl"]
+                    + " for additional help."
+                )
 
             generatedfn = _call_generator(task, spec)
             generatedfn.__annotations__ = name_type
@@ -897,7 +1139,7 @@ class Toolbox(_AsyncResource):
         # http://sampleserver1.arcgisonline.com/ArcGIS/rest/Services/Specialty/ESRI_Currents_World/GPServer
 
     def __str__(self):
-        return '<Toolbox url:' + self.url + '>'
+        return "<Toolbox url:" + self.url + ">"
 
     def _execute(self, params):
         caller_fnname = inspect.stack()[1][3]
@@ -911,7 +1153,7 @@ class Toolbox(_AsyncResource):
         task_name = name_type[caller_fnname]
         url = self.url + "/" + task_name + "/execute"
 
-        #---------------------in---------------------#
+        # ---------------------in---------------------#
 
         for key, value in params.items():
             # print(k + " = " + str(v))
@@ -920,21 +1162,19 @@ class Toolbox(_AsyncResource):
                 if py_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     if type(value) in [FeatureSet, LinearUnit, DataFile, RasterData]:
                         params[key] = value.to_dict()
-                    elif _is_geoenabled(value):
+                    elif _is_geoenabled(value) or hasattr(value, "spatial"):
                         params[key] = value.spatial.__feature_set__
-                    elif type(value) in [SpatialDataFrame]:
-                        params[key] = value.__feature_set__
                     elif type(value) == str:
                         try:
-                            klass = py_type # type[value]
+                            klass = py_type  # type[value]
                             params[key] = klass.from_str(value)
                         except:
                             pass
                 elif py_type == datetime.datetime:
                     params[key] = _date_handler(value)
-        #--------------------------------------------#
+        # --------------------------------------------#
 
-        params.update({ "f" : "json" })
+        params.update({"f": "json"})
 
         gp_params = {}
 
@@ -943,34 +1183,39 @@ class Toolbox(_AsyncResource):
             gp_params[gp_param_name] = param_value
 
         # copy environment variables if set
-        if 'env:outSR' not in params and arcgis.env.out_spatial_reference is not None:
-            gp_params['env:outSR'] = arcgis.env.out_spatial_reference
+        if "env:outSR" not in params and arcgis.env.out_spatial_reference is not None:
+            gp_params["env:outSR"] = arcgis.env.out_spatial_reference
 
-        if 'env:processSR' not in params and arcgis.env.process_spatial_reference is not None:
-            gp_params['env:processSR'] = arcgis.env.process_spatial_reference
+        if (
+            "env:processSR" not in params
+            and arcgis.env.process_spatial_reference is not None
+        ):
+            gp_params["env:processSR"] = arcgis.env.process_spatial_reference
 
-        if 'returnZ' not in params and arcgis.env.return_z is not False:
-            gp_params['returnZ'] = True
+        if "returnZ" not in params and arcgis.env.return_z is not False:
+            gp_params["returnZ"] = True
 
-        if 'returnM' not in params and arcgis.env.return_m is not False:
-            gp_params['returnM'] = True
+        if "returnM" not in params and arcgis.env.return_m is not False:
+            gp_params["returnM"] = True
 
         resp = None
 
-        if self.properties.executionType == 'esriExecutionTypeSynchronous':
-            resp = self._con.post(url, gp_params, token=self._token)
+        if self.properties.executionType == "esriExecutionTypeSynchronous":
+            resp = self._con.post(url, gp_params)
 
             output_dict = {}
 
-            for result in resp['results']:
-                retParamName = result['paramName']
+            for result in resp["results"]:
+                retParamName = result["paramName"]
                 ret_param_name = _camelCase_to_underscore(retParamName)
                 ret_type = name_type[ret_param_name]
                 ret_val = None
                 if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
-                    jsondict = result['value']
+                    jsondict = result["value"]
                     if jsondict is not None:
-                        if 'mapImage' in jsondict: # http://resources.esri.com/help/9.3/arcgisserver/apis/rest/gpresult.html#mapimage
+                        if (
+                            "mapImage" in jsondict
+                        ):  # http://resources.esri.com/help/9.3/arcgisserver/apis/rest/gpresult.html#mapimage
                             ret_val = jsondict
                         else:
                             result_obj = ret_type.from_dict(jsondict)
@@ -980,33 +1225,33 @@ class Toolbox(_AsyncResource):
                     else:
                         ret_val = jsondict
                 else:
-                    ret_val = result['value']
+                    ret_val = result["value"]
 
                 output_dict[ret_param_name] = ret_val
 
-            num_returns = len(resp['results'])
+            num_returns = len(resp["results"])
             if num_returns == 1:
-                return output_dict[name_type['return_name']]
+                return output_dict[name_type["return_name"]]
             else:
                 ret_names = []
                 for return_value in return_values:
-                    ret_names.append(return_value['name'])
+                    ret_names.append(return_value["name"])
 
-                NamedTuple = collections.namedtuple('ToolOutput', ret_names)
-                tool_output = NamedTuple(**output_dict) #TODO: preserve ordering
+                NamedTuple = collections.namedtuple("ToolOutput", ret_names)
+                tool_output = NamedTuple(**output_dict)  # TODO: preserve ordering
                 return tool_output
 
         else:
             task_url = "{}/{}".format(self.url, task_name)
             submit_url = "{}/submitJob".format(task_url)
-            job_info = self._con.post(submit_url, gp_params, token=self._token)
-            job_id = job_info['jobId']
+            job_info = self._con.post(submit_url, gp_params)
+            job_id = job_info["jobId"]
             try:
                 isCan = False
                 job_info = super()._analysis_job_status(task_url, job_info)
             except KeyboardInterrupt:
-                cancel_url = "%s/jobs/%s/cancel" % (task_url, job_info['jobId'])
-                params = {'f' : "json"}
+                cancel_url = "%s/jobs/%s/cancel" % (task_url, job_info["jobId"])
+                params = {"f": "json"}
                 job_info = self._con.get(path=cancel_url, params=params)
                 isCan = True
             if isCan:
@@ -1022,13 +1267,13 @@ class Toolbox(_AsyncResource):
                 if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     jsondict = resp[retParamName]
                     if jsondict is not None:
-                        if 'mapImage' in jsondict:
+                        if "mapImage" in jsondict:
                             ret_val = jsondict
                         else:
                             result = ret_type.from_dict(jsondict)
                             result._con = self._con
                             result._token = self._token
-                            ret_val =  result
+                            ret_val = result
                     else:
                         ret_val = jsondict
                 else:
@@ -1038,26 +1283,30 @@ class Toolbox(_AsyncResource):
 
             # tools with output map service - add another output:
             result_layer = self.properties.resultMapServerName
-            if result_layer != '':
-                #job_id = job_info.get("jobId")
-                result_layer_url = self.url.replace('/GPServer', '/MapServer') + '/jobs/' + job_id
+            if result_layer != "":
+                # job_id = job_info.get("jobId")
+                result_layer_url = (
+                    self.url.replace("/GPServer", "/MapServer") + "/jobs/" + job_id
+                )
 
-                output_dict['result_layer'] = MapImageLayer(result_layer_url, self._gis)
+                output_dict["result_layer"] = mapping.MapImageLayer(
+                    result_layer_url, self._gis
+                )
 
             num_returns = len(resp)
             if num_returns == 1:
-                return output_dict[name_type['return_name']] # *** output_dict[return_values[0]['name']]
+                return output_dict[
+                    name_type["return_name"]
+                ]  # *** output_dict[return_values[0]['name']]
             else:
                 ret_names = []
                 for return_value in return_values:
-                    ret_names.append(return_value['name'])
+                    ret_names.append(return_value["name"])
 
-                NamedTuple = collections.namedtuple('ToolOutput', ret_names)
-                tool_output = NamedTuple(**output_dict) #TODO: preserve ordering
+                NamedTuple = collections.namedtuple("ToolOutput", ret_names)
+                tool_output = NamedTuple(**output_dict)  # TODO: preserve ordering
                 return tool_output
-                #return collections.namedtuple('GeoprocessingResults', output_dict.keys())(**output_dict)
-
-
+                # return collections.namedtuple('GeoprocessingResults', output_dict.keys())(**output_dict)
 
     # def execute(self, task, input,
     #             outSR=None,

@@ -1,7 +1,9 @@
 try:
     import pandas as pd
-    from ._accessor import GeoAccessor, GeoSeriesAccessor, _is_geoenabled
-    from ._io.fileops import from_featureclass
-    __all__ = ['GeoAccessor', 'GeoSeriesAccessor', 'from_featureclass']
+    from arcgis.features.geo._accessor import GeoAccessor
+    from arcgis.features.geo._accessor import GeoSeriesAccessor
+    from arcgis.features.geo._accessor import _is_geoenabled
+
+    __all__ = ["GeoAccessor", "GeoSeriesAccessor"]
 except ImportError:
     pass

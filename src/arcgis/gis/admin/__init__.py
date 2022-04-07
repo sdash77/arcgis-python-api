@@ -11,11 +11,12 @@ from .agoladmin import AGOLAdminManager
 from ._federation import Federation
 from ._logs import Logs
 from ._license import LicenseManager, License, Bundle
+from ._livingatlas import LivingAtlas
 from ._machines import Machines, Machine
 from ._security import EnterpriseGroups, EnterpriseUsers, OAuth
 from ._security import Security, SSLCertificate, SSLCertificates
 from ._site import Site
-from ._system import Directory, Licenses, System
+from ._system import Directory, Licenses, System, Indexer, EmailManager
 from ._system import PortalLicense
 from ._system import WebAdaptor, WebAdaptors
 from ._collaboration import Collaboration, CollaborationManager
@@ -26,4 +27,6 @@ from ._resources import PortalResourceManager
 from ._catagoryschema import CategoryManager
 from ._idp import IdentityProviderManager
 from ._wh import WebhookManager, Webhook
-__all__ = ['PortalAdminManager', 'AGOLAdminManager']
+from ._usage import AGOLUsageReports
+
+__all__ = ["PortalAdminManager", "AGOLAdminManager"]

@@ -11,22 +11,23 @@ import textwrap
 import warnings
 import re
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 # This is mostly here so automodule docs are ordered more ideally.
-__all__ = ["deprecated", "message_location",
-           "DeprecatedWarning", "UnsupportedWarning"]
+__all__ = ["deprecated", "message_location", "DeprecatedWarning", "UnsupportedWarning"]
 
 # message_location provides some simple
 message_location = "top"
 
 
-
 def _parse(version):
     def normalize(v):
         import re
-        return [int(x) for x in re.sub(r'(\.0+)*$','', v).split(".")]
+
+        return [int(x) for x in re.sub(r"(\.0+)*$", "", v).split(".")]
+
     return normalize(version)
+
 
 class DeprecatedWarning(DeprecationWarning):
     """A warning class for deprecated methods
@@ -62,14 +63,16 @@ class DeprecatedWarning(DeprecationWarning):
         if self.deprecated_in:
             parts["deprecated"] = " as of %s" % self.deprecated_in
         if self.removed_in:
-            parts["removed"] = " and will be removed in %s" % self.removed_in
+            parts["removed"] = " and has be removed in %s" % self.removed_in
         if any([self.deprecated_in, self.removed_in, self.details]):
             parts["period"] = "."
         if self.details:
             parts["details"] = " %s" % self.details
 
-        return ("%(function)s is deprecated%(deprecated)s%(removed)s"
-                "%(period)s%(details)s" % (parts))
+        return (
+            "%(function)s is deprecated%(deprecated)s%(removed)s"
+            "%(period)s%(details)s" % (parts)
+        )
 
 
 class UnsupportedWarning(DeprecatedWarning):
@@ -90,11 +93,10 @@ class UnsupportedWarning(DeprecatedWarning):
         if self.details:
             parts["details"] = " %s" % self.details
 
-        return ("%(function)s is unsupported as of %(removed)s."
-                "%(details)s" % (parts))
+        return "%(function)s is unsupported as of %(removed)s." "%(details)s" % (parts)
 
-def deprecated(deprecated_in=None, removed_in=None, current_version=None,
-               details=""):
+
+def deprecated(deprecated_in=None, removed_in=None, current_version=None, details=""):
     """Decorate a function to signify its deprecation
 
     This function wraps a method that will soon be removed and does two things:
@@ -137,8 +139,9 @@ def deprecated(deprecated_in=None, removed_in=None, current_version=None,
     # You can't just jump to removal. It's weird, unfair, and also makes
     # building up the docstring weird.
     if deprecated_in is None and removed_in is not None:
-        raise TypeError("Cannot set removed_in to a value "
-                        "without also setting deprecated_in")
+        raise TypeError(
+            "Cannot set removed_in to a value " "without also setting deprecated_in"
+        )
 
     # Only warn when it's appropriate. There may be cases when it makes sense
     # to add this decorator before a formal deprecation period begins.
@@ -152,11 +155,9 @@ def deprecated(deprecated_in=None, removed_in=None, current_version=None,
     if current_version:
         current_version = _parse(current_version)
 
-        if (removed_in
-            and current_version >= _parse(removed_in)):
+        if removed_in and current_version >= _parse(removed_in):
             is_unsupported = True
-        elif (deprecated_in
-              and current_version >= _parse(deprecated_in)):
+        elif deprecated_in and current_version >= _parse(deprecated_in):
             is_deprecated = True
     else:
         # If we can't actually calculate that we're in a period of
@@ -177,16 +178,16 @@ def deprecated(deprecated_in=None, removed_in=None, current_version=None,
             # makes for a nicely constructed sentence with or without any
             # of the parts.
             parts = {
-                "deprecated_in":
-                    " %s" % deprecated_in if deprecated_in else "",
-                "removed_in":
-                    "\n   This will be removed in %s." %
-                    removed_in if removed_in else "",
-                "details":
-                    " %s" % details if details else ""}
+                "deprecated_in": " %s" % deprecated_in if deprecated_in else "",
+                "removed_in": "\n   This was removed in %s." % removed_in
+                if removed_in
+                else "",
+                "details": " %s" % details if details else "",
+            }
 
-            deprecation_note = (".. deprecated::{deprecated_in}"
-                                "{removed_in}{details}".format(**parts))
+            deprecation_note = (
+                ".. deprecated::{deprecated_in}" "{removed_in}{details}".format(**parts)
+            )
 
             # default location for insertion of deprecation note
             loc = 1
@@ -231,12 +232,12 @@ def deprecated(deprecated_in=None, removed_in=None, current_version=None,
                     cls = UnsupportedWarning
                 else:
                     cls = DeprecatedWarning
-                warnings.simplefilter('always', DeprecationWarning)
-                the_warning = cls(function.__name__, deprecated_in,
-                                  removed_in, details)
-                warnings.warn(the_warning, category=DeprecationWarning,
-                              stacklevel=3)
+                warnings.simplefilter("always", DeprecationWarning)
+                the_warning = cls(function.__name__, deprecated_in, removed_in, details)
+                warnings.warn(the_warning, category=DeprecationWarning, stacklevel=3)
                 warnings.resetwarnings()
             return function(*args, **kwargs)
+
         return _inner
+
     return _function_wrapper

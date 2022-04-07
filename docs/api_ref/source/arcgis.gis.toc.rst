@@ -23,7 +23,6 @@ User
     :undoc-members:
     :show-inheritance:
 
-
 Group
 ----------------
 .. autoclass:: arcgis.gis.Group
@@ -85,6 +84,13 @@ GroupManager
     :undoc-members:
     :show-inheritance:
 
+GroupMigrationManager
+-----------------------
+.. autoclass:: arcgis.gis.GroupMigrationManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 DatastoreManager
 ---------------------------
 .. autoclass:: arcgis.gis.DatastoreManager
@@ -106,6 +112,47 @@ ResourceManager
     :undoc-members:
     :show-inheritance:
 
+APIKeyManager
+---------------------------
+.. autoclass:: arcgis.gis._impl.APIKeyManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+APIKey
+---------------------------
+.. autoclass:: arcgis.gis._impl.APIKey
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ProfileManager
+---------------------------
+.. autoclass:: arcgis.gis._impl._profile.ProfileManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+InvitationManager
+---------------------------
+.. autoclass:: arcgis.gis._impl._invitations.InvitationManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+CertificateManager
+---------------------------
+.. autoclass:: arcgis.gis._impl.CertificateManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PortalDataStore
+---------------------------
+.. autoclass:: arcgis.gis._impl._datastores.PortalDataStore
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Submodules
 --------------
@@ -114,3 +161,10 @@ Submodules
 
    arcgis.gis.admin
    arcgis.gis.server
+   arcgis.gis.agoserver
+   arcgis.gis.mission
+   arcgis.gis.nb
+   arcgis.gis.workflowmanager
+   arcgis.gis.tasks
+   arcgis.gis.sharing
+

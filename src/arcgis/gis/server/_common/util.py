@@ -11,7 +11,7 @@ from arcgis._impl.common._utils import timestamp_to_datetime
 @contextmanager
 def _tempinput(data):
     temp = tempfile.NamedTemporaryFile(delete=False)
-    temp.write((bytes(data, 'UTF-8')))
+    temp.write((bytes(data, "UTF-8")))
     temp.close()
     yield temp.name
     os.unlink(temp.name)

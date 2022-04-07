@@ -56,9 +56,10 @@ arcgis.features.GeoSeriesAccessor
     :members:
     :undoc-members:
 
-arcgis.features.SpatialDataFrame
+
+arcgis.features.EditFeatureJob
 --------------
-.. autoclass:: arcgis.features.SpatialDataFrame
+.. autoclass:: arcgis.features._async.EditFeatureJob
     :inherited-members:
     :members:
     :undoc-members:

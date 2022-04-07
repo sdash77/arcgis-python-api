@@ -1,14 +1,17 @@
 """
 Classes to manage a GIS Collaboration
 """
+from typing import Optional, Union
+
+from numpy import str0
 from .. import GIS, Group
 import functools
 
+
 def _lazy_property(fn):
-    '''Decorator that makes a property lazy-evaluated.
-    '''
+    """Decorator that makes a property lazy-evaluated."""
     # http://stevenloria.com/lazy-evaluated-properties-in-python/
-    attr_name = '_lazy_' + fn.__name__
+    attr_name = "_lazy_" + fn.__name__
 
     @property
     @functools.wraps(fn)
@@ -16,35 +19,40 @@ def _lazy_property(fn):
         if not hasattr(self, attr_name):
             setattr(self, attr_name, fn(self))
         return getattr(self, attr_name)
+
     return _lazy_property
+
 
 class CollaborationManager(object):
     _gis = None
     _basepath = None
     _pid = None
-    def __init__(self, gis,portal_id=None):
+
+    def __init__(self, gis, portal_id=None):
         self._gis = gis
         self._portal = gis._portal
         self._pid = portal_id
         if portal_id is None:
             res = self._portal.con.get("portals/self")
-            if 'id' in res:
-                self._pid = res['id']
+            if "id" in res:
+                self._pid = res["id"]
             else:
                 raise Exception("Could not find the portal's ID")
         self._basepath = "portals/%s" % self._pid
 
-    #----------------------------------------------------------------------
-    def create(self,
-               name,
-               description,
-               workspace_name,
-               workspace_description,
-               portal_group_id,
-               host_contact_first_name,
-               host_contact_last_name,
-               host_contact_email_address,
-               access_mode="sendAndReceive"):
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        name: str,
+        description: str,
+        workspace_name: str,
+        workspace_description: str,
+        portal_group_id: str,
+        host_contact_first_name: str,
+        host_contact_last_name: str,
+        host_contact_email_address: str,
+        access_mode: str = "sendAndReceive",
+    ):
         """
         The create method creates a collaboration. The host
         of the collaboration is the portal where it is created. The initial
@@ -85,42 +93,47 @@ class CollaborationManager(object):
         :return: the data item is registered successfully, None otherwise
 
         """
-        if access_mode not in ['send', 'receive', 'sendAndReceive']:
-            raise Exception("Invalid access_mode. Must be of value: send, " + \
-                            "receive or sendAndReceive.")
+        if access_mode not in ["send", "receive", "sendAndReceive"]:
+            raise Exception(
+                "Invalid access_mode. Must be of value: send, "
+                + "receive or sendAndReceive."
+            )
         params = {
-            "f" : "json",
-            "name" : name,
-            "description" : description,
-            "workspaceName" : workspace_name,
-            "workspaceDescription" : workspace_description,
-            "portalGroupId" : portal_group_id,
-            "hostContactFirstname" : host_contact_first_name,
-            "hostContactLastname" : host_contact_last_name,
-            "hostContactEmailAddress" : host_contact_email_address,
-            "accessMode" : access_mode,
-            "config" : {}
+            "f": "json",
+            "name": name,
+            "description": description,
+            "workspaceName": workspace_name,
+            "workspaceDescription": workspace_description,
+            "portalGroupId": portal_group_id,
+            "hostContactFirstname": host_contact_first_name,
+            "hostContactLastname": host_contact_last_name,
+            "hostContactEmailAddress": host_contact_email_address,
+            "accessMode": access_mode,
+            "config": {},
         }
 
         data_path = "%s/createCollaboration" % self._basepath
         res = self._portal.con.post(data_path, params)
-        if 'collaboration' in res and \
-           'id' in res['collaboration']:
-            return Collaboration(collab_manager=self,
-                                 collab_id=res['collaboration']['id'],
-                                 portal_id=self._pid)
-    #----------------------------------------------------------------------
-    def accept_invitation(self,
-                          first_name,
-                          last_name,
-                          email,
-                          invitation_file=None,
-                          invitation_JSON=None,
-                          webauth_username=None,
-                          webauth_password=None,
-                          webauth_cert_file=None,
-                          webauth_cert_password=None
-                          ):
+        if "collaboration" in res and "id" in res["collaboration"]:
+            return Collaboration(
+                collab_manager=self,
+                collab_id=res["collaboration"]["id"],
+                portal_id=self._pid,
+            )
+
+    # ----------------------------------------------------------------------
+    def accept_invitation(
+        self,
+        first_name: str,
+        last_name: str,
+        email: str,
+        invitation_file: Optional[str] = None,
+        invitation_JSON: Optional[str] = None,
+        webauth_username: Optional[str] = None,
+        webauth_password: Optional[str] = None,
+        webauth_cert_file: Optional[str] = None,
+        webauth_cert_password: Optional[str] = None,
+    ):
         """
         The accept_invitation operation allows a portal to accept a
         collaboration invitation. The invitation file received securely
@@ -164,67 +177,67 @@ class CollaborationManager(object):
                                         web-tier authentication certificate password.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         data_path = "%s/acceptCollaborationInvitation" % self._basepath
         params = {
-            'f' : 'json',
-            'guestContactFirstname' : first_name,
-            'guestContactLastname' : last_name,
-            'guestContactEmailAddress' : email
+            "f": "json",
+            "guestContactFirstname": first_name,
+            "guestContactLastname": last_name,
+            "guestContactEmailAddress": email,
         }
-        files =  None
-        if invitation_file is None and \
-           invitation_JSON is None:
+        files = None
+        if invitation_file is None and invitation_JSON is None:
             raise ValueError("invitation_file or invitation_JSON must be provided")
         if invitation_file:
             files = {}
-            files['invitationFile'] = invitation_file
+            files["invitationFile"] = invitation_file
         if invitation_JSON:
-            params['invitationJSON'] = invitation_JSON
+            params["invitationJSON"] = invitation_JSON
         if webauth_cert_file:
             if files is None:
                 files = {}
-            files['hostWebauthCertificateFile'] = webauth_cert_file
+            files["hostWebauthCertificateFile"] = webauth_cert_file
         if webauth_cert_password:
-            params['hostWebauthCertPassword'] = webauth_cert_password
+            params["hostWebauthCertPassword"] = webauth_cert_password
         if webauth_password and webauth_username:
-            params['hostWebauthUsername'] = webauth_username
-            params['hostWebauthPassword'] = webauth_password
+            params["hostWebauthUsername"] = webauth_username
+            params["hostWebauthPassword"] = webauth_password
         con = self._portal.con
-        return con.post(path=data_path,
-                        postdata=params,
-                        files=files)
-    #----------------------------------------------------------------------
+        return con.post(path=data_path, postdata=params, files=files)
+
+    # ----------------------------------------------------------------------
     def list(self):
         """gets all collaborations for a portal"""
         data_path = "%s/collaborations" % self._basepath
-        params = {"f" : "json",
-                  "num":100,
-                  'start' : 1}
+        params = {"f": "json", "num": 100, "start": 1}
         res = self._portal.con.get(data_path, params)
         collabs = []
-        while len(res['collaborations']) > 0:
-            for collab in res['collaborations']:
-                collabs.append(Collaboration(collab_manager=self,
-                                             collab_id=collab['id']))
+        while len(res["collaborations"]) > 0:
+            for collab in res["collaborations"]:
+                collabs.append(
+                    Collaboration(collab_manager=self, collab_id=collab["id"])
+                )
             res = self._portal.con.get(data_path, params)
-            params['start'] = res['nextStart']
-            if res['nextStart'] == -1:
+            params["start"] = res["nextStart"]
+            if res["nextStart"] == -1:
                 return collabs
         return collabs
-    #----------------------------------------------------------------------
-    def validate_invitation(self,
-                            first_name,
-                            last_name,
-                            email,
-                            invitation_file=None,
-                            invitation_JSON=None,
-                            webauth_username=None,
-                            webauth_password=None,
-                            webauth_cert_file=None,
-                            webauth_cert_password=None):
+
+    # ----------------------------------------------------------------------
+    def validate_invitation(
+        self,
+        first_name: str,
+        last_name: str,
+        email: str,
+        invitation_file: Optional[str] = None,
+        invitation_JSON: Optional[str] = None,
+        webauth_username: Optional[str] = None,
+        webauth_password: Optional[str] = None,
+        webauth_cert_file: Optional[str] = None,
+        webauth_cert_password: Optional[str] = None,
+    ):
         """
         The validate_invitation method allows a portal to
         validate a collaboration invitation. The invitation file received
@@ -265,41 +278,40 @@ class CollaborationManager(object):
                                         web-tier authentication certificate password.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         data_path = "%s/validateCollaborationInvitation" % self._basepath
         params = {
-            'f' : 'json',
-            'guestContactFirstname' : first_name,
-            'guestContactLastname' : last_name,
-            'guestContactEmailAddress' : email
+            "f": "json",
+            "guestContactFirstname": first_name,
+            "guestContactLastname": last_name,
+            "guestContactEmailAddress": email,
         }
-        files =  None
-        if invitation_file is None and \
-           invitation_JSON is None:
+        files = None
+        if invitation_file is None and invitation_JSON is None:
             raise ValueError("invitation_file or invitation_JSON must be provided")
         if invitation_file:
             files = {}
-            files['invitationFile'] = invitation_file
+            files["invitationFile"] = invitation_file
         if invitation_JSON:
-            params['invitationJSON'] = invitation_JSON
+            params["invitationJSON"] = invitation_JSON
         if webauth_cert_file:
             if files is None:
                 files = {}
-            files['hostWebauthCertificateFile'] = webauth_cert_file
+            files["hostWebauthCertificateFile"] = webauth_cert_file
         if webauth_cert_password:
-            params['hostWebauthCertPassword'] = webauth_cert_password
+            params["hostWebauthCertPassword"] = webauth_cert_password
         if webauth_password and webauth_username:
-            params['hostWebauthUsername'] = webauth_username
-            params['hostWebauthPassword'] = webauth_password
+            params["hostWebauthUsername"] = webauth_username
+            params["hostWebauthPassword"] = webauth_password
         con = self._portal.con
-        return con.post(path=data_path,
-                        postdata=params,
-                        files=files)
+        return con.post(path=data_path, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
-    def collaborate_with(self, guest_gis, collaboration_name, collaboration_description):
+    def collaborate_with(
+        self, guest_gis: GIS, collaboration_name: str, collaboration_description: str
+    ):
         """
         A high level method to quickly establish a collaboration between two GIS. This method uses defaults
         wherever applicable and internally calls the `create`, `accept_invitation` and `invite_participant` methods.
@@ -322,86 +334,100 @@ class CollaborationManager(object):
         collaboration_description       Optional string. A generic description for the collaboration.
         ===========================     ====================================================================
 
-        :returns: boolean
+        :return: boolean
 
 
 
         """
 
         # create a group in the host
-        host_group = self._gis.groups.create(title="grp_" + collaboration_name, tags='collaboration',
-                                             description='Group for ' + collaboration_description)
+        host_group = self._gis.groups.create(
+            title="grp_" + collaboration_name,
+            tags="collaboration",
+            description="Group for " + collaboration_description,
+        )
 
-        #create a collaboration in the host
+        # create a collaboration in the host
         host_first_name = ""
         host_last_name = ""
         host_email = ""
-        if hasattr(self._gis.users.me, 'firstName'):
+        if hasattr(self._gis.users.me, "firstName"):
             host_first_name = self._gis.users.me.firstName
             host_last_name = self._gis.users.me.lastName
-        elif hasattr(self._gis.users.me, 'fullName'):
+        elif hasattr(self._gis.users.me, "fullName"):
             sp = self._gis.users.me.fullName.split()
             host_first_name = sp[0]
             if len(sp) > 1:
                 host_last_name = sp[1]
             else:
-                host_last_name=host_first_name
-        if hasattr(self._gis.users.me, 'email'):
+                host_last_name = host_first_name
+        if hasattr(self._gis.users.me, "email"):
             host_email = self._gis.users.me.email
 
-        host_collab = self.create(name='collab_' + collaboration_name, description=collaboration_description,
-                                  workspace_name='wksp_' + collaboration_name,
-                                  workspace_description='Workspace for ' + collaboration_description,
-                                  portal_group_id=host_group.id,
-                                  host_contact_first_name=host_first_name,
-                                  host_contact_last_name=host_last_name,
-                                  host_contact_email_address=host_email)
+        host_collab = self.create(
+            name="collab_" + collaboration_name,
+            description=collaboration_description,
+            workspace_name="wksp_" + collaboration_name,
+            workspace_description="Workspace for " + collaboration_description,
+            portal_group_id=host_group.id,
+            host_contact_first_name=host_first_name,
+            host_contact_last_name=host_last_name,
+            host_contact_email_address=host_email,
+        )
 
-        #Invite guest GIS as participant
-        config = [{host_collab.workspaces[0]['id']:"sendAndReceive"}]
+        # Invite guest GIS as participant
+        config = [{host_collab.workspaces[0]["id"]: "sendAndReceive"}]
         invite_file = host_collab.invite_participant(config, guest_gis=guest_gis)
 
-        #Create a group in guest GIS
-        guest_group = guest_gis.groups.create(title='grp_' + collaboration_name, tags='collaboration',
-                                              description='Group for ' + collaboration_description)
+        # Create a group in guest GIS
+        guest_group = guest_gis.groups.create(
+            title="grp_" + collaboration_name,
+            tags="collaboration",
+            description="Group for " + collaboration_description,
+        )
 
-        #Accept invitation in guest GIS
+        # Accept invitation in guest GIS
         guest_first_name = ""
         guest_last_name = ""
         guest_email = ""
-        if hasattr(guest_gis.users.me, 'firstName'):
+        if hasattr(guest_gis.users.me, "firstName"):
             guest_first_name = guest_gis.users.me.firstName
             guest_last_name = guest_gis.users.me.lastName
-        elif hasattr(guest_gis.users.me, 'fullName'):
+        elif hasattr(guest_gis.users.me, "fullName"):
             sp = self._gis.users.me.fullName.split()
             guest_first_name = sp[0]
             if len(sp) > 1:
                 guest_last_name = sp[1]
             else:
                 guest_last_name = guest_first_name
-        if hasattr(guest_gis.users.me, 'email'):
+        if hasattr(guest_gis.users.me, "email"):
             guest_email = guest_gis.users.me.email
-        response = guest_gis.admin.collaborations.accept_invitation(first_name=guest_first_name,
-                                                                    last_name=guest_last_name,
-                                                                    email=guest_email,
-                                                                    invitation_file=invite_file)
+        response = guest_gis.admin.collaborations.accept_invitation(
+            first_name=guest_first_name,
+            last_name=guest_last_name,
+            email=guest_email,
+            invitation_file=invite_file,
+        )
 
-        #Export response from guest GIS
+        # Export response from guest GIS
         guest_collab = None
         response_file = None
-        if response['success']:
+        if response["success"]:
             guest_collab = Collaboration(guest_gis.admin.collaborations, host_collab.id)
-            response_file = guest_collab.export_invitation('./')
+            response_file = guest_collab.export_invitation("./")
         else:
             raise Exception("Unable to accept collaboration in the guest GIS")
 
-        #Add guest group to guest collab
-        group_add_result = guest_collab.add_group_to_workspace(guest_group, guest_collab.workspaces[0])
+        # Add guest group to guest collab
+        group_add_result = guest_collab.add_group_to_workspace(
+            guest_group, guest_collab.workspaces[0]
+        )
 
-        #Accept response back in the host GIS
+        # Accept response back in the host GIS
         host_collab.import_invitation_response(response_file)
 
         return True
+
 
 ###########################################################################
 class Collaboration(dict):
@@ -409,10 +435,12 @@ class Collaboration(dict):
     The collaboration resource returns information about the collaboration
     with a specified ID.
     """
+
     _id = None
-    _cm = None # CollaborationManager
+    _cm = None  # CollaborationManager
     _baseurl = None
     _portal = None
+
     def __init__(self, collab_manager, collab_id, portal_id=None):
         dict.__init__(self)
         self._id = collab_id
@@ -420,44 +448,55 @@ class Collaboration(dict):
         self._portal = collab_manager._gis._portal
         if portal_id is None:
             res = self._portal.con.get("portals/self")
-            if 'id' in res:
-                portal_id = res['id']
+            if "id" in res:
+                portal_id = res["id"]
             else:
                 raise Exception("Could not find the portal's ID")
-        self._basepath = "portals/%s/collaborations/%s" % (portal_id,collab_id)
-        params = {"f" : "json"}
+        self._basepath = "portals/%s/collaborations/%s" % (portal_id, collab_id)
+        params = {"f": "json"}
         datadict = self._portal.con.post(self._basepath, params, verify_cert=False)
 
         if datadict:
             self.__dict__.update(datadict)
             super(Collaboration, self).update(datadict)
+
     def _refresh(self):
         """refreshes the properties"""
-        params = {"f" : "json"}
+        params = {"f": "json"}
         datadict = self._portal.con.post(self._basepath, params, verify_cert=False)
 
         if datadict:
             self.__dict__.update(datadict)
             super(Collaboration, self).update(datadict)
-    #----------------------------------------------------------------------
-    def __getattr__(self, name): # support group attributes as group.access, group.owner, group.phone etc
+
+    # ----------------------------------------------------------------------
+    def __getattr__(
+        self, name
+    ):  # support group attributes as group.access, group.owner, group.phone etc
         try:
             return dict.__getitem__(self, name)
         except:
-            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
-    #----------------------------------------------------------------------
-    def __getitem__(self, k): # support group attributes as dictionary keys on this object, eg. group['owner']
+            raise AttributeError(
+                "'%s' object has no attribute '%s'" % (type(self).__name__, name)
+            )
+
+    # ----------------------------------------------------------------------
+    def __getitem__(
+        self, k
+    ):  # support group attributes as dictionary keys on this object, eg. group['owner']
         try:
             return dict.__getitem__(self, k)
         except KeyError:
-            params = { "f" : "json" }
-            datadict = self._portal.con.post(self._basepath, params,
-                                             verify_cert=False)
+            params = {"f": "json"}
+            datadict = self._portal.con.post(self._basepath, params, verify_cert=False)
             super(Collaboration, self).update(datadict)
             self.__dict__.update(datadict)
             return dict.__getitem__(self, k)
-    #----------------------------------------------------------------------
-    def add_workspace(self, name, description, config, portal_group_id):
+
+    # ----------------------------------------------------------------------
+    def add_workspace(
+        self, name: str, description: str, config: dict, portal_group_id: str
+    ):
         """
         The add_workspace resource adds a new workspace to a
         portal-to-portal collaboration. Only collaboration hosts can create
@@ -474,71 +513,64 @@ class Collaboration(dict):
                                         workspace.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         from arcgis.gis import Group
+
         if isinstance(portal_group_id, Group):
             portal_group_id = portal_group_id.groupid
         params = {
             "f": "json",
-            "collaborationWorkspaceName" : name,
-            "collaborationWorkspaceDescription" : description,
-            "config" : config,
-            "portalGroupId" : portal_group_id
+            "collaborationWorkspaceName": name,
+            "collaborationWorkspaceDescription": description,
+            "config": config,
+            "portalGroupId": portal_group_id,
         }
         path = "%s/%s" % (self._basepath, "addWorkspace")
         return self._portal.con.post(path, params, verify_cert=False)
-    #----------------------------------------------------------------------
-    def get_invitation(self, invitation_id):
+
+    # ----------------------------------------------------------------------
+    def get_invitation(self, invitation_id: str):
         """
         The get_invitation operation returns the information about an
         invitation to participate in a portal-to-portal collaboration for a
         particular invitation with the specified ID.
         """
-        params = {
-            "f": "json"
-        }
-        path = "%s/%s/%s" % (self._basepath,
-                             "invitations",
-                             invitation_id)
+        params = {"f": "json"}
+        path = "%s/%s/%s" % (self._basepath, "invitations", invitation_id)
         return self._portal.con.get(path, params)
-    #----------------------------------------------------------------------
-    def get_workspace(self, workspace_id):
+
+    # ----------------------------------------------------------------------
+    def get_workspace(self, workspace_id: str):
         """
         The workspace resource provides information about the collaboration
         workspace with a specified ID.
         """
-        params = {
-            "f": "json"
-        }
-        path = "%s/%s/%s" % (self._basepath,
-                             "workspaces",
-                             workspace_id)
+        params = {"f": "json"}
+        path = "%s/%s/%s" % (self._basepath, "workspaces", workspace_id)
         return self._portal.con.get(path, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def invitations(self):
         """The invitations operation returns the invitation information for
         all the invitations generated by a portal-to-portal collaboration
         host.
         """
-        params = {
-            "f": "json",
-            'start' : 1,
-            'nun' : 100
-        }
+        params = {"f": "json", "start": 1, "nun": 100}
         invs = []
         path = "%s/%s" % (self._basepath, "invitations")
         res = self._portal.con.get(path, params)
-        while len(res['collaborationInvitations']) > 0:
-            invs += res['collaborationInvitations']
-            params['start'] = res['nextStart']
-            if res['nextStart'] == -1:
+        while len(res["collaborationInvitations"]) > 0:
+            invs += res["collaborationInvitations"]
+            params["start"] = res["nextStart"]
+            if res["nextStart"] == -1:
                 return invs
             res = self._portal.con.get(path, params)
         return invs
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         The delete operation deletes a portal-to-portal collaboration from
@@ -549,14 +581,15 @@ class Collaboration(dict):
         discontinue participation in a collaboration via the
         removeParticipation endpoint.
         """
-        params = {'f' : "json"}
+        params = {"f": "json"}
         data_path = "%s/delete" % self._basepath
         resp = self._portal.con.post(data_path, params)
-        if 'success' in resp:
-            return resp['success']
+        if "success" in resp:
+            return resp["success"]
         return resp
-    #----------------------------------------------------------------------
-    def remove_workspace(self, workspace_id):
+
+    # ----------------------------------------------------------------------
+    def remove_workspace(self, workspace_id: str):
         """
         The delete operation deletes a collaboration workspace. This
         immediately disables further replication of data to and from the
@@ -569,15 +602,16 @@ class Collaboration(dict):
                                         collaboration.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
 
 
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         data_path = "%s/workpaces/%s/delete" % (self._basepath, workspace_id)
         return self._portal.con.post(data_path, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @_lazy_property
     def workspaces(self):
         """
@@ -587,20 +621,19 @@ class Collaboration(dict):
         content. Workspaces can only be created by the collaboration owner.
         """
         data_path = "%s/workspaces" % self._basepath
-        params = {'f' : 'json',
-                  "num":100,
-                  'start' : 1}
+        params = {"f": "json", "num": 100, "start": 1}
         res = self._portal.con.get(data_path, params)
         workspaces = []
-        while len(res['workspaces']) > 0:
-            workspaces += res['workspaces']
-            params['start'] = res['nextStart']
-            if res['nextStart'] == -1:
+        while len(res["workspaces"]) > 0:
+            workspaces += res["workspaces"]
+            params["start"] = res["nextStart"]
+            if res["nextStart"] == -1:
                 return workspaces
             res = self._portal.con.get(data_path, params)
         return workspaces
-    #----------------------------------------------------------------------
-    def export_invitation(self, out_folder):
+
+    # ----------------------------------------------------------------------
+    def export_invitation(self, out_folder: str):
         """
         The exportInvitationResponse operation exports a collaboration
         invitation response file from a collaboration guest portal. The
@@ -618,20 +651,24 @@ class Collaboration(dict):
         out_folder                      Required string. Save location of the file.
         ===========================     ====================================================================
 
-        :returns: string
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         data_path = "%s/exportInvitationResponse" % self._basepath
-        return self._portal.con.post(data_path, params, out_folder=out_folder, verify_cert=False)
+        return self._portal.con.post(
+            data_path, params, out_folder=out_folder, verify_cert=False
+        )
 
-    #----------------------------------------------------------------------
-    def import_invitation_response(self,
-                                   response_file,
-                                   webauth_username=None,
-                                   webauth_password=None,
-                                   webauth_cert_file=None,
-                                   webauth_cert_password=None):
+    # ----------------------------------------------------------------------
+    def import_invitation_response(
+        self,
+        response_file: str,
+        webauth_username: Optional[str] = None,
+        webauth_password: Optional[str] = None,
+        webauth_cert_file: Optional[str] = None,
+        webauth_cert_password: Optional[str] = None,
+    ):
         """
         The importInvitationResponse operation imports an invitation
         response file from a portal collaboration guest. The operation is
@@ -662,44 +699,44 @@ class Collaboration(dict):
                                         web-tier authentication certificate password.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         data_path = "%s/importInvitationResponse" % self._basepath
-        files = {'invitationResponseFile' : response_file}
+        files = {"invitationResponseFile": response_file}
         if webauth_cert_file:
-            files['guestWebauthCertificateFile'] = webauth_cert_file
+            files["guestWebauthCertificateFile"] = webauth_cert_file
         if webauth_cert_password:
-            params['guestWebauthCertPassword'] = webauth_cert_password
+            params["guestWebauthCertPassword"] = webauth_cert_password
         if webauth_username and webauth_password:
-            params['guestWebauthUsername'] = webauth_username
-            params['guestWebauthPassword'] = webauth_password
+            params["guestWebauthUsername"] = webauth_username
+            params["guestWebauthPassword"] = webauth_password
         con = self._portal.con
-        return con.post(path=data_path,
-                        postdata=params,
-                        files=files,
-                        verify_cert=False)
-    #----------------------------------------------------------------------
-    def invalidate(self, invitation_id):
+        return con.post(path=data_path, postdata=params, files=files, verify_cert=False)
+
+    # ----------------------------------------------------------------------
+    def invalidate(self, invitation_id: str):
         """
         The invalidate operation invalidates a previously generated
         portal-to-portal collaboration invitation. If a guest accepts this
         invitation and sends an invitation response for it, the response
         will not import successfully on the collaboration host.
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         data_path = "%s/invitations/%s/invalidate" % (self._basepath, invitation_id)
         con = self._portal.con
-        return con.post(data_path,
-                       params, verify_cert=False)
-    #----------------------------------------------------------------------
-    def invite_participant(self,
-                           config_json,
-                           expiration=24,
-                           guest_portal_url=None,
-                           guest_gis=None,
-                           save_path=None):
+        return con.post(data_path, params, verify_cert=False)
+
+    # ----------------------------------------------------------------------
+    def invite_participant(
+        self,
+        config_json: dict,
+        expiration: int = 24,
+        guest_portal_url: Optional[str] = None,
+        guest_gis: Optional[GIS] = None,
+        save_path: Optional[str] = None,
+    ):
         """
         As a collaboration host, once you have set up a new collaboration,
         you are ready to invite other portals as participants in your
@@ -744,55 +781,55 @@ class Collaboration(dict):
         save_path                       Optional string. Path to download the invitation file to.
         ===========================     ====================================================================
 
-        :returns: contents of a file that contains the invitation information
+        :return: Contents of a file that contains the invitation information
 
 
         """
-        if guest_gis is None and \
-           guest_portal_url is None:
+        if guest_gis is None and guest_portal_url is None:
             raise ValueError("A GIS object or URL is required")
-        if guest_portal_url is None and \
-           guest_gis:
+        if guest_portal_url is None and guest_gis:
             guest_portal_url = guest_gis._portal.url
         data_path = "%s/inviteParticipant" % self._basepath
         params = {
-            "f" : "json",
-            "guestPortalUrl" : guest_portal_url,
-            "collaborationWorkspacesParticipantConfigJSON" : config_json,
-            "expiration" : expiration
+            "f": "json",
+            "guestPortalUrl": guest_portal_url,
+            "collaborationWorkspacesParticipantConfigJSON": config_json,
+            "expiration": expiration,
         }
         con = self._portal.con
-        return con.post(path=data_path,
-                       postdata=params,
-                       verify_cert=False,
-                        out_folder = save_path)
-    #----------------------------------------------------------------------
-    def get_participant(self, portal_id):
+        return con.post(
+            path=data_path, postdata=params, verify_cert=False, out_folder=save_path
+        )
+
+    # ----------------------------------------------------------------------
+    def get_participant(self, portal_id: str):
         """
         The participant operation provides information about the
         collaboration participant with a specified ID.
         """
         data_path = "%s/participants/%s" % (self._basepath, portal_id)
-        params = {"f" : "json"}
+        params = {"f": "json"}
         con = self._portal.con
-        return con.get(data_path,
-                       params)
-    #----------------------------------------------------------------------
+        return con.get(data_path, params)
+
+    # ----------------------------------------------------------------------
     def participants(self):
         """
         The participants resource provides information about all of the
         participants in a portal-to-portal collaboration.
         """
         data_path = "%s/participants" % self._basepath
-        params = {"f" : "json"}
+        params = {"f": "json"}
         con = self._portal.con
-        return con.get(data_path,
-                       params)
-    #----------------------------------------------------------------------
-    def update_item_delete_policy(self,
-                                  participant_id,
-                                  delete_contributed_items=False,
-                                  delete_received_items=False):
+        return con.get(data_path, params)
+
+    # ----------------------------------------------------------------------
+    def update_item_delete_policy(
+        self,
+        participant_id: str,
+        delete_contributed_items: bool = False,
+        delete_received_items: bool = False,
+    ):
         """
         The participants resource provides information about all of the
         participants in a portal-to-portal collaboration.
@@ -807,20 +844,23 @@ class Collaboration(dict):
         delete_received_items           Optional Boolean.  When a participant leaves or deletes a collaboration, this property determines whether received items will be deleted or maintained.
         ===========================     ====================================================================
 
-        :returns: Boolean
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        data_path = "%s/participants/%s/updateItemDeletePolicy" % (self._basepath, participant_id)
+        data_path = "%s/participants/%s/updateItemDeletePolicy" % (
+            self._basepath,
+            participant_id,
+        )
         params = {
-            "f" : "json",
-            "deleteContributedItems" : delete_contributed_items,
-            "deleteReceivedItems" : delete_received_items
+            "f": "json",
+            "deleteContributedItems": delete_contributed_items,
+            "deleteReceivedItems": delete_received_items,
         }
         con = self._portal.con
-        return con.post(data_path,
-                        params)
-    #----------------------------------------------------------------------
-    def add_group_to_workspace(self, portal_group, workspace):
+        return con.post(data_path, params)
+
+    # ----------------------------------------------------------------------
+    def add_group_to_workspace(self, portal_group: str, workspace: str):
         """
         This operation adds a group to a workspace that participates in a portal-to-portal collaboration. Content shared
          to the portal group is shared to other participants in the collaboration.
@@ -833,7 +873,7 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         group_id = None
@@ -842,11 +882,15 @@ class Collaboration(dict):
         elif isinstance(portal_group, str):
             group_id = portal_group
 
-        data_path = "{}/workspaces/{}/updatePortalGroupLink".format(self._basepath, workspace['id'])
-        params = {'f':'json',
-                  'portalGroupId':group_id,
-                  'enableRealtimeSync':True,
-                  'copyFeatureServiceData': False}
+        data_path = "{}/workspaces/{}/updatePortalGroupLink".format(
+            self._basepath, workspace["id"]
+        )
+        params = {
+            "f": "json",
+            "portalGroupId": group_id,
+            "enableRealtimeSync": True,
+            "copyFeatureServiceData": False,
+        }
         con = self._portal.con
         result = con.post(path=data_path, postdata=params, verify_cert=False)
         return result
@@ -859,17 +903,22 @@ class Collaboration(dict):
         :return:
         """
         config_sync_data_path = "{}/configSync".format(self._basepath)
-        config_sync_status = self._portal.con.get(config_sync_data_path, {"f":"json"})
+        config_sync_status = self._portal.con.get(config_sync_data_path, {"f": "json"})
 
-        if config_sync_status['success']:
-            #proceed to workspace sync
-            workspace_sync_data_path = "{}/workspaces/{}/sync".format(self._basepath, workspace['id'])
-            wksp_sync_status = self._portal.con.post(workspace_sync_data_path, postdata={'f':'json'}, verify_cert=False)
+        if config_sync_status["success"]:
+            # proceed to workspace sync
+            workspace_sync_data_path = "{}/workspaces/{}/sync".format(
+                self._basepath, workspace["id"]
+            )
+            wksp_sync_status = self._portal.con.post(
+                workspace_sync_data_path, postdata={"f": "json"}, verify_cert=False
+            )
             return wksp_sync_status
         else:
             raise RuntimeError("Error force syncing")
+
     # ----------------------------------------------------------------------
-    def refresh(self, invitation_id):
+    def refresh(self, invitation_id: str):
         """
         The refresh operation refreshes a previously generated
         portal-to-portal collaboration invitation. The new invitation file
@@ -884,16 +933,15 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         data_path = "%s/invitations/%s/refresh" % (self._basepath, invitation_id)
         con = self._portal.con
-        return con.post(path=data_path,
-                        postdata=params,
-                       verify_cert=False)
-    #----------------------------------------------------------------------
+        return con.post(path=data_path, postdata=params, verify_cert=False)
+
+    # ----------------------------------------------------------------------
     def remove_participation(self):
         """
         The removeParticipation operation removes collaboration
@@ -903,13 +951,12 @@ class Collaboration(dict):
         collaboration participants.
         """
         data_path = "%s/removeParticipation" % self._basepath
-        params = {"f" : "json"}
+        params = {"f": "json"}
         con = self._portal.con
-        return con.post(path=data_path,
-                       postdata=params,
-                       verify_cert=False)
-    #----------------------------------------------------------------------
-    def remove_participant(self, portal_id):
+        return con.post(path=data_path, postdata=params, verify_cert=False)
+
+    # ----------------------------------------------------------------------
+    def remove_participant(self, portal_id: str):
         """
         The remove operation allows a collaboration host to remove a
         participant from a portal-to-portal collaboration.
@@ -921,15 +968,16 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         data_path = "%s/participants/%s/remove" % (self._basepath, portal_id)
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
-    #----------------------------------------------------------------------
-    def remove_portal_group_link(self, workspace_id):
+
+    # ----------------------------------------------------------------------
+    def remove_portal_group_link(self, workspace_id: str):
         """
         The remove_portal_group_link operation removes the link between a
         collaboration workspace and a portal group. Replication of content
@@ -942,15 +990,19 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        params = {'f' : 'json'}
-        data_path = "%s/workspaces/%s/removePortalGroupLink" % (self._basepath, workspace_id)
+        params = {"f": "json"}
+        data_path = "%s/workspaces/%s/removePortalGroupLink" % (
+            self._basepath,
+            workspace_id,
+        )
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
-    #----------------------------------------------------------------------
-    def schedule(self, workspace_id):
+
+    # ----------------------------------------------------------------------
+    def schedule(self, workspace_id: str):
         """
         Collaboration guests can use the schedule resource to return a job
         schedule for synchronized items in a collaboration workspace. The
@@ -963,16 +1015,88 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: A dictionary of the job schedule
 
         """
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         data_path = "%s/workspaces/%s/schedule" % (self._basepath, workspace_id)
         con = self._portal.con
         return con.get(path=data_path, postdata=params)
-    #----------------------------------------------------------------------
-    def update_schedule(self, workspace_id, start_time,
-                        interval=24, repeat_count=-1):
+
+    # ----------------------------------------------------------------------
+    def pause_schedule(self, workspace_id: str) -> bool:
+        """
+        Suspends the scheduling job for synchronized items in a collaboration workspace.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to remove from the link.
+        ===========================     ====================================================================
+
+        :return: Boolean. True if successful else False
+
+        """
+        params = {"f": "json"}
+        data_path = "%s/workspaces/%s/schedule/pause" % (self._basepath, workspace_id)
+        con = self._portal.con
+        res = con.post(path=data_path, postdata=params)
+        if "success" in res:
+            return res["success"]
+        return res
+
+    # ----------------------------------------------------------------------
+    def delete_schedule(self, workspace_id: str) -> bool:
+        """
+        Removes the scheduling job for synchronized items in a collaboration workspace.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to remove from the link.
+        ===========================     ====================================================================
+
+        :return: Boolean. True if successful else False.
+
+        """
+        params = {"f": "json"}
+        data_path = "%s/workspaces/%s/schedule/delete" % (self._basepath, workspace_id)
+        con = self._portal.con
+        res = con.post(path=data_path, postdata=params)
+        if "success" in res:
+            return res["success"]
+        return res
+
+    # ----------------------------------------------------------------------
+    def resume_schedule(self, workspace_id: str) -> bool:
+        """
+        Resumes a paused scheduled synchronization.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to remove from the link.
+        ===========================     ====================================================================
+
+        :return: Boolean. True if successful else False.
+
+        """
+        params = {"f": "json"}
+        data_path = "%s/workspaces/%s/schedule/resume" % (self._basepath, workspace_id)
+        con = self._portal.con
+        res = con.post(path=data_path, postdata=params)
+        if "success" in res:
+            return res["success"]
+        return res
+
+    # ----------------------------------------------------------------------
+    def update_schedule(
+        self,
+        workspace_id: str,
+        start_time: int,
+        interval: int = 24,
+        repeat_count: int = -1,
+    ):
         """
         Collaboration guests can use the schedule resource to return a job
         schedule for synchronized items in a collaboration workspace. The
@@ -991,23 +1115,24 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: Boolean
+        :return: Boolean. True if successful else False.
 
         """
         params = {
-            'f' : 'json',
-            'startTime' : start_time,
-            'interval' : interval,
-            'repeatCount' : repeat_count
+            "f": "json",
+            "startTime": start_time,
+            "interval": interval,
+            "repeatCount": repeat_count,
         }
         data_path = "%s/workspaces/%s/schedule/update" % (self._basepath, workspace_id)
         con = self._portal.con
         res = con.post(path=data_path, postdata=params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
-    def sync(self, workspace_id, run_async=False):
+
+    # ----------------------------------------------------------------------
+    def sync(self, workspace_id: int, run_async: bool = False):
         """
         The sync endpoint is provided to allow execution of a data sync on
         a particular workspace. The operation is allowed on the participant
@@ -1036,43 +1161,68 @@ class Collaboration(dict):
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        params = {
-            'f' : 'json',
-            'async' : run_async
-        }
+        params = {"f": "json", "async": run_async}
         data_path = "%s/workspaces/%s/sync" % (self._basepath, workspace_id)
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
-    #----------------------------------------------------------------------
-    def sync_details(self, workspace_id, sync_id):
+
+    # ----------------------------------------------------------------------
+    def sync_status(self, workspace_id: str) -> list:
+        """
+        Provides a status summary of each scheduled sync for items in a collaboration workspace.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to examine `sync` jobs.
+        ===========================     ====================================================================
+
+        :return: List[Dict]
+
+        """
+        params = {"f": "json"}
+        data_path = f"{self._basepath}/workspaces/{workspace_id}/syncStatus"
+        con = self._portal.con
+        resp = con.get(path=data_path, postdata=params)
+        return resp.get("status") or resp
+
+    # ----------------------------------------------------------------------
+    def sync_details(self, workspace_id: str, sync_id: str):
         """
         Provides a detailed description of status for a selected sync ID.
 
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        workspace_id                    Required string. Workspace ID to remove from the link.
+        workspace_id                    Required string. Workspace ID to examine `sync` jobs.
         ---------------------------     --------------------------------------------------------------------
         sync_id                         Required String. When a sync is performed, an ID is generated to
                                         track the status of the synchronization of the collaboration.
         ===========================     ====================================================================
 
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        params = {
-            'f' : 'json'
-        }
-        data_path = "%s/workspaces/%s/syncStatus/%s" % (self._basepath, workspace_id, sync_id)
+        params = {"f": "json"}
+        data_path = "%s/workspaces/%s/syncStatus/%s" % (
+            self._basepath,
+            workspace_id,
+            sync_id,
+        )
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
-    #----------------------------------------------------------------------
-    def update_collaboration(self, name=None,
-                             description=None, config=None):
+
+    # ----------------------------------------------------------------------
+    def update_collaboration(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        config: Optional[dict] = None,
+    ):
         """
         The updateInfo operation updates certain properties of a
         collaboration, primarily its name, description, and configuration
@@ -1089,25 +1239,31 @@ class Collaboration(dict):
         config                          Optional dict. The configuration properties of the collaboration
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         data_path = "%s/updateInfo" % self._basepath
-        params = {"f" : "json"}
+        params = {"f": "json"}
         if name:
-            params['name'] = name
+            params["name"] = name
         if description:
-            params['description'] = description
+            params["description"] = description
         if config:
-            params['config'] = config
+            params["config"] = config
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
-    #----------------------------------------------------------------------
-    def update_workspace(self,
-                         workspace_id, name=None,
-                         description=None, config=None,
-                         max_item_size=None, max_replication_size=None,
-                         copy_by_ref_on_fail=False, ):
+
+    # ----------------------------------------------------------------------
+    def update_workspace(
+        self,
+        workspace_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        config: Optional[dict] = None,
+        max_item_size: Optional[int] = None,
+        max_replication_size: Optional[int] = None,
+        copy_by_ref_on_fail: bool = False,
+    ):
         """
         The updateInfo operation updates certain collaboration workspace
         properties.
@@ -1133,28 +1289,29 @@ class Collaboration(dict):
                                         the imposed size limit has been exceeded.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         data_path = "%s/workspaces/%s/updateInfo" % (self._basepath, workspace_id)
-        params = {"f" : 'json'}
+        params = {"f": "json"}
         if name:
-            params['name'] = name
+            params["name"] = name
         if description:
-            params['description'] = description
+            params["description"] = description
         if config:
-            params['config'] = config
+            params["config"] = config
         if max_item_size:
-            params['maxItemSizeInMB'] = max_item_size
+            params["maxItemSizeInMB"] = max_item_size
         if max_replication_size:
-            params['maxReplicationPackageSizeInMB'] = max_replication_size
-        params['copyByRefIfCopyFail'] = copy_by_ref_on_fail
+            params["maxReplicationPackageSizeInMB"] = max_replication_size
+        params["copyByRefIfCopyFail"] = copy_by_ref_on_fail
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
-    #----------------------------------------------------------------------
-    def update_access_modes(self,
-                            portal_id,
-                            workspace_access_json):
+
+    # ----------------------------------------------------------------------
+    def update_access_modes(
+        self, portal_id: str, workspace_access_json: Union[str, dict]
+    ):
         """
         The update_access_modes operation updates the access mode for a
         specific participant in a portal-to-portal collaboration.
@@ -1167,19 +1324,25 @@ class Collaboration(dict):
         workspace_access_json           Required dict/string. JSON describing the participant's access mode.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
         data_path = "/participants/%s/updateParticipantAccessModes" % portal_id
-        params = {'f': 'json'}
-        params['collaborationWorkspacesAccessJSON'] = workspace_access_json
+        params = {"f": "json"}
+        params["collaborationWorkspacesAccessJSON"] = workspace_access_json
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
-    #----------------------------------------------------------------------
-    def update_portal_group_link(self, workspace_id,
-                                 portal_id,
-                                 enable_realtime_sync=True,
-                                 copy_feature_service_data=True):
+
+    # ----------------------------------------------------------------------
+    def update_portal_group_link(
+        self,
+        workspace_id: str,
+        portal_id: str,
+        enable_realtime_sync: bool = True,
+        copy_feature_service_data: bool = True,
+        copy_by_ref_on_fail: bool = True,
+        enable_bidirectional_sync: bool = True,
+    ):
         """
         The `update_portal_group_link` operation updates the group linked with a
         workspace for a participant in a portal-to-portal collaboration.
@@ -1202,23 +1365,35 @@ class Collaboration(dict):
                                         shared in a group that is linked to a distributed collaboration
                                         workspace. When set to "true" Feature Service data will be copied
                                         to collaboration participants.
+        ---------------------------     --------------------------------------------------------------------
+        copy_by_ref_on_fail             Optional boolean. If the copy feature service data fails, and set to
+                                        `True`, the enterprise will reference the data instead of copying it.
+                                        This is supported on **10.9+**.
+        ---------------------------     --------------------------------------------------------------------
+        enable_bidirectional_sync       Optional boolean. When set to true, edits to shared feature services
+                                        can be allowed two-way to eligible participants.
+                                        This is supported on **10.9+**.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        data_path = "/workspaces/%s/updatePortalGroupLink" % workspace_id
+
+        data_path = f"{self._basepath}/workspaces/{workspace_id}/updatePortalGroupLink"
         params = {
-            'f': 'json',
-            'portalGroupId' : portal_id,
-            'enableRealtimeSync' : enable_realtime_sync,
-            "copyFeatureServiceData" : copy_feature_service_data
+            "f": "json",
+            "portalGroupId": portal_id,
+            "enableRealtimeSync": enable_realtime_sync,
+            "copyFeatureServiceData": copy_feature_service_data,
+            "copyByRefIfCopyFail": copy_by_ref_on_fail,
+            "enableFeatureServiceBidirectionalSync": enable_bidirectional_sync,
         }
 
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
-    #----------------------------------------------------------------------
-    def validate_invitation_response(self, response_file):
+
+    # ----------------------------------------------------------------------
+    def validate_invitation_response(self, response_file: str):
         """
         Prior to importing a collaboration invitation response, the
         invitation response file can be validated by using the
@@ -1231,11 +1406,11 @@ class Collaboration(dict):
         response_file                   Required string. Path to the collaboration response file.
         ===========================     ====================================================================
 
-        :returns: dict
+        :return: Dictionary indicating 'success' or 'error'
 
         """
-        files = {'invitationResponseFile' : response_file}
-        params = {'f':'json'}
+        files = {"invitationResponseFile": response_file}
+        params = {"f": "json"}
         data_path = "%s/validateInvitationResponse" % self._basepath
         con = self._portal.con
         return con.post(path=data_path, postdata=params, files=files)

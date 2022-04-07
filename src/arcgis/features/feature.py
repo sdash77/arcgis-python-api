@@ -2,36 +2,53 @@
 In the GIS, entities located in space with a set of properties can be represented as features. This module has the types
 to represent features and collection of features.
 """
-import copy
-import json
-import os
-import re
-import tempfile
-import uuid
+from __future__ import annotations
+from arcgis.auth.tools import LazyLoader
+from typing import Any, Optional, Union
+
+copy = LazyLoader("copy")
+json = LazyLoader("json")
+_ujson = LazyLoader("ujson")
+os = LazyLoader("os")
+re = LazyLoader("re")
+tempfile = LazyLoader("tempfile")
+uuid = LazyLoader("uuid")
+
 from datetime import datetime
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._spatial import json_to_featureclass
 from arcgis._impl.common._utils import _date_handler
-from arcgis.geometry import BaseGeometry, Point, MultiPoint, Polyline, Polygon, Geometry, SpatialReference
+from arcgis.geometry import (
+    BaseGeometry,
+    Point,
+    MultiPoint,
+    Polyline,
+    Polygon,
+    Geometry,
+    SpatialReference,
+)
 from arcgis.gis import Layer
 
 try:
-    import arcpy
+    arcpy = LazyLoader("arcpy", strict=True)
+
     HASARCPY = True
 except:
     HASARCPY = False
 
+
 class Feature(object):
-    """ Entities located in space with a set of properties can be represented as features.
+    """Entities located in space with a set of properties can be represented as features.
 
     .. code-block:: python
 
         # Obtain a feature from a feature layer:
 
-        feat_set = feature_layer.query(where="OBJECTID=1")
-        feat = feat_set[0]
+        feature_set = feature_layer.query(where="OBJECTID=1")
+        feature = feature_set[0]
 
     """
+
     _geom = None
     _json = None
     _dict = None
@@ -49,9 +66,13 @@ class Feature(object):
             self._dict["attributes"] = attributes
 
     # ----------------------------------------------------------------------
-    def set_value(self, field_name, value):
+    def set_value(
+        self,
+        field_name: str,
+        value: Union[dict, BaseGeometry, Point, MultiPoint, Polyline, Polygon],
+    ):
         """
-        Sets an attribute value for a given field name
+        Sets an attribute value for a given field name.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -61,34 +82,35 @@ class Feature(object):
         value               Required. Value to update the field with.
         ===============     ====================================================================
 
-        :return: boolean indicating whether field_name value was updated.
+        :return:
+            A boolean indicating whether ``field_name`` value was updated (True), or not updated (False).
+
+        .. code-block:: python
+
+            # UsageExample
+
+            >>> feat_set = feature_layer.query(where="OBJECTID=1")
+            >>> feat = feat_set[0]
+            >>> feat.set_value(field_name = "field_name", value = "new_value")
+            True
 
         """
         if field_name in self.fields:
             if value is not None:
-                self._dict['attributes'][field_name] = value
+                self._dict["attributes"][field_name] = value
                 self._json = json.dumps(self._dict, default=_date_handler)
             else:
                 pass
-        elif field_name.upper() in ['SHAPE', 'SHAPE@', "GEOMETRY"]:
+        elif field_name.upper() in ["SHAPE", "SHAPE@", "GEOMETRY"]:
             if isinstance(value, BaseGeometry):
                 if isinstance(value, Point):
-                    self._dict['geometry'] = {
-                        "x": value['x'],
-                        "y": value['y']
-                    }
+                    self._dict["geometry"] = {"x": value["x"], "y": value["y"]}
                 elif isinstance(value, MultiPoint):
-                    self._dict['geometry'] = {
-                        "points": value['points']
-                    }
+                    self._dict["geometry"] = {"points": value["points"]}
                 elif isinstance(value, Polyline):
-                    self._dict['geometry'] = {
-                        "paths": value['paths']
-                    }
+                    self._dict["geometry"] = {"paths": value["paths"]}
                 elif isinstance(value, Polygon):
-                    self._dict['geometry'] = {
-                        "rings": value['rings']
-                    }
+                    self._dict["geometry"] = {"rings": value["rings"]}
                 else:
                     return False
                 self._json = json.dumps(self._dict, default=_date_handler)
@@ -97,45 +119,61 @@ class Feature(object):
         return True
 
     # ----------------------------------------------------------------------
-    def get_value(self, field_name):
+    def get_value(self, field_name: str):
         """
-        Retrieves the value for a specified field name
+        Retrieves the value for a specified field name.
 
-        +--------------+----+------------------------------------------------------------------+
-        |**Argument**  |    |**Description**                                                   |
-        +==============+====+==================================================================+
-        | field name   |    | | Required String. The name of the field to get the value for.   |
-        |              |    | |                                                                |
-        |              |    | | ``feature.fields`` will return a list of all field names.      |
-        +--------------+----+------------------------------------------------------------------+
+        =============       ===========================================================
+        **Argument**        **Description**
+        -------------       -----------------------------------------------------------
+        field_name          Required String. The name for each attribute field.
 
-        :return: value for the specified attribute field of the feature.
+                            .. note::
+                                ``feature.fields`` will return a list of all field names.
+        =============       ===========================================================
+
+        :return:
+            The value for the specified attribute field of the :class:`~arcgis.features.Feature`
 
         """
         if field_name in self.fields:
-            return self._dict['attributes'][field_name]
-        elif field_name is not None and field_name.upper() in ['SHAPE', 'SHAPE@', "GEOMETRY"]:
-            return self._dict['geometry']
+            return self._dict["attributes"][field_name]
+        elif field_name is not None and field_name.upper() in [
+            "SHAPE",
+            "SHAPE@",
+            "GEOMETRY",
+        ]:
+            return self._dict["geometry"]
         return None
 
     # ----------------------------------------------------------------------
     @property
     def as_dict(self):
-        """:return: the feature as a dictionary"""
+        """
+        Retrieves the feature layer as a dictionary.
+
+        :return:
+            The feature as a dictionary
+        """
         return self._dict
 
     # ----------------------------------------------------------------------
     @property
     def as_row(self):
-        """ :return: the feature as a tuple containing two lists:
+        """
+        Retrieves the feature as a tuple containing two lists:
 
         =============     ===========================================================
-        **List of:**          **Description**
+        **List of:**      **Description**
         -------------     -----------------------------------------------------------
         row values        the specific attribute values and geometry for this feature
         -------------     -----------------------------------------------------------
         field names       the name for each attribute field
         =============     ===========================================================
+
+        :return:
+            A tuple of two lists: row values and field names
+
         """
         fields = self.fields
         row = [""] * len(fields)
@@ -151,40 +189,74 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @property
     def geometry(self):
-        """ :return: the feature geometry"""
+        """
+        Get/Set the geometry of the feature, if any
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+                                Values: 'Polyline' | 'Polygon' | 'Point'
+        ==================      ====================================================================
+
+        :return: The feature's geometry as a string
+
+        """
         if self._geom is None:
-            if 'geometry' in self._dict.keys():
-                self._geom = self._dict['geometry']
+            if "geometry" in self._dict.keys():
+                self._geom = self._dict["geometry"]
             else:
                 return None
         return self._geom
 
     @geometry.setter
     def geometry(self, value):
-        """gets/sets a feature's geometry"""
+        """
+        See main ``geometry`` property docstring
+        """
         self._geom = value
-        self._dict['geometry'] = value
+        self._dict["geometry"] = value
 
     # ----------------------------------------------------------------------
     @property
     def attributes(self):
-        """:return: a dictionary of feature attribute values with field names as the key"""
-        if self._attributes is None and 'attributes' in self._dict:
-            self._attributes = self._dict['attributes']
+        """
+        Get/Set the attribute values for a feature
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required dict.
+        ==================      ====================================================================
+
+        :return:
+            A dictionary of feature attribute values with field names as the key
+
+        """
+
+        if self._attributes is None and "attributes" in self._dict:
+            self._attributes = self._dict["attributes"]
         return self._attributes
 
     @attributes.setter
     def attributes(self, value):
-        """gets/sets a feature's attributes"""
+        """
+        See main ``attributes`` property docstring
+        """
         self._attributes = value
-        self._dict['attributes'] = value
+        self._dict["attributes"] = value
 
     # ----------------------------------------------------------------------
     @property
     def fields(self):
-        """ :return: attribute field names for the feature as a list of strings"""
-        if 'attributes' in self._dict:
-            self._attributes = self._dict['attributes']
+        """
+        Retrieves the attribute field names for the feature as a list of strings
+
+        :return:
+            A list of strings
+        """
+        if "attributes" in self._dict:
+            self._attributes = self._dict["attributes"]
             return list(self._attributes.keys())
         else:
             return []
@@ -192,10 +264,16 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @property
     def geometry_type(self):
-        """ :return: the geometry type of the feature as a string"""
+        """
+        Retrieves the geometry type of the Feature as a string.
+
+        :return:
+            The geometry type of the :class:`~arcgis.features.Feature` as a string
+
+        """
         if self._geom_type is None:
             if self.geometry is not None:
-                if hasattr(self.geometry, 'type'):
+                if hasattr(self.geometry, "type"):
                     self._geom_type = self.geometry.type
                 else:
                     self._geom_type = Geometry(self.geometry)._type
@@ -205,31 +283,46 @@ class Feature(object):
 
     # ----------------------------------------------------------------------
     @classmethod
-    def from_json(cls, json_str):
-        """:return: a feature from a JSON string"""
-        feature = json.loads(json_str)
-        geom = feature['geometry'] if 'geometry' in feature else None
-        attribs = feature['attributes'] if 'attributes' in feature else None
+    def from_json(cls, json_str: str):
+        """
+        Creates a Feature object from a JSON string.
+
+        :return:
+            A :class:`~arcgis.features.Feature`
+
+        """
+        feature = _ujson.loads(json_str)
+        geom = feature["geometry"] if "geometry" in feature else None
+        attribs = feature["attributes"] if "attributes" in feature else None
         return cls(geom, attribs)
 
     # ----------------------------------------------------------------------
     @classmethod
-    def from_dict(cls, feature):
-        """:return: a feature from a dict"""
-        geom = feature['geometry'] if 'geometry' in feature else None
-        attribs = feature['attributes'] if 'attributes' in feature else None
-        if 'centroid' in feature:
+    def from_dict(cls, feature: str, sr: Optional[dict[str, str]] = None):
+        """
+        Creates a Feature object from a dictionary.
+
+        :return:
+            A class:`~arcgis.features.feature.Feature`
+        """
+        geom = feature["geometry"] if "geometry" in feature else None
+        if geom and sr and isinstance(geom, dict) and not "spatialReference" in geom:
+            geom["spatialReference"] = sr
+
+        attribs = feature["attributes"] if "attributes" in feature else None
+        if "centroid" in feature:
             if attribs is None:
-                attribs = {'centroid' : feature['centroid']}
-            elif 'centroid' in attribs:
+                attribs = {"centroid": feature["centroid"]}
+            elif "centroid" in attribs:
                 fld = "centroid_" + uuid.uuid4().hex[:2]
-                attribs[fld] = feature['centroid']
+                attribs[fld] = feature["centroid"]
             else:
-                attribs['centroid'] = feature['centroid']
+                attribs["centroid"] = feature["centroid"]
         return cls(geom, attribs)
+
     # ----------------------------------------------------------------------
     def __str__(self):
-        """"""
+        """ """
         return json.dumps(self.as_dict, default=_date_handler)
 
     __repr__ = __str__
@@ -237,22 +330,24 @@ class Feature(object):
 
 class FeatureSet(object):
     """
-    A set of features with information about their fields, field aliases, geometry type, spatial reference etc.
+    A ``FeatureSet`` is a set of features with information about their ``fields``, ``field aliases``, ``geometry type``,
+    ``spatial reference``, and more.
 
-    FeatureSets are commonly used as input/output with several Geoprocessing
-    Tools, and can be the obtained through the query() methods of feature layers.
+    ``FeatureSets`` are commonly used as input/output with several ``Geoprocessing Tools``, and can be the obtained
+    through the :attr:`~arcgis.features.FeatureLayer.query` methods of feature layers.
     A FeatureSet can be combined with a layer definition to compose a FeatureCollection.
 
-    FeatureSet contains Feature objects, including the values for the
-    fields requested by the user. For layers, if you request geometry
+    FeatureSet contains :class:`~arcgis.features.Feature` objects, including the values for the
+    fields requested by the :class:`~arcgis.gis.User` . For layers, if you request geometry
     information, the geometry of each feature is also returned in the
     FeatureSet. For tables, the FeatureSet does not include geometries.
 
-    If a Spatial Reference is not specified at the FeatureSet level, the
-    FeatureSet will assume the SpatialReference of its first feature. If
-    the SpatialReference of the first feature is also not specified, the
+    If a ``Spatial Reference`` is not specified at the ``FeatureSet`` level, the
+    ``FeatureSet`` will assume the SpatialReference of its first feature. If
+    the ``Spatial Reference`` of the first feature is also not specified, the
     spatial reference will be UnknownCoordinateSystem.
     """
+
     _fields = None
     _features = None
     _has_z = None
@@ -262,23 +357,28 @@ class FeatureSet(object):
     _object_id_field_name = None
     _global_id_field_name = None
     _display_field_name = None
-    _allowed_geom_types = ["esriGeometryPoint", "esriGeometryMultipoint", "esriGeometryPolyline",
-                           "esriGeometryPolygon", "esriGeometryEnvelope"]
+    _allowed_geom_types = [
+        "esriGeometryPoint",
+        "esriGeometryMultipoint",
+        "esriGeometryPolyline",
+        "esriGeometryPolygon",
+        "esriGeometryEnvelope",
+    ]
 
     # ----------------------------------------------------------------------
-    def __init__(self,
-                 features,
-                 fields=None,
-                 has_z=False,
-                 has_m=False,
-                 geometry_type=None,
-                 spatial_reference=None,
-                 display_field_name=None,
-                 object_id_field_name=None,
-                 global_id_field_name=None):
+    def __init__(
+        self,
+        features,
+        fields=None,
+        has_z=False,
+        has_m=False,
+        geometry_type=None,
+        spatial_reference=None,
+        display_field_name=None,
+        object_id_field_name=None,
+        global_id_field_name=None,
+    ):
         """Constructor"""
-        self._fields = fields
-
         self._has_z = has_z
         self._has_m = has_m
         self._geometry_type = geometry_type
@@ -290,49 +390,52 @@ class FeatureSet(object):
         # conversion of different inputs to a common list of feature objects
         if isinstance(features, str):
             # convert the featuresclass to a list of features
-            features = self._fc_to_features(dataset=features)
+            features, fields = self._fc_to_features(dataset=features)
             if features is None:
-                raise AttributeError("Feature class could not be converted to a feature set")
+                raise AttributeError(
+                    "Feature class could not be converted to a feature set"
+                )
         elif isinstance(features, list) and len(features) > 0:
             feature = features[0]
             if isinstance(feature, Feature):
                 pass
                 # features passed in as a list of Feature objects
-
-                # if "attributes" in feature.as_dict:
-                #     if "geometry" in feature.as_dict:
-                #         features = [Feature(feat.as_dict['geometry'], feat.as_dict['attributes']) for feat in features]
-                #     else:
-                #         features = [Feature(None, feat.as_dict['attributes']) for feat in features]
-                # elif "geometry" in feature.as_dict:
-                #     features = [Feature(feat.as_dict['geometry'], None) for feat in features]
             elif isinstance(feature, dict):
                 # features passed in as a list of dicts
                 if "attributes" in feature:
                     if "geometry" in feature:
-                        features = [Feature(feat['geometry'], feat['attributes']) for feat in features]
+                        features = [
+                            Feature(feat["geometry"], feat["attributes"])
+                            for feat in features
+                        ]
                     else:
-                        features = [Feature(None, feat['attributes']) for feat in features]
+                        features = [
+                            Feature(None, feat["attributes"]) for feat in features
+                        ]
                 elif "geometry" in feature:
-                    features = [Feature(feat['geometry'], None) for feat in features]
+                    features = [Feature(feat["geometry"], None) for feat in features]
             else:
-                raise AttributeError("FeatureSet requires a list of features (as dicts or Feature objects)")
-
+                raise AttributeError(
+                    "FeatureSet requires a list of features (as dicts or Feature objects)"
+                )
+        self._fields = fields
         self._features = features
         if len(features) > 0:
             feat_geom = None
             feature = features[0]
 
-            if "geometry" in feature.as_dict: # can construct features out of tables with just attributes, no geometry
+            if (
+                "geometry" in feature.as_dict
+            ):  # can construct features out of tables with just attributes, no geometry
                 feat_geom = feature.geometry
             elif isinstance(feature, dict):
                 if "geometry" in feature:
-                    feat_geom = feature['geometry']
+                    feat_geom = feature["geometry"]
 
             if feat_geom is not None:
                 if spatial_reference is None:
-                    if 'spatialReference' in feat_geom:
-                        self._spatial_reference = feat_geom['spatialReference']
+                    if "spatialReference" in feat_geom:
+                        self._spatial_reference = feat_geom["spatialReference"]
 
                 if isinstance(feat_geom, Geometry):
                     geometry = feat_geom
@@ -348,28 +451,34 @@ class FeatureSet(object):
                         self._geometry_type = "esriGeometryPoint"
                     elif isinstance(geometry, MultiPoint):
                         self._geometry_type = "esriGeometryMultipoint"
-                # else:
-                #     raise AttributeError("Invalid geometry type") # Dont raise this error as input can be tables without geometries
 
             # region - build fields into a dict
             if self._fields is None or len(self._fields) == 0:
-                self._fields = feature.fields  # get fields from first feature if not set
+                self._fields = (
+                    feature.fields
+                )  # get fields from first feature if not set
 
-            if self._fields and isinstance(self._fields[0], str):  # as in geocoded results
+            if self._fields and isinstance(
+                self._fields[0], str
+            ):  # as in geocoded results
                 _fields = []
 
                 for key, val in feature.attributes.items():
                     if isinstance(val, float):
-                        field_type = 'esriFieldTypeDouble'
+                        field_type = "esriFieldTypeDouble"
                     elif isinstance(val, int):
-                        field_type = 'esriFieldTypeInteger'
+                        field_type = "esriFieldTypeInteger"
                     else:
-                        field_type = 'esriFieldTypeString'
+                        field_type = "esriFieldTypeString"
 
-                    _fields.append({'name': key,
-                                    'alias': key,
-                                    'type': field_type,
-                                    'sqlType': 'sqlTypeOther'})
+                    _fields.append(
+                        {
+                            "name": key,
+                            "alias": key,
+                            "type": field_type,
+                            "sqlType": "sqlTypeOther",
+                        }
+                    )
 
                 self._fields = _fields
             # endregion
@@ -380,7 +489,9 @@ class FeatureSet(object):
                 if isinstance(feature, Feature):
                     # Look for OBJECTID first, if it does not exist, look for FID
                     if self._fields is None or len(self._fields) == 0:
-                        self._fields = feature.fields  # get fields from first feature if not set
+                        self._fields = (
+                            feature.fields
+                        )  # get fields from first feature if not set
                     for field in feature.fields:
                         if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
                             self._object_id_field_name = field
@@ -401,38 +512,41 @@ class FeatureSet(object):
 
             # if still none, then build the objectid field
             if not self._object_id_field_name:
-                obj_field = {'name': 'OBJECTID',
-                             'type': 'esriFieldTypeOID',
-                             'alias': 'OBJECTID',
-                             'sqlType': 'sqlTypeOther'
-                             }
+                obj_field = {
+                    "name": "OBJECTID",
+                    "type": "esriFieldTypeOID",
+                    "alias": "OBJECTID",
+                    "sqlType": "sqlTypeOther",
+                }
 
                 if len(self._fields) > 0:
                     field0 = self._fields[0]
                     if isinstance(field0, str):
-                        self._fields.append('OBJECTID')
+                        self._fields.append("OBJECTID")
                     else:
                         self._fields.append(obj_field)
                 else:
                     self._fields.append(obj_field)
 
-                self._object_id_field_name = obj_field['name']
+                self._object_id_field_name = obj_field["name"]
 
                 counter = 0
                 for feat in self._features:
                     counter += 1
-                    feat.fields.append('OBJECTID')
-                    if not feat.attributes: #when features have just geometry and no attributes
-                        feat.attributes = {'OBJECTID':counter}
+                    feat.fields.append("OBJECTID")
+                    if (
+                        not feat.attributes
+                    ):  # when features have just geometry and no attributes
+                        feat.attributes = {"OBJECTID": counter}
                     else:
-                        feat.attributes['OBJECTID'] = counter
+                        feat.attributes["OBJECTID"] = counter
 
             # rectify Object ID field type
             if self._object_id_field_name:
                 for f in self._fields:
-                    if f['name'] == self._object_id_field_name:
-                        if f['type'] != 'esriFieldTypeOID':
-                            f['type'] = 'esriFieldTypeOID'
+                    if f["name"] == self._object_id_field_name:
+                        if f["type"] != "esriFieldTypeOID":
+                            f["type"] = "esriFieldTypeOID"
                         break
 
     # ----------------------------------------------------------------------
@@ -441,7 +555,7 @@ class FeatureSet(object):
         return json.dumps(self.value, default=_date_handler)
 
     def __repr__(self):
-        return '<{}> {} features'.format(self.__class__.__name__, len(self.features))
+        return "<{}> {} features".format(self.__class__.__name__, len(self.features))
 
     # noinspection PyUnresolvedReferences
     @staticmethod
@@ -456,53 +570,83 @@ class FeatureSet(object):
         ===============     ====================================================================
 
 
-        :return: list of feature objects
+        :return: A list of :class:`~arcgis.features.Feature` objects
         """
         try:
             import arcpy
+
             arcpy_found = True
         except:
             arcpy_found = False
-            raise AttributeError("ArcPy is required to create a feature set from a feature class")
+            raise AttributeError(
+                "ArcPy is required to create a feature set from a feature class"
+            )
         if arcpy_found:
             if not arcpy.Exists(dataset=dataset):
-                raise AttributeError("Error creating FeatureSet: {0} does not exist".format(dataset))
+                raise AttributeError(
+                    "Error creating FeatureSet: {0} does not exist".format(dataset)
+                )
 
-            desc = arcpy.Describe(dataset)
-            fields = [field.name for field in arcpy.ListFields(dataset) if field.type not in ['Geometry']]
-            date_fields = [field.name for field in arcpy.ListFields(dataset) if field.type == 'Date']
-            non_geom_fields = copy.deepcopy(fields)
+            desc = arcpy.da.Describe(dataset)
+            fields = []
+            date_fields = []
+            for field in desc["fields"]:
+                key = field.name
+                if field.type == "Date":
+                    field_type = "EsriFieldTypeDate"
+                    date_fields.append(key)
+                elif field.type == "Double":
+                    field_type = "EsriFieldTypeDouble"
+                elif field.type == "Integer":
+                    field_type = "EsriFieldTypeInteger"
+                else:
+                    field_type = "EsriFieldTypeString"
+                fields.append(
+                    {
+                        "name": key,
+                        "alias": key,
+                        "type": field_type,
+                        "sqlType": "sqlTypeOther",
+                    }
+                )
+            fields_names = [field["name"] for field in fields]
+            non_geom_fields = copy.deepcopy(fields_names)
             features = []
             if hasattr(desc, "shapeFieldName"):
                 fields.append("SHAPE@JSON")
             del desc
-            with arcpy.da.SearchCursor(dataset, fields) as rows:
+
+            with arcpy.da.SearchCursor(
+                dataset, fields_names
+            ) as rows:  # get field names here
                 for row in rows:
                     row = list(row)
                     for date_field in date_fields:
-                        if row[fields.index(date_field)] is not None:
-                            row[fields.index(date_field)] = int((_date_handler(row[fields.index(date_field)])))
-                    template = {
-                        "attributes": dict(zip(non_geom_fields, row))
-                    }
-                    if "SHAPE@JSON" in fields:
-                        template['geometry'] = \
-                            json.loads(row[fields.index("SHAPE@JSON")])
+                        date_value = row[fields_names.index(date_field)]
+                        if date_value is not None:
+                            date_value = int(_date_handler(date_value))
 
-                    features.append(
-                        Feature.from_dict(template)
-                    )
+                    template = {"attributes": dict(zip(non_geom_fields, row))}
+                    if "SHAPE@JSON" in fields:
+                        template["geometry"] = _ujson.loads(
+                            row[fields.index("SHAPE@JSON")]
+                        )
+                    features.append(Feature.from_dict(template))
                     del row
-            return features
+            fields = fields if fields else None
+            return features, fields
         return None
         # ----------------------------------------------------------------------
 
     @property
     def value(self):
-        """returns object as dictionary"""
-        val = {
-            "features": [f.as_dict for f in self._features]
-        }
+        """
+        Gets the Feature Set object as a dictionary.
+
+        :return:
+            A dictionary of the :class:`~arcgis.features.FeatureSet`
+        """
+        val = {"features": [f.as_dict for f in self._features]}
 
         if self._object_id_field_name is not None:
             val["objectIdFieldName"] = self._object_id_field_name
@@ -523,30 +667,30 @@ class FeatureSet(object):
 
         return val
 
-        # return {
-        #    "objectIdFieldName" : self._objectIdFieldName,
-        #    "displayFieldName" : self._displayFieldName,
-        #    "globalIdFieldName" : self._globalIdFieldName,
-        #    "geometryType" : self._geometryType,
-        #    "spatialReference" : self._spatialReference,
-        #    "hasZ" : self._hasZ,
-        #    "hasM" : self._hasM,
-        #    "fields" : self._fields,
-        #    "features" : [f.as_dict for f in self._features]
-        # }
-
     # ----------------------------------------------------------------------
     @property
     def to_json(self):
-        """converts the object to JSON"""
+        """
+        Gets the Feature Set object as a JSON string.
+
+        :return:
+            A JSON string of the :class:`~arcgis.features.FeatureSet`
+        """
         return json.dumps(self.value, default=_date_handler)
 
     # ----------------------------------------------------------------------
     @property
     def to_geojson(self):
-        """converts the object to GeoJSON"""
+        """
+        Gets the Feature Set object as a GeoJSON.
+
+        :return:
+            A GeoJSON object.
+        """
+
         def esri_to_geo(esrijson):
             """converts Esri Format JSON to GeoJSON"""
+
             def extract(feature, esri_geom_type):
                 """creates a single feature"""
                 item = {}
@@ -573,6 +717,7 @@ class FeatureSet(object):
                     return "Polygon"
                 else:
                     return "Point"
+
             def get_coordinates(geom, geom_type):
                 """
                 converts the Esri Geometry Structure to
@@ -582,9 +727,10 @@ class FeatureSet(object):
                 elif geom_type == "MultiLineString":
                     return geom["paths"]
                 elif geom_type == "Point":
-                    return [ geom["x"], geom["y"] ]
+                    return [geom["x"], geom["y"]]
                 else:
                     return []
+
             geojson = {}
             features = esrijson["features"]
             esri_geom_type = esrijson["geometryType"]
@@ -594,88 +740,53 @@ class FeatureSet(object):
                 feats.append(extract(feat, esri_geom_type))
             geojson["features"] = feats
             return geojson
+
         return json.dumps(esri_to_geo(self.value), default=_date_handler)
 
     def to_dict(self):
-        """converts the object to Python dictionary"""
+        """
+        Converts the Feature Set object to a Python dictionary.
+
+        :return:
+            A Python dictionary of the :class:`~arcgis.features.FeatureSet`
+        """
         return self.value
 
     @property
     def df(self):
         """
 
-        **deprecated in v1.5.0 please use `sdf`**
+        .. Warning::
+            deprecated in v1.5.0 please use :attr:`~arcgis.features.FeatureSet.sdf`
 
         converts the FeatureSet to a Pandas dataframe. Requires pandas
         """
-        import warnings
-        warnings.warn(("The SpatialDataFrame has been deprecated. "
-                       "`df` property will be removed as a future release"
-                       ". Use `sdf` instead."))
-        try:
-            try:
-                import arcpy
-                arcpy_found = True
-            except:
-                arcpy_found = False
-            from pandas.io.json import json_normalize
-            from arcgis.features import SpatialDataFrame
-            if len(self.features) == 0:
-                import pandas as pd
-                return pd.DataFrame()
-            elif self.geometry_type is not None:
-                if self._spatial_reference and \
-                   'wkt' in self._spatial_reference.keys():
-                    sr = SpatialReference(self._spatial_reference)
-                elif self._spatial_reference and \
-                     'wkid' in self._spatial_reference:
-                    sr = SpatialReference(self._spatial_reference)
-                else:
-                    sr = None
-                geoms = []
-                attributes = []
-                for feat in self.features:
-                    attributes.append(feat.attributes)
-                    if isinstance(feat.geometry, Geometry):
-                        geoms.append(feat.geometry)
-                    else:
-                        g = Geometry(feat.geometry)
-                        if 'spatialReference' not in g and \
-                           sr is not None:
-                            g['spatialReference'] = sr
-                        geoms.append(g)
-                    del feat
-                df = json_normalize(attributes)
-                df.columns = df.columns.str.replace('attributes.', '')
-                return SpatialDataFrame(df, geometry=geoms, sr=sr)
-            else:
-                #df = pandas.DataFrame.from_dict([f.attributes for f in fs.features])
-                df = json_normalize(self.value['features'])
-                df.columns = df.columns.str.replace('attributes.', '')
-                if self._object_id_field_name is not None:
-                    df.set_index([self._object_id_field_name], inplace=True)
-                else:
-                    if 'OBJECTID' in df.columns:
-                        df.set_index(['OBJECTID'], inplace=True)
-                    elif 'FID' in df.columns:
-                        df.set_index(['FID'], inplace=True)
-                return df
-        except ImportError:
-            raise ImportError("pandas not found, please install it")
+        return self.sdf
 
     # ----------------------------------------------------------------------
     @property
     def sdf(self):
         """
-        Converts the FeatureSet to a Spatially Enabled Pandas dataframe
+        Gets the Feature Set as a Spatially Enabled Pandas dataframe.
+
+        :return:
+            A Spatially Enabled `Pandas Dataframe <https://pandas.pydata.org/docs/reference/frame.html#dataframe>`_
+            object
         """
         try:
             from arcgis.features.geo._io.serviceops import from_featureset
+
             return from_featureset(fset=self)
         except ImportError:
-            raise Exception("Could not find the panda installation, please install Pandas and retry")
+            raise Exception(
+                "Could not find the panda installation, please install Pandas and retry"
+            )
         except Exception as e:
-            raise Exception("An error occurred with exporting the FeatureSet with message: %s" % str(e))
+            raise Exception(
+                "An error occurred with exporting the FeatureSet with message: %s"
+                % str(e)
+            )
+
     # ----------------------------------------------------------------------
     def __iter__(self):
         """featureset iterator on features in feature set"""
@@ -689,13 +800,57 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_json(json_str):
-        """returns a featureset from a JSON string"""
-        return FeatureSet.from_dict(json.loads(json_str))
+    def from_arcpy(fs: "arcpy.FeatureSet") -> "FeatureSet":
+        """
+        Converts an `arcpy` FeatureSet to an `arcgis` FeatureSet
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        fs                  Required arcpy.FeatureSet. The featureset objec to consume.
+        ===============     ====================================================================
+
+        :return:
+           A :class:`~arcgis.features.FeatureSet` object
+        """
+        if hasattr(fs, "JSON") and type(fs).__name__ == "FeatureSet":
+            return FeatureSet.from_dict(_ujson.loads(fs.JSON))
+        else:
+            raise ValueError(f"Invalid input of type {type(fs)}")
+
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def from_json(json_str: str):
+        """
+        Creates a Feature Set objects from a JSON string.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        json_str            Required json style string.
+        ===============     ====================================================================
+
+        :return:
+           A :class:`~arcgis.features.FeatureSet` object
+        """
+        return FeatureSet.from_dict(_ujson.loads(json_str))
 
     @staticmethod
     def from_dataframe(df):
-        """returns a featureset from a Pandas' Data or Spatial DataFrame"""
+        """
+        The ``from_dataframe`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
+        Pandas' DataFrame
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        df                  Required DataFrame.
+        ===============     ====================================================================
+
+        :return:
+           A :class:`~arcgis.features.FeatureSet` object
+        """
+
         def _infer_type(df, col):
             """
             internal function used to get the datatypes for the feature class if
@@ -707,91 +862,100 @@ class FeatureSet(object):
             Ouput:
               field type name
             """
-            import six
             import numpy as np
+
             nn = df[col].notnull()
             nn = list(df[nn].index)
             if len(nn) > 0:
                 val = df[col][nn[0]]
-                if isinstance(val, six.string_types):
+                if isinstance(val, str):
                     return "esriFieldTypeString"
-                elif isinstance(val, tuple(list(six.integer_types) + [np.int32])):
+                elif isinstance(val, tuple([int] + [np.int32])):
                     return "esriFieldTypeInteger"
                 elif isinstance(val, (float, np.int64)):
                     return "esriFieldTypeDouble"
                 elif isinstance(val, datetime):
                     return "esriFieldTypeDate"
             return "esriFieldTypeString"
-        from ._data.geodataset import SpatialDataFrame
+
         import pandas as pd
-        try:
-            import arcpy
-            HASARCPY = True
-        except ImportError:
-            HASARCPY = False
+
         features = []
         index = 0
         sr = None
-        df = df.fillna('')
-        if isinstance(df, SpatialDataFrame):
-            df_rows = df.copy()
-            del df_rows['SHAPE']
-            geoms = df['SHAPE'].tolist()
-            sr = df.sr
-        elif isinstance(df, pd.DataFrame) and \
-             not df.spatial.name is None:
-            return FeatureSet.from_dict(df.spatial.__feature_set__)
+        try:
+            date_cols = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
+            cols = [
+                col
+                for col in df.columns
+                if col != df.spatial.name and col not in date_cols
+            ]
+            df = df.fillna("")
+        except:
+            pass
+        old_idx = df.index
+        df.reset_index(drop=True, inplace=True)
+        if isinstance(df, pd.DataFrame) and not df.spatial.name is None:
+            fs = FeatureSet.from_dict(df.spatial.__feature_set__)
+            df.set_index(old_idx, inplace=True)
+            return fs
         elif isinstance(df, pd.DataFrame):
             geoms = []
             df_rows = df.copy()
         else:
             raise ValueError("Invalid input type")
         index = 0
-        for row in df_rows.to_dict('records'):
+        for row in df_rows.to_dict("records"):
             if len(geoms) > 0:
                 features.append(
                     {
-                        "geometry": json.loads(json.dumps(geoms[index])),
-                        "attributes": row
-                    })
+                        "geometry": _ujson.loads(json.dumps(geoms[index])),
+                        "attributes": row,
+                    }
+                )
             else:
-                features.append(
-                    {
-                        "attributes": row
-                    })
+                features.append({"attributes": row})
             index += 1
-        fs =  FeatureSet.from_dict(featureset_dict={'features': features})
+        fs = FeatureSet.from_dict(featureset_dict={"features": features})
         fields = []
         for col in df_rows.columns:
-            #if col not in df_rows.geometry.name:
-            fields.append(
-                {
-                    "name" : col,
-                    "type" : _infer_type(df=df_rows, col=col)
-                }
-            )
+            # if col not in df_rows.geometry.name:
+            fields.append({"name": col, "type": _infer_type(df=df_rows, col=col)})
         fs._fields = fields
         if sr is not None:
             fs.spatial_reference = sr
-
+        df.set_index(old_idx, inplace=True)
         return fs
+
     # ----------------------------------------------------------------------
     @staticmethod
     def from_geojson(geojson):
         """
-        Converts a GeoJSON Feature Collection into a FeatureSet
+        Creates a Feature Set objects from a GEO JSON  :class:`~arcgis.features.FeatureCollection` object
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        geojson             Required GEOJSON object
+        ===============     ====================================================================
+
+        :return:
+           A :class:`~arcgis.features.FeatureSet` object
 
         """
         from warnings import warn
+
         def geo_to_esri(geojson):
             esri = {}
 
             # we already know the spatial reference we want
             # for geojson, at least in this simple case
-            if 'crs' in geojson:
-                warn("crs has been deprecated and will be ignored. Please"+ \
-                     " see: https://tools.ietf.org/html/rfc7946#section-4 for" +\
-                     " more information.")
+            if "crs" in geojson:
+                warn(
+                    "crs has been deprecated and will be ignored. Please"
+                    + " see: https://tools.ietf.org/html/rfc7946#section-4 for"
+                    + " more information."
+                )
             sr = {"wkid": 4326}
 
             # This will hold the geojson geometry type
@@ -848,7 +1012,7 @@ class FeatureSet(object):
                 return "esriGeometryPoint"
             elif geo_type == "MultiPoint":
                 return "esriGeometryMultiPoint"
-            elif geo_type == "LineString":
+            elif geo_type in ["LineString", "MultiLineString"]:
                 return "esriGeometryPolyline"
             elif geo_type == "Polygon" or geo_type == "MultiPolygon":
                 return "esriGeometryPolygon"
@@ -865,18 +1029,26 @@ class FeatureSet(object):
                 geometry["x"] = geom["coordinates"][0]
                 geometry["y"] = geom["coordinates"][1]
             elif geo_type == "Polygon":
-                geometry["rings"] = geom["coordinates"]
+                geometry["rings"] = [
+                    [pt for pt in reversed(g)] for g in geom["coordinates"]
+                ]
             elif geo_type == "MultiPolygon":
                 rings = []
                 if HASARCPY:
-                    geom = arcpy.AsShape(geom)
-                    geometry = Geometry(json.loads(geom))
+                    if isinstance(geom, dict):
+                        geometry = Geometry(geom)
+                    else:
+                        geom = arcpy.AsShape(geom)
+                        geometry = Geometry(_ujson.loads(geom))
                 else:
-                    coordkey = ([d for d in geom if d.lower() == 'coordinates']
-                                    or ['coordinates']).pop()
+                    coordkey = (
+                        [d for d in geom if d.lower() == "coordinates"]
+                        or ["coordinates"]
+                    ).pop()
                     coordinates = geom[coordkey]
-                    typekey = ([d for d in geom if d.lower() == 'type']
-                                   or ['type']).pop()
+                    typekey = (
+                        [d for d in geom if d.lower() == "type"] or ["type"]
+                    ).pop()
                     if geom[typekey].lower() == "polygon":
                         coordinates = [coordinates]
                     part_list = []
@@ -885,147 +1057,290 @@ class FeatureSet(object):
                         for idx, ring in enumerate(part):
                             if idx:
                                 part_item.append(None)
-                            for coord in ring:
+                            for coord in reversed(ring):
                                 part_item.append(coord)
                         if part_item:
-                            part_list.append([part_item])
-                    geometry["rings"] = part_list[0]
-            elif geo_type =="LineString":
-                geometry["paths"] = geom
+                            part_list.append(part_item)
+                    geometry["rings"] = part_list  # [0]
+            elif geo_type == "MultiPoint":
+                geometry["points"] = [c[:] for c in geom["coordinates"]]
+            elif geo_type == "LineString":
+                geometry["paths"] = [[c[:] for c in geom["coordinates"]]]
+            elif geo_type == "MultiLineString":
+                if HASARCPY == "rem":
+                    geom = arcpy.AsShape(geom)
+                    geom["spatialReference"] = {"wkid": 4326}
+                    geometry = Geometry(_ujson.loads(geom))
+                else:
+                    coordkey = (
+                        [d for d in geom if d.lower() == "coordinates"]
+                        or ["coordinates"]
+                    ).pop()
+                    coordinates = geom[coordkey]
+                    typekey = (
+                        [d for d in geom if d.lower() == "type"] or ["type"]
+                    ).pop()
+                    if geom[typekey].lower() == "linestring":
+                        coordinates = [coordinates]
+                    geometry["paths"] = coordinates
+            if not "spatialReference" in geometry:
+                geometry["spatialReference"] = {"wkid": 4326}
 
             return geometry
+
         return FeatureSet.from_dict(geo_to_esri(geojson))
+
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_dict(featureset_dict):
-        """returns a featureset from a dict"""
+    def from_dict(featureset_dict: dict[str, Any]):
+        """
+        Creates a Feature Set objects from a dictionary.
 
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        featureset_dict     Required dict.
+                            Keys can include:
+                            'fields', 'features', 'hasZ', 'hasM', 'geometryType', 'objectIdFieldName',
+                            'globalIdFieldName', 'displayFieldName', 'spatialReference'
+        ===============     ====================================================================
+
+        :return:
+           A :class:`~arcgis.features.FeatureSet`
+        """
         features = []
-        if 'fields' in featureset_dict:
-            fields = featureset_dict['fields']
+        if "fields" in featureset_dict:
+            fields = featureset_dict["fields"]
         else:
             fields = []
-        if 'features' in featureset_dict:
-            for feat in featureset_dict['features']:
-                features.append(Feature.from_dict(feat))
+        if "features" in featureset_dict:
+            sr = featureset_dict.get("spatialReference", None)
+            for feat in featureset_dict["features"]:
+
+                features.append(Feature.from_dict(feat, sr=sr))
         return FeatureSet(
-            features=features, fields=fields,
-            has_z=featureset_dict['hasZ'] if 'hasZ' in featureset_dict else False,
-            has_m=featureset_dict['hasM'] if 'hasM' in featureset_dict else False,
-            geometry_type=featureset_dict['geometryType'] if 'geometryType' in featureset_dict else None,
-            object_id_field_name=featureset_dict['objectIdFieldName'] if 'objectIdFieldName' in featureset_dict else None,
-            global_id_field_name=featureset_dict['globalIdFieldName'] if 'globalIdFieldName' in featureset_dict else None,
-            display_field_name=featureset_dict['displayFieldName'] if 'displayFieldName' in featureset_dict else None,
-            spatial_reference=featureset_dict['spatialReference'] if 'spatialReference' in featureset_dict else None)
+            features=features,
+            fields=fields,
+            has_z=featureset_dict["hasZ"] if "hasZ" in featureset_dict else False,
+            has_m=featureset_dict["hasM"] if "hasM" in featureset_dict else False,
+            geometry_type=featureset_dict["geometryType"]
+            if "geometryType" in featureset_dict
+            else None,
+            object_id_field_name=featureset_dict["objectIdFieldName"]
+            if "objectIdFieldName" in featureset_dict
+            else None,
+            global_id_field_name=featureset_dict["globalIdFieldName"]
+            if "globalIdFieldName" in featureset_dict
+            else None,
+            display_field_name=featureset_dict["displayFieldName"]
+            if "displayFieldName" in featureset_dict
+            else None,
+            spatial_reference=featureset_dict["spatialReference"]
+            if "spatialReference" in featureset_dict
+            else None,
+        )
 
     # ----------------------------------------------------------------------
     @property
     def spatial_reference(self):
-        """gets the featureset's spatial reference"""
+        """
+        Get/Set the Feature Set's spatial reference
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required dict.
+                                (e.g. {"wkid" : 4326})
+        ==================      ====================================================================
+
+        :return:
+            A :class:`~arcgis.geometry.SpatialReference`
+
+        """
         return self._spatial_reference
 
     # ----------------------------------------------------------------------
     @spatial_reference.setter
-    def spatial_reference(self, value):
-        """sets the featureset's spatial reference"""
+    def spatial_reference(self, value: Optional[dict[str, int]]):
+        """
+        See main ``spatial_reference`` property docstring
+        """
         if isinstance(value, SpatialReference):
             self._spatial_reference = value
         elif isinstance(value, int):
             self._spatial_reference = SpatialReference(wkid=value)
-        elif isinstance(value, str) and \
-                str(value).isdigit():
+        elif isinstance(value, str) and str(value).isdigit():
             self._spatial_reference = SpatialReference(wkid=int(value))
         else:
             self._spatial_reference = SpatialReference(value)
 
-
     # ----------------------------------------------------------------------
     @property
     def has_z(self):
-        """gets/sets the Z-property"""
+        """
+         Get/Set the Z-property of the Feature Set object
+
+         ==================      ====================================================================
+         **Argument**            **Description**
+         ------------------      --------------------------------------------------------------------
+         value                   Required bool.
+                                 Values: True | False
+         ==================      ====================================================================
+
+        :return:
+             The Z-value of the :class:`~arcgis.features.FeatureSet` object
+        """
         return self._has_z
 
     # ----------------------------------------------------------------------
     @has_z.setter
-    def has_z(self, value):
-        """gets/sets the Z-property"""
+    def has_z(self, value: Optional[bool]):
+        """
+        See main ``has_z`` property docstring
+        """
         if isinstance(value, bool):
             self._has_z = value
 
     # ----------------------------------------------------------------------
     @property
     def has_m(self):
-        """gets/set the M-property"""
+        """
+        Get/Set the M-property of the Feature Set object.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required bool.
+                                Values: True | False
+        ==================      ====================================================================
+
+        :return:
+            The M-value of the :class:`~arcgis.features.FeatureSet` object
+        """
         return self._has_m
 
     # ----------------------------------------------------------------------
     @has_m.setter
-    def has_m(self, value):
-        """gets/set the M-property"""
+    def has_m(self, value: Optional[bool]):
+        """
+        See main ``has_m`` property docstring
+        """
         if isinstance(value, bool):
             self._has_m = value
 
     # ----------------------------------------------------------------------
     @property
     def geometry_type(self):
-        """gets/sets the geometry Type"""
+        """
+        Get/Set the ``Type`` of the Feature Set object.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+                                Values: 'Polygon' | 'Polyline' | 'Point'
+        ==================      ====================================================================
+
+        :return:
+            A string representing the geometry type of the :class:`~arcgis.features.FeatureSet` object
+        """
         return self._geometry_type
 
     # ----------------------------------------------------------------------
     @geometry_type.setter
-    def geometry_type(self, value):
-        """gets/sets the geometry Type"""
+    def geometry_type(self, value: Optional[str]):
+        """
+        See main ``geometry_type`` property docstring
+        """
         if value in self._allowed_geom_types:
             self._geometry_type = value
 
     # ----------------------------------------------------------------------
     @property
     def object_id_field_name(self):
-        """gets/sets the object id field"""
+        """
+        Get/Set the object id field of the Feature Set object
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+        ==================      ====================================================================
+
+        :return:
+            A string representing the object id field name
+        """
         return self._object_id_field_name
 
     # ----------------------------------------------------------------------
     @object_id_field_name.setter
-    def object_id_field_name(self, value):
-        """gets/sets the object id field"""
+    def object_id_field_name(self, value: Optional[str]):
+        """
+        See main ``object_id_field_name`` property docstring
+        """
         self._object_id_field_name = value
 
     # ----------------------------------------------------------------------
     @property
     def global_id_field_name(self):
-        """gets/sets the globalIdFieldName"""
+        """
+        Get/Set the ``global ID`` field  for the Feature Set object.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+        ==================      ====================================================================
+
+
+        :return:
+            A string
+        """
         return self._global_id_field_name
 
     # ----------------------------------------------------------------------
     @global_id_field_name.setter
-    def global_id_field_name(self, value):
-        """gets/sets the globalIdFieldName"""
+    def global_id_field_name(self, value: Optional[str]):
+        """
+        See main ``global_id_field_name`` property docstring
+        """
         self._global_id_field_name = value
 
     # ----------------------------------------------------------------------
     @property
     def display_field_name(self):
-        """gets/sets the displayFieldName"""
+        """
+        Get/Set the ``display`` field for the Feature Set object.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required string.
+        ==================      ====================================================================
+
+        :return:
+            A String
+        """
         return self._display_field_name
 
     # ----------------------------------------------------------------------
     @display_field_name.setter
-    def display_field_name(self, value):
-        """gets/sets the displayFieldName"""
+    def display_field_name(self, value: Optional[str]):
+        """
+        See main ``display_field_name`` property docstring
+        """
         self._display_field_name = value
 
     # ----------------------------------------------------------------------
-    def save(self, save_location, out_name, encoding=None):
+    def save(self, save_location: str, out_name: str, encoding: Optional[str] = None):
         """
-        Saves a featureset object to a feature class
-
-
-
+        The ``save`` method saves a Feature Set object to a
+        :class:`~arcgis.features.Feature` class on disk.
 
         =================    ====================================================================
         **Argument**         **Description**
         -----------------    --------------------------------------------------------------------
-        save_location        Required string. Path to export the FeatureSet to.
+        save_location        Required string. Path to export the Feature Set to.
         -----------------    --------------------------------------------------------------------
         out_name             Required string. Name of the saved table.
         -----------------    --------------------------------------------------------------------
@@ -1034,35 +1349,44 @@ class FeatureSet(object):
                              default is None.
         =================    ====================================================================
 
+        :return:
+            A string
 
-        :return: string
+        .. code-block:: python
+
+            # Obtain a feature from a feature layer:
+
+            >>> feat_set = feature_layer.save(save_location = "C:\ArcGISProjects\"
+            >>>                               out_name = "Power_Plant_Data")
+            "C:\ArcGISProjects\Power_Plant_Data"
 
         """
         _, file_extension = os.path.splitext(out_name)
-        if file_extension.lower() not in ['.csv', '.json'] and \
-           HASARCPY == False:
+        if file_extension.lower() not in [".csv", ".json"] and HASARCPY == False:
             raise ImportError("ArcPy is required to export a feature class.")
         import sys
+
         if sys.version_info[0] == 2:
-            access = 'wb+'
+            access = "wb+"
             kwargs = {}
             if encoding is not None:
-                kwargs['encoding'] = encoding
+                kwargs["encoding"] = encoding
         else:
-            access = 'wt+'
-            kwargs = {'newline': ''}
+            access = "wt+"
+            kwargs = {"newline": ""}
             if encoding is not None:
-                kwargs['encoding'] = encoding
+                kwargs["encoding"] = encoding
 
         if file_extension == ".csv":
             res = os.path.join(save_location, out_name)
             with open(res, access, **kwargs) as csv_file:
                 import csv
+
                 csv_writer = csv.writer(csv_file)
                 fields = []
                 # write the headers to the csv
                 for field in self.fields:
-                    fields.append(field['name'])
+                    fields.append(field["name"])
                 csv_writer.writerow(fields)
 
                 new_row = []
@@ -1070,81 +1394,103 @@ class FeatureSet(object):
                 for feature in self:
                     new_row = []
                     for field in self.fields:
-                        new_row.append(feature.get_value(field['name']))
+                        new_row.append(feature.get_value(field["name"]))
                     csv_writer.writerow(new_row)
                 csv_file.close()
             del csv_file
         elif file_extension == ".json":
             res = os.path.join(save_location, out_name)
             with open(res, access, **kwargs) as writer:
-                json.dump(self.value, writer, sort_keys=True, indent=4, ensure_ascii=False)
+                json.dump(
+                    self.value, writer, sort_keys=True, indent=4, ensure_ascii=False
+                )
             del writer
         else:
             temp_dir = tempfile.gettempdir()
             temp_file = os.path.join(temp_dir, "%s.json" % uuid.uuid4().hex)
             with open(temp_file, access, **kwargs) as writer:
-                json.dump(self.value,
-                          writer,
-                          default=_date_handler)
+                json.dump(self.value, writer, default=_date_handler)
             del writer
-            res = json_to_featureclass(json_file=temp_file,
-                                       out_fc=os.path.join(save_location, out_name))
+            res = json_to_featureclass(
+                json_file=temp_file, out_fc=os.path.join(save_location, out_name)
+            )
             os.remove(temp_file)
         return res
 
     # ----------------------------------------------------------------------
     @property
     def features(self):
-        """gets the features in the FeatureSet"""
+        """
+        Gets the :class:`~arcgis.features.Feature` objects in the FeatureSet object.
+
+        :return:
+            A list of :class:`~arcgis.features.Feature` objects
+        """
         return self._features
 
     # ----------------------------------------------------------------------
     @property
     def fields(self):
-        """gets the fields in the FeatureSet"""
-        # todo - build object id field if not found - webmaps need this
+        """
+        Get/Set the fields in the FeatureSet
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        value                   Required dict.
+        ==================      ====================================================================
+
+
+        :return:
+            A dictionary
+        """
+        # Build object id field if not found - webmaps need this
         if not self._object_id_field_name:
-            obj_field = {'name': 'OBJECTID',
-                         'type': 'esriFieldTypeOID',
-                         'alias': 'OBJECTID',
-                         'sqlType': 'sqlTypeOther'
-                         }
+            obj_field = {
+                "name": "OBJECTID",
+                "type": "esriFieldTypeOID",
+                "alias": "OBJECTID",
+                "sqlType": "sqlTypeOther",
+            }
 
             if len(self._fields) > 0:
                 field0 = self._fields[0]
                 if isinstance(field0, str):
-                    self._fields.append('OBJECTID')
+                    self._fields.append("OBJECTID")
                 else:
                     self._fields.append(obj_field)
             else:
                 self._fields.append(obj_field)
 
-            self._object_id_field_name = obj_field['name']
+            self._object_id_field_name = obj_field["name"]
 
             counter = 0
             for feat in self.features:
                 counter += 1
-                feat.fields.append('OBJECTID')
-                feat.attributes['OBJECTID'] = counter
+                feat.fields.append("OBJECTID")
+                feat.attributes["OBJECTID"] = counter
 
         return self._fields
 
     # ----------------------------------------------------------------------
     @fields.setter
-    def fields(self, fields):
-        """sets the fields in the FeatureSet"""
+    def fields(self, fields: Optional[dict]):
+        """
+        See main ``fields`` property docstring
+        """
         self._fields = fields
 
 
 class FeatureCollection(Layer):
     """
-    FeatureCollection is an object with a layer definition and a feature set.
+    ``FeatureCollection`` is an object with a layer definition and a :class:`~arcgis.features.FeatureSet`.
 
-    It is an in-memory collection of features with rendering information.
+    It is an in-memory collection of :class:`~arcgis.features.Feature` objects with rendering information.
 
-    Feature Collections can be stored as Items in the GIS, added as layers to a map or scene,
-    passed as inputs to feature analysis tools, and returned as results from feature analysis tools
-    if an output name for a feature layer is not specified when calling the tool.
+    .. note::
+        Feature Collections can be stored as :class:`~arcgis.gis.Item` objects in the GIS, added as layers to a map or
+        scene, passed as inputs to feature analysis tools, and returned as results from feature analysis tools
+        if an output name for a feature layer is not specified when calling the tool.
     """
 
     # noinspection PyMissingConstructor
@@ -1162,40 +1508,57 @@ class FeatureCollection(Layer):
         return dict(self.properties)
 
     def __str__(self):
-        return '<%s>' % type(self).__name__
+        return "<%s>" % type(self).__name__
 
     def __repr__(self):
-        return '<%s>' % type(self).__name__
+        return "<%s>" % type(self).__name__
 
     def query(self):
         """
-        Returns the data in this feature collection as a FeatureSet.
-        Filtering by where clause is not supported for feature collections
+        Retrieves the data in this feature collection as a :class:`~arcgis.features.FeatureSet`.
+        Ex: FeatureCollection.query()
+
+        .. Warning::
+            Filtering by ``where clause`` is not supported for feature collections.
+
+        :return:
+            A :class:`~arcgis.features.FeatureSet` object
+
         """
-        if 'layers' in self.properties:
-            if 'fields' in self.properties['layers'][0]['layerDefinition']:
-                self.properties['layers'][0]['featureSet']['fields'] = \
-                    self.properties['layers'][0]['layerDefinition']['fields']
+        if "layers" in self.properties:
+            if "fields" in self.properties["layers"][0]["layerDefinition"]:
+                self.properties["layers"][0]["featureSet"]["fields"] = self.properties[
+                    "layers"
+                ][0]["layerDefinition"]["fields"]
 
-            return FeatureSet.from_dict(self.properties['layers'][0]['featureSet'], )
+            return FeatureSet.from_dict(
+                self.properties["layers"][0]["featureSet"],
+            )
         else:
-            if 'fields' in self.properties['layerDefinition']:
-                self.properties['featureSet']['fields'] = self.properties['layerDefinition']['fields']
+            if "fields" in self.properties["layerDefinition"]:
+                self.properties["featureSet"]["fields"] = self.properties[
+                    "layerDefinition"
+                ]["fields"]
 
-            return FeatureSet.from_dict(self.properties['featureSet'])
+            return FeatureSet.from_dict(self.properties["featureSet"])
 
     @staticmethod
-    def from_featureset(fset, symbol=None, name=None):
+    def from_featureset(
+        fset: FeatureSet,
+        symbol: Optional[dict[str, Any]] = None,
+        name: Optional[str] = None,
+    ):
         """
-        Create a FeatureCollection object from a FeatureSet object.
+        Creates a :class:`~arcgis.features.FeatureCollection` object from a :class:`~arcgis.features.FeatureSet` object.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        fset                   Required arcgis.features.FeatureSet object.
+        fset                   Required :class:`~arcgis.features.FeatureSet` object.
         ------------------     --------------------------------------------------------------------
         symbol                 Optional dict. Specify your symbol as a dictionary. Symbols for points
-                               can be picked from http://esri.github.io/arcgis-python-api/tools/symbol.html
+                               can be picked from the
+                               `Esri Symbol Page <http://esri.github.io/arcgis-python-api/tools/symbol.html>`_
 
                                If not specified, a default symbol will be created.
         ------------------     --------------------------------------------------------------------
@@ -1203,8 +1566,20 @@ class FeatureCollection(Layer):
                                when feature collections are being persisted on a WebMap. If None is
                                provided, then a random name is generated. (New at 1.6.1)
         ==================     ====================================================================
+
         :return:
-            A FeatureCollection object.
+            A :class:`~arcgis.features.FeatureCollection` object.
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> feat_set = feature_layer.query(where="OBJECTID=1")
+            >>> feat_collect = FeatureCollection.from_featureset(feat_set)
+            >>> type(feat_collect)
+            "acrgis.features.FeatureCollection"
+
+
         """
         if not isinstance(fset, FeatureSet):
             raise ValueError
@@ -1213,59 +1588,83 @@ class FeatureCollection(Layer):
 
         # region compose layer definition
 
-        fc_layer_definition = {'geometryType' : fset_dict['geometryType'],
-                               'fields' : fset_dict['fields'],
-                               'spatialReference' : fset_dict['spatialReference'],
-                               'objectIdField' : fset.object_id_field_name,
-                               'type' : 'Feature Layer'}
+        fc_layer_definition = {
+            "geometryType": fset_dict["geometryType"],
+            "fields": fset_dict["fields"],
+            "spatialReference": fset_dict["spatialReference"],
+            "objectIdField": fset.object_id_field_name,
+            "type": "Feature Layer",
+        }
 
-        if not 'name' in fc_layer_definition:
+        if not "name" in fc_layer_definition:
             if name:
-                fc_layer_definition['name'] = name.replace(" ", "_")
+                fc_layer_definition["name"] = name.replace(" ", "_")
             else:
-                fc_layer_definition['name'] = "a" + uuid.uuid4().hex[:5]
+                fc_layer_definition["name"] = "a" + uuid.uuid4().hex[:5]
 
-        if not 'id' in fc_layer_definition:
-            fc_layer_definition['id'] = 0
+        if not "id" in fc_layer_definition:
+            fc_layer_definition["id"] = 0
 
         if not symbol:
-            if fc_layer_definition['geometryType'] == 'esriGeometryPolyline':
-                symbol = {"color": [0, 0, 0, 255],
-                               "width": 1.33,
-                               "type": "esriSLS",
-                               "style": "esriSLSSolid"}
+            if fc_layer_definition["geometryType"] == "esriGeometryPolyline":
+                symbol = {
+                    "color": [0, 0, 0, 255],
+                    "width": 1.33,
+                    "type": "esriSLS",
+                    "style": "esriSLSSolid",
+                }
 
-            elif fc_layer_definition['geometryType'] in ['esriGeometryPolygon', 'esriGeometryEnvelope']:
-                symbol = {"color": [0, 0, 0, 64],
-                               "outline": {
-                                   "color": [0, 0, 0, 255],
-                                   "width": 1.33,
-                                   "type": "esriSLS",
-                                   "style": "esriSLSSolid"},
-                               "type": "esriSFS",
-                               "style": "esriSFSSolid"}
+            elif fc_layer_definition["geometryType"] in [
+                "esriGeometryPolygon",
+                "esriGeometryEnvelope",
+            ]:
+                symbol = {
+                    "color": [0, 0, 0, 64],
+                    "outline": {
+                        "color": [0, 0, 0, 255],
+                        "width": 1.33,
+                        "type": "esriSLS",
+                        "style": "esriSLSSolid",
+                    },
+                    "type": "esriSFS",
+                    "style": "esriSFSSolid",
+                }
 
-            elif fc_layer_definition['geometryType'] in ['esriGeometryPoint', 'esriGeometryMultipoint']:
-                symbol = {"angle": 0,
-                               "xoffset": 0,
-                               "yoffset": 12,
-                               "type": "esriPMS",
-                               "url": "http://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
-                               "contentType": "image/png",
-                               "width": 24,
-                               "height": 24}
+            elif fc_layer_definition["geometryType"] in [
+                "esriGeometryPoint",
+                "esriGeometryMultipoint",
+            ]:
+                symbol = {
+                    "type": "esriSMS",
+                    "color": [226, 29, 145, 158],
+                    "angle": 0,
+                    "xoffset": 0,
+                    "yoffset": 0,
+                    "size": 12,
+                    "style": "esriSMSCircle",
+                    "outline": {
+                        "type": "esriSLS",
+                        "color": [0, 0, 0, 255],
+                        "width": 0.75,
+                        "style": "esriSLSSolid",
+                    },
+                }
 
-        fc_layer_definition['drawingInfo'] = {'renderer':{'type':'simple',
-                                                          'symbol':symbol}
-                                              }
+        fc_layer_definition["drawingInfo"] = {
+            "renderer": {"type": "simple", "symbol": symbol}
+        }
         # endregion
         # compose the feature collection dict
 
-        layers_dict = {'featureSet':{'geometryType':fset_dict['geometryType'],
-                                   'features':fset_dict['features']},
-                    'layerDefinition':fc_layer_definition}
+        layers_dict = {
+            "featureSet": {
+                "geometryType": fset_dict["geometryType"],
+                "features": fset_dict["features"],
+            },
+            "layerDefinition": fc_layer_definition,
+        }
 
-        fc_dict = {'layers':[layers_dict]}
+        fc_dict = {"layers": [layers_dict]}
 
-        #create a FC and return
+        # create a FC and return
         return FeatureCollection(fc_dict)

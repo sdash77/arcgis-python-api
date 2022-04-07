@@ -16,7 +16,7 @@ from arcgis.features.geo._array import GeoArray
 
 _HASARCPY, _HASSHAPELY = None, None
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 def _check_geometry_engine():
     """checks if the geometry engine exists"""
     global _HASARCPY
@@ -24,17 +24,21 @@ def _check_geometry_engine():
     if _HASARCPY is None:
         try:
             import arcpy
+
             _HASARCPY = True
         except:
             _HASARCPY = False
     if _HASSHAPELY is None:
         try:
             import shapely
+
             _HASSHAPELY = True
         except:
             _HASSHAPELY = False
     return _HASARCPY, _HASSHAPELY
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def contains(sdf, other, relation="CLEMENTINI"):
     """
     Indicates if the base geometry contains the comparison geometry.
@@ -58,7 +62,7 @@ def contains(sdf, other, relation="CLEMENTINI"):
                                  PROPER - Boundaries of geometries must not intersect.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -88,11 +92,17 @@ def contains(sdf, other, relation="CLEMENTINI"):
                 ud = ud | dj
         return sdf[ud]
     else:
-        raise ValueError(("Invalid input, please verify that `other` "
-                          "is a Point, Polygon, Polyline, MultiPoint, "
-                          "or Spatially enabled DataFrame"))
+        raise ValueError(
+            (
+                "Invalid input, please verify that `other` "
+                "is a Point, Polygon, Polyline, MultiPoint, "
+                "or Spatially enabled DataFrame"
+            )
+        )
     return None
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def crosses(sdf, other):
     """
 
@@ -112,7 +122,7 @@ def crosses(sdf, other):
     other                        Required Spatially Enabled DataFrame or arcgis.Geometry.  This is the selecting data.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -142,11 +152,17 @@ def crosses(sdf, other):
                 ud = ud | dj
         return sdf[ud]
     else:
-        raise ValueError(("Invalid input, please verify that `other` "
-                          "is a Point, Polygon, Polyline, MultiPoint, "
-                          "or Spatially enabled DataFrame"))
+        raise ValueError(
+            (
+                "Invalid input, please verify that `other` "
+                "is a Point, Polygon, Polyline, MultiPoint, "
+                "or Spatially enabled DataFrame"
+            )
+        )
     return None
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def disjoint(sdf, other):
     """
     Indicates if the base and comparison geometries share no points in common.
@@ -161,7 +177,7 @@ def disjoint(sdf, other):
     other                        Required Spatially Enabled DataFrame or arcgis.Geometry.  This is the selecting data.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -191,11 +207,17 @@ def disjoint(sdf, other):
                 ud = ~(~ud | ~dj)
         return sdf[ud]
     else:
-        raise ValueError(("Invalid input, please verify that `other` "
-                          "is a Point, Polygon, Polyline, MultiPoint, "
-                          "or Spatially enabled DataFrame"))
+        raise ValueError(
+            (
+                "Invalid input, please verify that `other` "
+                "is a Point, Polygon, Polyline, MultiPoint, "
+                "or Spatially enabled DataFrame"
+            )
+        )
     return None
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def equals(sdf, other):
     """
 
@@ -211,7 +233,7 @@ def equals(sdf, other):
     other                        Required Spatially Enabled DataFrame or arcgis.Geometry.  This is the selecting data.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -241,11 +263,17 @@ def equals(sdf, other):
                 ud = ud | dj
         return sdf[ud]
     else:
-        raise ValueError(("Invalid input, please verify that `other` "
-                          "is a Point, Polygon, Polyline, MultiPoint, "
-                          "or Spatially enabled DataFrame"))
+        raise ValueError(
+            (
+                "Invalid input, please verify that `other` "
+                "is a Point, Polygon, Polyline, MultiPoint, "
+                "or Spatially enabled DataFrame"
+            )
+        )
     return None
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def overlaps(sdf, other):
     """
 
@@ -261,7 +289,7 @@ def overlaps(sdf, other):
     other                        Required Spatially Enabled DataFrame or arcgis.Geometry.  This is the selecting data.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -291,11 +319,17 @@ def overlaps(sdf, other):
                 ud = ud | dj
         return sdf[ud]
     else:
-        raise ValueError(("Invalid input, please verify that `other` "
-                          "is a Point, Polygon, Polyline, MultiPoint, "
-                          "or Spatially enabled DataFrame"))
+        raise ValueError(
+            (
+                "Invalid input, please verify that `other` "
+                "is a Point, Polygon, Polyline, MultiPoint, "
+                "or Spatially enabled DataFrame"
+            )
+        )
     return None
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def touches(sdf, other):
     """
 
@@ -314,7 +348,7 @@ def touches(sdf, other):
     other                        Required Spatially Enabled DataFrame or arcgis.Geometry.  This is the selecting data.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -344,11 +378,17 @@ def touches(sdf, other):
                 ud = ud | dj
         return sdf[ud]
     else:
-        raise ValueError(("Invalid input, please verify that `other` "
-                          "is a Point, Polygon, Polyline, MultiPoint, "
-                          "or Spatially enabled DataFrame"))
+        raise ValueError(
+            (
+                "Invalid input, please verify that `other` "
+                "is a Point, Polygon, Polyline, MultiPoint, "
+                "or Spatially enabled DataFrame"
+            )
+        )
     return None
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def within(sdf, other, relation="CLEMENTINI"):
     """
 
@@ -373,7 +413,7 @@ def within(sdf, other, relation="CLEMENTINI"):
                                  PROPER - Boundaries of geometries must not intersect.
     =========================    =========================================================
 
-    :returns: pd.DataFrame (Spatially enabled DataFrame)
+    :return: pd.DataFrame (Spatially enabled DataFrame)
 
     """
     global _HASARCPY, _HASSHAPELY
@@ -403,7 +443,11 @@ def within(sdf, other, relation="CLEMENTINI"):
                 ud = ud | dj
         return sdf[ud]
     else:
-        raise ValueError(("Invalid input, please verify that `other` "
-                          "is a Point, Polygon, Polyline, MultiPoint, "
-                          "or Spatially enabled DataFrame"))
+        raise ValueError(
+            (
+                "Invalid input, please verify that `other` "
+                "is a Point, Polygon, Polyline, MultiPoint, "
+                "or Spatially enabled DataFrame"
+            )
+        )
     return None

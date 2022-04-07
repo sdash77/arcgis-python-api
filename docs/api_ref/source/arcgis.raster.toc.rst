@@ -15,6 +15,27 @@ ImageryLayer
     :members:
     :undoc-members:
 
+ImageryLayerCacheManager
+------------------
+.. autoclass:: arcgis.raster.ImageryLayerCacheManager
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+ImageryTileManager
+------------------
+.. autoclass:: arcgis.raster.ImageryTileManager
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+Raster
+------
+.. autoclass:: arcgis.raster.Raster
+    :inherited-members:
+    :members:
+    :undoc-members:
+
 RasterCatalogItem
 -----------------
 .. autoclass:: arcgis.raster.RasterCatalogItem
@@ -29,13 +50,19 @@ RasterManager
     :members:
     :undoc-members:
 
-ImageryTileManager
-------------------
-.. autoclass:: arcgis.raster.ImageryTileManager
+RasterCollection
+----------------
+.. autoclass:: arcgis.raster.RasterCollection
     :inherited-members:
     :members:
     :undoc-members:
 
+RasterInfo
+----------
+.. autoclass:: arcgis.raster.RasterInfo
+    :inherited-members:
+    :members:
+    :undoc-members:
 
 
 Submodules
@@ -48,3 +75,4 @@ Submodules
    arcgis.raster.functions.gbl
    arcgis.raster.orthomapping
    arcgis.raster.functions.RFT
+   arcgis.raster.utils

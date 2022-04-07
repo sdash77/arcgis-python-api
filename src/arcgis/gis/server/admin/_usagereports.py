@@ -8,6 +8,7 @@ from __future__ import print_function
 import json
 import six
 from .._common import BaseServer
+from urllib.parse import quote
 
 ########################################################################
 class ReportManager(BaseServer):
@@ -15,17 +16,15 @@ class ReportManager(BaseServer):
     A utility class for managing usage reports for ArcGIS Server.
 
     """
+
     _con = None
     _json_dict = None
     _url = None
     _json = None
     _metrics = None
     _reports = None
-    #----------------------------------------------------------------------
-    def __init__(self,
-                 url,
-                 gis,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis, initialize=False):
         """Constructor
 
         ==================     ====================================================================
@@ -41,22 +40,26 @@ class ReportManager(BaseServer):
 
         """
         super(ReportManager, self).__init__(url=url, gis=gis)
-        if url.lower().endswith('/usagereports'):
+        if url.lower().endswith("/usagereports"):
             self._url = url
         else:
             self._url = url + "/usagereports"
         self._con = gis
         if initialize:
             self._init(gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def list(self):
-        """Retrieves a list of reports on the server.
+        """
+        Retrieves a list of reports on the server.
 
         :return:
             A list of reports found.
@@ -65,14 +68,14 @@ class ReportManager(BaseServer):
         if self.properties is None:
             self._init()
         self._reports = []
-        if isinstance(self.properties['metrics'], list):
-            for r in self.properties['metrics']:
-                url = self._url + "/%s" % six.moves.urllib.parse.quote(r['reportname'])
-                self._reports.append(Report(url=url,
-                                            gis=self._con))
+        if isinstance(self.properties["metrics"], list):
+            for r in self.properties["metrics"]:
+                url = f"{self._url}/{quote(str(r['reportname']))}"
+                self._reports.append(Report(url=url, gis=self._con))
                 del url
         return self._reports
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def settings(self):
         """
@@ -88,17 +91,12 @@ class ReportManager(BaseServer):
         in days), unless the max_history parameter is 0, for which the
         statistics are persisted forever.
         """
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         url = self._url + "/settings"
-        return self._con.get(path=url,
-                             params=params)
-    #----------------------------------------------------------------------
-    def edit(self,
-             interval,
-             enabled=True,
-             max_history=0):
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    def edit(self, interval, enabled=True, max_history=0):
         """
         Edits the usage reports settings that are applied to the entire site.
 
@@ -126,50 +124,87 @@ class ReportManager(BaseServer):
 
         """
         params = {
-            "f" : "json",
-            "maxHistory" : max_history,
-            "enabled" : enabled,
-            "samplingInterval" : interval
+            "f": "json",
+            "maxHistory": max_history,
+            "enabled": enabled,
+            "samplingInterval": interval,
         }
         url = self._url + "/settings/edit"
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
-    def create(self,
-               reportname,
-               queries,
-               metadata=None,
-               since="LAST_DAY",
-               from_value=None,
-               to_value=None,
-               aggregation_interval=None):
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        reportname,
+        queries,
+        metadata=None,
+        since="LAST_DAY",
+        from_value=None,
+        to_value=None,
+        aggregation_interval=None,
+    ):
         """
         Creates a new usage report. A usage report is created by submitting
         a JSON representation of the usage report to this operation.
+        See `CreateUsageReport <https://developers.arcgis.com/rest/enterprise-administration/server/createusagereport.htm>`_
+        for details on the REST request bundled by this method.
 
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
         reportname               Required string. The unique name of the report.
         --------------------     --------------------------------------------------------------------
-        queries                  Required string. A list of queries for which to generate the report.
-                                 Specify the list as an array of JSON objects representing the queries.
-                                 Each query specifies the list of metrics to be queried for a given
-                                 set of resourceURIs.
+        queries                  Required list of Python dictionaries for which to generate the
+                                 report. Each dictionary has two keys: ``resourceURIs`` and
+                                 ``metrics``
 
-                                 The queries parameter has the following sub-parameters:
+                                 .. code-block:: python
 
-                                 - resourceURIs -- Comma-separated list of resource URIs for which
-                                   to report metrics. This specifies the services or folders for
-                                   which to gather metrics. The resourceURI is formatted as below:
-                                    - services/ -- Entire Site
-                                    - services/Folder/ -- Folder within a Site. Reports metrics
-                                      aggregated across all services within that Folder and Sub-Folders.
-                                    - services/Folder/ServiceName.ServiceType -- Service in a
-                                      specified folder, for example:
-                                         - services/Map_bv_999.MapServer
-                                         - services/ServiceName.ServiceType
-                                    - Service in the root folder, for example: Map_bv_999.MapServer.
+                                     # Usage Example
+
+                                     [{"resourceURIs": ["/services/Folder_name/",
+                                                        "Forest_loss.FeatureServer"],
+                                       "metrics": ["RequestCount,RequestsFailed"]}]
+
+                                 Each key's corresponding value is a list of strings specifying
+                                 a resource for which to gather metrics, or the metrics to
+                                 gather, respectively.
+
+                                 - ``resourceURIs`` --
+                                     Comma-separated list that specifies the services or folders
+                                     for which to gather metrics, formatted as below:
+
+                                     - ``services/`` -
+                                       Entire Site
+                                     - ``services/Folder/`` -
+                                       Folder within a Site. Reports metrics aggregated across all
+                                       services within that folder and any sub-folders.
+                                     - ``services/Folder/ServiceName.ServiceType`` -
+                                       Service in a specified folder.
+                                        - services/Folder_name/Map_bv_999.MapServer
+                                     - ``service`` -
+                                       If in the root folder
+                                        - Map_bv_999.MapServer
+
+                                 - ``metrics`` --
+                                     Comma-separated string of specific measures to gather.
+
+                                     - ``RequestCount`` —
+                                       the number of requests received
+                                     - ``RequestsFailed`` —
+                                       the number of requests that failed
+                                     - ``RequestsTimedOut`` —
+                                       the number of requests that timed out
+                                     - ``RequestMaxResponseTime`` —
+                                       the maximum response time
+                                     - ``RequestAvgResponseTime`` —
+                                       the average response time
+                                     - ``ServiceActiveInstances`` —
+                                       the maximum number of active (running) service instances sampled at 1 minute
+                                       intervals for a specified service
+                                     - ``ServiceRunningInstancesMax`` — the maximum number of active (running) service
+                                       instances, sampled at one-minute intervals for a specified service. If you
+                                       include this metric, it must be the only metric included in the report.
         --------------------     --------------------------------------------------------------------
         metadata                 Optional string. Any JSON object representing presentation tier
                                  data for the usage report, such as report title, colors,
@@ -185,21 +220,40 @@ class ReportManager(BaseServer):
         since                    Optional string. The time duration of the report. The supported
                                  values are: LAST_DAY, LAST_WEEK, LAST_MONTH, LAST_YEAR, CUSTOM
 
-                                 - LAST_DAY represents a time range spanning the previous 24 hours.
+                                 - ``LAST_DAY`` represents a time range spanning the previous 24 hours.
                                    This is the default value.
-                                 - LAST_WEEK represents a time range spanning the previous 7 days.
-                                 - LAST_MONTH represents a time range spanning the previous 30 days.
-                                 - LAST_YEAR represents a time range spanning the previous 365 days.
-                                 - CUSTOM represents a time range that is specified using the from
+                                 - ``LAST_WEEK`` represents a time range spanning the previous 7 days.
+                                 - ``LAST_MONTH`` represents a time range spanning the previous 30 days.
+                                 - ``LAST_YEAR`` represents a time range spanning the previous 365 days.
+                                 - ``CUSTOM`` represents a time range that is specified using the from
                                    and to parameters.
         --------------------     --------------------------------------------------------------------
-        from_value               Optional string. Only valid when *since* is CUSTOM. The timestamp
-                                 (milliseconds since UNIX epoch, namely January 1, 1970, 00:00:00 GMT)
+        from_value               Optional integer. Only valid when ``since`` is CUSTOM. The timestamp
+                                 in milliseconds (since January 1, 1970, 00:00:00 GMT, the Unix epoch)
                                  for the beginning period of the report.
+
+                                 .. code-block:: python
+
+                                    # usage Example:
+
+                                    import datetime as dt
+
+                                    >>> sept1_2020 = int(dt.datetime(2020, 9, 1).timestamp()) * 1000
+                                        sept1_2020
+
+                                        1598943600000
         --------------------     --------------------------------------------------------------------
-        to_value                 Optional string. Only valid when *since* is CUSTOM. The timestamp
-                                 (milliseconds since UNIX epoch, namely January 1, 1970, 00:00:00 GMT)
+        to_value                 Optional integer. Only valid when ``since`` is CUSTOM. The timestamp
+                                 in milliseconds (since January 1, 1970, 00:00:00 GMT, the Unix epoch)
                                  for the ending period of the report.
+
+                                 .. code-block:: python
+
+                                    # usage Example:
+
+                                    import datetime as dt
+
+                                    now = int(dt.datetime.now().timestamp()) * 1000
         --------------------     --------------------------------------------------------------------
         aggregation_interval     Optional string. The aggregation interval in minutes. Server metrics
                                  are aggregated and returned for time slices aggregated using the
@@ -211,11 +265,11 @@ class ReportManager(BaseServer):
                                  When the aggregation_interval is not specified, the following defaults
                                  are used:
 
-                                   - LAST_DAY: 30 minutes
-                                   - LAST_WEEK: 4 hours
-                                   - LAST_MONTH: 24 hours
-                                   - LAST_YEAR: 1 week
-                                   - CUSTOM: 30 minutes up to 1 day, 4 hours up to 1 week, 1
+                                   - ``LAST_DAY``: 30 minutes
+                                   - ``LAST_WEEK``: 4 hours
+                                   - ``LAST_MONTH``: 24 hours
+                                   - ``LAST_YEAR``: 1 week
+                                   - ``CUSTOM``: 30 minutes up to 1 day, 4 hours up to 1 week, 1
                                    day up to 30 days, and 1 week for longer periods.
 
                                  If the interval specified in Usage Reports Settings is more than
@@ -224,99 +278,106 @@ class ReportManager(BaseServer):
 
 
         :return:
-            A JSON indicating success.
+            A :class:`~arcgis.gis.server.Report` object.
 
 
         .. code-block:: python
 
             USAGE EXAMPLE:
 
-            >>> queryObj = [{
-                "resourceURIs": ["services/Map_bv_999.MapServer"],
-                "metrics": ["RequestCount"]
-                }]
-            >>> obj.createReport(
-                reportname="SampleReport",
-                queries=queryObj,
-                metadata="This could be any String or JSON Object.",
-                since="LAST_DAY"
-                )
+            import datetime as dt
+            from arcgis.gis import GIS
+
+            >>> gis = GIS(profile="your_ent_profile", verify_cert=False)
+
+            >>> gis_servers = gis.admin.servers.list()
+
+            >>> gis_server = gis_servers[1]
+
+            >>> now = int(dt.datetime.now().timestamp()) * 1000
+            >>> sept1_2020 = int(dt.datetime(2020, 9, 1).timestamp()) * 1000
+
+            >>> query_obj = [{"resourceURIs": ["services/Map_bv_999.MapServer"],
+                              "metrics": ["RequestCount"]}]
+
+            >>> r = gis_server.usage.create(reportname="SampleReport",
+                                            queries=query_obj,
+                                            metadata="This could be any String or JSON Object.",
+                                            since="CUSTOM",
+                                            from_value=sept1_2020,
+                                            to_value=now)
+            >>> r
+
+                <Report at https://server_url:6443/arcgis/admin/usagereports/SampleReport>
         """
         url = self._url + "/add"
         temp = False
         params = {
-
-            "reportname" : reportname,
-            "since" : since,
+            "reportname": reportname,
+            "since": since,
         }
-        if  not metadata:
-            params['metadata'] = {
-                "temp" : temp,
-                "title" : reportname,
-                "managerReport" : False,
-
+        if not metadata:
+            params["metadata"] = {
+                "temp": temp,
+                "title": reportname,
+                "managerReport": False,
             }
         else:
-            params['metadata'] = metadata
+            params["metadata"] = metadata
         if isinstance(queries, dict):
             params["queries"] = [queries]
         elif isinstance(queries, list):
             params["queries"] = queries
         if aggregation_interval:
-            params['aggregationInterval'] = aggregation_interval
+            params["aggregationInterval"] = aggregation_interval
         if since.lower() == "custom":
-            params['to'] = to_value
-            params['from'] = from_value
-        p = {"f" : "json",'usagereport' : params}
-        res = self._con.post(path=url,
-                             postdata=p)
+            params["to"] = to_value
+            params["from"] = from_value
+        p = {"f": "json", "usagereport": params}
+        res = self._con.post(path=url, postdata=p)
         #  Refresh the metrics object
         self._init()
         for report in self.list():
-            if report.reportname.lower() == reportname.lower():
+            if str(report.reportname).lower() == reportname.lower():
                 return report
         return res
-    #----------------------------------------------------------------------
-    def quick_report(self,
-                     since="LAST_WEEK",
-                     queries="services/",
-                     metrics="RequestsFailed"):
+
+    # ----------------------------------------------------------------------
+    def quick_report(
+        self, since="LAST_WEEK", queries="services/", metrics="RequestsFailed"
+    ):
         """
-        The operation quick_report generates an on the fly usage report for
-        a service, services, or folder.
+        Generates an on the fly usage report for a service, services, or folder.
 
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
         since                    Optional string. The time duration of the report. The supported
-                                 values are: LAST_DAY, LAST_WEEK, LAST_MONTH, LAST_YEAR, CUSTOM
+                                 values are: LAST_DAY, LAST_WEEK, LAST_MONTH, or LAST_YEAR.
 
-                                 - LAST_DAY represents a time range spanning the previous 24 hours.
+                                 - ``LAST_DAY`` represents a time range spanning the previous 24 hours.
                                    This is the default value.
-                                 - LAST_WEEK represents a time range spanning the previous 7 days.
-                                 - LAST_MONTH represents a time range spanning the previous 30 days.
-                                 - LAST_YEAR represents a time range spanning the previous 365 days.
-                                 - CUSTOM represents a time range that is specified using the from
-                                   and to parameters.
+                                 - ``LAST_WEEK`` represents a time range spanning the previous 7 days.
+                                 - ``LAST_MONTH`` represents a time range spanning the previous 30 days.
+                                 - ``LAST_YEAR`` represents a time range spanning the previous 365 days.
         --------------------     --------------------------------------------------------------------
-        queries                  Required string. A list of queries for which to generate the report.
-                                 Specify the list as an array of JSON objects representing the queries.
-                                 Each query specifies the list of metrics to be queried for a given
-                                 set of resourceURIs.
+        queries                  Required string. A string of resourceURIs for which to generate the report.
+                                 Specified as a comma-separated sting of services or folders for which to
+                                 gather metrics.
 
-                                 The queries parameter has the following sub-parameters:
-
-                                 - resourceURIs -- Comma-separated list of resource URIs for which
-                                   to report metrics. This specifies the services or folders for
-                                   which to gather metrics. The resourceURI is formatted as below:
-                                    - services/ -- Entire Site
-                                    - services/Folder/ -- Folder within a Site. Reports metrics
+                                    - ``services/`` -- Entire Site
+                                    - ``services/Folder/`` -- Folder within a Site. Reports metrics
                                       aggregated across all services within that Folder and Sub-Folders.
-                                    - services/Folder/ServiceName.ServiceType -- Service in a
+                                    - ``services/Folder/ServiceName.ServiceType`` -- Service in a
                                       specified folder, for example:
-                                         - services/Map_bv_999.MapServer
-                                         - services/ServiceName.ServiceType
-                                    - Service in the root folder, for example: Map_bv_999.MapServer.
+                                         - services/Folder_Name/Map_bv_999.MapServer
+                                         - services/Fodler_Name/ServiceName.ServiceType
+                                    - ``root folder`` -- Service in the root folder
+                                         - Map_bv_999.MapServer.
+
+                                 .. code-block:: python
+
+                                     queries="services/Hydroligic_Data/Lake_algae.FeatureServer,services/Mountains"
         --------------------     --------------------------------------------------------------------
         metrics                  Optional string. Comma separated list of metrics to be reported.
 
@@ -330,34 +391,63 @@ class ReportManager(BaseServer):
                                     - ServiceActiveInstances -- the maximum number of active
                                       (running) service instances sampled at 1 minute intervals,
                                       for a specified service
-        ====================     ====================================================================
 
+                                 .. code-block:: python
+
+                                     metrics="RequestCount,RequestsFailed"
+        ====================     ====================================================================
 
         :return:
             A Python dictionary of data on a successful query.
 
+        .. code-block:: python
+
+           # Usage Example:
+
+           >>> gis = GIS(profile="my_own_portal", verify_cert=False)
+
+           >>> gis_servers = gis.admin.servers.list()
+
+           >>> srv = gis_servers[0]
+
+           >>> query_string = "services/Forests/Forests_degraded_2000.MapServer,services/Lakes/Lakes_drought_levels.MapServer"
+           >>> qk_report = srv.usage.quick_report(since = "LAST_MONTH",
+                                                  queries = query_string,
+                                                  metrics = "RequestCount,RequestsFailed")
+
+           >>> qk_report
+
+               {'report': {'reportname': '1fa828eb31664485ae5c25c76c86e28d',
+                           'metadata': '{"temp":true,"title":"1fa828eb31664485ae5c25c76c86e28d","managerReport":false}',
+                           'time-slices': [1598914800000, 1599001200000, 1599087600000, ... 1601420400000],
+                           'report-data': [[{'resourceURI': 'services/Forests/Forests_degraded_2000.MapServer',
+                                             'metric-type': 'RequestCount', 'data': [None, 17, 928, ... 20]},
+                                            {'resourceURI': 'services/Forests/Forests_degraded_2000.MapServer',
+                                             'metric-type': 'RequestsFailed', 'data': [None, 225, None, ... 0]},
+                                            {'resourceURI': 'services/Lakes/Lakes_drought_levels.MapServer',
+                                             'metric-type': 'RequestCount', 'data': [0, 0, 7, ... 71]},
+                                            {'resourceURI': 'services/Lakes/Lakes_drought_levels.MapServer',
+                                             'metric-type': 'RequestsFailed', 'data': [None, None, 1 ... , 0]}]]}}
         """
         from uuid import uuid4
-        queries = {
-            "resourceURIs": queries.split(','),
-            "metrics" : metrics.split(',')
-        }
+
+        queries = {"resourceURIs": queries.split(","), "metrics": metrics.split(",")}
         reportname = uuid4().hex
         metadata = {
-                "temp" : True,
-                "title" : reportname,
-                "managerReport" : False,
-
-            }
-        res = self.create(reportname=reportname,
-                                       queries=queries,
-                                       since=since,
-                                       metadata=metadata)
+            "temp": True,
+            "title": reportname,
+            "managerReport": False,
+        }
+        res = self.create(
+            reportname=reportname, queries=queries, since=since, metadata=metadata
+        )
         if isinstance(res, Report):
             data = res.query()
             res.delete()
             return data
         return res
+
+
 ########################################################################
 class Report(BaseServer):
     """
@@ -372,6 +462,7 @@ class Report(BaseServer):
     gathered for a collection of server resources, such as folders and
     services).
     """
+
     _con = None
     _url = None
     _json = None
@@ -382,9 +473,8 @@ class Report(BaseServer):
     _aggregationInterval = None
     _queries = None
     _metadata = None
-    #----------------------------------------------------------------------
-    def __init__(self, url, gis,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis, initialize=False):
         """
         Constructor
 
@@ -405,7 +495,8 @@ class Report(BaseServer):
         self._url = url
         if initialize:
             self._init()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def edit(self):
         """
         Edits the usage report. To edit a usage report, submit
@@ -426,18 +517,15 @@ class Report(BaseServer):
             "queries": self._queries,
             "since": self._since,
             "metadata": self._metadata,
-            "to" : self._to,
-            "from" : self._from,
-            "aggregationInterval" : self._aggregationInterval
+            "to": self._to,
+            "from": self._from,
+            "aggregationInterval": self._aggregationInterval,
         }
-        params = {
-            "f" : "json",
-            "usagereport" : json.dumps(usagereport_dict)
-        }
+        params = {"f": "json", "usagereport": json.dumps(usagereport_dict)}
         url = self._url + "/edit"
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Deletes this usage report.
@@ -447,11 +535,11 @@ class Report(BaseServer):
         """
         url = self._url + "/delete"
         params = {
-            "f" : "json",
+            "f": "json",
         }
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def query(self, query_filter=None):
         """
         Retrieves server usage data for this report. This operation
@@ -496,10 +584,6 @@ class Report(BaseServer):
         """
         if query_filter is None:
             query_filter = {"machines": "*"}
-        params = {
-            "f" : "json",
-            "filter" : query_filter,
-            "filterType" : 'json'
-        }
+        params = {"f": "json", "filter": query_filter, "filterType": "json"}
         url = self._url + "/data"
         return self._con.get(path=url, params=params)
