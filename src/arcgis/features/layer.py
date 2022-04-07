@@ -2558,7 +2558,7 @@ class FeatureLayer(Layer):
         :returns: Dict[str, Any]
 
         """
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             if "infoInEstimates" in self.properties:
                 url = self._url + "/getEstimates"
                 params = {"f": "json"}
