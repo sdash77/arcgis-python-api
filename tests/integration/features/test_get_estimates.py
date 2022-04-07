@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
