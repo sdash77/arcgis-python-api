@@ -344,16 +344,17 @@ class Geocoder(_GISResource):
 
     def _batch_geocode(
         self,
-        addresses,
-        source_country=None,
-        category=None,
-        out_sr=None,
-        as_featureset=False,
-        match_out_of_range=True,
-        location_type="street",
-        search_extent=None,
-        lang_code="EN",
-        preferred_label_values=None,
+        addresses: list,
+        source_country: Optional[str] = None,
+        category: Optional[str] = None,
+        out_sr: Optional[str] = None,
+        as_featureset: Optional[bool] = False,
+        match_out_of_range: Optional[bool] = True,
+        location_type: Optional[str] = "street",
+        search_extent: Optional[str] = None,
+        lang_code: Optional[str] = "EN",
+        preferred_label_values: Optional[str] = None,
+        out_fields: Optional[str] = None,
     ):
         """
         The batch_geocode() method geocodes an entire list of addresses.
@@ -447,7 +448,8 @@ class Geocoder(_GISResource):
             params["langCode"] = lang_code
             if preferred_label_values is not None:
                 params["preferredLabelValues"] = preferred_label_values
-
+            if out_fields is not None:
+                params["outFields"] = out_fields
             resp = self._con.post(url, params)
             if resp is not None and as_featureset:
                 sr = resp["spatialReference"]
@@ -1482,6 +1484,7 @@ def batch_geocode(
     search_extent: Optional[Union[list[dict[str, Any], dict[str, Any]]]] = None,
     lang_code: str = "EN",
     preferred_label_values: Optional[str] = None,
+    out_fields: Optional[str] = None,
 ):
     """
     The ``batch_geocode`` function geocodes an entire list of addresses.
@@ -1578,6 +1581,9 @@ def batch_geocode(
                                   address component values should be included in output fields. Supports
                                   a single value or a comma-delimited collection of values as input.
                                   e.g. ='matchedCity,primaryStreet'
+    -------------------------     ----------------------------------------------------------------
+    out_fields                    Optional String. A string of comma seperated fields names used to
+                                  limit the return attributes of a geocoded location.
     =========================     ================================================================
 
     .. code-block:: python
@@ -1611,6 +1617,7 @@ def batch_geocode(
         search_extent,
         lang_code,
         preferred_label_values,
+        out_fields,
     )
 
 
