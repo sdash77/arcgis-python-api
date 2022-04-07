@@ -46,7 +46,7 @@ class Test_Geocoder_Outfields(unittest.TestCase):
                 as_featureset=True,
                 match_out_of_range=True,
             )
-            assert batched.sdf.columns > 5  # The amount varies
+            assert len(batched.sdf.columns) > 5  # The amount varies
 
     def test_out_fields(self):
         """tests without the out_fields parameters"""
