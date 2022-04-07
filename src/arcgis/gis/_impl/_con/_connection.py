@@ -525,6 +525,8 @@ class Connection(object):
                 pauth = None
                 if self._portal_connection:
                     pauth = self._portal_connection._con._auth
+                if self._token_url is None:
+                    self._check_product()
                 self._session.auth = EsriGenTokenAuth(
                     token_url=self._token_url,
                     referer=self._referer,
@@ -538,6 +540,8 @@ class Connection(object):
                 )
             else:
                 if self._use_gen_token:
+                    if self._token_url is None:
+                        self._check_product()
                     self._session.auth = EsriGenTokenAuth(
                         token_url=self._token_url,
                         referer=self._referer,
