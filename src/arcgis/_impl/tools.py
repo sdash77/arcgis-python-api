@@ -2061,7 +2061,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         if route_data_item:
             route_data_item = {"itemId": route_data_item.itemid}
-       
+
         if estimate:
             params = {}
             if context:
