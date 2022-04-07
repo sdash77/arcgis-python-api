@@ -3050,9 +3050,11 @@ def predict_batch_h5(self, dl, output_path, progressor):
             tile = tile[None]
 
         fname = np.array(dl.dataset.filenames)[tile[:, 0]]
-        fname, unique_index = np.unique(fname, return_index=True)
+        _, unique_index = np.unique(fname, return_index=True)
+        # get unique name form sorted index in actual array
+        fname = [fname[i] for i in np.sort(unique_index)]
         # add batch_size for spliting prediction till last batch number
-        unique_index = list(unique_index) + [dl.batch_size]
+        unique_index = list(np.sort(unique_index)) + [dl.batch_size]
         for i, ufname in enumerate(fname):
 
             if ufname != current_file_name:
