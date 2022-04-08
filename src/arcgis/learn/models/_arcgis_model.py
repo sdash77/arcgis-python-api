@@ -371,8 +371,9 @@ def _get_tail(model):
 
 
 def _get_ms_tail(tail, data, type_init="random"):
+    in_chanls = len(data._extract_bands)
     new_tail = nn.Conv2d(
-        in_channels=len(data._extract_bands),
+        in_channels=in_chanls,
         out_channels=tail.out_channels,
         kernel_size=tail.kernel_size,
         stride=tail.stride,
@@ -382,7 +383,16 @@ def _get_ms_tail(tail, data, type_init="random"):
         bias=tail.bias is not None,
         padding_mode=tail.padding_mode,
     )
-    avg_weights = tail.weight.data.mean(dim=1)
+    # referred from https://github.com/rwightman/pytorch-image-models/blob/7c67d6aca992f039eece0af5f7c29a43d48c00e4/timm/models/helpers.py#L143
+    if in_chanls == 1:
+        new_tail.weight.data = tail.weight.data.float().sum(dim=1, keepdim=True)
+    else:
+        repeat = int(math.ceil(in_chanls / 3))
+        new_tail.weight.data = (
+            (tail.weight.data.float().repeat(1, repeat, 1, 1)[:, :in_chanls, :, :])
+            * 3
+            / float(in_chanls)
+        )
     for i, j in enumerate(data._extract_bands):
         band = str(data._bands[j]).lower()
         b = get_band_mapping(band)  # rgb_map.get(band, None)
