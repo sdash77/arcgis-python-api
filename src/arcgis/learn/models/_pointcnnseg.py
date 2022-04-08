@@ -375,12 +375,14 @@ class PointCNN(ArcGISModel):
         _emd_template["DataAttributes"][
             "background_classcode"
         ] = self._data.background_classcode
-        
-        if hasattr(self.learn.data, "statistics") and self.learn.data.statistics["parameters"].get(
-            "excludedClasses", False
-        ):
-            _emd_template["excludedClasses"] = self.learn.data.statistics["parameters"]["excludedClasses"]
-            
+
+        if hasattr(self.learn.data, "statistics") and self.learn.data.statistics[
+            "parameters"
+        ].get("excludedClasses", False):
+            _emd_template["excludedClasses"] = self.learn.data.statistics["parameters"][
+                "excludedClasses"
+            ]
+
         if self._data.pc_type == "PointCloud_TF":
             _emd_template["DataAttributes"][
                 "extra_feat_indexes"
