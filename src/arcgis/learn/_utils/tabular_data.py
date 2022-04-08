@@ -836,7 +836,7 @@ class TabularDataObject(object):
                 seq_len, False, False
             )
 
-            n_items = rows ** 2
+            n_items = rows**2
             if n_items > len(X_train):
                 n_items = len(X_train)
 
@@ -1147,7 +1147,8 @@ class TabularDataObject(object):
                             value = raster_value[0][0]
                         else:  # Polygon
                             import random
-                            value = [random.uniform(0.3,0.7)]
+
+                            value = [random.uniform(0.3, 0.7)]
                         for i in range(len(value)):
                             if i == 0:
                                 rasters_data[raster.name].append(value[i])
