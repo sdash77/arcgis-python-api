@@ -13,7 +13,8 @@ _Image = LazyLoader("PIL.Image")
 _io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
 
-
+class Error(Exception):
+    pass
 class TextStyles(Enum):
     """
     Represents the Supported Text Styles Type Enumerations.
@@ -1256,6 +1257,54 @@ class Map(object):
 
     # ----------------------------------------------------------------------
     @property
+    def extent(self):
+        """
+        Get/Set the extent for the map in the story.
+
+        An extent dictionary is passed in. If you have an extent to use from a bookmark,
+        find this extent by using the bookmark property on the webmap. The
+        `map` property on this class will return the Web Map Item being used.
+        By passing this item into the :class:`~arcgis.mapping.WebMap` Class you can retrieve a list of all
+        bookmarks and their extents with the `bookmarks` property.
+
+        ==================  ========================================
+        **Argument**        **Description**
+        ------------------  ----------------------------------------
+        extent              A dictionary representing the extent of 
+                            the map.
+
+                            Example: 
+                            {'spatialReference': {'latestWkid': 3857, 'wkid': 102100}, 
+                            'xmin': -609354.6306080809, 
+                            'ymin': 2885721.2797636474, 
+                            'xmax': 6068184.160383142, 
+                            'ymax': 6642754.094035632}
+        ==================  ========================================
+
+        :return:
+            A dictionary depicting the extent of the map.
+        """   
+        if self._check_node() is True:
+            if "extent" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["extent"]
+            else:
+                return self._story._properties["resources"][self.resource_node]["data"]["extent"]
+
+    # ----------------------------------------------------------------------
+    @extent.setter
+    def extent(self, extent:dict):
+        # The properties found in the resource node are the original settings of the webmap
+        # When a user edits properties, it is the node dict that changes, not resource dict.
+        if isinstance(extent, dict):
+            if not all (k in extent for k in ("xmin","xmax", "ymin", "ymax")):
+                raise Error("Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'")
+            if "spatialReference" not in extent:
+                extent["spatialReference"] = {"wkid": 4326, "latestWkid": 4326}
+            self._story._properties["nodes"][self.node]["data"]["extent"] = extent
+        return self.extent
+
+    # ----------------------------------------------------------------------
+    @property
     def caption(self):
         """
         Get/Set the caption property for the map.
@@ -1311,7 +1360,7 @@ class Map(object):
         """
         Get/Set the display type of the map.
 
-        ``Values: "standard" | "wide" | "full" | "float"``
+        ``Values: "standard" | "wide" | "full" | "float right" |"float left"``
         """
         if self._check_node() is True:
             if "config" in self._story._properties["nodes"][self.node]:
@@ -1323,7 +1372,15 @@ class Map(object):
     @display.setter
     def display(self, display):
         if self._check_node() is True:
-            self._story._properties["nodes"][self.node]["config"]["size"] = display
+            if "float" in display.lower():
+                self._story._properties["nodes"][self.node]["config"]["size"] = "float"
+                if "right" in display.lower():
+                    self._story._properties["nodes"][self.node]["config"]["floatAlignment"] = "end"
+                else:
+                    self._story._properties["nodes"][self.node]["config"]["floatAlignment"] = "start"
+            else:
+                self._story._properties["nodes"][self.node]["config"]["size"] = display.lower()
+                self._story._properties["nodes"][self.node]["config"].pop("floatAlignment", None)
             return self.display
 
     # ----------------------------------------------------------------------
