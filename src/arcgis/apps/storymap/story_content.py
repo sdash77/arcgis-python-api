@@ -13,8 +13,6 @@ _Image = LazyLoader("PIL.Image")
 _io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
 
-class Error(Exception):
-    pass
 class TextStyles(Enum):
     """
     Represents the Supported Text Styles Type Enumerations.
@@ -1237,7 +1235,8 @@ class Map(object):
         ==================  ========================================
 
         .. note::
-            Only replace Map with a new map of same type.
+            Only replace a Map with a new map of same type. Cannot replace a
+            2D map with 3D.
 
         :return:
             The item id for the map that is being used.
@@ -1297,11 +1296,50 @@ class Map(object):
         # When a user edits properties, it is the node dict that changes, not resource dict.
         if isinstance(extent, dict):
             if not all (k in extent for k in ("xmin","xmax", "ymin", "ymax")):
-                raise Error("Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'")
+                raise ValueError("Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'")
             if "spatialReference" not in extent:
                 extent["spatialReference"] = {"wkid": 4326, "latestWkid": 4326}
             self._story._properties["nodes"][self.node]["data"]["extent"] = extent
         return self.extent
+
+    # ----------------------------------------------------------------------
+    @property
+    def center(self):
+        """
+        Get/Set the center for the map in the story.
+
+        ==================  ========================================
+        **Argument**        **Description**
+        ------------------  ----------------------------------------
+        center              A dictionary representing the center of 
+                            the map.
+
+                            Example: 
+                            {'spatialReference': {'latestWkid': 3857, 'wkid': 102100}, 
+                            'x': 1726560.9537862882, 
+                            'y': 5786659.377241888, 
+                            }
+        ==================  ========================================
+
+        :return:
+            A dictionary depicting the center of the map.
+        """   
+        if self._check_node() is True:
+            if "center" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["center"]
+            else:
+                return self._story._properties["resources"][self.resource_node]["data"]["center"]
+
+    # ----------------------------------------------------------------------
+    @center.setter
+    def center(self, center:dict):
+        # The properties found in the resource node are the original settings of the webmap
+        # When a user edits properties, it is the node dict that changes, not resource dict.
+        if isinstance(center, dict):
+            if not all (k in center for k in ("xmin","xmax", "ymin", "ymax")):
+                raise ValueError("Center dictionary missing one or more of these keys: 'x', 'y', 'spatioalReference'")
+            self._story._properties["nodes"][self.node]["data"]["center"] = center
+        return self.center
 
     # ----------------------------------------------------------------------
     @property
@@ -1402,10 +1440,6 @@ class Map(object):
                 "map": self.resource_node,
                 "caption": "" if caption is None else caption,
                 "alt": "" if alt_text is None else alt_text,
-                "extent": self._extent,
-                "center": self._center,
-                "zoom": 2,
-                "viewpoint": self._viewpoint,
             },
             "config": {"size": display},
         }
@@ -1450,23 +1484,28 @@ class Map(object):
         ):
             raise ValueError("New Map must be of same type as the exisiting map.")
 
-        # Get all the old properties but update with new map
+        # Get all the old properties but update with new map where needed
+        
+        # remove old resource node
         self._story._properties["resources"][
             new_map.resource_node
         ] = self._story._properties["resources"].pop(self.resource_node)
+        # assign new resource node
         self.resource_node = new_map.resource_node
+        # set the new item id in the story resources dictionary for this resource
         self._story._properties["resources"][new_map.resource_node]["data"][
             "itemId"
         ] = new_map._path.id
+        # set the new map layers in the story resources dict for this resource
         self._story._properties["resources"][new_map.resource_node]["data"][
             "mapLayers"
         ] = new_map._map_layers
-        # Update path to resource node
+        # Update path to resource node in the node dictionary
         self._story._properties["nodes"][self.node]["data"][
             "map"
         ] = new_map.resource_node
 
-        # Add for Web Scene
+        # Extra necessary updates when it is a Web Scene (3D Map)
         if self._type == "Web Scene":
             self._story._properties["resources"][self.resource_node]["data"][
                 "lightingDate"
