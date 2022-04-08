@@ -13,6 +13,7 @@ _Image = LazyLoader("PIL.Image")
 _io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
 
+
 class TextStyles(Enum):
     """
     Represents the Supported Text Styles Type Enumerations.
@@ -1269,34 +1270,38 @@ class Map(object):
         ==================  ========================================
         **Argument**        **Description**
         ------------------  ----------------------------------------
-        extent              A dictionary representing the extent of 
+        extent              A dictionary representing the extent of
                             the map.
 
-                            Example: 
-                            {'spatialReference': {'latestWkid': 3857, 'wkid': 102100}, 
-                            'xmin': -609354.6306080809, 
-                            'ymin': 2885721.2797636474, 
-                            'xmax': 6068184.160383142, 
+                            Example:
+                            {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                            'xmin': -609354.6306080809,
+                            'ymin': 2885721.2797636474,
+                            'xmax': 6068184.160383142,
                             'ymax': 6642754.094035632}
         ==================  ========================================
 
         :return:
             A dictionary depicting the extent of the map.
-        """   
+        """
         if self._check_node() is True:
             if "extent" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["extent"]
             else:
-                return self._story._properties["resources"][self.resource_node]["data"]["extent"]
+                return self._story._properties["resources"][self.resource_node]["data"][
+                    "extent"
+                ]
 
     # ----------------------------------------------------------------------
     @extent.setter
-    def extent(self, extent:dict):
+    def extent(self, extent: dict):
         # The properties found in the resource node are the original settings of the webmap
         # When a user edits properties, it is the node dict that changes, not resource dict.
         if isinstance(extent, dict):
-            if not all (k in extent for k in ("xmin","xmax", "ymin", "ymax")):
-                raise ValueError("Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'")
+            if not all(k in extent for k in ("xmin", "xmax", "ymin", "ymax")):
+                raise ValueError(
+                    "Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'"
+                )
             if "spatialReference" not in extent:
                 extent["spatialReference"] = {"wkid": 4326, "latestWkid": 4326}
             self._story._properties["nodes"][self.node]["data"]["extent"] = extent
@@ -1311,35 +1316,110 @@ class Map(object):
         ==================  ========================================
         **Argument**        **Description**
         ------------------  ----------------------------------------
-        center              A dictionary representing the center of 
+        center              A dictionary representing the center of
                             the map.
 
-                            Example: 
-                            {'spatialReference': {'latestWkid': 3857, 'wkid': 102100}, 
-                            'x': 1726560.9537862882, 
-                            'y': 5786659.377241888, 
+                            Example:
+                            {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                            'x': 1726560.9537862882,
+                            'y': 5786659.377241888,
                             }
         ==================  ========================================
 
         :return:
             A dictionary depicting the center of the map.
-        """   
+        """
         if self._check_node() is True:
             if "center" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["center"]
             else:
-                return self._story._properties["resources"][self.resource_node]["data"]["center"]
+                return self._story._properties["resources"][self.resource_node]["data"][
+                    "center"
+                ]
 
     # ----------------------------------------------------------------------
     @center.setter
-    def center(self, center:dict):
+    def center(self, center: dict):
         # The properties found in the resource node are the original settings of the webmap
         # When a user edits properties, it is the node dict that changes, not resource dict.
         if isinstance(center, dict):
-            if not all (k in center for k in ("xmin","xmax", "ymin", "ymax")):
-                raise ValueError("Center dictionary missing one or more of these keys: 'x', 'y', 'spatioalReference'")
+            if not all(k in center for k in ("xmin", "xmax", "ymin", "ymax")):
+                raise ValueError(
+                    "Center dictionary missing one or more of these keys: 'x', 'y', 'spatioalReference'"
+                )
             self._story._properties["nodes"][self.node]["data"]["center"] = center
         return self.center
+
+    # ----------------------------------------------------------------------
+    @property
+    def zoom(self):
+        """Get/Set the zoom level."""
+        if "zoom" in self._story._properties["nodes"][self.node]["data"]:
+            return self._story._properties["nodes"][self.node]["data"]["zoom"]
+        else:
+            return self._story._properties["resources"][self.resource_node]["data"][
+                "zoom"
+            ]
+
+    # ----------------------------------------------------------------------
+    @zoom.setter
+    def zoom(self, value: int):
+        self._story._properties["nodes"][self.node]["data"]["zoom"] = value
+        return self.zoom
+
+    # ----------------------------------------------------------------------
+    @property
+    def show_legend(self):
+        """Get/Set the showing legend toggle. True if enabled and False if disabled"""
+        if self._check_node() is True:
+            return self._story._properties["nodes"][self.node]["data"][
+                "isShowingLegend"
+            ]
+
+    # ----------------------------------------------------------------------
+    @show_legend.setter
+    def show_legend(self, value: bool):
+        self._story._properties["nodes"][self.node]["data"]["isShowingLegend"] = value
+        return self.show_legend
+
+    # ----------------------------------------------------------------------
+    @property
+    def legend_pinned(self):
+        """Get/Set the legend pinned toggle. True if enabled and False if disabled"""
+        if self._check_node() is True:
+            return self._story._properties["nodes"][self.node]["data"]["legendPinned"]
+
+    # ----------------------------------------------------------------------
+    @legend_pinned.setter
+    def legend_pinned(self, value: bool):
+        self._story._properties["nodes"][self.node]["data"]["legendPinned"] = value
+        return self.legend_pinned
+
+    # ----------------------------------------------------------------------
+    @property
+    def show_search(self):
+        """Get/Set the search toggle. True if enabled and False if disabled"""
+        if self._check_node() is True:
+            return self._story._properties["nodes"][self.node]["data"]["search"]
+
+    # ----------------------------------------------------------------------
+    @show_search.setter
+    def show_search(self, value: bool):
+        self._story._properties["nodes"][self.node]["data"]["search"] = value
+        return self.show_search
+
+    # ----------------------------------------------------------------------
+    @property
+    def time_slider(self):
+        """Get/Set the time slider toggle. True if enabled and False if disabled"""
+        if self._check_node() is True:
+            return self._story._properties["nodes"][self.node]["data"]["timeSlider"]
+
+    # ----------------------------------------------------------------------
+    @time_slider.setter
+    def time_slider(self, value: bool):
+        self._story._properties["nodes"][self.node]["data"]["timeSlider"] = value
+        return self.time_slider
 
     # ----------------------------------------------------------------------
     @property
@@ -1413,12 +1493,20 @@ class Map(object):
             if "float" in display.lower():
                 self._story._properties["nodes"][self.node]["config"]["size"] = "float"
                 if "right" in display.lower():
-                    self._story._properties["nodes"][self.node]["config"]["floatAlignment"] = "end"
+                    self._story._properties["nodes"][self.node]["config"][
+                        "floatAlignment"
+                    ] = "end"
                 else:
-                    self._story._properties["nodes"][self.node]["config"]["floatAlignment"] = "start"
+                    self._story._properties["nodes"][self.node]["config"][
+                        "floatAlignment"
+                    ] = "start"
             else:
-                self._story._properties["nodes"][self.node]["config"]["size"] = display.lower()
-                self._story._properties["nodes"][self.node]["config"].pop("floatAlignment", None)
+                self._story._properties["nodes"][self.node]["config"][
+                    "size"
+                ] = display.lower()
+                self._story._properties["nodes"][self.node]["config"].pop(
+                    "floatAlignment", None
+                )
             return self.display
 
     # ----------------------------------------------------------------------
@@ -1485,7 +1573,7 @@ class Map(object):
             raise ValueError("New Map must be of same type as the exisiting map.")
 
         # Get all the old properties but update with new map where needed
-        
+
         # remove old resource node
         self._story._properties["resources"][
             new_map.resource_node
