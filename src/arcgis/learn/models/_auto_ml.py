@@ -72,7 +72,7 @@ class AutoML(object):
                             Default is 3600 (1 Hr)
     ---------------------   -------------------------------------------
     mode                    Optional Str.
-                            Can be {Explain, Perform, Compete}. This parameter defines
+                            Can be {Basic, Intermediate, Advanced}. This parameter defines
                             the goal of AutoML and how intensive the AutoML search will be.
 
                             Basic : To to be used when the user wants to explain and
@@ -93,7 +93,7 @@ class AutoML(object):
                                       Uses the following models: Decision Tree, Random Forest, Extra Trees,
                                       XGBoost, CatBoost, Neural Network, Nearest Neighbors, Ensemble,
                                       and Stacking.It has only learning curves in the reports.
-                                      Default is Explain.
+                                      Default is Basic.
     ---------------------   -------------------------------------------
     algorithms              Optional. List of str.
                             The list of algorithms that will be used in the training. The algorithms can be:
@@ -113,8 +113,8 @@ class AutoML(object):
                             In all other cases, regression is performed on the dataset.
     ---------------------   -------------------------------------------
     n_jobs                  Optional. Int.
-                            Number of CPU cores to be used. By default, it is set to -1 which uses
-                            all processes.
+                            Number of CPU cores to be used. By default, it is set to 1.Set it
+                            to -1 to use all the cores.
     =====================   ===========================================
 
     :return: `AutoML` Object
@@ -124,10 +124,10 @@ class AutoML(object):
         self,
         data=None,
         total_time_limit=3600,
-        mode="Explain",
+        mode="Basic",
         algorithms=None,
         eval_metric="auto",
-        n_jobs=-1,
+        n_jobs=1,
     ):
         try:
             from supervised.automl import AutoML as base_AutoML
@@ -190,7 +190,7 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            if mode == "Explain":
+            if (mode == "Explain") or (mode == "Basic"):
                 explain_level = 2
             else:
                 explain_level = 0  # Setting explain level to 0 in case of Perform and Compete as EDA seems to be creating memory issues
