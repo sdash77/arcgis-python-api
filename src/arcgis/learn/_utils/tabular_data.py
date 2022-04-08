@@ -75,6 +75,7 @@ class TabularDataObject(object):
         feature_variables=None,
         raster_variables=None,
         date_field=None,
+        cell_sizes=[3, 4, 5, 6, 7],
         distance_feature_layers=None,
         procs=None,
         val_split_pct=0.1,
@@ -100,6 +101,7 @@ class TabularDataObject(object):
             feature_variables,
             raster_variables,
             date_field,
+            cell_sizes,
             distance_feature_layers,
             index_field,
         )
@@ -834,7 +836,7 @@ class TabularDataObject(object):
                 seq_len, False, False
             )
 
-            n_items = rows**2
+            n_items = rows ** 2
             if n_items > len(X_train):
                 n_items = len(X_train)
 
@@ -903,6 +905,7 @@ class TabularDataObject(object):
         feature_variables=None,
         raster_variables=None,
         date_field=None,
+        cell_sizes=[3, 4, 5, 6, 7],
         distance_feature_layers=None,
         index_field=None,
     ):
@@ -1002,6 +1005,7 @@ class TabularDataObject(object):
         dataframe, index_data = TabularDataObject._process_layer(
             input_features,
             date_field,
+            cell_sizes,
             distance_feature_layers,
             raster_variables,
             index_field,
@@ -1014,6 +1018,11 @@ class TabularDataObject(object):
                 continuous_variables.append(f"NEAR_DIST_{count}")
                 count = count + 1
 
+        if cell_sizes and not rasters:
+            for res in cell_sizes:
+                h3_field = f"zone{res}_id"
+                if h3_field in dataframe_columns:
+                    categorical_variables.append(h3_field)
         fields_to_keep = continuous_variables + categorical_variables
         if dependent_variable:
             fields_to_keep = fields_to_keep + [dependent_variable]
@@ -1099,7 +1108,7 @@ class TabularDataObject(object):
                 fields = [["Distance", field_2]]
                 arcpy.Near_analysis(data_source, distance_layer)
                 count = count + 1
-            sdf = pd.DataFrame.spatial.from_featureclass(data_source)
+            sdf = pd.DataFrame.spatial.from_featureclass(data_source, sr="4326")
         else:
             sdf = pd.DataFrame()
             data_type = arcpy.Describe(input_features).dataType
@@ -1153,13 +1162,17 @@ class TabularDataObject(object):
 
     @staticmethod
     def _process_layer(
-        input_features, date_field, distance_layers, rasters, index_field
+        input_features, date_field, cell_sizes, distance_layers, rasters, index_field
     ):
         index_data = None
         if input_features is not None:
             if isinstance(input_features, FeatureLayer):
                 input_layer = input_features
-                sdf = input_features.query().sdf
+                out_sr = None
+                if cell_sizes and not rasters:
+                    out_sr = 4326
+                sdf = input_features.query(out_sr=out_sr).sdf
+
             elif hasattr(input_features, "dataSource"):
                 sdf, index_data = TabularDataObject._sdf_gptool_workflow(
                     input_features,
@@ -1168,6 +1181,8 @@ class TabularDataObject(object):
                     index_field,
                     is_table_obj=False,
                 )
+                if cell_sizes and not rasters:
+                    sdf = add_h3(sdf, cell_sizes)
                 return sdf, index_data
             elif hasattr(input_features, "value"):
                 sdf, index_data = TabularDataObject._sdf_gptool_workflow(
@@ -1214,6 +1229,9 @@ class TabularDataObject(object):
                     original_points.append(sdf.iloc[i]["SHAPE"])
 
                 input_layer_spatial_reference = sdf.spatial._sr
+                if cell_sizes and not rasters:
+                    sdf = add_h3(sdf, cell_sizes)
+
                 for raster in rasters:
                     raster_type = 0
 
@@ -1626,6 +1644,48 @@ def explain_prediction(
             show_local_interpretation(
                 model, processed_df, index, random_index, method="FCN"
             )
+
+
+def add_h3(sdf, cell_sizes):
+    if sdf["SHAPE"][0]["spatialReference"]["wkid"] == 4326:
+        if (
+            "polygon" in sdf.spatial.geometry_type
+            or "point" in sdf.spatial.geometry_type
+        ):
+
+            try:
+                sdf = point_to_h3(sdf, cell_sizes)
+            except:
+                warnings.warn("Cell sizes will not work.")
+    return sdf
+
+
+def point_to_h3(sdf, cell_sizes):
+    import h3
+
+    for res in cell_sizes:
+        h3_id = []
+
+        if "polygon" in sdf.spatial.geometry_type:
+
+            for poly in sdf["SHAPE"]:
+                centroid = poly.centroid
+                h3_id.append(h3.geo_to_h3(centroid[1], centroid[0], res))
+
+        elif "point" in sdf.spatial.geometry_type:
+            h3_id = sdf["SHAPE"].apply(lambda x: h3.geo_to_h3(x["y"], x["x"], res))
+
+        unq_h3_ids = list(set(h3_id))
+        h3_to_token = {}
+        token_to_h3 = {}
+        for i in range(len(unq_h3_ids)):
+            h3_to_token[unq_h3_ids[i]] = i
+            token_to_h3[i] = unq_h3_ids[i]
+
+        tokens = [h3_to_token[id] for id in h3_id]
+
+        sdf[f"zone{res}_id"] = tokens
+    return sdf
 
 
 def show_local_interpretation(

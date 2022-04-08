@@ -966,6 +966,7 @@ def prepare_tabulardata(
     explanatory_variables=None,
     explanatory_rasters=None,
     date_field=None,
+    cell_sizes=[3, 4, 5, 6, 7],
     distance_features=None,
     preprocessors=None,
     val_split_pct=0.1,
@@ -1031,6 +1032,13 @@ def prepare_tabulardata(
                             to the prepared data as columns.
                             All fields other than elapsed and dayofyear are treated
                             as categorical.
+    ---------------------   -------------------------------------------
+    cell_sizes              Size of H3 cells (specified as H3 resolution) for spatially
+                            aggregating input features and passing in the cell ids as additional
+                            explanatory variables to the model. If a spatial dataframe is passed
+                            as input_features, ensure that the spatial reference is 4326,
+                            and the geometry type is Point. Not applicable when explanatory_rasters
+                            are provided.
     ---------------------   -------------------------------------------
     distance_features       Optional list of Feature Layer objects.
                             Distance is calculated from features in these layers
@@ -1133,6 +1141,7 @@ def prepare_tabulardata(
         feature_variables=explanatory_variables,
         raster_variables=explanatory_rasters,
         date_field=date_field,
+        cell_sizes=cell_sizes,
         distance_feature_layers=distance_features,
         procs=preprocessors,
         val_split_pct=val_split_pct,
