@@ -1433,19 +1433,23 @@ class ArcGISModel(object):
                 saved_path = self._save_tflite(
                     name, post_processed=post_processed, quantized=quantized
                 )
-            elif self._backend != "tensorflow" and _framework == "tflite":
-                supported_models = [
-                    "FeatureClassifier",
-                    "SingleShotDetector",
-                    "RetinaNet",
-                ]
-                if (type(self).__name__) in supported_models:
-                    saved_path = self._save_pytorch_tflite(name)
-                else:
-                    raise Exception(
-                        "This pytorch model cannot be saved in tflite format"
-                    )
             else:
+                if self._backend != "tensorflow" and _framework == "tflite":
+                    supported_models = [
+                        "FeatureClassifier",
+                        "MaskRCNN",
+                        "SingleShotDetector",
+                        "YOLOv3",
+                        "RetinaNet",
+                    ]
+                    if (type(self).__name__) in supported_models:
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore")
+                            tflite_paths = self._save_pytorch_tflite(name)
+                    else:
+                        raise Exception(
+                            "This pytorch model cannot be saved in tflite format"
+                        )
                 if self._backend == "pytorch" and _framework == "torchscript":
                     supported_models = [
                         "MaskRCNN",
@@ -1456,9 +1460,7 @@ class ArcGISModel(object):
                     if (type(self).__name__) in supported_models:
                         with warnings.catch_warnings():
                             warnings.simplefilter("ignore")
-                            script_paths = self._save_pytorch_torchscript(
-                                name
-                            )  # TODO: validate
+                            script_paths = self._save_pytorch_torchscript(name)
                     else:
                         raise Exception(
                             "This pytorch model cannot be saved in torchscript format"
@@ -1498,6 +1500,11 @@ class ArcGISModel(object):
                 _emd_template, saved_path.with_suffix(".onnx"), batch_size
             )
             os.remove(saved_path.with_suffix(".pth"))
+
+        if self._backend != "tensorflow" and framework.lower() == "tflite":
+            if len(tflite_paths) != 0:
+                _script_save_params = {"GPU": tflite_paths[0], "CPU": tflite_paths[0]}
+                _emd_template["TFLite"] = _script_save_params
 
         # TODO: merge all
         if framework.lower() == "torchscript":
@@ -1692,64 +1699,7 @@ class ArcGISModel(object):
         return self.learn._save_tflite(name)
 
     def _save_pytorch_tflite(self, name):
-        import tensorflow as tf
-
-        tf.get_logger().setLevel(logging.ERROR)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            import onnx
-            import onnx_tf
-            from onnx_tf.backend import prepare
-        torch_model = self.learn.model
-        torch_model = torch_model.eval()
-        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
-        dummy_input = torch.randn([1, num_input_channels, 224, 224]).cuda()
-        saved_path = self.learn.path / self.learn.model_dir / f"{name}.tflite"
-        saved_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
-        saved_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
-        if type(self).__name__ == "FeatureClassifier":
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                torch.onnx.export(
-                    torch_model,
-                    dummy_input,
-                    saved_path_onnx,
-                    export_params=True,
-                    input_names=["input"],
-                    output_names=["output"],
-                    opset_version=11,
-                )
-        else:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                torch.onnx.export(
-                    torch_model,
-                    dummy_input,
-                    saved_path_onnx,
-                    export_params=True,
-                    input_names=["input"],
-                    output_names=["scores", "box"],
-                    opset_version=11,
-                )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            arcgis_onnx = onnx.load(saved_path_onnx)
-            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
-            tf_onnx.export_graph(str(saved_path_pb))
-
-        converter = tf.lite.TFLiteConverter.from_saved_model(str(saved_path_pb))
-        converter.experimental_new_converter = True
-        converter.optimizations = [tf.compat.v1.lite.Optimize.DEFAULT]
-        converter.target_ops = [
-            tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
-            tf.lite.OpsSet.SELECT_TF_OPS,
-        ]
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            tflite_model = converter.convert()
-        with tf.io.gfile.GFile(saved_path, "wb") as f:
-            f.write(tflite_model)
-        return saved_path
+        pass
 
     def _script(self, model, inp):
         scripted_model = torch.jit.script(model, inp)

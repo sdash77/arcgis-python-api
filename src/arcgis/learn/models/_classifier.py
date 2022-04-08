@@ -380,6 +380,62 @@ class FeatureClassifier(ArcGISModel):
     def _model_metrics(self):
         return {}
 
+    def _save_pytorch_tflite(self, name):
+        import tensorflow as tf
+        import logging
+
+        tf.get_logger().setLevel(logging.ERROR)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import onnx
+            import onnx_tf
+            from onnx_tf.backend import prepare
+        device = torch.device("cpu")
+        torch_model = self.learn.model
+        torch_model = torch_model.eval()
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
+        dummy_input = torch.randn(
+            [1, num_input_channels, chip_size[0], chip_size[1]]
+        ).to(device)
+        saved_path = self.learn.path / self.learn.model_dir / f"{name}.tflite"
+        saved_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
+        saved_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            torch.onnx.export(
+                torch_model,
+                dummy_input,
+                saved_path_onnx,
+                export_params=True,
+                input_names=["input"],
+                output_names=["output"],
+                opset_version=11,
+            )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            arcgis_onnx = onnx.load(saved_path_onnx)
+            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
+            tf_onnx.export_graph(str(saved_path_pb))
+
+        converter = tf.lite.TFLiteConverter.from_saved_model(str(saved_path_pb))
+        converter.experimental_new_converter = True
+        converter.optimizations = [tf.compat.v1.lite.Optimize.DEFAULT]
+        converter.target_ops = [
+            tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
+            tf.lite.OpsSet.SELECT_TF_OPS,
+        ]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            tflite_model = converter.convert()
+        with tf.io.gfile.GFile(saved_path, "wb") as f:
+            f.write(tflite_model)
+
+        return [saved_path, saved_path_onnx]
+
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
