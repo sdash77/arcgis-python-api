@@ -2734,6 +2734,34 @@ class FeatureLayer(Layer):
         :return:
             A dictionary by default, or :class:`~arcgis.features._async.EditFeatureJob` if `future=True`.
 
+        .. code-block:: python
+
+            # Usage Example 1:
+
+            feature = [
+            {
+                'attributes': {
+                    'ObjectId': 1,
+                    'UpdateDate': datetime.datetime.now(),
+                }
+            }]
+            lyr.edit_features(updates=feature)
+
+        .. code-block:: python
+
+            # Usage Example 2:
+
+            adds = {"geometry": {"x": 500, "y": 500, "spatialReference":
+                                {"wkid": 102100, "latestWkid": 3857}},
+                    "attributes": {"ADMIN_NAME": "Fake Location"}
+                    }
+            lyr.edit_features(adds=[adds])
+
+        .. code-block:: python
+
+            # Usage Example 3:
+
+            lyr.edit_features(deletes=[2542])
 
         """
         try:
