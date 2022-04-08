@@ -3,8 +3,6 @@ The ``Filters`` modules contain functions to filter query results by a spatial r
 :class:`~arcgis.geometry.Geometry` object. The ``Filters`` module is used when querying feature layers and imagery
 layers.
 """
-
-from inspect import GEN_CLOSED
 from typing import Union
 from arcgis.geometry._types import Geometry, SpatialReference
 
