@@ -50,7 +50,7 @@ try:
     import matplotlib
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
     from .._utils.common import get_nbatches, image_batch_stretcher, read_image
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
 
     HAS_FASTAI = True
 except Exception as e:
@@ -940,7 +940,7 @@ class MaskRCNN(ArcGISModel):
         if self._device == torch.device("cuda"):
             torch.cuda.empty_cache()
 
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
         if return_fig:
             return fig

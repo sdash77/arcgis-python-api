@@ -49,7 +49,7 @@ try:
     )
     from .._video_utils import VideoUtils
     import inspect
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     from matplotlib import pyplot as plt
     import types
     from ._maskrcnn import grid_anchors
@@ -718,7 +718,7 @@ class ModelExtension(ArcGISModel):
             ys = [ds.y.reconstruct(grab_idx(y, i)) for i in range(n_items)]
             zs = [ds.y.reconstruct(z) for z in preds]
         ds.x.show_xyzs(xs, ys, zs, **kwargs)
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _predict_learn_modified(self, item, **kwargs):

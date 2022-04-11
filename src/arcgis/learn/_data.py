@@ -3133,9 +3133,9 @@ def prepare_data(
         data.path = Path(os.path.dirname(os.path.abspath(data.path)))
     _prepare_working_dir(data.path)
 
-    from ._utils.env import _IS_ARCGISPRONOTEBOOK
+    from ._utils.env import is_arcgispronotebook
 
-    if _IS_ARCGISPRONOTEBOOK:
+    if is_arcgispronotebook():
         from functools import wraps
         from matplotlib import pyplot as plt
 
