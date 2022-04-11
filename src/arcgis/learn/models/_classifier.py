@@ -61,7 +61,7 @@ try:
         _get_emd_path,
         image_batch_stretcher,
     )
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     from matplotlib import pyplot as plt
     from .._utils.image_classification import adapt_fastai_databunch
     import copy
@@ -310,7 +310,7 @@ class FeatureClassifier(ArcGISModel):
         """
         self._check_requisites()
         self.learn.show_results(rows=rows, **kwargs)
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _show_results_multispectral(self, rows=5, **kwargs):

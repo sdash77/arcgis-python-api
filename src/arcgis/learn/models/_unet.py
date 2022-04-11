@@ -33,7 +33,7 @@ try:
     from ._psp_utils import accuracy
     from ._deeplab_utils import compute_miou
     from matplotlib import pyplot as plt
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
 
     HAS_FASTAI = True
 except Exception as e:
@@ -528,7 +528,7 @@ class UnetClassifier(ArcGISModel):
         self.learn.show_results(
             rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs
         )
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def accuracy(self):

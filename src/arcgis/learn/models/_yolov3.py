@@ -52,7 +52,7 @@ try:
         _exclude_detection,
     )
     from .._video_utils import VideoUtils
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     from .._utils.pascal_voc_rectangles import _reconstruct
 except Exception as e:
     import_exception = "\n".join(
@@ -339,7 +339,7 @@ class YOLOv3(ArcGISModel):
         self.learn.show_results(
             rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self
         )
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             import matplotlib.pyplot as plt
 
             plt.show()

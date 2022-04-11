@@ -50,7 +50,7 @@ try:
     from .._video_utils import VideoUtils
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from fastprogress.fastprogress import progress_bar
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
 except Exception as e:
     import_exception = "\n".join(
@@ -499,7 +499,7 @@ class RetinaNet(ArcGISModel):
         self.learn.show_results(
             rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self
         )
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _show_results_multispectral(
