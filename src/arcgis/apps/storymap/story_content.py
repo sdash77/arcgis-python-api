@@ -30,6 +30,32 @@ class TextStyles(Enum):
     SUBHEADING = "h3"
     QUOTE = "quote"
 
+class Scales(Enum):
+    """
+    Represents the supported scales for the webmap view.
+    """
+    WORLD = {"scale" : 147914382, "zoom": 2}
+    CONTINENT = {"scale" : 50000000, "zoom": 3}
+    COUNTRIESLARGE = {"scale" : 25000000, "zoom": 4}
+    COUNTRIESSMALL = {"scale" : 12000000, "zoom": 5}
+    STATES = {"scale" : 6000000, "zoom": 6}
+    PROVINCES = {"scale" : 6000000, "zoom": 6}
+    STATE = {"scale" : 3000000, "zoom": 7}
+    PROVINCE = {"scale" : 3000000, "zoom": 7}
+    COUNTIES = {"scale" : 1500000, "zoom": 8}
+    COUNTY = {"scale" : 750000, "zoom": 9}
+    METROPOLITAN = {"scale" : 320000, "zoom": 10}
+    CITIES = {"scale" : 160000, "zoom": 11}
+    CITY = 	{"scale" : 80000, "zoom": 12}
+    TOWN = {"scale" : 40000, "zoom": 13}
+    NEIGHBORHOOD = {"scale" : 2000, "zoom": 14}
+    STREETS = {"scale" : 10000, "zoom": 15}
+    STREET = {"scale" : 5000, "zoom": 16}
+    BUILDINGS = {"scale" : 2500, "zoom": 17}
+    BUILDING = {"scale" : 1250, "zoom": 18}
+    SMALLBUILDING = {"scale" : 800, "zoom": 19}
+    ROOMS = {"scale" : 400, "zoom": 20}
+    ROOM = {"scale" : 100, "zoom": 22}
 
 ###############################################################################################################
 class Image(object):
@@ -1322,8 +1348,9 @@ class Map(object):
                 self._story._properties["nodes"][self.node]["data"]["viewpoint"]["targetGeometry"] = self._story._properties["nodes"][self.node]["data"]["center"]
         # set new scale if specified
         if scale:
-            self._story._properties["nodes"][self.node]["data"]["viewpoint"]["scale"] = scale
-
+            if isinstance(scale, Scales):
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"]["scale"] = scale.value["scale"]
+                self._story._properties["nodes"][self.node]["data"]["zoom"] = scale.value["zoom"]
         return self._story._properties["nodes"][self.node]["data"]["viewpoint"]
 
     # ----------------------------------------------------------------------
