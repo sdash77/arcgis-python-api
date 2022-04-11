@@ -208,4 +208,4 @@ def test_enrich_json_agol(usa_agol, polygon_df, usa_agol_enrich_vars):
 
 @skip_if_no_agol
 def test_enrich_usa_variable_name_list_local(usa_agol, polygon_df):
-    enrich_test(usa_local, polygon_df, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
+    enrich_test(usa_agol, polygon_df, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
