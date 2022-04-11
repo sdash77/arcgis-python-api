@@ -2,6 +2,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, Union
 import uuid
+
+from matplotlib import scale
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
@@ -1201,7 +1203,8 @@ class Map(object):
 
         :return:
             A dictionary depicting the node dictionary and resource
-            dictionary for the map.
+            dictionary for the map. The resource dictionary depicts the 
+            original map settings. The node dictionary depicts the current map settings.
             If nothing it returned, make sure the content is part of the story.
 
         .. note::
@@ -1256,22 +1259,27 @@ class Map(object):
             return self.map
 
     # ----------------------------------------------------------------------
-    @property
-    def extent(self):
+    def set_viewpoint(self, extent:dict = None, scale:str = None):
         """
-        Get/Set the extent for the map in the story.
+        Set the extent and/or scale for the map in the story.
 
-        An extent dictionary is passed in. If you have an extent to use from a bookmark,
-        find this extent by using the bookmark property on the webmap. The
-        `map` property on this class will return the Web Map Item being used.
-        By passing this item into the :class:`~arcgis.mapping.WebMap` Class you can retrieve a list of all
+        If you have an extent to use from a bookmark,
+        find this extent by using the `bookmarks` property in 
+        the :class:`~arcgis.mapping.WebMap` Class. 
+        The `map` property on this class will return the Web Map 
+        Item being used. By passing this item into 
+        the :class:`~arcgis.mapping.WebMap` Class you can retrieve a list of all
         bookmarks and their extents with the `bookmarks` property.
+
+        To see the current viewpoint call the `properties` property on the Map
+        node.
 
         ==================  ========================================
         **Argument**        **Description**
         ------------------  ----------------------------------------
-        extent              A dictionary representing the extent of
-                            the map.
+        extent              Optional dictionary representing the extent of
+                            the map. This will update the extent, center and viewpoint
+                            accordingly.
 
                             Example:
                             {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
@@ -1279,93 +1287,44 @@ class Map(object):
                             'ymin': 2885721.2797636474,
                             'xmax': 6068184.160383142,
                             'ymax': 6642754.094035632}
-        ==================  ========================================
-
-        :return:
-            A dictionary depicting the extent of the map.
-        """
-        if self._check_node() is True:
-            if "extent" in self._story._properties["nodes"][self.node]["data"]:
-                return self._story._properties["nodes"][self.node]["data"]["extent"]
-            else:
-                return self._story._properties["resources"][self.resource_node]["data"][
-                    "extent"
-                ]
-
-    # ----------------------------------------------------------------------
-    @extent.setter
-    def extent(self, extent: dict):
-        # The properties found in the resource node are the original settings of the webmap
-        # When a user edits properties, it is the node dict that changes, not resource dict.
-        if isinstance(extent, dict):
-            if not all(k in extent for k in ("xmin", "xmax", "ymin", "ymax")):
-                raise ValueError(
-                    "Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'"
-                )
-            if "spatialReference" not in extent:
-                extent["spatialReference"] = {"wkid": 4326, "latestWkid": 4326}
-            self._story._properties["nodes"][self.node]["data"]["extent"] = extent
-        return self.extent
-
-    # ----------------------------------------------------------------------
-    @property
-    def center(self):
-        """
-        Get/Set the center for the map in the story.
-
-        ==================  ========================================
-        **Argument**        **Description**
         ------------------  ----------------------------------------
-        center              A dictionary representing the center of
-                            the map.
-
-                            Example:
-                            {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                            'x': 1726560.9537862882,
-                            'y': 5786659.377241888,
-                            }
+        scale               Optional String. Define the scale of the map.
+                            If none specified, current scale is kept. 
         ==================  ========================================
+        
+        Values for `scale`:
+            "World" | "Continent" | "Countries - large" | "Countries - small" |
+            "States or provinces" | "State or province" | "Counties" | "County" |
+            "Metropolitan area" | "Cities" | "City" | "Town" | "Neighborhood" |
+            "Streets" | "Street" | "Buildings" | "Building" | "Small building" |
+            "Rooms" | "Room"
 
-        :return:
-            A dictionary depicting the center of the map.
+        :return: The current viewpoint dictionary
         """
-        if self._check_node() is True:
-            if "center" in self._story._properties["nodes"][self.node]["data"]:
-                return self._story._properties["nodes"][self.node]["data"]["center"]
-            else:
-                return self._story._properties["resources"][self.resource_node]["data"][
-                    "center"
-                ]
+        # set new extent if specified
+        if extent:
+            if isinstance(extent, dict):
+                if not all(k in extent for k in ("xmin", "xmax", "ymin", "ymax")):
+                    raise ValueError(
+                        "Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'"
+                    )
+                if "spatialReference" not in extent:
+                    extent["spatialReference"] = {"wkid": 4326, "latestWkid": 4326}
+                
+                # In order to correctly edit, the viewpoint, extent, and center must be updated.
+                # update extent
+                self._story._properties["nodes"][self.node]["data"]["extent"] = extent
+                # update center
+                center_x = (self.extent["xmin"] + self.extent["xmax"])/2
+                center_y = (self.extent["ymin"] + self.extent["ymax"])/2
+                self._story._properties["nodes"][self.node]["data"]["center"] = {"spatialReference": self.extent["spatialReference"], "x": center_x, "y": center_y}
+                # update viewpoint
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"]["targetGeometry"] = self._story._properties["nodes"][self.node]["data"]["center"]
+        # set new scale if specified
+        if scale:
+            self._story._properties["nodes"][self.node]["data"]["viewpoint"]["scale"] = scale
 
-    # ----------------------------------------------------------------------
-    @center.setter
-    def center(self, center: dict):
-        # The properties found in the resource node are the original settings of the webmap
-        # When a user edits properties, it is the node dict that changes, not resource dict.
-        if isinstance(center, dict):
-            if not all(k in center for k in ("xmin", "xmax", "ymin", "ymax")):
-                raise ValueError(
-                    "Center dictionary missing one or more of these keys: 'x', 'y', 'spatioalReference'"
-                )
-            self._story._properties["nodes"][self.node]["data"]["center"] = center
-        return self.center
-
-    # ----------------------------------------------------------------------
-    @property
-    def zoom(self):
-        """Get/Set the zoom level."""
-        if "zoom" in self._story._properties["nodes"][self.node]["data"]:
-            return self._story._properties["nodes"][self.node]["data"]["zoom"]
-        else:
-            return self._story._properties["resources"][self.resource_node]["data"][
-                "zoom"
-            ]
-
-    # ----------------------------------------------------------------------
-    @zoom.setter
-    def zoom(self, value: int):
-        self._story._properties["nodes"][self.node]["data"]["zoom"] = value
-        return self.zoom
+        return self._story._properties["nodes"][self.node]["data"]["viewpoint"]
 
     # ----------------------------------------------------------------------
     @property
