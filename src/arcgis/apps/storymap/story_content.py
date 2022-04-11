@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Optional, Union
 import uuid
 
-from matplotlib import scale
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
@@ -30,32 +29,35 @@ class TextStyles(Enum):
     SUBHEADING = "h3"
     QUOTE = "quote"
 
+
 class Scales(Enum):
     """
     Represents the supported scales for the webmap view.
     """
-    WORLD = {"scale" : 147914382, "zoom": 2}
-    CONTINENT = {"scale" : 50000000, "zoom": 3}
-    COUNTRIESLARGE = {"scale" : 25000000, "zoom": 4}
-    COUNTRIESSMALL = {"scale" : 12000000, "zoom": 5}
-    STATES = {"scale" : 6000000, "zoom": 6}
-    PROVINCES = {"scale" : 6000000, "zoom": 6}
-    STATE = {"scale" : 3000000, "zoom": 7}
-    PROVINCE = {"scale" : 3000000, "zoom": 7}
-    COUNTIES = {"scale" : 1500000, "zoom": 8}
-    COUNTY = {"scale" : 750000, "zoom": 9}
-    METROPOLITAN = {"scale" : 320000, "zoom": 10}
-    CITIES = {"scale" : 160000, "zoom": 11}
-    CITY = 	{"scale" : 80000, "zoom": 12}
-    TOWN = {"scale" : 40000, "zoom": 13}
-    NEIGHBORHOOD = {"scale" : 2000, "zoom": 14}
-    STREETS = {"scale" : 10000, "zoom": 15}
-    STREET = {"scale" : 5000, "zoom": 16}
-    BUILDINGS = {"scale" : 2500, "zoom": 17}
-    BUILDING = {"scale" : 1250, "zoom": 18}
-    SMALLBUILDING = {"scale" : 800, "zoom": 19}
-    ROOMS = {"scale" : 400, "zoom": 20}
-    ROOM = {"scale" : 100, "zoom": 22}
+
+    WORLD = {"scale": 147914382, "zoom": 2}
+    CONTINENT = {"scale": 50000000, "zoom": 3}
+    COUNTRIESLARGE = {"scale": 25000000, "zoom": 4}
+    COUNTRIESSMALL = {"scale": 12000000, "zoom": 5}
+    STATES = {"scale": 6000000, "zoom": 6}
+    PROVINCES = {"scale": 6000000, "zoom": 6}
+    STATE = {"scale": 3000000, "zoom": 7}
+    PROVINCE = {"scale": 3000000, "zoom": 7}
+    COUNTIES = {"scale": 1500000, "zoom": 8}
+    COUNTY = {"scale": 750000, "zoom": 9}
+    METROPOLITAN = {"scale": 320000, "zoom": 10}
+    CITIES = {"scale": 160000, "zoom": 11}
+    CITY = {"scale": 80000, "zoom": 12}
+    TOWN = {"scale": 40000, "zoom": 13}
+    NEIGHBORHOOD = {"scale": 2000, "zoom": 14}
+    STREETS = {"scale": 10000, "zoom": 15}
+    STREET = {"scale": 5000, "zoom": 16}
+    BUILDINGS = {"scale": 2500, "zoom": 17}
+    BUILDING = {"scale": 1250, "zoom": 18}
+    SMALLBUILDING = {"scale": 800, "zoom": 19}
+    ROOMS = {"scale": 400, "zoom": 20}
+    ROOM = {"scale": 100, "zoom": 22}
+
 
 ###############################################################################################################
 class Image(object):
@@ -1177,10 +1179,23 @@ class Map(object):
             self._path = item
             self._type = item.type
             if item.type == "Web Map":
-                self._center = map_item._mapview.center
                 self._extent = map_item._mapview.extent
+                if map_item._mapview.center is None:
+                    x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
+                    y_center = (self._extent["ymin"] + self._extent["ymax"]) / 2
+                    self._center = {
+                        "spatialReference": map_item.definition.spatialReference,
+                        "x": x_center,
+                        "y": y_center,
+                    }
+                else:
+                    self._center = map_item._mapview.center
                 self._zoom = map_item._mapview.zoom if map_item.zoom is not False else 2
-                self._viewpoint = {}
+                self._viewpoint = {
+                    "rotation": map_item._mapview.rotation,
+                    "scale": map_item._mapview.scale,
+                    "targetGeometry": self._center,
+                }
 
                 layers = []
                 # Create layer dictionary:
@@ -1212,10 +1227,23 @@ class Map(object):
                 view = arcgis.widgets.MapView(
                     arcgis.env.active_gis, map_item, mode="3D"
                 )
-                self._center = view.center
                 self._extent = view.extent
+                if map_item._mapview.center is None:
+                    x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
+                    y_center = (self._extent["ymin"] + self._extent["ymax"]) / 2
+                    self._center = {
+                        "spatialReference": map_item.definition.spatialReference,
+                        "x": x_center,
+                        "y": y_center,
+                    }
+                else:
+                    self._center = map_item._mapview.center
                 self._zoom = view.zoom if view.zoom > -1 else 2
-                self._viewpoint = {}
+                self._viewpoint = {
+                    "rotation": map_item._mapview.rotation,
+                    "scale": map_item._mapview.scale,
+                    "targetGeometry": self._center,
+                }
                 self._camera = map_item["initialState"]["viewpoint"]
                 self._lighting_date = map_item["initialState"]["environment"][
                     "lighting"
@@ -1229,7 +1257,7 @@ class Map(object):
 
         :return:
             A dictionary depicting the node dictionary and resource
-            dictionary for the map. The resource dictionary depicts the 
+            dictionary for the map. The resource dictionary depicts the
             original map settings. The node dictionary depicts the current map settings.
             If nothing it returned, make sure the content is part of the story.
 
@@ -1285,15 +1313,15 @@ class Map(object):
             return self.map
 
     # ----------------------------------------------------------------------
-    def set_viewpoint(self, extent:dict = None, scale:str = None):
+    def set_viewpoint(self, extent: dict = None, scale: Scales = None):
         """
         Set the extent and/or scale for the map in the story.
 
         If you have an extent to use from a bookmark,
-        find this extent by using the `bookmarks` property in 
-        the :class:`~arcgis.mapping.WebMap` Class. 
-        The `map` property on this class will return the Web Map 
-        Item being used. By passing this item into 
+        find this extent by using the `bookmarks` property in
+        the :class:`~arcgis.mapping.WebMap` Class.
+        The `map` property on this class will return the Web Map
+        Item being used. By passing this item into
         the :class:`~arcgis.mapping.WebMap` Class you can retrieve a list of all
         bookmarks and their extents with the `bookmarks` property.
 
@@ -1314,19 +1342,20 @@ class Map(object):
                             'xmax': 6068184.160383142,
                             'ymax': 6642754.094035632}
         ------------------  ----------------------------------------
-        scale               Optional String. Define the scale of the map.
-                            If none specified, current scale is kept. 
+        scale               Optional Scales Value. Define the scale of the map.
+                            If none specified, current scale is kept.
+                            Find the available scales in the
+                            :class:`~arcgis.apps.storymap.story_content.Scales` Class.
         ==================  ========================================
-        
-        Values for `scale`:
-            "World" | "Continent" | "Countries - large" | "Countries - small" |
-            "States or provinces" | "State or province" | "Counties" | "County" |
-            "Metropolitan area" | "Cities" | "City" | "Town" | "Neighborhood" |
-            "Streets" | "Street" | "Buildings" | "Building" | "Small building" |
-            "Rooms" | "Room"
 
         :return: The current viewpoint dictionary
         """
+        if "viewpoint" not in self._story._properties["nodes"][self.node]["data"]:
+            self._story._properties["nodes"][self.node]["data"][
+                "viewpoint"
+            ] = self._story._properties["resources"][self.resource_node]["data"][
+                "viewpoint"
+            ]
         # set new extent if specified
         if extent:
             if isinstance(extent, dict):
@@ -1335,22 +1364,32 @@ class Map(object):
                         "Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'"
                     )
                 if "spatialReference" not in extent:
-                    extent["spatialReference"] = {"wkid": 4326, "latestWkid": 4326}
-                
+                    extent["spatialReference"] = {"wkid": 4326}
+
                 # In order to correctly edit, the viewpoint, extent, and center must be updated.
                 # update extent
                 self._story._properties["nodes"][self.node]["data"]["extent"] = extent
                 # update center
-                center_x = (self.extent["xmin"] + self.extent["xmax"])/2
-                center_y = (self.extent["ymin"] + self.extent["ymax"])/2
-                self._story._properties["nodes"][self.node]["data"]["center"] = {"spatialReference": self.extent["spatialReference"], "x": center_x, "y": center_y}
+                center_x = (self.extent["xmin"] + self.extent["xmax"]) / 2
+                center_y = (self.extent["ymin"] + self.extent["ymax"]) / 2
+                self._story._properties["nodes"][self.node]["data"]["center"] = {
+                    "spatialReference": self.extent["spatialReference"],
+                    "x": center_x,
+                    "y": center_y,
+                }
                 # update viewpoint
-                self._story._properties["nodes"][self.node]["data"]["viewpoint"]["targetGeometry"] = self._story._properties["nodes"][self.node]["data"]["center"]
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                    "targetGeometry"
+                ] = self._story._properties["nodes"][self.node]["data"]["center"]
         # set new scale if specified
         if scale:
             if isinstance(scale, Scales):
-                self._story._properties["nodes"][self.node]["data"]["viewpoint"]["scale"] = scale.value["scale"]
-                self._story._properties["nodes"][self.node]["data"]["zoom"] = scale.value["zoom"]
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                    "scale"
+                ] = scale.value["scale"]
+                self._story._properties["nodes"][self.node]["data"][
+                    "zoom"
+                ] = scale.value["zoom"]
         return self._story._properties["nodes"][self.node]["data"]["viewpoint"]
 
     # ----------------------------------------------------------------------
@@ -1524,7 +1563,7 @@ class Map(object):
             "data": {
                 "extent": self._extent,
                 "center": self._center,
-                "zoom": 2,
+                "zoom": self._zoom,
                 "mapLayers": self._map_layers,
                 "viewpoint": self._viewpoint,
                 "itemId": self._path.id,

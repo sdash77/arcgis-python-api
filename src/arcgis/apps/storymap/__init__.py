@@ -16,7 +16,7 @@ from .story_content import (
     Timeline,
     Swipe,
     TextStyles,
-    Scales
+    Scales,
 )
 
 __all__ = [
