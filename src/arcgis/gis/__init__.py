@@ -13023,8 +13023,7 @@ class Item(dict):
                         res = pd.DataFrame(
                             res["data"][0]["num"], columns=["Date", "Usage"]
                         )
-                        res.Date = res.astype(float) / 1000
-                        res.Date = res.Date.apply(lambda x: datetime.fromtimestamp(x))
+                        res.Date = pd.to_datetime(res["Date"], unit="ms")
                         res.Usage = res.Usage.astype(int)
 
                 results.append(res)
@@ -13071,8 +13070,7 @@ class Item(dict):
                         res = pd.DataFrame(
                             res["data"][0]["num"], columns=["Date", "Usage"]
                         )
-                        res.Date = res.Date.astype(float) / 1000
-                        res.Date = res.Date.apply(lambda x: datetime.fromtimestamp(x))
+                        res.Date = pd.to_datetime(res["Date"], unit="ms")
                         res.Usage = res.Usage.astype(int)
 
                 results.append(res)
@@ -13105,8 +13103,7 @@ class Item(dict):
                     df = pd.DataFrame([], columns=["Date", "Usage"])
                 elif len(res["data"]):
                     df = pd.DataFrame(res["data"][0]["num"], columns=["Date", "Usage"])
-                    df.Date = df.Date.astype(float) / 1000
-                    df.Date = df.Date.apply(lambda x: datetime.fromtimestamp(x))
+                    res.Date = pd.to_datetime(res["Date"], unit="ms")
                     df.Usage = df.Usage.astype(int)
                 return df
             return res
