@@ -5,6 +5,7 @@ import json
 from typing import Optional, Union
 import pandas as pd
 import arcgis
+from arcgis.mapping.symbol import create_symbol, display_colormaps, show_styles
 from arcgis.mapping.renderer import generate_renderer
 from arcgis.widgets import MapView
 
