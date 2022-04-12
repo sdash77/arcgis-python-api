@@ -1182,8 +1182,9 @@ class Page(OrderedDict):
         for item in linked_sites:
             site_item = self._gis.content.get(item['id'])
             site = Site(self._gis, site_item)
-            site.definition['values']['pages'] = [p for p in site.definition['values']['pages'] if p['id']!=self.itemid]
-            site.item.update(item_properties={'text': site.definition})
+            definition = site.definition
+            definition['values']['pages'] = [p for p in site.definition['values']['pages'] if p['id']!=self.itemid]
+            site_item.update(item_properties={'text': definition})
         #Remove delete protection on page
         self.item.protect(enable=False)
         #Delete page item

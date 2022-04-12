@@ -317,7 +317,7 @@ class Initiative(OrderedDict):
         return self._gis.hub.events.search(initiative_id=self.item.id)
     
     @_lazy_property
-    def followers(self, community_gis=None):
+    def followers(self):
         """
         Fetches the list of followers for initiative. 
         """

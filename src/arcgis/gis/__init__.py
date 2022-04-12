@@ -927,11 +927,6 @@ class GIS(object):
         return ContentManager(self)
 
     @_lazy_property
-<<<<<<< HEAD
-    def hub(self):
-        """
-        The resource manager for GIS hub. See :class:`~arcgis.apps.hub.Hub`.
-=======
     def velocity(self):
         """
         The resource manager for ArcGIS Velocity. See :class:`~arcgis.realtime.velocity.Velocity`
