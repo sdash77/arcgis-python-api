@@ -823,78 +823,67 @@ class AutoML(object):
         default_sr = rasters[0].extent["spatialReference"]
 
         for raster in rasters:
-            point_upper = arcgis.geometry.Point(
-                {
-                    "x": raster.extent["xmin"],
-                    "y": raster.extent["ymax"],
-                    "sr": raster.extent["spatialReference"],
-                }
-            )
-            point_lower = arcgis.geometry.Point(
-                {
-                    "x": raster.extent["xmax"],
-                    "y": raster.extent["ymin"],
-                    "sr": raster.extent["spatialReference"],
-                }
-            )
-            cell_size = arcgis.geometry.Point(
-                {
-                    "x": raster.mean_cell_width,
-                    "y": raster.mean_cell_height,
-                    "sr": raster.extent["spatialReference"],
-                }
-            )
+            # try:
+            point_upper = arcpy.PointGeometry(
+                arcpy.Point(raster.extent["xmin"], raster.extent["ymax"]),
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
+            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
+            point_lower = arcpy.PointGeometry(
+                arcpy.Point(raster.extent["xmax"], raster.extent["ymin"]),
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
+            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
+            cell_size = arcpy.PointGeometry(
+                arcpy.Point(raster.mean_cell_width, raster.mean_cell_height),
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
+            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
 
-            points = arcgis.geometry.project(
-                [point_upper, point_lower, cell_size],
-                raster.extent["spatialReference"],
-                default_sr,
-            )
-            point_upper = points[0]
-            point_lower = points[1]
-            cell_size = points[2]
+            if xmin > point_upper.firstPoint.X:
+                xmin = point_upper.firstPoint.X
+            if ymax < point_upper.firstPoint.Y:
+                ymax = point_upper.firstPoint.y
+            if xmax < point_lower.firstPoint.X:
+                xmax = point_lower.firstPoint.X
+            if ymin > point_lower.firstPoint.Y:
+                ymin = point_lower.firstPoint.Y
 
-            if xmin > point_upper.x:
-                xmin = point_upper.x
-            if ymax < point_upper.y:
-                ymax = point_upper.y
-            if xmax < point_lower.x:
-                xmax = point_lower.x
-            if ymin > point_lower.y:
-                ymin = point_lower.y
+            if min_cell_size_x > cell_size.firstPoint.X:
+                min_cell_size_x = cell_size.firstPoint.X
 
-            if min_cell_size_x > cell_size.x:
-                min_cell_size_x = cell_size.x
-
-            if min_cell_size_y > cell_size.y:
-                min_cell_size_y = cell_size.y
+            if min_cell_size_y > cell_size.firstPoint.Y:
+                min_cell_size_y = cell_size.firstPoint.Y
 
         max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
         max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
 
-        point_upper = arcgis.geometry.Point({"x": xmin, "y": ymax, "sr": default_sr})
-        cell_size = arcgis.geometry.Point(
-            {"x": min_cell_size_x, "y": min_cell_size_y, "sr": default_sr}
+        point_upper = arcpy.PointGeometry(
+            arcpy.Point(xmin, ymax), arcpy.SpatialReference(default_sr["wkid"])
+        )
+        cell_size = arcpy.PointGeometry(
+            arcpy.Point(min_cell_size_x, min_cell_size_y),
+            arcpy.SpatialReference(default_sr["wkid"]),
         )
 
         raster_data = {}
         for raster in rasters:
             field_name = raster.name
-            point_upper_translated = arcgis.geometry.project(
-                [point_upper], default_sr, raster.extent["spatialReference"]
-            )[0]
-            cell_size_translated = arcgis.geometry.project(
-                [cell_size], default_sr, raster.extent["spatialReference"]
-            )[0]
+            point_upper_translated = point_upper.projectAs(
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
+            )
+            cell_size_translated = cell_size.projectAs(
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
+            )
             if field_name in fields_needed:
                 raster_read = raster.read(
                     origin_coordinate=(
-                        point_upper_translated.x,
-                        point_upper_translated.y,
+                        point_upper_translated.firstPoint.X,
+                        point_upper_translated.firstPoint.Y,
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.firstPoint.X,
+                        cell_size_translated.firstPoint.Y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -912,12 +901,15 @@ class AutoML(object):
                 field_name = match_field_names.get(raster.name)
                 raster_read = raster.read(
                     origin_coordinate=(
-                        point_upper_translated.x,
-                        point_upper_translated.y,
+                        point_upper_translated.firstPoint.X,
+                        point_upper_translated.firstPoint.Y,
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.firstPoint.X,
+                        cell_size_translated.firstPoint.Y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
