@@ -11614,6 +11614,12 @@ class Item(dict):
                 + self.itemid
                 + f"/data"  # "?token={self._gis._con.token}"
             )
+        else:
+            data_path = (
+                "content/items/"
+                + self.itemid
+                + f"/data"  # "?token={self._gis._con.token}"
+            )
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
@@ -13065,7 +13071,7 @@ class Item(dict):
                         res = pd.DataFrame(
                             res["data"][0]["num"], columns=["Date", "Usage"]
                         )
-                        res.Date = res.astype(float) / 1000
+                        res.Date = res.Date.astype(float) / 1000
                         res.Date = res.Date.apply(lambda x: datetime.fromtimestamp(x))
                         res.Usage = res.Usage.astype(int)
 

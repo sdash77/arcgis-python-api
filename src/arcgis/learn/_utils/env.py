@@ -172,8 +172,11 @@ def raise_gdal_import_error(import_exception=gdal_import_exception):
 
 ## Ipython inside ArcGIS Pro
 import sys
+
 _IS_ARCGISPRONOTEBOOK = None
 using_mpl_inline = False
+
+
 def is_arcgispronotebook():
     global using_mpl_inline
     if _IS_ARCGISPRONOTEBOOK is not None:
@@ -182,7 +185,7 @@ def is_arcgispronotebook():
         else:
             using_mpl_inline = False
         return _IS_ARCGISPRONOTEBOOK
-    if (os.path.basename(sys.executable) == "ArcGISPro.exe"):
+    if os.path.basename(sys.executable) == "ArcGISPro.exe":
         ### This code will be execute only once in ArcGIS Pro notebooks
         if not using_mpl_inline:
             patch_arcgis_notebook()
@@ -192,14 +195,18 @@ def is_arcgispronotebook():
         return True
         ###
 
+
 def reload_IPython():
-    if 'IPython' in sys.modules:
-        del sys.modules['IPython']
+    if "IPython" in sys.modules:
+        del sys.modules["IPython"]
     import IPython
+
     return IPython
+
 
 def patch_arcgis_notebook():
     if reload_IPython().get_ipython() is not None:
         reload_IPython().get_ipython().run_line_magic("matplotlib", "inline")
+
 
 is_arcgispronotebook()

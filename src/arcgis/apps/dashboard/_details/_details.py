@@ -16,7 +16,7 @@ class Details(_BaseWidget):
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the element.
     -------------------------   -------------------------------------------
-    layer                       Optional integer. Layer index for the Feature 
+    layer                       Optional integer. Layer index for the Feature
                                 Layer Collection item. Default value is 0
     -------------------------   -------------------------------------------
     title                       Optional string. Title of the widget.
@@ -157,7 +157,7 @@ class Details(_BaseWidget):
         """
         Set true to show last update in the widget.
         """
-        self._show_last_update = bool(value)        
+        self._show_last_update = bool(value)
 
     def _convert_to_json(self):
         if self.item.type == "mapWidget":

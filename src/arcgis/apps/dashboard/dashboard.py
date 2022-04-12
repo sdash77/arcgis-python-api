@@ -7,6 +7,7 @@ _DASHBOARD_VERSION = 27
 
 _created_dashboards = []
 
+
 @deprecated(deprecated_in="2.0.1", removed_in=None, current_version="2.0.1")
 class Dashboard(object):
     """
