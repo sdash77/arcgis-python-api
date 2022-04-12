@@ -1986,8 +1986,8 @@ def clip(
 
             if not isinstance(geometry, Geometry):
                 geometry = Geometry(geometry)
-            if isinstance(geometry, Geometry):
-                extent_envelope = _json.loads(geometry.envelope.JSON)
+
+            extent_envelope = _json.loads(geometry.envelope.JSON)
 
         if not use_input_feature_geometry:
             template_dict["rasterFunctionArguments"][
