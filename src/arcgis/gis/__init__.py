@@ -11614,6 +11614,12 @@ class Item(dict):
                 + self.itemid
                 + f"/data"  # "?token={self._gis._con.token}"
             )
+        else:
+            data_path = (
+                "content/items/"
+                + self.itemid
+                + f"/data"  # "?token={self._gis._con.token}"
+            )
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
@@ -13425,7 +13431,18 @@ class Item(dict):
 
         .. code-block:: python
 
-            # Usage Example
+            # Publishing a Hosted Table Example
+
+            >>> csv_item = gis.content.get('<csv item id>')
+            >>> analyzed = gis.content.analyze(item=csv_item)
+            >>> publish_parameters = analyzed['publishParameters']
+            >>> publish_parameters['name'] = 'AVeryUniqueName' # this needs to be updated
+            >>> publish_parameters['locationType'] = None # this makes it a hosted table
+            >>> published_item = csv_item.publish(publish_parameters)
+
+        .. code-block:: python
+
+            # Publishing a Tile Service Example
 
             >>> item.publish(address_fields= { "CountryCode" : "Country"},
             >>>               output_type="Tiles",
