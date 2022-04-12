@@ -1264,6 +1264,7 @@ class Portal(object):
 
         # If we've never retrieved the properties before, or the caller is
         # forcing a check of the server, then check the server
+        resp = None
         if not self._properties or force:
             path = "accounts/self" if self._is_pre_162 else "portals/self"
             resp = None
