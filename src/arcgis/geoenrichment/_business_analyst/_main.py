@@ -1625,9 +1625,9 @@ class BusinessAnalyst(object):
 
             # if z-enabled, de-enable so enrich can work...conversion does not work with z-enabled features
             if geographies[geographies.spatial.name].iloc[0].has_z:
-                geographies[geographies.spatial.name] = geographies[geographies.spatial.name].apply(
-                    lambda geom: Geometry(geom.__geo_interface__)
-                )
+                geographies[geographies.spatial.name] = geographies[
+                    geographies.spatial.name
+                ].apply(lambda geom: Geometry(geom.__geo_interface__))
 
         # if a proximity type is provided, validate
         if proximity_type is not None:
