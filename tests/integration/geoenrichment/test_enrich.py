@@ -33,6 +33,10 @@ def enrich_test(enrich_src: Country, geom: Union[pd.DataFrame, pd.Series, Iterab
                                        proximity_metric=prx_mtrc)
         assert isinstance(enrich_res, pd.DataFrame)
         assert enrich_res.spatial.validate()
+
+        if isinstance(enrich_vars, list):
+            enrich_vars = enrich_src._ba_cntry.get_enrich_variables_from_iterable(enrich_vars)
+
         enrich_var_cols = [pep8ify(val) for val in enrich_vars['enrich_field_name']]
         enrich_res_cols = list(enrich_res.columns)
         assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
@@ -133,6 +137,12 @@ def test_enrich_usa_stdgeo_df_local(usa_local, polygon_df, usa_local_enrich_vars
 
 @skip_if_no_local
 def test_enrich_usa_variable_name_list_local(usa_local, polygon_df):
+    enrich_test(usa_local, polygon_df, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
+
+
+def test_enrich_usa_after_can_variable_name_list_local(usa_local, polygon_df):
+    import arcpy
+    arcpy.env.baDataSource = "LOCAL;;CAN_ESRI_2021"
     enrich_test(usa_local, polygon_df, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
 
 
