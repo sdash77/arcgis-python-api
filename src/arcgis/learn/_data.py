@@ -672,7 +672,6 @@ def merge_emd_and_stats(data_folders):
             )  # Number of pixels
         eas["NumClasses"] = max(eas["NumClasses"], _eas["NumClasses"])
         eas["NumTiles"] += _eas["NumTiles"]
-        #
         stats_key1 = None
         stats_key1_1 = None
         stats_key2 = None
