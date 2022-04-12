@@ -1370,10 +1370,10 @@ class Map(object):
                 # update extent
                 self._story._properties["nodes"][self.node]["data"]["extent"] = extent
                 # update center
-                center_x = (self.extent["xmin"] + self.extent["xmax"]) / 2
-                center_y = (self.extent["ymin"] + self.extent["ymax"]) / 2
+                center_x = (extent["xmin"] + extent["xmax"]) / 2
+                center_y = (extent["ymin"] + extent["ymax"]) / 2
                 self._story._properties["nodes"][self.node]["data"]["center"] = {
-                    "spatialReference": self.extent["spatialReference"],
+                    "spatialReference": extent["spatialReference"],
                     "x": center_x,
                     "y": center_y,
                 }
