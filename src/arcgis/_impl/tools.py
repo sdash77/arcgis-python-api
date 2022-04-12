@@ -4,14 +4,11 @@ or Portal web services. It has implementations for Spatial Analysis tools, GeoAn
 Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services.
 These tools primarily operate on items and layers from the GIS.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import json
 import logging
 import os
-import sys
 import random
 import string
 import tempfile
@@ -941,7 +938,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         point_layer = self._feature_input(point_layer)
         if polygon_layer:
             polygon_layer = self._feature_input(polygon_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -1288,7 +1285,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             required_facilities_layer = self._feature_input(required_facilities_layer)
         if candidate_facilities_layer:
             candidate_facilities_layer = self._feature_input(candidate_facilities_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -1644,7 +1641,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "ConnectOriginsToDestinations"
         origins_layer = self._feature_input(origins_layer)
         destinations_layer = self._feature_input(destinations_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -1926,7 +1923,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CreateDriveTimeAreas"
 
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2064,13 +2061,6 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         if route_data_item:
             route_data_item = {"itemId": route_data_item.itemid}
-        # if self._gis.version > [9, 2] or self._gis._is_agol:
-        # overwrite = context.pop("overwrite", False) if context else False
-        # else:
-        ## Remove if in context but default to False in all cases.
-        # overwrite = context.pop("overwrite", False) if context else False
-        # overwrite = False
-        # output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params = {}
@@ -2244,7 +2234,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         task = "CreateBuffers"
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2402,7 +2392,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CalculateDensity"
 
         params = {}
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2603,7 +2593,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         task = "CreateViewshed"
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2765,7 +2755,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3063,7 +3053,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3170,7 +3160,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
                                                     .. code-block:: python
 
@@ -3318,7 +3308,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
 
                                                                                 .. code-block:: python
@@ -3423,55 +3413,55 @@ class _FeatureAnalysisTools(BaseAnalytics):
         The extracted data format can be a file geodatabase, shapefiles, csv, or kml.
         File geodatabases and shapefiles are added to a zip file that can be downloaded.
 
-        ===================================    =========================================================
-        **Argument**                           **Description**
-        -----------------------------------    ---------------------------------------------------------
-        input_layers                           Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
-        -----------------------------------    ---------------------------------------------------------
-        extent                                 Optional layer. The extent is the area of interest used to extract the input features. If not specified, all features from each input layer are extracted. See :ref:`Feature Input<FeatureInput>`.
-        -----------------------------------    ---------------------------------------------------------
-        clip                                   Optional boolean. A Boolean value that specifies whether the features within the input layer are clipped
-                                            within the extent. By default, features are not clipped and all features intersecting the extent are returned.
+        ===================================     =========================================================
+        **Argument**                            **Description**
+        -----------------------------------     ---------------------------------------------------------
+        input_layers                            Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
+        -----------------------------------     ---------------------------------------------------------
+        extent                                  Optional layer. The extent is the area of interest used to extract the input features. If not specified, all features from each input layer are extracted. See :ref:`Feature Input<FeatureInput>`.
+        -----------------------------------     ---------------------------------------------------------
+        clip                                    Optional boolean. A Boolean value that specifies whether the features within the input layer are clipped
+                                                within the extent. By default, features are not clipped and all features intersecting the extent are returned.
 
-                                            The default is false.
-        -----------------------------------    ---------------------------------------------------------
-        data_format                            Optional string. A keyword defining the output data format for your extracted data.
+                                                The default is false.
+        -----------------------------------     ---------------------------------------------------------
+        data_format                             Optional string. A keyword defining the output data format for your extracted data.
 
-                                            Choice list: ``['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']``
+                                                Choice list: ``['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']``
 
-                                            The default is 'CSV'.
+                                                The default is 'CSV'.
 
-                                            If *FileGeodatase* is specified *and* the input layer has `attachments: <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_
+                                                If *FileGeodatase* is specified *and* the input layer has `attachments: <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_
 
-                                                * if *clip=False*, the attachments will be extracted to the output file
-                                                * if *clip=True*, the attachments will not be extracted
-        -----------------------------------    ---------------------------------------------------------
-        output_name                            Optional string or dict.
+                                                    * if *clip=False*, the attachments will be extracted to the output file
+                                                    * if *clip=True*, the attachments will not be extracted
+        -----------------------------------     ---------------------------------------------------------
+        output_name                             Optional string or dict.
 
-                                            When ``output_name`` is a string, the output item in your My contents page
-                                            will be named by the value. Other item properties will receive default values.
+                                                When ``output_name`` is a string, the output item in your My contents page
+                                                will be named by the value. Other item properties will receive default values.
 
-                                            .. code-block:: python
+                                                .. code-block:: python
 
-                                                output_name = "my_extracted_item"
+                                                    output_name = "my_extracted_item"
 
-                                            To explicitly provide other item properties, use a dict with the following Syntax.
+                                                To explicitly provide other item properties, use a dict with the following Syntax.
 
-                                            .. code-block:: python
+                                                .. code-block:: python
 
-                                                output_name = {"title": "<title>",
-                                                                "tag": "<tags>",
-                                                                "snippet": "<snippet>",
-                                                                "description": "<description>"}
+                                                    output_name = {"title": "<title>",
+                                                                    "tag": "<tags>",
+                                                                    "snippet": "<snippet>",
+                                                                    "description": "<description>"}
 
-                                            For more information on these and other item properties, see the Item resource page in the `ArcGIS REST API. <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
-        -----------------------------------    ---------------------------------------------------------
-        gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-        -----------------------------------    ---------------------------------------------------------
-        estimate                               Optional boolean. If True, the number of credits to run the operation will be returned.
-        -----------------------------------    ---------------------------------------------------------
-        future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-        ===================================    =========================================================
+                                                For more information on these and other item properties, see the Item resource page in the `ArcGIS REST API. <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
+        -----------------------------------     ---------------------------------------------------------
+        gis                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -----------------------------------     ---------------------------------------------------------
+        estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
+        -----------------------------------     ---------------------------------------------------------
+        future                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ===================================     =========================================================
 
         :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
 
@@ -3572,7 +3562,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3665,7 +3655,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3960,7 +3950,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4061,7 +4051,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
 
                                                                                     .. code-block:: python
 
@@ -4106,7 +4096,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4359,7 +4349,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             line_barrier_layer = self._feature_input(line_barrier_layer)
         if polygon_barrier_layer:
             polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4547,7 +4537,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4674,7 +4664,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
                                     .. code-block:: python
 
@@ -4826,7 +4816,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                     - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
 
                                         .. code-block:: python
 
@@ -4855,7 +4845,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "FindSimilarLocations"
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4971,7 +4961,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         if extent_layer:
             extent_layer = self._feature_input(extent_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5195,7 +5185,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if predict_at_point_layer:
             predict_at_point_layer = self._feature_input(predict_at_point_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5368,7 +5358,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         target_layer = self._feature_input(target_layer)
         join_layer = self._feature_input(join_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5512,7 +5502,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         input_layer = self._feature_input(input_layer)
         merge_layer = self._feature_input(merge_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5661,7 +5651,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         overlay_layer = self._feature_input(overlay_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5984,7 +5974,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             start_layer = self._feature_input(start_layer)
         if end_layer:
             end_layer = self._feature_input(end_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6112,7 +6102,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
 
                                     .. code-block:: python
 
@@ -6142,7 +6132,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6322,7 +6312,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if sum_within_layer:
             sum_within_layer = self._feature_input(sum_within_layer)
         summary_layer = self._feature_input(summary_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6488,7 +6478,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6760,7 +6750,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         sum_nearby_layer = self._feature_input(sum_nearby_layer)
         summary_layer = self._feature_input(summary_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.

@@ -21,7 +21,7 @@ import_exception = None
 
 try:
     from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
-    from arcgis.learn._utils.tabular_data import TabularDataObject
+    from arcgis.learn._utils.tabular_data import TabularDataObject, add_h3
     from arcgis.learn._utils.common import _get_emd_path
 
     HAS_FASTAI = True
@@ -72,7 +72,7 @@ class AutoML(object):
                             Default is 3600 (1 Hr)
     ---------------------   -------------------------------------------
     mode                    Optional Str.
-                            Can be {Explain, Perform, Compete}. This parameter defines
+                            Can be {Basic, Intermediate, Advanced}. This parameter defines
                             the goal of AutoML and how intensive the AutoML search will be.
 
                             Basic : To to be used when the user wants to explain and
@@ -93,7 +93,7 @@ class AutoML(object):
                                       Uses the following models: Decision Tree, Random Forest, Extra Trees,
                                       XGBoost, CatBoost, Neural Network, Nearest Neighbors, Ensemble,
                                       and Stacking.It has only learning curves in the reports.
-                                      Default is Explain.
+                                      Default is Basic.
     ---------------------   -------------------------------------------
     algorithms              Optional. List of str.
                             The list of algorithms that will be used in the training. The algorithms can be:
@@ -113,8 +113,8 @@ class AutoML(object):
                             In all other cases, regression is performed on the dataset.
     ---------------------   -------------------------------------------
     n_jobs                  Optional. Int.
-                            Number of CPU cores to be used. By default, it is set to -1 which uses
-                            all processes.
+                            Number of CPU cores to be used. By default, it is set to 1.Set it
+                            to -1 to use all the cores.
     =====================   ===========================================
 
     :return: `AutoML` Object
@@ -124,10 +124,10 @@ class AutoML(object):
         self,
         data=None,
         total_time_limit=3600,
-        mode="Explain",
+        mode="Basic",
         algorithms=None,
         eval_metric="auto",
-        n_jobs=-1,
+        n_jobs=1,
     ):
         try:
             from supervised.automl import AutoML as base_AutoML
@@ -190,7 +190,7 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            if mode == "Explain":
+            if (mode == "Explain") or (mode == "Basic"):
                 explain_level = 2
             else:
                 explain_level = 0  # Setting explain level to 0 in case of Perform and Compete as EDA seems to be creating memory issues
@@ -546,6 +546,7 @@ class AutoML(object):
         input_features=None,
         explanatory_rasters=None,
         datefield=None,
+        cell_sizes=[3, 4, 5, 6, 7],
         distance_features=None,
         output_layer_name="Prediction Layer",
         gis=None,
@@ -571,6 +572,13 @@ class AutoML(object):
         datefield                           Optional string. Field name from feature layer
                                             that contains the date, time for the input features.
                                             Same as `prepare_tabulardata()`.
+        ---------------------------------   -------------------------------------------------------------------------
+        cell_sizes                          Size of H3 cells (specified as H3 resolution) for spatially
+                                            aggregating input features and passing in the cell ids as additional
+                                            explanatory variables to the model. If a spatial dataframe is passed
+                                            as input_features, ensure that the spatial reference is 4326,
+                                            and the geometry type is Point. Not applicable when explanatory_rasters
+                                            are provided.
         ---------------------------------   -------------------------------------------------------------------------
         distance_features                   Optional List of Feature Layer objects.
                                             These layers are used for calculation of field "NEAR_DIST_1",
@@ -620,6 +628,7 @@ class AutoML(object):
                 input_features,
                 rasters,
                 datefield,
+                cell_sizes,
                 distance_features,
                 output_layer_name,
                 gis,
@@ -642,6 +651,7 @@ class AutoML(object):
         input_features,
         rasters=None,
         datefield=None,
+        cell_sizes=[3, 4, 5, 6, 7],
         distance_feature_layers=None,
         output_name="Prediction Layer",
         gis=None,
@@ -650,7 +660,12 @@ class AutoML(object):
     ):
         dataframe_complete = False
         if isinstance(input_features, FeatureLayer):
-            dataframe = input_features.query().sdf
+            if cell_sizes and not rasters:
+                dataframe = input_features.query(out_sr=4326).sdf
+                dataframe = add_h3(dataframe, cell_sizes)
+            else:
+                dataframe = input_features.query().sdf
+
         elif hasattr(input_features, "dataSource"):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
                 input_features,
@@ -659,6 +674,8 @@ class AutoML(object):
                 index_field=None,
                 is_table_obj=False,
             )
+            if cell_sizes and not rasters:
+                dataframe = add_h3(dataframe, cell_sizes)
             dataframe_complete = True
         elif hasattr(input_features, "value"):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
@@ -730,6 +747,7 @@ class AutoML(object):
                     feature_layer_columns,
                     raster_columns,
                     datefield,
+                    cell_sizes,
                     distance_feature_layers,
                 )
 

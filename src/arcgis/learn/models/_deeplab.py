@@ -45,7 +45,7 @@ try:
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._psp_utils import accuracy
     from ._PointRend import PointRendSemSegHead, PointRend_target_transform
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
 
     HAS_FASTAI = True
@@ -639,7 +639,7 @@ class DeepLab(ArcGISModel):
         self.learn.show_results(
             rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs
         )
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _show_results_multispectral(

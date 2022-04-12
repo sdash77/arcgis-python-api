@@ -5,6 +5,7 @@ try:
     import torch.nn as nn
     import math
     from .util import scale_batch, variable_tile_size_check
+    import cv2
 
     HAS_TORCH = True
 except Exception as e:
@@ -332,29 +333,45 @@ def pixel_mask_image(
                 masks = masks[None]
             for n, mask in enumerate(masks):
                 if predictions[batch_idx]["scores"][n].tolist() >= threshold:
-                    contours = find_contours(mask, 0.5, fully_connected="high")
-                    coord_list = []
-                    for c_idx, contour in enumerate(contours):
-
-                        contour[:, 0] = contour[:, 0] + (i * chip_size)
-                        contour[:, 1] = contour[:, 1] + (j * chip_size)
-                        if c_idx == 0:
-                            coord_list.append(contour[:, [1, 0]].tolist())
-                        else:
-                            coord_list.append(
-                                list(reversed(contour[:, [1, 0]].tolist()))
-                            )
-                    all_contour_list.append(coord_list)
-                    pred_class.append(predictions[batch_idx]["labels"][n].tolist())
-                    pred_score.append(
-                        predictions[batch_idx]["scores"][n].tolist() * 100
+                    contours, hierarchy = cv2.findContours(
+                        (mask >= 0.5).astype(np.uint8),
+                        cv2.RETR_TREE,
+                        cv2.CHAIN_APPROX_NONE,
                     )
-                    box = predictions[batch_idx]["boxes"][n].cpu().detach().numpy()
-                    box[0] += j * chip_size
-                    box[2] += j * chip_size
-                    box[1] += i * chip_size
-                    box[3] += i * chip_size
-                    pred_box.append(box)
+                    if len(contours) > 0:
+                        hierarchy = hierarchy[0]
+                        for c_idx, contour in enumerate(contours):
+                            contour = contours[c_idx] = contour.squeeze(1)
+                            contours[c_idx][:, 0] = contour[:, 0] + (j * chip_size)
+                            contours[c_idx][:, 1] = contour[:, 1] + (i * chip_size)
+                        for (
+                            contour_idx,
+                            (next_contour, prev_contour, child_contour, parent_contour),
+                        ) in enumerate(hierarchy):
+                            if parent_contour == -1:
+                                coord_list = [contours[contour_idx].tolist()]
+                                while child_contour != -1:
+                                    coord_list.append(contours[child_contour].tolist())
+                                    child_contour = hierarchy[child_contour][0]
+                                #
+                                all_contour_list.append(coord_list)
+                                pred_class.append(
+                                    predictions[batch_idx]["labels"][n].tolist()
+                                )
+                                pred_score.append(
+                                    predictions[batch_idx]["scores"][n].tolist() * 100
+                                )
+                                box = (
+                                    predictions[batch_idx]["boxes"][n]
+                                    .cpu()
+                                    .detach()
+                                    .numpy()
+                                )
+                                box[0] += j * chip_size
+                                box[2] += j * chip_size
+                                box[1] += i * chip_size
+                                box[3] += i * chip_size
+                                pred_box.append(box)
 
     if return_bboxes:
         pred_box = np.array(pred_box)

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 from .common import get_nbatches, image_batch_stretcher
-from .._utils.env import _IS_ARCGISPRONOTEBOOK
+from .._utils.env import is_arcgispronotebook
 
 
 def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in kwargs
@@ -140,7 +140,7 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in 
             else:
                 ax[r][c].axis("off")
             idx += 1
-    if _IS_ARCGISPRONOTEBOOK:
+    if is_arcgispronotebook():
         plt.show()
 
 
