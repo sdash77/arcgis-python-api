@@ -1364,7 +1364,9 @@ class Map(object):
                         "Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'"
                     )
                 if "spatialReference" not in extent:
-                    extent["spatialReference"] = {"wkid": 4326}
+                    extent["spatialReference"] = self._story._properties["resources"][
+                        self.resource_node
+                    ]["data"]["extent"]["spatialReference"]
 
                 # In order to correctly edit, the viewpoint, extent, and center must be updated.
                 # update extent
