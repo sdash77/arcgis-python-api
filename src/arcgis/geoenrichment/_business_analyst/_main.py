@@ -1623,6 +1623,12 @@ class BusinessAnalyst(object):
         else:
             geographies = get_spatially_enabled_dataframe(geographies)
 
+            # if z-enabled, de-enable so enrich can work...conversion does not work with z-enabled features
+            if geographies[geographies.spatial.name].iloc[0].has_z:
+                geographies[geographies.spatial.name] = geographies[geographies.spatial.name].apply(
+                    lambda geom: Geometry(geom.__geo_interface__)
+                )
+
         # if a proximity type is provided, validate
         if proximity_type is not None:
             proximity_type = validate_network_travel_mode(country, proximity_type)
@@ -1634,7 +1640,7 @@ class BusinessAnalyst(object):
             proximity_metric = (
                 "kilometers" if proximity_metric is None else proximity_metric
             )
-            proximity_value = 1 if proximity_value is 1 else proximity_value
+            proximity_value = 1 if proximity_value == 1 else proximity_value
 
             # ensure if the geometry is lines, the proximity_type is not a network travel mode
             if (
@@ -1757,7 +1763,7 @@ class BusinessAnalyst(object):
         ge_url = f"{self._base_url}/Geoenrichment/Enrich"
 
         # get the enrichment variables as a string ready to submit as a payload parameter
-        evars = self._enrich_variable_preprocessing(enrich_variables)
+        evars = self._enrich_variable_preprocessing(enrich_variables, country=country)
 
         # start building out the package for enrich REST call
         params = {
