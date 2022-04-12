@@ -37,7 +37,7 @@ def enrich_test(enrich_src: Country, geom: Union[pd.DataFrame, pd.Series, Iterab
         if isinstance(enrich_vars, list):
             enrich_vars = enrich_src._ba_cntry.get_enrich_variables_from_iterable(enrich_vars)
 
-        enrich_var_cols = [pep8ify(val) for val in enrich_vars['enrich_field_name']]
+        enrich_var_cols = [pep8ify(val) for val in enrich_vars['name']]
         enrich_res_cols = list(enrich_res.columns)
         assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
 

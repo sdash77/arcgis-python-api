@@ -112,7 +112,7 @@ class AOI(object):
         return ev
 
     def get_enrich_variables_from_iterable(
-        self, enrich_variables: Union[Iterable, pd.Series]
+        self, enrich_variables: Union[Iterable, pd.Series], **kwargs
     ) -> pd.DataFrame:
         """Get a dataframe of enrich enrich_variables associated with the list of enrich_variables
         passed in. This is especially useful when needing aliases (*human readable
@@ -162,7 +162,9 @@ class AOI(object):
             enrich_df.spatial.to_featureclass(new_fc_pth)
         """
         # call the method from the parent business analyst instance
-        ev = self._ba.get_enrich_variables_from_iterable(enrich_variables, country=self)
+        ev = self._ba.get_enrich_variables_from_iterable(
+            enrich_variables, country=self, **kwargs
+        )
 
         return ev
 
@@ -1167,7 +1169,7 @@ class BusinessAnalyst(object):
                     break
 
         # make sure something was found, but don't break the runtime
-        if len(sel_vars) == 0:
+        if "suppress_warn" not in kwargs.keys() and len(sel_vars) == 0:
             warn(f"It appears none of the input enrich enrich_variables were found.")
 
         return sel_vars
@@ -1683,7 +1685,10 @@ class BusinessAnalyst(object):
         # convert the output to a spatially enabled dataframe
         enrich_df = GeoAccessor.from_featureclass(enrich_res)
 
-        # pep8ify columns to prevent unexpected schema changes when exporting
+        # standardize columns to ensure results are as expected
+        enrich_df.columns = [
+            self._standardize_enrich_column_name(c, country) for c in enrich_df.columns
+        ]
         enrich_df.columns = [pep8ify(c) for c in enrich_df.columns if c != "SHAPE"] + [
             "SHAPE"
         ]
@@ -1694,7 +1699,7 @@ class BusinessAnalyst(object):
         ]
         drop_cols.append(pep8ify(arcpy.Describe(enrich_res).OIDFieldName))
 
-        # get rid of the temproary output to save memory
+        # get rid of the temporary output to save memory
         arcpy.management.Delete(enrich_res)
 
         # if returning geometry
@@ -1960,6 +1965,9 @@ class BusinessAnalyst(object):
 
         # proactively change the column names so no surprises if exporting to a feature class later
         enrich_df.columns = [
+            self._standardize_enrich_column_name(c, country) for c in enrich_df.columns
+        ]
+        enrich_df.columns = [
             pep8ify(c) if c != "SHAPE" else c for c in enrich_df.columns
         ]
 
@@ -1968,6 +1976,17 @@ class BusinessAnalyst(object):
         enrich_df.attrs["arcgis_aoi"] = country
 
         return enrich_df
+
+    def _standardize_enrich_column_name(
+        self, column_name: str, country: Optional[Country] = None
+    ):
+        """Helper function to standardize the output column names so is the same no matter the source."""
+        std_src = self if country is None else country
+        col_nm = std_src.get_enrich_variables_from_iterable(
+            column_name, suppress_warn=True
+        )
+        col_nm = col_nm.iloc[0]["name"] if len(col_nm.index) > 0 else column_name
+        return col_nm
 
 
 async def _get_enrich_rest(
