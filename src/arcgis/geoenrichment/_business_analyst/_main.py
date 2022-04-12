@@ -1621,6 +1621,9 @@ class BusinessAnalyst(object):
                 ids_list=std_geo_in,
             )[0]
 
+            # convert to spatially enabled dataframe
+            geographies = GeoAccessor.from_featureclass(geographies)
+
         # otherwise, make sure input in consistent format
         else:
             geographies = get_spatially_enabled_dataframe(geographies)
