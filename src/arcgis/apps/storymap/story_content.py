@@ -1399,54 +1399,64 @@ class Map(object):
     def show_legend(self):
         """Get/Set the showing legend toggle. True if enabled and False if disabled"""
         if self._check_node() is True:
-            return self._story._properties["nodes"][self.node]["data"][
-                "isShowingLegend"
-            ]
+            if "isShowingLegend" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"][
+                    "isShowingLegend"
+                ]
+            else:
+                return False
 
     # ----------------------------------------------------------------------
     @show_legend.setter
     def show_legend(self, value: bool):
         self._story._properties["nodes"][self.node]["data"]["isShowingLegend"] = value
-        return self.show_legend
 
     # ----------------------------------------------------------------------
     @property
     def legend_pinned(self):
         """Get/Set the legend pinned toggle. True if enabled and False if disabled"""
         if self._check_node() is True:
-            return self._story._properties["nodes"][self.node]["data"]["legendPinned"]
+            if "legendPinned" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"][
+                    "legendPinned"
+                ]
+            else:
+                return False
 
     # ----------------------------------------------------------------------
     @legend_pinned.setter
     def legend_pinned(self, value: bool):
         self._story._properties["nodes"][self.node]["data"]["legendPinned"] = value
-        return self.legend_pinned
 
     # ----------------------------------------------------------------------
     @property
     def show_search(self):
         """Get/Set the search toggle. True if enabled and False if disabled"""
         if self._check_node() is True:
-            return self._story._properties["nodes"][self.node]["data"]["search"]
+            if "search" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["search"]
+            else:
+                return False
 
     # ----------------------------------------------------------------------
     @show_search.setter
     def show_search(self, value: bool):
         self._story._properties["nodes"][self.node]["data"]["search"] = value
-        return self.show_search
 
     # ----------------------------------------------------------------------
     @property
     def time_slider(self):
         """Get/Set the time slider toggle. True if enabled and False if disabled"""
         if self._check_node() is True:
-            return self._story._properties["nodes"][self.node]["data"]["timeSlider"]
+            if "time_slider" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["timeSlider"]
+            else:
+                return False
 
     # ----------------------------------------------------------------------
     @time_slider.setter
     def time_slider(self, value: bool):
         self._story._properties["nodes"][self.node]["data"]["timeSlider"] = value
-        return self.time_slider
 
     # ----------------------------------------------------------------------
     @property
