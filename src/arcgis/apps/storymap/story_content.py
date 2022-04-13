@@ -1414,7 +1414,13 @@ class Map(object):
     # ----------------------------------------------------------------------
     @property
     def legend_pinned(self):
-        """Get/Set the legend pinned toggle. True if enabled and False if disabled"""
+        """
+        Get/Set the legend pinned toggle. True if enabled and False if disabled.
+
+        .. note::
+            If set to True, make sure `show_legend` is also True. Otherwise, you will not
+            see the legend pinned.
+        """
         if self._check_node() is True:
             if "legendPinned" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"][
