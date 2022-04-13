@@ -1940,7 +1940,7 @@ def clip(
     --------------------------------     --------------------------------------------------------------------
     raster                                   Required input Raster/ImageryLayer object
     --------------------------------     --------------------------------------------------------------------
-    goemetry                                 Required clipping geometry
+    goemetry                                 Optional dictionary. Specifies the geometry for clipping.
     --------------------------------     --------------------------------------------------------------------
     clip_outside                             Optional boolean, If True, the imagery outside the extents will be removed, else the imagery within the clipping geometry will be removed.
     --------------------------------     --------------------------------------------------------------------
