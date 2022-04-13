@@ -1105,8 +1105,8 @@ class TabularDataObject(object):
             for distance_layer in distance_feature:
                 # field_1 = 'NEAR_FID_'+str(count)
                 field_2 = "NEAR_DIST_" + str(count)
-                fields = [["Distance", field_2]]
-                arcpy.Near_analysis(data_source, distance_layer)
+                fields = [["NEAR_DIST", field_2]]
+                arcpy.Near_analysis(data_source, distance_layer,field_names=fields)
                 count = count + 1
             sdf = pd.DataFrame.spatial.from_featureclass(data_source, sr="4326")
         else:
