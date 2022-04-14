@@ -434,9 +434,7 @@ class MaskRCNN(ArcGISModel):
         self.learn.c_device = self._device
 
         # fixes for zero division error when slice is passed
-        idx = 27
-        if self._backbone.__name__ in ["resnet18", "resnet34"]:
-            idx = self._freeze()
+        idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 

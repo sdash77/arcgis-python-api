@@ -598,19 +598,16 @@ class DeepLab(ArcGISModel):
 
     def _freeze(self):
         "Freezes the pretrained backbone."
-        if self._backbone.__name__ == "resnet101":
-            idx = 68
-        else:
-            for idx, i in enumerate(flatten_model(self.learn.model)):
-                if isinstance(i, (nn.BatchNorm2d)):
-                    continue
-                if hasattr(i, "dilation"):
-                    dilation = i.dilation
-                    dilation = dilation[0] if isinstance(dilation, tuple) else dilation
-                    if dilation > 1:
-                        break
-                for p in i.parameters():
-                    p.requires_grad = False
+        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
+            if isinstance(i, (nn.BatchNorm2d)):
+                continue
+            if hasattr(i, "dilation"):
+                dilation = i.dilation
+                dilation = dilation[0] if isinstance(dilation, tuple) else dilation
+                if dilation > 1:
+                    break
+            for p in i.parameters():
+                p.requires_grad = False
 
         self.learn.layer_groups = split_model_idx(
             self.learn.model, [idx]
