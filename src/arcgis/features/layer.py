@@ -2453,7 +2453,7 @@ class FeatureLayer(Layer):
         ======================     ====================================================================
 
         :return:
-            A dictionary if future=False (default), else If ``future = True``, 
+            A dictionary if future=False (default), else If ``future = True``,
             then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
@@ -3017,9 +3017,9 @@ class FeatureLayer(Layer):
                                 `isDataBranchVersioned` property of the layer is
                                 true.
         ---------------------   ----------------------------------------------------
-        future                  Optional boolean. If True, a future object will be 
+        future                  Optional boolean. If True, a future object will be
                                 returned and the process
-                                will not wait for the task to complete. The default is 
+                                will not wait for the task to complete. The default is
                                 False, which means wait for results.
 
                                 **This applies to 10.8+ only**
@@ -3032,7 +3032,7 @@ class FeatureLayer(Layer):
              'updatedFeatureCount': 1,
              'success': True
              }
-            
+
             If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python

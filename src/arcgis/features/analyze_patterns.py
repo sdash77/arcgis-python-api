@@ -568,7 +568,7 @@ def find_hot_spots(
                                              bounding_polygon_layer=boundry_lyr,
                                              output_name='collision_hexagon_hot_spots',
                                              shape_type='hexagon')
-                                    
+
     """
 
     distance_band_units = distance_band_unit

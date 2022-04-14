@@ -2035,7 +2035,7 @@ class FeatureLayerCollectionManager(_GISResource):
         ===============     ====================================================================
 
         :return:
-           JSON message as dictionary when `future=False` else If ``future = True``, 
+           JSON message as dictionary when `future=False` else If ``future = True``,
            then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
@@ -2187,7 +2187,7 @@ class FeatureLayerCollectionManager(_GISResource):
         ===============     ====================================================================
 
         :return:
-           JSON message as dictionary when `future=False` else If ``future = True``, 
+           JSON message as dictionary when `future=False` else If ``future = True``,
            then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
@@ -2593,7 +2593,7 @@ class FeatureLayerManager(_GISResource):
         ===============     ====================================================================
 
         :return:
-           JSON message as dictionary indicating 'success' or 'error'. If ``future = True``, 
+           JSON message as dictionary indicating 'success' or 'error'. If ``future = True``,
            then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
         """
 
@@ -2641,7 +2641,7 @@ class FeatureLayerManager(_GISResource):
         ===============     ====================================================================
 
         :return:
-           JSON Message as dictionary indicating 'success' or 'error'. If ``future = True``, 
+           JSON Message as dictionary indicating 'success' or 'error'. If ``future = True``,
            then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
         """
 
@@ -2693,7 +2693,7 @@ class FeatureLayerManager(_GISResource):
         ===============     ====================================================================
 
         :return:
-           JSON Message as dictionary indicating 'success' or 'error'. If ``future = True``, 
+           JSON Message as dictionary indicating 'success' or 'error'. If ``future = True``,
            then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """

@@ -191,7 +191,7 @@ class NotebookManager(object):
                                 will not wait for the task to complete. The default is False, which means wait for results.
         ====================    ====================================================================
 
-        :return: Boolean else If ``future = True``, 
+        :return: Boolean else If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """

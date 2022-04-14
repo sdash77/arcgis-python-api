@@ -178,7 +178,7 @@ def areas_and_lengths(
     ================  ===============================================================================
 
     :returns:
-        A JSON as dictionary, or a `GeometryJob` object. If ``future = True``, 
+        A JSON as dictionary, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
@@ -235,7 +235,7 @@ def auto_complete(
     ================  ===============================================================================
 
     :returns:
-        A :class:`~arcgis.geometry.Polygon` object, or a `GeometryJob` object. If ``future = True``, 
+        A :class:`~arcgis.geometry.Polygon` object, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
@@ -305,7 +305,7 @@ def buffer(
     ================  ===============================================================================
 
     :returns:
-        A list of :class:`~arcgis.geometry.Polygon` object, or a `GeometryJob` object. If ``future = True``, 
+        A list of :class:`~arcgis.geometry.Polygon` object, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
@@ -368,7 +368,7 @@ def convex_hull(
 
     :returns:
         The convex hull of the :class:`~arcgis.geometry.Geometry` object, or a `GeometryJob` object.
-        If ``future = True``, 
+        If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
@@ -418,7 +418,7 @@ def cut(
     ================  ===============================================================================
 
     :returns:
-        A List of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``, 
+        A List of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
@@ -479,9 +479,9 @@ def densify(
     ================  ===============================================================================
 
     :returns:
-        A list of :class:`~arcgis.geometry.Geometry` object, or a `GeometryJob` object. If ``future = True``, 
+        A list of :class:`~arcgis.geometry.Geometry` object, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
-    
+
     .. code-block:: python
 
             >>> densify(geometries =[geom1, geom2,...],
@@ -544,7 +544,7 @@ def difference(
     ================  ===============================================================================
 
     :returns:
-        A list of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``, 
+        A list of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
@@ -602,7 +602,7 @@ def distance(
 
     :returns:
         The 2D or geodesic distance between the two :class:`~arcgis.geometry.Geometry` objects, or
-        a `GeometryJob` object. If ``future = True``, 
+        a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
@@ -672,7 +672,7 @@ def find_transformation(
     ================  ===============================================================================
 
     :returns:
-        A List of geographic transformations, or a `GeometryJob` object. If ``future = True``, 
+        A List of geographic transformations, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
@@ -746,7 +746,7 @@ def from_geo_coordinate_string(
     ================  ===============================================================================
 
     :returns:
-        An array of (x,y) coordinates, or a `GeometryJob` object. If ``future = True``, 
+        An array of (x,y) coordinates, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
@@ -808,7 +808,7 @@ def generalize(
     ================  ===============================================================================
 
     :returns:
-        An array of the simplified :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``, 
+        An array of the simplified :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
@@ -857,7 +857,7 @@ def intersect(
     ================  ===============================================================================
 
     :returns:
-        The set-theoretic dimension between :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``, 
+        The set-theoretic dimension between :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
@@ -894,7 +894,7 @@ def label_points(
     ================  ===============================================================================
 
     :returns:
-        An array of :class:`~arcgis.geometry.Point` objects, or a `GeometryJob` object. If ``future = True``, 
+        An array of :class:`~arcgis.geometry.Point` objects, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
@@ -952,7 +952,7 @@ def lengths(
     ================  ===============================================================================
 
     :returns:
-        A list of floats of 2D-Euclidean or Geodesic lengths, or a `GeometryJob` object. If ``future = True``, 
+        A list of floats of 2D-Euclidean or Geodesic lengths, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
@@ -1035,7 +1035,7 @@ def offset(
     ================  ===============================================================================
 
     :returns:
-        A list of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``, 
+        A list of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
@@ -1114,7 +1114,7 @@ def project(
 
     :returns:
         A list of :class:`~arcgis.geometry.Geometry` objects in the ``out_sr`` coordinate system, or
-        a `GeometryJob` object. If ``future = True``, 
+        a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
@@ -1178,7 +1178,7 @@ def relation(
 
 
     :returns:
-        A JSON dict of geometryNIndex between two lists of geometries, or a `GeometryJob` object. If ``future = True``, 
+        A JSON dict of geometryNIndex between two lists of geometries, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
             >>> new_res = relation(geometry1 = [geom1,geom2,...],
@@ -1232,7 +1232,7 @@ def reshape(
 
     :returns:
         A reshaped :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` object, or
-        a `GeometryJob` object. If ``future = True``, 
+        a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
@@ -1268,7 +1268,7 @@ def simplify(
     ================  ===============================================================================
 
     :returns:
-        An array of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``, 
+        An array of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
@@ -1358,7 +1358,7 @@ def to_geo_coordinate_string(
     ================  ===============================================================================
 
     :returns:
-        An array of Strings, or a `GeometryJob` object. If ``future = True``, 
+        An array of Strings, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
@@ -1441,7 +1441,7 @@ def trim_extend(
     ================  ===============================================================================
 
     :returns:
-        An array of :class:`~arcgis.geometry.Polyline` objects, or a `GeometryJob` object. If ``future = True``, 
+        An array of :class:`~arcgis.geometry.Polyline` objects, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
@@ -1495,7 +1495,7 @@ def union(
     ================  ===============================================================================
 
     :returns:
-        The set-theoretic union of the :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``, 
+        The set-theoretic union of the :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
         then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
