@@ -3123,14 +3123,14 @@ class GeoAccessor(object):
                 fields.append(
                     {"name": col, "type": "esriFieldTypeSmallInteger", "alias": col}
                 )
-            elif (
-                isinstance(col_val, (int, np.int, np.int64, np.int32))
-                and not col in date_cols
-            ):
+            elif isinstance(col_val, (int, np.int, np.int32)) and not col in date_cols:
                 fields.append(
                     {"name": col, "type": "esriFieldTypeInteger", "alias": col}
                 )
-            elif isinstance(col_val, (float, np.float64)) and not col in date_cols:
+            elif (
+                isinstance(col_val, (float, np.float64, np.int64))
+                and not col in date_cols
+            ):
                 fields.append(
                     {"name": col, "type": "esriFieldTypeDouble", "alias": col}
                 )

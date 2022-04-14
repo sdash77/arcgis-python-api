@@ -549,10 +549,6 @@ class FasterRCNN(ModelExtension):
 
         super().__init__(data, MyFasterRCNN, backbone, pretrained_path, **kwargs)
 
-        idx = 27
-        if self._backbone.__name__ in ["resnet18", "resnet34"]:
-            idx = self._freeze()
-
         self.learn.model.roi_heads.forward = types.MethodType(
             forward_roi, self.learn.model.roi_heads
         )
@@ -563,6 +559,7 @@ class FasterRCNN(ModelExtension):
             postprocess_transform, self.learn.model.transform
         )
         self.learn.metrics = [AveragePrecision(self, data.c - 1)]
+        idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 

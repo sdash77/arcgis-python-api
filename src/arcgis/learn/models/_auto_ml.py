@@ -190,6 +190,12 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
+            ml_task = "auto"
+            ml_task = self.get_ml_task(self._all_labels)
+            if ml_task == "text":
+                raise ValueError(
+                    "Dependent variable has more than 200 unique values more than half of the total records are unique, hence there is not enough information to train a model"
+                )
             if (mode == "Explain") or (mode == "Basic"):
                 explain_level = 2
             else:
@@ -215,6 +221,7 @@ class AutoML(object):
             self._model = base_AutoML(
                 results_path=result_path,
                 mode=mode,
+                ml_task=ml_task,
                 algorithms=algorithms,
                 total_time_limit=total_time_limit,
                 golden_features=False,
@@ -227,6 +234,21 @@ class AutoML(object):
             result_path = self._data.path
             self._model = base_AutoML(results_path=result_path)
             self._model._results_path = self._data.path
+
+    def get_ml_task(self, all_labels):
+        try:
+            if isinstance(all_labels[0], str):
+                unique = np.unique(all_labels, return_counts=False)
+                if len(unique) == 2:
+                    return "binary_classification"
+                elif len(unique) > 200 and len(unique) > int(0.5 * all_labels.shape[0]):
+                    return "text"
+                else:
+                    return "multiclass_classification"
+            else:
+                return "auto"
+        except:
+            return "auto"
 
     def fit(self):
         """
