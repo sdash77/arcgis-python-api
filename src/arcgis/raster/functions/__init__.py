@@ -1981,9 +1981,9 @@ def clip(
         extent_envelope = dict(clipping_raster.extent)
 
     try:
-        if geometry is not None:
-            from arcgis.geometry import Geometry
+        from arcgis.geometry import Envelope, Geometry
 
+        if geometry is not None:
             if not isinstance(geometry, Geometry):
                 geometry = Geometry(geometry)
 
@@ -1994,10 +1994,14 @@ def clip(
                 "ClippingGeometry"
             ] = extent_envelope
 
+        geom_dict = template_dict["rasterFunctionArguments"]["ClippingGeometry"]
+
+        template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
+        if (geom_dict) and not isinstance(Geometry(geom_dict), Envelope): #for release after 2.0.1 remove this code that sets Extent to None
+            template_dict["rasterFunctionArguments"]["Extent"] = None
+
     except:
         pass
-
-    template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
 
     if clipping_raster is not None:
         template_dict["rasterFunctionArguments"]["ClippingRaster"] = raster_2
