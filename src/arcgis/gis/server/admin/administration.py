@@ -4,6 +4,7 @@
 
 """
 from __future__ import absolute_import
+from typing import Optional
 from .._common import BaseServer
 from . import _machines, _clusters
 from . import _data, _info
@@ -14,6 +15,7 @@ from . import _uploads, _usagereports
 from . import _mode
 from .. import ServicesDirectory
 from ..._impl._con import Connection
+from arcgis.gis import GIS
 
 ########################################################################
 class Server(BaseServer):
@@ -142,7 +144,7 @@ class Server(BaseServer):
     _catalog = None
     _sitemanager = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis=None, **kwargs):
+    def __init__(self, url: str, gis: Optional[GIS] = None, **kwargs):
         """Constructor"""
         if gis is None and len(kwargs) > 0:
             if "baseurl" not in kwargs:
@@ -172,15 +174,17 @@ class Server(BaseServer):
             self._init(self._con)
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def publish_sd(self, sd_file, folder=None, service_config=None):
+    def publish_sd(
+        self, sd_file: str, folder: Optional[str] = None, service_config: dict = None
+    ) -> bool:
         """
         Publishes a service definition file to ArcGIS Server.
 
@@ -234,14 +238,14 @@ class Server(BaseServer):
     # ----------------------------------------------------------------------
     @staticmethod
     def _create(
-        url,
-        username,
-        password,
-        config_store_connection,
-        directories,
-        cluster=None,
-        logs_settings=None,
-        run_async=False,
+        url: str,
+        username: str,
+        password: str,
+        config_store_connection: str,
+        directories: str,
+        cluster: Optional[str] = None,
+        logs_settings: Optional[str] = None,
+        run_async: Optional[bool] = False,
         **kwargs,
     ):
         """
@@ -347,7 +351,7 @@ class Server(BaseServer):
         return con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _join(self, admin_url, username, password):
+    def _join(self, admin_url: str, username: str, password: str) -> dict:
         """
         The Join Site operation is used to connect a server machine to an
         existing site. This is considered a 'push' mechanism, in which a
@@ -389,7 +393,7 @@ class Server(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _delete(self):
+    def _delete(self) -> dict:
         """
         Deletes the site configuration and releases all server resources.
         This is an unrecoverable operation. This operation is well suited
@@ -413,7 +417,7 @@ class Server(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _export(self, location=None):
+    def _export(self, location: Optional[str] = None) -> dict:
         """
         Exports the site configuration to a location you specify as input
         to this operation.
@@ -439,7 +443,7 @@ class Server(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _import_site(self, location):
+    def _import_site(self, location: str) -> dict:
         """
         This operation imports a site configuration into the currently
         running site. Importing a site means replacing all site
@@ -471,7 +475,7 @@ class Server(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _upgrade(self, run_async=False):
+    def _upgrade(self, run_async: Optional[bool] = False) -> dict:
         """
         This is the first operation that must be invoked during an ArcGIS
         Server upgrade. Once the new software version has been installed
@@ -507,7 +511,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def _public_key(self):
+    def _public_key(self) -> dict:
         """Gets the public key."""
         url = self._url + "/publicKey"
         params = {
@@ -517,7 +521,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def machines(self):
+    def machines(self) -> _machines.MachineManager:
         """
         Gets the list of server machines registered with the site.
         This resource represents a collection of all the server machines that
@@ -542,7 +546,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def datastores(self):
+    def datastores(self) -> _data.DataStoreManager:
         """
         Gets the information about the data holdings of the server.
         Data items are used by ArcGIS Pro, ArcGIS Desktop, and other clients
@@ -572,7 +576,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def _info(self):
+    def _info(self) -> _info.Info:
         """
         A read-only resource that returns meta information about the server.
         """
@@ -581,7 +585,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def site(self):
+    def site(self) -> "SiteManager":
         """
         Gets the site's collection of server resources. This collection
         includes server machines that are installed with ArcGIS Server,
@@ -599,7 +603,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def _clusters(self):
+    def _clusters(self) -> _clusters.Cluster:
         """Gets the clusters functions if supported in resources."""
         if self.properties is None:
             self._init()
@@ -611,7 +615,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def services(self):
+    def services(self) -> _services.ServiceManager:
         """
         Gives the administrator access to the services on ArcGIS Server as a
         ServerManager Object.
@@ -628,7 +632,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def usage(self):
+    def usage(self) -> _usagereports.ReportManager:
         """
         Gets the collection of all the usage reports created
         within your site. The Create Usage Report operation lets you define
@@ -644,14 +648,14 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def _kml(self):
+    def _kml(self) -> _kml.KML:
         """Gets the KML functions for a server."""
         url = self._url + "/kml"
         return _kml.KML(url=url, gis=self._con, initialize=True)
 
     # ----------------------------------------------------------------------
     @property
-    def logs(self):
+    def logs(self) -> _logs.LogManager:
         """
         Gives users access the ArcGIS Server's logs and lets
         administrators query and find errors and/or problems related to
@@ -672,7 +676,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def _security(self):
+    def _security(self) -> _security.Security:
         """Gets an object to work with the site security."""
         if self.resources is None:
             self._init()
@@ -684,13 +688,13 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def users(self):
+    def users(self) -> "UserManager":
         """Gets operations to work with users."""
         return self._security.users
 
     # ----------------------------------------------------------------------
     @property
-    def content(self):
+    def content(self) -> ServicesDirectory:
         """
         Gets the Services Directory which can help you discover information about
         services available on a particular server. A service represents a
@@ -725,7 +729,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def system(self):
+    def system(self) -> _system.SystemManager:
         """
         Provides access to common system configuration settings.
         """
@@ -739,7 +743,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def _uploads(self):
+    def _uploads(self) -> _uploads.Uploads:
         """Gets an object to work with the site uploads."""
         if self.resources is None:
             self._init()
@@ -751,7 +755,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def mode(self):
+    def mode(self) -> _mode.Mode:
         """
         ArcGIS Server site mode that allows you to control changes to your site.
         You can set the site mode to READ_ONLY to disallow the publishing of new
@@ -794,7 +798,7 @@ class SiteManager(object):
 
     _sm = None
     # ----------------------------------------------------------------------
-    def __init__(self, server, initialize=False):
+    def __init__(self, server: SiteManager, initialize: Optional[bool] = False):
         """Constructor"""
         self._sm = server
         isinstance(self._sm, SiteManager)
@@ -803,29 +807,29 @@ class SiteManager(object):
             self._sm._init()
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._sm._url)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._sm._url)
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> dict:
         """Gets the site properties."""
         return self._sm.properties
 
     # ----------------------------------------------------------------------
     @staticmethod
     def create(
-        username,
-        password,
-        config_store_connection,
-        directories,
-        cluster=None,
-        logs_settings=None,
-        run_async=False,
+        username: str,
+        password: str,
+        config_store_connection: str,
+        directories: str,
+        cluster: Optional[str] = None,
+        logs_settings: Optional[str] = None,
+        run_async: Optional[bool] = False,
         **kwargs,
     ):
         """
@@ -928,7 +932,7 @@ class SiteManager(object):
         )
 
     # ----------------------------------------------------------------------
-    def join(self, admin_url, username, password):
+    def join(self, admin_url: str, username: str, password: str) -> dict:
         """
         The Join Site operation is used to connect a server machine to an
         existing site. This is considered a 'push' mechanism, in which a
@@ -963,7 +967,7 @@ class SiteManager(object):
         return self._sm._join(admin_url, username, password)
 
     # ----------------------------------------------------------------------
-    def delete(self):
+    def delete(self) -> dict:
         """
         Deletes the site configuration and releases all server resources.
         This operation is well suited
@@ -990,7 +994,7 @@ class SiteManager(object):
         return self._sm._delete()
 
     # ----------------------------------------------------------------------
-    def export(self, location=None):
+    def export(self, location: str = None) -> dict:
         """
         Exports the site configuration to a location you specify as input
         to this operation.
@@ -1013,7 +1017,7 @@ class SiteManager(object):
         return self._sm._export(location)
 
     # ----------------------------------------------------------------------
-    def import_site(self, location):
+    def import_site(self, location: str) -> dict:
         """
         This operation imports a site configuration into the currently
         running site. Importing a site means replacing all site
@@ -1044,7 +1048,7 @@ class SiteManager(object):
         return self._sm._import_site(location=location)
 
     # ----------------------------------------------------------------------
-    def upgrade(self, run_async=False):
+    def upgrade(self, run_async: Optional[bool] = False) -> dict:
         """
         This is the first operation that must be invoked during an ArcGIS
         Server upgrade. Once the new software version has been installed
@@ -1080,6 +1084,6 @@ class SiteManager(object):
 
     # ----------------------------------------------------------------------
     @property
-    def public_key(self):
+    def public_key(self) -> str:
         """Gets the public key."""
         return self._sm._public_key

@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
+from arcgis.gis import GIS
+from typing import Optional
 
 ########################################################################
 class Info(BaseServer):
@@ -13,7 +15,7 @@ class Info(BaseServer):
     _url = None
     _json = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
         """Constructor
         ===============     ====================================================================
         **Argument**        **Description**
@@ -32,7 +34,7 @@ class Info(BaseServer):
             self._init(gis)
 
     # ----------------------------------------------------------------------
-    def available_time_zones(self):
+    def available_time_zones(self) -> dict:
         """
         Returns an enumeration of all the time zones of which the server
         is aware. This is used by the GIS service publishing tools
