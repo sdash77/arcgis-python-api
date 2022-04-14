@@ -879,13 +879,13 @@ class SyncManager(object):
                                `replica_id` in addition to the `retention_period` and the
                                `min_server_gen`.
         ------------------     --------------------------------------------------------------------
-        future                 Optional Boolean.  Support options for asynchronous processing. The
-                               default format is false.
+        future                 Optional boolean. If True, a future object will be returned and the process
+                               will not wait for the task to complete. The default is False, which means wait for results.
         ==================     ====================================================================
 
 
         :return:
-            Boolean when future is False and Future object when future is True
+            Boolean or If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
         return self._fs._cleanup_change_tracking(
@@ -2035,8 +2035,8 @@ class FeatureLayerCollectionManager(_GISResource):
         ===============     ====================================================================
 
         :return:
-           JSON message as dictionary when `future=False`
-           when `future=True`, ```concurrent.futures.Future``` is returned.
+           JSON message as dictionary when `future=False` else If ``future = True``, 
+           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
 
@@ -2077,7 +2077,7 @@ class FeatureLayerCollectionManager(_GISResource):
                             For layer level modifications, run updates on each individual feature
                             service layer object.
         ---------------     --------------------------------------------------------------------
-        future              Optional, If True, a future object will be returns and the process
+        future              Optional boolean. If True, a future object will be returns and the process
                             will not wait for the task to complete.
                             The default is False, which means wait for results.
         ===============     ====================================================================
@@ -2181,14 +2181,14 @@ class FeatureLayerCollectionManager(_GISResource):
                             For layer level modifications, run updates on each individual feature
                             service layer object.
         ---------------     --------------------------------------------------------------------
-        future              Optional, If True, a future object will be returns and the process
+        future              Optional boolean. If True, a future object will be returns and the process
                             will not wait for the task to complete.
                             The default is False, which means wait for results.
         ===============     ====================================================================
 
         :return:
-           JSON message as dictionary when `future=False`
-           when `future=True`, ```concurrent.futures.Future``` is returned.
+           JSON message as dictionary when `future=False` else If ``future = True``, 
+           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
         params = {
@@ -2587,10 +2587,14 @@ class FeatureLayerManager(_GISResource):
                             can be derived from the `properties` property.
                             For layer level modifications, run updates on each individual feature
                             service layer object.
+        ---------------     --------------------------------------------------------------------
+        future              Optional boolean. If True, a future object will be returned and the process
+                            will not wait for the task to complete. The default is False, which means wait for results.
         ===============     ====================================================================
 
         :return:
-           JSON message as dictionary indicating 'success' or 'error'
+           JSON message as dictionary indicating 'success' or 'error'. If ``future = True``, 
+           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -2637,7 +2641,8 @@ class FeatureLayerManager(_GISResource):
         ===============     ====================================================================
 
         :return:
-           JSON Message as dictionary indicating 'success' or 'error'
+           JSON Message as dictionary indicating 'success' or 'error'. If ``future = True``, 
+           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -2687,8 +2692,9 @@ class FeatureLayerManager(_GISResource):
                             The default is False, which means wait for results.
         ===============     ====================================================================
 
-        Output:
-           JSON Message as dictionary indicating 'success' or 'error'
+        :return:
+           JSON Message as dictionary indicating 'success' or 'error'. If ``future = True``, 
+           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
 

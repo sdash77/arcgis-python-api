@@ -705,7 +705,8 @@ class Version(object):
                                The default is `False`.
         ==================     ====================================================================
 
-        :returns: Boolean
+        :returns: Boolean. 
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
         if self._mode == "edit":

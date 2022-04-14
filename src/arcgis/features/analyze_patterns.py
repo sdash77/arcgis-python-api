@@ -123,11 +123,14 @@ def calculate_density(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional, If True, a future object will be returned and the process
+                                 will not wait for the task to complete.
+                                 The default is False, which means wait for results.
     =========================    =========================================================
 
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -252,7 +255,9 @@ def summarize_center_and_dispersion(
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
-    future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                  Optional, If True, a future object will be returned and the process
+                            will not wait for the task to complete.
+                            The default is False, which means wait for results.
     ====================    =========================================================
 
     :return: Python dictionary with the following keys:
@@ -261,6 +266,8 @@ def summarize_center_and_dispersion(
         "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         "ellipse_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         "process_info" : list of messages
+
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     """
 
@@ -379,10 +386,13 @@ def find_point_clusters(
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
-    future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                  Optional, If True, a future object will be returned and the process
+                            will not wait for the task to complete.
+                            The default is False, which means wait for results.
     ====================    =========================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -543,10 +553,13 @@ def find_hot_spots(
     -------------------------------------------------------------------     ---------------------------------------------------------
     distance_band_unit                                                      Optional string. The units of the ``distance_band`` value. You must provide a value if ``distance_band`` has been set.
     -------------------------------------------------------------------     ---------------------------------------------------------
-    future                                                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                                                  Optional, If True, a future object will be returned and the process
+                                                                            will not wait for the task to complete.
+                                                                            The default is False, which means wait for results.
     ===================================================================     =========================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else a dictionary with a :class:`~arcgis.features.FeatureCollection` and processing messages.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -555,6 +568,7 @@ def find_hot_spots(
                                              bounding_polygon_layer=boundry_lyr,
                                              output_name='collision_hexagon_hot_spots',
                                              shape_type='hexagon')
+                                    
     """
 
     distance_band_units = distance_band_unit
@@ -720,7 +734,9 @@ def find_outliers(
     ------------------------------------------------------------------  ---------------------------------------------------------------
     estimate                                                            Optional boolean. Returns the number of credit for the operation.
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    future                                                              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                                              Optional, If True, a future object will be returned and the process
+                                                                        will not wait for the task to complete.
+                                                                        The default is False, which means wait for results.
     ==================================================================  ===============================================================
 
     :return:
@@ -729,6 +745,8 @@ def find_outliers(
         "find_outliers_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
         "process_info" : list of messages
+
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -947,7 +965,9 @@ def interpolate_points(
     ---------------------------  -------------------------------------------------------------------------------------------
     estimate                     Optional boolean. If True, the number of credits to run the operation will be returned.
     ---------------------------  -------------------------------------------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional, If True, a future object will be returned and the process
+                                 will not wait for the task to complete.
+                                 The default is False, which means wait for results.
     ===========================  ===========================================================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
@@ -957,6 +977,8 @@ def interpolate_points(
         "prediction_error" : layer (:class:`~arcgis.features.FeatureCollection`)
 
         "predicted_point_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 

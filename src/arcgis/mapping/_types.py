@@ -2889,7 +2889,9 @@ class OfflineMapAreaManager(object):
                                                          "levels": "17,18,19"
                                                         }
                                                        ]
-
+        ------------------     --------------------------------------------------------------------
+        future                 Optional boolean. If True, a future object will be returned and the process
+                               will not wait for the task to complete. The default is False, which means wait for results.
         ==================     ====================================================================
 
         .. note::

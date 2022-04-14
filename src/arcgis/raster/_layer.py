@@ -4821,8 +4821,8 @@ class ImageryLayer(Layer):
                                                  The GIS to be used for saving the
                                                  output. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
-        future                                   Optional boolean. If True, the result will be a GPJob object and
-                                                 results will be returned asynchronously. Keyword only parameter.
+        future                                   Optional boolean. If True, a future object will be returned and the process
+                                                 will not wait for the task to complete. The default is False, which means wait for results.
         ------------------------------------     --------------------------------------------------------------------
         folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
@@ -5031,8 +5031,8 @@ class ImageryLayer(Layer):
         gis                                      Optional GIS object. If not speficied, the currently active connection
                                                  is used.
         ------------------------------------     --------------------------------------------------------------------
-        future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
-                                                 results will be returned asynchronously.
+        future                                   Optional boolean. If True, a future object will be returned and the process
+                                                 will not wait for the task to complete. The default is False, which means wait for results.
         ====================================     ====================================================================
 
         :return: A :class:`~arcgis.features.FeatureLayer` item.
