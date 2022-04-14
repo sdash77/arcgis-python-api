@@ -11941,7 +11941,6 @@ class Item(dict):
 
     @property
     def metadata(self):
-
         """The ``metadata`` property gets and sets the item metadata for the specified item.
         ``metadata`` returns None if the item does not have metadata.
 
@@ -11967,12 +11966,14 @@ class Item(dict):
         """
         See main ``metadata`` property docstring
         """
-        
-
         xml_file = os.path.join(tempfile.gettempdir(), "metadata.xml")
         if os.path.isfile(xml_file) == True:
             os.remove(xml_file)
-        if str(value).lower().endswith(".xml") and len(value) <= 32767 and os.path.isfile(value) == True:
+        if (
+            str(value).lower().endswith(".xml")
+            and len(value) <= 32767
+            and os.path.isfile(value) == True
+        ):
             if os.path.basename(value).lower() != "metadata.xml":
                 shutil.copy(value, xml_file)
             else:
