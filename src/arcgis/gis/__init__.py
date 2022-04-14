@@ -14,6 +14,7 @@ import io
 import os
 import re
 import time
+import shutil
 import tempfile
 import zipfile
 import configparser
@@ -11966,18 +11967,17 @@ class Item(dict):
         """
         See main ``metadata`` property docstring
         """
-        import shutil
-        from six import string_types
+        
 
         xml_file = os.path.join(tempfile.gettempdir(), "metadata.xml")
         if os.path.isfile(xml_file) == True:
             os.remove(xml_file)
-        if os.path.isfile(value) == True and str(value).lower().endswith(".xml"):
+        if str(value).lower().endswith(".xml") and len(value) <= 32767 and os.path.isfile(value) == True:
             if os.path.basename(value).lower() != "metadata.xml":
                 shutil.copy(value, xml_file)
             else:
                 xml_file = value
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             with open(xml_file, mode="w") as writer:
                 writer.write(value)
                 writer.close()
