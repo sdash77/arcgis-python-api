@@ -427,7 +427,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     except:
                         dtypes.append((col, "<U254"))
             elif df[col].dtype.name == "int64":
-                dtypes.append((col, np.int64))
+                dtypes.append((col, np.float))
             elif df[col].dtype.name == "bool":
                 dtypes.append((col, np.int32))
             else:
@@ -843,7 +843,7 @@ def to_featureclass(
                         except:
                             dtypes.append((col, "<U254"))
                 elif df[col].dtype.name == "int64":
-                    dtypes.append((col, np.int64))
+                    dtypes.append((col, np.float))
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
                 else:
@@ -989,9 +989,9 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                         shpfile.field(name=c, size=255)
                     elif isinstance(df[c].loc[idx], (int)):
                         shpfile.field(name=c, fieldType="N", size=5)
-                    elif isinstance(df[c].loc[idx], (np.int, np.int32, np.int64)):
+                    elif isinstance(df[c].loc[idx], (np.int, np.int32)):
                         shpfile.field(name=c, fieldType="N", size=10)
-                    elif isinstance(df[c].loc[idx], (np.float, np.float64)):
+                    elif isinstance(df[c].loc[idx], (np.float, np.float64, np.int64)):
                         shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                     elif (
                         isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64))
@@ -1112,9 +1112,9 @@ def _pyshp2(df, out_path, out_name):
                         shpfile.field(name=c, size=255)
                     elif isinstance(df[c].loc[idx], (int)):
                         shpfile.field(name=c, fieldType="N", size=5)
-                    elif isinstance(df[c].loc[idx], (np.int, np.int32, np.int64)):
+                    elif isinstance(df[c].loc[idx], (np.int, np.int32)):
                         shpfile.field(name=c, fieldType="N", size=10)
-                    elif isinstance(df[c].loc[idx], (np.float, np.float64)):
+                    elif isinstance(df[c].loc[idx], (np.float, np.float64, np.int64)):
                         shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                     elif (
                         isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64))
