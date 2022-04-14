@@ -13580,6 +13580,44 @@ class Item(dict):
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": "Query"},
                 }
+        elif (
+            fileType
+            in [
+                "csv",
+                "excel",
+            ]
+            and overwrite is False
+        ):  # merge users passed-in publish parameters with analyze results
+            publish_parameters_orig = publish_parameters
+
+            res = self._gis.content.analyze(item=self, file_type=fileType)
+            publish_parameters = res["publishParameters"]
+            # case for hosted tables
+            if (
+                "layerInfo" in publish_parameters
+                and "layerInfo" in publish_parameters_orig
+            ):
+                # do general update
+                publish_parameters.update(publish_parameters_orig)
+            # case for hosted fl
+            else:
+                # check if layers key exist. If not, add empty array to avoid error in update
+                if "layers" not in publish_parameters:
+                    publish_parameters["layers"] = []
+                    # csv analyze returns layerInfo rather than a layer
+                    if "layerInfo" in publish_parameters:
+                        publish_parameters["layers"].append(
+                            publish_parameters["layerInfo"]
+                        )
+
+                # do general update and assign service name
+                publish_parameters.update(publish_parameters_orig)
+                service_name = re.sub(r"[\W_]+", "_", self["title"])
+                publish_parameters.update({"name": service_name})
+                if not self._gis.content.is_service_name_available(
+                    publish_parameters["name"], "featureService"
+                ):
+                    raise Exception("Service name already exists in your org.")
 
         ret = self._portal.publish_item(
             self.itemid,
