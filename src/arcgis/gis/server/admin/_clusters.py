@@ -237,7 +237,7 @@ class Cluster(BaseServer):
         return self._con.get(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def add_machines(self, names) -> dict:
+    def add_machines(self, names: str) -> dict:
         """
         Adds new server machines to the cluster. The server machines need
         to be registered with the site prior to this operation. When a
@@ -259,7 +259,7 @@ class Cluster(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def remove_machines(self, names) -> dict:
+    def remove_machines(self, names: str) -> dict:
         """
         Removes server machines from the cluster. The server machines are
         returned back to the pool of registered server machines.

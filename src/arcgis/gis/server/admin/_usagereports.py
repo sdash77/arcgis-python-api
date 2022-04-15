@@ -9,6 +9,7 @@ import json
 from .._common import BaseServer
 from urllib.parse import quote
 from arcgis.gis import GIS
+from typing import Optional
 
 ########################################################################
 class ReportManager(BaseServer):
@@ -142,11 +143,11 @@ class ReportManager(BaseServer):
         self,
         reportname: str,
         queries: list,
-        metadata: str = None,
+        metadata: Optional[str] = None,
         since: str = "LAST_DAY",
-        from_value: int = None,
-        to_value: int = None,
-        aggregation_interval: str = None,
+        from_value: Optional[int] = None,
+        to_value: Optional[int] = None,
+        aggregation_interval: Optional[str] = None,
     ) -> dict:
         """
         Creates a new usage report. A usage report is created by submitting
@@ -548,7 +549,7 @@ class Report(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def query(self, query_filter: str = None) -> dict:
+    def query(self, query_filter: Optional[str] = None) -> dict:
         """
         Retrieves server usage data for this report. This operation
         aggregates and filters server usage statistics for the entire

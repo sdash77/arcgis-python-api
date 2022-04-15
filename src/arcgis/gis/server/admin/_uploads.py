@@ -16,6 +16,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
 from arcgis.gis import GIS
+from typing import Optional
 
 ########################################################################
 class Uploads(BaseServer):
@@ -186,7 +187,7 @@ class Uploads(BaseServer):
         return self._con.post(path=url, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
-    def commit(self, item_id: str, parts: list = None) -> bool:
+    def commit(self, item_id: str, parts: Optional[list] = None) -> bool:
         """
         Use this operation to complete the upload of all the parts that
         make an item. The parts parameter indicates to the server all the
