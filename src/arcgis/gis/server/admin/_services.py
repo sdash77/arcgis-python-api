@@ -12,6 +12,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
 from arcgis.gis._impl._con import Connection
 import datetime as _datetime
+from typing import Optional
 
 ########################################################################
 class ServiceManager(BaseServer):
@@ -121,7 +122,7 @@ class ServiceManager(BaseServer):
         return self._folders
 
     # ----------------------------------------------------------------------
-    def list(self, folder: str = None, refresh: bool = True) -> list:
+    def list(self, folder: Optional[str] = None, refresh: bool = True) -> list:
         """
         returns a list of services in the specified folder
 
@@ -236,8 +237,8 @@ class ServiceManager(BaseServer):
     def publish_sd(
         self,
         sd_file: str,
-        folder: str = None,
-        service_config: dict = None,
+        folder: Optional[str] = None,
+        service_config: Optional[dict] = None,
     ) -> bool:
         """
         publishes a service definition file to arcgis server
@@ -317,7 +318,7 @@ class ServiceManager(BaseServer):
         return type_services
 
     # ----------------------------------------------------------------------
-    def _examine_folder(self, folder: str = None) -> dict:
+    def _examine_folder(self, folder: Optional[str] = None) -> dict:
         """
         A folder is a container for GIS services. ArcGIS Server supports a
         single level hierarchy of folders.
@@ -347,9 +348,9 @@ class ServiceManager(BaseServer):
     def _can_create_service(
         self,
         service: dict,
-        options: dict = None,
-        folder_name: str = None,
-        service_type: str = None,
+        options: Optional[dict] = None,
+        folder_name: Optional[str] = None,
+        service_type: Optional[str] = None,
     ) -> bool:
         """
         Use canCreateService to determine whether a specific service can be
@@ -394,7 +395,7 @@ class ServiceManager(BaseServer):
         self,
         principal: str,
         is_allowed: bool = True,
-        folder: str = None,
+        folder: Optional[str] = None,
     ) -> dict:
         """
            Assigns a new permission to a role (principal). The permission
@@ -516,7 +517,9 @@ class ServiceManager(BaseServer):
             return False
 
     # ----------------------------------------------------------------------
-    def _delete_service(self, name: str, service_type: str, folder: str = None) -> bool:
+    def _delete_service(
+        self, name: str, service_type: str, folder: Optional[str] = None
+    ) -> bool:
         """
         Deletes a service from ArcGIS Server
 
@@ -544,7 +547,7 @@ class ServiceManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _service_report(self, folder: str = None) -> dict:
+    def _service_report(self, folder: Optional[str] = None) -> dict:
         """
         Provides a report on all items in a given folder.
 
@@ -669,7 +672,7 @@ class ServiceManager(BaseServer):
 
     # ----------------------------------------------------------------------
     def _rename_service(
-        self, name: str, service_type: str, new_name: str, folder: str = None
+        self, name: str, service_type: str, new_name: str, folder: Optional[str] = None
     ) -> bool:
         """
         Renames a published AGS Service
@@ -865,7 +868,10 @@ class ServiceManager(BaseServer):
 
     # ----------------------------------------------------------------------
     def exists(
-        self, folder_name: str, name: str = None, service_type: str = None
+        self,
+        folder_name: str,
+        name: Optional[str] = None,
+        service_type: Optional[str] = None,
     ) -> bool:
         """
         This operation allows you to check whether a folder or a service
@@ -1069,7 +1075,7 @@ class Service(BaseServer):
         return self._extensions
 
     # ----------------------------------------------------------------------
-    def modify_extensions(self, extension_objects: list = None) -> bool:
+    def modify_extensions(self, extension_objects: Optional[list] = None) -> bool:
         """
         enables/disables a service extension type based on the name
 
@@ -1454,9 +1460,9 @@ class JobManager(BaseServer):
         self,
         start_time: _datetime.datetime = None,
         end_time: _datetime.datetime = None,
-        status: str = None,
-        username: str = None,
-        machine: str = None,
+        status: Optional[str] = None,
+        username: Optional[str] = None,
+        machine: Optional[str] = None,
     ) -> "Job":
         """
         This operation allows you to query the current jobs for a
@@ -1629,7 +1635,7 @@ class ItemInformationManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def upload(self, info_file: str, folder: str = None) -> dict:
+    def upload(self, info_file: str, folder: Optional[str] = None) -> dict:
         """Uploads a file associated with the item information to the server.
 
         ===============     ====================================================================

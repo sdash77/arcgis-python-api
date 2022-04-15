@@ -8,6 +8,7 @@ from __future__ import print_function
 from .._common import BaseServer
 from arcgis.gis import GIS
 from arcgis.gis._impl._con import Connection
+from typing import Optional
 
 ########################################################################
 class SystemManager(BaseServer):
@@ -131,7 +132,7 @@ class SystemManager(BaseServer):
         directory_type: str,
         max_age: int,
         cleanup_mode: str = "NONE",
-        description: str = None,
+        description: Optional[str] = None,
     ) -> bool:
         """
         Registers a new server directory. While registering the server
@@ -772,7 +773,7 @@ class ConfigurationStore(BaseServer):
         move: bool = True,
         run_async: bool = False,
         *,
-        local_path: str = None,
+        local_path: Optional[str] = None,
     ) -> bool:
         """
         You can use this operation to update the configuration store.
@@ -1194,7 +1195,7 @@ class DirectoryManager(object):
         directoryType: str,
         maxFileAge: int,
         cleanupMode: str = "NONE",
-        description: str = None,
+        description: Optional[str] = None,
     ) -> bool:
         """
         Registers a new server directory. While registering the server
@@ -1302,8 +1303,8 @@ class ServerDirectory(BaseServer):
         max_age: int,
         description: str,
         *,
-        use_local_dir: bool = None,
-        local_dir: str = None,
+        use_local_dir: Optional[bool] = None,
+        local_dir: Optional[str] = None,
     ):
         """
         The server directory's edit operation allows you to change the path

@@ -17,6 +17,7 @@ from .._common import BaseServer
 from ..._impl._con import Connection
 from .._common.util import contextmanager, _tempinput
 from arcgis.gis import GIS
+from typing import Optional
 
 ###########################################################################
 class Datastore(BaseServer):
@@ -38,7 +39,7 @@ class Datastore(BaseServer):
         self,
         datastore: "DataStoreManager",
         path: str,
-        datadict: dict = None,
+        datadict: Optional[dict] = None,
         **kwargs,
     ):
         self._path = path
@@ -466,7 +467,7 @@ class DataStoreManager(BaseServer):
 
     # ----------------------------------------------------------------------
     def add_folder(
-        self, name: str, server_path: str, client_path: str = None
+        self, name: str, server_path: str, client_path: Optional[str] = None
     ) -> Datastore:
         """
         Registers a folder with the data store.
@@ -533,7 +534,7 @@ class DataStoreManager(BaseServer):
     def add_bigdata(
         self,
         name: str,
-        server_path: str = None,
+        server_path: Optional[str] = None,
         connection_type: str = "fileShare",
     ) -> Datastore:
         """
@@ -642,7 +643,7 @@ class DataStoreManager(BaseServer):
         object_store: str,
         provider: str,
         managed: bool = False,
-        folder: str = None,
+        folder: Optional[str] = None,
     ) -> Datastore:
         """
         Cloud Store data item represents a connection to a Amazon or Microsoft Azure store.
@@ -704,7 +705,7 @@ class DataStoreManager(BaseServer):
         self,
         name: str,
         conn_str: str,
-        client_conn_str: str = None,
+        client_conn_str: Optional[str] = None,
         conn_type: str = "shared",
     ) -> Datastore:
         """
@@ -852,10 +853,10 @@ class DataStoreManager(BaseServer):
     # ----------------------------------------------------------------------
     def search(
         self,
-        parent_path: str = None,
-        ancestor_path: str = None,
-        types: str = None,
-        id: str = None,
+        parent_path: Optional[str] = None,
+        ancestor_path: Optional[str] = None,
+        types: Optional[str] = None,
+        id: Optional[str] = None,
         **kwargs,
     ) -> list:
         """

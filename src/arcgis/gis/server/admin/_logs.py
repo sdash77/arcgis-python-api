@@ -4,6 +4,7 @@ import csv
 from datetime import datetime
 from .._common import BaseServer
 from arcgis.gis import GIS
+from typing import Optional
 
 ########################################################################
 class LogManager(BaseServer):
@@ -108,7 +109,7 @@ class LogManager(BaseServer):
     def edit(
         self,
         level: str = "WARNING",
-        log_dir: str = None,
+        log_dir: Optional[str] = None,
         max_age: int = 90,
         max_report_count: int = 10,
     ) -> dict:
@@ -165,18 +166,18 @@ class LogManager(BaseServer):
     # ----------------------------------------------------------------------
     def query(
         self,
-        start_time: str = None,
-        end_time: str = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
         since_server_start: bool = False,
         level: str = "WARNING",
         services: str = "*",
         machines: str = "*",
         server: str = "*",
-        codes: str = None,
-        process_IDs: str = None,
+        codes: Optional[str] = None,
+        process_IDs: Optional[str] = None,
         export: bool = False,
         export_type: str = "CSV",
-        out_path: str = None,
+        out_path: Optional[str] = None,
         max_records_return: int = 5000,
     ):
         """

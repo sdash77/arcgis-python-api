@@ -117,7 +117,7 @@ class Uploads(BaseServer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def upload(self, path: str, description: str = None) -> bool:
+    def upload(self, path: str, description: Optional[str] = None) -> bool:
         """
         Uploads a new item to the server. Once the operation is completed
         successfully, the JSON structure of the uploaded item is returned.

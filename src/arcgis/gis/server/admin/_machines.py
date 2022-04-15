@@ -18,6 +18,7 @@ from .._common import BaseServer
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
 from arcgis.gis._impl._con import Connection
+from typing import Optional
 
 ########################################################################
 class MachineManager(BaseServer):

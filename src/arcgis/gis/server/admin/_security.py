@@ -11,6 +11,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
 from arcgis.gis import GIS
+from typing import Optional
 
 ########################################################################
 class Security(BaseServer):
@@ -229,9 +230,9 @@ class UserManager(BaseServer):
         self,
         username: str,
         password: str,
-        fullname: str = None,
-        description: str = None,
-        email: str = None,
+        fullname: Optional[str] = None,
+        description: Optional[str] = None,
+        email: Optional[str] = None,
     ) -> dict:
         """
         Adds a user account to the user store.
@@ -298,8 +299,8 @@ class UserManager(BaseServer):
     def _get_user_roles(
         self,
         username: str,
-        user_filter: str = None,
-        max_count: int = None,
+        user_filter: Optional[str] = None,
+        max_count: Optional[int] = None,
     ) -> dict:
         """
         This operation returns a list of role names that have been
@@ -495,7 +496,7 @@ class UserManager(BaseServer):
         return self._rm
 
     # ----------------------------------------------------------------------
-    def _find_users(self, criteria: str = None, max_count: int = 10) -> dict:
+    def _find_users(self, criteria: Optional[str] = None, max_count: int = 10) -> dict:
         """
         You can use this operation to search a specific user or a group
         of users from the user store. The size of the search result can
@@ -525,10 +526,10 @@ class UserManager(BaseServer):
     def _update_user(
         self,
         username: str,
-        password: str = None,
-        fullname: str = None,
-        description: str = None,
-        email: str = None,
+        password: Optional[str] = None,
+        fullname: Optional[str] = None,
+        description: Optional[str] = None,
+        email: Optional[str] = None,
     ) -> dict:
         """
         Updates a user account in the user store.
@@ -666,10 +667,10 @@ class User(dict):
     # ----------------------------------------------------------------------
     def update(
         self,
-        password: str = None,
-        full_name: str = None,
-        description: str = None,
-        email: str = None,
+        password: Optional[str] = None,
+        full_name: Optional[str] = None,
+        description: Optional[str] = None,
+        email: Optional[str] = None,
     ) -> bool:
         """
         Updates this user account in the user store.
@@ -797,7 +798,7 @@ class RoleManager(BaseServer):
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def create(self, name: str, description: str = None) -> bool:
+    def create(self, name: str, description: Optional[str] = None) -> bool:
         """
         Adds a role to the role store. This operation is available only
         when the role store is a read-write store such as the default
@@ -1024,8 +1025,8 @@ class RoleManager(BaseServer):
     def _get_user_roles(
         self,
         username: str,
-        user_filter: str = None,
-        max_count: int = None,
+        user_filter: Optional[str] = None,
+        max_count: Optional[int] = None,
     ) -> dict:
         """
         Supplies a list of roles that have been assigned to a particular user account.
@@ -1060,7 +1061,7 @@ class RoleManager(BaseServer):
     def _get_users_within_role(
         self,
         rolename: str,
-        user_filter: str = None,
+        user_filter: Optional[str] = None,
         max_count: int = 20,
     ) -> dict:
         """
@@ -1178,7 +1179,7 @@ class RoleManager(BaseServer):
         return self._con.get(path=u_url, params=params)
 
     # ----------------------------------------------------------------------
-    def get_role(self, role_id: str = None, max_count: int = 10) -> list:
+    def get_role(self, role_id: Optional[str] = None, max_count: int = 10) -> list:
         """
         Use this operation to search a specific role or a group
         of roles from the role store.
@@ -1284,7 +1285,7 @@ class Role(dict):
         return "<%s rolename:%s>" % (type(self).__name__, self.rolename)
 
     # ----------------------------------------------------------------------
-    def update(self, description: str = None) -> dict:
+    def update(self, description: Optional[str] = None) -> dict:
         """
         Updates this role in the role store with new information. This
         operation is available only when the role store is a read-write

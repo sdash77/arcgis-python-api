@@ -15,6 +15,7 @@ from . import _mode
 from .. import ServicesDirectory
 from ..._impl._con import Connection
 from arcgis.gis import GIS
+from typing import Optional
 
 ########################################################################
 class Server(BaseServer):
@@ -182,7 +183,10 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     def publish_sd(
-        self, sd_file: str, folder: str = None, service_config: dict = None
+        self,
+        sd_file: str,
+        folder: Optional[str] = None,
+        service_config: Optional[dict] = None,
     ) -> bool:
         """
         Publishes a service definition file to ArcGIS Server.
@@ -242,8 +246,8 @@ class Server(BaseServer):
         password: str,
         config_store_connection: str,
         directories: str,
-        cluster: str = None,
-        logs_settings: str = None,
+        cluster: Optional[str] = None,
+        logs_settings: Optional[str] = None,
         run_async: bool = False,
         **kwargs,
     ):
@@ -416,7 +420,7 @@ class Server(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _export(self, location: str = None) -> dict:
+    def _export(self, location: Optional[str] = None) -> dict:
         """
         Exports the site configuration to a location you specify as input
         to this operation.
@@ -826,8 +830,8 @@ class SiteManager(object):
         password: str,
         config_store_connection: str,
         directories: str,
-        cluster: str = None,
-        logs_settings: str = None,
+        cluster: Optional[str] = None,
+        logs_settings: Optional[str] = None,
         run_async: bool = False,
         **kwargs,
     ):
@@ -993,7 +997,7 @@ class SiteManager(object):
         return self._sm._delete()
 
     # ----------------------------------------------------------------------
-    def export(self, location: str = None) -> dict:
+    def export(self, location: Optional[str] = None) -> dict:
         """
         Exports the site configuration to a location you specify as input
         to this operation.
