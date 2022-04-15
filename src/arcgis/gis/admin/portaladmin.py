@@ -370,7 +370,7 @@ class PortalAdminManager(BasePortalAdmin):
                           modify or update content or site settings is made through the API.
         ================  ===============================================================================
 
-        ..code-block:: python
+        .. code-block:: python
             **Usage Example**
 
             gis.admin.mode({'read_only' : False})

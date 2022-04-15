@@ -3858,7 +3858,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
     A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
 
-    ..note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
+    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
     """
 
     def __init__(self, url, gis=None, vect_tile_lyr=None):
