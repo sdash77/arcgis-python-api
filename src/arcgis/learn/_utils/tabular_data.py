@@ -1175,7 +1175,9 @@ class TabularDataObject(object):
                     out_sr = 4326
                 sdf = input_features.query(out_sr=out_sr).sdf
 
-            elif hasattr(input_features, "dataSource"):
+            elif hasattr(input_features, "dataSource") or str(input_features).endswith(
+                ".shp"
+            ):
                 sdf, index_data = TabularDataObject._sdf_gptool_workflow(
                     input_features,
                     distance_layers,
