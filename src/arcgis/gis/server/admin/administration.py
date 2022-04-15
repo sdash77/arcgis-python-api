@@ -4,7 +4,6 @@
 
 """
 from __future__ import absolute_import
-from typing import Optional
 from .._common import BaseServer
 from . import _machines, _clusters
 from . import _data, _info
@@ -144,7 +143,7 @@ class Server(BaseServer):
     _catalog = None
     _sitemanager = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: Optional[GIS] = None, **kwargs):
+    def __init__(self, url: str, gis: GIS = None, **kwargs):
         """Constructor"""
         if gis is None and len(kwargs) > 0:
             if "baseurl" not in kwargs:
@@ -183,7 +182,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     def publish_sd(
-        self, sd_file: str, folder: Optional[str] = None, service_config: dict = None
+        self, sd_file: str, folder: str = None, service_config: dict = None
     ) -> bool:
         """
         Publishes a service definition file to ArcGIS Server.
@@ -243,9 +242,9 @@ class Server(BaseServer):
         password: str,
         config_store_connection: str,
         directories: str,
-        cluster: Optional[str] = None,
-        logs_settings: Optional[str] = None,
-        run_async: Optional[bool] = False,
+        cluster: str = None,
+        logs_settings: str = None,
+        run_async: bool = False,
         **kwargs,
     ):
         """
@@ -417,7 +416,7 @@ class Server(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _export(self, location: Optional[str] = None) -> dict:
+    def _export(self, location: str = None) -> dict:
         """
         Exports the site configuration to a location you specify as input
         to this operation.
@@ -475,7 +474,7 @@ class Server(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _upgrade(self, run_async: Optional[bool] = False) -> dict:
+    def _upgrade(self, run_async: bool = False) -> dict:
         """
         This is the first operation that must be invoked during an ArcGIS
         Server upgrade. Once the new software version has been installed
@@ -798,7 +797,7 @@ class SiteManager(object):
 
     _sm = None
     # ----------------------------------------------------------------------
-    def __init__(self, server: SiteManager, initialize: Optional[bool] = False):
+    def __init__(self, server: SiteManager, initialize: bool = False):
         """Constructor"""
         self._sm = server
         isinstance(self._sm, SiteManager)
@@ -827,9 +826,9 @@ class SiteManager(object):
         password: str,
         config_store_connection: str,
         directories: str,
-        cluster: Optional[str] = None,
-        logs_settings: Optional[str] = None,
-        run_async: Optional[bool] = False,
+        cluster: str = None,
+        logs_settings: str = None,
+        run_async: bool = False,
         **kwargs,
     ):
         """
@@ -1048,7 +1047,7 @@ class SiteManager(object):
         return self._sm._import_site(location=location)
 
     # ----------------------------------------------------------------------
-    def upgrade(self, run_async: Optional[bool] = False) -> dict:
+    def upgrade(self, run_async: bool = False) -> dict:
         """
         This is the first operation that must be invoked during an ArcGIS
         Server upgrade. Once the new software version has been installed

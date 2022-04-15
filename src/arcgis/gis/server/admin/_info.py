@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
 from arcgis.gis import GIS
-from typing import Optional
 
 ########################################################################
 class Info(BaseServer):
@@ -15,7 +14,7 @@ class Info(BaseServer):
     _url = None
     _json = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
         ===============     ====================================================================
         **Argument**        **Description**

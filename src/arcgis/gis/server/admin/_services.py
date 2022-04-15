@@ -10,7 +10,7 @@ from .._common import BaseServer
 from .parameters import Extension
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
-from typing import Optional
+from arcgis.gis._impl._con import Connection
 import datetime as _datetime
 
 ########################################################################
@@ -40,7 +40,7 @@ class ServiceManager(BaseServer):
         self,
         url: str,
         gis: GIS,
-        initialize: Optional[bool] = False,
+        initialize: bool = False,
         sm: "Server" = None,
     ):
         """Constructor
@@ -64,7 +64,7 @@ class ServiceManager(BaseServer):
             self._init(gis)
 
     # ----------------------------------------------------------------------
-    def _init(self, connection: "Connection" = None):
+    def _init(self, connection: Connection = None):
         """loads the properties into the class"""
         if connection is None:
             connection = self._con
@@ -121,9 +121,7 @@ class ServiceManager(BaseServer):
         return self._folders
 
     # ----------------------------------------------------------------------
-    def list(
-        self, folder: Optional[str] = None, refresh: Optional[bool] = True
-    ) -> list:
+    def list(self, folder: str = None, refresh: bool = True) -> list:
         """
         returns a list of services in the specified folder
 
@@ -238,8 +236,8 @@ class ServiceManager(BaseServer):
     def publish_sd(
         self,
         sd_file: str,
-        folder: Optional[str] = None,
-        service_config: Optional[dict] = None,
+        folder: str = None,
+        service_config: dict = None,
     ) -> bool:
         """
         publishes a service definition file to arcgis server
@@ -260,7 +258,7 @@ class ServiceManager(BaseServer):
         return self._sm.publish_sd(sd_file, folder, service_config=service_config)
 
     # ----------------------------------------------------------------------
-    def _find_services(self, service_type: Optional[str] = "*") -> list:
+    def _find_services(self, service_type: str = "*") -> list:
         """
             returns a list of a particular service type on AGS
 
@@ -319,7 +317,7 @@ class ServiceManager(BaseServer):
         return type_services
 
     # ----------------------------------------------------------------------
-    def _examine_folder(self, folder: Optional[str] = None) -> dict:
+    def _examine_folder(self, folder: str = None) -> dict:
         """
         A folder is a container for GIS services. ArcGIS Server supports a
         single level hierarchy of folders.
@@ -349,7 +347,7 @@ class ServiceManager(BaseServer):
     def _can_create_service(
         self,
         service: dict,
-        options: Optional[dict] = None,
+        options: dict = None,
         folder_name: str = None,
         service_type: str = None,
     ) -> bool:
@@ -395,8 +393,8 @@ class ServiceManager(BaseServer):
     def _add_folder_permission(
         self,
         principal: str,
-        is_allowed: Optional[bool] = True,
-        folder: Optional[str] = None,
+        is_allowed: bool = True,
+        folder: str = None,
     ) -> dict:
         """
            Assigns a new permission to a role (principal). The permission
@@ -471,7 +469,7 @@ class ServiceManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def create_folder(self, folder_name: str, description: Optional[str] = "") -> bool:
+    def create_folder(self, folder_name: str, description: str = "") -> bool:
         """
         Creates a unique folder name on AGS
 
@@ -518,9 +516,7 @@ class ServiceManager(BaseServer):
             return False
 
     # ----------------------------------------------------------------------
-    def _delete_service(
-        self, name: str, service_type: str, folder: Optional[str] = None
-    ) -> bool:
+    def _delete_service(self, name: str, service_type: str, folder: str = None) -> bool:
         """
         Deletes a service from ArcGIS Server
 
@@ -548,7 +544,7 @@ class ServiceManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _service_report(self, folder: Optional[str] = None) -> dict:
+    def _service_report(self, folder: str = None) -> dict:
         """
         Provides a report on all items in a given folder.
 
@@ -673,7 +669,7 @@ class ServiceManager(BaseServer):
 
     # ----------------------------------------------------------------------
     def _rename_service(
-        self, name: str, service_type: str, new_name: str, folder: Optional[str] = None
+        self, name: str, service_type: str, new_name: str, folder: str = None
     ) -> bool:
         """
         Renames a published AGS Service
@@ -835,9 +831,7 @@ class ServiceManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _edit_folder(
-        self, description: str, web_encrypted: Optional[bool] = False
-    ) -> bool:
+    def _edit_folder(self, description: str, web_encrypted: bool = False) -> bool:
         """
         This operation allows you to change the description of an existing
         folder or change the web encrypted property.
@@ -962,9 +956,7 @@ class Service(BaseServer):
     _extensions = None
     _jm = None
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, gis: GIS, initialize: Optional[bool] = False, **kwargs
-    ):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False, **kwargs):
         """
         Constructor
 
@@ -999,7 +991,7 @@ class Service(BaseServer):
             self._init(self._con)
 
     # ----------------------------------------------------------------------
-    def _init(self, connection: "Connection" = None):
+    def _init(self, connection: Connection = None):
         """populates server admin information"""
         from .parameters import Extension
 
@@ -1321,7 +1313,7 @@ class Service(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _service_manifest(self, file_type: Optional[str] = "json") -> str:
+    def _service_manifest(self, file_type: str = "json") -> str:
         """
         The service manifest resource documents the data and other
         resources that define the service origins and power the service.
@@ -1352,9 +1344,7 @@ class Service(BaseServer):
         return open(f, "r").read()
 
     # ----------------------------------------------------------------------
-    def _add_permission(
-        self, principal: str, is_allowed: Optional[bool] = True
-    ) -> bool:
+    def _add_permission(self, principal: str, is_allowed: bool = True) -> bool:
         """
         Assigns a new permission to a role (principal). The permission
         on a parent resource is automatically inherited by all child resources.
@@ -1454,7 +1444,7 @@ class JobManager(BaseServer):
     _url = None
     _properties = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, con: "Connection"):
+    def __init__(self, url: str, con: Connection):
         """Constructor"""
         self._url = url
         self._con = con
@@ -1462,8 +1452,8 @@ class JobManager(BaseServer):
     # ----------------------------------------------------------------------
     def search(
         self,
-        start_time: Optional[_datetime.datetime] = None,
-        end_time: Optional[_datetime.datetime] = None,
+        start_time: _datetime.datetime = None,
+        end_time: _datetime.datetime = None,
         status: str = None,
         username: str = None,
         machine: str = None,
@@ -1619,7 +1609,7 @@ class ItemInformationManager(BaseServer):
     _properties = None
     _con = None
 
-    def __init__(self, url: str, con: "Connection"):
+    def __init__(self, url: str, con: Connection):
         """Constructor"""
         self._url = url
         self._con = con
@@ -1639,7 +1629,7 @@ class ItemInformationManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def upload(self, info_file: str, folder: Optional[str] = None) -> dict:
+    def upload(self, info_file: str, folder: str = None) -> dict:
         """Uploads a file associated with the item information to the server.
 
         ===============     ====================================================================

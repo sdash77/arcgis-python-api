@@ -9,7 +9,6 @@ import json
 from .._common import BaseServer
 from .parameters import ClusterProtocol
 from arcgis.gis import GIS
-from typing import Optional
 
 ########################################################################
 class Clusters(BaseServer):
@@ -35,7 +34,7 @@ class Clusters(BaseServer):
     _json = None
     _url = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""
         super(Clusters, self).__init__(gis=gis, url=url)
         self._con = gis
@@ -51,8 +50,8 @@ class Clusters(BaseServer):
     def create_cluster(
         self,
         cluster_name: str,
-        machine_names: Optional[str] = None,
-        port: Optional[str] = None,
+        machine_names: str = None,
+        port: str = None,
     ) -> dict:
         """
         Creating a new cluster involves defining a clustering protocol that
@@ -144,7 +143,7 @@ class Cluster(BaseServer):
     _json = None
     _url = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""
         super(Cluster, self).__init__(gis=gis, url=url)
         self._con = gis

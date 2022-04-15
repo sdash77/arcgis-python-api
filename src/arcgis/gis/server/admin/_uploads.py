@@ -15,9 +15,7 @@ with the server properties API.
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
-from urllib.parse import urlparse
 from arcgis.gis import GIS
-from typing import Optional
 
 ########################################################################
 class Uploads(BaseServer):
@@ -43,7 +41,7 @@ class Uploads(BaseServer):
     _url = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""
         if url.lower().find("uploads") < -1:
             self._url = url + "/uploads"
@@ -118,7 +116,7 @@ class Uploads(BaseServer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def upload(self, path: str, description: Optional[str] = None) -> bool:
+    def upload(self, path: str, description: str = None) -> bool:
         """
         Uploads a new item to the server. Once the operation is completed
         successfully, the JSON structure of the uploaded item is returned.

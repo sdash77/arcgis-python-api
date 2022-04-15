@@ -1,5 +1,5 @@
 import json
-from typing import Union, Optional
+from typing import Union
 
 ########################################################################
 class Extension(object):

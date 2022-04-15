@@ -17,7 +17,7 @@ import json
 from .._common import BaseServer
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
-from typing import Optional
+from arcgis.gis._impl._con import Connection
 
 ########################################################################
 class MachineManager(BaseServer):
@@ -45,7 +45,7 @@ class MachineManager(BaseServer):
     _url = None
     _json = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
 
 
@@ -69,7 +69,7 @@ class MachineManager(BaseServer):
             self._init(gis)
 
     # ----------------------------------------------------------------------
-    def _init(self, connection: "Connection" = None) -> dict:
+    def _init(self, connection: Connection = None) -> dict:
         """Loads the properties into the class."""
         if connection is None:
             connection = self._con
@@ -260,7 +260,7 @@ class Machine(BaseServer):
     _con = None
     _url = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 

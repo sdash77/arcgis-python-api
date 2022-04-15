@@ -17,7 +17,6 @@ from .._common import BaseServer
 from ..._impl._con import Connection
 from .._common.util import contextmanager, _tempinput
 from arcgis.gis import GIS
-from typing import Optional, Dict
 
 ###########################################################################
 class Datastore(BaseServer):
@@ -39,7 +38,7 @@ class Datastore(BaseServer):
         self,
         datastore: "DataStoreManager",
         path: str,
-        datadict: Optional[dict] = None,
+        datadict: dict = None,
         **kwargs,
     ):
         self._path = path
@@ -313,7 +312,7 @@ class DataStoreManager(BaseServer):
     _gis = None
     _datastores = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: Optional[GIS] = None, **kwargs):
+    def __init__(self, url: str, gis: GIS = None, **kwargs):
         """Constructor
         Inputs:
            url - admin url
@@ -469,7 +468,7 @@ class DataStoreManager(BaseServer):
 
     # ----------------------------------------------------------------------
     def add_folder(
-        self, name: str, server_path: str, client_path: Optional[str] = None
+        self, name: str, server_path: str, client_path: str = None
     ) -> Datastore:
         """
         Registers a folder with the data store.
@@ -536,8 +535,8 @@ class DataStoreManager(BaseServer):
     def add_bigdata(
         self,
         name: str,
-        server_path: Optional[str] = None,
-        connection_type: Optional[str] = "fileShare",
+        server_path: str = None,
+        connection_type: str = "fileShare",
     ) -> Datastore:
         """
         Registers a bigdata fileshare with the data store.
@@ -644,8 +643,8 @@ class DataStoreManager(BaseServer):
         conn_str: str,
         object_store: str,
         provider: str,
-        managed: Optional[bool] = False,
-        folder: Optional[str] = None,
+        managed: bool = False,
+        folder: str = None,
     ) -> Datastore:
         """
         Cloud Store data item represents a connection to a Amazon or Microsoft Azure store.
@@ -707,8 +706,8 @@ class DataStoreManager(BaseServer):
         self,
         name: str,
         conn_str: str,
-        client_conn_str: Optional[str] = None,
-        conn_type: Optional[str] = "shared",
+        client_conn_str: str = None,
+        conn_type: str = "shared",
     ) -> Datastore:
         """
         Registers a database with the data store.
@@ -855,10 +854,10 @@ class DataStoreManager(BaseServer):
     # ----------------------------------------------------------------------
     def search(
         self,
-        parent_path: Optional[str] = None,
-        ancestor_path: Optional[str] = None,
-        types: Optional[str] = None,
-        id: Optional[str] = None,
+        parent_path: str = None,
+        ancestor_path: str = None,
+        types: str = None,
+        id: str = None,
         **kwargs,
     ) -> list:
         """

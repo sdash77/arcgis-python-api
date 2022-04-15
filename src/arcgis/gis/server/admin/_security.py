@@ -10,7 +10,6 @@ recommended that this resource be accessed over HTTPS protocol.
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
-from typing import Optional
 from arcgis.gis import GIS
 
 ########################################################################
@@ -34,7 +33,7 @@ class Security(BaseServer):
     _um = None
     _rm = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
 
         ==================     ====================================================================
@@ -182,7 +181,7 @@ class UserManager(BaseServer):
     _json = None
     _rm = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 
@@ -230,9 +229,9 @@ class UserManager(BaseServer):
         self,
         username: str,
         password: str,
-        fullname: Optional[str] = None,
-        description: Optional[str] = None,
-        email: Optional[str] = None,
+        fullname: str = None,
+        description: str = None,
+        email: str = None,
     ) -> dict:
         """
         Adds a user account to the user store.
@@ -299,8 +298,8 @@ class UserManager(BaseServer):
     def _get_user_roles(
         self,
         username: str,
-        user_filter: Optional[str] = None,
-        max_count: Optional[int] = None,
+        user_filter: str = None,
+        max_count: int = None,
     ) -> dict:
         """
         This operation returns a list of role names that have been
@@ -334,9 +333,7 @@ class UserManager(BaseServer):
         return self._con.post(path=u_url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _list_users(
-        self, start_index: Optional[int] = 0, page_size: Optional[int] = 10
-    ) -> dict:
+    def _list_users(self, start_index: int = 0, page_size: int = 10) -> dict:
         """
         This operation gives you a pageable view of users in the user
         store. It is intended for iterating over all available user
@@ -442,7 +439,7 @@ class UserManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def search(self, username: str, max_results: Optional[int] = 25) -> list:
+    def search(self, username: str, max_results: int = 25) -> list:
         """
         You can use this operation to search a specific user or a group of
         users from the user store. The size of the search result can be
@@ -498,9 +495,7 @@ class UserManager(BaseServer):
         return self._rm
 
     # ----------------------------------------------------------------------
-    def _find_users(
-        self, criteria: Optional[str] = None, max_count: Optional[int] = 10
-    ) -> dict:
+    def _find_users(self, criteria: str = None, max_count: int = 10) -> dict:
         """
         You can use this operation to search a specific user or a group
         of users from the user store. The size of the search result can
@@ -530,10 +525,10 @@ class UserManager(BaseServer):
     def _update_user(
         self,
         username: str,
-        password: Optional[str] = None,
-        fullname: Optional[str] = None,
-        description: Optional[str] = None,
-        email: Optional[str] = None,
+        password: str = None,
+        fullname: str = None,
+        description: str = None,
+        email: str = None,
     ) -> dict:
         """
         Updates a user account in the user store.
@@ -671,10 +666,10 @@ class User(dict):
     # ----------------------------------------------------------------------
     def update(
         self,
-        password: Optional[str] = None,
-        full_name: Optional[str] = None,
-        description: Optional[str] = None,
-        email: Optional[str] = None,
+        password: str = None,
+        full_name: str = None,
+        description: str = None,
+        email: str = None,
     ) -> bool:
         """
         Updates this user account in the user store.
@@ -771,7 +766,7 @@ class RoleManager(BaseServer):
     _json_dict = None
     _json = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 
@@ -802,7 +797,7 @@ class RoleManager(BaseServer):
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def create(self, name: str, description: Optional[str] = None) -> bool:
+    def create(self, name: str, description: str = None) -> bool:
         """
         Adds a role to the role store. This operation is available only
         when the role store is a read-write store such as the default
@@ -860,9 +855,7 @@ class RoleManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _assign_privilege(
-        self, rolename: str, privilege: Optional[str] = "ACCESS"
-    ) -> bool:
+    def _assign_privilege(self, rolename: str, privilege: str = "ACCESS") -> bool:
         """
         Assigns a privilege to the desired role.
 
@@ -976,9 +969,7 @@ class RoleManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def all(
-        self, start_index: Optional[int] = 0, page_size: Optional[int] = 10
-    ) -> list:
+    def all(self, start_index: int = 0, page_size: int = 10) -> list:
         """
         This operation gives you a pageable view of roles in the role
         store. It is intended for iterating through all available role
@@ -1033,8 +1024,8 @@ class RoleManager(BaseServer):
     def _get_user_roles(
         self,
         username: str,
-        user_filter: Optional[str] = None,
-        max_count: Optional[int] = None,
+        user_filter: str = None,
+        max_count: int = None,
     ) -> dict:
         """
         Supplies a list of roles that have been assigned to a particular user account.
@@ -1069,8 +1060,8 @@ class RoleManager(BaseServer):
     def _get_users_within_role(
         self,
         rolename: str,
-        user_filter: Optional[str] = None,
-        max_count: Optional[int] = 20,
+        user_filter: str = None,
+        max_count: int = 20,
     ) -> dict:
         """
         You can use this operation to conveniently see all the user
@@ -1187,9 +1178,7 @@ class RoleManager(BaseServer):
         return self._con.get(path=u_url, params=params)
 
     # ----------------------------------------------------------------------
-    def get_role(
-        self, role_id: Optional[str] = None, max_count: Optional[int] = 10
-    ) -> list:
+    def get_role(self, role_id: str = None, max_count: int = 10) -> list:
         """
         Use this operation to search a specific role or a group
         of roles from the role store.
@@ -1295,7 +1284,7 @@ class Role(dict):
         return "<%s rolename:%s>" % (type(self).__name__, self.rolename)
 
     # ----------------------------------------------------------------------
-    def update(self, description: Optional[str] = None) -> dict:
+    def update(self, description: str = None) -> dict:
         """
         Updates this role in the role store with new information. This
         operation is available only when the role store is a read-write

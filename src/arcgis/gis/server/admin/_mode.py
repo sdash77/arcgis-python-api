@@ -11,7 +11,6 @@ from __future__ import print_function
 from .._common import BaseServer
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.gis import GIS
-from typing import Optional
 
 ###########################################################################
 class Mode(BaseServer):
@@ -32,7 +31,7 @@ class Mode(BaseServer):
     _copyConfigLocal = None
     _lastModified = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""
         super(Mode, self).__init__(gis=gis, url=url)
         if url.lower().endswith("/mode"):
@@ -50,7 +49,7 @@ class Mode(BaseServer):
         current_version="2.0.1",
         details="Use `Mode.update_mode` instead.",
     )
-    def update(self, siteMode: str, runAsync: Optional[bool] = False) -> bool:
+    def update(self, siteMode: str, runAsync: bool = False) -> bool:
         """
         The update operation is used to move between the two types of site
         modes. Switching to READ_ONLY mode will restart all your services
@@ -81,8 +80,8 @@ class Mode(BaseServer):
     def update_mode(
         self,
         site_mode: str,
-        run_async: Optional[bool] = False,
-        allow_editing: Optional[bool] = True,
+        run_async: bool = False,
+        allow_editing: bool = True,
     ) -> bool:
         """
         The update operation is used to move between the two types of site

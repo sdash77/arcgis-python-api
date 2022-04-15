@@ -6,7 +6,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
 from arcgis.gis import GIS
-from typing import Optional
+
 
 ########################################################################
 class KML(BaseServer):
@@ -19,7 +19,7 @@ class KML(BaseServer):
     _url = None
     _json_dict = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 

@@ -7,7 +7,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
 from arcgis.gis import GIS
-from typing import Optional
+from arcgis.gis._impl._con import Connection
 
 ########################################################################
 class SystemManager(BaseServer):
@@ -23,7 +23,7 @@ class SystemManager(BaseServer):
     _url = None
     _resources = None
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: Optional[bool] = False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 
@@ -130,8 +130,8 @@ class SystemManager(BaseServer):
         physical_path: str,
         directory_type: str,
         max_age: int,
-        cleanup_mode: Optional[str] = "NONE",
-        description: Optional[str] = None,
+        cleanup_mode: str = "NONE",
+        description: str = None,
     ) -> bool:
         """
         Registers a new server directory. While registering the server
@@ -532,9 +532,7 @@ class PlatformServiceManager(BaseServer):
     _json = None
     _json_dict = None
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, connection: "Connection", initialize: Optional[bool] = False
-    ):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         ==================     ====================================================================
         **Argument**           **Description**
@@ -555,7 +553,7 @@ class PlatformServiceManager(BaseServer):
             self._init(connection)
 
     # ----------------------------------------------------------------------
-    def _init(self, connection: "Connection" = None):
+    def _init(self, connection: Connection = None):
         """loads the properties into the class"""
         from arcgis._impl.common._mixins import PropertyMap
 
@@ -648,9 +646,7 @@ class PlatformService(BaseServer):
     _url = None
     _con = None
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, connection: "Connection", initialize: Optional[bool] = False
-    ):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -722,9 +718,7 @@ class ConfigurationStore(BaseServer):
     _json = None
     _json_dict = None
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, connection: "Connection", initialize: Optional[bool] = False
-    ):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -775,8 +769,8 @@ class ConfigurationStore(BaseServer):
         self,
         type_value: str,
         connection: GIS,
-        move: Optional[bool] = True,
-        run_async: Optional[bool] = False,
+        move: bool = True,
+        run_async: bool = False,
         *,
         local_path: str = None,
     ) -> bool:
@@ -848,9 +842,7 @@ class Jobs(BaseServer):
     _json_dict = None
     _url = None
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, connection: "Connection", initialize: Optional[bool] = False
-    ):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -1005,9 +997,7 @@ class ServerProperties(BaseServer):
     _json = None
     _json_dict = None
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, connection: "Connection", initialize: Optional[bool] = False
-    ):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -1203,8 +1193,8 @@ class DirectoryManager(object):
         physicalPath: str,
         directoryType: str,
         maxFileAge: int,
-        cleanupMode: Optional[str] = "NONE",
-        description: Optional[str] = None,
+        cleanupMode: str = "NONE",
+        description: str = None,
     ) -> bool:
         """
         Registers a new server directory. While registering the server
@@ -1282,9 +1272,7 @@ class ServerDirectory(BaseServer):
     _description = None
     _virtualPath = None
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, connection: "Connection", initialize: Optional[bool] = False
-    ):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -1314,8 +1302,8 @@ class ServerDirectory(BaseServer):
         max_age: int,
         description: str,
         *,
-        use_local_dir: Optional[bool] = None,
-        local_dir: Optional[str] = None,
+        use_local_dir: bool = None,
+        local_dir: str = None,
     ):
         """
         The server directory's edit operation allows you to change the path
