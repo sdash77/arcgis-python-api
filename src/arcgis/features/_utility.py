@@ -1089,14 +1089,22 @@ class UtilityNetworkManager(object):
             return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def create_trace_configurations(self, name:str, trace_type:str, trace_config:dict, description:Optional[str]=None, result_types:Optional[list[dict]]=None, tags:Optional[list[str]]=None):
+    def create_trace_configurations(
+        self,
+        name: str,
+        trace_type: str,
+        trace_config: dict,
+        description: Optional[str] = None,
+        result_types: Optional[list[dict]] = None,
+        tags: Optional[list[str]] = None,
+    ):
         """
-        The create operation on the traceConfigurations resource provides the 
-        ability to create a single named trace configuration. Named trace 
-        configurations store the properties of a complex trace in a utility 
-        network and can be shared through a map service consumed by a web map 
-        or field app. Multiple parameters and properties are provided with 
-        the create operation that support the analytic workflows associated 
+        The create operation on the traceConfigurations resource provides the
+        ability to create a single named trace configuration. Named trace
+        configurations store the properties of a complex trace in a utility
+        network and can be shared through a map service consumed by a web map
+        or field app. Multiple parameters and properties are provided with
+        the create operation that support the analytic workflows associated
         with the trace operation.
 
         ======================      ===============================================
@@ -1153,11 +1161,12 @@ class UtilityNetworkManager(object):
                 "tags": tags,
             }
             return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
     def delete_trace_configurations(self, global_ids: list[str]):
         """
-        The delete operation provides the ability to delete one or more named 
-        trace configurations in a utility network. A named trace configuration 
+        The delete operation provides the ability to delete one or more named
+        trace configurations in a utility network. A named trace configuration
         can only be deleted by an administrator or its creator.
         """
         if self._gis.version >= [9, 2]:
@@ -1167,10 +1176,17 @@ class UtilityNetworkManager(object):
                 "globalIds": global_ids,
             }
             return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
-    def query_trace_configurations(self, global_ids:Optional[list[str]]=None, creators:Optional[list[str]]=None, tags:Optional[list[str]]=None, names:Optional[list[str]]=None):
+    def query_trace_configurations(
+        self,
+        global_ids: Optional[list[str]] = None,
+        creators: Optional[list[str]] = None,
+        tags: Optional[list[str]] = None,
+        names: Optional[list[str]] = None,
+    ):
         """
-        The query operation returns all properties from one or more 
+        The query operation returns all properties from one or more
         named trace configurations in a utility network.
 
         ========================    ===========================================
@@ -1196,7 +1212,8 @@ class UtilityNetworkManager(object):
                 "globalIds": global_ids,
                 "creators": creators,
                 "tags": tags,
-                "names": names
+                "names": names,
             }
             return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
