@@ -68,7 +68,7 @@ class UtilityNetworkManager(object):
         locations: list[dict],
         trace_type: str,
         fields: Optional[list[str]] = None,
-        moment: Optional[str] = None,
+        moment: Optional[int] = None,
         configuration: Optional[dict] = None,
         result_type: Optional[str] = None,
         result_types: Optional[list[dict]] = None,
@@ -123,7 +123,7 @@ class UtilityNetworkManager(object):
                                 'upstream' | 'downstream' | 'loops' | 'shortestPath' |
                                 'isolation'`
         --------------------    --------------------------------------------------
-        moment                  Optional string. Specifies the session moment. This
+        moment                  Optional Integer. Specifies the session moment. This
                                 should only be specified if you do not want to use
                                 the current moment.
 
@@ -347,7 +347,7 @@ class UtilityNetworkManager(object):
         fields: Optional[list[str]] = None,
         result_type: Optional[str] = None,
         result_types: Optional[list[dict]] = None,
-        moment: Optional[str] = None,
+        moment: Optional[int] = None,
     ):
         """
         The `export_subnetwork` operation is used to export information
@@ -390,7 +390,7 @@ class UtilityNetworkManager(object):
                                                             },...
                                                         ]
         ------------------------------------        --------------------------------------------------------------------
-        moment                                      Optional String. Specify the session moment if you do not want to use
+        moment                                      Optional Integer. Specify the session moment if you do not want to use
                                                     the current moment.
         ====================================        ====================================================================
 
@@ -416,7 +416,7 @@ class UtilityNetworkManager(object):
     def query_network_moments(
         self,
         moments_to_return: Optional[list[str]] = ["all"],
-        moment: Optional[str] = None,
+        moment: Optional[int] = None,
     ):
         """
         The `query_network_moments` operation returns the moments related
@@ -430,13 +430,13 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         moments_to_return                           Optional List of Strings. Represents the collection of validate moments to
                                                     return. Default is all.
-        ------------------------------------        --------------------------------------------------------------------
-        moment                                      Optional String. Specify the session moment if you do not want to use
-                                                    the current moment.
 
                                                     `Values: ["initialEnableTopology" | "fullValidateTopology" |
                                                             "partialValidateTopology" | "enableTopology" | "disableTopology" |
                                                             "definitionModification" | "updateIsConnected" | "indexUpdate" | "all" ]`
+        ------------------------------------        --------------------------------------------------------------------
+        moment                                      Optional Integer. Specify the session moment if you do not want to use
+                                                    the current moment.
         ====================================        ====================================================================
 
         """
@@ -488,7 +488,7 @@ class UtilityNetworkManager(object):
         count: int = 200,
         extent: dict = {},
         out_sr: Optional[Union[int, dict[str, Any]]] = None,
-        moment: Optional[str] = None,
+        moment: Optional[int] = None,
     ):
         """
         The `synthesize_association_geometries` operation is used to export
@@ -528,7 +528,7 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         out_sr                                      Optional Dictionary. Represents the output spatial reference.
         ------------------------------------        --------------------------------------------------------------------
-        moment                                      Optional String. Specify the session moment if you do not want to use
+        moment                                      Optional Integer. Specify the session moment if you do not want to use
                                                     the current moment.
         ====================================        ====================================================================
 
@@ -753,7 +753,7 @@ class UtilityNetworkManager(object):
     def query_associations(
         self,
         elements: Optional[list[dict]] = None,
-        moment: Optional[Union[str, int]] = None,
+        moment: Optional[int] = None,
         types: Optional[list[str]] = ["all"],
         return_deletes: bool = False,
     ):
@@ -805,7 +805,7 @@ class UtilityNetworkManager(object):
     def traverse_associations(
         self,
         elements: list[dict],
-        moment: Optional[str] = None,
+        moment: Optional[int] = None,
         type: Optional[str] = "unspecified",
         direction: str = "descending",
         dirty_filter: str = "none",
@@ -933,7 +933,7 @@ class UtilityNetworkManager(object):
         self,
         elements: list[dict],
         max_geom_count: int,
-        moment: Optional[str] = None,
+        moment: Optional[int] = None,
         attachment_associations: bool = False,
         connectivity_associations: bool = False,
         containment_associations: bool = False,
