@@ -439,8 +439,9 @@ class TabularDataObject(object):
             processed_data = _procs.fit_transform(dataframe)
         except:
             msg = arcpy_localization_helper(
-                'Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.',
-                260143)
+                "Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.",
+                260143,
+            )
             raise ValueError(msg)
 
         training_data = processed_data.take(self._training_indexes, axis=0)
