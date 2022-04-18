@@ -61,29 +61,95 @@ class TraceNetworkManager(object):
     # ----------------------------------------------------------------------
     def trace(
         self,
-        locations: list[str],
+        locations: list[dict],
         trace_type: str,
-        fields: Optional[list[str]] = None,
         moment: Optional[str] = None,
-        configuration: Optional[str] = None,
-        result_type: Optional[str] = None,
+        configuration: Optional[dict] = None,
+        result_types: Optional[list[dict]] = None,
+        run_async: bool = False,
     ):
         """
-        A trace refers to a pre-configured algorithm that systematically
-        travels a network to return results. Generalized traces allow you to
-        trace across multiple types of domain networks. For example, running
-        a Connected trace from your electric network through to your gas
-        network. An assortment of options is provided with trace to support
-        various analytic work flows. All traces use the network topology to
-        read cached information about network features. This can improve
-        performance of complex traces on large networks. Trace results are
-        not guaranteed to accurately represent a utility network when dirty
-        areas are present. The network topology must be validated to ensure
-        it reflects the most recent edits or updates made to the network.
+        A trace refers to a preconfigured algorithm that systematically
+        travels a network to return results. Multiple parameters and properties
+        are provided with the trace operation that support various analytic workflows.
+        All traces use the network topology to read cached information about network features.
+        This can improve performance of complex traces on large networks.
+        Trace results are not guaranteed to accurately represent a trace network when
+        dirty areas are present. The network topology must be validated to ensure that it
+        reflects the most recent edits or updates made to the network.
+
+        .. note::
+            The active portal account must be licensed with the ArcGIS Trace
+            Network user type extention to use this operation.
+
+        ====================    ==================================================
+        **Arguments**           **Description**
+        --------------------    --------------------------------------------------
+        locations               Required list of dictionaries. The locations for
+                                starting points and barriers. An empty array must
+                                be used when performing a subnetwork trace if a
+                                subnetworkName is provided as part of the
+                                `configuration`—for example, `locations=[]`.
 
 
+                                The location is ignored by the trace if the following
+                                required properties are not defined:
+                                * `percentAlong` : required for edge features and objects.
+                                * `terminalID` : required for junction features and objects.
+
+
+                                .. code-block:: python
+                                    [{
+                                        "traceLocationType" : "startingPoint" | "barrier",
+                                        "globalId" : <guid>,
+                                        “percentAlong” : <double>, // optional
+                                    }]
+        --------------------    --------------------------------------------------
+        trace_type              Required string. Specifies the core algorithm that
+                                will be executed to analyze the network. Can be
+                                configured using the `configuration` parameter.
+
+                                `Values: 'connected' | 'subnetwork' | 'subnetworkController' |
+                                'upstream' | 'downstream' | 'loops' | 'shortestPath' |
+                                'isolation'`
+        --------------------    --------------------------------------------------
+        moment                  Optional Integer. Specifies the session moment. This
+                                should only be specified if you do not want to use
+                                the current moment.
+
+                                Example: moment = <Epoch time in milliseconds>
+        --------------------    --------------------------------------------------
+        configuration           Optional dictionary. Specifies the collection of
+                                trace configuration properties. Depending on the
+                                `trace_type`, some properties are required.
+
+                                To see all configuration properties see:
+                                `Trace Configuration Properties
+                                <https://developers.arcgis.com/rest/services-reference/enterprise/trace-trace-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
+        --------------------    --------------------------------------------------
+        result_types            Optional parameter specifying hte types of results
+                                to return.
+
+                                .. code-block::
+                                    [{
+                                        "type" : "elements" | "aggregatedGeometry" | "connectivity",
+                                        "includeGeometry" : true | false,
+                                        "includePropagatedValues": true | false,
+                                        "networkAttributeNames" :["attribute1Name","attribute2Name",...],
+                                        "diagramTemplateName": <value>,
+                                        "resultTypeFields":[{"networkSourceId":<long>,"fieldname":<value>},...]
+                                    },...]
+
+                                .. note::
+                                    ArcGIS Enterprise 10.9.1 or later is required when
+                                    using the `connectivity` type.
+        ====================    ==================================================
+
+        :return: If `asynchronous = True` then the status URL is returned for the job. Otherwise,
+        a Dictionary of the Trace Results is returned.
         """
         url = "%s/trace" % self._url
+
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
@@ -92,178 +158,15 @@ class TraceNetworkManager(object):
             "moment": moment,
             "traceLocations": locations,
             "traceConfiguration": configuration,
-            "resultFields": fields,
-            "resultType": result_type,
-        }
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def disable_topology(self):
-        """
-        Disables the network topology for a utility network. When the
-        topology is disabled, feature and association edits do not generate
-        dirty areas. Analytics and diagram generation can't be performed if
-        the topology is not present.
-
-        When the topology is disabled, the following happens:
-
-             - All current rows in the topology tables are deleted.
-             - No dirty areas are generated from edits.
-             - Remaining error features still exist and can be cleaned up without the overhead of dirty areas.
-
-        To perform certain network configuration tasks, the network
-        topology must be disabled.
-
-             - This operation must be executed by the portal utility network owner.
-             - The topology can be disabled in the default version or in a named version.
-
-        :return: Dictionary indicating 'success' or 'error'
-
-        """
-        url = "%s/disableTopology" % self._url
-        params = {
-            "f": "json",
-            "gdbVersion": self._version_name,
-            "sessionId": self._version_guid,
-        }
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def enable_topology(self, error_count: int = 10000):
-        """
-        Enabling the network topology for a utility network is done on the
-        **DEFAULT** version. Enabling is **not** supported in named versions.
-        When the topology is enabled, all feature and association edits
-        generate dirty areas, which are then consumed when the network
-        topology is updated.
-
-
-        ====================================     ====================================================================
-        **Argument**                             **Description**
-        ------------------------------------     --------------------------------------------------------------------
-        error_count                              Optional Integer. Sets the threshold when the `enable_topology` will
-                                                 stop if the maximum number of errors is met. The default value is
-                                                 10,000.
-        ====================================     ====================================================================
-
-        :return: Dictionary indicating 'success' or 'error'
-
-        """
-        if self._version_name.lower().find("default") == -1:
-            raise Exception("Current version is not the `DEFAULT` version.")
-
-        params = {"f": "json", "maxErrorCount": error_count}
-        url = "%s/enableTopology" % self._url
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def disable_subnetwork_controller(
-        self, network_source_id: str, global_id: str, terminal_id: str
-    ):
-        """
-        A subnetwork controller (or simply, a source or a sink) is the
-        origin (or destination) of resource flow for a subpart of the
-        network. Examples of subnetwork controllers are circuit breakers in
-        electric networks, or town border stations in gas networks.
-        Subnetwork controllers correspond to devices that have the
-        Subnetwork Controller network capability set. A source is removed
-        with `disable_subnetwork_controller`.
-
-
-        """
-
-        url = "%s/disableSubnetworkController" % self._url
-        params = {
-            "f": "json",
-            "gdbVersion": self._version_name,
-            "sessionId": self._version_guid,
-            "networkSourceId": network_source_id,
-            "featureGlobalId": global_id,
-            "terminalId": terminal_id,
-        }
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def enable_subnetwork_controller(
-        self,
-        network_source_id: str,
-        global_id: str,
-        terminal_id: str,
-        subnetwork_controller_name: str,
-        tier_name: str,
-        subnetwork_name: Optional[str] = None,
-        description: Optional[str] = None,
-        notes: Optional[str] = None,
-    ):
-        """
-        A subnetwork controller is the origin (or destination) of resource
-        flow for a subpart of the network (e.g., a circuit breaker in
-        electric networks, or a town border station in gas networks).
-        Controllers correspond to Devices that have the Subnetwork
-        Controller network capability set.
-
-
-        """
-
-        url = "%s/enableSubnetworkController" % self._url
-        params = {
-            "f": "json",
-            "gdbVersion": self._version_name,
-            "sessionId": self._version_guid,
-            "networkSourceId": network_source_id,
-            "featureGlobalId": global_id,
-            "terminalID": terminal_id,
-            "subnetworkControllerName": subnetwork_controller_name,
-            "subnetworkName": subnetwork_name,
-            "tierName": tier_name,
-            "description": description,
-            "notes": notes,
-        }
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def export_subnetwork(
-        self,
-        domain_name: str,
-        tier_name: str,
-        subnetwork_name: str,
-        trace_configuration: Optional[str] = None,
-        export_acknowlegement: bool = False,
-        fields: Optional[list[str]] = None,
-        result_type: Optional[str] = None,
-        moment: Optional[str] = None,
-    ):
-        """
-        The `export_subnetwork` operation is used to export information
-        about a subnetwork into a JSON file. That information can then be
-        consumed by outside systems such as outage management and asset
-        tracking. The exportSubnetwork operation allows you to delete
-        corresponding rows in the Subnetwork Sources table as long as the
-        IsDeleted attribute is set to True. This indicates a source feeding
-        the subnetwork has been removed.
-
-        """
-
-        url = "%s/exportSubnetwork" % self._url
-        params = {
-            "f": "json",
-            "gdbVersion": self._version_name,
-            "sessionId": self._version_guid,
-            "moment": moment,
-            "domainNetworkName": domain_name,
-            "tierName": tier_name,
-            "subnetworkName": subnetwork_name,
-            "exportAcknowledgement": export_acknowlegement,
-            "traceConfiguration": trace_configuration,
-            "resultFields": fields,
-            "resultType": result_type,
+            "resultTypes": result_types,
+            "async": run_async,
         }
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def query_network_moments(
         self,
-        moments_to_return: str = "fullValidateTopology",
+        moments_to_return: Optional[list[str]] = ["all"],
         moment: Optional[str] = None,
     ):
         """
@@ -271,7 +174,22 @@ class TraceNetworkManager(object):
         to the network topology and operations against the topology. This
         includes when the topology was initially enabled, when it was last
         validated, when the topology was last disabled (and later enabled),
-        and when the definition of the utility network was last modified.
+        and when the definition of the trace network was last modified.
+
+        ====================================        ====================================================================
+        **Argument**                                **Description**
+        ------------------------------------        --------------------------------------------------------------------
+        moments_to_return                           Optional List of Strings. Represents the collection of validate moments to
+                                                    return. Default is all.
+
+                                                    `Values: ["initialEnableTopology" | "fullValidateTopology" |
+                                                            "partialValidateTopology" | "enableTopology" | "disableTopology" |
+                                                            "definitionModification" | "indexUpdate" | "all" ]`
+        ------------------------------------        --------------------------------------------------------------------
+        moment                                      Optional Epoch in Time in Seconds.
+                                                    Example: `moment=1603109606`
+        ====================================        ====================================================================
+
         """
         url = "%s/queryNetworkMoments" % self._url
         params = {
@@ -284,136 +202,54 @@ class TraceNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def query_overrides(
-        self,
-        attribute_ids: Optional[list[str]] = None,
-        all_attributes: bool = False,
-        all_connectivity: bool = False,
-    ):
-        """
-        Network attributes support the ability to have their values
-        overridden without having to edit features and validate the network
-        topology (build the index). The utility network also supports the
-        ability to place ephemeral connectivity (e.g., jumpers in an
-        electrical network) between two devices or junctions without having
-        to edit features or connectivity associations and validate the
-        network topology (build the index). This operation allows the
-        client to query all the overrides associated with the network
-        attributes (by network attribute id). In addition, all connectivity
-        overrides are returned.
-        """
-        url = "%s/queryOverrides" % self._url
-        params = {
-            "f": "json",
-            "attributeIDs": attribute_ids,
-            "allAttributes": all_attributes,
-            "allConnectivity": all_connectivity,
-        }
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def synthesize_association_geometries(
-        self,
-        attachment_associations: bool = False,
-        connectivity_associations: bool = False,
-        containment_associations: bool = False,
-        count: int = 200,
-        extent: bool = False,
-        out_sr: Optional[Union[int, dict[str, Any]]] = None,
-        moment: Optional[str] = None,
-    ):
-        """
-        The `synthesize_association_geometries` operation is used to export
-        geometries representing associations that are synthesized as line
-        segments corresponding to the geometries of the devices at the
-        endpoints. All features associated with an association must be in
-        the specified extent in order for the geometry to be synthesized.
-        If only zero or one of the devices/junctions intersects the extent,
-        then no geometry will be synthesized.
-
-
-
-        """
-        url = "%s/synthesizeAssociationGeometries"
-        params = {
-            "gdbVersion": self._version_name,
-            "sessionId": self._version_guid,
-            "moment": moment,
-            "attachmentAssociations": attachment_associations,
-            "connectivityAssociations": connectivity_associations,
-            "containmentAssociations": containment_associations,
-            "maxGeometryCount": count,
-            "extent": extent,
-            "outSR": out_sr,
-            "f": "json",
-        }
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def update_is_connected(self):
-        """
-
-        Utility network features have an attribute called IsConnected that
-        lets you know if a feature is connected to a source or sink, and
-        therefore it could potentially be part of an existing subnetwork.
-        The `update_is_connected` operation updates this attribute on
-        features in the specified utility network. This operation can only
-        be executed on the default version by the portal utility network
-        owner.
-        """
-        url = "%s/updateIsConnected" % self._url
-        params = {"f": "json"}
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def update_subnetwork(
-        self,
-        domain_name: str,
-        tier_name: str,
-        subnetwork_name: str = None,
-        all_subnetwork_tier: bool = False,
-        continue_on_failure: bool = False,
-        trace_configuration: Optional[str] = None,
-    ):
-        """
-        A subnetwork is updated by calling the `update_subnetwork` operation.
-        With this operation, one or all of the subnetworks in a single tier
-        can be updated. When a subnetwork is updated, four things can occur;
-        the Subnetwork Name attribute is updated for all features in the
-        subnetwork, the record representing the subnetwork inside the
-        SubnetLine class is refreshed, the Subnetworks table is updated and
-        finally diagrams are generated or updated for the subnetwork.
-
-        :return: Boolean. True if successful else False.
-
-        """
-        url = "%s/updateSubnetwork" % self._url
-        params = {
-            "f": "json",
-            "gdbVersion": self._version_name,
-            "sessionId": self._version_guid,
-            "domainNetworkName": domain_name,
-            "tierName": tier_name,
-            "subnetworkName": subnetwork_name,
-            "allSubnetworksInTier": all_subnetwork_tier,
-            "continueOnFailure": continue_on_failure,
-            "traceConfiguration": trace_configuration,
-        }
-        return self._con.post(url, params)["success"]
-
-    # ----------------------------------------------------------------------
     def validate_topology(
         self,
         envelope: dict[str, Any],
-        run_async: bool = False,
         return_edits: bool = False,
     ):
         """
-        Validating the network topology for a utility network maintains
+        Validating the network topology for a trace network maintains
         consistency between feature editing space and network topology space.
         Validating a network topology may include all or a subset of the
         dirty areas present in the network. Validation of network topology
         is supported synchronously and asynchronously.
+
+        ====================================        ====================================================================
+        **Argument**                                **Description**
+        ------------------------------------        --------------------------------------------------------------------
+        envelope                                    Required Dictionary. The envelope of the area to validate.
+
+                                                    .. code-block:: python
+                                                        {
+                                                            "xmin": <minimum x-coordinate>,
+                                                            "ymin": <minimum y-coordinate>,
+                                                            "xmax": <maximum x-coordinate>,
+                                                            "ymax": <maximum y-coordinate>,
+                                                            "spatialReference": {
+                                                            "wkid": <spatial reference well-known identifier>,
+                                                            "latestWkid": <the current wkid value associated with the wkid>
+                                                            }
+                                                        }
+        ------------------------------------        --------------------------------------------------------------------
+        return_edits                                Optional Boolean. Returned results are organized in a layer-by-layer fashion.
+                                                    If `return_edits` is set to True, each layer may have edited features
+                                                    returned in an editedFeatures object.
+                                                    The editedFeatures object returns full features including the original
+                                                    features prior to delete; the original and current features for updates;
+                                                    and the current rows for inserts, which may contain implicit changes
+                                                    (for example, as a result of a calculation rule).
+
+                                                    The response includes no editedFeatures and 'exceededTransferLimit = true'
+                                                    if the count of edited features to return is more than the maxRecordCount.
+                                                    If clients are using this parameter to maintain a cache, they should
+                                                    invalidate the cache when exceededTransferLimit = true is returned.
+                                                    If the server encounters an error when generating the list
+                                                    of edits is the response, exceededTransferLimit = true is also returned.
+
+                                                    Edited features are returned in the spatial reference
+                                                    of the feature service as defined by the service's spatialReferenceobject
+                                                    or by the spatialReference of the layer's extent object.
+        ====================================        ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
 
@@ -424,33 +260,220 @@ class TraceNetworkManager(object):
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
             "validateArea": envelope,
-            "async": run_async,
             "returnEdits": return_edits,
         }
-        if run_async == False:
-            return self._con.post(url, params)["success"]
-        else:
-            return self._con.post(url, params)
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def apply_overrides(
+    def trace_configurations(self):
+        """
+        The `trace_configurations` resource provides access to all trace
+        configuration operations for a trace network.
+        It is returned as an array of named trace configurations with the creator,
+        name, and global ID for each.
+        """
+
+        url = "%s/traceConfigurations"
+        params = {"f": "json"}
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def alter_trace_configurations(
         self,
-        adds: Optional[Union[list, dict[str, Any]]] = None,
-        deletes: Optional[Union[list, dict[str, Any]]] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        trace_type: str = "connected",
+        trace_config: Optional[dict] = {},
+        result_types: Optional[list[dict]] = None,
+        tags: Optional[list[str]] = None,
     ):
         """
-        Network attributes support the ability to have their values
-        overridden without having to edit features and validate the network
-        topology (build the index). The utility network also supports the
-        ability to place ephemeral connectivity (for example, jumpers in an
-        electrical network) between two devices or junctions without having
-        to edit features or connectivity associations and validate the
-        network topology (build the index). When specified by the client, a
-        trace operation may optionally incorporate the network attribute
-        and connectivity override values when the trace is run on.
+        The alter operation provides the ability to alter a single named
+        trace configuration. A named trace configuration can only be altered
+        by an administrator or the creator of the configuration.
+        For example, you can update an existing trace configuration to
+        accommodate changes in the network or address incorrectly set parameters
+        without the need to delete and re-create a trace configuration.
+        This enables existing map services to continue use of the named trace
+        configuration without requiring the map to be republished.
 
+        ======================      ===============================================
+        **Argument**                **Description**
+        ----------------------      -----------------------------------------------
+        name                        Optional String. The altered name of the trace
+                                    configuration.
+        ----------------------      -----------------------------------------------
+        description                 Optional String. Specify the altered description
+                                    of the trace configuration.
+        ----------------------      -----------------------------------------------
+        trace_type                  Optional String. Specify the core algorithm that
+                                    will be used to analyze the network. Trace types
+                                    can be configured using the `trace_config` parameter.
+
+                                    `Values: "connected" | "subnetwork" | "upstream" |
+                                    "subnetworkController" | "downstream" | "loops" |
+                                    "shortenPath" | "isolation"`
+        ----------------------      -----------------------------------------------
+        trace_config                Optional Dictionary. Specify the collection of
+                                    altered trace configuration properties.
+
+                                    See: `Properties <https://developers.arcgis.com/rest/services-reference/enterprise/trace-trace-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
+        ----------------------      -----------------------------------------------
+        result_types                Optional List of Dictionary. Specify the altered
+                                    types of results to return.
+
+                                    .. code-block:: python
+                                        [{
+                                            "type" : "elements" | "aggregatedGeometry",
+                                            "includeGeometry" : true | false,
+                                            "includePropagatedValues": true | false,
+                                            "networkAttributeNames" :["attribute1Name","attribute2Name",...],
+                                            "diagramTemplateName": <value>,
+                                            "resultTypeFields":[{"networkSourceId":<long>,"fieldname":<value>},...]
+                                        },...]
+
+        ----------------------      -----------------------------------------------
+        tags                        Optional List of String(s). Specify the altered
+                                    user-provided tags.
+        ======================      ===============================================
 
         """
-        url = "%s/applyOverrides"
-        params = {"f": "json", "adds": adds, "deletes": deletes}
+
+        url = "%s/traceConfigurations/alter"
+        params = {
+            "f": "json",
+            "gdbVersion": self._version_name,
+            "name": name,
+            "description": description,
+            "traceType": trace_type,
+            "traceConfiguration": trace_config,
+            "resultTypes": result_types,
+            "tags": tags,
+        }
         return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def create_trace_configurations(
+        self,
+        name: str,
+        trace_type: str,
+        trace_config: dict,
+        description: Optional[str] = None,
+        result_types: Optional[list[dict]] = None,
+        tags: Optional[list[str]] = None,
+    ):
+        """
+        The create operation on the traceConfigurations resource provides the
+        ability to create a single named trace configuration. Named trace
+        configurations store the properties of a complex trace in a trace
+        network and can be shared through a map service consumed by a web map
+        or field app. Multiple parameters and properties are provided with
+        the create operation that support the analytic workflows associated
+        with the trace operation.
+
+        ======================      ===============================================
+        **Argument**                **Description**
+        ----------------------      -----------------------------------------------
+        name                        Required String. The altered name of the trace
+                                    configuration.
+        ----------------------      -----------------------------------------------
+        trace_type                  Required String. Specify the core algorithm that
+                                    will be used to analyze the network. Trace types
+                                    can be configured using the `trace_config` parameter.
+
+                                    `Values: "connected" | "upstream" | "downstream" |
+                                    "shortenPath"`
+        ----------------------      -----------------------------------------------
+        trace_config                Required Dictionary. Specify the collection of
+                                    altered trace configuration properties.
+
+                                    See: `Properties <https://developers.arcgis.com/rest/services-reference/enterprise/trace-trace-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
+        ----------------------      -----------------------------------------------
+        description                 Optional String. Specify the altered description
+                                    of the trace configuration.
+        ----------------------      -----------------------------------------------
+        result_types                Optional List of Dictionary. Specify the altered
+                                    types of results to return.
+
+                                    .. code-block:: python
+                                        [{
+                                            "type" : "elements" | "aggregatedGeometry",
+                                            "includeGeometry" : true | false,
+                                            "includePropagatedValues": true | false,
+                                            "networkAttributeNames" :["attribute1Name","attribute2Name",...],
+                                            "diagramTemplateName": <value>,
+                                            "resultTypeFields":[{"networkSourceId":<long>,"fieldname":<value>},...]
+                                        },...]
+
+        ----------------------      -----------------------------------------------
+        tags                        Optional List of String(s). Specify the altered
+                                    user-provided tags.
+        ======================      ===============================================
+
+        """
+        url = "%s/traceConfigurations/create"
+        params = {
+            "f": "json",
+            "gdbVersion": self._version_name,
+            "name": name,
+            "description": description,
+            "traceType": trace_type,
+            "traceConfiguration": trace_config,
+            "resultTypes": result_types,
+            "tags": tags,
+        }
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def delete_trace_configurations(self, global_ids: list[str]):
+        """
+        The delete operation provides the ability to delete one or more named
+        trace configurations in a trace network. A named trace configuration
+        can only be deleted by an administrator or its creator.
+        """
+        url = "%s/traceConfigurations/delete"
+        params = {
+            "f": "json",
+            "globalIds": global_ids,
+        }
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def query_trace_configurations(
+        self,
+        global_ids: Optional[list[str]] = None,
+        creators: Optional[list[str]] = None,
+        tags: Optional[list[str]] = None,
+        names: Optional[list[str]] = None,
+    ):
+        """
+        The query operation returns all properties from one or more
+        named trace configurations in a trace network.
+
+        ========================    ===========================================
+        **Argument**                **Description**
+        ------------------------    -------------------------------------------
+        global_ids                  Optional list of strings. Specify the global
+                                    IDs of the named trace configs to be queried.
+        ------------------------    -------------------------------------------
+        creators                    Optional list of strings. The creators of
+                                    the named trace configurations to be queried.
+        ------------------------    -------------------------------------------
+        tags                        Optional list of strings. The user tags of
+                                    the named trace configurations to be queried.
+        ------------------------    -------------------------------------------
+        names                       Optional list of strings. The names of the
+                                    named trace configurations to be queried.
+        ========================    ===========================================
+        """
+        url = "%s/traceConfigurations/query"
+        params = {
+            "f": "json",
+            "globalIds": global_ids,
+            "creators": creators,
+            "tags": tags,
+            "names": names,
+        }
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
