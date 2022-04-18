@@ -22,6 +22,7 @@ try:
     from fastai.data_block import DatasetType
     import torch
     import pandas as pd
+    from .utils import arcpy_localization_helper
 
     HAS_FASTAI = True
 
@@ -434,7 +435,13 @@ class TabularDataObject(object):
                 mapping[variable] = labelEncoder
             self._encoder_mapping = mapping
 
-        processed_data = _procs.fit_transform(dataframe)
+        try:
+            processed_data = _procs.fit_transform(dataframe)
+        except:
+            msg = arcpy_localization_helper(
+                'Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.',
+                260143)
+            raise ValueError(msg)
 
         training_data = processed_data.take(self._training_indexes, axis=0)
         training_labels = None
@@ -1014,8 +1021,8 @@ class TabularDataObject(object):
         dataframe_columns = dataframe.columns
         if distance_feature_layers:
             count = 1
-            while f"NEAR_DIST_{count}" in dataframe_columns:
-                continuous_variables.append(f"NEAR_DIST_{count}")
+            while f"DIST_{count}" in dataframe_columns:
+                continuous_variables.append(f"DIST_{count}")
                 count = count + 1
 
         if cell_sizes and not rasters:
@@ -1100,11 +1107,15 @@ class TabularDataObject(object):
 
         # if ((distance_feature) and (data_source)):F
         if not is_table_obj:
-            data_source = input_features.dataSource
+            if isinstance(input_features, tuple):
+                input_features = input_features[0]
+                data_source = str(input_features)
+            else:
+                data_source = input_features.dataSource
             count = 1
             for distance_layer in distance_feature:
                 # field_1 = 'NEAR_FID_'+str(count)
-                field_2 = "NEAR_DIST_" + str(count)
+                field_2 = "DIST_" + str(count)
                 fields = [["NEAR_DIST", field_2]]
                 arcpy.Near_analysis(data_source, distance_layer, field_names=fields)
                 count = count + 1
@@ -1120,8 +1131,10 @@ class TabularDataObject(object):
                 if isinstance(raster, tuple):
                     try:
                         wkt = raster[0].extent["spatialReference"]["wkt"]
+                        raster = raster[0]
                     except:
                         wkt = raster[0].extent["spatialReference"]["wkid"]
+                        raster = raster[0]
                 else:
                     try:
                         wkt = raster.extent["spatialReference"]["wkt"]
@@ -1175,8 +1188,10 @@ class TabularDataObject(object):
                     out_sr = 4326
                 sdf = input_features.query(out_sr=out_sr).sdf
 
-            elif hasattr(input_features, "dataSource") or str(input_features).endswith(
-                ".shp"
+            elif (
+                hasattr(input_features, "dataSource")
+                or str(input_features).endswith(".shp")
+                or isinstance(input_features, tuple)
             ):
                 sdf, index_data = TabularDataObject._sdf_gptool_workflow(
                     input_features,
@@ -1221,7 +1236,7 @@ class TabularDataObject(object):
                     for i in range(len(connecting_df)):
                         near_dist.append(connecting_df.iloc[i]["Total_Miles"])
 
-                    sdf[f"NEAR_DIST_{count}"] = near_dist
+                    sdf[f"DIST_{count}"] = near_dist
                     count = count + 1
 
             # Process Raster Data to get information.

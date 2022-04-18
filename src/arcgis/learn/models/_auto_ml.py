@@ -694,8 +694,10 @@ class AutoML(object):
                 dataframe = add_h3(dataframe, cell_sizes)
             else:
                 dataframe = input_features.query().sdf
-        elif hasattr(input_features, "dataSource") or str(input_features).endswith(
-            ".shp"
+        elif (
+            hasattr(input_features, "dataSource")
+            or str(input_features).endswith(".shp")
+            or isinstance(input_features, tuple)
         ):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
                 input_features,
