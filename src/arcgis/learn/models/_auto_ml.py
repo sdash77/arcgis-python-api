@@ -128,6 +128,7 @@ class AutoML(object):
         algorithms=None,
         eval_metric="auto",
         n_jobs=1,
+        ml_task='auto'
     ):
         try:
             from supervised.automl import AutoML as base_AutoML
@@ -190,14 +191,21 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            ml_task = "auto"
-            ml_task = self.get_ml_task(self._all_labels)
+            if ml_task == "auto":
+                ml_task = self.get_ml_task(self._all_labels)
             if ml_task == "text":
                 raise ValueError(
                     "Dependent variable has more than 200 unique values more than half of the total records are unique, hence there is not enough information to train a model"
                 )
             if (mode == "Explain") or (mode == "Basic"):
                 explain_level = 2
+                zone_list = ["zone3_id", "zone4_id", "zone5_id", "zone6_id", "zone7_id"]
+                # try:
+                #    self._all_data_df = self._all_data_df.drop(columns=zone_list)
+                #    self._data._continuous_variables = [x for x in self._data._continuous_variables if x not in zone_list]
+                #    self._data._categorical_variables = [x for x in self._data._categorical_variables if x not in zone_list]
+                # except:
+                #    pass
             else:
                 explain_level = 0  # Setting explain level to 0 in case of Perform and Compete as EDA seems to be creating memory issues
 
@@ -568,13 +576,13 @@ class AutoML(object):
         input_features=None,
         explanatory_rasters=None,
         datefield=None,
-        cell_sizes=[3, 4, 5, 6, 7],
         distance_features=None,
         output_layer_name="Prediction Layer",
         gis=None,
         prediction_type="features",
         output_raster_path=None,
         match_field_names=None,
+        cell_sizes=[3, 4, 5, 6, 7],
     ):
         """
 
@@ -687,8 +695,11 @@ class AutoML(object):
                 dataframe = add_h3(dataframe, cell_sizes)
             else:
                 dataframe = input_features.query().sdf
-
-        elif hasattr(input_features, "dataSource"):
+        elif (
+            hasattr(input_features, "dataSource")
+            or str(input_features).endswith(".shp")
+            or isinstance(input_features, tuple)
+        ):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
                 input_features,
                 distance_feature_layers,

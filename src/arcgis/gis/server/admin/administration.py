@@ -507,8 +507,19 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def _public_key(self):
-        """Gets the public key."""
+    def _public_key(self) -> dict:
+        """
+        Returns the public key of the server that can be used by a client
+        application (or script) to encrypt data sent to the server using the
+        RSA algorithm for public-key encryption. In addition to encrypting
+        the sensitive parameters, the client is also required to send to
+        the server an additional flag encrypted with value set to true. As
+        the public key for the server can be changed at a later time, the
+        client must fetch it on each request before encrypting the data
+        sent to the server.
+
+        :returns: dict
+        """
         url = self._url + "/publicKey"
         params = {
             "f": "json",
@@ -1080,6 +1091,17 @@ class SiteManager(object):
 
     # ----------------------------------------------------------------------
     @property
-    def public_key(self):
-        """Gets the public key."""
+    def public_key(self) -> dict:
+        """
+        Returns the public key of the server that can be used by a client
+        application (or script) to encrypt data sent to the server using the
+        RSA algorithm for public-key encryption. In addition to encrypting
+        the sensitive parameters, the client is also required to send to
+        the server an additional flag encrypted with value set to true. As
+        the public key for the server can be changed at a later time, the
+        client must fetch it on each request before encrypting the data
+        sent to the server.
+
+        :returns: dict
+        """
         return self._sm._public_key
