@@ -1148,7 +1148,7 @@ class TabularDataObject(object):
         else:
             sdf = pd.DataFrame()
             data_type = arcpy.Describe(input_features).dataType
-            if data_type == "TableView":
+            if data_type in ["TableView","TextFile"]:
                 sdf = pd.DataFrame.spatial.from_table(str(input_features))
         rasters_data = {}
         if data_source:
