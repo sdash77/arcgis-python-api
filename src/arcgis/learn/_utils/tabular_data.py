@@ -126,10 +126,15 @@ class TabularDataObject(object):
         tabular_data._dependent_variable = tabular_data._field_mapping[
             "dependent_variable"
         ]
-        if tabular_data._dataframe[tabular_data._dependent_variable].isnull().values.any():
+        if (
+            tabular_data._dataframe[tabular_data._dependent_variable]
+            .isnull()
+            .values.any()
+        ):
             msg = arcpy_localization_helper(
                 "Rows having null values in dependent variable are removed and model will be trained with remaining data",
-                260145, "WARNING"
+                260145,
+                "WARNING",
             )
             tabular_data._dataframe = tabular_data._dataframe[
                 ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
@@ -357,7 +362,9 @@ class TabularDataObject(object):
 
         if labels.isna().sum().sum() != 0:
             msg = arcpy_localization_helper(
-                "You have some missing values in dependent variable column.", 260144, "ERROR"
+                "You have some missing values in dependent variable column.",
+                260144,
+                "ERROR",
             )
             raise ValueError(msg)
 
@@ -455,7 +462,8 @@ class TabularDataObject(object):
         except:
             msg = arcpy_localization_helper(
                 "Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.",
-                260143,"ERROR"
+                260143,
+                "ERROR",
             )
             raise ValueError(msg)
 
