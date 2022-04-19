@@ -47,6 +47,7 @@ try:
         LabelEncoder,
         MinMaxScaler,
         StandardScaler,
+        OrdinalEncoder,
     )
 except:
     HAS_SK_LEARN = False
@@ -125,6 +126,19 @@ class TabularDataObject(object):
         tabular_data._dependent_variable = tabular_data._field_mapping[
             "dependent_variable"
         ]
+        if (
+            tabular_data._dataframe[tabular_data._dependent_variable]
+            .isnull()
+            .values.any()
+        ):
+            msg = arcpy_localization_helper(
+                "Rows having null values in dependent variable are removed and model will be trained with remaining data",
+                260145,
+                "WARNING",
+            )
+            tabular_data._dataframe = tabular_data._dataframe[
+                ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
+            ]
         tabular_data._index_data = tabular_data._field_mapping["index_data"]
         tabular_data._index_field = index_field
 
@@ -347,9 +361,12 @@ class TabularDataObject(object):
         labels = df[self._dependent_variable]
 
         if labels.isna().sum().sum() != 0:
-            raise Exception(
-                "You have some missing values in dependent variable column."
+            msg = arcpy_localization_helper(
+                "You have some missing values in dependent variable column.",
+                260144,
+                "ERROR",
             )
+            raise ValueError(msg)
 
         unique_labels = labels.unique()
 
@@ -428,9 +445,14 @@ class TabularDataObject(object):
         if self._categorical_variables:
             mapping = {}
             for variable in self._categorical_variables:
-                labelEncoder = LabelEncoder()
+                labelEncoder = OrdinalEncoder(
+                    handle_unknown="use_encoded_value", unknown_value=-1
+                )
                 dataframe[variable] = np.array(
-                    labelEncoder.fit_transform(dataframe[variable]), dtype="int64"
+                    labelEncoder.fit_transform(
+                        dataframe[variable].values.reshape(-1, 1)
+                    ),
+                    dtype="int64",
                 )
                 mapping[variable] = labelEncoder
             self._encoder_mapping = mapping
@@ -441,6 +463,7 @@ class TabularDataObject(object):
             msg = arcpy_localization_helper(
                 "Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.",
                 260143,
+                "ERROR",
             )
             raise ValueError(msg)
 
@@ -787,7 +810,8 @@ class TabularDataObject(object):
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
                 dataframe[variable] = np.array(
-                    encoder.fit_transform(dataframe[variable]), dtype="int64"
+                    encoder.fit_transform(dataframe[variable].values.reshape(-1, 1)),
+                    dtype="int64",
                 )
 
         if fit:
@@ -1695,16 +1719,7 @@ def point_to_h3(sdf, cell_sizes):
         elif "point" in sdf.spatial.geometry_type:
             h3_id = sdf["SHAPE"].apply(lambda x: h3.geo_to_h3(x["y"], x["x"], res))
 
-        unq_h3_ids = list(set(h3_id))
-        h3_to_token = {}
-        token_to_h3 = {}
-        for i in range(len(unq_h3_ids)):
-            h3_to_token[unq_h3_ids[i]] = i
-            token_to_h3[i] = unq_h3_ids[i]
-
-        tokens = [h3_to_token[id] for id in h3_id]
-
-        sdf[f"zone{res}_id"] = tokens
+        sdf[f"zone{res}_id"] = h3_id
     return sdf
 
 
