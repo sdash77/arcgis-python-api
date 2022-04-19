@@ -1474,6 +1474,16 @@ class FeatureLayer(Layer):
                                                 }
                                             ]
         -------------------------------     --------------------------------------------------------------------
+        statistic_filter                    Optional ``StatisticFilter`` instance. The definitions for one or more field-based
+                                            statistics can be added, e.g. statisticType, onStatisticField, or
+                                            outStatisticFieldName.
+
+                                            Syntax:
+
+                                            sf = StatisticFilter()
+                                            sf.add(statisticType="count", onStatisticField="1", outStatisticFieldName="total")
+                                            sf.filter
+        -------------------------------     --------------------------------------------------------------------
         return_z                            Optional boolean. If true, Z values are included in the results if
                                             the features have Z values. Otherwise, Z values are not returned.
                                             The default is False.
@@ -1619,6 +1629,28 @@ class FeatureLayer(Layer):
             <Integer>
             >>> search_count
             <149>
+
+        .. code-block:: python
+
+            # Usage Example with "out_statistics" parameter
+
+            >>> stats = [{
+                    'onStatisticField': "1",
+                    'outStatisticFieldName': "total",
+                    'statisticType': "count"
+                }]
+            >>> feature_layer.query(out_statistics=stats, as_df=True) # returns a DataFrame containting total count
+
+        .. code-block:: python
+
+            # Usage Example with "StatisticFilter" parameter
+
+            >>> from arcgis._impl.common._filters import StatisticFilter
+            >>> sf1 = StatisticFilter()
+            >>> sf1.add(statisticType="count", onStatisticField="1", outStatisticFieldName="total")
+            >>> sf1.filter # This is to print the filter content
+            >>> feature_layer.query(statistic_filter=sf1, as_df=True) # returns a DataFrame containing total count
+
 
         """
         as_raw = as_df
@@ -2521,14 +2553,16 @@ class FeatureLayer(Layer):
         and extent. Layers that support this property will include
         `infoInEstimates` information in the layer's :attr:`~arcgis.features.FeatureLayer.properties`.
 
+        Currently available with ArcGIS Online and Enterprise 10.9.1+
+
         :returns: Dict[str, Any]
 
         """
-
-        if "infoInEstimates" in self.properties:
-            url = self._url + "/getEstimates"
-            params = {"f": "json"}
-            return self._con.get(url, params)
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
+            if "infoInEstimates" in self.properties:
+                url = self._url + "/getEstimates"
+                params = {"f": "json"}
+                return self._con.get(url, params)
         return {}
 
     # ----------------------------------------------------------------------
@@ -3112,7 +3146,7 @@ class FeatureLayer(Layer):
 
         if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeSmallInteger": np.int64,
                 "esriFieldTypeInteger": np.int64,
                 "esriFieldTypeSingle": np.int32,
                 "esriFieldTypeDouble": float,
@@ -3131,14 +3165,14 @@ class FeatureLayer(Layer):
             from datetime import datetime as _datetime
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
+                "esriFieldTypeSmallInteger": pd.Int64Dtype(),
+                "esriFieldTypeInteger": pd.Int64Dtype(),
+                "esriFieldTypeSingle": pd.Int32Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
                 "esriFieldTypeString": str,
-                "esriFieldTypeDate": _datetime,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeDate": object,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
@@ -3242,6 +3276,9 @@ class FeatureLayer(Layer):
                     names.append(fld["name"])
                 if fld["type"] == "esriFieldTypeDate":
                     dfields.append(fld["name"])
+        if dtypes:
+            df = df.astype(dtypes)
+
         if "SHAPE" in featureset_dict:
             df.spatial.set_geometry("SHAPE")
         if len(dfields) > 0:

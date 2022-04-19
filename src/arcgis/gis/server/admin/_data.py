@@ -826,6 +826,7 @@ class Datastore(BaseServer):
     _json = None
     _con = None
     _url = None
+    _properties = None
 
     def __init__(self, datastore, path, datadict=None, **kwargs):
         self._path = path
@@ -842,6 +843,7 @@ class Datastore(BaseServer):
         if datastore:
             self._con = datastore._con
         self._datastore = datastore
+        self._properties = None
         self._url = "%s%s" % (datastore._url, path)
         if kwargs.pop("initialize", False):
             self._init()

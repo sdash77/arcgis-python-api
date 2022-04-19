@@ -181,7 +181,6 @@ def remove_bounding_boxes_in_padding(
     batch_width=1,
 ):
     """
-
     :param bounding_boxes: the batch of bounding boxes, shape=[B,N,4]
     :param scores: the batch of box scores, shape=[B,N]
     :param classes: the batch of labels, shape=[B,N]
@@ -355,6 +354,8 @@ class ChildObjectDetector:
 
         if "NormalizationStats" in self.json_info:
             img_normed = normalize_batch(batch, self.json_info)
+        elif self.json_info["ModelFileConfigurationClass"] == "CustomDetReg":
+            img_normed = batch
         else:
             img_normed = normalize_batch_imagenetstats(
                 batch.transpose(0, 2, 3, 1)

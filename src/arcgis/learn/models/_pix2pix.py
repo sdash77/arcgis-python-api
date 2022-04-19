@@ -213,6 +213,12 @@ class Pix2Pix(ArcGISModel):
         rows                    Optional int. Number of rows of results
                                 to be displayed.
         =====================   ===========================================
+        **kwargs**
+
+        =====================   ===========================================
+        rgb_bands               Optional list of integers (band numbers)
+                                to be considered for rgb visualization.
+        =====================   ===========================================
 
         """
         show_results(self, rows, **kwargs)

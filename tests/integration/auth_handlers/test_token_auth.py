@@ -1,6 +1,6 @@
 import sys, json, uuid
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7986\src")
+# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import unittest
 
 try:
@@ -16,7 +16,7 @@ try:
     SKIP_ARCPY = False
     import arcpy
 
-    assert arcpy.GetActivePortalURL
+    assert arcpy.GetActivePortalURL()
     assert arcpy.GetSigninToken()
 except:
     SKIP_ARCPY = True

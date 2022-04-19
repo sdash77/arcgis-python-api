@@ -2064,13 +2064,13 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         if route_data_item:
             route_data_item = {"itemId": route_data_item.itemid}
-        if self._gis.version > [9, 2] or self._gis._is_agol:
-            overwrite = context.pop("overwrite", False) if context else False
-        else:
-            # Remove if in context but default to False in all cases.
-            overwrite = context.pop("overwrite", False) if context else False
-            overwrite = False
-        output_name = self._output_name_dict(output_name, overwrite)
+        # if self._gis.version > [9, 2] or self._gis._is_agol:
+        # overwrite = context.pop("overwrite", False) if context else False
+        # else:
+        ## Remove if in context but default to False in all cases.
+        # overwrite = context.pop("overwrite", False) if context else False
+        # overwrite = False
+        # output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params = {}
@@ -8851,8 +8851,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                         ):
                             url = input_param["url"]
                             if "token" not in url:
-                                token = input_layer._gis._con._create_token(url)
-                                url = input_param["url"] + "?token=" + token
+                                from arcgis.raster.functions.utility import (
+                                    _generate_layer_token,
+                                )
+
+                                token = _generate_layer_token(input_layer, url)
+                                if token is not None:
+                                    url = input_param["url"] + "?token=" + token
                                 input_param.update({"url": url})
                     except:
                         pass
@@ -8888,8 +8893,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                     if isinstance(input_param, dict) and "url" in input_param.keys():
                         url = input_param["url"]
                         if "token" not in url:
-                            token = input_layer._gis._con._create_token(url)
-                            url = input_param["url"] + "?token=" + token
+                            from arcgis.raster.functions.utility import (
+                                _generate_layer_token,
+                            )
+
+                            token = _generate_layer_token(input_layer, url)
+                            if token is not None:
+                                url = input_param["url"] + "?token=" + token
                             input_param.update({"url": url})
                 except:
                     pass
@@ -9289,8 +9299,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                     url = item.url
                     try:
                         if "token" not in url:
-                            token = item._gis._con._create_token(url)
-                            url = url + "?token=" + token
+                            from arcgis.raster.functions.utility import (
+                                _generate_layer_token,
+                            )
+
+                            token = _generate_layer_token(item, url)
+                            if token is not None:
+                                url = url + "?token=" + token
                     except:
                         pass
                     url_list.append(url)
@@ -16957,6 +16972,77 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
+        return RAJob(gpjob).result()
+
+    def export_to_tile_package(
+        self,
+        input_imagery_layer,
+        output_tile_package=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
+        """
+        input_imagery_layer: inputImageryLayer (str). Required parameter.
+
+        output_tile_package: outputTilePackage (str). Required parameter.
+
+         context: context (str). Optional parameter.
+
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "ExportToTilePackage"
+
+        gis = self._gis
+
+        if (
+            gis._con._product != "AGOL"
+            or "rasterAnalytics" not in gis.properties.helperServices
+        ):
+            raise RuntimeError(
+                "Export to tile package functionality is supported only on ArcGIS Online environment that has Raster Analysis capabilties"
+            )
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        if isinstance(input_imagery_layer, Item):
+            url = "%s/sharing/rest/content/items/%s" % (
+                input_imagery_layer._portal.url,
+                input_imagery_layer.id,
+            )
+            token = input_imagery_layer._gis._con._create_token(url)
+            if token is not None:
+                url = url + "?token=" + token
+            input_imagery_layer = {"itemId": input_imagery_layer.itemid, "url": url}
+        elif (isinstance(input_imagery_layer, str)) and (
+            "http:" in input_imagery_layer or "https:" in input_imagery_layer
+        ):
+            input_imagery_layer = {"url": input_imagery_layer}
+        else:
+            raise RuntimeError("Invalid value for input_imagery_layer parameter")
+
+        if output_tile_package is None:
+            output_tile_package = str(task) + "_" + _id_generator()
+
+        gpjob = self._tbx.export_to_tile_package(
+            input_imagery_layer=input_imagery_layer,
+            output_tile_package=output_tile_package,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+        gpjob._is_ra = True
+        if future:
+            return RAJob(gpjob)
+
         return RAJob(gpjob).result()
 
 

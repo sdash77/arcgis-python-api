@@ -1037,7 +1037,7 @@ class GeoArray(ExtensionArray):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        method              Required String. LANAR measurements reflect the projection of
+        method              Required String. PLANAR measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
                             take into account the curvature of the earth). GEODESIC,
                             GREAT_ELLIPTIC, LOXODROME, and PRESERVE_SHAPE measurement types

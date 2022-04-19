@@ -800,6 +800,26 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
+    def from_arcpy(fs: "arcpy.FeatureSet") -> "FeatureSet":
+        """
+        Converts an `arcpy` FeatureSet to an `arcgis` FeatureSet
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        fs                  Required arcpy.FeatureSet. The featureset objec to consume.
+        ===============     ====================================================================
+
+        :return:
+           A :class:`~arcgis.features.FeatureSet` object
+        """
+        if hasattr(fs, "JSON") and type(fs).__name__ == "FeatureSet":
+            return FeatureSet.from_dict(_ujson.loads(fs.JSON))
+        else:
+            raise ValueError(f"Invalid input of type {type(fs)}")
+
+    # ----------------------------------------------------------------------
+    @staticmethod
     def from_json(json_str: str):
         """
         Creates a Feature Set objects from a JSON string.

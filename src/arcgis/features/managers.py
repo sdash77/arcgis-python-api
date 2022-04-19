@@ -1502,14 +1502,17 @@ class FeatureLayerCollectionManager(_GISResource):
         :returns: List[FeatureLayerManagers]
         """
         self._layers = []
-        for table in self.properties.layers:
-            try:
+        if "layers" in self.properties:
+            for table in self.properties.layers:
+                try:
 
-                self._layers.append(
-                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
-                )
-            except Exception as e:
-                _log.error(str(e))
+                    self._layers.append(
+                        FeatureLayerManager(
+                            self.url + "/" + str(table["id"]), self._gis
+                        )
+                    )
+                except Exception as e:
+                    _log.error(str(e))
 
         return self._layers
 
@@ -1521,14 +1524,18 @@ class FeatureLayerCollectionManager(_GISResource):
         :returns: List[FeatureLayerManagers]
         """
         self._tables = []
-        for table in self.properties.tables:
-            try:
+        if "tables" in self.properties:
+            for table in self.properties.tables:
+                try:
 
-                self._tables.append(
-                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
-                )
-            except Exception as e:
-                _log.error(str(e))
+                    self._tables.append(
+                        FeatureLayerManager(
+                            self.url + "/" + str(table["id"]), self._gis
+                        )
+                    )
+                except Exception as e:
+                    _log.error(str(e))
+        return self._tables
 
     def _populate_layers(self):
         """
@@ -2250,62 +2257,17 @@ class FeatureLayerCollectionManager(_GISResource):
                 "error": "Cannot find related data item used to publish this feature layer"
             }
 
+        # Find if hosted table, meaning no layers present but table is present
+        hosted_table = False
+        if not feature_layer_item.layers and feature_layer_item.tables:
+            hosted_table = True
         # endregion
         params = None
         if (
             related_data_item.type
             in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
-            and self._gis._portal.is_arcgisonline == False
-        ):
-            params = {
-                "name": related_data_item.name,
-                "title": related_data_item.title,
-                "tags": related_data_item.tags,
-                "type": related_data_item.type,
-                "overwrite": True,
-                "overwriteService": "on",
-                "useDescription": "on",
-            }
-            base_url = feature_layer_item.privateUrl
-            lyr_url_info = "%s/layers" % base_url
-            fs_url = "%s" % base_url
-            # layer_info gets information on the layers and tables of an item
-            layer_info = self._gis._con.get(lyr_url_info, {"f": "json"})
-            [lyr.pop("fields") for lyr in layer_info["layers"]]
-            [lyr.pop("fields") for lyr in layer_info["tables"]]
-            feature_service_def = self._gis._con.get(fs_url, {"f": "json"})
-            feature_service_def["tables"] = []
-            feature_service_def["layers"] = []
-            feature_service_def.update(layer_info)
-            publish_parameters = feature_service_def
-            publish_parameters["name"] = feature_layer_item.title
-            publish_parameters["_ssl"] = False
-            for idx, lyr in enumerate(publish_parameters["layers"]):
-                lyr["parentLayerId"] = -1
-                for k in {
-                    "sourceSpatialReference",
-                    "isCoGoEnabled",
-                    "parentLayer",
-                    "isDataArchived",
-                    "cimVersion",
-                }:
-                    lyr.pop(k, None)
-            for idx, lyr in enumerate(publish_parameters["tables"]):
-                lyr["parentLayerId"] = -1
-                for k in {
-                    "sourceSpatialReference",
-                    "isCoGoEnabled",
-                    "parentLayer",
-                    "isDataArchived",
-                    "cimVersion",
-                }:
-                    lyr.pop(k, None)
-
-        # region construct publishParameters dictionary
-        elif (
-            related_data_item.type
-            in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
             and self._gis._portal.is_arcgisonline
+            or hosted_table is True
         ):
             # construct a full publishParameters that is a combination of existing Feature Layer definition
             # and original publishParameters.json used for publishing the service the first time
@@ -2349,6 +2311,57 @@ class FeatureLayerCollectionManager(_GISResource):
             # combine both old publish params and full feature service definition
             publish_parameters = feature_service_def
             publish_parameters.update(old_publish_parameters)
+
+        # region construct publishParameters dictionary
+        elif related_data_item.type in [
+            "CSV",
+            "Shapefile",
+            "File Geodatabase",
+            "Microsoft Excel",
+        ]:
+            params = {
+                "name": related_data_item.name,
+                "title": related_data_item.title,
+                "tags": related_data_item.tags,
+                "type": related_data_item.type,
+                "overwrite": True,
+                "overwriteService": "on",
+            }
+            base_url = feature_layer_item.privateUrl
+            lyr_url_info = "%s/layers" % base_url
+            fs_url = "%s" % base_url
+            # layer_info gets information on the layers and tables of an item
+            layer_info = self._gis._con.get(lyr_url_info, {"f": "json"})
+            [lyr.pop("fields") for lyr in layer_info["layers"]]
+            [lyr.pop("fields") for lyr in layer_info["tables"]]
+            feature_service_def = self._gis._con.get(fs_url, {"f": "json"})
+            feature_service_def["tables"] = []
+            feature_service_def["layers"] = []
+            feature_service_def.update(layer_info)
+            publish_parameters = feature_service_def
+            publish_parameters["name"] = feature_layer_item.title
+            publish_parameters["_ssl"] = False
+            for idx, lyr in enumerate(publish_parameters["layers"]):
+                lyr["parentLayerId"] = -1
+                for k in {
+                    "sourceSpatialReference",
+                    "isCoGoEnabled",
+                    "parentLayer",
+                    "isDataArchived",
+                    "cimVersion",
+                }:
+                    lyr.pop(k, None)
+            for idx, lyr in enumerate(publish_parameters["tables"]):
+                lyr["parentLayerId"] = -1
+                for k in {
+                    "sourceSpatialReference",
+                    "isCoGoEnabled",
+                    "parentLayer",
+                    "isDataArchived",
+                    "cimVersion",
+                }:
+                    lyr.pop(k, None)
+
         else:
             # overwriting a SD case - no need for detailed publish parameters
             publish_parameters = None

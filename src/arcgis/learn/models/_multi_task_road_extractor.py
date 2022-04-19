@@ -22,7 +22,6 @@ HAS_ARCPY = True
 try:
     import numpy as np
     import torch
-    from fastai.vision.learner import create_body
     from torch import optim
     from torchvision import models
     from arcgis.learn.models._linknet_utils import (
@@ -43,6 +42,7 @@ try:
     from arcgis.learn._utils.segmentation_loss_functions import dice
     from arcgis.learn.models._arcgis_model import _device_check
     from ._arcgis_model import _set_multigpu_callback
+    from ._timm_utils import filter_timm_models, get_backbone
     from .._data_utils._pixel_classifier_data import ClassifiedTilesData
     from .._data_utils._road_orient_data import RoadOrientation
     from .._utils.env import _IS_ARCGISPRONOTEBOOK
@@ -52,6 +52,8 @@ except Exception as e:
         traceback.format_exception(type(e), e, e.__traceback__)
     )
     HAS_FASTAI = False
+
+logger = logging.getLogger()
 
 
 def safe_json(data):
@@ -83,21 +85,16 @@ class MultiTaskRoadExtractor(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             ``prepare_data`` function.
     ---------------------   -------------------------------------------
-    backbone                Optional String. Backbone CNN model to be used for
-                            creating the base. If hourglass is chosen as
+    backbone                Optional String. Backbone convolutional neural network
+                            model used for feature extraction. If hourglass is chosen as
                             the mtl_model (Architecture),then this parameter is
                             ignored as hourglass uses a special customised
                             architecture.
                             This parameter is used with `linknet` model.
                             Default: 'resnet34'
 
-                            Supported backbones: 'resnet18', 'resnet34',
-                            'resnet50', 'resnet101', 'resnet152'
-    ---------------------   -------------------------------------------
-    mtl_model               Optional String. It is used to create model
-                            from linknet or hourglass based neural architectures.
-                            Supported: 'linknet', 'hourglass'.
-                            Default: 'hourglass'
+                            Supported backbones: ResNet family and specified Timm
+                            models from :func:`~arcgis.learn.MultiTaskRoadExtractor.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional String. Path where a compatible pre-trained
                             model is saved. Accepts a Deep Learning Package
@@ -108,6 +105,11 @@ class MultiTaskRoadExtractor(ArcGISModel):
 
     =============================   =============================================
     **Argument**                    **Description**
+    ---------------------   -------------------------------------------
+    mtl_model               Optional String. It is used to create model
+                            from linknet or hourglass based neural architectures.
+                            Supported: 'linknet', 'hourglass'.
+                            Default: 'hourglass'
     -----------------------------   ---------------------------------------------
     gaussian_thresh                 Optional float. Sets the gaussian threshold
                                     which allows to set the required road width.
@@ -146,8 +148,8 @@ class MultiTaskRoadExtractor(ArcGISModel):
             pretrained_backbone = True
 
         self._validate_kwargs(**kwargs)
-        if backbone is None:
-            backbone = models.resnet34
+        # if backbone is None:
+        #    backbone = models.resnet34
         super().__init__(data, backbone, **kwargs)
         self._slice_lr = False  # Road models just have a single layer group due to which we cant slice the lr.
         predefined_mtl_model = None
@@ -385,7 +387,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         self._chip_size = (self._orient_data.chip_size, self._orient_data.chip_size)
 
         # Cut-off the backbone before the penultimate layer
-        self._encoder = create_body(self._backbone, pretrained_backbone)
+        self._encoder = get_backbone(self._backbone, pretrained_backbone)
 
         # Initialize the model, loss function and the Learner object
         mtl_models = {
@@ -399,7 +401,17 @@ class MultiTaskRoadExtractor(ArcGISModel):
             self._mtl_model = (
                 self._mtl_model if self._mtl_model in mtl_models.keys() else "hourglass"
             )
+
+        if self._mtl_model == "hourglass" and backbone is not None:
+            logger.warning(
+                "The Hourglass model does not support user specified backbones. The backbone parameter will be ignored."
+            )
+
         self._model_init_kwargs = kwargs.get("model_init_kwargs", {})
+
+        if "timm" in self._backbone.__module__ and self._mtl_model == "linknet":
+            self._model_init_kwargs["is_timm"] = True
+
         self._model = mtl_models[self._mtl_model](
             self._encoder,
             task1_classes=self._orient_data.c,
@@ -538,14 +550,33 @@ class MultiTaskRoadExtractor(ArcGISModel):
     # Return a list of supported backbones names
     @property
     def supported_backbones(self):
-        """
-        Supported torchvision backbones for this model.
-        """
+        """Supported list of backbones for this model."""
+        return MultiTaskRoadExtractor._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return MultiTaskRoadExtractor._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family]
+        timm_models = filter_timm_models(
+            [
+                "*dpn*",
+                "*inception*",
+                "*nasnet*",
+                "*tf_efficientnet_cc*",
+                "*repvgg*",
+                "*resnetblur*",
+                "*selecsls*",
+                "*tresnet*",
+                "*hrnet*",
+                "*rexnet*",
+                "*mixnet*",
+            ]
+        )
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family] + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -700,6 +731,24 @@ class MultiTaskRoadExtractor(ArcGISModel):
     def _show_results_multispectral(
         self, rows=5, alpha=0.7, **kwargs
     ):  # parameters adjusted in kwargs
+        """
+        Shows the ground truth and predictions of model side by side.
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Number of rows of data to be displayed, if
+                                batch size is smaller, then the rows will
+                                display the value provided for batch size.
+        ---------------------   -------------------------------------------
+        alpha                   Optional Float. Opacity parameter for label
+                                overlay on image. Float [0.0 - 1.0]
+                                Default: 0.7
+        =====================   ===========================================
+
+        """
         return_fig = kwargs.get("return_fig", False)
         ret_val = show_results_multispectral(self, nrows=rows, alpha=alpha, **kwargs)
         if return_fig:
@@ -730,7 +779,6 @@ class MultiTaskRoadExtractor(ArcGISModel):
                 model_iou = np.max(metrics_array[:, 1])
                 model_accuracy = metrics_array[np.argmax(metrics_array[:, 1]), 0]
         except BaseException:
-            logger = logging.getLogger()
             logger.debug("Cannot retrieve model accuracy.")
             model_accuracy = 0.0
 

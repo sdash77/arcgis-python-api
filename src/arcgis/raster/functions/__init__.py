@@ -4962,7 +4962,7 @@ def majority(
     process_as_multiband: Optional[bool] = None,
 ):
     """
-    The majority function calculates focal statistics for each pixel of an image based on the majority value, or the value that occurs most frequently, of the pixels within the neighborhood.
+    The majority function determines the value that occurs most often from multiple rasters, on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
@@ -5035,7 +5035,7 @@ def max(
     process_as_multiband: Optional[bool] = None,
 ):
     """
-    The max function calculates focal statistics for each pixel of an image based on the maximum value of the pixels within the neighborhood.
+    The max function determines the maximum value from multiple rasters, on a pixel-by-pixel basis. .
 
     The arguments for this function are as follows:
 
@@ -5113,7 +5113,7 @@ def mean(
     process_as_multiband: Optional[bool] = None,
 ):
     """
-    The mean function calculates the average of a raster on a pixel-by-pixel basis.
+    The mean function determines the average value from multiple rasters, on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
@@ -5183,7 +5183,7 @@ def med(
     percentile_interpolation_type: str = "AUTO_DETECT",
 ):
     """
-    The med function calculates the middle value of the pixels on a pixel-by-pixel basis.
+    The med function calculates the middle value of the pixels from multiple rasters, on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
@@ -5268,7 +5268,7 @@ def min(
     process_as_multiband: Optional[bool] = None,
 ):
     """
-    The min function determines the smallest value of the pixels on a pixel-by-pixel basis.
+    The min function determines the smallest value from multiple rasters, on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
@@ -5336,7 +5336,7 @@ def minority(
     process_as_multiband: Optional[bool] = None,
 ):
     """
-    The miniority function determines the value that occurs least often on a pixel-by-pixel basis.
+    The miniority function determines the value that occurs least often from multiple rasters, on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
@@ -9724,7 +9724,9 @@ def _raster_item(raster: Union[Raster, ImageryLayer], raster_id=None):
                 if (
                     (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
                 ) or not hasattr(raster, "_lazy_token"):
-                    raster._lazy_token = raster._gis._con._create_token(url)
+                    from .utility import _generate_layer_token
+
+                    raster._lazy_token = _generate_layer_token(raster)
                 if isinstance(raster._lazy_token, str):
                     url = url + "?token=" + raster._lazy_token
             except:

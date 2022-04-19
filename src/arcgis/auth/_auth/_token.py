@@ -38,20 +38,26 @@ You need to a security question by integer:
 """
 # -------------------------------------------------------------------------
 @lru_cache(maxsize=255)
-def _token_url_validator(url: str, session: "EsriSession") -> str:
+def _token_url_validator(
+    url: str, session: "EsriSession", verify: bool = False, proxies: frozenset = None
+) -> str:
     """validates the token url from the give URL"""
     parts = ["/info", "/rest/info", "/sharing/rest/info"]
     params = {"f": "json"}
+    if proxies:
+        proxies = dict(proxies)
     parsed_url = _parse_arcgis_url(url=url)
     token_url = None  # parsed_url + "/sharing/rest/generateToken"
     for pt in parts:
         try:
-            resp = session.get(f"{parsed_url}{pt}?f=json")
+            resp = session.get(
+                f"{parsed_url}{pt}?f=json", proxies=proxies, verify=verify
+            )  # need to include proxies, verify parameter
             token_url = resp.json()["authInfo"]["tokenServicesUrl"]
             if token_url:
                 break
             del pt
-        except:
+        except Exception as e:
             pass
     return token_url
 
@@ -320,8 +326,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         auth_url, state = session.authorization_url(
             self._auth_url,
             expiration=self._expiration,
-            style="dark",
-            locale="en-US",
+            **{"allow_verification": "false", "style": "dark", "locale": "en-US"},
         )
         auth_response = requests.get(
             url=auth_url,
@@ -388,8 +393,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         authorization_url, state = self._oauth.authorization_url(
             self._auth_url,
             expiration=20160,
-            style="dark",
-            locale="en-US",
+            **{"allow_verification": "false", "style": "dark", "locale": "en-US"},
         )
         self._authorization_url = authorization_url
         self._state = state
@@ -704,9 +708,20 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
         if has_session == False:
             self._session.verify = verify_cert
             self._session.allow_redirects = True
-        token_url = _token_url_validator(
-            _parse_arcgis_url(token_url), session=self._session
-        )  # + "/sharing/rest/generateToken"
+        if self.proxies:
+
+            token_url = _token_url_validator(
+                _parse_arcgis_url(token_url),
+                session=self._session,
+                verify=False,
+                proxies=frozenset(self.proxies.items()),
+            )
+        else:
+            token_url = _token_url_validator(
+                _parse_arcgis_url(token_url),
+                session=self._session,
+                verify=False,
+            )
         self._thread_local = threading.local()
 
         self._expires_on = None

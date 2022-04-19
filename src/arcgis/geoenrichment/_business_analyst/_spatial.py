@@ -1,5 +1,5 @@
 import importlib.util
-from typing import Union
+from typing import Union, Optional
 
 from arcgis.env import active_gis
 from arcgis.geometry import find_transformation, SpatialReference, Point
@@ -17,8 +17,8 @@ if arcpy_avail:
 def change_spatial_reference(
     input_dataframe: pd.DataFrame,
     output_spatial_reference: Union[int, SpatialReference] = 4326,
-    input_spatial_reference: Union[int, SpatialReference] = None,
-    transformation_name: str = None,
+    input_spatial_reference: Optional[Union[int, SpatialReference]] = None,
+    transformation_name: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Change the spatial reference of the input Spatially Enabled Dataframe to a desired output spatial reference,

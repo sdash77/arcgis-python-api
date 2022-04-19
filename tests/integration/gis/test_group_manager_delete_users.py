@@ -6,7 +6,7 @@ import unittest
 from arcgis.gis import GIS, GroupManager, Group, User
 import arcgis.geoanalytics
 
-PROFILES = ['your_enterprise_profile', 'your_online_profile']
+PROFILES = ["your_enterprise_profile", "your_online_profile"]
 
 
 class TestUserDeleteWithGroups(unittest.TestCase):
@@ -22,15 +22,15 @@ class TestUserDeleteWithGroups(unittest.TestCase):
             user = um.create(
                 username=username,
                 password="!Am4zingp0iNt",
-                firstname='testaccount',
-                lastname='testaccount',
-                email='test@esri.com',
+                firstname="testaccount",
+                lastname="testaccount",
+                email="test@esri.com",
             )
             gm = gis.groups
 
             isinstance(gm, GroupManager)
-            group = gm.create(title=group1_name, tags='tags')
-            group2 = gm.create(title=group2_name, tags='tags')
+            group = gm.create(title=group1_name, tags="tags")
+            group2 = gm.create(title=group2_name, tags="tags")
 
             group.add_users(usernames=[user])
             group2.add_users(usernames=[user])
@@ -56,15 +56,15 @@ class TestUserDeleteWithGroups(unittest.TestCase):
             user = um.create(
                 username=username,
                 password="!Am4zingp0iNt",
-                firstname='testaccount',
-                lastname='testaccount',
-                email='test@esri.com',
+                firstname="testaccount",
+                lastname="testaccount",
+                email="test@esri.com",
             )
             gm = gis.groups
 
             isinstance(gm, GroupManager)
-            group = gm.create(title=group1_name, tags='tags')
-            group2 = gm.create(title=group2_name, tags='tags')
+            group = gm.create(title=group1_name, tags="tags")
+            group2 = gm.create(title=group2_name, tags="tags")
 
             group.add_users(usernames=[user])
             group2.add_users(usernames=[user])
