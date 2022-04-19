@@ -128,15 +128,11 @@ class ServerProfileManager(object):
 
             if self._keyring_version() >= [23]:
 
-                password = keyring.get_credential(
-                    "arcgis_python_api_profile_passwords", profile
-                )
+                password = keyring.get_credential(self._profile_name, profile)
 
                 password = getattr(password, "password", None)
             else:
-                password = keyring.get_password(
-                    "arcgis_python_api_profile_passwords", profile
-                )
+                password = keyring.get_password(self._profile_name, profile)
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
