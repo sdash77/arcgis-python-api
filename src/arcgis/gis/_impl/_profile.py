@@ -719,6 +719,16 @@ class ProfileManager(object):
         if self._keyring_version() >= [23, 0, 0]:
             supported_keyrings = [type(r) for r in keyring.backend.get_all_keyring()]
         else:
+            import sys
+            if sys.platform == "darwin":
+                try:
+                    import keyring.backends.OS_X
+                    import keyring.backends.kwallet
+                    import keyring.backends.chainer
+                    import keyring.backends.Windows
+                    import keyring.backends.SecretService
+                except:
+                    pass
 
             supported_keyrings = [
                 keyring.backends.OS_X.Keyring,
