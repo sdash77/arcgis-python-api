@@ -57,7 +57,7 @@ class MyFasterRCNN:
         )
 
         if "timm" in backbone:
-            from arcgis.learn.models._arcgis_model import timm_config, _get_feature_size
+            from arcgis.learn.models._timm_utils import timm_config, _get_feature_size
 
             backbone_cut = timm_config(backbone)["cut"]
         else:
@@ -81,7 +81,7 @@ class MyFasterRCNN:
             backbone = backbone
         pretrained_backbone = kwargs.get("pretrained_backbone", True)
         assert type(pretrained_backbone) == bool
-        if backbone.__name__ == "resnet50":
+        if backbone.__name__ == "resnet50" and "timm" not in backbone.__module__:
             model = self.torchvision.models.detection.fasterrcnn_resnet50_fpn(
                 pretrained=pretrained_backbone,
                 pretrained_backbone=False,
@@ -90,7 +90,10 @@ class MyFasterRCNN:
                 **self.fasterrcnn_kwargs,
             )
 
-        elif backbone.__name__ in ["resnet101", "resnet152"]:
+        elif (
+            backbone.__name__ in ["resnet101", "resnet152"]
+            and "timm" not in backbone.__module__
+        ):
             backbone_fpn = (
                 self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(
                     backbone.__name__, pretrained=pretrained_backbone
