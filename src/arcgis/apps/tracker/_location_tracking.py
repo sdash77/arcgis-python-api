@@ -52,9 +52,7 @@ class LocationTrackingManager:
 
     @property
     def _use_location_sharing(self):
-        return float(
-                self._gis.properties.get("currentVersion", "0")
-        ) >= 10.1
+        return float(self._gis.properties.get("currentVersion", "0")) >= 10.1
 
     def enable(
         self,
@@ -101,7 +99,9 @@ class LocationTrackingManager:
             raise ValueError(
                 f"'{tracks_layer_rolling_index_strategy}' is not supported for this version of Enterprise"
             )
-        folder_title = "Location Sharing" if self._use_location_sharing else "Location Tracking"
+        folder_title = (
+            "Location Sharing" if self._use_location_sharing else "Location Tracking"
+        )
         for folder in self._gis.users.me.folders:
             if folder["title"] == folder_title:
                 break
@@ -241,7 +241,11 @@ class LocationTrackingManager:
             )
             == 0
         ):
-            folder_title = "Location Sharing" if self._use_location_sharing else "Location Tracking"
+            folder_title = (
+                "Location Sharing"
+                if self._use_location_sharing
+                else "Location Tracking"
+            )
             for folder in self._gis.users.get(item.owner).folders:
                 if folder["title"] == folder_title:
                     self._gis.content.delete_folder(folder["title"], owner=item.owner)
