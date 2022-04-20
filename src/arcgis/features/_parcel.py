@@ -1124,6 +1124,46 @@ class ParcelFabricManager(object):
         return res
 
     # ----------------------------------------------------------------------
+    def reconstruct_from_seeds(
+        self,
+        extent: dict[str, Any],
+    ):
+        """
+        Reconstruct From Seeds to build parcels that are bounded by different records.
+
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        extent                   The extent containing seeds to reconstruct.
+
+
+                                 :Syntax:
+
+                                 .. code-block:: python
+
+                                     >>> extent={
+                                                 "xmin":X min,
+                                                 "ymin": y min,
+                                                 "xmax": x max,
+                                                 "ymax": y max,
+                                                 "spatialReference": {"wkid": <wkid_value>}
+                                                }
+
+        ====================     ====================================================================
+
+        :return: Dictionary indicating 'success' or 'error'
+
+        """
+        url = "{base}/reconstructFromSeeds".format(base=self._url)
+        params = {
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
+            "extent": extent,
+            "f": "json",
+        }
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
 
     def _run_async(self, fn, **inputs):
         """runs the inputs asynchronously"""
