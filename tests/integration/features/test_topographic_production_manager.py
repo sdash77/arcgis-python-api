@@ -35,6 +35,8 @@ class TestTopographicProductionManager(unittest.TestCase):
             verify_cert=False,
             proxy=PROXIES,
         )
+        # Automate the setup
+        sd.admin.publish_sd()
 
 
 if __name__ == "__main__":
