@@ -4,7 +4,6 @@ ehthumbs.db
 
 # Folder config file
 Desktop.ini
-tests/integration/features/services_config.json
 
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
