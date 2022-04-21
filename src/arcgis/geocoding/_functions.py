@@ -1045,13 +1045,13 @@ def geocode_from_items(
 
     if (
         isinstance(input_data, Item)
-        and input_data.type == 'Feature Service'
+        and input_data.type == "Feature Service"
         and input_data.tables
     ):
         lyr = input_data.tables[0]
-        kwargs['input_table'] = {"url": lyr.url}
+        kwargs["input_table"] = {"url": lyr.url}
         if gis._con.token:
-            kwargs['input_table']["serviceToken"] = gis._con.token
+            kwargs["input_table"]["serviceToken"] = gis._con.token
         if geocode_parameters is None:
 
             kwargs["geocode_parameters"] = analyze_geocode_input(
@@ -1103,9 +1103,9 @@ def geocode_from_items(
             geocode_service_url=geocode_service_url,
             gis=gis,
         )
-    if output_type in ["Feature Layer", 'Feature Service', 'FeatureLayer']:
+    if output_type in ["Feature Layer", "Feature Service", "FeatureLayer"]:
         output_type = "Feature Service"
-        kwargs['output_type'] = "Feature Service"
+        kwargs["output_type"] = "Feature Service"
         if output_name is None:
 
             kwargs["output_name"] = {
@@ -1174,7 +1174,7 @@ def geocode_from_items(
     res = tbx.batch_geocode(**kwargs)
     if "itemId" in res:
         return gis.content.get(res["itemId"])
-    elif hasattr(res, 'geocode_result'):
+    elif hasattr(res, "geocode_result"):
         item_id = res.geocode_result.get("itemId", None)
         if item_id:
             return gis.content.get(item_id)
