@@ -292,6 +292,10 @@ def detect_objects(
 
                                              - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
 
+                                             - mask: Only cells that fall within the analysis mask will be considered in the operation.
+
+                                             Eg: {"mask": {"url": "<feature_service_url>"}}
+
                                              - processorType - Sets the processor type. "CPU" or "GPU"
 
                                              Eg: {"processorType" : "CPU"}
