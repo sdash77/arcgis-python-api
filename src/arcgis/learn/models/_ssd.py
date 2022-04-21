@@ -64,7 +64,7 @@ try:
     )
     from ._inferencing.util import actn_to_bb, hw2corners, nms_jit
     from fastprogress.fastprogress import progress_bar
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
 except Exception as e:
     import_exception = "\n".join(
@@ -837,7 +837,12 @@ class SingleShotDetector(ArcGISModel):
             traced_model = self._trace(model, inp, True)
         torch.jit.save(traced_model, save_path)
 
-    def _save_pytorch_torchscript(self, name):
+        return traced_model
+
+    def _save_pytorch_torchscript(self, name, save=True):
+        traced_model_cpu = None
+        traced_model_gpu = None
+
         model = self.learn.model
         model.eval()
         device = self._device
@@ -846,7 +851,7 @@ class SingleShotDetector(ArcGISModel):
         save_path_cpu = (
             self.learn.path / self.learn.model_dir / f"{name}-cpu.pt"
         ).__str__()
-        self._save_device_model(model, cpu, save_path_cpu)
+        traced_model_cpu = self._save_device_model(model, cpu, save_path_cpu)
         save_path_cpu = f"{name}-cpu.pt"
 
         save_path_gpu = ""
@@ -855,12 +860,80 @@ class SingleShotDetector(ArcGISModel):
             save_path_gpu = (
                 self.learn.path / self.learn.model_dir / f"{name}-gpu.pt"
             ).__str__()
-            self._save_device_model(model, gpu, save_path_gpu)
+            traced_model_gpu = self._save_device_model(model, gpu, save_path_gpu)
             save_path_gpu = f"{name}-gpu.pt"
 
         model.to(device)
 
+        if not save:
+            return [traced_model_cpu, traced_model_gpu]
         return [save_path_cpu, save_path_gpu]
+
+    def _save_pytorch_tflite(self, name):
+        import tensorflow as tf
+        import logging
+
+        tf.get_logger().setLevel(logging.ERROR)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import onnx
+            import onnx_tf
+            from onnx_tf.backend import prepare
+
+        traced_models = self._save_pytorch_torchscript(name, False)
+        if traced_models[0] is None:
+            return ["", ""]
+
+        cpu = torch.device("cpu")
+        device = cpu
+        traced_model = traced_models[0].to(device)
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
+        inp = torch.randn([1, num_input_channels, chip_size[0], chip_size[1]]).to(
+            device
+        )
+
+        save_path_tflite = self.learn.path / self.learn.model_dir / f"{name}.tflite"
+        save_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
+        save_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            torch.onnx.export(
+                traced_model,
+                inp,
+                save_path_onnx,
+                export_params=True,
+                do_constant_folding=False,
+                verbose=True,
+                input_names=["input"],
+                output_names=["output"],
+                opset_version=11,
+            )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            arcgis_onnx = onnx.load(save_path_onnx)
+            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
+            tf_onnx.export_graph(str(save_path_pb))
+
+        converter = tf.lite.TFLiteConverter.from_saved_model(str(save_path_pb))
+        converter.experimental_new_converter = True
+        converter.optimizations = [tf.compat.v1.lite.Optimize.DEFAULT]
+        converter.target_ops = [
+            tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
+            tf.lite.OpsSet.SELECT_TF_OPS,
+        ]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            tflite_model = converter.convert()
+        with tf.io.gfile.GFile(save_path_tflite, "wb") as f:
+            f.write(tflite_model)
+
+        return [save_path_tflite, save_path_onnx]
 
     def _get_emd_params(self, save_inference_file):
         import random
@@ -932,7 +1005,7 @@ class SingleShotDetector(ArcGISModel):
         self.learn.show_results(
             rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self
         )
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _show_results_multispectral(

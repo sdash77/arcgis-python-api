@@ -643,6 +643,9 @@ def merge_emd_and_stats(data_folders):
     # Create master EMD and esri_accumulated_stats
     emd = emd_store[emd_keys[0]]
     eas = stats_store[emd_keys[0]]
+    if not "NumTilesAsDouble" in eas:
+        eas["NumTilesAsDouble"] = eas["NumTiles"]
+        del eas["NumTiles"]
     _class_hash = {x["Value"]: x for x in emd["Classes"]}
     for k in emd_keys[1:]:
         _emd = emd_store[k]
@@ -671,8 +674,10 @@ def merge_emd_and_stats(data_folders):
                 eas["BandStatsState"][i]["Num"] + _eas["BandStatsState"][i]["Num"]
             )  # Number of pixels
         eas["NumClasses"] = max(eas["NumClasses"], _eas["NumClasses"])
-        eas["NumTiles"] += _eas["NumTiles"]
-        #
+        if "NumTiles" in _eas:
+            eas["NumTilesAsDouble"] += _eas["NumTiles"]
+        else:
+            eas["NumTilesAsDouble"] += _eas["NumTilesAsDouble"]
         stats_key1 = None
         stats_key1_1 = None
         stats_key2 = None
@@ -966,6 +971,7 @@ def prepare_tabulardata(
     explanatory_variables=None,
     explanatory_rasters=None,
     date_field=None,
+    cell_sizes=[3, 4, 5, 6, 7],
     distance_features=None,
     preprocessors=None,
     val_split_pct=0.1,
@@ -1031,6 +1037,13 @@ def prepare_tabulardata(
                             to the prepared data as columns.
                             All fields other than elapsed and dayofyear are treated
                             as categorical.
+    ---------------------   -------------------------------------------
+    cell_sizes              Size of H3 cells (specified as H3 resolution) for spatially
+                            aggregating input features and passing in the cell ids as additional
+                            explanatory variables to the model. If a spatial dataframe is passed
+                            as input_features, ensure that the spatial reference is 4326,
+                            and the geometry type is Point. Not applicable when explanatory_rasters
+                            are provided.
     ---------------------   -------------------------------------------
     distance_features       Optional list of Feature Layer objects.
                             Distance is calculated from features in these layers
@@ -1133,6 +1146,7 @@ def prepare_tabulardata(
         feature_variables=explanatory_variables,
         raster_variables=explanatory_rasters,
         date_field=date_field,
+        cell_sizes=cell_sizes,
         distance_feature_layers=distance_features,
         procs=preprocessors,
         val_split_pct=val_split_pct,
@@ -3124,9 +3138,9 @@ def prepare_data(
         data.path = Path(os.path.dirname(os.path.abspath(data.path)))
     _prepare_working_dir(data.path)
 
-    from ._utils.env import _IS_ARCGISPRONOTEBOOK
+    from ._utils.env import is_arcgispronotebook
 
-    if _IS_ARCGISPRONOTEBOOK:
+    if is_arcgispronotebook():
         from functools import wraps
         from matplotlib import pyplot as plt
 

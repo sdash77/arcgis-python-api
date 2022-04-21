@@ -561,7 +561,7 @@ def pro_at_least_version(version: str) -> bool:
     for idx in range(0, max_len):
 
         # evaluate if the part and if greater, break and report status
-        if v_lst[idx] > in_lst[idx]:
+        if v_lst[idx] < in_lst[idx]:
             at_least = True
             break
 

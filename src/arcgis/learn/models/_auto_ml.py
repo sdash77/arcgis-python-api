@@ -21,7 +21,7 @@ import_exception = None
 
 try:
     from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
-    from arcgis.learn._utils.tabular_data import TabularDataObject
+    from arcgis.learn._utils.tabular_data import TabularDataObject, add_h3
     from arcgis.learn._utils.common import _get_emd_path
 
     HAS_FASTAI = True
@@ -72,7 +72,7 @@ class AutoML(object):
                             Default is 3600 (1 Hr)
     ---------------------   -------------------------------------------
     mode                    Optional Str.
-                            Can be {Explain, Perform, Compete}. This parameter defines
+                            Can be {Basic, Intermediate, Advanced}. This parameter defines
                             the goal of AutoML and how intensive the AutoML search will be.
 
                             Basic : To to be used when the user wants to explain and
@@ -93,7 +93,7 @@ class AutoML(object):
                                       Uses the following models: Decision Tree, Random Forest, Extra Trees,
                                       XGBoost, CatBoost, Neural Network, Nearest Neighbors, Ensemble,
                                       and Stacking.It has only learning curves in the reports.
-                                      Default is Explain.
+                                      Default is Basic.
     ---------------------   -------------------------------------------
     algorithms              Optional. List of str.
                             The list of algorithms that will be used in the training. The algorithms can be:
@@ -113,8 +113,8 @@ class AutoML(object):
                             In all other cases, regression is performed on the dataset.
     ---------------------   -------------------------------------------
     n_jobs                  Optional. Int.
-                            Number of CPU cores to be used. By default, it is set to -1 which uses
-                            all processes.
+                            Number of CPU cores to be used. By default, it is set to 1.Set it
+                            to -1 to use all the cores.
     =====================   ===========================================
 
     :return: `AutoML` Object
@@ -124,10 +124,10 @@ class AutoML(object):
         self,
         data=None,
         total_time_limit=3600,
-        mode="Explain",
+        mode="Basic",
         algorithms=None,
         eval_metric="auto",
-        n_jobs=-1,
+        n_jobs=1,
     ):
         try:
             from supervised.automl import AutoML as base_AutoML
@@ -190,8 +190,21 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            if mode == "Explain":
+            ml_task = "auto"
+            ml_task = self.get_ml_task(self._all_labels)
+            if ml_task == "text":
+                raise ValueError(
+                    "Dependent variable has more than 200 unique values more than half of the total records are unique, hence there is not enough information to train a model"
+                )
+            if (mode == "Explain") or (mode == "Basic"):
                 explain_level = 2
+                zone_list = ["zone3_id", "zone4_id", "zone5_id", "zone6_id", "zone7_id"]
+                # try:
+                #    self._all_data_df = self._all_data_df.drop(columns=zone_list)
+                #    self._data._continuous_variables = [x for x in self._data._continuous_variables if x not in zone_list]
+                #    self._data._categorical_variables = [x for x in self._data._categorical_variables if x not in zone_list]
+                # except:
+                #    pass
             else:
                 explain_level = 0  # Setting explain level to 0 in case of Perform and Compete as EDA seems to be creating memory issues
 
@@ -215,6 +228,7 @@ class AutoML(object):
             self._model = base_AutoML(
                 results_path=result_path,
                 mode=mode,
+                ml_task=ml_task,
                 algorithms=algorithms,
                 total_time_limit=total_time_limit,
                 golden_features=False,
@@ -227,6 +241,21 @@ class AutoML(object):
             result_path = self._data.path
             self._model = base_AutoML(results_path=result_path)
             self._model._results_path = self._data.path
+
+    def get_ml_task(self, all_labels):
+        try:
+            if isinstance(all_labels[0], str):
+                unique = np.unique(all_labels, return_counts=False)
+                if len(unique) == 2:
+                    return "binary_classification"
+                elif len(unique) > 200 and len(unique) > int(0.5 * all_labels.shape[0]):
+                    return "text"
+                else:
+                    return "multiclass_classification"
+            else:
+                return "auto"
+        except:
+            return "auto"
 
     def fit(self):
         """
@@ -552,6 +581,7 @@ class AutoML(object):
         prediction_type="features",
         output_raster_path=None,
         match_field_names=None,
+        cell_sizes=[3, 4, 5, 6, 7],
     ):
         """
 
@@ -571,6 +601,13 @@ class AutoML(object):
         datefield                           Optional string. Field name from feature layer
                                             that contains the date, time for the input features.
                                             Same as `prepare_tabulardata()`.
+        ---------------------------------   -------------------------------------------------------------------------
+        cell_sizes                          Size of H3 cells (specified as H3 resolution) for spatially
+                                            aggregating input features and passing in the cell ids as additional
+                                            explanatory variables to the model. If a spatial dataframe is passed
+                                            as input_features, ensure that the spatial reference is 4326,
+                                            and the geometry type is Point. Not applicable when explanatory_rasters
+                                            are provided.
         ---------------------------------   -------------------------------------------------------------------------
         distance_features                   Optional List of Feature Layer objects.
                                             These layers are used for calculation of field "NEAR_DIST_1",
@@ -620,6 +657,7 @@ class AutoML(object):
                 input_features,
                 rasters,
                 datefield,
+                cell_sizes,
                 distance_features,
                 output_layer_name,
                 gis,
@@ -642,6 +680,7 @@ class AutoML(object):
         input_features,
         rasters=None,
         datefield=None,
+        cell_sizes=[3, 4, 5, 6, 7],
         distance_feature_layers=None,
         output_name="Prediction Layer",
         gis=None,
@@ -650,8 +689,16 @@ class AutoML(object):
     ):
         dataframe_complete = False
         if isinstance(input_features, FeatureLayer):
-            dataframe = input_features.query().sdf
-        elif hasattr(input_features, "dataSource"):
+            if cell_sizes and not rasters:
+                dataframe = input_features.query(out_sr=4326).sdf
+                dataframe = add_h3(dataframe, cell_sizes)
+            else:
+                dataframe = input_features.query().sdf
+        elif (
+            hasattr(input_features, "dataSource")
+            or str(input_features).endswith(".shp")
+            or isinstance(input_features, tuple)
+        ):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
                 input_features,
                 distance_feature_layers,
@@ -659,6 +706,8 @@ class AutoML(object):
                 index_field=None,
                 is_table_obj=False,
             )
+            if cell_sizes and not rasters:
+                dataframe = add_h3(dataframe, cell_sizes)
             dataframe_complete = True
         elif hasattr(input_features, "value"):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
@@ -730,6 +779,7 @@ class AutoML(object):
                     feature_layer_columns,
                     raster_columns,
                     datefield,
+                    cell_sizes,
                     distance_feature_layers,
                 )
 
@@ -805,78 +855,67 @@ class AutoML(object):
         default_sr = rasters[0].extent["spatialReference"]
 
         for raster in rasters:
-            point_upper = arcgis.geometry.Point(
-                {
-                    "x": raster.extent["xmin"],
-                    "y": raster.extent["ymax"],
-                    "sr": raster.extent["spatialReference"],
-                }
-            )
-            point_lower = arcgis.geometry.Point(
-                {
-                    "x": raster.extent["xmax"],
-                    "y": raster.extent["ymin"],
-                    "sr": raster.extent["spatialReference"],
-                }
-            )
-            cell_size = arcgis.geometry.Point(
-                {
-                    "x": raster.mean_cell_width,
-                    "y": raster.mean_cell_height,
-                    "sr": raster.extent["spatialReference"],
-                }
-            )
+            # try:
+            point_upper = arcpy.PointGeometry(
+                arcpy.Point(raster.extent["xmin"], raster.extent["ymax"]),
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
+            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
+            point_lower = arcpy.PointGeometry(
+                arcpy.Point(raster.extent["xmax"], raster.extent["ymin"]),
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
+            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
+            cell_size = arcpy.PointGeometry(
+                arcpy.Point(raster.mean_cell_width, raster.mean_cell_height),
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
+            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
 
-            points = arcgis.geometry.project(
-                [point_upper, point_lower, cell_size],
-                raster.extent["spatialReference"],
-                default_sr,
-            )
-            point_upper = points[0]
-            point_lower = points[1]
-            cell_size = points[2]
+            if xmin > point_upper.firstPoint.X:
+                xmin = point_upper.firstPoint.X
+            if ymax < point_upper.firstPoint.Y:
+                ymax = point_upper.firstPoint.y
+            if xmax < point_lower.firstPoint.X:
+                xmax = point_lower.firstPoint.X
+            if ymin > point_lower.firstPoint.Y:
+                ymin = point_lower.firstPoint.Y
 
-            if xmin > point_upper.x:
-                xmin = point_upper.x
-            if ymax < point_upper.y:
-                ymax = point_upper.y
-            if xmax < point_lower.x:
-                xmax = point_lower.x
-            if ymin > point_lower.y:
-                ymin = point_lower.y
+            if min_cell_size_x > cell_size.firstPoint.X:
+                min_cell_size_x = cell_size.firstPoint.X
 
-            if min_cell_size_x > cell_size.x:
-                min_cell_size_x = cell_size.x
-
-            if min_cell_size_y > cell_size.y:
-                min_cell_size_y = cell_size.y
+            if min_cell_size_y > cell_size.firstPoint.Y:
+                min_cell_size_y = cell_size.firstPoint.Y
 
         max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
         max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
 
-        point_upper = arcgis.geometry.Point({"x": xmin, "y": ymax, "sr": default_sr})
-        cell_size = arcgis.geometry.Point(
-            {"x": min_cell_size_x, "y": min_cell_size_y, "sr": default_sr}
+        point_upper = arcpy.PointGeometry(
+            arcpy.Point(xmin, ymax), arcpy.SpatialReference(default_sr["wkid"])
+        )
+        cell_size = arcpy.PointGeometry(
+            arcpy.Point(min_cell_size_x, min_cell_size_y),
+            arcpy.SpatialReference(default_sr["wkid"]),
         )
 
         raster_data = {}
         for raster in rasters:
             field_name = raster.name
-            point_upper_translated = arcgis.geometry.project(
-                [point_upper], default_sr, raster.extent["spatialReference"]
-            )[0]
-            cell_size_translated = arcgis.geometry.project(
-                [cell_size], default_sr, raster.extent["spatialReference"]
-            )[0]
+            point_upper_translated = point_upper.projectAs(
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
+            )
+            cell_size_translated = cell_size.projectAs(
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
+            )
             if field_name in fields_needed:
                 raster_read = raster.read(
                     origin_coordinate=(
-                        point_upper_translated.x,
-                        point_upper_translated.y,
+                        point_upper_translated.firstPoint.X,
+                        point_upper_translated.firstPoint.Y,
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.firstPoint.X,
+                        cell_size_translated.firstPoint.Y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -894,12 +933,15 @@ class AutoML(object):
                 field_name = match_field_names.get(raster.name)
                 raster_read = raster.read(
                     origin_coordinate=(
-                        point_upper_translated.x,
-                        point_upper_translated.y,
+                        point_upper_translated.firstPoint.X,
+                        point_upper_translated.firstPoint.Y,
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.firstPoint.X,
+                        cell_size_translated.firstPoint.Y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):

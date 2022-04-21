@@ -5,6 +5,7 @@ from ._arcgis_model import _EmptyData, _change_tail
 HAS_OPENCV = True
 try:
     from pathlib import Path
+    import warnings
     import json
     import math
     import PIL
@@ -49,7 +50,7 @@ try:
     import matplotlib
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
     from .._utils.common import get_nbatches, image_batch_stretcher, read_image
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
 
     HAS_FASTAI = True
 except Exception as e:
@@ -433,9 +434,7 @@ class MaskRCNN(ArcGISModel):
         self.learn.c_device = self._device
 
         # fixes for zero division error when slice is passed
-        idx = 27
-        if self._backbone.__name__ in ["resnet18", "resnet34"]:
-            idx = self._freeze()
+        idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 
@@ -554,7 +553,7 @@ class MaskRCNN(ArcGISModel):
             data, **model_params, pretrained_path=str(model_file), **maskrcnn_kwargs
         )
 
-    def _save_pytorch_torchscript(self, name):
+    def _save_pytorch_torchscript(self, name, save=True):
         model = self.learn.model
         model.eval()
 
@@ -570,12 +569,11 @@ class MaskRCNN(ArcGISModel):
 
         model = MaskRCNNTracer(model)
 
+        traced_model = None
         try:
-            traced_model = None
             with torch.no_grad():
                 traced_model = self._trace(model, inp, True)
         except:
-            traced_model = None
             with torch.no_grad():
                 traced_model = self._trace(model, inp, True)
 
@@ -586,7 +584,72 @@ class MaskRCNN(ArcGISModel):
         saved_path_gpu = ""
         torch.jit.save(traced_model, saved_path_cpu)
 
+        if not save:
+            [traced_model, traced_model]
         return [f"{name}-cpu.pt", saved_path_gpu]
+
+    def _save_pytorch_tflite(self, name):
+        import tensorflow as tf
+        import logging
+
+        tf.get_logger().setLevel(logging.ERROR)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import onnx
+            import onnx_tf
+            from onnx_tf.backend import prepare
+
+        traced_models = self._save_pytorch_torchscript(name, False)
+        if traced_models[0] is None:
+            return ["", ""]
+
+        cpu = torch.device("cpu")
+        device = cpu
+        traced_model = traced_models[0].to(device)
+
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
+        inp = torch.randn([1, num_input_channels, chip_size[0], chip_size[1]]).to(
+            device
+        )
+
+        save_path_tflite = self.learn.path / self.learn.model_dir / f"{name}.tflite"
+        save_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
+        save_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            torch.onnx.export(
+                traced_model,
+                inp,
+                save_path_onnx,
+                export_params=True,
+                do_constant_folding=False,
+                verbose=True,
+                input_names=["input"],
+                output_names=["output"],
+                opset_version=11,
+            )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            arcgis_onnx = onnx.load(save_path_onnx)
+            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
+            tf_onnx.export_graph(str(save_path_pb))
+
+        model = tf.saved_model.load(save_path_pb)
+        concrete_func = model.signatures[
+            tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+        ]
+        converter = tf.lite.TFLiteConverter.from_concrete_functions([concrete_func])
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]  # for full accuracy
+        tf_lite_model = converter.convert()
+        open(save_path_tflite, "wb").write(tf_lite_model)
+
+        return [save_path_tflite, save_path_onnx]
 
     def _get_emd_params(self, save_inference_file):
         import random
@@ -875,7 +938,7 @@ class MaskRCNN(ArcGISModel):
         if self._device == torch.device("cuda"):
             torch.cuda.empty_cache()
 
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
         if return_fig:
             return fig
