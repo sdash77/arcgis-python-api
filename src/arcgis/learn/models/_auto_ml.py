@@ -128,6 +128,7 @@ class AutoML(object):
         algorithms=None,
         eval_metric="auto",
         n_jobs=1,
+        ml_task="auto",
     ):
         try:
             from supervised.automl import AutoML as base_AutoML
@@ -190,8 +191,8 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            ml_task = "auto"
-            ml_task = self.get_ml_task(self._all_labels)
+            if ml_task == "auto":
+                ml_task = self.get_ml_task(self._all_labels)
             if ml_task == "text":
                 raise ValueError(
                     "Dependent variable has more than 200 unique values more than half of the total records are unique, hence there is not enough information to train a model"
@@ -872,7 +873,7 @@ class AutoML(object):
             if xmin > point_upper.firstPoint.X:
                 xmin = point_upper.firstPoint.X
             if ymax < point_upper.firstPoint.Y:
-                ymax = point_upper.firstPoint.y
+                ymax = point_upper.firstPoint.Y
             if xmax < point_lower.firstPoint.X:
                 xmax = point_lower.firstPoint.X
             if ymin > point_lower.firstPoint.Y:

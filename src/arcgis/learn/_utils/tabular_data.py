@@ -126,10 +126,15 @@ class TabularDataObject(object):
         tabular_data._dependent_variable = tabular_data._field_mapping[
             "dependent_variable"
         ]
-        if tabular_data._dataframe[tabular_data._dependent_variable].isnull().values.any():
+        if (
+            tabular_data._dataframe[tabular_data._dependent_variable]
+            .isnull()
+            .values.any()
+        ):
             msg = arcpy_localization_helper(
                 "Rows having null values in dependent variable are removed and model will be trained with remaining data",
-                260145, "WARNING"
+                260145,
+                "WARNING",
             )
             tabular_data._dataframe = tabular_data._dataframe[
                 ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
@@ -357,7 +362,9 @@ class TabularDataObject(object):
 
         if labels.isna().sum().sum() != 0:
             msg = arcpy_localization_helper(
-                "You have some missing values in dependent variable column.", 260144, "ERROR"
+                "You have some missing values in dependent variable column.",
+                260144,
+                "ERROR",
             )
             raise ValueError(msg)
 
@@ -455,7 +462,8 @@ class TabularDataObject(object):
         except:
             msg = arcpy_localization_helper(
                 "Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.",
-                260143,"ERROR"
+                260143,
+                "ERROR",
             )
             raise ValueError(msg)
 
@@ -1128,7 +1136,10 @@ class TabularDataObject(object):
                 input_features = input_features[0]
                 data_source = str(input_features)
             else:
-                data_source = input_features.dataSource
+                try:
+                    data_source = str(input_features)
+                except:
+                    data_source = input_features.dataSource
             count = 1
             for distance_layer in distance_feature:
                 # field_1 = 'NEAR_FID_'+str(count)
@@ -1140,7 +1151,7 @@ class TabularDataObject(object):
         else:
             sdf = pd.DataFrame()
             data_type = arcpy.Describe(input_features).dataType
-            if data_type == "TableView":
+            if data_type in ["TableView", "TextFile"]:
                 sdf = pd.DataFrame.spatial.from_table(str(input_features))
         rasters_data = {}
         if data_source:
