@@ -202,4 +202,4 @@ if len(PROFILES) > 0:
 
 if __name__ == "__main__":
     unittest.main()
-    print("Test complete.")
+    
