@@ -10243,7 +10243,7 @@ class User(dict):
             "cultureFormat": culture_format,
             "region": region,
         }
-        if security_answer and security_question:
+        if security_answer and not security_question is None:
             params["securityQuestionIdx"] = security_question
             params["securityAnswer"] = security_answer
         for k, v in copy.copy(params).items():
@@ -10254,8 +10254,8 @@ class User(dict):
             files = {"thumbnail": thumbnail}
         else:
             files = None
-        url = "%s/sharing/rest/community/users/%s/update" % (
-            self._gis._url,
+        url = "%scommunity/users/%s/update" % (
+            self._gis._portal.resturl,
             self._user_id,
         )
         ret = self._gis._con.post(path=url, postdata=params, files=files)
