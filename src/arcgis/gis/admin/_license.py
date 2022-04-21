@@ -2,13 +2,10 @@
 Entry point to working with licensing on Portal or ArcGIS Online
 """
 import datetime
-import numpy
-from arcgis.gis.admin.agoladmin import AGOLAdminManager
 from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
-from ...gis import GIS, User, Item
+from ...gis import GIS, User
 from ._base import BasePortalAdmin
-from typing import Union
 
 ########################################################################
 class LicenseManager(BasePortalAdmin):
