@@ -1,40 +1,24 @@
 import logging
 import sys
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
 import unittest
 from arcgis.features._utility import UtilityNetworkManager
+from arcgis.features._version import Version
 from arcgis.gis import GIS
-from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis.server.catalog import ServicesDirectory
+import json
 
-__logger__ = logging.getLogger()
+with open(r"tests\integration\features\services_config.json") as json_data_file:
+    data = json.load(json_data_file)
 
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
-url = "https://rextapilnxsvr01.esri.com/server"
-username = "siteadmin"
-password = "esri.agp2"
-
+gis = GIS(data["utility_network"]["url"], data["utility_network"]["username"], data["utility_network"]["password"])
+version = Version("https://utilitynetwork.esri.com/server/rest/services/GettingToKnow_Oracle/FeatureServer", gis)
+utility_net = UtilityNetworkManager("https://utilitynetwork.esri.com/server/rest/services/GettingToKnow_Oracle/FeatureServer/500001", version, gis)
 class TestUtilityNetworkManager(unittest.TestCase):
     """Tests the Utility Network Service"""
 
     def add_product(self):
-        sd = ServicesDirectory(
-            url=url,
-            username=username,
-            password=password,
-            verify_cert=False,
-            proxy=PROXIES,
-        )
+        """ Test `add_product` method on a utility service."""
+
 
 
 if __name__ == "__main__":
