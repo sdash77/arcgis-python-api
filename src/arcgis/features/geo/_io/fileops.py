@@ -498,16 +498,24 @@ def from_featureclass(filename, **kwargs):
     from arcgis.geometry import _types
     import json
 
-    filename = _ensure_path_string(filename)
-    if not isinstance(filename, (str, Path, PurePath)):
-        raise ValueError(
-            f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
-        )
-    if filename.find("http://") > -1 or filename.find("https://") > -1:
-        res = from_url(url=filename)
-        if len(res) == 1:
-            return res[0]
-        return res
+    if (
+        HASARCPY
+        or isinstance(filename, (arcpy._mp.Layer))
+        and type(filename).__name__.find("arcpy") > -1
+    ):
+        filename = filename
+    else:
+
+        filename = _ensure_path_string(filename)
+        if not isinstance(filename, (str, Path, PurePath)):
+            raise ValueError(
+                f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
+            )
+        if filename.find("http://") > -1 or filename.find("https://") > -1:
+            res = from_url(url=filename)
+            if len(res) == 1:
+                return res[0]
+            return res
     if HASARCPY:
         sql_clause = kwargs.pop("sql_clause", (None, None))
         where_clause = kwargs.pop("where_clause", None)

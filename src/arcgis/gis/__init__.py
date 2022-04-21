@@ -13664,11 +13664,14 @@ class Item(dict):
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": "Query"},
                 }
-
-        elif fileType in [
-            "csv",
-            "excel",
-        ]:  # merge users passed-in publish parameters with analyze results
+        elif (
+            fileType
+            in [
+                "csv",
+                "excel",
+            ]
+            and overwrite is False
+        ):  # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
 
             res = self._gis.content.analyze(item=self, file_type=fileType)
@@ -13691,21 +13694,14 @@ class Item(dict):
                             publish_parameters["layerInfo"]
                         )
 
-                # check if layers key exist. If not, add empty array to avoid error in update
-                if "layers" not in publish_parameters_orig:
-                    publish_parameters_orig["layers"] = []
-
-                # update layers but layer index must match
-                # update the layers otherwise general update will overwrite nested dictionary
-                for idx, lyr in enumerate(publish_parameters["layers"]):
-                    lyr.update(publish_parameters_orig["layers"][idx])
-
-                # delete since already updated and avoid overwritting
-                if "layers" in publish_parameters_orig:
-                    del publish_parameters_orig["layers"]
-
-                # do general update
+                # do general update and assign service name
                 publish_parameters.update(publish_parameters_orig)
+                service_name = re.sub(r"[\W_]+", "_", self["title"])
+                publish_parameters.update({"name": service_name})
+                if not self._gis.content.is_service_name_available(
+                    publish_parameters["name"], "featureService"
+                ):
+                    raise Exception("Service name already exists in your org.")
 
         ret = self._portal.publish_item(
             self.itemid,
