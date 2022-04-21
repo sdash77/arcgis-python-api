@@ -1289,8 +1289,9 @@ def train_model(
     backbone_model                           Optional string.
                                              Specifies the preconfigured neural network to be used as an architecture for training the new model.
                                              Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 ,
-                                                              RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 ,
-                                                              VGG13_BN , VGG16 , VGG16_BN , VGG19 , VGG19_BN , DARKNET53 , REID_V1 , REID_V2
+                                             RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 ,
+                                             VGG13_BN , VGG16 , VGG16_BN , VGG19 , VGG19_BN , DARKNET53 , REID_V1 , REID_V2
+
                                              Example:
                                                 RESNET34
     ------------------------------------     --------------------------------------------------------------------
