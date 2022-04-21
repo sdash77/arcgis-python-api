@@ -31,8 +31,8 @@ if not "your_kubernetes_profile" in ProfileManager().list():
 
     gis = GIS(
         url="https://devent.esri.com/gis",
-        username="admin",
-        password="esri.agp",
+        username="administrator",
+        password="esri.agp1",
         profile="your_kubernetes_profile",
     )
 
@@ -45,7 +45,7 @@ def _setup_ge_service(gis: GIS):
         "title": "AGO World GeoEnrichment (demos_deldev)",
         "tags": "Tool, Service, Geoenrichment Service, ArcGIS Server",
         "serviceUsername": "demos_deldev",
-        "servicePassword": "DelDevs.123",
+        "servicePassword": "DelDevs.1234",
     }
     from arcgis.gis import ContentManager
 
@@ -103,7 +103,7 @@ if len(PROFILES) > 0:
             for profile in PROFILES:
                 gis = GIS(profile=profile, verify_cert=VERIFY, trust_env=True)
                 res = geoenrichment.get_countries(gis=gis)
-                self.assertIsInstance(res, list)
+                self.assertIsInstance(res, (list, pd.DataFrame))
 
         ##----------------------------------------------------------------------
         # @unittest.SkipTest
@@ -202,3 +202,4 @@ if len(PROFILES) > 0:
 
 if __name__ == "__main__":
     unittest.main()
+    print("Test complete.")
