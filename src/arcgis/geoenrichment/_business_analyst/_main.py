@@ -1479,20 +1479,28 @@ class BusinessAnalyst(object):
             ev = self.enrich_variables
 
             # get the current year key variables
-            enrich_variables = ev[
-                (ev.name.str.lower().str.contains('cy'))
-                & (ev.data_collection.str.lower().str.contains('key'))
-                ].drop_duplicates('name').reset_index(drop=True)
+            enrich_variables = (
+                ev[
+                    (ev.name.str.lower().str.contains("cy"))
+                    & (ev.data_collection.str.lower().str.contains("key"))
+                ]
+                .drop_duplicates("name")
+                .reset_index(drop=True)
+            )
 
             # ensure something is found, dropping current year if nothing found
             if len(enrich_variables.index) == 0:
-                enrich_variables = ev[
-                    (ev.data_collection.str.lower().str.contains('key'))
-                ].drop_duplicates('name').reset_index(drop=True)
+                enrich_variables = (
+                    ev[(ev.data_collection.str.lower().str.contains("key"))]
+                    .drop_duplicates("name")
+                    .reset_index(drop=True)
+                )
 
             # let user know we are grabbing defaults
-            warn(f'Using {len(enrich_variables.index)} enrich variables, key variables, as default '
-                 f'since no enrich_variables were provided.')
+            warn(
+                f"Using {len(enrich_variables.index)} enrich variables, key variables, as default "
+                f"since no enrich_variables were provided."
+            )
 
         # if a list of enrichment variables was provided, ensure they are valid
         if not isinstance(enrich_variables, pd.DataFrame):
