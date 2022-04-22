@@ -300,8 +300,8 @@ class NormalLoss(nn.Module):
 
         e = (c[:, :, None, :] @ d[:, :, :, None]).squeeze(-1).squeeze(-1)
 
-        fake_norm = torch.sqrt(torch.sum(c ** 2, dim=-1))
-        real_norm = torch.sqrt(torch.sum(d ** 2, dim=-1))
+        fake_norm = torch.sqrt(torch.sum(c**2, dim=-1))
+        real_norm = torch.sqrt(torch.sum(d**2, dim=-1))
 
         return 1 - torch.mean(e / (fake_norm * real_norm))
 

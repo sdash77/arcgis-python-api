@@ -868,7 +868,7 @@ class TabularDataObject(object):
                 seq_len, False, False
             )
 
-            n_items = rows ** 2
+            n_items = rows**2
             if n_items > len(X_train):
                 n_items = len(X_train)
 
