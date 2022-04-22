@@ -1136,7 +1136,10 @@ class TabularDataObject(object):
                 input_features = input_features[0]
                 data_source = str(input_features)
             else:
-                data_source = input_features.dataSource
+                try:
+                    data_source = str(input_features)
+                except:
+                    data_source = input_features.dataSource
             count = 1
             for distance_layer in distance_feature:
                 # field_1 = 'NEAR_FID_'+str(count)
@@ -1148,7 +1151,7 @@ class TabularDataObject(object):
         else:
             sdf = pd.DataFrame()
             data_type = arcpy.Describe(input_features).dataType
-            if data_type in ["TableView","TextFile"]:
+            if data_type in ["TableView", "TextFile"]:
                 sdf = pd.DataFrame.spatial.from_table(str(input_features))
         rasters_data = {}
         if data_source:

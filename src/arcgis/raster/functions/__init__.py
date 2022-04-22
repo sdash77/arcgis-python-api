@@ -1925,6 +1925,8 @@ def clip(
     geometry=None,
     clip_outside: bool = True,
     astype: Optional[str] = None,
+    clipping_raster: Optional[Union[Raster, ImageryLayer]] = None,
+    use_input_geometry: bool = True,
 ):
 
     """
@@ -1938,17 +1940,26 @@ def clip(
     --------------------------------     --------------------------------------------------------------------
     raster                                   Required input Raster/ImageryLayer object
     --------------------------------     --------------------------------------------------------------------
-    goemetry                                 Required clipping geometry
+    goemetry                                 Optional dictionary. Specifies the geometry for clipping.
     --------------------------------     --------------------------------------------------------------------
     clip_outside                             Optional boolean, If True, the imagery outside the extents will be removed, else the imagery within the clipping geometry will be removed.
     --------------------------------     --------------------------------------------------------------------
     astype                                   Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    clipping_raster                          Optional Raster/ImageryLayer object. Specifies the raster from which the extent needs to be used for clipping.
+    --------------------------------     --------------------------------------------------------------------
+    use_input_geometry                       Optional boolean. If True, the function uses the clip geometry defined by the geometry parameter. This is the default.
+                                             If False, the function uses the extent of the clip geometry defined by the geometry parameter.
     ================================     ====================================================================
 
     :return: The clipped raster.
 
     """
     layer, raster, raster_ra = _raster_input(raster)
+
+    layer2 = None
+    if clipping_raster is not None:
+        layer2, raster_2, raster_ra2 = _raster_input(raster, clipping_raster)
 
     template_dict = {
         "rasterFunction": "Clip",
@@ -1962,7 +1973,47 @@ def clip(
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    extent_envelope = None
+
+    if clipping_raster is not None and isinstance(
+        clipping_raster, (Raster, ImageryLayer)
+    ):
+        extent_envelope = dict(clipping_raster.extent)
+
+    try:
+        from arcgis.geometry import Envelope, Geometry
+
+        if geometry is not None:
+            if not isinstance(geometry, Geometry):
+                geometry = Geometry(geometry)
+
+            extent_envelope = _json.loads(geometry.envelope.JSON)
+
+        if not use_input_geometry:
+            template_dict["rasterFunctionArguments"][
+                "ClippingGeometry"
+            ] = extent_envelope
+
+        geom_dict = template_dict["rasterFunctionArguments"]["ClippingGeometry"]
+
+        template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
+        if (geom_dict) and not isinstance(
+            Geometry(geom_dict), Envelope
+        ):  # for release after 2.0.1 remove this code that sets Extent to None
+            template_dict["rasterFunctionArguments"]["Extent"] = None
+
+    except:
+        pass
+
+    if clipping_raster is not None:
+        template_dict["rasterFunctionArguments"]["ClippingRaster"] = raster_2
+
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra["rasterFunctionArguments"]["Raster"] = raster_ra
+    if clipping_raster is not None:
+        function_chain_ra["rasterFunctionArguments"]["ClippingRaster"] = raster_ra2
+
+    return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
 
 
 def colormap(

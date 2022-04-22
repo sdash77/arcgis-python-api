@@ -128,7 +128,7 @@ class AutoML(object):
         algorithms=None,
         eval_metric="auto",
         n_jobs=1,
-        ml_task='auto'
+        ml_task="auto",
     ):
         try:
             from supervised.automl import AutoML as base_AutoML
@@ -873,7 +873,7 @@ class AutoML(object):
             if xmin > point_upper.firstPoint.X:
                 xmin = point_upper.firstPoint.X
             if ymax < point_upper.firstPoint.Y:
-                ymax = point_upper.firstPoint.y
+                ymax = point_upper.firstPoint.Y
             if xmax < point_lower.firstPoint.X:
                 xmax = point_lower.firstPoint.X
             if ymin > point_lower.firstPoint.Y:
