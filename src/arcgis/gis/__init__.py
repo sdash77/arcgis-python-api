@@ -2986,14 +2986,17 @@ class UserManager(object):
             Data Editor         iBBBBBBBBBBBBBBB
             CustomRole          bKrTCjFF9tKbaFk8
 
-            >>> gis.users.create(username='new_user_1',
-                                            password='<strong_password>',
-                                            firstname='New',
-                                            lastname='User',
-                                            email='namee@organization.com',
-                                            description='User with custom role assigned',
-                                            role='bKrTCjFF9tKbaFk8',
-                                            user_type='Creator')
+            >>> user1 = gis.users.create(username='new_user_1',
+                                         password='<strong_password>',
+                                         firstname='New',
+                                         lastname='User',
+                                         email='namee@organization.com',
+                                         description='User with custom role assigned',
+                                         role='bKrTCjFF9tKbaFk8',
+                                         user_type='Creator')
+
+            >>> if user1: # setting the start_page of the newly created user
+            >>>     user1.landing_page = "organization"
 
         """
         if any(
@@ -10281,9 +10284,15 @@ class User(dict):
 
            # Usage example: Setting login page
 
-           >>> user1 = gis.users.get("org_data_viewer")
+           >>> user1 = gis.users.get("org_data_viewer") # approach 1: set via landing_page
 
            >>> user1.landing_page = "map"
+
+           >>> us = user.user_settings # approach 2: set via user_settings
+
+           >>> us['landingPage']['url'] = "webmap/viewer.html"
+
+           >>> user1.user_settings = us
 
         """
         value = self.user_settings.get("landingPage", {}).get("url", "")
@@ -10352,6 +10361,17 @@ class User(dict):
         ================  ==========================================================
 
         :return: dict
+
+        .. code-block:: python
+
+           # Usage example: Getting the current user settings
+
+           >>> us = user.user_settings # similar to setting the landing_page property
+
+           >>> us['landingPage']['url'] = "webmap/viewer.html"
+
+           >>> user1.user_settings = us
+
         """
         url = "%s/sharing/rest/community/users/%s/properties" % (
             self._gis._url,
