@@ -1,5 +1,6 @@
 from arcgis.gis import GIS
 from arcgis.geoenrichment import Country
+from arcgis.geoenrichment.enrichment import NamedArea
 import pandas as pd
 
 from .configtest import (
@@ -17,7 +18,7 @@ def get_san_bernardino_test(src: GIS, expectation: object):
     with expectation:
         cntry = Country('usa', gis=src)
         res = cntry.subgeographies.states['California'].counties['San_Bernardino_County']
-        assert isinstance(res, pd.DataFrame)
+        assert isinstance(res, NamedArea)
 
 
 @skip_if_no_agol

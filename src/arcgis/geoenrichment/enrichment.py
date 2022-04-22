@@ -156,7 +156,10 @@ class NamedArea(object):
         if geometry is not None:
             self.geometry = geometry
         if name is None:
-            name = country.properties.name
+            if hasattr(country.properties, "name"):
+                name = country.properties.name
+            else:
+                name = country.properties.country_name
         self._name = name
         self._level_mappings = {}
 

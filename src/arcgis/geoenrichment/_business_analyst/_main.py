@@ -843,14 +843,14 @@ class BusinessAnalyst(object):
             axis=1,
         )
         keep_cols = [
-                "iso2",
-                "iso3",
-                "country_name",
-                "datasets",
-                "default_dataset",
-                "alt_name",
-                "continent",
-            ]
+            "iso2",
+            "iso3",
+            "country_name",
+            "datasets",
+            "default_dataset",
+            "alt_name",
+            "continent",
+        ]
         cntry_df = cntry_df[keep_cols]
 
         return cntry_df
