@@ -2557,7 +2557,7 @@ class Sidecar(object):
         """
         # Remove slide and all associated children.
         self._story._properties["nodes"][self.node]["children"].remove(slide)
-        self._slide.remove(slide)
+        self._slides.remove(slide)
         self._story._delete(slide)
         self._remove_associated(slide)
 
