@@ -13663,6 +13663,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         multiple_occurrence_value=None,
         ignore_nodata=True,
         context=None,
+        argument_value=None,
+        comparison="EQUAL_TO",
+        occurrence="FIRST_OCCURRENCE",
         future=False,
         **kwargs
     ):
@@ -13683,7 +13686,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         variables: variables (str). Optional parameter.
 
         statistics_type: statisticsType (str). Optional parameter.
-           Choice list:['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
+           Choice list:['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION', 'ARGUMENT_VALUE']
 
         min_value: minValue (float). Optional parameter.
 
@@ -13697,8 +13700,13 @@ class _RasterAnalysisTools(BaseAnalytics):
 
          gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-
          future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+         argument_value: argumentValue (int). Optional parameter. Required when statistics_type is set to 'ARGUMENT_VALUE'.
+
+         comparison: comparison (str). Optional parameter.
+
+         occurrence: occurrence (str). Optional parameter.
 
         """
 
@@ -13763,6 +13771,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "ARGUMENT_MAX",
                 "ARGUMENT_MEDIAN",
                 "DURATION",
+                "ARGUMENT_VALUE"
             ]
             if [element.lower() for element in statistics_type_allowed_values].count(
                 statistics_type.lower()
@@ -13776,26 +13785,92 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if statistics_type.upper() == element:
                     statistics_type_val = element
 
+            if statistics_type.lower() == "argument_value" and argument_value is None:
+                raise RuntimeError(
+                    "argument_value is required when statistics_type is set to 'ARGUMENT_VALUE'."
+                )
+
+        comparison_val = comparison
+        if comparison is not None:
+            comparison_type_allowed_values = [
+                "EQUAL_TO",
+                "GREATER_THAN",
+                "SMALLER_THAN"
+            ]
+            if [element.lower() for element in comparison_type_allowed_values].count(
+                comparison.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "comparison can only be one of the following: "
+                    + str(comparison_type_allowed_values)
+                )
+            
+            for element in comparison_type_allowed_values:
+                if comparison.upper() == element:
+                    comparison_val = element
+
+        occurrence_val = occurrence
+        if occurrence is not None:
+            occurrence_type_allowed_values = [
+                "FIRST_OCCURRENCE",
+                "LAST_OCCURRENCE"
+            ]
+            if [element.lower() for element in occurrence_type_allowed_values].count(
+                occurrence.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "occurrence can only be one of the following: "
+                    + str(occurrence_type_allowed_values)
+                )
+            
+            for element in occurrence_type_allowed_values:
+                if occurrence.upper() == element:
+                    occurrence_val = element
+
         output_raster, output_service = self._set_output_raster(
             output_name=output_name, task=task, output_properties=kwargs
         )
 
-        gpjob = self._tbx.find_argument_statistics(
-            input_raster=input_raster,
-            output_name=output_raster,
-            dimension=dimension,
-            dimension_definition=dimension_definition_val,
-            interval_keyword=interval_keyword_val,
-            variables=variables,
-            statistics_type=statistics_type_val,
-            min_value=min_value,
-            max_value=max_value,
-            multiple_occurrence_value=multiple_occurrence_value,
-            ignore_nodata=ignore_nodata,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (current_version is not None) and current_version < 11:
+                gpjob = self._tbx.find_argument_statistics(
+                    input_raster=input_raster,
+                    output_name=output_raster,
+                    dimension=dimension,
+                    dimension_definition=dimension_definition_val,
+                    interval_keyword=interval_keyword_val,
+                    variables=variables,
+                    statistics_type=statistics_type_val,
+                    min_value=min_value,
+                    max_value=max_value,
+                    multiple_occurrence_value=multiple_occurrence_value,
+                    ignore_nodata=ignore_nodata,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
+            else:
+                gpjob = self._tbx.find_argument_statistics(
+                    input_raster=input_raster,
+                    output_name=output_raster,
+                    dimension=dimension,
+                    dimension_definition=dimension_definition_val,
+                    interval_keyword=interval_keyword_val,
+                    variables=variables,
+                    statistics_type=statistics_type_val,
+                    min_value=min_value,
+                    max_value=max_value,
+                    multiple_occurrence_value=multiple_occurrence_value,
+                    ignore_nodata=ignore_nodata,
+                    context=context,
+                    argument_value=argument_value,
+                    comparison=comparison_val,
+                    occurrence=occurrence_val,
+                    gis=self._gis,
+                    future=True,
+                )
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None

@@ -5967,6 +5967,9 @@ def find_argument_statistics(
     ignore_nodata: bool = True,
     output_name: Optional[str] = None,
     context: Optional[dict[str, Any]] = None,
+    argument_value: Optional[int] = None,
+    comparison: Optional[str] = "EQUAL_TO",
+    occurrence: Optional[str] = "FIRST_OCCURRENCE",
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -6024,6 +6027,8 @@ def find_argument_statistics(
                                              - ARGUMENT_MEDIAN : The dimension value at which the median variable value is reached will be extracted.
 
                                              - DURATION : The longest dimension duration for which the variable values fall between the minimum and maximum values.
+
+                                             - ARGUMENT_VALUE: The dimension value at which the specified variable value is reached will be extracted. 
     ------------------------------------     --------------------------------------------------------------------
     min_value                                Optional Float. The minimum variable value to be used to extract the duration.
 
@@ -6098,6 +6103,26 @@ def find_argument_statistics(
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
+    argument_value                           Optional Integer. The value at which a comparison will be made to extract 
+                                             the dimension value. This parameter is required when the statisticsType
+                                             parameter is set to ARGUMENT_VALUE.
+    ------------------------------------     --------------------------------------------------------------------
+    comparison                               Optional String. Specifies the comparison type that will be used to
+                                             extract the dimension value.
+
+                                             - EQUAL_TO : The extracted dimension is equal to the specified value. This is the default.
+
+                                             - GREATER_THAN : The extracted dimension is greater than the specified value.
+
+                                             - SMALLER_THAN : The extracted dimension is smaller than the specified value.
+    ------------------------------------     --------------------------------------------------------------------
+    occurrence                               Optional String. Specifies whether the value of the dimension will be returned the first
+                                             time or last time the argument statistic is reached.
+
+                                             - FIRST_OCCURRENCE : The value of the dimension will be returned the first time the argument statistic is reached. This is the default.
+
+                                             - LAST_OCCURRENCE : The value of the dimension will be returned the last time the argument statistic is reached.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -6169,6 +6194,9 @@ def find_argument_statistics(
         ignore_nodata=ignore_nodata,
         context=context,
         future=future,
+        argument_value=argument_value,
+        comparison=comparison,
+        occurrence=occurrence,
         **kwargs,
     )
 
