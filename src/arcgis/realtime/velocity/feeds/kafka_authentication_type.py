@@ -43,6 +43,6 @@ class SASLPlain(_KafkaAuthenticationType):
     def _build(self, feed_or_source_name: str) -> Dict[str, str]:
         return {
             f"{feed_or_source_name}.authenticationType": self._auth_type,
-            f"{feed_or_source_name}.username": self._auth_type,
-            f"{feed_or_source_name}.password": self._auth_type,
+            f"{feed_or_source_name}.username": self.username,
+            f"{feed_or_source_name}.password": self.password,
         }
