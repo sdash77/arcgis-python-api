@@ -128,6 +128,7 @@ class AutoML(object):
         algorithms=None,
         eval_metric="auto",
         n_jobs=1,
+        ml_task="auto",
     ):
         try:
             from supervised.automl import AutoML as base_AutoML
@@ -190,8 +191,21 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
+            if ml_task == "auto":
+                ml_task = self.get_ml_task(self._all_labels)
+            if ml_task == "text":
+                raise ValueError(
+                    "Dependent variable has more than 200 unique values more than half of the total records are unique, hence there is not enough information to train a model"
+                )
             if (mode == "Explain") or (mode == "Basic"):
                 explain_level = 2
+                zone_list = ["zone3_id", "zone4_id", "zone5_id", "zone6_id", "zone7_id"]
+                # try:
+                #    self._all_data_df = self._all_data_df.drop(columns=zone_list)
+                #    self._data._continuous_variables = [x for x in self._data._continuous_variables if x not in zone_list]
+                #    self._data._categorical_variables = [x for x in self._data._categorical_variables if x not in zone_list]
+                # except:
+                #    pass
             else:
                 explain_level = 0  # Setting explain level to 0 in case of Perform and Compete as EDA seems to be creating memory issues
 
@@ -215,6 +229,7 @@ class AutoML(object):
             self._model = base_AutoML(
                 results_path=result_path,
                 mode=mode,
+                ml_task=ml_task,
                 algorithms=algorithms,
                 total_time_limit=total_time_limit,
                 golden_features=False,
@@ -227,6 +242,21 @@ class AutoML(object):
             result_path = self._data.path
             self._model = base_AutoML(results_path=result_path)
             self._model._results_path = self._data.path
+
+    def get_ml_task(self, all_labels):
+        try:
+            if isinstance(all_labels[0], str):
+                unique = np.unique(all_labels, return_counts=False)
+                if len(unique) == 2:
+                    return "binary_classification"
+                elif len(unique) > 200 and len(unique) > int(0.5 * all_labels.shape[0]):
+                    return "text"
+                else:
+                    return "multiclass_classification"
+            else:
+                return "auto"
+        except:
+            return "auto"
 
     def fit(self):
         """
@@ -546,13 +576,13 @@ class AutoML(object):
         input_features=None,
         explanatory_rasters=None,
         datefield=None,
-        cell_sizes=[3, 4, 5, 6, 7],
         distance_features=None,
         output_layer_name="Prediction Layer",
         gis=None,
         prediction_type="features",
         output_raster_path=None,
         match_field_names=None,
+        cell_sizes=[3, 4, 5, 6, 7],
     ):
         """
 
@@ -665,8 +695,11 @@ class AutoML(object):
                 dataframe = add_h3(dataframe, cell_sizes)
             else:
                 dataframe = input_features.query().sdf
-
-        elif hasattr(input_features, "dataSource"):
+        elif (
+            hasattr(input_features, "dataSource")
+            or str(input_features).endswith(".shp")
+            or isinstance(input_features, tuple)
+        ):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
                 input_features,
                 distance_feature_layers,
@@ -823,78 +856,67 @@ class AutoML(object):
         default_sr = rasters[0].extent["spatialReference"]
 
         for raster in rasters:
-            point_upper = arcgis.geometry.Point(
-                {
-                    "x": raster.extent["xmin"],
-                    "y": raster.extent["ymax"],
-                    "sr": raster.extent["spatialReference"],
-                }
-            )
-            point_lower = arcgis.geometry.Point(
-                {
-                    "x": raster.extent["xmax"],
-                    "y": raster.extent["ymin"],
-                    "sr": raster.extent["spatialReference"],
-                }
-            )
-            cell_size = arcgis.geometry.Point(
-                {
-                    "x": raster.mean_cell_width,
-                    "y": raster.mean_cell_height,
-                    "sr": raster.extent["spatialReference"],
-                }
-            )
+            # try:
+            point_upper = arcpy.PointGeometry(
+                arcpy.Point(raster.extent["xmin"], raster.extent["ymax"]),
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
+            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
+            point_lower = arcpy.PointGeometry(
+                arcpy.Point(raster.extent["xmax"], raster.extent["ymin"]),
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
+            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
+            cell_size = arcpy.PointGeometry(
+                arcpy.Point(raster.mean_cell_width, raster.mean_cell_height),
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
+            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
 
-            points = arcgis.geometry.project(
-                [point_upper, point_lower, cell_size],
-                raster.extent["spatialReference"],
-                default_sr,
-            )
-            point_upper = points[0]
-            point_lower = points[1]
-            cell_size = points[2]
+            if xmin > point_upper.firstPoint.X:
+                xmin = point_upper.firstPoint.X
+            if ymax < point_upper.firstPoint.Y:
+                ymax = point_upper.firstPoint.Y
+            if xmax < point_lower.firstPoint.X:
+                xmax = point_lower.firstPoint.X
+            if ymin > point_lower.firstPoint.Y:
+                ymin = point_lower.firstPoint.Y
 
-            if xmin > point_upper.x:
-                xmin = point_upper.x
-            if ymax < point_upper.y:
-                ymax = point_upper.y
-            if xmax < point_lower.x:
-                xmax = point_lower.x
-            if ymin > point_lower.y:
-                ymin = point_lower.y
+            if min_cell_size_x > cell_size.firstPoint.X:
+                min_cell_size_x = cell_size.firstPoint.X
 
-            if min_cell_size_x > cell_size.x:
-                min_cell_size_x = cell_size.x
-
-            if min_cell_size_y > cell_size.y:
-                min_cell_size_y = cell_size.y
+            if min_cell_size_y > cell_size.firstPoint.Y:
+                min_cell_size_y = cell_size.firstPoint.Y
 
         max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
         max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
 
-        point_upper = arcgis.geometry.Point({"x": xmin, "y": ymax, "sr": default_sr})
-        cell_size = arcgis.geometry.Point(
-            {"x": min_cell_size_x, "y": min_cell_size_y, "sr": default_sr}
+        point_upper = arcpy.PointGeometry(
+            arcpy.Point(xmin, ymax), arcpy.SpatialReference(default_sr["wkid"])
+        )
+        cell_size = arcpy.PointGeometry(
+            arcpy.Point(min_cell_size_x, min_cell_size_y),
+            arcpy.SpatialReference(default_sr["wkid"]),
         )
 
         raster_data = {}
         for raster in rasters:
             field_name = raster.name
-            point_upper_translated = arcgis.geometry.project(
-                [point_upper], default_sr, raster.extent["spatialReference"]
-            )[0]
-            cell_size_translated = arcgis.geometry.project(
-                [cell_size], default_sr, raster.extent["spatialReference"]
-            )[0]
+            point_upper_translated = point_upper.projectAs(
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
+            )
+            cell_size_translated = cell_size.projectAs(
+                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
+            )
             if field_name in fields_needed:
                 raster_read = raster.read(
                     origin_coordinate=(
-                        point_upper_translated.x,
-                        point_upper_translated.y,
+                        point_upper_translated.firstPoint.X,
+                        point_upper_translated.firstPoint.Y,
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.firstPoint.X,
+                        cell_size_translated.firstPoint.Y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -912,12 +934,15 @@ class AutoML(object):
                 field_name = match_field_names.get(raster.name)
                 raster_read = raster.read(
                     origin_coordinate=(
-                        point_upper_translated.x,
-                        point_upper_translated.y,
+                        point_upper_translated.firstPoint.X,
+                        point_upper_translated.firstPoint.Y,
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.firstPoint.X,
+                        cell_size_translated.firstPoint.Y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):

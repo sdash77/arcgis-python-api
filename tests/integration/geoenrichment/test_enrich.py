@@ -22,7 +22,7 @@ from .configtest import (
 
 # root tests
 def enrich_test(enrich_src: Country, geom: Union[pd.DataFrame, pd.Series, Iterable],
-                enrich_vars: pd.DataFrame, expectation: object, std_geo_lvl: Union[str, int] = None,
+                enrich_vars: Union[pd.DataFrame, list], expectation: object, std_geo_lvl: Union[str, int] = None,
                 std_geo_id_col: str = None, prx_typ: str = None, prx_val: Union[int, float] = None,
                 prx_mtrc: str = None) -> None:
     with expectation:
@@ -33,13 +33,17 @@ def enrich_test(enrich_src: Country, geom: Union[pd.DataFrame, pd.Series, Iterab
                                        proximity_metric=prx_mtrc)
         assert isinstance(enrich_res, pd.DataFrame)
         assert enrich_res.spatial.validate()
-        enrich_var_cols = [pep8ify(val) for val in enrich_vars['enrich_field_name']]
+
+        if isinstance(enrich_vars, list):
+            enrich_vars = enrich_src._ba_cntry.get_enrich_variables_from_iterable(enrich_vars)
+
+        enrich_var_cols = [pep8ify(val) for val in enrich_vars['name']]
         enrich_res_cols = list(enrich_res.columns)
         assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
 
 
 def enrich_do_not_return_geom_test(enrich_src: Country, geom_df: pd.DataFrame,
-                                   enrich_vars: pd.DataFrame, expectation: object,
+                                   enrich_vars: Union[pd.DataFrame, list], expectation: object,
                                    std_geo_lvl: Union[str, int] = None, std_geo_id_col: str = None) -> None:
     with expectation:
         enrich_res = enrich_src.enrich(geom_df, enrich_vars, standard_geography_level=std_geo_lvl,
@@ -132,6 +136,17 @@ def test_enrich_usa_stdgeo_df_local(usa_local, polygon_df, usa_local_enrich_vars
 
 
 @skip_if_no_local
+def test_enrich_usa_variable_name_list_local(usa_local, polygon_df):
+    enrich_test(usa_local, polygon_df, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
+
+
+def test_enrich_usa_after_can_variable_name_list_local(usa_local, polygon_df):
+    import arcpy
+    arcpy.env.baDataSource = "LOCAL;;CAN_ESRI_2021"
+    enrich_test(usa_local, polygon_df, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
+
+
+@skip_if_no_local
 def test_enrich_json_local(usa_local, usa_local_enrich_vars):
     enrich_json_input_test(usa_local, usa_local_enrich_vars, pytest.raises(ValueError))
 
@@ -199,3 +214,8 @@ def test_enrich_usa_point_drivetime_agol(usa_agol, point_df, usa_agol_enrich_var
 @skip_if_no_agol
 def test_enrich_json_agol(usa_agol, polygon_df, usa_agol_enrich_vars):
     enrich_json_input_test(usa_agol, usa_agol_enrich_vars, does_not_raise())
+
+
+@skip_if_no_agol
+def test_enrich_usa_variable_name_list_local(usa_agol, polygon_df):
+    enrich_test(usa_agol, polygon_df, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())

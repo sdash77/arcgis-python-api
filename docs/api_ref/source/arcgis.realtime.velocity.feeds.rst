@@ -129,6 +129,20 @@ SASLPlain
     :undoc-members:
     :exclude-members:
 
+SaslScramSha256
+-------------------------
+.. autoclass:: arcgis.realtime.velocity.feeds.SaslScramSha256
+    :members:
+    :undoc-members:
+    :exclude-members:
+
+SaslScramSha512
+-------------------------
+.. autoclass:: arcgis.realtime.velocity.feeds.SaslScramSha512
+    :members:
+    :undoc-members:
+    :exclude-members:
+
 XYZGeometry
 -------------------------
 .. autoclass:: arcgis.realtime.velocity.feeds.XYZGeometry

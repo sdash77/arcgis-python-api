@@ -13,7 +13,7 @@ from .._utils.env import (
     raise_tensorflow_import_error,
     _LAMBDA_TEXT_CLASSIFICATION,
     is_arcgispronotebook,
-    reload_IPython
+    reload_IPython,
 )
 from warnings import warn
 import contextlib

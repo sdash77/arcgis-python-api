@@ -643,6 +643,9 @@ def merge_emd_and_stats(data_folders):
     # Create master EMD and esri_accumulated_stats
     emd = emd_store[emd_keys[0]]
     eas = stats_store[emd_keys[0]]
+    if not "NumTilesAsDouble" in eas:
+        eas["NumTilesAsDouble"] = eas["NumTiles"]
+        del eas["NumTiles"]
     _class_hash = {x["Value"]: x for x in emd["Classes"]}
     for k in emd_keys[1:]:
         _emd = emd_store[k]
@@ -671,8 +674,10 @@ def merge_emd_and_stats(data_folders):
                 eas["BandStatsState"][i]["Num"] + _eas["BandStatsState"][i]["Num"]
             )  # Number of pixels
         eas["NumClasses"] = max(eas["NumClasses"], _eas["NumClasses"])
-        eas["NumTiles"] += _eas["NumTiles"]
-        #
+        if "NumTiles" in _eas:
+            eas["NumTilesAsDouble"] += _eas["NumTiles"]
+        else:
+            eas["NumTilesAsDouble"] += _eas["NumTilesAsDouble"]
         stats_key1 = None
         stats_key1_1 = None
         stats_key2 = None

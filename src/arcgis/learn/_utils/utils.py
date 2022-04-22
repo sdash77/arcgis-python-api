@@ -12,3 +12,12 @@ def extract_zipfile(filepath, filename, remove=False):
         zip_ref.extractall(filepath)
     if remove:
         os.remove(os.path.join(filepath, filename))
+
+
+def arcpy_localization_helper(msg, id, msg_type="ERROR"):
+    try:
+        import arcpy
+
+        arcpy.AddIDMessage(msg_type, id)
+    except:
+        return msg

@@ -2986,14 +2986,17 @@ class UserManager(object):
             Data Editor         iBBBBBBBBBBBBBBB
             CustomRole          bKrTCjFF9tKbaFk8
 
-            >>> gis.users.create(username='new_user_1',
-                                            password='<strong_password>',
-                                            firstname='New',
-                                            lastname='User',
-                                            email='namee@organization.com',
-                                            description='User with custom role assigned',
-                                            role='bKrTCjFF9tKbaFk8',
-                                            user_type='Creator')
+            >>> user1 = gis.users.create(username='new_user_1',
+                                         password='<strong_password>',
+                                         firstname='New',
+                                         lastname='User',
+                                         email='namee@organization.com',
+                                         description='User with custom role assigned',
+                                         role='bKrTCjFF9tKbaFk8',
+                                         user_type='Creator')
+
+            >>> if user1: # setting the start_page of the newly created user
+            >>>     user1.landing_page = "organization"
 
         """
         if any(
@@ -10243,7 +10246,7 @@ class User(dict):
             "cultureFormat": culture_format,
             "region": region,
         }
-        if security_answer and security_question:
+        if security_answer and not security_question is None:
             params["securityQuestionIdx"] = security_question
             params["securityAnswer"] = security_answer
         for k, v in copy.copy(params).items():
@@ -10254,8 +10257,8 @@ class User(dict):
             files = {"thumbnail": thumbnail}
         else:
             files = None
-        url = "%s/sharing/rest/community/users/%s/update" % (
-            self._gis._url,
+        url = "%scommunity/users/%s/update" % (
+            self._gis._portal.resturl,
             self._user_id,
         )
         ret = self._gis._con.post(path=url, postdata=params, files=files)
@@ -10281,9 +10284,15 @@ class User(dict):
 
            # Usage example: Setting login page
 
-           >>> user1 = gis.users.get("org_data_viewer")
+           >>> user1 = gis.users.get("org_data_viewer") # approach 1: set via landing_page
 
            >>> user1.landing_page = "map"
+
+           >>> us = user.user_settings # approach 2: set via user_settings
+
+           >>> us['landingPage']['url'] = "webmap/viewer.html"
+
+           >>> user1.user_settings = us
 
         """
         value = self.user_settings.get("landingPage", {}).get("url", "")
@@ -10352,6 +10361,17 @@ class User(dict):
         ================  ==========================================================
 
         :return: dict
+
+        .. code-block:: python
+
+           # Usage example: Getting the current user settings
+
+           >>> us = user.user_settings # similar to setting the landing_page property
+
+           >>> us['landingPage']['url'] = "webmap/viewer.html"
+
+           >>> user1.user_settings = us
+
         """
         url = "%s/sharing/rest/community/users/%s/properties" % (
             self._gis._url,
@@ -11609,6 +11629,12 @@ class Item(dict):
 
         """
         if self._gis._con.token:
+            data_path = (
+                "content/items/"
+                + self.itemid
+                + f"/data"  # "?token={self._gis._con.token}"
+            )
+        else:
             data_path = (
                 "content/items/"
                 + self.itemid
@@ -13017,8 +13043,7 @@ class Item(dict):
                         res = pd.DataFrame(
                             res["data"][0]["num"], columns=["Date", "Usage"]
                         )
-                        res.Date = res.astype(float) / 1000
-                        res.Date = res.Date.apply(lambda x: datetime.fromtimestamp(x))
+                        res.Date = pd.to_datetime(res["Date"], unit="ms")
                         res.Usage = res.Usage.astype(int)
 
                 results.append(res)
@@ -13065,8 +13090,7 @@ class Item(dict):
                         res = pd.DataFrame(
                             res["data"][0]["num"], columns=["Date", "Usage"]
                         )
-                        res.Date = res.astype(float) / 1000
-                        res.Date = res.Date.apply(lambda x: datetime.fromtimestamp(x))
+                        res.Date = pd.to_datetime(res["Date"], unit="ms")
                         res.Usage = res.Usage.astype(int)
 
                 results.append(res)
@@ -13099,8 +13123,7 @@ class Item(dict):
                     df = pd.DataFrame([], columns=["Date", "Usage"])
                 elif len(res["data"]):
                     df = pd.DataFrame(res["data"][0]["num"], columns=["Date", "Usage"])
-                    df.Date = df.Date.astype(float) / 1000
-                    df.Date = df.Date.apply(lambda x: datetime.fromtimestamp(x))
+                    res.Date = pd.to_datetime(res["Date"], unit="ms")
                     df.Usage = df.Usage.astype(int)
                 return df
             return res
@@ -13661,11 +13684,14 @@ class Item(dict):
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": "Query"},
                 }
-
-        elif fileType in [
-            "csv",
-            "excel",
-        ]:  # merge users passed-in publish parameters with analyze results
+        elif (
+            fileType
+            in [
+                "csv",
+                "excel",
+            ]
+            and overwrite is False
+        ):  # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
 
             res = self._gis.content.analyze(item=self, file_type=fileType)
@@ -13688,21 +13714,14 @@ class Item(dict):
                             publish_parameters["layerInfo"]
                         )
 
-                # check if layers key exist. If not, add empty array to avoid error in update
-                if "layers" not in publish_parameters_orig:
-                    publish_parameters_orig["layers"] = []
-
-                # update layers but layer index must match
-                # update the layers otherwise general update will overwrite nested dictionary
-                for idx, lyr in enumerate(publish_parameters["layers"]):
-                    lyr.update(publish_parameters_orig["layers"][idx])
-
-                # delete since already updated and avoid overwritting
-                if "layers" in publish_parameters_orig:
-                    del publish_parameters_orig["layers"]
-
-                # do general update
+                # do general update and assign service name
                 publish_parameters.update(publish_parameters_orig)
+                service_name = re.sub(r"[\W_]+", "_", self["title"])
+                publish_parameters.update({"name": service_name})
+                if not self._gis.content.is_service_name_available(
+                    publish_parameters["name"], "featureService"
+                ):
+                    raise Exception("Service name already exists in your org.")
 
         ret = self._portal.publish_item(
             self.itemid,
