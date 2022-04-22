@@ -1948,7 +1948,7 @@ def clip(
     --------------------------------     --------------------------------------------------------------------
     clipping_raster                          Optional Raster/ImageryLayer object. Specifies the raster from which the extent needs to be used for clipping.
     --------------------------------     --------------------------------------------------------------------
-    use_input_geometry               Optional boolean. If True, the function uses the clip geometry defined by the geometry parameter. This is the default.
+    use_input_geometry                       Optional boolean. If True, the function uses the clip geometry defined by the geometry parameter. This is the default.
                                              If False, the function uses the extent of the clip geometry defined by the geometry parameter.
     ================================     ====================================================================
 
