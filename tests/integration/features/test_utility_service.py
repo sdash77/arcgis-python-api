@@ -10,7 +10,7 @@ import json
 with open(r"tests\integration\features\services_config.json") as json_data_file:
     data = json.load(json_data_file)
 
-gis = GIS(data["utility_network"]["url"], data["utility_network"]["username"], data["utility_network"]["password"])
+gis = GIS("https://utilitynetwork.esri.com/portal", "AChapkowski", "AChapkowski1!")
 version = Version("https://utilitynetwork.esri.com/server/rest/services/GettingToKnow_Oracle/FeatureServer", gis)
 utility_net = UtilityNetworkManager("https://utilitynetwork.esri.com/server/rest/services/GettingToKnow_Oracle/FeatureServer/500001", version, gis)
 class TestUtilityNetworkManager(unittest.TestCase):
