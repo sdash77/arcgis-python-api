@@ -180,7 +180,7 @@ class Server(BaseServer):
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def publish_sd(self, sd_file, folder=None, service_config=None):
+    def publish_sd(self, sd_file, folder=None, service_config=None, future=False):
         """
         Publishes a service definition file to ArcGIS Server.
 
@@ -195,10 +195,14 @@ class Server(BaseServer):
                                to the System folder.
         ------------------     --------------------------------------------------------------------
         service_config         Optional Dict[str, Any]. A set of configuration overwrites that overrides the service definitions defaults.
+        ------------------     --------------------------------------------------------------------
+        future                 Optional boolean. If True, the operation is returned immediately and a Job object is returned.
         ==================     ====================================================================
 
         :return:
-           A boolean indicating success (True) or failure (False).
+           If future=False, A boolean indicating success (True) or failure (False).
+           else when future=True, a Future object is returned.
+
         """
         import json
 
@@ -224,10 +228,18 @@ class Server(BaseServer):
                 if "folderName" in config:
                     config["folderName"] = folder
                 res = service.publish_service_definition(
-                    in_sdp_id=uid, in_config_overwrite=json.dumps(config)
+                    in_sdp_id=uid,
+                    in_config_overwrite=json.dumps(config),
+                    future=True,
+                    gis=self._con,
                 )
             else:
-                res = service.publish_service_definition(in_sdp_id=uid)
+                res = service.publish_service_definition(
+                    in_sdp_id=uid, future=True, gis=self._con
+                )
+            if future:
+                return res
+            res = res.result()
             return True
         return False
 
