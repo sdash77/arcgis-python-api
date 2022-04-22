@@ -337,9 +337,9 @@ def _inspect_tool(taskprops, map_as_result):
 
     helpstring = r" \n\t\n"
     if "docstring" in taskprops:
-        helpstring += fr"{_strip_html(taskprops['docstring'])}"
+        helpstring += rf"{_strip_html(taskprops['docstring'])}"
     if "description" in taskprops:
-        helpstring += fr"{_strip_html(taskprops['description'])}"  # _strip_html(taskprops["description"])
+        helpstring += rf"{_strip_html(taskprops['description'])}"  # _strip_html(taskprops["description"])
 
     helpstring = helpstring + "\n\nParameters:"
 
