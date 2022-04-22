@@ -668,7 +668,7 @@ class _PAMBlock(nn.Module):
             )
 
             sim_map = torch.bmm(query_local, key_local)  # batch matrix multiplication
-            sim_map = (self.key_channels**-0.5) * sim_map
+            sim_map = (self.key_channels ** -0.5) * sim_map
             sim_map = F.softmax(sim_map, dim=-1)
 
             context_local = torch.bmm(value_local, sim_map.permute(0, 2, 1))
@@ -826,7 +826,7 @@ class BAM(nn.Module):
             m_batchsize, -1, width * height
         )  # B X C x (*W*H)/(ds*ds)
         energy = torch.bmm(proj_query, proj_key)  # transpose check
-        energy = (self.key_channel**-0.5) * energy
+        energy = (self.key_channel ** -0.5) * energy
 
         attention = self.softmax(energy)  # BX (N) X (N)/(ds*ds)/(ds*ds)
 
@@ -997,7 +997,7 @@ def __fast_hist(label_gt, label_pred, num_classes):
     mask = (label_gt >= 0) & (label_gt < num_classes)
     hist = np.bincount(
         num_classes * label_gt[mask].astype(int) + label_pred[mask],
-        minlength=num_classes**2,
+        minlength=num_classes ** 2,
     ).reshape(num_classes, num_classes)
     return hist
 

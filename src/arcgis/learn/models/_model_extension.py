@@ -675,7 +675,7 @@ class ModelExtension(ArcGISModel):
             rows = len(self._data.valid_ds)
 
         ds_type = DatasetType.Valid
-        n_items = rows**2 if self.learn.data.train_ds.x._square_show_res else rows
+        n_items = rows ** 2 if self.learn.data.train_ds.x._square_show_res else rows
         if self.learn.dl(ds_type).batch_size < n_items:
             n_items = self.learn.dl(ds_type).batch_size
         ds = self.learn.dl(ds_type).dataset

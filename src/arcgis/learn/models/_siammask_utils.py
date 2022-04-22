@@ -812,7 +812,7 @@ class Anchors:
         self.__dict__.update(cfg)
 
         self.anchor_num = (
-            len(self.scales) * len(self.ratios) * (self.anchor_density**2)
+            len(self.scales) * len(self.ratios) * (self.anchor_density ** 2)
         )
         self.anchors = None  # in single position (anchor_num*4)
         self.all_anchors = None  # in all position 2*(4*anchor_num*h*w)
@@ -1069,7 +1069,7 @@ class MaskCorr(Mask):
     def __init__(self, oSz=63):
         super(MaskCorr, self).__init__()
         self.oSz = oSz
-        self.mask = DepthCorr(256, 256, self.oSz**2)
+        self.mask = DepthCorr(256, 256, self.oSz ** 2)
 
     def forward(self, z, x):
         return self.mask(z, x)

@@ -228,7 +228,7 @@ class NGram:
         return np.all(np.array(self.ngram) == np.array(other.ngram))
 
     def __hash__(self):
-        return int(sum([o * self.max_n**i for i, o in enumerate(self.ngram)]))
+        return int(sum([o * self.max_n ** i for i, o in enumerate(self.ngram)]))
 
 
 def get_grams(x, n, max_n=5000):

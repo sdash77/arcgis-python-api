@@ -97,8 +97,8 @@ class Tracker:  # class for Kalman Filter-based tracker
         # Initialize the process covariance
         self.Q_comp_mat = np.array(
             [
-                [self.dt**4 / 4.0, self.dt**3 / 2.0],
-                [self.dt**3 / 2.0, self.dt**2],
+                [self.dt ** 4 / 4.0, self.dt ** 3 / 2.0],
+                [self.dt ** 3 / 2.0, self.dt ** 2],
             ]
         )
         self.Q = block_diag(

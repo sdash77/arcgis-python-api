@@ -128,7 +128,7 @@ class AutoML(object):
         algorithms=None,
         eval_metric="auto",
         n_jobs=1,
-        ml_task='auto'
+        ml_task="auto",
     ):
         try:
             from supervised.automl import AutoML as base_AutoML

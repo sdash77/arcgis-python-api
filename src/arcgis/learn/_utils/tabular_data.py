@@ -868,7 +868,7 @@ class TabularDataObject(object):
                 seq_len, False, False
             )
 
-            n_items = rows**2
+            n_items = rows ** 2
             if n_items > len(X_train):
                 n_items = len(X_train)
 
@@ -1148,7 +1148,7 @@ class TabularDataObject(object):
         else:
             sdf = pd.DataFrame()
             data_type = arcpy.Describe(input_features).dataType
-            if data_type in ["TableView","TextFile"]:
+            if data_type in ["TableView", "TextFile"]:
                 sdf = pd.DataFrame.spatial.from_table(str(input_features))
         rasters_data = {}
         if data_source:

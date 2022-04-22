@@ -18,7 +18,7 @@ class _TSInceptionBlock(nn.Module):
             nn.Conv1d(input, bottleneck, 1) if bottleneck and input > 1 else noop
         )
 
-        kss = [ks // (2**i) for i in range(3)]
+        kss = [ks // (2 ** i) for i in range(3)]
         kss = [ksi if ksi % 2 != 0 else ksi - 1 for ksi in kss]
 
         self.conv_layers = nn.ModuleList(

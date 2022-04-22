@@ -112,7 +112,7 @@ def _plotOrientationOnImage(ax, orientMap, image, bin_size=20):
     V = orientmap_xy[:, :, 1]
     X, Y = np.meshgrid(np.arange(U.shape[0]), np.arange(U.shape[1]))
     M = np.zeros(U.shape, dtype="bool")
-    M[U**2 + V**2 < 0.5 * 0.5] = True
+    M[U ** 2 + V ** 2 < 0.5 * 0.5] = True
     U = ma.masked_array(U, mask=M)
     V = ma.masked_array(V, mask=M)
 

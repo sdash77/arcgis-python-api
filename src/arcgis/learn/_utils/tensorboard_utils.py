@@ -108,7 +108,7 @@ class ArcGISTBCallback(
 
     def show_results(self, ds_type=DatasetType.Valid, rows: int = 5, **kwargs):
         "Show `rows` result of predictions on `ds_type` dataset."
-        n_items = rows**2 if self.data.train_ds.x._square_show_res else rows
+        n_items = rows ** 2 if self.data.train_ds.x._square_show_res else rows
         if self.dl(ds_type).batch_size < n_items:
             n_items = self.dl(ds_type).batch_size
         ds = self.dl(ds_type).dataset
@@ -341,14 +341,14 @@ class ArcGISTBCallback(
             ds_type, detach=False, denorm=False
         )
         ds = self._arcgis_model.learn.dl(ds_type).dataset
-        if xb.shape[0] < rows**2:
+        if xb.shape[0] < rows ** 2:
             ds_type = DatasetType.Train
             xb, yb = self._arcgis_model.learn.data.one_batch(
                 ds_type, detach=False, denorm=False
             )
             ds = self._arcgis_model.learn.dl(ds_type).dataset
         n_items = (
-            rows**2
+            rows ** 2
             if self._arcgis_model.learn.data.train_ds.x._square_show_res
             else rows
         )

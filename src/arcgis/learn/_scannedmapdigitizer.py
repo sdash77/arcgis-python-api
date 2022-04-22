@@ -367,7 +367,7 @@ def calculate_diagonal_length(length, height):
         length_diag: Length of the diagonal
     """
 
-    length_diag = math.sqrt(length**2 + height**2)
+    length_diag = math.sqrt(length ** 2 + height ** 2)
 
     return length_diag
 
