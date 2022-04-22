@@ -394,6 +394,38 @@ class WebMap(HasTraits, collections.OrderedDict):
                 "Layer must be part of WebMap's Operational Layers in order to add it as a basemap"
             )
 
+    def move_from_basemap(self, layer):
+        """
+        Move a layer from the basemap layers to the operational layers. The reverse process of
+        `move_to_basemap`.
+
+        =====================       ===================================================================
+        **Argument**                **Definition**
+        ---------------------       -------------------------------------------------------------------
+        layer                       Required Dictionary. The layer dictionary that will be sent to
+                                    operational layers. This dictionary is found when calling the `definition`
+                                    property on the WebMap. The layer must already be a part of the baseMapLayers.
+        =====================       ===================================================================
+
+        :return: The WebMap definition if successful, else an error.
+
+        .. code-block:: python
+
+            wm = WebMap(<webmap_item_id>)
+            layer = wm.definition["baseMap"]["baseMapLayer"][0]
+            wm.move_from_basemap(layer)
+            wm.update()
+        """
+        if layer in self.definition["baseMap"]["baseMapLayers"]:
+            self._webmapdict["baseMap"]["baseMapLayers"].remove(layer)
+            self._webmapdict["operationalLayers"].append(layer)
+            self.definition = _mixins.PropertyMap(self._webmapdict)
+            return self.definition
+        else:
+            raise Error(
+                "Layer must be part of WebMap's BaseMap Layers in order to add it as an Operational Layer"
+            )
+
     def add_layer(
         self,
         layer: Union[
