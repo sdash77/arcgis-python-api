@@ -842,22 +842,7 @@ class BusinessAnalyst(object):
             inplace=True,
             axis=1,
         )
-        cntry_df.drop(
-            columns=[
-                "distanceUnits",
-                "esriUnits",
-                "hierarchies",
-                "currencySymbol",
-                "currencyFormat",
-                "defaultDataCollection",
-                "dataCollections",
-                "defaultReportTemplate",
-                "defaultExtent",
-            ],
-            inplace=True,
-        )
-        cntry_df = cntry_df[
-            [
+        keep_cols = [
                 "iso2",
                 "iso3",
                 "country_name",
@@ -866,7 +851,7 @@ class BusinessAnalyst(object):
                 "alt_name",
                 "continent",
             ]
-        ]
+        cntry_df = cntry_df[keep_cols]
 
         return cntry_df
 
