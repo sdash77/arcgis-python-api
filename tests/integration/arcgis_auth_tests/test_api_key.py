@@ -1,6 +1,5 @@
 import sys, os
 
-sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
 import unittest
 from arcgis.auth import EsriAPIKeyAuth
 
@@ -25,7 +24,7 @@ class TestAPIKey(unittest.TestCase):
 
     def test_api_key_login(self):
         gis = GIS(url=SITE_URL, api_key=API_KEY)
-        assert gis._con._auth == "USER_TOKEN"
+        assert gis._con._auth == "API_KEY"
         assert gis.properties["appInfo"]["appOwner"]
 
 

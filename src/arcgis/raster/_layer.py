@@ -677,6 +677,7 @@ class ImageryLayer(Layer):
         self._tiles_only = None
         self._extent_set = False
         self._original_info = {}
+        self._rendering_rule_from_item = False
 
     @property
     def rasters(self):
@@ -5207,7 +5208,7 @@ class ImageryLayer(Layer):
                             G.edge(
                                 str(nodenumber),
                                 str(connect),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -5228,7 +5229,7 @@ class ImageryLayer(Layer):
                             G.edge(
                                 str(nodenumber),
                                 str(connect),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -5265,7 +5266,7 @@ class ImageryLayer(Layer):
                             G.edge(
                                 str(nodenumber),
                                 str(connect),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -5284,7 +5285,7 @@ class ImageryLayer(Layer):
                             G.edge(
                                 str(nodenumber),
                                 str(connect),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -5306,7 +5307,7 @@ class ImageryLayer(Layer):
                     G.edge(
                         str(nodenumber),
                         str(connect),
-                        color="silver",
+                        color="#BEBEBE",
                         arrowsize="0.9",
                         penwidth="1",
                     )
@@ -5330,7 +5331,7 @@ class ImageryLayer(Layer):
                         G.edge(
                             str(nodenumber),
                             str(connect),
-                            color="silver",
+                            color="#BEBEBE",
                             arrowsize="0.9",
                             penwidth="1",
                         )
@@ -5351,7 +5352,7 @@ class ImageryLayer(Layer):
                 G.edge(
                     str(nodenumber),
                     str(root),
-                    color="silver",
+                    color="#BEBEBE",
                     arrowsize="0.9",
                     penwidth="1",
                 )
@@ -5398,7 +5399,7 @@ class ImageryLayer(Layer):
                                     G.edge(
                                         str(nodenumber),
                                         str(connect),
-                                        color="silver",
+                                        color="#BEBEBE",
                                         arrowsize="0.9",
                                         penwidth="1",
                                     )
@@ -5448,7 +5449,7 @@ class ImageryLayer(Layer):
                                             G.edge(
                                                 str(nodenumber),
                                                 str(connect),
-                                                color="silver",
+                                                color="#BEBEBE",
                                                 arrowsize="0.9",
                                                 penwidth="1",
                                             )
@@ -5520,7 +5521,7 @@ class ImageryLayer(Layer):
                             G.edge(
                                 str(root),
                                 str(dg_root),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -5573,7 +5574,7 @@ class ImageryLayer(Layer):
                                         G.edge(
                                             str(root),
                                             str(dg_root),
-                                            color="silver",
+                                            color="#BEBEBE",
                                             arrowsize="0.9",
                                             penwidth="1",
                                         )
@@ -5632,7 +5633,7 @@ class ImageryLayer(Layer):
                             G.edge(
                                 str(dict_arg.get(k_check)),
                                 str(childnode),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -5654,7 +5655,7 @@ class ImageryLayer(Layer):
                         G.edge(
                             str(nodenumber),
                             str(childnode),
-                            color="silver",
+                            color="#BEBEBE",
                             arrowsize="0.9",
                             penwidth="1",
                         )
@@ -5705,7 +5706,7 @@ class ImageryLayer(Layer):
                                 G.edge(
                                     str(nodenumber),
                                     str(childnode),
-                                    color="silver",
+                                    color="#BEBEBE",
                                     arrowsize="0.9",
                                     penwidth="1",
                                 )
@@ -5727,7 +5728,7 @@ class ImageryLayer(Layer):
                                 G.edge(
                                     str(nodenumber),
                                     str(childnode),
-                                    color="silver",
+                                    color="#BEBEBE",
                                     arrowsize="0.9",
                                     penwidth="1",
                                 )
@@ -5768,7 +5769,7 @@ class ImageryLayer(Layer):
                                     G.edge(
                                         str(nodenumber),
                                         str(childnode),
-                                        color="silver",
+                                        color="#BEBEBE",
                                         arrowsize="0.9",
                                         penwidth="1",
                                     )
@@ -5789,7 +5790,7 @@ class ImageryLayer(Layer):
                                 G.edge(
                                     str(nodenumber),
                                     str(childnode),
-                                    color="silver",
+                                    color="#BEBEBE",
                                     arrowsize="0.9",
                                     penwidth="1",
                                 )
@@ -5813,7 +5814,7 @@ class ImageryLayer(Layer):
                             G.edge(
                                 str(nodenumber),
                                 str(childnode),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -5837,7 +5838,7 @@ class ImageryLayer(Layer):
                                 G.edge(
                                     str(nodenumber),
                                     str(childnode),
-                                    color="silver",
+                                    color="#BEBEBE",
                                     arrowsize="0.9",
                                     penwidth="1",
                                 )
@@ -5861,7 +5862,7 @@ class ImageryLayer(Layer):
                                 G.edge(
                                     str(nodenumber),
                                     str(childnode),
-                                    color="silver",
+                                    color="#BEBEBE",
                                     arrowsize="0.9",
                                     penwidth="1",
                                 )
@@ -5882,7 +5883,7 @@ class ImageryLayer(Layer):
                                 G.edge(
                                     str(nodenumber),
                                     str(childnode),
-                                    color="silver",
+                                    color="#BEBEBE",
                                     arrowsize="0.9",
                                     penwidth="1",
                                 )
@@ -5909,7 +5910,7 @@ class ImageryLayer(Layer):
                                     G.edge(
                                         str(nodenumber),
                                         str(childnode),
-                                        color="silver",
+                                        color="#BEBEBE",
                                         arrowsize="0.9",
                                         penwidth="1",
                                     )
@@ -5947,7 +5948,7 @@ class ImageryLayer(Layer):
                         G.edge(
                             str(nodenumber),
                             str(childnode),
-                            color="silver",
+                            color="#BEBEBE",
                             arrowsize="0.9",
                             penwidth="1",
                         )
@@ -5967,7 +5968,7 @@ class ImageryLayer(Layer):
                         G.edge(
                             str(nodenumber),
                             str(childnode),
-                            color="silver",
+                            color="#BEBEBE",
                             arrowsize="0.9",
                             penwidth="1",
                         )
@@ -5989,7 +5990,7 @@ class ImageryLayer(Layer):
                     G.edge(
                         str(nodenumber),
                         str(childnode),
-                        color="silver",
+                        color="#BEBEBE",
                         arrowsize="0.9",
                         penwidth="1",
                     )
@@ -6008,7 +6009,7 @@ class ImageryLayer(Layer):
                     G.edge(
                         str(nodenumber),
                         str(childnode),
-                        color="silver",
+                        color="#BEBEBE",
                         arrowsize="0.9",
                         penwidth="1",
                     )
@@ -6061,7 +6062,7 @@ class ImageryLayer(Layer):
                                                 G.edge(
                                                     str(nodenumber),
                                                     str(childnode),
-                                                    color="silver",
+                                                    color="#BEBEBE",
                                                     arrowsize="0.9",
                                                     penwidth="1",
                                                 )
@@ -6094,7 +6095,7 @@ class ImageryLayer(Layer):
                                             G.edge(
                                                 str(nodenumber),
                                                 str(childnode),
-                                                color="silver",
+                                                color="#BEBEBE",
                                                 arrowsize="0.9",
                                                 penwidth="1",
                                             )
@@ -6113,7 +6114,7 @@ class ImageryLayer(Layer):
                                     G.edge(
                                         str(nodenumber),
                                         str(childnode),
-                                        color="silver",
+                                        color="#BEBEBE",
                                         arrowsize="0.9",
                                         penwidth="1",
                                     )
@@ -6530,8 +6531,11 @@ class ImageryLayer(Layer):
                     if (
                         (hasattr(self, "_lazy_token")) and self._lazy_token is None
                     ) or not hasattr(self, "_lazy_token"):
-                        token = self._gis._con._create_token(self._url)
-                        self._lazy_token = token
+                        from .functions.utility import _generate_layer_token
+
+                        token = _generate_layer_token(self, self._url)
+                        if token is not None:
+                            self._lazy_token = token
                 except Exception as e:
                     token = self._token
                 try:

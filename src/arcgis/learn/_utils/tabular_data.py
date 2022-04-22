@@ -22,6 +22,7 @@ try:
     from fastai.data_block import DatasetType
     import torch
     import pandas as pd
+    from .utils import arcpy_localization_helper
 
     HAS_FASTAI = True
 
@@ -46,6 +47,7 @@ try:
         LabelEncoder,
         MinMaxScaler,
         StandardScaler,
+        OrdinalEncoder,
     )
 except:
     HAS_SK_LEARN = False
@@ -75,6 +77,7 @@ class TabularDataObject(object):
         feature_variables=None,
         raster_variables=None,
         date_field=None,
+        cell_sizes=[3, 4, 5, 6, 7],
         distance_feature_layers=None,
         procs=None,
         val_split_pct=0.1,
@@ -100,6 +103,7 @@ class TabularDataObject(object):
             feature_variables,
             raster_variables,
             date_field,
+            cell_sizes,
             distance_feature_layers,
             index_field,
         )
@@ -122,6 +126,19 @@ class TabularDataObject(object):
         tabular_data._dependent_variable = tabular_data._field_mapping[
             "dependent_variable"
         ]
+        if (
+            tabular_data._dataframe[tabular_data._dependent_variable]
+            .isnull()
+            .values.any()
+        ):
+            msg = arcpy_localization_helper(
+                "Rows having null values in dependent variable are removed and model will be trained with remaining data",
+                260145,
+                "WARNING",
+            )
+            tabular_data._dataframe = tabular_data._dataframe[
+                ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
+            ]
         tabular_data._index_data = tabular_data._field_mapping["index_data"]
         tabular_data._index_field = index_field
 
@@ -344,9 +361,12 @@ class TabularDataObject(object):
         labels = df[self._dependent_variable]
 
         if labels.isna().sum().sum() != 0:
-            raise Exception(
-                "You have some missing values in dependent variable column."
+            msg = arcpy_localization_helper(
+                "You have some missing values in dependent variable column.",
+                260144,
+                "ERROR",
             )
+            raise ValueError(msg)
 
         unique_labels = labels.unique()
 
@@ -425,14 +445,27 @@ class TabularDataObject(object):
         if self._categorical_variables:
             mapping = {}
             for variable in self._categorical_variables:
-                labelEncoder = LabelEncoder()
+                labelEncoder = OrdinalEncoder(
+                    handle_unknown="use_encoded_value", unknown_value=-1
+                )
                 dataframe[variable] = np.array(
-                    labelEncoder.fit_transform(dataframe[variable]), dtype="int64"
+                    labelEncoder.fit_transform(
+                        dataframe[variable].values.reshape(-1, 1)
+                    ),
+                    dtype="int64",
                 )
                 mapping[variable] = labelEncoder
             self._encoder_mapping = mapping
 
-        processed_data = _procs.fit_transform(dataframe)
+        try:
+            processed_data = _procs.fit_transform(dataframe)
+        except:
+            msg = arcpy_localization_helper(
+                "Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.",
+                260143,
+                "ERROR",
+            )
+            raise ValueError(msg)
 
         training_data = processed_data.take(self._training_indexes, axis=0)
         training_labels = None
@@ -777,7 +810,8 @@ class TabularDataObject(object):
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
                 dataframe[variable] = np.array(
-                    encoder.fit_transform(dataframe[variable]), dtype="int64"
+                    encoder.fit_transform(dataframe[variable].values.reshape(-1, 1)),
+                    dtype="int64",
                 )
 
         if fit:
@@ -903,6 +937,7 @@ class TabularDataObject(object):
         feature_variables=None,
         raster_variables=None,
         date_field=None,
+        cell_sizes=[3, 4, 5, 6, 7],
         distance_feature_layers=None,
         index_field=None,
     ):
@@ -1002,6 +1037,7 @@ class TabularDataObject(object):
         dataframe, index_data = TabularDataObject._process_layer(
             input_features,
             date_field,
+            cell_sizes,
             distance_feature_layers,
             raster_variables,
             index_field,
@@ -1010,10 +1046,15 @@ class TabularDataObject(object):
         dataframe_columns = dataframe.columns
         if distance_feature_layers:
             count = 1
-            while f"NEAR_DIST_{count}" in dataframe_columns:
-                continuous_variables.append(f"NEAR_DIST_{count}")
+            while f"DIST_{count}" in dataframe_columns:
+                continuous_variables.append(f"DIST_{count}")
                 count = count + 1
 
+        if cell_sizes and not rasters:
+            for res in cell_sizes:
+                h3_field = f"zone{res}_id"
+                if h3_field in dataframe_columns:
+                    categorical_variables.append(h3_field)
         fields_to_keep = continuous_variables + categorical_variables
         if dependent_variable:
             fields_to_keep = fields_to_keep + [dependent_variable]
@@ -1077,14 +1118,128 @@ class TabularDataObject(object):
         )
 
     @staticmethod
+    def _sdf_gptool_workflow(
+        input_features,
+        distance_feature,
+        raster_list,
+        index_field=None,
+        is_table_obj=False,
+    ):
+        index_data = None
+        data_source = None
+        import arcpy
+        import pandas as pd
+
+        # if ((distance_feature) and (data_source)):F
+        if not is_table_obj:
+            if isinstance(input_features, tuple):
+                input_features = input_features[0]
+                data_source = str(input_features)
+            else:
+                try:
+                    data_source = str(input_features)
+                except:
+                    data_source = input_features.dataSource
+            count = 1
+            for distance_layer in distance_feature:
+                # field_1 = 'NEAR_FID_'+str(count)
+                field_2 = "DIST_" + str(count)
+                fields = [["NEAR_DIST", field_2]]
+                arcpy.Near_analysis(data_source, distance_layer, field_names=fields)
+                count = count + 1
+            sdf = pd.DataFrame.spatial.from_featureclass(data_source, sr="4326")
+        else:
+            sdf = pd.DataFrame()
+            data_type = arcpy.Describe(input_features).dataType
+            if data_type in ["TableView", "TextFile"]:
+                sdf = pd.DataFrame.spatial.from_table(str(input_features))
+        rasters_data = {}
+        if data_source:
+            for cnt, raster in enumerate(raster_list):
+                if isinstance(raster, tuple):
+                    try:
+                        wkt = raster[0].extent["spatialReference"]["wkt"]
+                        raster = raster[0]
+                    except:
+                        wkt = raster[0].extent["spatialReference"]["wkid"]
+                        raster = raster[0]
+                else:
+                    try:
+                        wkt = raster.extent["spatialReference"]["wkt"]
+                    except:
+                        wkt = raster.extent["spatialReference"]["wkid"]
+                sr = arcpy.SpatialReference()
+                sr.loadFromString(wkt)
+                for i in range(raster.band_count):
+                    if i == 0:
+                        rasters_data[raster.name] = []
+                    else:
+                        rasters_data[raster.name + f"_{i}"] = []
+                fields = ["SHAPE@X", "SHAPE@Y"]
+                with arcpy.da.SearchCursor(
+                    data_source, fields, spatial_reference=sr
+                ) as cursor:
+                    for row in cursor:
+                        # print(u'{0}, {1}'.format(row[0], row[1]))
+                        if arcpy.Describe(data_source).shapeType == "Point":
+                            raster_value = raster.read(
+                                origin_coordinate=(row[0], row[1]), ncols=1, nrows=1
+                            )
+                            value = raster_value[0][0]
+                        else:  # Polygon
+                            import random
+
+                            value = [random.uniform(0.3, 0.7)]
+                        for i in range(len(value)):
+                            if i == 0:
+                                rasters_data[raster.name].append(value[i])
+                            else:
+                                rasters_data[raster.name + f"_{i}"].append(value[i])
+                for key, value in rasters_data.items():
+                    sdf[key] = value
+
+            if index_field in list(sdf.columns.values):
+                index_data = sdf[index_field].values
+
+        return sdf, index_data
+
+    @staticmethod
     def _process_layer(
-        input_features, date_field, distance_layers, rasters, index_field
+        input_features, date_field, cell_sizes, distance_layers, rasters, index_field
     ):
         index_data = None
         if input_features is not None:
             if isinstance(input_features, FeatureLayer):
                 input_layer = input_features
-                sdf = input_features.query().sdf
+                out_sr = None
+                if cell_sizes and not rasters:
+                    out_sr = 4326
+                sdf = input_features.query(out_sr=out_sr).sdf
+
+            elif (
+                hasattr(input_features, "dataSource")
+                or str(input_features).endswith(".shp")
+                or isinstance(input_features, tuple)
+            ):
+                sdf, index_data = TabularDataObject._sdf_gptool_workflow(
+                    input_features,
+                    distance_layers,
+                    rasters,
+                    index_field,
+                    is_table_obj=False,
+                )
+                if cell_sizes and not rasters:
+                    sdf = add_h3(sdf, cell_sizes)
+                return sdf, index_data
+            elif hasattr(input_features, "value"):
+                sdf, index_data = TabularDataObject._sdf_gptool_workflow(
+                    input_features,
+                    distance_layers,
+                    rasters,
+                    index_field,
+                    is_table_obj=True,
+                )
+                return sdf, index_data
             else:
                 sdf = input_features.copy()
                 input_layer = None
@@ -1109,7 +1264,7 @@ class TabularDataObject(object):
                     for i in range(len(connecting_df)):
                         near_dist.append(connecting_df.iloc[i]["Total_Miles"])
 
-                    sdf[f"NEAR_DIST_{count}"] = near_dist
+                    sdf[f"DIST_{count}"] = near_dist
                     count = count + 1
 
             # Process Raster Data to get information.
@@ -1121,6 +1276,9 @@ class TabularDataObject(object):
                     original_points.append(sdf.iloc[i]["SHAPE"])
 
                 input_layer_spatial_reference = sdf.spatial._sr
+                if cell_sizes and not rasters:
+                    sdf = add_h3(sdf, cell_sizes)
+
                 for raster in rasters:
                     raster_type = 0
 
@@ -1533,6 +1691,39 @@ def explain_prediction(
             show_local_interpretation(
                 model, processed_df, index, random_index, method="FCN"
             )
+
+
+def add_h3(sdf, cell_sizes):
+    if sdf["SHAPE"][0]["spatialReference"]["wkid"] == 4326:
+        if (
+            "polygon" in sdf.spatial.geometry_type
+            or "point" in sdf.spatial.geometry_type
+        ):
+
+            try:
+                sdf = point_to_h3(sdf, cell_sizes)
+            except:
+                warnings.warn("Cell sizes will not work.")
+    return sdf
+
+
+def point_to_h3(sdf, cell_sizes):
+    import h3
+
+    for res in cell_sizes:
+        h3_id = []
+
+        if "polygon" in sdf.spatial.geometry_type:
+
+            for poly in sdf["SHAPE"]:
+                centroid = poly.centroid
+                h3_id.append(h3.geo_to_h3(centroid[1], centroid[0], res))
+
+        elif "point" in sdf.spatial.geometry_type:
+            h3_id = sdf["SHAPE"].apply(lambda x: h3.geo_to_h3(x["y"], x["x"], res))
+
+        sdf[f"zone{res}_id"] = h3_id
+    return sdf
 
 
 def show_local_interpretation(

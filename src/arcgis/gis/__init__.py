@@ -2986,14 +2986,17 @@ class UserManager(object):
             Data Editor         iBBBBBBBBBBBBBBB
             CustomRole          bKrTCjFF9tKbaFk8
 
-            >>> gis.users.create(username='new_user_1',
-                                            password='<strong_password>',
-                                            firstname='New',
-                                            lastname='User',
-                                            email='namee@organization.com',
-                                            description='User with custom role assigned',
-                                            role='bKrTCjFF9tKbaFk8',
-                                            user_type='Creator')
+            >>> user1 = gis.users.create(username='new_user_1',
+                                         password='<strong_password>',
+                                         firstname='New',
+                                         lastname='User',
+                                         email='namee@organization.com',
+                                         description='User with custom role assigned',
+                                         role='bKrTCjFF9tKbaFk8',
+                                         user_type='Creator')
+
+            >>> if user1: # setting the start_page of the newly created user
+            >>>     user1.landing_page = "organization"
 
         """
         if any(
@@ -4608,8 +4611,12 @@ class GroupManager(object):
 
         --------------------  ---------------------------------------------------------
         provider_group_name   Optional string. The name of the domain group.
+                              Create an association between a Portal group and an
+                              Active Directory or LDAP group.
         --------------------  ---------------------------------------------------------
-        provider              Optional string. Name of the provider.
+        provider              Optional string. Name of the provider. Required if the
+                              parameter `provider_group_name` is specified. Example of
+                              use: provider_group_name = "groupNameTest", provider = "enterprise"
         --------------------  ---------------------------------------------------------
         max_file_size         Optional integer.  This is the maximum file size allowed
                               be uploaded/shared to a group. Default value is: 1024000
@@ -4856,6 +4863,8 @@ class ContentManager(object):
         The class is not created by the user.
     """
 
+    _depmgr = None
+
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
@@ -4874,6 +4883,88 @@ class ContentManager(object):
         curl = f"{self._gis._portal.resturl}portals/checkUrl"
         params = {"f": "json", "url": url}
         return self._gis._con.get(curl, params, ignore_error_key=True)
+
+    # ----------------------------------------------------------------------
+    def cost(
+        self,
+        tile_storage: Optional[float] = None,
+        file_storage: Optional[float] = None,
+        feature_storage: Optional[float] = None,
+        generate_tile_count: Optional[int] = None,
+        loaded_tile_count: Optional[int] = None,
+        enrich_variable_count: Optional[int] = None,
+        enrich_report_count: Optional[int] = None,
+        service_area_count: Optional[int] = None,
+        geocode_count: Optional[int] = None,
+    ) -> dict:
+        """
+        The `cost` allows for the estimation of amount of credits an
+        operation will be required. For vector and tile storage, a user can
+        estimate the cost to cook tile and the cost of storage.  This
+        operation allows users to plan for future costs effeciently to best
+        serve their organization and clients.
+
+        .. note::
+            This operation is only supported on ArcGIS Online.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        tile_storage               Optional Float.  The size of the uncompressed tiles in MBs.
+        ----------------------     --------------------------------------------------------------------
+        file_storage               Optional Float. Estimates the credit cost of MB file storage.
+        ----------------------     --------------------------------------------------------------------
+        feature_storage            Optional Float. Estimates the cost of feature storage per feature.
+        ----------------------     --------------------------------------------------------------------
+        generate_tile_count        Optional Int.  Estimates the credit cost per tile.
+        ----------------------     --------------------------------------------------------------------
+        loaded_tile_count          Optional Int. Estimates the credit cost of pregenerated tile storage.
+        ----------------------     --------------------------------------------------------------------
+        enrich_variable_count      Optional Int. Estimates the credit cost er geoenrichment variable.
+        ----------------------     --------------------------------------------------------------------
+        enrich_report_count        Optional Int. Estimates the credit cost of running reports.
+        ----------------------     --------------------------------------------------------------------
+        service_area_count         Optional Int. Estimates the credit cost per service area generation.
+        ----------------------     --------------------------------------------------------------------
+        geocode_count              Optional Int. Estimates the credit cost per record for geocoding.
+        ======================     ====================================================================
+
+        :returns: dict[str, float]
+
+        """
+        if self._gis._portal.is_arcgisonline == False:
+            return {}
+        url = f"{self._gis._portal.resturl}portals/self/cost"
+
+        params = {
+            "tileStorage": tile_storage,
+            "fileStorage": file_storage,
+            "featureStorage": feature_storage,
+            "generatedTileCount": generate_tile_count,
+            "loadedTileCount": loaded_tile_count,
+            "enrichVariableCount": enrich_variable_count,
+            "enrichReportCount": enrich_report_count,
+            "serviceAreaCount": service_area_count,
+            "geocodeCount": geocode_count,
+            "f": "json",
+        }
+        return self._gis._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def dependency_manager(self) -> "DependencyManager":
+        """
+        Provides users the ability to manage the Enterprise's Item Dependencies Database.
+
+        Available in ArcGIS Enterprise 10.9.1+
+
+        :returns: DependencyManager or None for ArcGIS Online.
+        """
+        if self._depmgr is None and self._gis._portal.is_arcgisonline == False:
+            from arcgis.gis.sharing._dependency import DependencyManager
+
+            self._depmgr = DependencyManager(gis=self._gis)
+        return self._depmgr
 
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
@@ -9211,6 +9302,7 @@ class User(dict):
         self._user_id = username
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
+        self._invitemgr = None
         # userdict = self._portal.get_user(self.username)
         self._hydrated = False
         if userdict:
@@ -9292,6 +9384,20 @@ class User(dict):
         )
         params = {"f": "json"}
         return self._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def invitations(self) -> "UserInvitationManager":
+        """
+        Provides a list of invitations for a given user
+
+        :returns: UserInvitationManager
+        """
+        if self._invitemgr is None:
+            from arcgis.gis.sharing import UserInvitationManager
+
+            self._invitemgr = UserInvitationManager(self)
+        return self._invitemgr
 
     # ----------------------------------------------------------------------
     def report(
@@ -10140,7 +10246,7 @@ class User(dict):
             "cultureFormat": culture_format,
             "region": region,
         }
-        if security_answer and security_question:
+        if security_answer and not security_question is None:
             params["securityQuestionIdx"] = security_question
             params["securityAnswer"] = security_answer
         for k, v in copy.copy(params).items():
@@ -10151,8 +10257,8 @@ class User(dict):
             files = {"thumbnail": thumbnail}
         else:
             files = None
-        url = "%s/sharing/rest/community/users/%s/update" % (
-            self._gis._url,
+        url = "%scommunity/users/%s/update" % (
+            self._gis._portal.resturl,
             self._user_id,
         )
         ret = self._gis._con.post(path=url, postdata=params, files=files)
@@ -10178,9 +10284,15 @@ class User(dict):
 
            # Usage example: Setting login page
 
-           >>> user1 = gis.users.get("org_data_viewer")
+           >>> user1 = gis.users.get("org_data_viewer") # approach 1: set via landing_page
 
            >>> user1.landing_page = "map"
+
+           >>> us = user.user_settings # approach 2: set via user_settings
+
+           >>> us['landingPage']['url'] = "webmap/viewer.html"
+
+           >>> user1.user_settings = us
 
         """
         value = self.user_settings.get("landingPage", {}).get("url", "")
@@ -10249,6 +10361,17 @@ class User(dict):
         ================  ==========================================================
 
         :return: dict
+
+        .. code-block:: python
+
+           # Usage example: Getting the current user settings
+
+           >>> us = user.user_settings # similar to setting the landing_page property
+
+           >>> us['landingPage']['url'] = "webmap/viewer.html"
+
+           >>> user1.user_settings = us
+
         """
         url = "%s/sharing/rest/community/users/%s/properties" % (
             self._gis._url,
@@ -10680,6 +10803,8 @@ class User(dict):
         else:
             # delete the groups owned by the user
             [grp.delete() for grp in self.groups if grp.owner == self.username]
+        if self._gis._portal.is_arcgisonline:
+            self.esri_access = "arcgisonly"
         return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username: str):
@@ -11056,8 +11181,11 @@ class Item(dict):
                 lyr = ImageryLayer(self.url, self._gis)
                 try:
                     item_data = self.get_data()
-                    lyr._fn = item_data.get("renderingRule", None)
-                    lyr._fnra = item_data.get("renderingRule", None)
+                    rendering_rule = item_data.get("renderingRule", None)
+                    if rendering_rule:
+                        lyr._fn = rendering_rule
+                        lyr._fnra = rendering_rule
+                        lyr._rendering_rule_from_item = True
                     lyr._mosaic_rule = item_data.get("mosaicRule", None)
                 except:
                     pass
@@ -11500,20 +11628,55 @@ class Item(dict):
             >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
 
         """
-        data_path = "content/items/" + self.itemid + "/data"
+        if self._gis._con.token:
+            data_path = (
+                "content/items/"
+                + self.itemid
+                + f"/data"  # "?token={self._gis._con.token}"
+            )
+        else:
+            data_path = (
+                "content/items/"
+                + self.itemid
+                + f"/data"  # "?token={self._gis._con.token}"
+            )
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
         if not save_path:
             save_path = self._workdir
         try:
-            download_path = self._portal.con.get(
-                path=data_path,
+
+            url = self._gis._portal.resturl + data_path
+            con = self._gis._con
+            resp = self._portal.con.get(
+                path=url,
                 file_name=file_name,
                 out_folder=save_path,
                 try_json=False,
                 force_bytes=False,
+                allow_redirects=False,
+                return_raw_response=True,
             )
+            if resp.status_code >= 300 and resp.status_code < 400:
+                url = resp.headers["location"]
+                resp = self._portal.con.get(
+                    path=url,
+                    file_name=file_name,
+                    out_folder=save_path,
+                    try_json=False,
+                    force_bytes=False,
+                    allow_redirects=False,
+                    return_raw_response=True,
+                    drop_auth=True,
+                )
+                download_path = con._handle_response(
+                    resp, file_name=file_name, out_path=save_path, try_json=False
+                )
+            else:
+                download_path = con._handle_response(
+                    resp, file_name=file_name, out_path=save_path, try_json=False
+                )
         except Exception as e:
             _log.debug(msg=str(e))
             _log.debug(
@@ -12617,50 +12780,118 @@ class Item(dict):
              item.update(description ="aggregated US hurricane data", title = "US Hurricane Data",
                              tags = "Hurricanes, USA, Natural Disasters")
         """
-        # owner = self._gis.users.get(self.owner)
-        owner = self._user_id
-        # if hasattr(owner, 'id') and \
-        #   owner.id != 'null':
-        #    owner = owner.id
-        # else:
-        #    owner = owner.username
-        try:
-            folder = self.ownerFolder
-        except:
-            folder = None
+        if (
+            data
+            and isinstance(data, str)
+            and os.path.isfile(data)
+            and os.stat(data).st_size > int(2.5e7)
+        ):
+            owner = self._user_id
 
-        if item_properties:
-            large_thumbnail = item_properties.pop("largeThumbnail", None)
-        else:
-            large_thumbnail = None
+            try:
+                folder = self.ownerFolder
+            except:
+                folder = None
 
-        if item_properties is not None:
-            if "tags" in item_properties:
-                if type(item_properties["tags"]) is list:
-                    item_properties["tags"] = ",".join(item_properties["tags"])
+            if item_properties:
+                large_thumbnail = item_properties.pop("largeThumbnail", None)
+            else:
+                large_thumbnail = None
 
-        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            if item_properties is not None:
+                if "tags" in item_properties:
+                    if type(item_properties["tags"]) is list:
+                        item_properties["tags"] = ",".join(item_properties["tags"])
+
+            if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+                if item_properties is None:
+                    item_properties = {}
+                if not "type" in item_properties:
+                    item_properties["type"] = self.type
+                if not "fileName" in item_properties:
+                    fileName = self.name
+                    item_properties["fileName"] = fileName
+            # update everything but the data
+            ret = self._portal.update_item(
+                self.itemid,
+                item_properties,
+                None,
+                thumbnail,
+                metadata,
+                owner,
+                folder,
+                large_thumbnail,
+            )
+            # update the data by part:
+            params = {
+                "f": "json",
+                "multipart": True,
+                "async": True,
+                "filename": os.path.basename(data),
+            }
+            url = f"{self._gis._portal.resturl}content/users/{self.owner}"
+            if folder:
+                url += "/" + folder
+            url += "/items/" + self.itemid + "/update"
+            res = self._gis._con.post(url, params)
             if item_properties is None:
-                item_properties = {}
-            if not "type" in item_properties:
+                item_properties = {"type": self.type}
+            elif not "type" in item_properties:
                 item_properties["type"] = self.type
-            if not "fileName" in item_properties:
-                fileName = self.name
-                item_properties["fileName"] = fileName
+            status = self._gis.content._add_by_part(
+                file_path=data,
+                itemid=self.itemid,
+                item_properties=item_properties,
+                size=int(3.5e7),
+                owner=self.owner,
+                folder=folder,
+            )
+            if status == "completed":
+                self._hydrate()
+            elif ret:
+                self._hydrate()
+            return ret
+        else:
 
-        ret = self._portal.update_item(
-            self.itemid,
-            item_properties,
-            data,
-            thumbnail,
-            metadata,
-            owner,
-            folder,
-            large_thumbnail,
-        )
-        if ret:
-            self._hydrate()
-        return ret
+            owner = self._user_id
+
+            try:
+                folder = self.ownerFolder
+            except:
+                folder = None
+
+            if item_properties:
+                large_thumbnail = item_properties.pop("largeThumbnail", None)
+            else:
+                large_thumbnail = None
+
+            if item_properties is not None:
+                if "tags" in item_properties:
+                    if type(item_properties["tags"]) is list:
+                        item_properties["tags"] = ",".join(item_properties["tags"])
+
+            if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+                if item_properties is None:
+                    item_properties = {}
+                if not "type" in item_properties:
+                    item_properties["type"] = self.type
+                if not "fileName" in item_properties:
+                    fileName = self.name
+                    item_properties["fileName"] = fileName
+
+            ret = self._portal.update_item(
+                self.itemid,
+                item_properties,
+                data,
+                thumbnail,
+                metadata,
+                owner,
+                folder,
+                large_thumbnail,
+            )
+            if ret:
+                self._hydrate()
+            return ret
 
     @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range: str = "7D", as_df: bool = True):
@@ -12812,8 +13043,7 @@ class Item(dict):
                         res = pd.DataFrame(
                             res["data"][0]["num"], columns=["Date", "Usage"]
                         )
-                        res.Date = res.astype(float) / 1000
-                        res.Date = res.Date.apply(lambda x: datetime.fromtimestamp(x))
+                        res.Date = pd.to_datetime(res["Date"], unit="ms")
                         res.Usage = res.Usage.astype(int)
 
                 results.append(res)
@@ -12860,8 +13090,7 @@ class Item(dict):
                         res = pd.DataFrame(
                             res["data"][0]["num"], columns=["Date", "Usage"]
                         )
-                        res.Date = res.astype(float) / 1000
-                        res.Date = res.Date.apply(lambda x: datetime.fromtimestamp(x))
+                        res.Date = pd.to_datetime(res["Date"], unit="ms")
                         res.Usage = res.Usage.astype(int)
 
                 results.append(res)
@@ -12894,8 +13123,7 @@ class Item(dict):
                     df = pd.DataFrame([], columns=["Date", "Usage"])
                 elif len(res["data"]):
                     df = pd.DataFrame(res["data"][0]["num"], columns=["Date", "Usage"])
-                    df.Date = df.Date.astype(float) / 1000
-                    df.Date = df.Date.apply(lambda x: datetime.fromtimestamp(x))
+                    res.Date = pd.to_datetime(res["Date"], unit="ms")
                     df.Usage = df.Usage.astype(int)
                 return df
             return res
@@ -13223,7 +13451,18 @@ class Item(dict):
 
         .. code-block:: python
 
-            # Usage Example
+            # Publishing a Hosted Table Example
+
+            >>> csv_item = gis.content.get('<csv item id>')
+            >>> analyzed = gis.content.analyze(item=csv_item)
+            >>> publish_parameters = analyzed['publishParameters']
+            >>> publish_parameters['name'] = 'AVeryUniqueName' # this needs to be updated
+            >>> publish_parameters['locationType'] = None # this makes it a hosted table
+            >>> published_item = csv_item.publish(publish_parameters)
+
+        .. code-block:: python
+
+            # Publishing a Tile Service Example
 
             >>> item.publish(address_fields= { "CountryCode" : "Country"},
             >>>               output_type="Tiles",
@@ -13239,7 +13478,6 @@ class Item(dict):
 
         import time
 
-        params = {"f": "json"}
         if str(output_type).lower() in ["ogc", "ogcfeatureservice"]:
             output_type = "OGCFeatureService"
             file_type = "featureService"
@@ -13320,7 +13558,6 @@ class Item(dict):
                 # find items with relationship 'Service2Data' in reverse direction - all feature services published using this data item
                 related_items = self.related_items("Service2Data", "reverse")
 
-                return_item_list = []
                 if (
                     len(related_items) == 1
                 ):  # simple 1:1 relationship between data and service items
@@ -13353,7 +13590,6 @@ class Item(dict):
                             "analyzeParameters": {
                                 "enableGlobalGeocoding": "true",
                                 "sourceLocale": "en-us",
-                                # "locationType":"address",
                                 "sourceCountry": "",
                                 "sourceCountryHint": "",
                             },
@@ -13376,7 +13612,6 @@ class Item(dict):
                         "analyzeParameters": {
                             "enableGlobalGeocoding": "true",
                             "sourceLocale": "en-us",
-                            # "locationType":"address",
                             "sourceCountry": "",
                             "sourceCountryHint": "",
                         },
@@ -13449,43 +13684,44 @@ class Item(dict):
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": "Query"},
                 }
-
-        elif fileType in [
-            "csv",
-            "excel",
-        ]:  # merge users passed-in publish parameters with analyze results
+        elif (
+            fileType
+            in [
+                "csv",
+                "excel",
+            ]
+            and overwrite is False
+        ):  # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
 
             res = self._gis.content.analyze(item=self, file_type=fileType)
             publish_parameters = res["publishParameters"]
+            # case for hosted tables
+            if (
+                "layerInfo" in publish_parameters
+                and "layerInfo" in publish_parameters_orig
+            ):
+                # do general update
+                publish_parameters.update(publish_parameters_orig)
+            # case for hosted fl
+            else:
+                # check if layers key exist. If not, add empty array to avoid error in update
+                if "layers" not in publish_parameters:
+                    publish_parameters["layers"] = []
+                    # csv analyze returns layerInfo rather than a layer
+                    if "layerInfo" in publish_parameters:
+                        publish_parameters["layers"].append(
+                            publish_parameters["layerInfo"]
+                        )
 
-            # check if layers and tables key exist. If not, add empty array to avoid error in update
-            if "layers" not in publish_parameters:
-                publish_parameters["layers"] = []
-            if "tables" not in publish_parameters:
-                publish_parameters["tables"] = []
-
-            # check if layers and tables key exist. If not, add empty array to avoid error in update
-            if "layers" not in publish_parameters_orig:
-                publish_parameters_orig["layers"] = []
-            if "tables" not in publish_parameters_orig:
-                publish_parameters_orig["tables"] = []
-
-            # update layers but layer index must match
-            # update the layers otherwise general update will overwrite nested dictionary
-            for idx, lyr in enumerate(publish_parameters["layers"]):
-                lyr.update(publish_parameters_orig["layers"][idx])
-            for idx, tbl in enumerate(publish_parameters["tables"]):
-                tbl.update(publish_parameters_orig["tables"][idx])
-
-            # delete since already updated and avoid overwritting
-            if "layers" in publish_parameters_orig:
-                del publish_parameters_orig["layers"]
-            if "tables" in publish_parameters_orig:
-                del publish_parameters_orig["tables"]
-
-            # do general update
-            publish_parameters.update(publish_parameters_orig)
+                # do general update and assign service name
+                publish_parameters.update(publish_parameters_orig)
+                service_name = re.sub(r"[\W_]+", "_", self["title"])
+                publish_parameters.update({"name": service_name})
+                if not self._gis.content.is_service_name_available(
+                    publish_parameters["name"], "featureService"
+                ):
+                    raise Exception("Service name already exists in your org.")
 
         ret = self._portal.publish_item(
             self.itemid,

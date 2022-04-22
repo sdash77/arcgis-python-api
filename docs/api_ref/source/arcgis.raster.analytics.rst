@@ -199,3 +199,7 @@ train_random_trees_regression_model
 summarize_categorical_raster
 ----------------------------
 .. autofunction:: arcgis.raster.analytics.summarize_categorical_raster
+
+export_to_tile_package
+----------------------
+.. autofunction:: arcgis.raster.analytics.export_to_tile_package

@@ -23,22 +23,105 @@
 # Based on https://github.com/hszhao/semseg
 
 import torch
-import warnings
 import numpy as np
 import torch.nn.functional as F
 import torch.nn as nn
 import torch
-from torchvision import models
 import math
 from fastai.callbacks.hooks import hook_outputs
-from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
-from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
+from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision.models.segmentation.fcn import FCNHead
-from ._arcgis_model import _get_backbone_meta
+from ._timm_utils import get_backbone
 from fastprogress.fastprogress import progress_bar
 from ._PointRend import PointRendSemSegHead
 from fastai.vision import flatten_model
+
+
+def get_dilation_index(backbone_name, pointrend=False, keep_dilation=False):
+
+    vgg = False
+    if "vgg" in backbone_name:
+        modify_dilation_index = -5
+        vgg = True
+    elif "mobilenet" in backbone_name or "hardcorenas" in backbone_name:
+        modify_dilation_index = -1
+    else:
+        if pointrend and not keep_dilation:
+            modify_dilation_index = -1
+        else:
+            modify_dilation_index = -2
+
+    return modify_dilation_index, vgg
+
+
+def get_last_module(backbone):
+
+    hookable_modules = list(backbone.children())
+    if len(hookable_modules) < 5:
+
+        def get_len(m):
+            try:
+                return len(m)
+            except:
+                return 0
+
+        module_len = [get_len(m) for m in hookable_modules]
+        noise = np.array(range(len(module_len))) * 1e-15
+        module_len += noise
+        hookable_modules = hookable_modules[np.argmax(module_len)]
+
+    return hookable_modules
+
+
+def get_hooks(backbone_name, hookable_modules):
+
+    if "vgg" in backbone_name:
+        hooks = [
+            hookable_modules[i - 1]
+            for i, module in enumerate(hookable_modules)
+            if isinstance(module, nn.MaxPool2d)
+        ]
+
+    else:
+        hooks = [hookable_modules[-2], hookable_modules[-4]]
+
+    return hooks
+
+
+def add_dilation(backbone_fn, hookable_modules, modify_dilation_index):
+
+    custom_idx = 0
+    for i, module in enumerate(hookable_modules[modify_dilation_index:]):
+        dilation = 2 * (i + 1)
+        padding = 2 * (i + 1)
+
+        if "vgg" in backbone_fn.__name__:
+            if isinstance(module, nn.Conv2d):
+                dilation = 2 * (custom_idx + 1)
+                padding = 2 * (custom_idx + 1)
+                module.dilation, module.padding, module.stride = (
+                    (dilation, dilation),
+                    (padding, padding),
+                    (1, 1),
+                )
+                custom_idx += 1
+        else:
+            for m in flatten_model(module):
+                if "Pool" in m.__class__.__name__:
+                    m.stride = 1
+                    m.kernel_size = 3
+                    m.padding = 1
+
+                elif hasattr(m, "stride") and len(m.stride) == 2:
+                    if m.kernel_size[0] > 1:
+                        m.dilation, m.padding, m.stride = (
+                            (dilation, dilation),
+                            (padding, padding),
+                            (1, 1),
+                        )
+                    else:
+                        m.stride = (1, 1)
 
 
 class Deeplab(nn.Module):
@@ -53,72 +136,14 @@ class Deeplab(nn.Module):
     ):
         super().__init__()
         self.pointrend = pointrend
-        self.vgg = False
-        if getattr(backbone_fn, "_is_multispectral", False):
-            self.backbone = create_body(
-                backbone_fn,
-                pretrained=pretrained,
-                cut=_get_backbone_meta(backbone_fn.__name__)["cut"],
-            )
-        else:
-            self.backbone = create_body(backbone_fn, pretrained=pretrained)
-
+        self.backbone = get_backbone(backbone_fn, pretrained)
         backbone_name = backbone_fn.__name__
-
-        ## Support for different backbones
-        if "densenet" in backbone_name or "vgg" in backbone_name:
-            hookable_modules = list(self.backbone.children())[0]
-        else:
-            hookable_modules = list(self.backbone.children())
-
-        if "vgg" in backbone_name:
-            modify_dilation_index = -5
-            self.vgg = True
-        else:
-            if self.pointrend and not keep_dilation:
-                modify_dilation_index = -1
-            else:
-                modify_dilation_index = -2
-
-        if backbone_name == "resnet18" or backbone_name == "resnet34":
-            module_to_check = "conv"
-        else:
-            module_to_check = "conv2"
-
-        if "vgg" in backbone_name:
-            hooks = [
-                hookable_modules[i - 1]
-                for i, module in enumerate(hookable_modules)
-                if isinstance(module, nn.MaxPool2d)
-            ]
-
-        else:
-            hooks = [hookable_modules[-2], hookable_modules[-4]]
-
-        custom_idx = 0
-        for i, module in enumerate(hookable_modules[modify_dilation_index:]):
-            dilation = 2 * (i + 1)
-            padding = 2 * (i + 1)
-            for n, m in module.named_modules():
-                if module_to_check in n:
-                    m.dilation, m.padding, m.stride = (
-                        (dilation, dilation),
-                        (padding, padding),
-                        (1, 1),
-                    )
-                elif "downsample.0" in n:
-                    m.stride = (1, 1)
-
-            if "vgg" in backbone_fn.__name__:
-                if isinstance(module, nn.Conv2d):
-                    dilation = 2 * (custom_idx + 1)
-                    padding = 2 * (custom_idx + 1)
-                    module.dilation, module.padding, module.stride = (
-                        (dilation, dilation),
-                        (padding, padding),
-                        (1, 1),
-                    )
-                    custom_idx += 1
+        modify_dilation_index, self.vgg = get_dilation_index(
+            backbone_name, pointrend, keep_dilation
+        )
+        hookable_modules = get_last_module(self.backbone)
+        add_dilation(backbone_fn, hookable_modules, modify_dilation_index)
+        hooks = get_hooks(backbone_name, hookable_modules)
 
         ## Hook at the index where we need to get the auxillary logits out along with Fine-grained features
         self.hook = hook_outputs(hooks)
@@ -149,7 +174,7 @@ class Deeplab(nn.Module):
                 num_channels = self.hook[1].stored.shape[1]
                 stride = chip_size / feature_sizes[-1][2]
 
-            subdivision_steps = math.log(stride, 2)
+            subdivision_steps = math.ceil(math.log(stride, 2))
             self.pointrend_head = PointRendSemSegHead(
                 num_classes,
                 num_channels,
@@ -194,6 +219,10 @@ class Deeplab(nn.Module):
         else:
 
             if self.pointrend:
+                if pointrend_out.shape[-1] != x_size[-1]:
+                    pointrend_out = F.interpolate(
+                        pointrend_out, x_size[2:], mode="bilinear", align_corners=True
+                    )
                 return pointrend_out
             else:
                 return result

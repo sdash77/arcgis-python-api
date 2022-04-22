@@ -29,7 +29,7 @@ try:
     from pathlib import Path
     from fastai.vision import DatasetType, Learner, partial, open_image, Image
     import torch
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
 
     HAS_FASTAI = True
 except Exception as e:
@@ -205,11 +205,18 @@ class CycleGAN(ArcGISModel):
                                 to be displayed.
         =====================   ===========================================
 
+         **kwargs**
+
+        =====================   ===========================================
+        rgb_bands               Optional list of integers (band numbers)
+                                to be considered for rgb visualization.
+        =====================   ===========================================
+
         """
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
         show_results(self, rows, **kwargs)
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             from matplotlib import pyplot as plt
 
             plt.show()

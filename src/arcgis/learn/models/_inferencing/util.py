@@ -1,9 +1,12 @@
 import torch
+from torch import tensor, Tensor
 import numpy as np
 from torch import tensor
 import torch.nn as nn
 import torch
 import math
+
+from typing import Union, Tuple, Optional, List
 from .._unet_utils import is_contiguous as is_cont
 
 
@@ -196,6 +199,72 @@ def nms(boxes, scores, overlap=0.5, top_k=100):
         # keep only elements with an IoU <= overlap
         idx = idx[IoU.le(overlap)]
     return keep, count
+
+
+try:
+
+    @torch.jit.script
+    def nms_jit(
+        boxes, scores, overlap: float = 0.5, top_k: int = 100
+    ) -> Tuple[Tensor, Tensor]:
+        keep = torch.zeros(scores.size(0), dtype=torch.long).to(scores.device)
+
+        count = 0
+        if boxes.numel() == 0:
+            return keep, torch.tensor([count]).to(scores.device).int()
+        x1 = boxes[:, 0]
+        y1 = boxes[:, 1]
+        x2 = boxes[:, 2]
+        y2 = boxes[:, 3]
+        area = torch.mul(x2 - x1, y2 - y1)
+        v, idx = scores.sort(0)  # sort in ascending order
+        limiter = 0 if top_k == 0 else len(idx) - top_k  # TODO:here
+        idx = idx[limiter:]  # indices of the top-k largest vals
+        xx1 = torch.empty((0,), dtype=boxes.dtype).to(scores.device)
+        yy1 = torch.empty((0,), dtype=boxes.dtype).to(scores.device)
+        xx2 = torch.empty((0,), dtype=boxes.dtype).to(scores.device)
+        yy2 = torch.empty((0,), dtype=boxes.dtype).to(scores.device)
+        w = torch.empty((0,), dtype=boxes.dtype).to(scores.device)
+        h = torch.empty((0,), dtype=boxes.dtype).to(scores.device)
+
+        while idx.numel() > 0:
+            i = idx[len(idx) - 1]  # index of current largest val
+            keep[count] = i
+            count += 1
+            if idx.size(0) == 1:
+                break
+            idx = (
+                idx[: len(idx) - 1].clone().to(scores.device)
+            )  # remove kept element from view
+            # load bboxes of next highest vals
+            torch.index_select(x1, 0, idx, out=xx1)
+            torch.index_select(y1, 0, idx, out=yy1)
+            torch.index_select(x2, 0, idx, out=xx2)
+            torch.index_select(y2, 0, idx, out=yy2)
+            # store element-wise max with next highest score
+            xx1 = torch.clamp(xx1, min=x1[i])
+            yy1 = torch.clamp(yy1, min=y1[i])
+            xx2 = torch.clamp(xx2, max=x2[i])
+            yy2 = torch.clamp(yy2, max=y2[i])
+            w.resize_as_(xx2)
+            h.resize_as_(yy2)
+            w = xx2 - xx1
+            h = yy2 - yy1
+            # check sizes of xx1 and xx2.. after each iteration
+            w = torch.clamp(w, min=0.0)
+            h = torch.clamp(h, min=0.0)
+            inter = w * h
+            # IoU = i / (area(a) + area(b) - i)
+            rem_areas = torch.index_select(area, 0, idx)  # load remaining areas)
+            union = (rem_areas - inter) + area[i]
+            IoU = inter / union  # store result in iou
+            # keep only elements with an IoU <= overlap
+            idx = idx[IoU.le(overlap)]
+
+        return keep, torch.tensor([count]).to(scores.device).int()
+
+except:
+    print("\ntorch not available\n")
 
 
 def get_nms_preds(b_clas, b_bb, idx, anchors, grid_sizes, classes, nms_overlap, thres):

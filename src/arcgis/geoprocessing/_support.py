@@ -12,6 +12,7 @@ import concurrent.futures
 
 import arcgis
 from arcgis.gis import GIS
+from arcgis.gis._impl._con import Connection
 from arcgis.features import FeatureSet, FeatureCollection, Table
 from arcgis.auth.tools import LazyLoader
 
@@ -367,6 +368,15 @@ def _execute_gp_tool(
 ):
     if gis is None:
         gis = arcgis.env.active_gis
+    elif (  # Checks if the GIS is not a GIS class but has the _con property
+        isinstance(gis, GIS) == False
+        and hasattr(gis, "_con")
+        and isinstance(gis._con, Connection)
+    ):
+        gis = gis._con
+    elif isinstance(gis, Connection):
+        log = logging.getLogger()
+        log.warning("Using Connection object over GIS object")
 
     gp_params = {"f": "json"}
 
@@ -465,7 +475,7 @@ def _execute_gp_tool(
                     param_db,
                     return_values,
                     return_messages,
-                )
+                ),
             )
             executor.shutdown(False)
             gpjob = GPJob(

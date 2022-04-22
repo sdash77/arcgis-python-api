@@ -191,7 +191,9 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             if self._proxies:
                 oauth.proxies = self._proxies
             oauth.verify = False
-            authorization_url, state = oauth.authorization_url(auth_url)
+            authorization_url, state = oauth.authorization_url(
+                auth_url, **{"allow_verification": "false"}
+            )
             print(
                 "Please sign in to your GIS and paste the code that is obtained below."
             )
@@ -227,6 +229,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 "response_type": "code",
                 "expiration": -1,  # we want refresh_token to work for the life of the script
                 "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
+                "allow_verification": "false",
             }
             content = str(self._session.get(auth_url, params=parameters).content)
 
@@ -235,15 +238,29 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 pattern = re.compile("var oAuthInfo = ({.*?})", re.DOTALL)
 
             soup = lxml.html.fromstring(content)
+
+            def _load_oauth_info(js_object):
+                """converts the js oauth to dict"""
+                try:
+                    oauth_info = json.loads(js_object)
+                except:
+                    oauth_info = json.loads(js_object + "}")
+                return oauth_info
+
             for script in soup.xpath("//script/text()"):
                 script_code = str(script).strip()
                 matches = pattern.search(script_code)
                 if not matches is None:
                     js_object = matches.groups()[0]
                     try:
-                        oauth_info = json.loads(js_object)
-                    except:
-                        oauth_info = json.loads(js_object + "}")
+                        oauth_info = _load_oauth_info(js_object)
+                    except Exception:
+                        raise Exception(
+                            (
+                                "Could not login. Please validate your creden"
+                                "tials or make sure the security question is set on the user."
+                            )
+                        )
                     break
 
             parameters = {

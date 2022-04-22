@@ -150,17 +150,19 @@ class PanopticSegmentationLabelList(ImageList):
     # Method to convert the semantics to individual masks and labels
     def create_semantic_masks(self, semantic):
 
-        # Change the instance class pixels to 0
+        # Change the instance class pixels to -1
         for inst_cls in self.indexed_inst_classes:
-            semantic = torch.where(semantic == int(inst_cls), torch.tensor(0), semantic)
+            semantic = torch.where(
+                semantic == int(inst_cls), torch.tensor(-1), semantic
+            )
 
         semantic_np = np.asarray(semantic.cpu())
         labels = np.unique(semantic.cpu())
 
         ## TODO: investigate this
-        # Remove the label 0 (instance classes/No data)
-        # if labels[0] == 0:
-        #     labels = labels[1:]
+        # Remove the label -1 (instance classes)
+        if labels[0] == -1:
+            labels = labels[1:]
 
         semantic_labels = torch.tensor(labels, dtype=torch.long)
 

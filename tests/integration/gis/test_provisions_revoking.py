@@ -21,10 +21,10 @@ class TestLicenseProvisions(unittest.TestCase):
 
             um.create(
                 username=username,
-                password='sup3r5ecr3t!',
-                firstname='test',
-                lastname='account',
-                email='achapkowski@esri.com',
+                password="sup3r5ecr3t!",
+                firstname="test",
+                lastname="account",
+                email="achapkowski@esri.com",
             )
             user = gis.users.get(username)
         except Exception as e:
@@ -33,11 +33,11 @@ class TestLicenseProvisions(unittest.TestCase):
 
         lm = gis.admin.license
         for license in lm.all():
-            if license.properties.listing.title == 'TRIAL PAID \xa0LBU':
+            if license.properties.listing.title == "TRIAL PAID \xa0LBU":
 
                 license.assign(
                     username=user.username,
-                    entitlements=['d01b2c63d1a14f63842c20076e3f2b66'],
+                    entitlements=["d01b2c63d1a14f63842c20076e3f2b66"],
                 )
                 assert license.all()
 
@@ -57,10 +57,10 @@ class TestLicenseProvisions(unittest.TestCase):
 
             um.create(
                 username=username,
-                password='sup3r5ecr3t!',
-                firstname='test',
-                lastname='account',
-                email='achapkowski@esri.com',
+                password="sup3r5ecr3t!",
+                firstname="test",
+                lastname="account",
+                email="achapkowski@esri.com",
             )
             user = gis.users.get(username)
         except Exception as e:
@@ -69,15 +69,15 @@ class TestLicenseProvisions(unittest.TestCase):
 
         lm = gis.admin.license
         for license in lm.all():
-            if license.properties.listing.title == 'TRIAL PAID \xa0LBU':
+            if license.properties.listing.title == "TRIAL PAID \xa0LBU":
 
                 license.assign(
                     username=user.username,
-                    entitlements=['d01b2c63d1a14f63842c20076e3f2b66'],
+                    entitlements=["d01b2c63d1a14f63842c20076e3f2b66"],
                 )
                 assert license.all()
                 for l in license.all():
-                    entitlements = l['entitlements']
+                    entitlements = l["entitlements"]
                     license.revoke(username=user.username, entitlements=entitlements)
                 assert len(license.all()) == 0
 

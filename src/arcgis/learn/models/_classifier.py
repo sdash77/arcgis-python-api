@@ -1,5 +1,6 @@
 import arcgis as _arcgis
 from ._arcgis_model import ArcGISModel
+from ._timm_utils import timm_config, filter_timm_models, _get_feature_size
 from ..._impl.common._deprecate import deprecated
 from .._data import _check_esri_files, _raise_fastai_import_error
 import random
@@ -16,8 +17,6 @@ try:
     import shutil
     import warnings
     from pathlib import Path
-    from functools import partial
-    from ._unet_utils import is_no_color
     from ._codetemplate import feature_classifier_prf
     import torch
     import torch.nn.functional as F
@@ -33,7 +32,7 @@ try:
     from fastai.vision.data import ImageDataBunch, ImageList
     from fastai.vision import imagenet_stats, normalize
     from fastai.basic_train import Learner, LearnerCallback
-    from torch.utils.data.sampler import WeightedRandomSampler, BatchSampler
+    from torch.utils.data.sampler import WeightedRandomSampler
     from fastai.vision.learner import (
         cnn_learner,
         ClassificationInterpretation,
@@ -62,7 +61,7 @@ try:
         _get_emd_path,
         image_batch_stretcher,
     )
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     from matplotlib import pyplot as plt
     from .._utils.image_classification import adapt_fastai_databunch
     import copy
@@ -118,9 +117,11 @@ class FeatureClassifier(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             `prepare_data` function.
     ---------------------   -------------------------------------------
-    backbone                Optional torchvision model. Backbone CNN model to be used for
-                            creating the base of the ``FeatureClassifier``, which
-                            is ``resnet34`` by default.
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which is ``resnet34``
+                            by default.
+                            Supported backbones: ResNet family and specified Timm
+                            models from :func:`~arcgis.learn.FeatureClassifier.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -213,12 +214,26 @@ class FeatureClassifier(ArcGISModel):
             else:
                 metrics = accuracy
 
+            if "timm" in self._backbone.__module__:
+                timm_meta = timm_config(self._backbone)
+                backbone_cut = timm_meta["cut"]
+                backbone_split = timm_meta["split"]
+
+            if "tresnet" in self._backbone.__module__:
+                from fastai.vision import create_head
+
+                nf = 2 * _get_feature_size(self._backbone, backbone_cut)[-1][1]
+                head = create_head(nf, data.c)
+            else:
+                head = None
+
             self.learn = cnn_learner(
                 data,
                 self._backbone,
                 metrics=metrics,
                 cut=backbone_cut,
                 split_on=backbone_split,
+                custom_head=head,
             )
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
@@ -258,12 +273,19 @@ class FeatureClassifier(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return FeatureClassifier._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family, models.mobilenet_v2.__name__]
+        timm_models = filter_timm_models()
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family, models.mobilenet_v2.__name__] + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -288,7 +310,7 @@ class FeatureClassifier(ArcGISModel):
         """
         self._check_requisites()
         self.learn.show_results(rows=rows, **kwargs)
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _show_results_multispectral(self, rows=5, **kwargs):
@@ -357,6 +379,62 @@ class FeatureClassifier(ArcGISModel):
     @property
     def _model_metrics(self):
         return {}
+
+    def _save_pytorch_tflite(self, name):
+        import tensorflow as tf
+        import logging
+
+        tf.get_logger().setLevel(logging.ERROR)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import onnx
+            import onnx_tf
+            from onnx_tf.backend import prepare
+        device = torch.device("cpu")
+        torch_model = self.learn.model
+        torch_model = torch_model.eval()
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
+        dummy_input = torch.randn(
+            [1, num_input_channels, chip_size[0], chip_size[1]]
+        ).to(device)
+        saved_path = self.learn.path / self.learn.model_dir / f"{name}.tflite"
+        saved_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
+        saved_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            torch.onnx.export(
+                torch_model,
+                dummy_input,
+                saved_path_onnx,
+                export_params=True,
+                input_names=["input"],
+                output_names=["output"],
+                opset_version=11,
+            )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            arcgis_onnx = onnx.load(saved_path_onnx)
+            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
+            tf_onnx.export_graph(str(saved_path_pb))
+
+        converter = tf.lite.TFLiteConverter.from_saved_model(str(saved_path_pb))
+        converter.experimental_new_converter = True
+        converter.optimizations = [tf.compat.v1.lite.Optimize.DEFAULT]
+        converter.target_ops = [
+            tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
+            tf.lite.OpsSet.SELECT_TF_OPS,
+        ]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            tflite_model = converter.convert()
+        with tf.io.gfile.GFile(saved_path, "wb") as f:
+            f.write(tflite_model)
+
+        return [saved_path, saved_path_onnx]
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
