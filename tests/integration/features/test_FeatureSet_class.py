@@ -3,8 +3,9 @@
 # Purpose:     Tests for checking the save function of the feature class works properly.
 # -------------------------------------------------------------------------------
 
-import sys
-sys.path.insert(0, r"C:\Job\repos\geosaurus\tests")
+# Needed to find the integration module when running locally
+#import sys
+#sys.path.insert(0, r"C:\Job\repos\geosaurus\tests")
 
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
