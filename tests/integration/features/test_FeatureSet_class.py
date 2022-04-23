@@ -5,7 +5,7 @@
 
 # Needed to find the integration module when running locally
 #import sys
-#sys.path.insert(0, r"C:\Job\repos\geosaurus\tests")
+#sys.path.insert(0, r"<path on your system"\geosaurus\tests")
 
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
