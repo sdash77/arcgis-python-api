@@ -227,7 +227,7 @@ class BaseAnalytics(object):
                         token = input_layer.layers[0]._gis._con._create_token(
                             input_layer_url
                         )
-                        if self._validate_token(
+                        if token and self._validate_token(
                             input_layer._gis._con, url=input_layer_url, token=token
                         ):
                             input_param.update({"serviceToken": token})
@@ -261,7 +261,7 @@ class BaseAnalytics(object):
                     and "serviceToken" not in input_param.keys()
                 ):
                     token = input_layer._gis._con._create_token(input_layer_url)
-                    if self._validate_token(
+                    if token and self._validate_token(
                         input_layer._gis._con, url=input_layer_url, token=token
                     ):
                         input_param.update({"serviceToken": token})
