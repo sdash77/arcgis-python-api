@@ -835,7 +835,6 @@ class BusinessAnalyst(object):
             {
                 "id": "iso2",
                 "abbr3": "iso3",
-                "name": "country_name",
                 "altName": "alt_name",
                 "defaultDatasetID": "default_dataset",
             },
@@ -845,10 +844,10 @@ class BusinessAnalyst(object):
         keep_cols = [
             "iso2",
             "iso3",
-            "country_name",
+            "name",
+            "alt_name",
             "datasets",
             "default_dataset",
-            "alt_name",
             "continent",
         ]
         cntry_df = cntry_df[keep_cols]
