@@ -778,7 +778,7 @@ class BusinessAnalyst(object):
         cntry_df = pd.DataFrame(
             cntry_lst,
             columns=[
-                "country_name",
+                "name",
                 "vintage",
                 "iso2",
                 "iso3",
@@ -795,7 +795,7 @@ class BusinessAnalyst(object):
 
         # organize the columns
         cntry_df = cntry_df[
-            ["iso2", "iso3", "country_name", "vintage", "country_id", "data_source_id"]
+            ["iso2", "iso3", "name", "vintage", "country_id", "data_source_id"]
         ]
 
         return cntry_df
@@ -862,7 +862,7 @@ class BusinessAnalyst(object):
         # filter functions for getting the iso3 iso3 value
         iso3_fltr = self.countries["iso3"].str.lower() == cntry_str
         iso2_fltr = self.countries["iso2"].str.lower() == cntry_str
-        name_fltr = self.countries["country_name"].str.lower() == cntry_str
+        name_fltr = self.countries["name"].str.lower() == cntry_str
 
         # construct the filter, using alias if working online
         cntry_fltr = iso3_fltr | iso2_fltr | name_fltr

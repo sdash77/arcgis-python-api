@@ -849,6 +849,13 @@ class Country(object):
             )
 
         """
+        # pull out named areas if present
+        if isinstance(geographies, Iterable) and not isinstance(geographies, pd.DataFrame):
+            first_geo = geographies[0]
+            if isinstance(first_geo, NamedArea):
+                geographies = [na.area_id for na in geographies]
+                standard_geography_level = first_geo.level
+
         # invoke enrich on the business analyst object
         enrich_res = self._ba_cntry.enrich(
             geographies,
@@ -1518,22 +1525,33 @@ def enrich(
     # handle the caveat of using a GIS('Pro') input
     gis = _check_gis_source(gis)
 
-    # create the business analyst object
-    ba = _business_analyst.BusinessAnalyst(gis)
+    # create the enrich source
+    enrich_src = _business_analyst.BusinessAnalyst(gis)
+
+    # pull out named area properties if present and set to use country instead of just BA global
+    standard_geography_level = None
+
+    if isinstance(study_areas, Iterable) and not isinstance(study_areas, pd.DataFrame):
+        first_geo = study_areas[0]
+
+        if isinstance(first_geo, NamedArea):
+            study_areas = [na._areaid for na in study_areas]
+            standard_geography_level = first_geo._currlvl
+            enrich_src = first_geo._country
 
     # get all possible requested enrich variables
-    enrich_vars = _preproces_data_colletions_and_analysis_variables(
-        ba, data_collections, analysis_variables
-    )
+    src = enrich_src._ba_cntry if isinstance(enrich_src, Country) else enrich_src
+    enrich_vars = _preproces_data_colletions_and_analysis_variables(src, data_collections, analysis_variables)
 
     # invoke enrich on the business analyst object
-    enrich_res = ba.enrich(
-        study_areas,
-        enrich_vars,
-        proximity_type,
-        proximity_value,
-        proximity_metric,
-        return_geometry,
+    enrich_res = enrich_src.enrich(
+        geographies=study_areas,
+        enrich_variables=enrich_vars,
+        proximity_type=proximity_type,
+        proximity_value=proximity_value,
+        proximity_metric=proximity_metric,
+        standard_geography_level=standard_geography_level,
+        return_geometry=return_geometry,
     )
 
     return enrich_res
