@@ -102,6 +102,15 @@ def _tempinput(data):
 
 ###########################################################################
 class BaseAnalytics(object):
+    @lru_cache(maxsize=255)
+    def _validate_token(con:"Connection", url:str, token:str) -> bool:
+        """validates that a token should be given to the endpoint"""
+        resp = con.get(f"{url}?token={token}", try_json=True, return_raw_response=True)
+        if resp.text.lower().find("error") == -1:
+            return True
+        else:
+            return False
+        return False
     def _feature_input(self, input_layer):
         from arcgis.features.geo._accessor import _is_geoenabled
 
@@ -217,7 +226,8 @@ class BaseAnalytics(object):
                         token = input_layer.layers[0]._gis._con._create_token(
                             input_layer_url
                         )
-                        input_param.update({"serviceToken": token})
+                        if self._validate_token(input_layer._gis._con, url=input_layer_url, token=token):
+                            input_param.update({"serviceToken": token})                        
                 except:
                     pass
             elif input_layer.type.lower() == "feature collection":
@@ -248,7 +258,8 @@ class BaseAnalytics(object):
                     and "serviceToken" not in input_param.keys()
                 ):
                     token = input_layer._gis._con._create_token(input_layer_url)
-                    input_param.update({"serviceToken": token})
+                    if self._validate_token(input_layer._gis._con, url=input_layer_url, token=token):
+                        input_param.update({"serviceToken": token})
             except:
                 pass
 
