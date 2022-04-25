@@ -850,7 +850,9 @@ class Country(object):
 
         """
         # pull out named areas if present
-        if isinstance(geographies, Iterable) and not isinstance(geographies, pd.DataFrame):
+        if isinstance(geographies, Iterable) and not isinstance(
+            geographies, pd.DataFrame
+        ):
             first_geo = geographies[0]
             if isinstance(first_geo, NamedArea):
                 geographies = [na.area_id for na in geographies]
@@ -1541,7 +1543,9 @@ def enrich(
 
     # get all possible requested enrich variables
     src = enrich_src._ba_cntry if isinstance(enrich_src, Country) else enrich_src
-    enrich_vars = _preproces_data_colletions_and_analysis_variables(src, data_collections, analysis_variables)
+    enrich_vars = _preproces_data_colletions_and_analysis_variables(
+        src, data_collections, analysis_variables
+    )
 
     # invoke enrich on the business analyst object
     enrich_res = enrich_src.enrich(
