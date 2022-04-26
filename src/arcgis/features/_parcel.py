@@ -1129,7 +1129,7 @@ class ParcelFabricManager(object):
         extent: dict[str, Any],
     ):
         """
-        The :meth:`~reconstructFromSeeds` operation econstructs parcels from seeds enclosed by
+        The :meth:`~reconstructFromSeeds` operation constructs parcels from seeds enclosed by
         parcel lines in the specified extent. The tool reconstructs parcels regardless of the parcel
         lines associations with records.
 
