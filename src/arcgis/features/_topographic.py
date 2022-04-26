@@ -423,7 +423,7 @@ class TopographicProductionManager(object):
                                 included.
         ====================    ==========================================
         """
-        url = "%s/products/%s" % self._url, name
+        url = "%s/products/%s" % (self._url, name)
         params = {"f": "json", "includeDef": include_def}
         return self._con.post(url, params)
 
@@ -485,7 +485,7 @@ class TopographicProductionManager(object):
             }
             ```
         """
-        url = "%s/jobs/job/%s" % self._url, job_id
+        url = "%s/jobs/job/%s" % (self._url, job_id)
         params = {"f": "json", "msgLevel": msg_level}
         return self._con.post(url, params)
 
