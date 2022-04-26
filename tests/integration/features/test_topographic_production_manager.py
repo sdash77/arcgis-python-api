@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.features._topographic import TopographicProductionManager
@@ -11,9 +12,15 @@ sd = ServicesDirectory(
     verify_cert=False,
 )
 # Create Topographic Service
-topo = TopographicProductionManager("https://defmapdb.esri.com/arcgis/rest/services/MPS/MTM/TopographicProductionServer", sd)
+topo = TopographicProductionManager(
+    "https://defmapdb.esri.com/arcgis/rest/services/MPS/MTM/TopographicProductionServer",
+    sd,
+)
+
+
 class TestTopographicProductionManager(unittest.TestCase):
     """Tests the Topographic Production Service"""
+
     def get_products(self):
         products = topo.products()
         assert products
@@ -24,7 +31,7 @@ class TestTopographicProductionManager(unittest.TestCase):
         assert product.name == "MTM50"
 
     def add_product(self):
-        """ Test the add_product method """
+        """Test the add_product method"""
         # Get all the products
         products = topo.products(include_def=True)
         number_products = len(products["products"])
@@ -39,7 +46,7 @@ class TestTopographicProductionManager(unittest.TestCase):
         # Get all the products again to compare
         products_updated = topo.products()
         assert len(products_updated["products"]) == number_products + 1
-    
+
     def remove_product(self):
         """Test remove product"""
         # Get all the products
@@ -59,11 +66,18 @@ class TestTopographicProductionManager(unittest.TestCase):
         # Get all the products
         products = topo.products(include_def=True)
         product = products["products"][0]
-        generated = topo.generate_product(product["name"], "Test", "https://rextapilnxsvr01.esri.com/server/rest/services/MPS_AOI/MapServer/1", "234", "aprx")
+        generated = topo.generate_product(
+            product["name"],
+            "Test",
+            "https://rextapilnxsvr01.esri.com/server/rest/services/MPS_AOI/MapServer/1",
+            "234",
+            "aprx",
+        )
 
         assert generated["jobId"]
         assert generated["statusUrl"]
         assert generated["success"] is True
+
 
 if __name__ == "__main__":
     unittest.main()
