@@ -161,6 +161,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert len(updated_query["traceConfigurations"]) == number_trace_configs
 
     def validate_topology(self):
+        """Test validate topology method"""
         validate = utility_nm.validate_topology(
             envelope={
                 "xmin": 1034659.2752358826,
@@ -173,6 +174,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         )
     
     def query_network(self):
+        """Test query network method"""
         query1 = utility_nm.query_network_moments(moments_to_return=["enableTopology","initialEnableTopology"])
         assert query1
         assert len(query1["networkMoments"]) == 2
@@ -180,7 +182,25 @@ class TestUtilityNetworkManager(unittest.TestCase):
         query2 = utility_nm.query_network_moments()
         assert query2
         assert len(query2["networkMoments"]) == 8
-        
+
+    def synthesize_association_geometries(self):
+        """Test the method"""
+        sag = utility_nm.synthesize_association_geometries(connectivity_associations=True,
+                count=25,
+                extent=
+                {	
+                "xmin": 6814287.099790375,
+                    "ymin": 1847003.4894856418,
+                    "xmax": 6814425.830360317,
+                    "ymax": 1847091.4713699604,
+                    "spatialReference": {
+                        "wkid": 3498,
+                        "latestWkid": 3498	
+                }
+                })
+        assert sag
+        assert sag["success"] is True
+    
 
 if __name__ == "__main__":
     unittest.main()
