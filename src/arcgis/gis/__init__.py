@@ -11863,6 +11863,44 @@ class Item(dict):
         if job_id is not None:
             params["jobId"] = job_id
         return self._portal.con.get(data_path, params)
+    # ----------------------------------------------------------------------
+    def list_item(self):
+        """
+        The `list_item` operation lists the item in the marketplace.
+
+        This operation is only available to organizations that have permissions 
+        to list items in the marketplace. The permissions are returned with the 
+        Portal Self response.
+
+        The listing properties must be specified for the item before 
+        calling this operation. This operation will fail if listing 
+        properties have not already been specified.
+
+        Listing an item will set its listed property to true.
+
+        This operation is available to the user and to the administrator 
+        of the organization to which the user belongs.
+
+        :return: True if success else False
+        """
+        params = {"f": "json"}
+        url = "content/users/%s/items/%s/list" % (self._user_id, self.itemid)
+        return self._portal.con.get(url, params)
+    # ----------------------------------------------------------------------
+    def unlist(self):
+        """
+        The `unlist` operation unlists a previously listed item from the marketplace.
+
+        Unlisting an item will reset its listed property to false.
+
+        This operation is available to the user and the administrator of 
+        the organization to which the user belongs.
+
+        :return: Success being True or False and the item id.
+        """
+        params = {"f": "json"}
+        url = "content/users/%s/items/%s/unlist" % (self._user_id, self.itemid)
+        return self._portal.con.get(url, params)
 
     # ----------------------------------------------------------------------
     def get_thumbnail(self):
@@ -11891,6 +11929,7 @@ class Item(dict):
                     thumbnail_url_path, try_json=False, force_bytes=True
                 )
 
+    # ----------------------------------------------------------------------
     def download_thumbnail(self, save_folder: Optional[str] = None):
         """
         The ``download_thumbnail`` method is similar to the ``download`` method but only downloads the item thumbnail.
@@ -11933,6 +11972,7 @@ class Item(dict):
         else:
             return None
 
+    # ----------------------------------------------------------------------
     def get_thumbnail_link(self):
 
         """
@@ -11957,7 +11997,18 @@ class Item(dict):
                 + thumbnail_file
             )
             return thumbnail_url_path
+    
+    # ----------------------------------------------------------------------
+    def delete_thumbnail(self):
+        """
+        The Delete Item Thumbnail operation allows item owner or organization 
+        administrator to delete their item's or an organization item's thumbnail.
+        """
+        params = {"f": "json"}
+        url = "content/users/%s/items/%s/deleteThumbnail" % (self._user_id, self.itemid)
+        return self._portal.con.get(url, params)
 
+    # ---------------------------------------------------------------------- 
     @property
     def metadata(self):
 
@@ -12005,6 +12056,7 @@ class Item(dict):
             raise ValueError("Input must be XML path file or XML Text")
         return self.update(metadata=xml_file)
 
+    # ----------------------------------------------------------------------
     def download_metadata(self, save_folder: Optional[str] = None):
         """
         The ``download_metadata`` method is similar to the ``download`` method but only downloads the item metadata for
@@ -12091,6 +12143,7 @@ class Item(dict):
         icon = self._gis.url + "/home/js/jsapi/esri/css/images/item_type_icons/" + icon
         return icon
 
+    # ----------------------------------------------------------------------
     def _ux_item_type(self):
         item_type = self.type
         if self.type == "Geoprocessing Service":
@@ -12107,6 +12160,7 @@ class Item(dict):
             item_type = self.type.replace("Service", "Layer")
         return item_type
 
+    # ----------------------------------------------------------------------
     def _repr_html_(self):
         thumbnail = self.thumbnail
         if self.thumbnail is None or not self._portal.is_logged_in:
@@ -12174,11 +12228,13 @@ class Item(dict):
                 """
         )
 
+    # ----------------------------------------------------------------------
     def __str__(self):
         return self.__repr__()
         # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
         # return '\n'.join(state)
 
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return '<%s title:"%s" type:%s owner:%s>' % (
             type(self).__name__,
@@ -12187,6 +12243,7 @@ class Item(dict):
             self.owner,
         )
 
+    # ----------------------------------------------------------------------
     def reassign_to(self, target_owner: str, target_folder: Optional[str] = None):
         """
         The ``reassign_to`` method allows the administrator to reassign a single item from one user to another.
@@ -12224,6 +12281,7 @@ class Item(dict):
             self._hydrate()  # refresh
             return resp
 
+    # ----------------------------------------------------------------------
     @property
     def shared_with(self):
         """
@@ -12335,6 +12393,7 @@ class Item(dict):
 
         return ret_dict
 
+    # ----------------------------------------------------------------------
     def share(
         self,
         everyone: bool = False,
@@ -12442,6 +12501,7 @@ class Item(dict):
         self._hydrate()
         return res
 
+    # ----------------------------------------------------------------------
     def unshare(self, groups: Union[list[str], list[Group]]):
         """
         The ``unshare`` method stops sharing of the Item with the specified list of groups.
@@ -12493,6 +12553,7 @@ class Item(dict):
             owner = self._user_id
             return self._portal.unshare_item(self.itemid, owner, folder, group_ids)
 
+    # ----------------------------------------------------------------------
     def delete(self, force: bool = False, dry_run: bool = False):
         """
         The ``delete`` method deletes the item. If the item is unable to be deleted , a RuntimeException is raised.
@@ -12579,6 +12640,7 @@ class Item(dict):
         else:
             return self._portal.delete_item(self.itemid, self._user_id, folder, force)
 
+    # ----------------------------------------------------------------------
     def create_thumbnail(self, update: bool = True):
         """
         The ``create_thumbnail`` method creates a Thumbnail for a feature service portal item using the service's
@@ -12687,6 +12749,7 @@ class Item(dict):
             self.update(item_properties={"thumbnailUrl": res.url})
         return res
 
+    # ----------------------------------------------------------------------
     def update(
         self,
         item_properties: Optional[dict[str, Any]] = None,
@@ -12893,6 +12956,71 @@ class Item(dict):
                 self._hydrate()
             return ret
 
+    # ----------------------------------------------------------------------
+    def update_info(self, file:str, folder_name:Optional[str]=None):
+        """
+        This method is available for all items and allows you to upload multiple files to an item's esriinfo folder. 
+        You can upload JSON, XML, CFG, TXT, PBF, and PNG files only. The file size limit is 100K. 
+        The uploaded file is also available through the https://item-url/info/filename resource.
+        
+        Must be the owner of the item to update this. 
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        file                Required String. The path to the file that will be uploaded.
+        ---------------     --------------------------------------------------------------------
+        folder_name         Optional String. The name of the subfolder for added information.
+        ===============     ====================================================================
+
+        :return: Success or Failure
+        """
+        if self.owner == self._gis.users.me.username:
+
+            url = "{resturl}content/users/{owner}/items/{itemid}/updateInfo".format(
+                resturl=self._gis._portal.resturl, owner=self.owner, itemid=self.itemid
+            )
+            params = {
+                "f": "json",
+                "file": file,
+                "folderName": folder_name,
+            } 
+            res = self._portal.con.post(url, params)
+            self._hydrated = False
+            self._hydrate()
+            return res
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def delete_info(self, file:str):
+        """
+        This is available for all items and allows you to delete an individual file from an item's esriinfo folder.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        file                Required String. The file to be deleted.
+        ===============     ====================================================================
+
+        """
+        if self.owner == self._gis.users.me.username:
+
+            url = "{resturl}content/users/{owner}/items/{itemid}/deleteInfo".format(
+                resturl=self._gis._portal.resturl, owner=self.owner, itemid=self.itemid
+            )
+            params = {
+                "f": "json",
+                "file": file,
+            } 
+            res = self._portal.con.post(url, params)
+            self._hydrated = False
+            self._hydrate()
+            return res
+        else:
+            return None
+    
+    # ----------------------------------------------------------------------
     @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range: str = "7D", as_df: bool = True):
         """
@@ -13130,6 +13258,7 @@ class Item(dict):
         except:
             return None
 
+    # ----------------------------------------------------------------------
     def get_data(self, try_json: bool = True):
         """
         The ``get_data`` method retrieves the data associated with an item.
@@ -13175,6 +13304,7 @@ class Item(dict):
         else:
             return item_data
 
+    # ----------------------------------------------------------------------
     def dependent_upon(self):
 
         """
@@ -13185,6 +13315,7 @@ class Item(dict):
             with an ArcGIS Enterprise."""
         return self._portal.get_item_dependencies(self.itemid)
 
+    # ----------------------------------------------------------------------
     def dependent_to(self):
         """
         The ``dependent_to`` method returns items, urls, etc that are dependent to this item.
@@ -13194,7 +13325,8 @@ class Item(dict):
              only with an ArcGIS Enterprise.
         """
         return self._portal.get_item_dependents_to(self.itemid)
-
+    
+    # ----------------------------------------------------------------------
     _RELATIONSHIP_TYPES = frozenset(
         [
             "Area2CustomPackage",
@@ -13230,6 +13362,7 @@ class Item(dict):
 
     _RELATIONSHIP_DIRECTIONS = frozenset(["forward", "reverse"])
 
+    # ----------------------------------------------------------------------
     def related_items(self, rel_type: str, direction: str = "forward"):
         """
         The ``related_items`` method retrieves the items related to this item. Relationships can be added and deleted
@@ -13277,6 +13410,7 @@ class Item(dict):
             related_items.append(Item(self._gis, related_item["id"], related_item))
         return related_items
 
+    # ----------------------------------------------------------------------
     def add_relationship(self, rel_item: Item, rel_type: str):
 
         """The ``add_relationship`` method adds a relationship from the current item to ``rel_item``.
@@ -13328,6 +13462,7 @@ class Item(dict):
         if resp:
             return resp.get("success")
 
+    # ----------------------------------------------------------------------
     def delete_relationship(self, rel_item: Item, rel_type: str):
         """
         The ``delete_relationship`` method  deletes a relationship between this item and the rel_item.
@@ -13366,6 +13501,7 @@ class Item(dict):
         if resp:
             return resp.get("success")
 
+    # ----------------------------------------------------------------------
     def publish(
         self,
         publish_parameters: Optional[dict[str, Any]] = None,
@@ -13801,6 +13937,7 @@ class Item(dict):
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
 
+    # ----------------------------------------------------------------------
     def move(self, folder: str, owner: Optional[str] = None):
         """
         The ``move`` method moves the current item to the name of the folder passed when ``move`` is called.
@@ -14079,6 +14216,7 @@ class Item(dict):
             raise ValueError("Input must of type FeatureService")
         return
 
+    # ----------------------------------------------------------------------
     def protect(self, enable: bool = True):
         """
         The ``protect`` method enables or disables delete protection on this item, essentially allowing the item to be
@@ -14106,6 +14244,7 @@ class Item(dict):
         self._hydrate()
         return res
 
+    # ----------------------------------------------------------------------
     def _check_publish_status(self, ret, folder):
         """Internal method to check the status of a publishing job.
 
