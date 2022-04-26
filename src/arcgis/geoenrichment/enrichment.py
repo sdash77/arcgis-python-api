@@ -371,11 +371,11 @@ class Country(object):
     def __repr__(self):
         if self._gis == "local":
             repr = (
-                f"<{type(self).__name__} - {self.properties.country_name} {self.properties.year} "
+                f"<{type(self).__name__} - {self.properties.name} {self.properties.year} "
                 f"({self._gis.__repr__()})>"
             )
         else:
-            repr = f"<{type(self).__name__} - {self.properties.country_name} ({self._gis.__repr__()})>"
+            repr = f"<{type(self).__name__} - {self.properties.name} ({self._gis.__repr__()})>"
         return repr
 
     @property
