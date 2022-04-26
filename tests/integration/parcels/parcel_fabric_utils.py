@@ -73,7 +73,26 @@ def create_version(vms, version_name=None):
         print(ex)
         return None
 
+def generate_where_in_clause(field_name, feature_list):
+    """
 
+    Args:
+      field_name (str): Name of column to query
+      feature_list (list): List of values to generate IN clause
+
+    Returns:
+        string e.g. `WHERE name IN ('a' ,'b', 'c')`
+    """
+    # Build up 'IN' clause for searching
+    where_str = f"{field_name} in ("
+    for p in feature_list:
+        if not isinstance(p, str):
+            where_str += f"{str(p)},"
+        else:
+            where_str += f"'{str(p)}',"
+    where_str = f"{where_str[:-1]})"
+    return where_str
+    
 def get_feature_layer(flc, lyr_name):
     """Get a FeatureLayer out of a FeatureLayerCollection by its name property
 
