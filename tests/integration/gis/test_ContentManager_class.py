@@ -87,7 +87,7 @@ class Test_ContentManager_portal_builtin(unittest.TestCase):
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False, trust_env=True)
+        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
         if cls.gis is None:
             cls.class_skip = True
 
