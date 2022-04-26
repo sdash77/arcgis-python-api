@@ -1,7 +1,7 @@
 from __future__ import annotations
 import datetime
 from typing import Optional
-from arcgis import env
+from arcgis import GIS, env
 from arcgis._impl.common._mixins import PropertyMap
 
 ########################################################################
@@ -24,9 +24,9 @@ class TopographicProductionManager(object):
     ---------------------   -------------------------------------------
     url                     Required String. The web endpoint to the topographic service.
     ---------------------   -------------------------------------------
-    version                 Required Version. The `Version` class where the branch version will take place.
-    ---------------------   -------------------------------------------
-    gis                     Optional GIS. The `GIS` connection object.
+    gis                     Optional GIS. The enterprise connection to 
+                            the Portal site. A connection can be passed 
+                            in such as a Service Directory connection.
     =====================   ===========================================
 
 
@@ -35,21 +35,22 @@ class TopographicProductionManager(object):
     _con = None
     _gis = None
     _url = None
-    _version = None
     _property = None
-    _version_guid = None
-    _version_name = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, version, gis=None):
+    def __init__(self, url, gis=None):
         """Constructor"""
         if gis is None:
             gis = env.active_gis
+        if isinstance(gis, GIS):
+            self._gis = gis
+            self._con = self._gis._portal.con
+        elif hasattr(gis, "_con"):
+            self._gis = gis
+            self._con = gis._con
+        else:
+            raise ValueError("gis must be of type GIS")
         self._gis = gis
-        self._con = gis._portal.con
         self._url = url
-        self._version = version
-        self._version_guid = version._guid
-        self._version_name = version.properties.versionName
 
     # ----------------------------------------------------------------------
     def _init(self):
