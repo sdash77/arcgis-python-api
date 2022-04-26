@@ -18,7 +18,7 @@ class UtilityNetworkManager(object):
     ---------------------   -------------------------------------------
     url                     Required String. The web endpoint to the utility service.
     ---------------------   -------------------------------------------
-    version                 Required Version. The `Version` class where the branch version will take place.
+    version                 Optional Version. The `Version` class where the branch version will take place.
     ---------------------   -------------------------------------------
     gis                     Optional GIS. The `GIS` connection object.
     =====================   ===========================================
@@ -29,21 +29,23 @@ class UtilityNetworkManager(object):
     _con = None
     _gis = None
     _url = None
-    _version = None
     _property = None
     _version_guid = None
     _version_name = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, version, gis=None):
+    def __init__(self, url, version=None, gis=None):
         """Constructor"""
         if gis is None:
             gis = env.active_gis
         self._gis = gis
         self._con = gis._portal.con
         self._url = url
-        self._version = version
-        self._version_guid = version._guid
-        self._version_name = version.properties.versionName
+        if version:
+            self._version_guid = version._guid
+            self._version_name = version.properties.versionName
+        else:
+            self._version_guid = None
+            self._version_name = None
 
     # ----------------------------------------------------------------------
     def _init(self):
@@ -534,7 +536,7 @@ class UtilityNetworkManager(object):
 
 
         """
-        url = "%s/synthesizeAssociationGeometries"
+        url = "%s/synthesizeAssociationGeometries" % self._url
         params = {
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
@@ -728,7 +730,7 @@ class UtilityNetworkManager(object):
 
 
         """
-        url = "%s/applyOverrides"
+        url = "%s/applyOverrides" % self._url
         params = {"f": "json", "adds": adds, "deletes": deletes}
         return self._con.post(url, params)
 
@@ -745,7 +747,7 @@ class UtilityNetworkManager(object):
         """
 
         if self._gis.version >= [9, 2]:
-            url = "%s/associations"
+            url = "%s/associations" % self._url
             params = {"f": "json"}
             return self._con.post(url, params)
 
@@ -790,7 +792,7 @@ class UtilityNetworkManager(object):
 
         """
         if self._gis.version >= [9, 2]:
-            url = "%s/associations/query"
+            url = "%s/associations/query" % self._url
             params = {
                 "f": "json",
                 "gdbVersion": self._version_name,
@@ -896,7 +898,7 @@ class UtilityNetworkManager(object):
 
         """
         if self._gis.version >= [9, 2]:
-            url = "%s/associations/traverse"
+            url = "%s/associations/traverse" % self._url
             params = {
                 "f": "json",
                 "gdbVersion": self._version_name,
@@ -924,7 +926,7 @@ class UtilityNetworkManager(object):
         """
 
         if self._gis.version >= [9, 2]:
-            url = "%s/locations"
+            url = "%s/locations" % self._url
             params = {"f": "json"}
             return self._con.post(url, params)
 
@@ -982,7 +984,7 @@ class UtilityNetworkManager(object):
         """
 
         if self._gis.version >= [9, 2]:
-            url = "%s/locations/query"
+            url = "%s/locations/query" % self._url
             params = {
                 "f": "json",
                 "gdbVersion": self._version_name,
@@ -1008,13 +1010,14 @@ class UtilityNetworkManager(object):
         """
 
         if self._gis.version >= [9, 2]:
-            url = "%s/traceConfigurations"
+            url = "%s/traceConfigurations" % self._url
             params = {"f": "json"}
             return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def alter_trace_configurations(
         self,
+        global_id: str,
         name: Optional[str] = None,
         description: Optional[str] = None,
         trace_type: str = "connected",
@@ -1034,6 +1037,9 @@ class UtilityNetworkManager(object):
 
         ======================      ===============================================
         **Argument**                **Description**
+        ----------------------      -----------------------------------------------
+        global_id                   Required String. Specifying the global ID of
+                                    the named trace configuration to alter.
         ----------------------      -----------------------------------------------
         name                        Optional String. The altered name of the trace
                                     configuration.
@@ -1075,10 +1081,10 @@ class UtilityNetworkManager(object):
         """
 
         if self._gis.version >= [9, 2]:
-            url = "%s/traceConfigurations/alter"
+            url = "%s/traceConfigurations/alter" % self._url
             params = {
                 "f": "json",
-                "gdbVersion": self._version_name,
+                "globalId": global_id,
                 "name": name,
                 "description": description,
                 "traceType": trace_type,
@@ -1149,7 +1155,7 @@ class UtilityNetworkManager(object):
 
         """
         if self._gis.version >= [9, 2]:
-            url = "%s/traceConfigurations/create"
+            url = "%s/traceConfigurations/create" % self._url
             params = {
                 "f": "json",
                 "gdbVersion": self._version_name,
@@ -1170,7 +1176,7 @@ class UtilityNetworkManager(object):
         can only be deleted by an administrator or its creator.
         """
         if self._gis.version >= [9, 2]:
-            url = "%s/traceConfigurations/delete"
+            url = "%s/traceConfigurations/delete" % self._url
             params = {
                 "f": "json",
                 "globalIds": global_ids,
@@ -1206,7 +1212,7 @@ class UtilityNetworkManager(object):
         ========================    ===========================================
         """
         if self._gis.version >= [9, 2]:
-            url = "%s/traceConfigurations/query"
+            url = "%s/traceConfigurations/query" % self._url
             params = {
                 "f": "json",
                 "globalIds": global_ids,
