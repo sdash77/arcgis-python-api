@@ -24,8 +24,8 @@ class TopographicProductionManager(object):
     ---------------------   -------------------------------------------
     url                     Required String. The web endpoint to the topographic service.
     ---------------------   -------------------------------------------
-    gis                     Optional GIS. The enterprise connection to 
-                            the Portal site. A connection can be passed 
+    gis                     Optional GIS. The enterprise connection to
+                            the Portal site. A connection can be passed
                             in such as a Service Directory connection.
     =====================   ===========================================
 
