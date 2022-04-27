@@ -2,7 +2,7 @@ import sys
 
 #
 #  Update the Path to set the test area
-#  sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8284\src")
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 #
 import os, shutil, tempfile
 import logging

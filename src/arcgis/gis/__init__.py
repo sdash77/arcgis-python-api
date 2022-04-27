@@ -11995,16 +11995,6 @@ class Item(dict):
                 + thumbnail_file
             )
             return thumbnail_url_path
-    
-    # ----------------------------------------------------------------------
-    def delete_thumbnail(self):
-        """
-        The Delete Item Thumbnail operation allows item owner or organization 
-        administrator to delete their item's or an organization item's thumbnail.
-        """
-        params = {"f": "json"}
-        url = "content/users/%s/items/%s/deleteThumbnail" % (self._user_id, self.itemid)
-        return self._portal.con.get(url, params)
 
     # ---------------------------------------------------------------------- 
     @property
