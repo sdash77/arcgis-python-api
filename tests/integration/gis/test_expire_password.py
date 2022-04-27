@@ -4,8 +4,7 @@ sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7210\src")
 import unittest
 from arcgis.gis import GIS, User, UserManager
 
-PROFILES = ["your_enterprise_profile", "your_online_profile"]
-
+PROFILES = ["your_ent_admin_profile", "your_online_admin_profile"]
 
 class TestUserExpirePassword(unittest.TestCase):
     """
