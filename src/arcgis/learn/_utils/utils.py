@@ -19,5 +19,10 @@ def arcpy_localization_helper(msg, id, msg_type="ERROR"):
         import arcpy
 
         arcpy.AddIDMessage(msg_type, id)
+        if msg_type == "ERROR":
+            try:
+                exit()
+            except:
+                pass
     except:
         return msg

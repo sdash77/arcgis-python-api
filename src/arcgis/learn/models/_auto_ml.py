@@ -23,6 +23,7 @@ try:
     from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
     from arcgis.learn._utils.tabular_data import TabularDataObject, add_h3
     from arcgis.learn._utils.common import _get_emd_path
+    from arcgis.learn._utils.utils import arcpy_localization_helper
 
     HAS_FASTAI = True
 except:
@@ -32,6 +33,7 @@ except:
 try:
     import sklearn
     from sklearn import *
+    from sklearn import preprocessing
     import numpy as np
     import pandas as pd
 except Exception as e:
@@ -194,9 +196,12 @@ class AutoML(object):
             if ml_task == "auto":
                 ml_task = self.get_ml_task(self._all_labels)
             if ml_task == "text":
-                raise ValueError(
-                    "Dependent variable has more than 200 unique values more than half of the total records are unique, hence there is not enough information to train a model"
+                msg = arcpy_localization_helper(
+                    "Dependent variable has more than 200 unique values more than half of the total records are unique, hence there is not enough information to train a model",
+                    260154,
+                    "ERROR",
                 )
+                exit(260146)
             if (mode == "Explain") or (mode == "Basic"):
                 explain_level = 2
                 zone_list = ["zone3_id", "zone4_id", "zone5_id", "zone6_id", "zone7_id"]
@@ -263,7 +268,15 @@ class AutoML(object):
         Fits the AutoML model.
         """
         if getattr(self._data, "_is_not_empty", True):
-            self._model.fit(self._all_data_df, self._all_labels)
+            try:
+                self._model.fit(self._all_data_df, self._all_labels)
+            except:
+                msg = arcpy_localization_helper(
+                    "The desired models could not be trained using the input data provided.",
+                    260150,
+                    "ERROR",
+                )
+                exit()
         else:
             raise Exception("Fit can be called only with data.")
         # self.save()
@@ -488,6 +501,10 @@ class AutoML(object):
             emd_params["dependent_variable"] = self._data._dependent_variable
 
         emd_params["continuous_variables"] = self._data._continuous_variables
+        if self._data._feature_field_variables:
+            emd_params["_feature_field_variables"] = self._data._feature_field_variables
+        if self._data._raster_field_variables:
+            emd_params["_raster_field_variables"] = self._data._raster_field_variables
 
         with open(emd_file, "w") as f:
             f.write(json.dumps(emd_params, indent=4))
@@ -785,11 +802,25 @@ class AutoML(object):
                 )
 
         if match_field_names:
+            try:
+                list_of_train_fields = []
+                for key, value in match_field_names.items():
+                    if (not key == value) and (len(str(key)) > 0):
+                        list_of_train_fields.append(value)
+                processed_dataframe = processed_dataframe.drop(
+                    list_of_train_fields, axis=1, errors="ignore"
+                )
+            except:
+                pass
             processed_dataframe.rename(columns=match_field_names, inplace=True)
-
         for field in fields_needed:
             if field not in processed_dataframe.columns:
-                raise Exception(f"Field missing {field}")
+                msg = arcpy_localization_helper(
+                    "Data on which prediction in needed does not have the fields the model was trained on",
+                    260152,
+                    "ERROR",
+                )
+                exit()
 
         for column in processed_dataframe.columns:
             if column not in fields_needed:
@@ -836,7 +867,7 @@ class AutoML(object):
         fields_needed = (
             self._data._categorical_variables + self._data._continuous_variables
         )
-
+        cached_sr = arcpy.env.outputCoordinateSystem
         try:
             arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
                 "wkt"
@@ -868,7 +899,7 @@ class AutoML(object):
             cell_size = arcpy.PointGeometry(
                 arcpy.Point(raster.mean_cell_width, raster.mean_cell_height),
                 arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
-            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
+            )  # .projectAs(arcpy.SpatialReference(default_sr["wkid"]))
 
             if xmin > point_upper.firstPoint.X:
                 xmin = point_upper.firstPoint.X
@@ -879,10 +910,10 @@ class AutoML(object):
             if ymin > point_lower.firstPoint.Y:
                 ymin = point_lower.firstPoint.Y
 
-            if min_cell_size_x > cell_size.firstPoint.X:
+            if min_cell_size_x < cell_size.firstPoint.X:
                 min_cell_size_x = cell_size.firstPoint.X
 
-            if min_cell_size_y > cell_size.firstPoint.Y:
+            if min_cell_size_y < cell_size.firstPoint.Y:
                 min_cell_size_y = cell_size.firstPoint.Y
 
         max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
@@ -960,12 +991,15 @@ class AutoML(object):
                 continue
 
         for field in fields_needed:
-            if (
-                field not in list(raster_data.keys())
-                and match_field_names
-                and match_field_names.get(field, None) is None
+            if (field not in list(raster_data.keys())) and (
+                match_field_names and match_field_names.get(field, None) is None
             ):
-                raise Exception(f"Field missing {field}")
+                msg = arcpy_localization_helper(
+                    "Data on which prediction in needed does not have the fields the model was trained on",
+                    260152,
+                    "ERROR",
+                )
+                exit()
 
         processed_data = []
 
@@ -984,9 +1018,24 @@ class AutoML(object):
 
         predictions = self._predict(processed_numpy)
 
-        predictions = np.array(
-            predictions.reshape([max_raster_rows, max_raster_columns]), dtype="float64"
-        )
+        if isinstance(predictions[0], str):
+            processed_df["predictions"] = predictions
+            le = preprocessing.LabelEncoder()
+            le.fit(processed_df["predictions"])
+            le_name_mapping = dict(zip(le.classes_, le.transform(le.classes_)))
+            processed_df["predictions"] = le.transform(processed_df["predictions"])
+
+            predictions = np.array(
+                processed_df["predictions"].values.reshape(
+                    [max_raster_rows, max_raster_columns]
+                ),
+                dtype=np.uint8,
+            )
+        else:
+            predictions = np.array(
+                predictions.reshape([max_raster_rows, max_raster_columns]),
+                dtype="float64",
+            )
 
         processed_raster = arcpy.NumPyArrayToRaster(
             predictions,
@@ -994,6 +1043,18 @@ class AutoML(object):
             x_cell_size=min_cell_size_x,
             y_cell_size=min_cell_size_y,
         )
+        if isinstance(predictions[0], str):
+            arcpy.management.BuildRasterAttributeTable(processed_raster)
+            class_map = le_name_mapping
+            "class_map=" + str(class_map)
+            arcpy.management.CalculateField(
+                processed_raster,
+                "Class",
+                expression="class_map.get(!Value!)",
+                expression_type="PYTHON3",
+                code_block="class_map=" + str(class_map),
+            )
         processed_raster.save(output_folder_path)
+        arcpy.env.outputCoordinateSystem = cached_sr
 
         return True
