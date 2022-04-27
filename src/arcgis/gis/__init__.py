@@ -12982,22 +12982,18 @@ class Item(dict):
 
         :return: Success or Failure
         """
-        if self.owner == self._gis.users.me.username:
-
-            url = "{resturl}content/users/{owner}/items/{itemid}/updateInfo".format(
-                resturl=self._gis._portal.resturl, owner=self.owner, itemid=self.itemid
-            )
-            params = {
-                "f": "json",
-                "file": file,
-                "folderName": folder_name,
-            }
-            res = self._portal.con.post(url, params)
-            self._hydrated = False
-            self._hydrate()
-            return res
-        else:
-            return None
+        url = "{resturl}content/users/{owner}/items/{itemid}/updateInfo".format(
+            resturl=self._gis._portal.resturl, owner=self.owner, itemid=self.itemid
+        )
+        params = {
+            "f": "json",
+            "file": file,
+            "folderName": folder_name,
+        }
+        res = self._portal.con.post(url, params)
+        self._hydrated = False
+        self._hydrate()
+        return res
 
     # ----------------------------------------------------------------------
     def delete_info(self, file: str):
@@ -13011,21 +13007,17 @@ class Item(dict):
         ===============     ====================================================================
 
         """
-        if self.owner == self._gis.users.me.username:
-
-            url = "{resturl}content/users/{owner}/items/{itemid}/deleteInfo".format(
-                resturl=self._gis._portal.resturl, owner=self.owner, itemid=self.itemid
-            )
-            params = {
-                "f": "json",
-                "file": file,
-            }
-            res = self._portal.con.post(url, params)
-            self._hydrated = False
-            self._hydrate()
-            return res
-        else:
-            return None
+        url = "{resturl}content/users/{owner}/items/{itemid}/deleteInfo".format(
+            resturl=self._gis._portal.resturl, owner=self.owner, itemid=self.itemid
+        )
+        params = {
+            "f": "json",
+            "file": file,
+        }
+        res = self._portal.con.post(url, params)
+        self._hydrated = False
+        self._hydrate()
+        return res
 
     # ----------------------------------------------------------------------
     @cached(cache=TTLCache(maxsize=255, ttl=60))

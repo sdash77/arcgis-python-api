@@ -2,7 +2,7 @@ import sys
 
 #
 #  Update the Path to set the test area
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 #
 import os, shutil, tempfile
 import logging
@@ -50,6 +50,19 @@ class TestInfoFileOps(unittest.TestCase):
                 assert fp
                 os.remove(fp)
 
+    def test_update_info(self):
+        for profile in profiles:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            items = gis.content.search("Map Package")
+            if len(items) > 0:
+                fp = items[0].item_card
+                assert fp
+                
+                updated = items[8].update_info(fp)
+                assert updated
+                assert updated["success"] is True
+                os.remove(fp)
+ 
 
 if __name__ == "__main__":
     unittest.main()
