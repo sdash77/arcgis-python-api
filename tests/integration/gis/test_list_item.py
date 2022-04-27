@@ -28,28 +28,32 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
-class TestInfoFileOps(unittest.TestCase):
-    def test_package_info(self):
+class TestListItem(unittest.TestCase):
+    def test_list_item(self):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            items = gis.content.search("Map Package")
-            if len(items) > 0:
-                fp = items[0].package_info()
-                assert fp
-                os.remove(fp)
-                fp = items[0].package_info(tempfile.gettempdir())
-                assert fp
-                os.remove(fp)
-
-    def test_item_card(self):
+            items = gis.content.search("*", item_type="Feature Layer")
+            for item in items:
+                if item.owner == gis.users.me.username:
+                    try:
+                        item.list
+                        assert item["listed"] is True
+                        print("listed: " + item["name"])
+                    except:
+                        continue
+    
+    def test_unlist_item(self):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            items = gis.content.search("Map Package")
-            if len(items) > 0:
-                fp = items[0].item_card
-                assert fp
-                os.remove(fp)
-
+            items = gis.content.search("*", item_type="Feature Layer")
+            for item in items:
+                if item.owner == gis.users.me.username:
+                    try:
+                        item.unlist
+                        assert item["listed"] is False
+                        print("unlisted: " + item["name"])
+                    except:
+                        continue
 
 if __name__ == "__main__":
     unittest.main()

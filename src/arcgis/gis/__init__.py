@@ -11862,7 +11862,8 @@ class Item(dict):
             params["jobId"] = job_id
         return self._portal.con.get(data_path, params)
     # ----------------------------------------------------------------------
-    def list_item(self):
+    @property
+    def list(self):
         """
         The `list_item` operation lists the item in the marketplace.
 
@@ -11885,6 +11886,7 @@ class Item(dict):
         url = "content/users/%s/items/%s/list" % (self._user_id, self.itemid)
         return self._portal.con.get(url, params)
     # ----------------------------------------------------------------------
+    @property
     def unlist(self):
         """
         The `unlist` operation unlists a previously listed item from the marketplace.
