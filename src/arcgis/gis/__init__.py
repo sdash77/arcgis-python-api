@@ -11861,23 +11861,24 @@ class Item(dict):
         if job_id is not None:
             params["jobId"] = job_id
         return self._portal.con.get(data_path, params)
+
     # ----------------------------------------------------------------------
     @property
     def list(self):
         """
         The `list_item` operation lists the item in the marketplace.
 
-        This operation is only available to organizations that have permissions 
-        to list items in the marketplace. The permissions are returned with the 
+        This operation is only available to organizations that have permissions
+        to list items in the marketplace. The permissions are returned with the
         Portal Self response.
 
-        The listing properties must be specified for the item before 
-        calling this operation. This operation will fail if listing 
+        The listing properties must be specified for the item before
+        calling this operation. This operation will fail if listing
         properties have not already been specified.
 
         Listing an item will set its listed property to true.
 
-        This operation is available to the user and to the administrator 
+        This operation is available to the user and to the administrator
         of the organization to which the user belongs.
 
         :return: True if success else False
@@ -11885,6 +11886,7 @@ class Item(dict):
         params = {"f": "json"}
         url = "content/users/%s/items/%s/list" % (self._user_id, self.itemid)
         return self._portal.con.get(url, params)
+
     # ----------------------------------------------------------------------
     @property
     def unlist(self):
@@ -11893,7 +11895,7 @@ class Item(dict):
 
         Unlisting an item will reset its listed property to false.
 
-        This operation is available to the user and the administrator of 
+        This operation is available to the user and the administrator of
         the organization to which the user belongs.
 
         :return: Success being True or False and the item id.
@@ -11998,7 +12000,7 @@ class Item(dict):
             )
             return thumbnail_url_path
 
-    # ---------------------------------------------------------------------- 
+    # ----------------------------------------------------------------------
     @property
     def metadata(self):
 
@@ -12963,12 +12965,12 @@ class Item(dict):
             return ret
 
     # ----------------------------------------------------------------------
-    def update_info(self, file:str, folder_name:Optional[str]=None):
-        """ 
-        You can upload JSON, XML, CFG, TXT, PBF, and PNG files only. The file size limit is 100K. 
+    def update_info(self, file: str, folder_name: Optional[str] = None):
+        """
+        You can upload JSON, XML, CFG, TXT, PBF, and PNG files only. The file size limit is 100K.
         The uploaded file is also available through the https://item-url/info/filename resource.
-        
-        Must be the owner of the item to update this. 
+
+        Must be the owner of the item to update this.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -12989,7 +12991,7 @@ class Item(dict):
                 "f": "json",
                 "file": file,
                 "folderName": folder_name,
-            } 
+            }
             res = self._portal.con.post(url, params)
             self._hydrated = False
             self._hydrate()
@@ -12998,7 +13000,7 @@ class Item(dict):
             return None
 
     # ----------------------------------------------------------------------
-    def delete_info(self, file:str):
+    def delete_info(self, file: str):
         """
         This is available for all items and allows you to delete an individual file from an item's esriinfo folder.
 
@@ -13017,14 +13019,14 @@ class Item(dict):
             params = {
                 "f": "json",
                 "file": file,
-            } 
+            }
             res = self._portal.con.post(url, params)
             self._hydrated = False
             self._hydrate()
             return res
         else:
             return None
-    
+
     # ----------------------------------------------------------------------
     @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range: str = "7D", as_df: bool = True):
@@ -13330,7 +13332,7 @@ class Item(dict):
              only with an ArcGIS Enterprise.
         """
         return self._portal.get_item_dependents_to(self.itemid)
-    
+
     # ----------------------------------------------------------------------
     _RELATIONSHIP_TYPES = frozenset(
         [

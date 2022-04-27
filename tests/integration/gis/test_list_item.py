@@ -23,7 +23,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
+profiles = ["your_online_profile", "your_enterprise_profile"]
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -41,7 +41,7 @@ class TestListItem(unittest.TestCase):
                         print("listed: " + item["name"])
                     except:
                         continue
-    
+
     def test_unlist_item(self):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
@@ -54,6 +54,7 @@ class TestListItem(unittest.TestCase):
                         print("unlisted: " + item["name"])
                     except:
                         continue
+
 
 if __name__ == "__main__":
     unittest.main()
