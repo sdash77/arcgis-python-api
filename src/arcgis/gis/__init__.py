@@ -12958,8 +12958,7 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def update_info(self, file:str, folder_name:Optional[str]=None):
-        """
-        This method is available for all items and allows you to upload multiple files to an item's esriinfo folder. 
+        """ 
         You can upload JSON, XML, CFG, TXT, PBF, and PNG files only. The file size limit is 100K. 
         The uploaded file is also available through the https://item-url/info/filename resource.
         
