@@ -175,6 +175,7 @@ def test_enrich_usa_variable_name_list_local(usa_local, polygon_df):
     enrich_test(usa_local, polygon_df, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
 
 
+@skip_if_no_local
 def test_enrich_usa_after_can_variable_name_list_local(usa_local, polygon_df):
     import arcpy
     arcpy.env.baDataSource = "LOCAL;;CAN_ESRI_2021"
