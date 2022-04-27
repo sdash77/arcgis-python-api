@@ -6823,20 +6823,27 @@ class ContentManager(object):
         elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
             # CSV WORKFLOW
             path = "content/features/analyze"
-
+            if kwargs.get("geocode_url", None):
+                geocode_url = kwargs.get("geocode_url")
+            else:
+                locators = [
+                    gc["url"]
+                    for gc in self._gis.properties.helperServices.geocode
+                    if gc.get("batch", False)
+                ]
+                if len(locators) == 0:
+                    raise Exception("No batch geocoding service found.")
+                geocode_url = locators[0]
             postdata = {
                 "f": "pjson",
-                "text": df.to_csv(),
+                "text": df.to_csv(index_label="OBJECTID"),
                 "filetype": "csv",
                 "analyzeParameters": {
                     "enableGlobalGeocoding": "true",
                     "sourceLocale": "en-us",
-                    # "locationType":"address",
                     "sourceCountry": "",
                     "sourceCountryHint": "",
-                    "geocodeServiceUrl": self._gis.properties.helperServices.geocode[0][
-                        "url"
-                    ],
+                    "geocodeServiceUrl": geocode_url,
                 },
             }
 
@@ -6844,23 +6851,19 @@ class ContentManager(object):
                 postdata["analyzeParameters"]["locationType"] = "address"
 
             res = self._portal.con.post(path, postdata)
-            # import json
-            # json.dumps(res)
             if address_fields is not None:
                 res["publishParameters"].update({"addressFields": address_fields})
 
             path = "content/features/generate"
             postdata = {
                 "f": "pjson",
-                "text": df.to_csv(),
+                "text": df.to_csv(index_label="OBJECTID"),
                 "filetype": "csv",
                 "publishParameters": json.dumps(res["publishParameters"]),
             }
             if item_id:
                 postdata["itemIdToCreate"] = item_id
-            res = self._portal.con.post(
-                path, postdata
-            )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
+            res = self._portal.con.post_multipart(path, postdata)
 
             fc = FeatureCollection(res["featureCollection"]["layers"][0])
             return fc
@@ -6878,13 +6881,8 @@ class ContentManager(object):
                     "sourceCountryHint": kwargs.pop("country_hint", ""),
                     "geocodeServiceUrl": kwargs.pop(
                         "geocode_url",
-                        self._gis.properties.helperServices.geocode[0]["url"],
+                        geocode_url,
                     ),
-                    # "locationType": kwargs.pop('location_type', None),
-                    # "latitudeFieldName" : kwargs.pop("latitude_field", None),
-                    # "longitudeFieldName" : kwargs.pop("longitude_field", None),
-                    # "coordinateFieldName" : kwargs.pop("coordinate_field_name", None),
-                    # "coordinateFieldType" : kwargs.pop("coordinate_field_type", None)
                 },
             }
             update_dict = {}
@@ -15050,6 +15048,43 @@ class Item(dict):
             self._hydrate()
             return True
         return res["success"]
+
+    # ----------------------------------------------------------------------
+    def package_info(self, folder: Optional[str] = None) -> str:
+        """
+        Items will have a package info file available only if that item is
+        an ArcGIS package (for example, a layer package or map package). It
+        contains information that is used by clients (ArcGIS Pro, ArcGIS
+        Explorer, and so on) to work appropriately with downloaded
+        packages. Navigating to the URL will result in a package info file
+        (.pkinfo) being downloaded.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. The save location of the pkinfo file.
+        ===============     ====================================================================
+
+        :returns: str
+        """
+
+        url = f"{self._gis._portal.resturl}content/items/{self.itemid}/item.pkinfo"
+        res = self._portal.con.get(url, {}, try_json=False, out_folder=folder)
+        return res
+
+    # ----------------------------------------------------------------------
+    @property
+    def item_card(self) -> str:
+        """
+        Returns an XML representation of the Item
+
+        :returns: A string path to the downloaded XML file.
+        """
+        url = (
+            f"{self._gis._portal.resturl}content/items/{self.itemid}/info/iteminfo.xml"
+        )
+        res = self._portal.con.get(url, {"f": "json"})
+        return res
 
     # ----------------------------------------------------------------------
     @property
