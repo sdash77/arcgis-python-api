@@ -14945,7 +14945,7 @@ class Item(dict):
         url = (
             f"{self._gis._portal.resturl}content/items/{self.itemid}/info/iteminfo.xml"
         )
-        res = self._portal.con.get(url, {'f': 'json'})
+        res = self._portal.con.get(url, {"f": "json"})
         return res
 
     # ----------------------------------------------------------------------
