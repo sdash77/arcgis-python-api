@@ -12738,6 +12738,22 @@ class Item(dict):
         return res
 
     # ----------------------------------------------------------------------
+    def delete_thumbnail(self) -> bool:
+        """
+        Deletes the item's thumbnail
+
+        :returns: bool
+        """
+        url = f"{self._gis._portal.resturl}content/users/{self.owner}/items/{self.itemid}/deleteThumbnail"
+        params = {"f": "json"}
+        res = self._gis._con.post(url, params)
+        if res.get("success", False):
+            self._hydrated = False
+            self._hydrate()
+            return True
+        return res
+
+    # ----------------------------------------------------------------------
     def update(
         self,
         item_properties: Optional[dict[str, Any]] = None,
